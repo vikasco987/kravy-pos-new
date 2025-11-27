@@ -291,3 +291,14 @@ model Upload {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ===================== DELETE HISTORY =====================
+
+model DeleteHistory {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  billId     String
+  deletedBy  String?
+  snapshot   Json
+  deletedAt  DateTime @default(now())
+}
+
