@@ -391,3 +391,149 @@ export default function BillsPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// "use client";
+
+// import { useEffect, useState } from "react";
+// import { useAuth } from "@clerk/nextjs";
+
+// export default function DeletedBillsPage() {
+//   const [bills, setBills] = useState<any[]>([]);
+//   const [loading, setLoading] = useState(true);
+
+//   // ⭐ Clerk Auth
+//   const { getToken } = useAuth();
+
+//   // ⭐ Fetch deleted bills
+//   const fetchBills = async () => {
+//     setLoading(true);
+//     try {
+//       const token = await getToken(); // Get Clerk token
+
+//       const res = await fetch("/api/billing/deleted/list", {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//         },
+//       });
+
+//       const data = await res.json();
+//       setBills(data.bills || []);
+//     } catch (err) {
+//       console.error("Fetch deleted bills error:", err);
+//       setBills([]);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // ⭐ Restore or delete function
+//   const restoreBill = async (id: string) => {
+//     const ok = confirm("Do you want to restore this bill?");
+//     if (!ok) return;
+
+//     const token = await getToken();
+
+//     const res = await fetch(`/api/billing/deleted/restore/${id}`, {
+//       method: "POST",
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//       },
+//     });
+
+//     const data = await res.json();
+
+//     if (data.success) {
+//       alert("Bill restored successfully!");
+//       setBills((prev) => prev.filter((b) => b.id !== id));
+//     } else {
+//       alert("Restore failed: " + data.error);
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchBills();
+//   }, []);
+
+//   if (loading) return <p className="p-6">Loading deleted bills...</p>;
+
+//   return (
+//     <div className="max-w-4xl mx-auto p-6">
+//       <h1 className="text-3xl font-bold mb-6">🗑️ Deleted Bills</h1>
+
+//       {bills.length === 0 ? (
+//         <p>No deleted bills found.</p>
+//       ) : (
+//         bills.map((bill: any) => (
+//           <div
+//             key={bill.id}
+//             className="p-4 border rounded mb-6 bg-white shadow"
+//           >
+//             {/* BILL BASE INFO */}
+//             <h2 className="text-lg font-semibold">🧾 Bill ID: {bill.id}</h2>
+//             <p className="mt-1">👤 Customer: {bill.customer?.name || "N/A"}</p>
+//             <p className="mt-1">💰 Total: ₹{bill.total}</p>
+//             <p className="mt-1 text-gray-600">
+//               Deleted At: {new Date(bill.deletedAt).toLocaleString("en-IN")}
+//             </p>
+
+//             {/* PRODUCTS SECTION */}
+//             <div className="mt-4 bg-gray-100 p-3 rounded">
+//               <h3 className="font-semibold mb-2">Items</h3>
+
+//               {bill.snapshot?.products?.length > 0 ? (
+//                 <table className="w-full text-sm">
+//                   <thead>
+//                     <tr className="bg-gray-200">
+//                       <th className="p-2 border">Item</th>
+//                       <th className="p-2 border">Qty</th>
+//                       <th className="p-2 border">Rate</th>
+//                       <th className="p-2 border">Total</th>
+//                     </tr>
+//                   </thead>
+
+//                   <tbody>
+//                     {bill.snapshot.products.map((p: any, i: number) => (
+//                       <tr key={i}>
+//                         <td className="border p-2">
+//                           {p.productName || p.name || "Unnamed"}
+//                         </td>
+//                         <td className="border p-2 text-center">{p.quantity}</td>
+//                         <td className="border p-2 text-right">₹{p.price}</td>
+//                         <td className="border p-2 text-right font-semibold">
+//                           ₹{p.total}
+//                         </td>
+//                       </tr>
+//                     ))}
+//                   </tbody>
+//                 </table>
+//               ) : (
+//                 <p>No items found.</p>
+//               )}
+//             </div>
+
+//             {/* RESTORE BUTTON */}
+//             <button
+//               className="mt-4 bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700"
+//               onClick={() => restoreBill(bill.id)}
+//             >
+//               Restore
+//             </button>
+//           </div>
+//         ))
+//       )}
+//     </div>
+//   );
+// }
