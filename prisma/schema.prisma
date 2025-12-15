@@ -28,18 +28,23 @@ enum FieldType {
 //////////////////////////////////////////////////
 // CATEGORY
 //////////////////////////////////////////////////
-
 model Category {
   id        String     @id @default(auto()) @map("_id") @db.ObjectId
   name      String
-  clerkId   String?
+
   parentId  String?    @db.ObjectId
-  parent    Category?  @relation("Subcategories", fields: [parentId], references: [id])
+
+  parent    Category?  @relation(
+    "Subcategories",
+    fields: [parentId],
+    references: [id],
+    onDelete: NoAction,
+    onUpdate: NoAction
+  )
+
   children  Category[] @relation("Subcategories")
-  items     Item[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
 }
+
 
 //////////////////////////////////////////////////
 // ITEM (MENU / INVENTORY)
@@ -60,7 +65,13 @@ model Item {
 
   clerkId String
   userId  String @db.ObjectId
-  user    User   @relation(fields: [userId], references: [id])
+  category Category? @relation(
+  fields: [categoryId],
+  references: [id],
+  onDelete: NoAction,
+  onUpdate: NoAction
+)
+
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
