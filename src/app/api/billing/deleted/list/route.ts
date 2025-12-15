@@ -149,13 +149,12 @@
 // }
 
 
-
-
-import { NextResponse } from "next/server";
+// src/app/api/billing/deleted/list/route.ts
+import { NextResponse, type NextRequest } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     const { userId } = getAuth(req);
 
@@ -164,7 +163,7 @@ export async function GET(req: Request) {
     }
 
     const deleted = await prisma.deleteHistory.findMany({
-      orderBy: { deletedAt: "desc" }, // FIXED
+      orderBy: { deletedAt: "desc" },
     });
 
     return NextResponse.json({ deleted });

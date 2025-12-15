@@ -120,3 +120,25 @@
     @apply bg-background text-foreground;
   }
 }
+/* ---- FIX: Mobile category bar spacing ---- */
+
+/* Space reserved under sticky filter bar */
+.mobile-category-wrapper {
+  margin-top: 68px; /* height of filter bar + gap */
+}
+
+/* Make sure nothing overlaps on mobile */
+@media (max-width: 768px) {
+  .filter-sticky-bar {
+    position: sticky;
+    top: 64px; /* header height */
+    z-index: 40;
+    background: var(--background);
+    padding-bottom: 6px;
+  }
+
+  .mobile-category-wrapper {
+    position: relative;
+    z-index: 39; /* just under filter bar */
+  }
+}

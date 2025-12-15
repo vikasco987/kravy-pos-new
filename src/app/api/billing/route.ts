@@ -698,28 +698,113 @@
 
 
 
-
-// File: src/app/api/billing/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+
+/* ===================== TYPES ===================== */
 
 interface ProductInput {
   productId: string;
   quantity: number;
   price: number;
-  discount?: number;
-  gst?: number;
+  discount?: number; // percentage
+  gst?: number; // percentage
   total: number;
 }
+
+/* ===================== CREATE BILL ===================== */
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+
     const {
       userClerkId,
       customerId,
       products,
+      total,
+      discount, // overall discount %
+      gst,
+      grandTotal,
+      paymentMode,
+      paymentStatus,
+      notes,
+      dueDate,
+
+      // company details
+      companyName,
+      companyAddress,
+      companyPhone,
+      contactPerson,
+      logoUrl,
+      signatureUrl,
+      websiteUrl,
+    } = body;
+
+    /* ---------- BASIC VALIDATION ---------- */
+    if (!userClerkId || !Array.isArray(products) || products.length === 0) {
+      return NextResponse.json(
+        { message: "User or products missing" },
+        { status: 400 }
+      );
+    }
+
+    /* ---------- FIND USER ---------- */
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userClerkId },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { message: "Invalid user" },
+        { status: 400 }
+      );
+    }
+
+    /* ---------- FETCH ITEMS ---------- */
+    const items = await prisma.item.findMany({
+      where: {
+        id: { in: products.map((p: ProductInput) => p.productId) },
+      },
+    });
+
+    if (!items.length) {
+      return NextResponse.json(
+        { message: "No valid items found" },
+        { status: 400 }
+      );
+    }
+
+    /* ---------- MAP PRODUCTS ---------- */
+    const billProducts = products
+      .map((p: ProductInput) => {
+        const item = items.find((i) => i.id === p.productId);
+        if (!item) return null;
+
+        return {
+          productId: p.productId,
+          productName: item.name,
+          quantity: p.quantity,
+          price: p.price,
+          discount: p.discount ?? 0,
+          gst: p.gst ?? 0,
+          total: p.total,
+        };
+      })
+      .filter(Boolean) as Prisma.BillProductCreateWithoutBillInput[];
+
+    if (!billProducts.length) {
+      return NextResponse.json(
+        { message: "Products mismatch" },
+        { status: 400 }
+      );
+    }
+
+    /* ---------- SNAPSHOT FOR HISTORY ---------- */
+    const snapshot: Prisma.InputJsonValue = {
+      customerId,
+      products: billProducts,
       total,
       discount,
       gst,
@@ -732,68 +817,27 @@ export async function POST(req: Request) {
       companyAddress,
       companyPhone,
       contactPerson,
-      logoUrl,
-      signatureUrl,
-      websiteUrl,
-    } = body;
+    };
 
-    if (!userClerkId || !products?.length) {
-      return NextResponse.json(
-        { message: "Missing required fields or products" },
-        { status: 400 }
-      );
-    }
+    /* ---------- CREATE BILL ---------- */
+    const bill = await prisma.bill.create({
+      data: {
+        userId: user.id,
+        clerkUserId: user.clerkId,
 
-    // ✅ Find the user from Clerk ID
-    const dbUser = await prisma.user.findUnique({
-      where: { clerkId: userClerkId },
-    });
+        customerId: customerId || undefined,
 
-    if (!dbUser) {
-      return NextResponse.json({ message: "Invalid user" }, { status: 400 });
-    }
-
-    // ✅ Fetch valid items from DB
-    const validItems = await prisma.item.findMany({
-      where: { id: { in: products.map((p: ProductInput) => p.productId) } },
-    });
-
-    const validProductIds = validItems.map((i) => i.id);
-
-    const validProducts = (products as ProductInput[]).filter((p) =>
-      validProductIds.includes(p.productId)
-    );
-
-    if (!validProducts.length) {
-      return NextResponse.json(
-        { message: "No valid products provided" },
-        { status: 400 }
-      );
-    }
-
-    // ✅ Snapshot with product names
-    const snapshot: Prisma.InputJsonValue = JSON.parse(
-      JSON.stringify({
-        products: validProducts.map((p) => {
-          const item = validItems.find((i) => i.id === p.productId);
-          return {
-            productId: p.productId,
-            productName: item?.name || "Unnamed Item",
-            quantity: p.quantity,
-            price: p.price,
-            discount: p.discount,
-            gst: p.gst,
-            total: p.total,
-          };
-        }),
         total,
-        discount,
-        gst,
+        discount: discount ?? 0,
+        gst: gst ?? 0,
         grandTotal,
+
         paymentMode,
         paymentStatus,
         notes,
-        dueDate,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+
+        // company info
         companyName,
         companyAddress,
         companyPhone,
@@ -801,48 +845,13 @@ export async function POST(req: Request) {
         logoUrl,
         signatureUrl,
         websiteUrl,
-      })
-    );
 
-    // ✅ Create bill with product names
-    const bill = await prisma.bill.create({
-      data: {
-        userId: dbUser.id,
-        customerId: customerId || undefined,
-        total,
-        discount,
-        gst,
-        grandTotal,
-        paymentMode,
-        paymentStatus,
-        notes,
-        dueDate: dueDate ? new Date(dueDate) : undefined,
-
-        companyName: companyName || undefined,
-        companyAddress: companyAddress || undefined,
-        companyPhone: companyPhone || undefined,
-        contactPerson: contactPerson || undefined,
-        logoUrl: logoUrl || undefined,
-        signatureUrl: signatureUrl || undefined,
-        websiteUrl: websiteUrl || undefined,
-
-        // ✅ Include product names
+        // products
         products: {
-          create: validProducts.map((p) => {
-            const item = validItems.find((i) => i.id === p.productId);
-            return {
-              productId: p.productId,
-              productName: item?.name || "Unnamed Item",
-              quantity: p.quantity,
-              price: p.price,
-              discount: p.discount,
-              gst: p.gst,
-              total: p.total,
-            };
-          }),
+          create: billProducts,
         },
 
-        // History record
+        // history
         history: {
           create: {
             snapshot,
@@ -852,14 +861,14 @@ export async function POST(req: Request) {
       include: {
         products: true,
         customer: true,
-        payments: true,
         history: true,
+        payments: true,
       },
     });
 
     return NextResponse.json(bill);
   } catch (error: any) {
-    console.error("Error creating bill:", error);
+    console.error("BILL CREATE ERROR:", error);
     return NextResponse.json(
       { message: "Failed to create bill", error: error.message },
       { status: 500 }
@@ -867,14 +876,23 @@ export async function POST(req: Request) {
   }
 }
 
+/* ===================== LIST BILL HISTORY ===================== */
 
+export async function GET() {
+  try {
+    const bills = await prisma.bill.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        customer: true,
+        products: true,
+      },
+    });
 
-
-
-
-
-
-
-
-
-
+    return NextResponse.json(bills);
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Failed to fetch bills" },
+      { status: 500 }
+    );
+  }
+}

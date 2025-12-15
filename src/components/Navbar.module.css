@@ -1,0 +1,144 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: #ffffff;
+  border-bottom: 1px solid #e6e6e6;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 1px 0 rgba(16,24,40,0.03);
+}
+
+.inner {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* LEFT SIDE */
+.left {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.collapseBtn {
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.brand {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: 6px;
+}
+
+.logo {
+  font-weight: 800;
+  font-size: 18px;
+  background: linear-gradient(90deg, #0ea5e9, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brandText {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+/* CENTER NAV */
+.center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.nav {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.link {
+  color: #111827;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.link:hover {
+  background: #f3f4f6;
+}
+
+/* RIGHT SIDE */
+.right {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;                /* 🔥 Add this */
+  align-items: center;          /* 🔥 Centers Clerk avatar + sign-in */
+  gap: 12px;                    /* 🔥 Space between search + buttons */
+}
+
+.search {
+  height: 36px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e6e6e6;
+  min-width: 160px;
+}
+
+/* SIGN IN BUTTON */
+.signinBtn {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.signinBtn:hover {
+  background: #4338ca;
+}
+
+/* RESPONSIVE */
+@media (max-width: 880px) {
+  .center {
+    display: none;
+  }
+  .search {
+    display: none;
+  }
+  .left {
+    left: 8px;
+  }
+  .right {
+    right: 8px;
+  }
+}

@@ -1,0 +1,157 @@
+/* Sidebar.module.css */
+
+/* sidebar sits below header (header height = 64px) */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 64px; /* below header */
+  bottom: 0;
+  height: calc(100vh - 64px);
+  background: #fff;
+  border-right: 1px solid #e6e6e6;
+  box-sizing: border-box;
+  z-index: 200;
+  overflow: hidden;
+  transition: width 180ms ease, transform 180ms ease;
+  display: flex;
+  flex-direction: column;
+}
+
+/* expanded (desktop) */
+.expanded {
+  width: 240px;
+  min-width: 240px;
+}
+
+/* collapsed (desktop) - fully hidden */
+.collapsed {
+  width: 0;
+  min-width: 0;
+}
+
+/* inner scrollable content */
+.inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px 6px;
+}
+
+/* nav items */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #0f172a;
+  font-weight: 600;
+  transition: background 140ms ease;
+}
+
+.item:hover {
+  background: #f3f4f6;
+}
+
+/* icons */
+.icon {
+  font-size: 18px;
+  color: #0f172a;
+  min-width: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* label text. will be clipped when collapsed (sidebar width = 0) */
+.label {
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+/* bottom actions (settings + footer) */
+.bottomActions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+/* settings button pinned above footer */
+.settings {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #0f172a;
+  font-weight: 600;
+  background: transparent;
+  transition: background 140ms ease;
+}
+
+.settings:hover {
+  background: #f3f4f6;
+}
+
+/* footer */
+.footer {
+  padding: 8px;
+  font-size: 13px;
+  color: #64748b;
+  text-align: left;
+}
+
+/* ----------------------
+   MOBILE (<= 880px)
+   Sidebar becomes overlay: slide in/out using transform.
+   Backdrop appears when sidebar is expanded.
+   ---------------------- */
+@media (max-width: 880px) {
+  .sidebar {
+    top: 64px;
+    height: calc(100vh - 64px);
+    width: 240px;
+    transform: translateX(-100%); /* hidden */
+    box-shadow: 0 6px 24px rgba(2,6,23,0.08);
+  }
+
+  .expanded {
+    transform: translateX(0);
+  }
+
+  .collapsed {
+    transform: translateX(-100%);
+  }
+
+  .backdrop {
+    display: none;
+  }
+
+  .sidebar.expanded + .backdrop {
+    display: block;
+    position: fixed;
+    left: 0;
+    top: 64px;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.36);
+    z-index: 190;
+  }
+}
+
+/* small-screen tweak: ensure labels wrapped nicely */
+@media (max-width: 440px) {
+  .label { font-size: 14px; }
+}

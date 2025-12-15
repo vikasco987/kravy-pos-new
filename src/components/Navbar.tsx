@@ -104,92 +104,71 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-// components/Navbar.tsx
 "use client";
 
-import Link from "next/link";
-import { UserButton, useUser } from "@clerk/nextjs";
+import React from "react";
+import styles from "./Navbar.module.css";
+import { useSidebar } from "./SidebarContext";
 
-export default function Navbar() {
-  const { user } = useUser();
+// Clerk
+import {
+  SignedIn,
+  SignedOut,
+  UserButton,
+  SignInButton,
+} from "@clerk/nextjs";
+
+export default function Navbar(): JSX.Element {
+  const { collapsed, toggle } = useSidebar();
 
   return (
-    <nav
-      className="h-16 fixed top-0 left-[250px] right-0 z-50 
-                 flex items-center justify-between 
-                 bg-gray-900 text-white px-6 shadow-md backdrop-blur"
-    >
-      {/* Left - Logo */}
-      <div className="text-xl font-bold tracking-wide">
-        <Link href="/">MyApp</Link>
-      </div>
+    <header className={styles.header}>
+      <div className={styles.inner}>
 
-      {/* Right Side */}
-      <div className="flex items-center gap-4">
+        {/* LEFT — collapse button + brand */}
+        <div className={styles.left}>
+          <button
+            className={styles.collapseBtn}
+            onClick={toggle}
+            aria-label={collapsed ? "Open sidebar" : "Close sidebar"}
+            title={collapsed ? "Open sidebar" : "Close sidebar"}
+          >
+            {collapsed ? "☰" : "⟨"}
+          </button>
 
-        {/* View Bills */}
-        <Link
-          href="/bills"
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg 
-                     hover:bg-indigo-700 transition shadow-sm"
-        >
-          View Bills
-        </Link>
-
-        {/* ⭐ New - Deleted Bills Button */}
-        <Link
-          href="/deleted-bills"
-          className="px-4 py-2 bg-red-600 text-white rounded-lg 
-                     hover:bg-red-700 transition shadow-sm"
-        >
-          Deleted Bills
-        </Link>
-
-        {!user && (
-          <>
-            <Link
-              href="/sign-in"
-              className="hover:underline text-gray-300"
-            >
-              Sign In
-            </Link>
-
-            <Link
-              href="/sign-up"
-              className="hover:underline text-gray-300"
-            >
-              Sign Up
-            </Link>
-          </>
-        )}
-
-        {/* User Info */}
-        {user && (
-          <div className="flex items-center gap-3 pl-4 border-l border-gray-700">
-            <div className="text-right">
-              <p className="text-sm font-medium">
-                {user.fullName || user.primaryEmailAddress?.emailAddress}
-              </p>
-              <p className="text-xs text-gray-400">
-                Role: {String(user?.publicMetadata?.role || "User")}
-              </p>
-            </div>
-
-            <UserButton afterSignOutUrl="/" />
+          <div className={styles.brand}>
+            <span className={styles.logo}>Kravy</span>
+            <span className={styles.brandText}>Billing</span>
           </div>
-        )}
+        </div>
+
+        {/* CENTER — your existing nav links */}
+        <div className={styles.center}>
+          <nav className={styles.nav}>
+            <a className={styles.link} href="/">Home</a>
+            <a className={styles.link} href="/billing">Billing</a>
+            <a className={styles.link} href="/invoices">Invoices</a>
+          </nav>
+        </div>
+
+        {/* RIGHT — search + Clerk buttons */}
+        <div className={styles.right}>
+          <input className={styles.search} placeholder="Search..." aria-label="Search" />
+
+          {/* When signed in -> show avatar */}
+          <SignedIn>
+            <UserButton afterSignOutUrl="/"/>
+          </SignedIn>
+
+          {/* When signed out -> show Sign In button */}
+          <SignedOut>
+            <SignInButton>
+              <button className={styles.signinBtn}>Sign In</button>
+            </SignInButton>
+          </SignedOut>
+        </div>
+
       </div>
-    </nav>
+    </header>
   );
 }

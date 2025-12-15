@@ -1,3 +1,5 @@
+// src/app/parties/add/page.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -26,7 +28,7 @@ export default function AddPartyPage() {
   };
 
   return (
-    <div className="max-w-lg mx-auto p-6 bg-white rounded-lg shadow">
+    <div className="max-w-lg mx-auto p-36 bg-white rounded-lg shadow">
       <h1 className="text-2xl font-bold mb-4">➕ Add Party</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
