@@ -28,12 +28,13 @@ enum FieldType {
 //////////////////////////////////////////////////
 // CATEGORY
 //////////////////////////////////////////////////
+
 model Category {
   id        String     @id @default(auto()) @map("_id") @db.ObjectId
   name      String
+  clerkId   String?
 
   parentId  String?    @db.ObjectId
-
   parent    Category?  @relation(
     "Subcategories",
     fields: [parentId],
@@ -41,10 +42,12 @@ model Category {
     onDelete: NoAction,
     onUpdate: NoAction
   )
-
   children  Category[] @relation("Subcategories")
-}
 
+  items     Item[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
 
 //////////////////////////////////////////////////
 // ITEM (MENU / INVENTORY)
@@ -60,18 +63,18 @@ model Item {
   unit          String?
   barcode       String?
   imageUrl      String?
-  categoryId    String?  @db.ObjectId
-  category      Category? @relation(fields: [categoryId], references: [id])
+
+  categoryId    String?   @db.ObjectId
+  category      Category? @relation(
+    fields: [categoryId],
+    references: [id],
+    onDelete: NoAction,
+    onUpdate: NoAction
+  )
 
   clerkId String
   userId  String @db.ObjectId
-  category Category? @relation(
-  fields: [categoryId],
-  references: [id],
-  onDelete: NoAction,
-  onUpdate: NoAction
-)
-
+  user    User   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,55 +103,36 @@ model Party {
 model Bill {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
 
-  // Ownership
   userId          String   @db.ObjectId
   clerkUserId     String?
   user            User     @relation(fields: [userId], references: [id])
 
-  // Customer
   customerId      String?  @db.ObjectId
   customer        Party?   @relation(fields: [customerId], references: [id])
 
-  // Bill info
   billNumber      String
   createdAt       DateTime @default(now())
 
-  // Snapshot items (POS safe)
   items           Json
-  /*
-    [
-      {
-        id,
-        name,
-        qty,
-        rate,
-        itemDiscountPct
-      }
-    ]
-  */
 
-  // Calculations
   subtotal        Float
   billDiscountPct Float?
-  discountAmount Float?
-  taxableAmount  Float
-  gstPercent     Float?
-  cgst            Float
-  sgst            Float
-  total           Float
+  discountAmount  Float?
+  taxableAmount   Float
+  gstPercent      Float?
+  cgst             Float
+  sgst             Float
+  total            Float
 
-  // Payment
   paymentMode     String
   paymentStatus   String
   upiTxnRef       String?
 
-  // Hold feature
   isHeld          Boolean  @default(false)
   holdBy          String?
   holdAt          DateTime?
   resumedAt       DateTime?
 
-  // Company snapshot (receipt safe)
   companyName     String?
   companyAddress  String?
   companyPhone    String?
@@ -161,14 +145,14 @@ model Bill {
 }
 
 //////////////////////////////////////////////////
-// BILL HISTORY (AUDIT / REOPEN)
+// BILL HISTORY
 //////////////////////////////////////////////////
 
 model BillHistory {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   billId    String   @db.ObjectId
   bill      Bill     @relation(fields: [billId], references: [id])
-  action    String   // CREATED | UPDATED | PAID | REOPENED
+  action    String
   snapshot  Json
   createdAt DateTime @default(now())
 }
