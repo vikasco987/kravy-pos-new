@@ -35,14 +35,9 @@ model Category {
   clerkId   String?
 
   parentId  String?    @db.ObjectId
-  parent    Category?  @relation(
-    "Subcategories",
-    fields: [parentId],
-    references: [id],
-    onDelete: NoAction,
-    onUpdate: NoAction
-  )
-  children  Category[] @relation("Subcategories")
+parent    Category?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+children  Category[] @relation("Subcategories")
+
 
   items     Item[]
   createdAt DateTime   @default(now())
@@ -65,12 +60,8 @@ model Item {
   imageUrl      String?
 
   categoryId    String?   @db.ObjectId
-  category      Category? @relation(
-    fields: [categoryId],
-    references: [id],
-    onDelete: NoAction,
-    onUpdate: NoAction
-  )
+ category Category? @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
 
   clerkId String
   userId  String @db.ObjectId
