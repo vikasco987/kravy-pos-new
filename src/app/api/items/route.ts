@@ -1547,7 +1547,7 @@ async function findOrCreateDBUser(clerk: any) {
       data: {
         clerkId: clerkId || undefined,
         email: email || undefined,
-        name: name || undefined,
+        name: name || "Unnamed User",
         role: "SELLER",
       },
     });

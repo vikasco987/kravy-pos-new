@@ -245,9 +245,15 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
 
     // 1️⃣ Find the bill
     const bill = await prisma.bill.findUnique({
-      where: { id },
-      include: { products: true },
-    });
+  where: { id },
+  include: {
+    customer: true,
+    payments: true,
+    history: true,
+    // items is Json → no include needed
+  },
+});
+
 
     if (!bill) {
       return new Response(JSON.stringify({ error: "Bill not found" }), { status: 404 });
@@ -255,14 +261,19 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
 
     // 2️⃣ Update the bill to mark it as resumed
     const resumedBill = await prisma.bill.update({
-      where: { id },
-      data: {
-        isHeld: false,
-        holdAt: null,
-        resumedAt: new Date(),
-      },
-      include: { products: true },
-    });
+  where: { id },
+  data: {
+    isHeld: false,
+    resumedAt: new Date(),
+  },
+  include: {
+    customer: true,
+    payments: true,
+    history: true,
+    // items is Json → no include
+  },
+});
+
 
     return new Response(JSON.stringify({ resumedBill }), { status: 200 });
   } catch (err) {

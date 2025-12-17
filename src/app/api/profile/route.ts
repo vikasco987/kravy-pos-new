@@ -1226,27 +1226,26 @@ export async function POST(req: Request) {
     }
 
     // ---- Save profile to database ----
-    const profile = await prisma.businessProfile.create({
-      data: {
-        userId: user.id,
-        createdBy: user.id, // ✅ REQUIRED FIELD
-        businessType,
-        businessName,
-        businessTagLine: businessTagline,
-        contactPersonName: contactName,
-        contactPersonPhone: contactPhone,
-        contactPersonEmail: contactEmail,
-        upi,
-        googleReviewUrl: reviewLink,
-        profileImageUrl: profileImage || "",
-        logoUrl: logo || "",
-        signatureUrl: signature || "",
-        gstNumber,
-        businessAddress,
-        state,
-        pinCode,
-      },
-    });
+   const profile = await prisma.businessProfile.create({
+  data: {
+    userId: user.id,
+
+    businessName,
+    businessTagLine: businessTagline ?? null,
+
+    contactPersonName: contactName ?? null,
+    contactPersonPhone: contactPhone ?? null,
+
+    upi: upi ?? null,
+    logoUrl: logo ?? null,
+    signatureUrl: signature ?? null,
+
+    gstNumber: gstNumber ?? null,
+    businessAddress: businessAddress ?? null,
+    state: state ?? null,
+    pinCode: pinCode ?? null,
+  },
+});
 
     return NextResponse.json(profile, { status: 201 });
   } catch (err: any) {

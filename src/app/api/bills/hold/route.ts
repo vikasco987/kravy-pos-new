@@ -1,111 +1,133 @@
-// import { NextResponse } from "next/server";
-// import prisma from "@/lib/prisma";
-
-// export async function POST(req: Request) {
-//   try {
-//     const body = await req.json();
-//     const { userClerkId, customerId, items, total } = body;
-
-//     // ✅ Validation
-//     if (!userClerkId || !items?.length || total == null) {
-//       return NextResponse.json(
-//         { message: "Missing required fields" },
-//         { status: 400 }
-//       );
-//     }
-
-//     // ✅ Create a held bill and link to existing user via clerkId
-//     const heldBill = await prisma.bill.create({
-//       data: {
-//         userClerkId,
-//         customerId: customerId || null,
-//         items,
-//         total,
-//         isHeld: true,
-//         holdAt: new Date(),
-//         user: {
-//           connect: { clerkId: userClerkId }, // 👈 Fix relation issue
-//         },
-//       },
-//     });
-
-//     // ✅ Return all held bills for dashboard/list
-//     const heldBills = await prisma.bill.findMany({
-//       where: { isHeld: true },
-//       orderBy: { holdAt: "desc" },
-//     });
-
-//     return NextResponse.json({ heldBill, heldBills }, { status: 200 });
-//   } catch (err: any) {
-//     console.error("Error holding bill:", err);
-//     return NextResponse.json(
-//       { message: "Failed to hold bill", error: err.message },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-
-
-
-
-
-
-
-
-
-
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const { userClerkId, customerId, items, total } = await req.json();
+    // ---------- AUTH ----------
+    const session = await auth();
+    const clerkUserId = session.userId;
 
-    if (!userClerkId || !items?.length || total == null) {
+    if (!clerkUserId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // ---------- BODY ----------
+    const body = await req.json();
+    const {
+      customerId,
+      products,
+      billDiscountPct,
+      gstPercent,
+      paymentMode,
+      paymentStatus,
+    } = body;
+
+    if (!Array.isArray(products) || products.length === 0) {
       return NextResponse.json(
-        { message: "Missing required fields" },
+        { message: "Products missing" },
         { status: 400 }
       );
     }
 
-    // ✅ Step 1: Find user by Clerk ID
+    // ---------- FIND USER ----------
     const user = await prisma.user.findUnique({
-      where: { clerkId: userClerkId },
+      where: { clerkId: clerkUserId },
       select: { id: true },
     });
 
     if (!user) {
       return NextResponse.json(
-        { message: "User not found for given Clerk ID" },
+        { message: "User not found" },
         { status: 404 }
       );
     }
 
-    // ✅ Step 2: Create held bill and connect via userId
-    const heldBill = await prisma.bill.create({
-      data: {
-        userId: user.id, // ✅ Relation with User
-        customerId: customerId || null,
-        total,
-        isHeld: true,
-        holdBy: userClerkId, // ✅ Optional: store who held it
-        holdAt: new Date(),
-        // ⚠️ For MongoDB JSON fields, store items directly
-        // if you have items JSON array (not BillProduct relation)
-        // If you use BillProduct relation, remove below line.
-        // You can uncomment next line if you store inline items:
-        // items,
+    // ---------- FETCH ITEMS ----------
+    const items = await prisma.item.findMany({
+      where: {
+        id: { in: products.map((p: any) => p.productId) },
       },
     });
 
-    // ✅ Step 3: Fetch updated list of held bills
+    // ---------- BUILD BILL ITEMS (JSON) ----------
+    const billItems = products.map((p: any) => {
+      const item = items.find((i) => i.id === p.productId);
+      if (!item) throw new Error("Products mismatch");
+
+      return {
+        id: p.productId,
+        name: item.name,
+        quantity: p.quantity,
+        price: p.price,
+        discount: p.discount ?? 0,
+        gst: p.gst ?? 0,
+        total: p.total,
+      };
+    });
+
+    if (!billItems.length) {
+      return NextResponse.json(
+        { message: "No items found" },
+        { status: 400 }
+      );
+    }
+
+    // ---------- CALCULATIONS ----------
+    const subtotal = billItems.reduce(
+      (sum: number, item: any) => sum + item.price * item.quantity,
+      0
+    );
+
+    const discountAmount =
+      billDiscountPct != null ? (subtotal * billDiscountPct) / 100 : null;
+
+    const taxableAmount =
+      discountAmount != null ? subtotal - discountAmount : subtotal;
+
+    const cgst = gstPercent ? (taxableAmount * gstPercent) / 200 : 0;
+    const sgst = gstPercent ? (taxableAmount * gstPercent) / 200 : 0;
+
+    const total = taxableAmount + cgst + sgst;
+
+    // ---------- CREATE HELD BILL ----------
+    const heldBill = await prisma.bill.create({
+      data: {
+        userId: user.id,
+        clerkUserId,
+
+        customerId: customerId ?? null,
+        billNumber: `HOLD-${Date.now()}`,
+
+        items: billItems,
+
+        subtotal,
+        billDiscountPct: billDiscountPct ?? null,
+        discountAmount,
+        taxableAmount,
+        gstPercent: gstPercent ?? null,
+        cgst,
+        sgst,
+        total,
+
+        paymentMode: paymentMode ?? "PENDING",
+        paymentStatus: paymentStatus ?? "HOLD",
+
+        upiTxnRef: null,
+
+        isHeld: true,
+        holdBy: clerkUserId, // ✅ FIXED
+        holdAt: new Date(),
+      },
+    });
+
+    // ---------- LIST HELD BILLS ----------
     const heldBills = await prisma.bill.findMany({
-      where: { isHeld: true },
+      where: { isHeld: true, clerkUserId },
       orderBy: { holdAt: "desc" },
       include: {
-        user: { select: { name: true, email: true, clerkId: true } },
-        customer: { select: { name: true, phone: true } },
+        customer: true,
+        payments: true,
       },
     });
 

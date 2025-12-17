@@ -73,7 +73,7 @@ import { useSidebar } from "@/components/SidebarContext";
 import { FaCashRegister, FaChartLine, FaMobileAlt } from "react-icons/fa";
 import styles from "./Page.module.css";
 
-export default function Page(): JSX.Element {
+export default function Page() {
   const { collapsed } = useSidebar();
   const [isMobile, setIsMobile] = useState<boolean>(false);
 

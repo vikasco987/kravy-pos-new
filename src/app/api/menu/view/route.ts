@@ -1,60 +1,35 @@
-
-import { NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    // ✔ Works with both: Clerk Cookies & Bearer Token
-    const { userId } = getAuth(req);
+    // ✅ App Router auth (correct)
+    const session = await auth();
+    const userId = session.userId;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2️⃣ Fetch categories created by user
-    const categories = await prisma.category.findMany({
-      where: { clerkId: userId },
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
-
-    // 3️⃣ Fetch items created by user
+    // ✅ Fetch menu items for this user
     const items = await prisma.item.findMany({
-      where: { clerkId: userId },
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        price: true,
-        sellingPrice: true,
-        imageUrl: true,
-        unit: true,
-        categoryId: true,
-      },
-    });
-
-    // 4️⃣ Fetch uncategorized items
-    const uncategorizedItems = await prisma.item.findMany({
       where: {
         clerkId: userId,
-        categoryId: null,
       },
-      orderBy: { name: "asc" },
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        category: true,
+      },
     });
 
-    return NextResponse.json({
-      categories,
-      items,
-      uncategorizedItems,
-    });
-  } catch (error: any) {
+    return NextResponse.json(items);
+  } catch (error) {
     console.error("Menu view error:", error);
     return NextResponse.json(
-      { error: "Server error", details: error?.message ?? String(error) },
+      { error: "Failed to fetch menu" },
       { status: 500 }
     );
   }

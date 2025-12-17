@@ -102,13 +102,12 @@ export async function POST(req: NextRequest) {
     });
 
     // ✅ Save to DB with user relation
-    const saved = await prisma.upload.create({
-      data: {
-        text: text || "",
-        imageUrl: uploadResponse.secure_url,
-        user: { connect: { clerkId: user.id } }, // 👈 FIX: connect to logged-in user
-      },
-    });
+   const saved = await prisma.upload.create({
+  data: {
+    imageUrl: uploadResponse.secure_url,
+    user: { connect: { clerkId: user.id } },
+  },
+});
 
     return NextResponse.json(saved, { status: 200 });
   } catch (err: any) {

@@ -69,30 +69,36 @@
 
 
 
-
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
-// ✅ Next.js 15 correct function signature
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = getAuth(req);
+    // Clerk auth (async – correct for your setup)
+    const session = await auth();
+    const clerkUserId = session.userId;
 
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!clerkUserId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    // ⬇️ Must await because params is a Promise in Next.js 15
-    const { id: billId } = await params;
+    // Next.js 16 params are async
+    const { id: billId } = await context.params;
 
-    const bill = await prisma.bill.findUnique({
-      where: { id: billId },
+    // Fetch bill
+    const bill = await prisma.bill.findFirst({
+      where: {
+        id: billId,
+        clerkUserId,
+      },
       include: {
-        products: true,
         payments: true,
         customer: true,
         user: true,
@@ -101,32 +107,44 @@ export async function DELETE(
     });
 
     if (!bill) {
-      return NextResponse.json({ error: "Bill not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Bill not found" },
+        { status: 404 }
+      );
     }
 
-    // Save snapshot
-    await prisma.deleteHistory.create({
+    // Save delete snapshot
+    await prisma.billHistory.create({
       data: {
         billId,
-        deletedBy: userId,
+        action: "DELETED",
         snapshot: bill,
       },
     });
 
-    // Delete related data
-    await prisma.billProduct.deleteMany({ where: { billId } });
-    await prisma.payment.deleteMany({ where: { billId } });
-    await prisma.billHistory.deleteMany({ where: { billId } });
+    // Delete dependent records first
+    await prisma.payment.deleteMany({
+      where: { billId },
+    });
 
-    // Delete main bill
-    await prisma.bill.delete({ where: { id: billId } });
+    await prisma.billHistory.deleteMany({
+      where: { billId },
+    });
+
+    // Delete main bill last
+    await prisma.bill.delete({
+      where: { id: billId },
+    });
 
     return NextResponse.json({
       success: true,
       message: "Bill deleted successfully",
     });
   } catch (error) {
-    console.error("Delete Error:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("Billing DELETE error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

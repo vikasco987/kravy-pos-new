@@ -634,12 +634,12 @@ function PartyForm({ initial, onCancel, onSave, saving }: {
 
       <div>
         <label className="text-sm font-medium">Date of Birth</label>
-        <input
-          value={form.dob}
-          onChange={(e) => setForm({ ...form, dob: e.target.value })}
-          placeholder="YYYY-MM-DD"
-          className="mt-1 w-full px-3 py-2 border rounded"
-        />
+          <input
+            value={form.dob ?? ""}
+            onChange={(e) => setForm({ ...form, dob: e.target.value })}
+            placeholder="YYYY-MM-DD"
+            className="mt-1 w-full px-3 py-2 border rounded"
+          />
       </div>
 
       <div className="flex gap-2 justify-end">

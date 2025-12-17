@@ -1,43 +1,54 @@
-import { NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
-export async function PUT(req: Request) {
+export async function PUT(req: NextRequest) {
   try {
-    const { userId } = getAuth(req);
+    // ✅ App Router auth
+    const session = await auth();
+    const userId = session.userId;
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
-    const { id, name, sellingPrice, unit, categoryId, imageUrl } = body;
+    const { id, name, price, categoryId } = body;
 
-    if (!id || !name) {
-      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    if (!id) {
+      return NextResponse.json(
+        { error: "Menu id required" },
+        { status: 400 }
+      );
     }
 
-    // ensure item belongs to user
+    // ✅ Check ownership
     const existing = await prisma.item.findFirst({
-      where: { id, clerkId: userId },
+      where: {
+        id,
+        clerkId: userId,
+      },
     });
 
     if (!existing) {
-      return NextResponse.json({ error: "Item not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Item not found" },
+        { status: 404 }
+      );
     }
 
+    // ✅ Update menu item
     const updated = await prisma.item.update({
       where: { id },
       data: {
-        name,
-        sellingPrice,
-        unit,
-        categoryId: categoryId === "uncategorised" ? null : categoryId,
-        imageUrl,
+        name: name ?? existing.name,
+        price: price ?? existing.price,
+        categoryId: categoryId ?? existing.categoryId,
       },
     });
 
     return NextResponse.json(updated);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Menu update error:", error);
     return NextResponse.json(
       { error: "Server error" },

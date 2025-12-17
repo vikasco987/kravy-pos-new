@@ -121,9 +121,12 @@
 // src/proxy.ts
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
-export default clerkMiddleware({
+export default clerkMiddleware();
+
+// ✅ matcher must be exported separately
+export const config = {
   matcher: [
     "/((?!.*\\..*|_next).*)", // app pages
     "/api/:path*",            // api routes
   ],
-});
+};

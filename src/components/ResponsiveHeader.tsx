@@ -211,7 +211,7 @@ import { useUser, SignOutButton } from "@clerk/nextjs";
 import { FiSearch } from "react-icons/fi";
 import { HiOutlineMoon, HiOutlineSun } from "react-icons/hi";
 
-export default function ResponsiveHeader(): JSX.Element {
+export default function ResponsiveHeader() {
   const { isLoaded, isSignedIn, user } = useUser();
   const pathname = usePathname();
 

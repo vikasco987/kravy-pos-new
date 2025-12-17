@@ -162,9 +162,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const deleted = await prisma.deleteHistory.findMany({
-      orderBy: { deletedAt: "desc" },
-    });
+    const deleted = await prisma.billHistory.findMany({
+  where: {
+    action: "DELETED",
+  },
+  orderBy: {
+    createdAt: "desc",
+  },
+  include: {
+    bill: true,
+  },
+});
+
 
     return NextResponse.json({ deleted });
   } catch (err) {

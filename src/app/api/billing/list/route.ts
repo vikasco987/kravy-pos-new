@@ -23,33 +23,17 @@ export async function GET() {
       },
       orderBy: { createdAt: "desc" },
       include: {
-        customer: true,
-        products: {
-          include: { product: true },
-        },
-        payments: true,
+      customer: true,
+      payments: true,
+      // items is Json → automatically included, no need for include
       },
     });
 
     // ✅ TEMP FIX (Solution B)
     const cleaned = bills.map((bill) => ({
-      ...bill,
-      products: bill.products.map((bp) => ({
-        ...bp,
-
-        // Fix null productName (Prisma error)
-        productName: bp.productName ?? "Unknown Product",
-
-        // Fix missing Product relation
-        product:
-          bp.product ||
-          {
-            id: null,
-            name: bp.productName ?? "Unknown Product",
-            price: bp.price || 0,
-          },
-      })),
-    }));
+  ...bill,
+  items: Array.isArray(bill.items) ? bill.items : [],
+}));
 
     return new Response(JSON.stringify({ bills: cleaned }), {
       status: 200,

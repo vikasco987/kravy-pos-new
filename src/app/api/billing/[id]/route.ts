@@ -117,45 +117,56 @@
 //   }
 // }
 
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+
+
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import prisma from "@/lib/prisma";
 
 export async function GET(
-  req: Request,
-  context: { params: { id?: string } }
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const billId = context?.params?.id;
+    // Clerk auth is async
+    const session = await auth();
+    const clerkUserId = session.userId;
 
-    // 🛑 HARD GUARD
-    if (!billId || typeof billId !== "string") {
+    if (!clerkUserId) {
       return NextResponse.json(
-        { message: "Bill ID is required" },
-        { status: 400 }
+        { error: "Unauthorized" },
+        { status: 401 }
       );
     }
 
-    const bill = await prisma.bill.findUnique({
-      where: { id: billId },
+    // Next.js 16 params are async
+    const { id } = await context.params;
+
+    const bill = await prisma.bill.findFirst({
+      where: {
+        id,
+        clerkUserId, // ✅ correct field from schema
+      },
       include: {
-        products: true,
         customer: true,
+        payments: true,
         history: true,
+        // ❌ items is Json → do NOT include
       },
     });
 
     if (!bill) {
       return NextResponse.json(
-        { message: "Bill not found" },
+        { error: "Bill not found" },
         { status: 404 }
       );
     }
 
     return NextResponse.json(bill);
-  } catch (error: any) {
-    console.error("Fetch bill error:", error);
+  } catch (error) {
+    console.error("Billing GET error:", error);
     return NextResponse.json(
-      { message: "Failed to fetch bill" },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

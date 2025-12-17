@@ -118,7 +118,7 @@ import {
   SignInButton,
 } from "@clerk/nextjs";
 
-export default function Navbar(): JSX.Element {
+export default function Navbar() {
   const { collapsed, toggle } = useSidebar();
 
   return (

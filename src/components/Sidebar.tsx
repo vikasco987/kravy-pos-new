@@ -18,7 +18,7 @@ import {
 } from "react-icons/fa";
 import { useSidebar } from "./SidebarContext";
 
-export default function Sidebar(): JSX.Element {
+export default function Sidebar() {
   const { collapsed, setCollapsed } = useSidebar();
 
   // close handler for backdrop / mobile

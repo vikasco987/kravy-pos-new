@@ -698,8 +698,15 @@
 
 
 
+
+
+
+
+
+
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
+import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
 /* ===================== TYPES ===================== */
@@ -708,8 +715,8 @@ interface ProductInput {
   productId: string;
   quantity: number;
   price: number;
-  discount?: number; // percentage
-  gst?: number; // percentage
+  discount?: number; // %
+  gst?: number; // %
   total: number;
 }
 
@@ -720,39 +727,41 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     const {
-      userClerkId,
       customerId,
       products,
-      total,
-      discount, // overall discount %
-      gst,
-      grandTotal,
+      billDiscountPct,
+      gstPercent,
       paymentMode,
       paymentStatus,
-      notes,
-      dueDate,
+      upiTxnRef,
 
-      // company details
+      // company info
       companyName,
       companyAddress,
       companyPhone,
-      contactPerson,
+      gstNumber,
       logoUrl,
-      signatureUrl,
       websiteUrl,
     } = body;
 
-    /* ---------- BASIC VALIDATION ---------- */
-    if (!userClerkId || !Array.isArray(products) || products.length === 0) {
+    /* ---------- AUTH ---------- */
+    const session = await auth();
+    const clerkUserId = session.userId;
+
+    if (!clerkUserId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!Array.isArray(products) || products.length === 0) {
       return NextResponse.json(
-        { message: "User or products missing" },
+        { message: "Products missing" },
         { status: 400 }
       );
     }
 
     /* ---------- FIND USER ---------- */
     const user = await prisma.user.findUnique({
-      where: { clerkId: userClerkId },
+      where: { clerkId: clerkUserId },
     });
 
     if (!user) {
@@ -769,127 +778,146 @@ export async function POST(req: Request) {
       },
     });
 
-    if (!items.length) {
+    /* ---------- BUILD BILL ITEMS (JSON) ---------- */
+    const billItems = products.map((p: ProductInput) => {
+      const item = items.find((i) => i.id === p.productId);
+      if (!item) throw new Error("Products mismatch");
+
+      return {
+        id: p.productId,
+        name: item.name,
+        quantity: p.quantity,
+        price: p.price,
+        discount: p.discount ?? 0,
+        gst: p.gst ?? 0,
+        total: p.total,
+      };
+    });
+
+    if (!billItems.length) {
       return NextResponse.json(
-        { message: "No valid items found" },
+        { message: "No items found" },
         { status: 400 }
       );
     }
 
-    /* ---------- MAP PRODUCTS ---------- */
-    const billProducts = products
-      .map((p: ProductInput) => {
-        const item = items.find((i) => i.id === p.productId);
-        if (!item) return null;
+    /* ---------- CALCULATIONS ---------- */
+    const subtotal = billItems.reduce(
+      (sum, i) => sum + i.price * i.quantity,
+      0
+    );
 
-        return {
-          productId: p.productId,
-          productName: item.name,
-          quantity: p.quantity,
-          price: p.price,
-          discount: p.discount ?? 0,
-          gst: p.gst ?? 0,
-          total: p.total,
-        };
-      })
-      .filter(Boolean) as Prisma.BillProductCreateWithoutBillInput[];
+    const discountAmount =
+      billDiscountPct != null ? (subtotal * billDiscountPct) / 100 : null;
 
-    if (!billProducts.length) {
-      return NextResponse.json(
-        { message: "Products mismatch" },
-        { status: 400 }
-      );
-    }
+    const taxableAmount =
+      discountAmount != null ? subtotal - discountAmount : subtotal;
 
-    /* ---------- SNAPSHOT FOR HISTORY ---------- */
+    const cgst = gstPercent ? (taxableAmount * gstPercent) / 200 : 0;
+    const sgst = gstPercent ? (taxableAmount * gstPercent) / 200 : 0;
+
+    const total = taxableAmount + cgst + sgst;
+
+    const billNumber = `BILL-${Date.now()}`;
+
+    /* ---------- SNAPSHOT ---------- */
     const snapshot: Prisma.InputJsonValue = {
-      customerId,
-      products: billProducts,
+      customerId: customerId ?? null,
+      items: billItems,
+      subtotal,
+      billDiscountPct: billDiscountPct ?? null,
+      discountAmount,
+      taxableAmount,
+      gstPercent: gstPercent ?? null,
+      cgst,
+      sgst,
       total,
-      discount,
-      gst,
-      grandTotal,
       paymentMode,
       paymentStatus,
-      notes,
-      dueDate,
-      companyName,
-      companyAddress,
-      companyPhone,
-      contactPerson,
+      upiTxnRef: upiTxnRef ?? null,
     };
 
     /* ---------- CREATE BILL ---------- */
     const bill = await prisma.bill.create({
       data: {
         userId: user.id,
-        clerkUserId: user.clerkId,
+        clerkUserId,
 
-        customerId: customerId || undefined,
+        customerId: customerId ?? null,
+        billNumber,
 
+        items: billItems,
+
+        subtotal,
+        billDiscountPct: billDiscountPct ?? null,
+        discountAmount,
+        taxableAmount,
+        gstPercent: gstPercent ?? null,
+        cgst,
+        sgst,
         total,
-        discount: discount ?? 0,
-        gst: gst ?? 0,
-        grandTotal,
 
         paymentMode,
         paymentStatus,
-        notes,
-        dueDate: dueDate ? new Date(dueDate) : undefined,
+        upiTxnRef: upiTxnRef ?? null,
 
-        // company info
-        companyName,
-        companyAddress,
-        companyPhone,
-        contactPerson,
-        logoUrl,
-        signatureUrl,
-        websiteUrl,
+        isHeld: false,
 
-        // products
-        products: {
-          create: billProducts,
-        },
+        companyName: companyName ?? null,
+        companyAddress: companyAddress ?? null,
+        companyPhone: companyPhone ?? null,
+        gstNumber: gstNumber ?? null,
+        logoUrl: logoUrl ?? null,
+        websiteUrl: websiteUrl ?? null,
 
-        // history
         history: {
           create: {
+            action: "CREATED",
             snapshot,
           },
         },
       },
       include: {
-        products: true,
         customer: true,
-        history: true,
         payments: true,
+        history: true,
       },
     });
 
     return NextResponse.json(bill);
-  } catch (error: any) {
+  } catch (error) {
     console.error("BILL CREATE ERROR:", error);
     return NextResponse.json(
-      { message: "Failed to create bill", error: error.message },
+      { message: "Failed to create bill" },
       { status: 500 }
     );
   }
 }
 
-/* ===================== LIST BILL HISTORY ===================== */
+/* ===================== LIST BILLS ===================== */
 
 export async function GET() {
   try {
+    const session = await auth();
+    const clerkUserId = session.userId;
+
+    if (!clerkUserId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const bills = await prisma.bill.findMany({
+      where: { clerkUserId },
       orderBy: { createdAt: "desc" },
       include: {
         customer: true,
-        products: true,
+        payments: true,
+        history: true,
       },
     });
 
     return NextResponse.json(bills);
   } catch (error) {
+    console.error("LIST BILL ERROR:", error);
     return NextResponse.json(
       { message: "Failed to fetch bills" },
       { status: 500 }

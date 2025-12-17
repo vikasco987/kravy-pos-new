@@ -93,10 +93,20 @@ export async function GET(req: NextRequest) {
 
     // ✅ Fetch held bills
     const heldBills = await prisma.bill.findMany({
-      where: { isHeld: true, userId: dbUser.id },
-      include: { customer: true, products: { include: { product: true } }, payments: true },
-      orderBy: { holdAt: "desc" },
-    });
+  where: {
+    isHeld: true,
+    userId: dbUser.id,
+  },
+  include: {
+    customer: true,
+    payments: true,
+    history: true,
+    // items is Json → no include needed
+  },
+  orderBy: {
+    holdAt: "desc",
+  },
+});
 
     // ✅ Convert IDs to string for frontend
     const billsWithStringIds = heldBills.map((b) => ({

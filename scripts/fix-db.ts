@@ -256,10 +256,10 @@ async function main() {
   // 6) PURCHASE UPDATE — FIELD = userId refers to User.clerkId
   // ============================
   try {
-    const res = await prisma.purchase.updateMany({
-      data: { userId: targetClerkId },
-    });
-    console.log(`✅ Updated Purchase.userId (${res.count} purchases)`);
+    // const res = await prisma.purchase.updateMany({
+    //   data: { userId: targetClerkId },
+    // });
+    // console.log(`✅ Updated Purchase.userId (${res.count} purchases)`);
   } catch (e) {
     console.warn("⚠ Failed updating Purchases:", e);
   }

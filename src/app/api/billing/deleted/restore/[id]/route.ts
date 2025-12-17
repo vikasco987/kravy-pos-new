@@ -1,151 +1,114 @@
-import { NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
-export async function POST(req: Request, { params }: any) {
+export async function POST(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const { userId } = getAuth(req);
+    // Clerk auth (App Router correct)
+    const session = await auth();
+    const clerkUserId = session.userId;
 
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!clerkUserId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    const restoreId = params.id;
+    // Params are async
+    const { id: historyId } = await context.params;
 
-    // 1️⃣ Fetch deleted bill snapshot
-    const entry = await prisma.deleteHistory.findUnique({
-      where: { id: restoreId },
+    // 1️⃣ Find deleted bill snapshot
+    const history = await prisma.billHistory.findUnique({
+      where: { id: historyId },
     });
 
-    if (!entry) {
-      return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    if (!history || history.action !== "DELETED") {
+      return NextResponse.json(
+        { error: "Deleted bill not found" },
+        { status: 404 }
+      );
     }
 
-    const snap: any = entry.snapshot;
+    const snap = history.snapshot as any;
 
-    // 2️⃣ Restore the main bill using upsert to avoid unique constraint errors
+    // 2️⃣ Restore bill (items is Json, no products table)
     await prisma.bill.upsert({
       where: { id: snap.id },
       update: {
-        userId: snap.userId,
-        clerkUserId: snap.clerkUserId ?? null,
+        clerkUserId,
         customerId: snap.customerId ?? null,
-        total: snap.total ?? 0,
-        discount: snap.discount ?? null,
-        gst: snap.gst ?? null,
-        grandTotal: snap.grandTotal ?? null,
-        paymentStatus: snap.paymentStatus ?? "PENDING",
-        paymentMode: snap.paymentMode ?? null,
-        notes: snap.notes ?? null,
-        dueDate: snap.dueDate ? new Date(snap.dueDate) : null,
-
+        billNumber: snap.billNumber,
+        items: snap.items,
+        subtotal: snap.subtotal,
+        billDiscountPct: snap.billDiscountPct ?? null,
+        discountAmount: snap.discountAmount ?? null,
+        taxableAmount: snap.taxableAmount,
+        gstPercent: snap.gstPercent ?? null,
+        cgst: snap.cgst,
+        sgst: snap.sgst,
+        total: snap.total,
+        paymentMode: snap.paymentMode,
+        paymentStatus: snap.paymentStatus,
+        upiTxnRef: snap.upiTxnRef ?? null,
+        isHeld: snap.isHeld ?? false,
         holdBy: snap.holdBy ?? null,
         holdAt: snap.holdAt ? new Date(snap.holdAt) : null,
         resumedAt: snap.resumedAt ? new Date(snap.resumedAt) : null,
-        isHeld: snap.isHeld ?? false,
-
         companyName: snap.companyName ?? null,
         companyAddress: snap.companyAddress ?? null,
         companyPhone: snap.companyPhone ?? null,
-        contactPerson: snap.contactPerson ?? null,
+        gstNumber: snap.gstNumber ?? null,
         logoUrl: snap.logoUrl ?? null,
-        signatureUrl: snap.signatureUrl ?? null,
         websiteUrl: snap.websiteUrl ?? null,
       },
       create: {
         id: snap.id,
         userId: snap.userId,
-        clerkUserId: snap.clerkUserId ?? null,
+        clerkUserId,
         customerId: snap.customerId ?? null,
-        total: snap.total ?? 0,
-        discount: snap.discount ?? null,
-        gst: snap.gst ?? null,
-        grandTotal: snap.grandTotal ?? null,
-        paymentStatus: snap.paymentStatus ?? "PENDING",
-        paymentMode: snap.paymentMode ?? null,
-        notes: snap.notes ?? null,
-        dueDate: snap.dueDate ? new Date(snap.dueDate) : null,
-
+        billNumber: snap.billNumber,
+        items: snap.items,
+        subtotal: snap.subtotal,
+        billDiscountPct: snap.billDiscountPct ?? null,
+        discountAmount: snap.discountAmount ?? null,
+        taxableAmount: snap.taxableAmount,
+        gstPercent: snap.gstPercent ?? null,
+        cgst: snap.cgst,
+        sgst: snap.sgst,
+        total: snap.total,
+        paymentMode: snap.paymentMode,
+        paymentStatus: snap.paymentStatus,
+        upiTxnRef: snap.upiTxnRef ?? null,
+        isHeld: snap.isHeld ?? false,
         holdBy: snap.holdBy ?? null,
         holdAt: snap.holdAt ? new Date(snap.holdAt) : null,
         resumedAt: snap.resumedAt ? new Date(snap.resumedAt) : null,
-        isHeld: snap.isHeld ?? false,
-
         companyName: snap.companyName ?? null,
         companyAddress: snap.companyAddress ?? null,
         companyPhone: snap.companyPhone ?? null,
-        contactPerson: snap.contactPerson ?? null,
+        gstNumber: snap.gstNumber ?? null,
         logoUrl: snap.logoUrl ?? null,
-        signatureUrl: snap.signatureUrl ?? null,
         websiteUrl: snap.websiteUrl ?? null,
       },
     });
 
-    // 3️⃣ Restore bill products
-    if (snap.products?.length) {
-      for (const p of snap.products) {
-        await prisma.billProduct.upsert({
-          where: { id: p.id },
-          update: {
-            billId: p.billId,
-            productId: p.productId,
-            productName: p.productName,
-            quantity: p.quantity,
-            price: p.price,
-            discount: p.discount,
-            gst: p.gst,
-            total: p.total,
-          },
-          create: {
-            id: p.id,
-            billId: p.billId,
-            productId: p.productId,
-            productName: p.productName,
-            quantity: p.quantity,
-            price: p.price,
-            discount: p.discount,
-            gst: p.gst,
-            total: p.total,
-          },
-        });
-      }
-    }
-
-    // 4️⃣ Restore payments
-    if (snap.payments?.length) {
-      for (const pay of snap.payments) {
-        await prisma.payment.upsert({
-          where: { id: pay.id },
-          update: {
-            billId: pay.billId,
-            amount: pay.amount,
-            mode: pay.mode,
-            paidAt: new Date(pay.paidAt),
-          },
-          create: {
-            id: pay.id,
-            billId: pay.billId,
-            amount: pay.amount,
-            mode: pay.mode,
-            paidAt: new Date(pay.paidAt),
-          },
-        });
-      }
-    }
-
-    // 5️⃣ Delete restore entry from deleteHistory
-    await prisma.deleteHistory.delete({
-      where: { id: restoreId },
+    // 3️⃣ Remove delete history entry
+    await prisma.billHistory.delete({
+      where: { id: historyId },
     });
 
     return NextResponse.json({
       success: true,
       message: "Bill restored successfully",
     });
-  } catch (err) {
-    console.error("RESTORE ERROR →", err);
+  } catch (error) {
+    console.error("RESTORE ERROR:", error);
     return NextResponse.json(
-      { error: "Server error", details: String(err) },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

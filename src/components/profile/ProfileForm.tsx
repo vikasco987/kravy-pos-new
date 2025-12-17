@@ -199,18 +199,61 @@ export default function ProfileForm({ initialData = null, onSaved }: Props) {
             onChange={(v) => update("businessType", v)}
           />
 
-          <InputField label="Business Name" required value={form.businessName} onChange={(v) => update("businessName", v)} />
-          <InputField label="Tagline" value={form.businessTagline} onChange={(v) => update("businessTagline", v)} />
-          <InputField label="Contact Person Name" required value={form.contactName} onChange={(v) => update("contactName", v)} />
+<InputField
+  name="businessName"
+  label="Business Name"
+  required
+  value={form.businessName}
+  onChange={(v) => update("businessName", v)}
+/>
+<InputField
+  name="businessTagline"
+  label="Tagline"
+  value={form.businessTagline}
+  onChange={(v) => update("businessTagline", v)}
+/>
+<InputField
+  name="contactName"
+  label="Contact Person Name"
+  required
+  value={form.contactName}
+  onChange={(v) => update("contactName", v)}
+/>
 
-          <div className="two-col">
-            <InputField label="Phone" required value={form.contactPhone} onChange={(v) => update("contactPhone", v)} />
-            <InputField label="Email" required value={form.contactEmail} onChange={(v) => update("contactEmail", v)} />
+<div className="two-col">
+<InputField
+  name="contactPhone"
+  label="Phone"
+  required
+  value={form.contactPhone}
+  onChange={(v) => update("contactPhone", v)}
+/>
+
+<InputField
+  name="contactEmail"
+  label="Email"
+  required
+  value={form.contactEmail}
+  onChange={(v) => update("contactEmail", v)}
+/>
+
           </div>
 
           <div className="two-col">
-            <InputField label="UPI" value={form.upi} onChange={(v) => update("upi", v)} />
-            <InputField label="Google Review Link" value={form.reviewLink} onChange={(v) => update("reviewLink", v)} />
+<InputField
+  name="upi"
+  label="UPI"
+  value={form.upi}
+  onChange={(v) => update("upi", v)}
+/>
+
+<InputField
+  name="reviewLink"
+  label="Google Review Link"
+  value={form.reviewLink}
+  onChange={(v) => update("reviewLink", v)}
+/>
+
           </div>
 
           {/* BUTTONS */}
