@@ -139,14 +139,13 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// Disable Clerk in dev / preview
-const isProd = process.env.NODE_ENV === "production";
+// Enable Clerk ONLY on real production
+const isRealProd = process.env.VERCEL_ENV === "production";
 
-export default isProd
+export default isRealProd
   ? clerkMiddleware()
   : () => NextResponse.next();
 
-// ✅ matcher must be exported separately
 export const config = {
   matcher: [
     "/((?!.*\\..*|_next).*)",
