@@ -1,3 +1,5 @@
+"use client";
+
 import { SignIn } from "@clerk/nextjs";
 
 export default function Page() {
@@ -7,4 +9,3 @@ export default function Page() {
     </div>
   );
 }
-

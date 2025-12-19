@@ -1533,33 +1533,54 @@ async function findOrCreateDBUser(clerk: any) {
   const name =
     `${clerk?.firstName || ""} ${clerk?.lastName || ""}`.trim() || null;
 
+  const orConditions: any[] = [];
+
+  if (clerkId) orConditions.push({ clerkId });
+  if (email) orConditions.push({ email });
+
   let dbUser = await prisma.user.findFirst({
-    where: {
-      OR: [
-        clerkId ? { clerkId } : undefined,
-        email ? { email } : undefined,
-      ].filter(Boolean) as any[],
+    where: orConditions.length ? { OR: orConditions } : undefined,
+    select: {
+      id: true,
+      clerkId: true,
+      email: true,
+      name: true,
     },
   });
 
+  // 1️⃣ If user does not exist → create
   if (!dbUser) {
-    return prisma.user.create({
-      data: {
-        clerkId: clerkId || undefined,
-        email: email || undefined,
-        name: name || "Unnamed User",
-        role: "SELLER",
-      },
-    });
+   dbUser = await prisma.user.create({
+  data: {
+    clerkId: clerkId ?? undefined,
+    email: email ?? undefined,
+    name: name ?? "", // ✅ always string
+  },
+  select: {
+    id: true,
+    clerkId: true,
+    email: true,
+    name: true,
+  },
+});
+
   }
 
+  // 2️⃣ If user exists but clerkId is missing → update
   if (!dbUser.clerkId && clerkId) {
     dbUser = await prisma.user.update({
       where: { id: dbUser.id },
       data: { clerkId },
+      select: {
+        id: true,
+        clerkId: true,
+        email: true,
+        name: true,
+      },
     });
   }
 
+  // ✅ IMPORTANT: return the user
   return dbUser;
 }
 

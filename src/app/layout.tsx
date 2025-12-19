@@ -98,7 +98,11 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import "./globals.css";
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   return (
     <ClerkProvider>
       <html lang="en">

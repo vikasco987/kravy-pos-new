@@ -452,87 +452,80 @@ export default function ViewMenuPage() {
   }, [toast]);
 
   useEffect(() => {
-    const fetchMenus = async () => {
-      setLoading(true);
-      setError(null);
+  const fetchMenus = async () => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        const res = await fetch("/api/menu/view", {
-  method: "GET",
-  headers: { "Content-Type": "application/json" },
-  credentials: "include", // Clerk cookie auth
+    try {
+      const res = await fetch("/api/menu/view", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Failed (${res.status})`);
+      }
+
+      const items = await res.json();
+      console.log("MENU ITEMS:", items);
+
+      if (!Array.isArray(items)) {
+        throw new Error("Menu API did not return array");
+      }
+
+     const UNCATEGORISED_ID = "__uncategorised__";
+
+const categoryMap = new Map<string, MenuCategory>();
+
+categoryMap.set(UNCATEGORISED_ID, {
+  id: UNCATEGORISED_ID,
+  name: "Uncategorised",
+  items: [],
 });
 
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          let msg = text || `Failed to fetch menus (${res.status})`;
-          try {
-            const parsed = JSON.parse(text);
-            msg = parsed?.error ?? JSON.stringify(parsed);
-          } catch {}
-          console.error("Fetch /api/menu/view failed:", res.status, msg);
-          throw new Error(msg);
+      items.forEach((it: any) => {
+        const catId = it.category?.id ?? UNCATEGORISED_ID;
+        const catName = it.category?.name ?? "Uncategorised";
+
+        if (!categoryMap.has(catId)) {
+          categoryMap.set(catId, {
+            id: catId,
+            name: catName,
+            items: [],
+          });
         }
 
-        const data = await res.json();
+        categoryMap.get(catId)!.items.push({
+          id: String(it.id),
+          name: it.name ?? "Unnamed",
+          price:
+            typeof it.sellingPrice === "number"
+              ? it.sellingPrice
+              : it.price ?? null,
+          imageUrl: it.imageUrl ?? null,
+          unit: it.unit ?? null,
+          categoryId: catId,
+        });
+      });
 
-        if (Array.isArray(data.categories) && Array.isArray(data.items)) {
-          const categoryMap = new Map<string, MenuCategory>();
-          data.categories.forEach((c: any) => {
-            categoryMap.set(String(c.id), { id: String(c.id), name: c.name, items: [] });
-          });
+      const finalCategories = Array.from(categoryMap.values()).filter(
+        (c) => c.items.length > 0
+      );
 
-          const uncategorisedId = "uncategorised";
-          if (!categoryMap.has(uncategorisedId)) {
-            categoryMap.set(uncategorisedId, { id: uncategorisedId, name: "Uncategorised", items: [] });
-          }
+      setMenus(finalCategories);
+      setActiveCategory(finalCategories[0]?.id ?? null);
+    } catch (err: any) {
+      console.error("Error fetching menus:", err);
+      setError(err.message || "Failed to load menu");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-          data.items.forEach((it: any) => {
-            const id = it.id ?? it._id ?? String(Math.random());
-            const catId = it.categoryId ?? uncategorisedId;
-            if (!categoryMap.has(catId)) categoryMap.set(catId, { id: catId, name: "Uncategorised", items: [] });
-
-            const item: MenuItem = {
-              id: String(id),
-              name: it.name ?? "Unnamed",
-              price: typeof it.sellingPrice === "number" ? it.sellingPrice : it.price ?? null,
-              imageUrl: it.imageUrl ?? null,
-              unit: it.unit ?? null,
-              categoryId: catId,
-            };
-
-            categoryMap.get(catId)!.items.push(item);
-          });
-
-          const finalCategories = Array.from(categoryMap.values()).map((c) => ({
-            ...c,
-            items: c.items.sort((a, b) => (a.name || "").localeCompare(b.name || "")),
-          }));
-
-          finalCategories.sort((a, b) => {
-            if (a.id === "uncategorised") return 1;
-            if (b.id === "uncategorised") return -1;
-            return a.name.localeCompare(b.name);
-          });
-
-          setMenus(finalCategories);
-          if (finalCategories.length > 0) {
-            setActiveCategory(finalCategories[0].id);
-          }
-        } else {
-          throw new Error("Unexpected response shape from /api/menu/view");
-        }
-      } catch (err: any) {
-        console.error("Error fetching menus:", err);
-        setError(err?.message ?? "Failed to fetch menus");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMenus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  fetchMenus();
+}, []);
 
   const allCategories = useMemo(() => [{ id: "all", name: "All Categories" }, ...menus.map((m) => ({ id: m.id, name: m.name }))], [menus]);
 
