@@ -118,15 +118,38 @@
 // // # Last working version ---------------------------------------------------------------------------------
 
 
+// // src/proxy.ts
+// import { clerkMiddleware } from "@clerk/nextjs/server";
+
+// export default clerkMiddleware();
+
+// // ✅ matcher must be exported separately
+// export const config = {
+//   matcher: [
+//     "/((?!.*\\..*|_next).*)", // app pages
+//     "/api/:path*",            // api routes
+//   ],
+// };
+// # Current working version ---------------------------------------------------------------------------------
+
+
+
+// src/proxy.ts
 // src/proxy.ts
 import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
-export default clerkMiddleware();
+// Disable Clerk in dev / preview
+const isProd = process.env.NODE_ENV === "production";
+
+export default isProd
+  ? clerkMiddleware()
+  : () => NextResponse.next();
 
 // ✅ matcher must be exported separately
 export const config = {
   matcher: [
-    "/((?!.*\\..*|_next).*)", // app pages
-    "/api/:path*",            // api routes
+    "/((?!.*\\..*|_next).*)",
+    "/api/:path*",
   ],
 };
