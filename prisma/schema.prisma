@@ -44,9 +44,6 @@ model Category {
 }
 
 //////////////////////////////////////////////////
-// ITEM (MENU / INVENTORY)
-//////////////////////////////////////////////////
-
 model Item {
   id           String  @id @default(auto()) @map("_id") @db.ObjectId
   name         String
@@ -59,13 +56,13 @@ model Item {
   imageUrl     String?
 
   categoryId String?   @db.ObjectId
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  category   Category? @relation(fields: [categoryId], references: [id])
 
   clerkId String
   userId  String @db.ObjectId
   user    User   @relation(fields: [userId], references: [id])
 
-  purchases Purchase[] // ✅ ADD THIS LINE
+  purchases Purchase[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

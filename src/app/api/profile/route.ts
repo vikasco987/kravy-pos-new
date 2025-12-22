@@ -1170,28 +1170,22 @@
 
 
 
-
-
-
-
-
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { currentUser } from "@clerk/nextjs/server";
+import { getAuth } from "@clerk/nextjs/server";
 
-// =============================
-// CREATE BUSINESS PROFILE (POST)
-// =============================
+/* =============================
+   CREATE / UPDATE PROFILE
+============================= */
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
-    const user = await currentUser();
-
-    if (!user?.id) {
+    const { userId } = getAuth(req);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // ---- Extract fields ----
+    const data = await req.json();
+
     const {
       businessType,
       businessName,
@@ -1201,16 +1195,16 @@ export async function POST(req: Request) {
       contactEmail,
       upi = "",
       reviewLink = "",
-      profileImage,
-      logo,
-      signature,
+      profileImage = "",
+      logo = "",
+      signature = "",
       gstNumber = "",
       businessAddress = "",
       state = "",
       pinCode = "",
     } = data;
 
-    // ---- Validation ----
+    // validation
     const required: Record<string, string> = {
       businessType: "Business Type is required",
       businessName: "Business Name is required",
@@ -1225,36 +1219,48 @@ export async function POST(req: Request) {
       }
     }
 
-    // ---- Save profile to database ----
-   const profile = await prisma.businessProfile.create({
-  data: {
-    userId: user.id,
+    const profile = await prisma.businessProfile.upsert({
+      where: { userId },
+      update: {
+        businessType,
+        businessName,
+        businessTagLine: businessTagline || null,
+        contactPersonName: contactName,
+        contactPersonPhone: contactPhone,
+        contactPersonEmail: contactEmail,
+        upi: upi || null,
+        googleReviewUrl: reviewLink || null,
+        profileImageUrl: profileImage || null,
+        logoUrl: logo || null,
+        signatureUrl: signature || null,
+        gstNumber: gstNumber || null,
+        businessAddress: businessAddress || null,
+        state: state || null,
+        pinCode: pinCode || null,
+      },
+      create: {
+        userId,
+        businessType,
+        businessName,
+        businessTagLine: businessTagline || null,
+        contactPersonName: contactName,
+        contactPersonPhone: contactPhone,
+        contactPersonEmail: contactEmail,
+        upi: upi || null,
+        googleReviewUrl: reviewLink || null,
+        profileImageUrl: profileImage || null,
+        logoUrl: logo || null,
+        signatureUrl: signature || null,
+        gstNumber: gstNumber || null,
+        businessAddress: businessAddress || null,
+        state: state || null,
+        pinCode: pinCode || null,
+      },
+    });
 
-    businessName,
-    businessTagLine: businessTagline ?? null,
-
-    contactPersonName: contactName ?? null,
-    contactPersonPhone: contactPhone ?? null,
-
-    upi: upi ?? null,
-    logoUrl: logo ?? null,
-    signatureUrl: signature ?? null,
-
-    gstNumber: gstNumber ?? null,
-    businessAddress: businessAddress ?? null,
-    state: state ?? null,
-    pinCode: pinCode ?? null,
-  },
-});
-
-    return NextResponse.json(profile, { status: 201 });
+    return NextResponse.json(profile);
   } catch (err: any) {
     console.error("Profile save error:", err);
-
-    if (err.code === "P2002") {
-      return NextResponse.json({ error: "Duplicate entry" }, { status: 409 });
-    }
-
     return NextResponse.json(
       { error: "Failed to save profile", details: err.message },
       { status: 500 }
@@ -1262,19 +1268,18 @@ export async function POST(req: Request) {
   }
 }
 
-// =============================
-// GET MOST RECENT BUSINESS PROFILE (GET)
-// =============================
-export async function GET() {
+/* =============================
+   FETCH PROFILE
+============================= */
+export async function GET(req: Request) {
   try {
-    const user = await currentUser();
-
-    if (!user?.id) {
+    const { userId } = getAuth(req);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const profile = await prisma.businessProfile.findFirst({
-      where: { userId: user.id },
+      where: { userId },
       orderBy: { createdAt: "desc" },
     });
 
@@ -1285,7 +1290,7 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(profile, { status: 200 });
+    return NextResponse.json(profile);
   } catch (err: any) {
     console.error("Fetch profile error:", err);
     return NextResponse.json(

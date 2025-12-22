@@ -1518,70 +1518,63 @@
 
 
 
-"use server";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { getAuth } from "@clerk/nextjs/server";
+import { uploadExternalImageToCloudinary } from "@/lib/cloudinaryUploadFromUrl";
 
 /* --------------------------------
    Helper: find or create DB user
 --------------------------------- */
-async function findOrCreateDBUser(clerk: any) {
-  const email = clerk?.emailAddresses?.[0]?.emailAddress || null;
-  const clerkId = clerk?.id || null;
-  const name =
-    `${clerk?.firstName || ""} ${clerk?.lastName || ""}`.trim() || null;
-
-  const orConditions: any[] = [];
-
-  if (clerkId) orConditions.push({ clerkId });
-  if (email) orConditions.push({ email });
-
-  let dbUser = await prisma.user.findFirst({
-    where: orConditions.length ? { OR: orConditions } : undefined,
-    select: {
-      id: true,
-      clerkId: true,
-      email: true,
-      name: true,
-    },
+async function findOrCreateDBUser(clerkId: string) {
+  let user = await prisma.user.findUnique({
+    where: { clerkId },
+    select: { id: true },
   });
 
-  // 1️⃣ If user does not exist → create
-  if (!dbUser) {
-   dbUser = await prisma.user.create({
-  data: {
-    clerkId: clerkId ?? undefined,
-    email: email ?? undefined,
-    name: name ?? "", // ✅ always string
-  },
-  select: {
-    id: true,
-    clerkId: true,
-    email: true,
-    name: true,
-  },
-});
-
-  }
-
-  // 2️⃣ If user exists but clerkId is missing → update
-  if (!dbUser.clerkId && clerkId) {
-    dbUser = await prisma.user.update({
-      where: { id: dbUser.id },
-      data: { clerkId },
-      select: {
-        id: true,
-        clerkId: true,
-        email: true,
-        name: true,
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        clerkId,
+        name: "",
       },
+      select: { id: true },
     });
   }
 
-  // ✅ IMPORTANT: return the user
-  return dbUser;
+  return user;
 }
 
 /* --------------------------------
@@ -1589,83 +1582,56 @@ async function findOrCreateDBUser(clerk: any) {
 --------------------------------- */
 export async function GET(req: Request) {
   try {
-    const clerk = await currentUser();
-    if (!clerk?.id) {
+    const { userId: clerkId } = getAuth(req);
+
+    if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
-    const search = (url.searchParams.get("search") || "").trim();
-    const page = Number(url.searchParams.get("page") || "1");
-    const pageSize = Number(url.searchParams.get("pageSize") || "50");
 
     if (id) {
       const item = await prisma.item.findFirst({
-        where: { id, clerkId: clerk.id },
+        where: { id, clerkId },
       });
 
       if (!item) {
         return NextResponse.json({ error: "Item not found" }, { status: 404 });
       }
+
       return NextResponse.json(item);
     }
 
-    const where: any = { clerkId: clerk.id };
-
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { barcode: { contains: search, mode: "insensitive" } },
-        {
-          category: {
-            name: { contains: search, mode: "insensitive" },
-          },
-        },
-      ];
-    }
-
-    const skip = (page - 1) * pageSize;
-
-    const [items, total] = await Promise.all([
-      prisma.item.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: pageSize,
-      }),
-      prisma.item.count({ where }),
-    ]);
-
-    return NextResponse.json({
-      items,
-      page,
-      pageSize,
-      total,
-      hasMore: skip + items.length < total,
+    const items = await prisma.item.findMany({
+      where: { clerkId },
+      orderBy: { createdAt: "desc" },
     });
+
+    return NextResponse.json(items);
   } catch (err: any) {
     console.error("GET /api/items error:", err);
     return NextResponse.json(
-      { error: err?.message || "Failed to fetch items" },
+      { error: "Failed to fetch items" },
       { status: 500 }
     );
   }
 }
 
 /* --------------------------------
-   POST /api/items (unchanged)
+   POST /api/items
 --------------------------------- */
 export async function POST(req: Request) {
   try {
-    const clerk = await currentUser();
-    if (!clerk?.id) {
+    const { userId: clerkId } = getAuth(req);
+
+    if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const dbUser = await findOrCreateDBUser(clerk);
-
+    const dbUser = await findOrCreateDBUser(clerkId);
     const body = await req.json();
+
     if (!body?.name || body.price == null || !body.categoryId) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -1683,8 +1649,8 @@ export async function POST(req: Request) {
             : Number(body.price),
         unit: body.unit || null,
         imageUrl: body.imageUrl || null,
+        clerkId,
         category: { connect: { id: String(body.categoryId) } },
-        clerkId: clerk.id,
         user: { connect: { id: dbUser.id } },
       },
     });
@@ -1693,19 +1659,20 @@ export async function POST(req: Request) {
   } catch (err: any) {
     console.error("POST /api/items error:", err);
     return NextResponse.json(
-      { error: err?.message || "Failed to save item" },
+      { error: "Failed to save item" },
       { status: 500 }
     );
   }
 }
 
 /* --------------------------------
-   PUT /api/items  ✅ NEW (EDIT MENU)
+   PUT /api/items
 --------------------------------- */
 export async function PUT(req: Request) {
   try {
-    const clerk = await currentUser();
-    if (!clerk?.id) {
+    const { userId: clerkId } = getAuth(req);
+
+    if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -1719,18 +1686,14 @@ export async function PUT(req: Request) {
       );
     }
 
-    // 🔐 ensure ownership (VERY IMPORTANT)
     const existing = await prisma.item.findFirst({
-      where: {
-        id,
-        clerkId: clerk.id,
-      },
-      select: { id: true, userId: true },
+      where: { id, clerkId },
+      select: { id: true },
     });
 
     if (!existing) {
       return NextResponse.json(
-        { error: "Item not found or not owned by user" },
+        { error: "Item not found" },
         { status: 404 }
       );
     }
@@ -1752,31 +1715,28 @@ export async function PUT(req: Request) {
   } catch (err: any) {
     console.error("PUT /api/items error:", err);
     return NextResponse.json(
-      { error: err?.message || "Failed to update item" },
+      { error: "Failed to update item" },
       { status: 500 }
     );
   }
 }
 
-
 /* --------------------------------
-   DELETE /api/items  ✅ UPDATED
+   DELETE /api/items
 --------------------------------- */
-
 export async function DELETE(req: Request) {
   try {
-    const clerk = await currentUser();
-    if (!clerk?.id) {
+    const { userId: clerkId } = getAuth(req);
+
+    if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     let id: string | null = null;
 
-    // allow query param
     const url = new URL(req.url);
     id = url.searchParams.get("id");
 
-    // allow JSON body
     if (!id) {
       try {
         const body = await req.json();
@@ -1791,31 +1751,25 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // 🔐 ownership check
     const existing = await prisma.item.findFirst({
-      where: {
-        id,
-        clerkId: clerk.id,
-      },
+      where: { id, clerkId },
       select: { id: true },
     });
 
     if (!existing) {
       return NextResponse.json(
-        { error: "Item not found or not owned by user" },
+        { error: "Item not found" },
         { status: 404 }
       );
     }
 
-    await prisma.item.delete({
-      where: { id },
-    });
+    await prisma.item.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error("DELETE /api/items error:", err);
     return NextResponse.json(
-      { error: err?.message || "Failed to delete item" },
+      { error: "Failed to delete item" },
       { status: 500 }
     );
   }

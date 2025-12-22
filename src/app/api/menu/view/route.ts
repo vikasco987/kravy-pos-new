@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    // ✅ App Router auth (correct)
-    const session = await auth();
-    const userId = session.userId;
+    // ✅ Correct auth method when proxy.ts includes /api
+    const { userId: clerkId } = getAuth(req);
 
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!clerkId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    // ✅ Fetch menu items for this user
+    // ✅ Fetch menu items for this clerk user
     const items = await prisma.item.findMany({
       where: {
-        clerkId: userId,
+        clerkId: clerkId,
       },
       orderBy: {
         createdAt: "desc",

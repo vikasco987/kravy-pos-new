@@ -117,38 +117,39 @@
 
 // // # Last working version ---------------------------------------------------------------------------------
 
-
-// // src/proxy.ts
-// import { clerkMiddleware } from "@clerk/nextjs/server";
-
-// export default clerkMiddleware();
-
-// // ✅ matcher must be exported separately
-// export const config = {
-//   matcher: [
-//     "/((?!.*\\..*|_next).*)", // app pages
-//     "/api/:path*",            // api routes
-//   ],
-// };
-// # Current working version ---------------------------------------------------------------------------------
-
-
-
-// src/proxy.ts
 // src/proxy.ts
 import { clerkMiddleware } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 
-// Enable Clerk ONLY on real production
-const isRealProd = process.env.VERCEL_ENV === "production";
+export default clerkMiddleware();
 
-export default isRealProd
-  ? clerkMiddleware()
-  : () => NextResponse.next();
-
+// ✅ matcher must be exported separately
 export const config = {
   matcher: [
-    "/((?!.*\\..*|_next).*)",
-    "/api/:path*",
+    "/((?!.*\\..*|_next).*)", // app pages
+    "/api/:path*",            // api routes
   ],
 };
+
+
+//# Current working version ---------------------------------------------------------------------------------
+
+
+
+// // src/proxy.ts
+// // src/proxy.ts
+// import { clerkMiddleware } from "@clerk/nextjs/server";
+// import { NextResponse } from "next/server";
+
+// // Enable Clerk ONLY on real production
+// const isRealProd = process.env.VERCEL_ENV === "production";
+
+// export default isRealProd
+//   ? clerkMiddleware()
+//   : () => NextResponse.next();
+
+// export const config = {
+//   matcher: [
+//     "/((?!.*\\..*|_next).*)",
+//     "/api/:path*",
+//   ],
+// };

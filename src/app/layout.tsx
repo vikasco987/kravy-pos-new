@@ -85,18 +85,73 @@
 
 
 
+// import type { ReactNode } from "react";
+// import "./globals.css";
+// import Providers from "@/components/Providers";
 
+// export const metadata = {
+//   title: "Kravy Billing",
+// };
 
-// app/layout.tsx
-"use client";
+// export default function RootLayout({
+//   children,
+// }: {
+//   children: ReactNode;
+// }) {
+//   return (
+//     <html lang="en">
+//       <body
+//         style={{
+//           margin: 0,
+//           fontFamily:
+//             "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial",
+//         }}
+//       >
+//         <Providers>{children}</Providers>
+//       </body>
+//     </html>
+//   );
+// }
+// import type { ReactNode } from "react";
+// import "./globals.css";
+// import Providers from "@/components/Providers";
 
-import React from "react";
+// export const metadata = {
+//   title: "Kravy Billing",
+// };
+
+// export default function RootLayout({
+//   children,
+// }: {
+//   children: ReactNode;
+// }) {
+//   return (
+//     <html lang="en">
+//       <body
+//         style={{
+//           margin: 0,
+//           fontFamily:
+//             "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial",
+//         }}
+//       >
+//         <Providers>{children}</Providers>
+//       </body>
+//     </html>
+//   );
+// }
+
+//last working version above
+
+// Current working version below
+
 import type { ReactNode } from "react";
-import { ClerkProvider } from "@clerk/nextjs";
-import { SidebarProvider } from "@/components/SidebarContext";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
 import "./globals.css";
+import Providers from "@/components/Providers";
+import ClientLayout from "@/components/ClientLayout";
+
+export const metadata = {
+  title: "Kravy Billing",
+};
 
 export default function RootLayout({
   children,
@@ -104,28 +159,20 @@ export default function RootLayout({
   children: ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <head />
-        <body
-          style={{
-            margin: 0,
-            fontFamily:
-              "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial",
-          }}
-        >
-          <SidebarProvider>
-            {/* Fixed Header */}
-            <Navbar />
-
-            {/* Sidebar (below navbar) */}
-            <Sidebar />
-
-            {/* Page Content */}
-            <div id="page-root">{children}</div>
-          </SidebarProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en">
+      <body
+        style={{
+          margin: 0,
+          fontFamily:
+            "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial",
+        }}
+        className="min-h-screen bg-gray-50 overflow-x-hidden"
+      >
+        <Providers>
+          {/* Client-only UI logic lives here */}
+          <ClientLayout>{children}</ClientLayout>
+        </Providers>
+      </body>
+    </html>
   );
 }

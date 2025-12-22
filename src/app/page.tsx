@@ -67,67 +67,88 @@
 
 
 
+
+
 "use client";
-import React, { useEffect, useState } from "react";
-import { useSidebar } from "@/components/SidebarContext";
-import { FaCashRegister, FaChartLine, FaMobileAlt } from "react-icons/fa";
-import styles from "./Page.module.css";
 
-export default function Page() {
-  const { collapsed } = useSidebar();
-  const [isMobile, setIsMobile] = useState<boolean>(false);
+import Link from "next/link";
+import "./home.css";
 
-  useEffect(() => {
-    // matchMedia to detect small screens
-    const mq = window.matchMedia("(max-width: 880px)");
-    const apply = () => setIsMobile(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
-
-  // on mobile we never push content (sidebar overlays instead)
-  const sidebarWidth = isMobile ? 0 : collapsed ? 0 : 240;
-
+export default function HomePage() {
   return (
-    <div style={{ marginLeft: sidebarWidth, transition: "margin-left 180ms ease" }}>
-      <main className={styles.content}>
-        <div className={styles.container}>
-          <section className={styles.hero}>
-            <h1>Kravy Billing Software</h1>
-            <p>Smart Billing & Restaurant POS — Fast, Simple & Reliable</p>
-            <button className={styles.primary}>Get Started</button>
-          </section>
+    <main className="home">
+      {/* HERO */}
+      <section className="hero">
+      <div className="hero-content scroll-fade">
+          <h1 className="brand-title scroll-fade">
+  <span className="brand-name">KRAVY</span>
+  <span className="brand-sub">Billing Software</span>
+</h1>
 
-          <section className={styles.features}>
-            <div className={styles.card}>
-              <FaCashRegister style={{ fontSize: 40, color: "#0ea5e9" }} />
-              <h3>Easy Billing</h3>
-              <p>Generate invoices & manage payments in seconds.</p>
-            </div>
+          <p>
+            Kravy Billing helps restaurants and shops manage billing, menu,
+            customers and sales with ease.
+          </p>
 
-            <div className={styles.card}>
-              <FaChartLine style={{ fontSize: 40, color: "#10b981" }} />
-              <h3>Smart Analytics</h3>
-              <p>Track sales, revenue, and inventory in real-time.</p>
-            </div>
-
-            <div className={styles.card}>
-              <FaMobileAlt style={{ fontSize: 40, color: "#7c3aed" }} />
-              <h3>Mobile Ready</h3>
-              <p>Works on Android, iOS, and Web seamlessly.</p>
-            </div>
-          </section>
-
-          <section className={styles.cta}>
-            <h2>Ready to grow your business?</h2>
-            <p>Start your free trial today and experience smarter billing.</p>
-            <button className={styles.primaryAlt}>Start Free Trial</button>
-          </section>
-
-          <footer className={styles.footer}>© {new Date().getFullYear()} Kravy Billing Software. All rights reserved.</footer>
+          <div className="hero-actions">
+            <Link href="/billing" className="btn primary">
+              Start Billing
+            </Link>
+            <Link href="/menu/view" className="btn outline">
+              View Menu
+            </Link>
+          </div>
         </div>
-      </main>
-    </div>
+        
+        <div className="hero-visual">
+          <div className="mock-card" />
+          <div className="mock-card delay" />
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section className="features">
+        <h2>Why Kravy Billing?</h2>
+
+        <div className="feature-grid">
+        <div className="feature scroll-rise">⚡ Fast Billing</div>
+        <div className="feature scroll-rise">📋 Menu Management</div>
+        <div className="feature scroll-rise">👥 Party Records</div>
+        <div className="feature scroll-rise">📊 Sales Tracking</div>
+        <div className="feature scroll-rise">📱 Mobile Friendly</div>
+        <div className="feature scroll-rise">🔒 Secure System</div>
+        </div>
+
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="steps">
+        <h2>How It Works</h2>
+
+        <div className="step-list">
+          <div className="step scroll-slide">
+            <span>1</span>
+            <p>Add Menu Items</p>
+          </div>
+          <div className="step">
+            <span>2</span>
+            <p>Create Bill</p>
+          </div>
+          <div className="step">
+            <span>3</span>
+            <p>Track Sales</p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="cta scroll-zoom">
+        <h2>Ready to Upgrade Your Billing?</h2>
+        <p>Clean. Fast. Reliable.</p>
+        <Link href="/billing" className="btn primary big">
+          Go to Billing
+        </Link>
+      </section>
+    </main>
   );
 }

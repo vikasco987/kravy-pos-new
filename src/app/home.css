@@ -1,0 +1,312 @@
+/* ROOT */
+.home {
+  font-family: Inter, system-ui, Arial;
+  color: #111;
+}
+
+/* HERO */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  padding: 80px 20px;
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: white;
+}
+
+.hero-content {
+  animation: fadeUp 0.8s ease forwards;
+}
+
+.hero h1 {
+  font-size: 40px;
+  line-height: 1.2;
+}
+
+.hero p {
+  margin-top: 16px;
+  color: #cbd5f5;
+  max-width: 480px;
+}
+
+.hero-actions {
+  margin-top: 30px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* BRAND TITLE */
+.brand-title {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.brand-name {
+  font-size: 64px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, #6366f1, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-sub {
+  margin-top: 8px;
+  font-size: 22px;
+  font-weight: 500;
+  color: #c7d2fe;
+}
+
+/* DESKTOP */
+@media (min-width: 768px) {
+  .brand-name {
+    font-size: 96px;
+  }
+
+  .brand-sub {
+    font-size: 26px;
+  }
+}
+
+/* BUTTONS */
+.btn {
+  padding: 12px 22px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.btn.primary {
+  background: #6366f1;
+  color: white;
+}
+
+.btn.primary:hover {
+  transform: translateY(-2px);
+  background: #4f46e5;
+}
+
+.btn.outline {
+  border: 1px solid #c7d2fe;
+  color: #c7d2fe;
+}
+
+.btn.outline:hover {
+  background: white;
+  color: #020617;
+}
+
+.btn.big {
+  font-size: 18px;
+  padding: 14px 28px;
+}
+
+/* HERO VISUAL */
+.hero-visual {
+  position: relative;
+  height: 200px;
+}
+
+.mock-card {
+  position: absolute;
+  width: 220px;
+  height: 140px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #6366f1, #22d3ee);
+  opacity: 0.9;
+  animation: float 4s ease-in-out infinite;
+}
+
+.mock-card.delay {
+  top: 30px;
+  left: 60px;
+  animation-delay: 1.5s;
+}
+
+/* FEATURES */
+.features {
+  padding: 70px 20px;
+  text-align: center;
+}
+
+.features h2 {
+  font-size: 28px;
+}
+
+.feature-grid {
+  margin-top: 30px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.feature {
+  padding: 18px;
+  border-radius: 14px;
+  background: #f8fafc;
+  font-weight: 600;
+  transition: transform 0.2s ease;
+}
+
+.feature:hover {
+  transform: translateY(-4px);
+}
+
+/* STEPS */
+.steps {
+  background: #f1f5f9;
+  padding: 70px 20px;
+  text-align: center;
+}
+
+.step-list {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.step {
+  background: white;
+  padding: 20px 24px;
+  border-radius: 14px;
+  width: 160px;
+  animation: fadeUp 0.6s ease forwards;
+}
+
+.step span {
+  display: inline-block;
+  background: #6366f1;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  line-height: 32px;
+  margin-bottom: 10px;
+}
+
+/* CTA */
+.cta {
+  background: #020617;
+  color: white;
+  text-align: center;
+  padding: 70px 20px;
+}
+
+.cta p {
+  color: #cbd5f5;
+  margin: 10px 0 30px;
+}
+
+/* ANIMATIONS */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* RESPONSIVE */
+@media (min-width: 768px) {
+  .hero {
+    grid-template-columns: 1fr 1fr;
+    padding: 100px 60px;
+  }
+
+  .hero h1 {
+    font-size: 52px;
+  }
+}
+/* ============================= */
+/* SCROLL ANIMATIONS (CSS ONLY) */
+/* ============================= */
+
+.scroll-fade,
+.scroll-rise,
+.scroll-slide,
+.scroll-zoom {
+  opacity: 0;
+  animation-fill-mode: forwards;
+  animation-timing-function: ease;
+  animation-duration: 0.7s;
+}
+
+/* Fade Up */
+.scroll-fade {
+  animation-name: fadeUp;
+  animation-timeline: view();
+  animation-range: entry 10% cover 35%;
+}
+
+/* Rise Cards */
+.scroll-rise {
+  animation-name: rise;
+  animation-timeline: view();
+  animation-range: entry 15% cover 40%;
+}
+
+/* Slide */
+.scroll-slide {
+  animation-name: slideIn;
+  animation-timeline: view();
+  animation-range: entry 20% cover 45%;
+}
+
+/* Zoom CTA */
+.scroll-zoom {
+  animation-name: zoomIn;
+  animation-timeline: view();
+  animation-range: entry 30% cover 50%;
+}
+
+/* KEYFRAMES */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
