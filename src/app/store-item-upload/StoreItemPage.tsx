@@ -7,7 +7,10 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 type Category = { id: string; name: string };
-type Clerk = { id: string; name: string };
+type ClerkOption = {
+  clerkId: string; // internal use only
+  email: string;   // shown in UI
+};
 
 type StoreItem = {
   name: string;
@@ -24,9 +27,11 @@ export default function StoreItemPage() {
 
   const [items, setItems] = useState<StoreItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [clerks, setClerks] = useState<Clerk[]>([]);
+  const [clerks, setClerks] = useState<ClerkOption[]>([]);
   const [search, setSearch] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [bulkClerkId, setBulkClerkId] = useState<string>("");
+
 
   /* =============================
      LOAD MASTER DATA
@@ -165,11 +170,8 @@ export default function StoreItemPage() {
   }, [items]);
 
   const hasErrors = items.some(
-    (i) =>
-      !i.name ||
-      i.price <= 0 ||
-      duplicateMap[i.name.toLowerCase()] > 1
-  );
+  (i) => !i.name?.trim() || i.price == null
+);
 
   /* =============================
      SAVE
@@ -188,7 +190,7 @@ export default function StoreItemPage() {
     headers: { "Content-Type": "application/json" },
 
     // ✅ SEND WHAT USER SEES & EDITS
-    body: JSON.stringify({ items: filtered }),
+body: JSON.stringify({ items }),
   });
 
   const data = await res.json();
@@ -207,7 +209,7 @@ export default function StoreItemPage() {
   );
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
+    <div className="p-4 md:p-26 space-y-4">
       <h1 className="text-2xl font-bold">Store Item Uploading</h1>
 
       <div className="flex flex-col md:flex-row gap-3">
@@ -234,7 +236,40 @@ export default function StoreItemPage() {
               <th className="p-3">Name</th>
               <th className="p-3">Price</th>
               <th className="p-3">Category</th>
-              <th className="p-3">Clerk</th>
+<th className="p-3 text-left">
+  <div className="flex flex-col gap-1">
+    <span className="text-xs font-medium text-gray-600">
+      Assigned Clerk
+    </span>
+
+    <select
+      className="border rounded px-2 py-1 text-sm"
+      value={bulkClerkId}
+      onChange={(e) => {
+        const selectedClerkId = e.target.value;
+
+        // 🔴 VERY IMPORTANT
+        setBulkClerkId(selectedClerkId);
+
+        // 🔴 APPLY TO ALL ITEMS (THIS WAS MISSING / BROKEN)
+        setItems((prev) =>
+          prev.map((it) => ({
+            ...it,
+            clerkId: selectedClerkId || it.clerkId,
+          }))
+        );
+      }}
+    >
+      <option value="">Select clerk</option>
+      {clerks.map((c) => (
+        <option key={c.clerkId} value={c.clerkId}>
+          {c.email}
+        </option>
+      ))}
+    </select>
+  </div>
+</th>
+
               <th className="p-3">Active</th>
               <th className="p-3">Delete</th>
             </tr>
@@ -329,27 +364,29 @@ export default function StoreItemPage() {
                   </select>
                 </td>
 
-                <td className="p-3">
-                  <select
-                    className="border rounded px-2 py-1 w-full"
-                    value={item.clerkId || ""}
-                    onChange={(e) =>
-                      setItems((p) =>
-                        p.map((it, idx) =>
-                          idx === i
-                            ? { ...it, clerkId: e.target.value }
-                            : it
-                        )
-                      )
-                    }
-                  >
-                    {clerks.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
+               <td className="p-3">
+  <select
+    className="border rounded px-2 py-1 w-full text-sm"
+    value={item.clerkId || ""}
+    onChange={(e) =>
+      setItems((prev) =>
+        prev.map((it, idx) =>
+          idx === i
+            ? { ...it, clerkId: e.target.value }
+            : it
+        )
+      )
+    }
+  >
+    <option value="">Select</option>
+    {clerks.map((c) => (
+      <option key={c.clerkId} value={c.clerkId}>
+        {c.email}
+      </option>
+    ))}
+  </select>
+</td>
+
 
                 <td className="p-3 text-center">
                   <input
@@ -384,14 +421,22 @@ export default function StoreItemPage() {
           </tbody>
         </table>
       </div>
+      
+      {hasErrors && (
+  <p className="text-red-600 text-sm mb-2">
+    Please fill item name and price before saving.
+  </p>
+)}
 
-      <button
-        disabled={hasErrors}
-        onClick={saveItems}
-        className="px-6 py-3 bg-black text-white rounded disabled:opacity-50"
-      >
-        Save All Items
-      </button>
+     <button
+  type="button"
+  onClick={saveItems}
+  disabled={hasErrors || items.length === 0}
+  className="px-6 py-3 bg-black text-white rounded disabled:opacity-50"
+>
+  Save Items
+</button>
+
     </div>
   );
 }

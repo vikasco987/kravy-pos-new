@@ -101,7 +101,9 @@ const userObjectId = user.id;
     categoryId: item.categoryId ?? null,
 
     // required fields
-    clerkId: clerkId,
+clerkId: item.clerkId && item.clerkId.length > 0
+  ? item.clerkId
+  : loggedInClerkId,
     userId: userObjectId, // 👈 MUST be valid ObjectId string
   })),
 });
