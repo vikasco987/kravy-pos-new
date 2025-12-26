@@ -1,4 +1,3 @@
-// src/app/store-item-upload/StoreItemPage.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -6,24 +5,36 @@ import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
+/* =============================
+   TYPES
+   ============================= */
 type Category = { id: string; name: string };
 type ClerkOption = {
-  clerkId: string; // internal use only
-  email: string;   // shown in UI
+  clerkId: string;
+  label: string;   // name or email (display)
+  email: string;
 };
 
 type StoreItem = {
+  id?: string;                 // present in update mode
   name: string;
-  price: number;
+  price: number | null;
   categoryId: string | null;
   clerkId: string | null;
   imageUrl: string | null;
   isActive: boolean;
 };
 
+/* =============================
+   COMPONENT
+   ============================= */
 export default function StoreItemPage() {
   const { userId } = useAuth();
   const router = useRouter();
+
+  // mode: create (bulk upload) | update (edit existing)
+  const [mode, setMode] = useState<"create" | "update">("create");
+  const [loadingItems, setLoadingItems] = useState(false);
 
   const [items, setItems] = useState<StoreItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -31,6 +42,14 @@ export default function StoreItemPage() {
   const [search, setSearch] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [bulkClerkId, setBulkClerkId] = useState<string>("");
+  const [clerkSearch, setClerkSearch] = useState("");
+  const [showClerkDropdown, setShowClerkDropdown] = useState(false);
+
+  const filteredClerks = useMemo(() => {
+  return clerks.filter((c) =>
+    c.label.toLowerCase().includes(clerkSearch.toLowerCase())
+  );
+  }, [clerks, clerkSearch]);
 
 
   /* =============================
@@ -40,6 +59,43 @@ export default function StoreItemPage() {
     fetch("/api/categories").then(r => r.json()).then(setCategories);
     fetch("/api/clerks").then(r => r.json()).then(setClerks);
   }, []);
+
+  /* =============================
+     FETCH EXISTING ITEMS (UPDATE)
+     ============================= */
+  const fetchExistingItems = async () => {
+    try {
+      setLoadingItems(true);
+
+      const res = await fetch("/api/menu/view");
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to load items");
+        return;
+      }
+
+      const mapped: StoreItem[] = data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        categoryId: item.categoryId ?? null,
+        clerkId: item.clerkId ?? null,
+        imageUrl: item.imageUrl ?? null,
+        isActive: item.isActive ?? true,
+      }));
+
+      setItems(mapped);
+      setSearch("");
+      setMode("update");
+      toast.success("Items loaded for update");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch items");
+    } finally {
+      setLoadingItems(false);
+    }
+  };
 
   /* =============================
      ENSURE CATEGORY
@@ -52,15 +108,15 @@ export default function StoreItemPage() {
     });
     const cat = await res.json();
 
-    setCategories((prev) =>
-      prev.some((c) => c.id === cat.id) ? prev : [...prev, cat]
+    setCategories(prev =>
+      prev.some(c => c.id === cat.id) ? prev : [...prev, cat]
     );
 
     return cat;
   };
 
   /* =============================
-     EXCEL UPLOAD
+     EXCEL UPLOAD (CREATE)
      ============================= */
   const handleExcelUpload = async (file: File) => {
     const XLSX = await import("xlsx");
@@ -92,11 +148,13 @@ export default function StoreItemPage() {
     }
 
     setItems(newItems);
+    setMode("create");
+    setSearch("");
     toast.success(`Loaded ${newItems.length} items`);
   };
 
   /* =============================
-     IMAGE UPLOAD (API)
+     IMAGE UPLOAD
      ============================= */
   const uploadImage = async (file: File): Promise<string> => {
     const fd = new FormData();
@@ -112,13 +170,10 @@ export default function StoreItemPage() {
     return data.url;
   };
 
-  /* =============================
-     IMAGE HANDLERS (CLICK + DROP)
-     ============================= */
   const handleImageFile = async (file: File, index: number) => {
     try {
       const url = await uploadImage(file);
-      setItems((prev) =>
+      setItems(prev =>
         prev.map((it, i) => (i === index ? { ...it, imageUrl: url } : it))
       );
     } catch {
@@ -142,81 +197,89 @@ export default function StoreItemPage() {
   };
 
   /* =============================
-     CATEGORY SELECT
+     VALIDATION (ONLY REQUIRED FIELDS)
      ============================= */
-  const handleCategorySelect = async (index: number, value: string) => {
-    if (value === "__new__") {
-      const name = prompt("Enter new category name");
-      if (!name) return;
-      const cat = await ensureCategory(name);
-      value = cat.id;
-    }
-
-    setItems((p) =>
-      p.map((it, i) => (i === index ? { ...it, categoryId: value } : it))
-    );
-  };
-
-  /* =============================
-     VALIDATION
-     ============================= */
-  const duplicateMap = useMemo(() => {
-    const m: Record<string, number> = {};
-    items.forEach((i) => {
-      const k = i.name.toLowerCase();
-      m[k] = (m[k] || 0) + 1;
-    });
-    return m;
-  }, [items]);
-
   const hasErrors = items.some(
-  (i) => !i.name?.trim() || i.price == null
-);
-
-  /* =============================
-     SAVE
-     ============================= */
- const saveItems = async (e?: React.MouseEvent) => {
-  e?.preventDefault();
-  e?.stopPropagation();
-
-  if (hasErrors) {
-    toast.error("Fix validation errors first");
-    return;
-  }
-
-  const res = await fetch("/api/store-items/bulk", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-
-    // ✅ SEND WHAT USER SEES & EDITS
-body: JSON.stringify({ items }),
-  });
-
-  const data = await res.json();
-
-  if (res.ok && data?.insertedCount > 0) {
-    toast.success(`${data.insertedCount} items saved`);
-    router.push("/menu/view");
-  } else {
-    toast.error("No items were saved");
-  }
-};
-
-
-  const filtered = items.filter((i) =>
-    i.name.toLowerCase().includes(search.toLowerCase())
+    i => !i.name?.trim() || i.price == null
   );
 
-  return (
-    <div className="p-4 md:p-26 space-y-4">
-      <h1 className="text-2xl font-bold">Store Item Uploading</h1>
+  /* =============================
+     SAVE / UPDATE
+     ============================= */
+  const saveItems = async () => {
+    const res = await fetch("/api/store-items/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+    });
 
-      <div className="flex flex-col md:flex-row gap-3">
+    const data = await res.json();
+
+    if (res.ok && data?.insertedCount > 0) {
+      toast.success(`${data.insertedCount} items saved`);
+      router.push("/menu/view");
+    } else {
+      toast.error(data?.error || "Save failed");
+    }
+  };
+
+  const updateItems = async () => {
+    const res = await fetch("/api/store-items/bulk-update", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+    });
+
+    if (res.ok) {
+      toast.success("Items updated");
+    } else {
+      toast.error("Update failed");
+    }
+  };
+
+  const handleSave = () => {
+    if (hasErrors || items.length === 0) return;
+    mode === "create" ? saveItems() : updateItems();
+  };
+
+  const displayedItems = search
+    ? items.filter(i =>
+        i.name.toLowerCase().includes(search.toLowerCase())
+      )
+    : items;
+
+  /* =============================
+     RENDER
+     ============================= */
+  return (
+    <div className="p-24 space-y-4">
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Store Item Uploading</h1>
+          <p className="text-sm text-gray-500">
+            {mode === "create"
+              ? "Upload new items"
+              : "Update existing items"}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={fetchExistingItems}
+          disabled={loadingItems}
+          className="px-4 py-2 border rounded"
+        >
+          {loadingItems ? "Loading..." : "Update"}
+        </button>
+      </div>
+
+      {/* ACTIONS */}
+      <div className="flex gap-3">
         <input
           type="file"
           accept=".xlsx,.xls"
-          onChange={(e) =>
+          onChange={e =>
             e.target.files && handleExcelUpload(e.target.files[0])
           }
         />
@@ -224,10 +287,11 @@ body: JSON.stringify({ items }),
           className="border rounded px-3 py-2"
           placeholder="Search item"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={e => setSearch(e.target.value)}
         />
       </div>
 
+      {/* TABLE */}
       <div className="overflow-x-auto border rounded bg-white">
         <table className="min-w-[1100px] w-full text-sm">
           <thead className="bg-gray-100">
@@ -236,39 +300,55 @@ body: JSON.stringify({ items }),
               <th className="p-3">Name</th>
               <th className="p-3">Price</th>
               <th className="p-3">Category</th>
-<th className="p-3 text-left">
-  <div className="flex flex-col gap-1">
-    <span className="text-xs font-medium text-gray-600">
-      Assigned Clerk
-    </span>
 
-    <select
-      className="border rounded px-2 py-1 text-sm"
-      value={bulkClerkId}
-      onChange={(e) => {
-        const selectedClerkId = e.target.value;
+              {/* CLERK HEADER DROPDOWN */}
+             <th className="p-3 text-left relative">
+  <span className="text-xs font-medium text-gray-600">
+    Assigned Clerk
+  </span>
 
-        // 🔴 VERY IMPORTANT
-        setBulkClerkId(selectedClerkId);
+  <input
+    className="mt-1 w-full border rounded px-2 py-1 text-sm"
+    placeholder="Search clerk"
+    value={clerkSearch}
+    onFocus={() => setShowClerkDropdown(true)}
+    onChange={(e) => setClerkSearch(e.target.value)}
+  />
 
-        // 🔴 APPLY TO ALL ITEMS (THIS WAS MISSING / BROKEN)
-        setItems((prev) =>
-          prev.map((it) => ({
-            ...it,
-            clerkId: selectedClerkId || it.clerkId,
-          }))
-        );
-      }}
-    >
-      <option value="">Select clerk</option>
-      {clerks.map((c) => (
-        <option key={c.clerkId} value={c.clerkId}>
-          {c.email}
-        </option>
+  {showClerkDropdown && (
+    <div className="absolute z-20 mt-1 w-full max-h-48 overflow-auto border bg-white rounded shadow">
+      {filteredClerks.map((c) => (
+        <div
+          key={c.clerkId}
+          className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
+          onClick={() => {
+            setBulkClerkId(c.clerkId);
+
+            // ✅ apply to all rows
+            setItems((prev) =>
+              prev.map((it) => ({
+                ...it,
+                clerkId: c.clerkId,
+              }))
+            );
+
+            setShowClerkDropdown(false);
+            setClerkSearch(c.label);
+          }}
+        >
+          {c.label}
+        </div>
       ))}
-    </select>
-  </div>
+
+      {filteredClerks.length === 0 && (
+        <div className="px-3 py-2 text-sm text-gray-400">
+          No clerk found
+        </div>
+      )}
+    </div>
+  )}
 </th>
+
 
               <th className="p-3">Active</th>
               <th className="p-3">Delete</th>
@@ -276,69 +356,108 @@ body: JSON.stringify({ items }),
           </thead>
 
           <tbody>
-            {filtered.map((item, i) => (
-              <tr key={i} className="border-t">
-                {/* IMAGE (DRAG + DROP + CLICK) */}
-                <td className="p-3">
-                  <div
-                    onDragOver={(e) => e.preventDefault()}
-                    onDragEnter={() => setDragIndex(i)}
-                    onDragLeave={() => setDragIndex(null)}
-                    onDrop={(e) => handleDrop(e, i)}
-                    className={`w-16 h-16 border rounded flex items-center justify-center cursor-pointer overflow-hidden ${
-                      dragIndex === i ? "border-blue-500 bg-blue-50" : ""
-                    }`}
-                  >
-                    <label className="w-full h-full flex items-center justify-center">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <span className="text-xs text-gray-400">
-                          Drop / Click
-                        </span>
-                      )}
-                      <input
-                        type="file"
-                        hidden
-                        accept="image/*"
-                        onChange={(e) =>
-                          e.target.files &&
-                          handleImageFile(e.target.files[0], i)
-                        }
-                      />
-                    </label>
-                  </div>
-                </td>
+            {displayedItems.map((item, i) => (
+              <tr key={item.id ?? i} className="border-t">
+                {/* IMAGE */}
+               {/* IMAGE */}
+<td className="p-3">
+  <div
+    onDragOver={e => e.preventDefault()}
+    onDragEnter={() => setDragIndex(i)}
+    onDragLeave={() => setDragIndex(null)}
+    onDrop={e => handleDrop(e, i)}
+    className={`w-16 h-16 border rounded flex items-center justify-center ${
+      dragIndex === i ? "border-blue-500 bg-blue-50" : ""
+    }`}
+  >
+    <label className="w-full h-full flex items-center justify-center cursor-pointer">
+      {item.imageUrl ? (
+        <img
+          src={item.imageUrl}
+          className="object-cover w-full h-full"
+        />
+      ) : (
+        <span className="text-xs text-gray-400">
+          Drop / Click
+        </span>
+      )}
+      <input
+        type="file"
+        hidden
+        accept="image/*"
+        onChange={e =>
+          e.target.files &&
+          handleImageFile(e.target.files[0], i)
+        }
+      />
+    </label>
+  </div>
 
-                <td className="p-3">
-                  <input
-                    className="border rounded px-2 py-1 w-full"
-                    value={item.name}
-                    onChange={(e) =>
-                      setItems((p) =>
-                        p.map((it, idx) =>
-                          idx === i
-                            ? { ...it, name: e.target.value }
-                            : it
-                        )
-                      )
-                    }
-                  />
-                </td>
+  {/* 🔹 IMAGE URL PASTE (NEW) */}
+  <input
+    type="text"
+    placeholder="Paste image URL"
+    className="mt-2 w-32 text-xs border rounded px-2 py-1"
+    value={item.imageUrl ?? ""}
+    onChange={(e) =>
+      setItems(prev =>
+        prev.map((it, idx) =>
+          idx === i
+            ? { ...it, imageUrl: e.target.value }
+            : it
+        )
+      )
+    }
+  />
+</td>
 
+                {/* NAME */}
+                {/* NAME */}
+<td className="p-3">
+  <div className="flex items-center gap-2">
+    <input
+      className="border rounded px-2 py-1 w-full"
+      value={item.name}
+      onChange={e =>
+        setItems(prev =>
+          prev.map((it, idx) =>
+            idx === i
+              ? { ...it, name: e.target.value }
+              : it
+          )
+        )
+      }
+    />
+
+    {/* 🔹 COPY NAME */}
+    <button
+      type="button"
+      className="px-2 py-1 text-xs border rounded hover:bg-gray-100"
+      onClick={() => {
+        navigator.clipboard.writeText(item.name);
+        toast.success("Item name copied");
+      }}
+      title="Copy item name"
+    >
+      Copy
+    </button>
+  </div>
+</td>
+
+                {/* PRICE */}
                 <td className="p-3">
                   <input
                     type="number"
                     className="border rounded px-2 py-1 w-full"
-                    value={item.price}
-                    onChange={(e) =>
-                      setItems((p) =>
-                        p.map((it, idx) =>
+                    value={item.price ?? ""}
+                    onChange={e =>
+                      setItems(prev =>
+                        prev.map((it, idx) =>
                           idx === i
-                            ? { ...it, price: Number(e.target.value) }
+                            ? {
+                                ...it,
+                                price: Number(e.target.value),
+                              }
                             : it
                         )
                       )
@@ -346,16 +465,23 @@ body: JSON.stringify({ items }),
                   />
                 </td>
 
+                {/* CATEGORY */}
                 <td className="p-3">
                   <select
                     className="border rounded px-2 py-1 w-full"
-                    value={item.categoryId || ""}
-                    onChange={(e) =>
-                      handleCategorySelect(i, e.target.value)
+                    value={item.categoryId ?? ""}
+                    onChange={e =>
+                      setItems(prev =>
+                        prev.map((it, idx) =>
+                          idx === i
+                            ? { ...it, categoryId: e.target.value }
+                            : it
+                        )
+                      )
                     }
                   >
                     <option value="">Select</option>
-                    {categories.map((c) => (
+                    {categories.map(c => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>
@@ -364,37 +490,37 @@ body: JSON.stringify({ items }),
                   </select>
                 </td>
 
-               <td className="p-3">
+                {/* CLERK (ROW) */}
+                <td className="p-3">
   <select
     className="border rounded px-2 py-1 w-full text-sm"
     value={item.clerkId || ""}
     onChange={(e) =>
       setItems((prev) =>
         prev.map((it, idx) =>
-          idx === i
-            ? { ...it, clerkId: e.target.value }
-            : it
+          idx === i ? { ...it, clerkId: e.target.value } : it
         )
       )
     }
   >
-    <option value="">Select</option>
+    <option value="">Select clerk</option>
     {clerks.map((c) => (
       <option key={c.clerkId} value={c.clerkId}>
-        {c.email}
+        {c.label}
       </option>
     ))}
   </select>
 </td>
 
 
+                {/* ACTIVE */}
                 <td className="p-3 text-center">
                   <input
                     type="checkbox"
                     checked={item.isActive}
-                    onChange={(e) =>
-                      setItems((p) =>
-                        p.map((it, idx) =>
+                    onChange={e =>
+                      setItems(prev =>
+                        prev.map((it, idx) =>
                           idx === i
                             ? { ...it, isActive: e.target.checked }
                             : it
@@ -404,12 +530,13 @@ body: JSON.stringify({ items }),
                   />
                 </td>
 
+                {/* DELETE */}
                 <td className="p-3 text-center">
                   <button
                     className="text-red-600"
                     onClick={() =>
-                      setItems((p) =>
-                        p.filter((_, idx) => idx !== i)
+                      setItems(prev =>
+                        prev.filter((_, idx) => idx !== i)
                       )
                     }
                   >
@@ -421,22 +548,21 @@ body: JSON.stringify({ items }),
           </tbody>
         </table>
       </div>
-      
+
       {hasErrors && (
-  <p className="text-red-600 text-sm mb-2">
-    Please fill item name and price before saving.
-  </p>
-)}
+        <p className="text-red-600 text-sm">
+          Please fill item name and price before saving.
+        </p>
+      )}
 
-     <button
-  type="button"
-  onClick={saveItems}
-  disabled={hasErrors || items.length === 0}
-  className="px-6 py-3 bg-black text-white rounded disabled:opacity-50"
->
-  Save Items
-</button>
-
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={hasErrors || items.length === 0}
+        className="px-6 py-3 bg-black text-white rounded disabled:opacity-50"
+      >
+        {mode === "create" ? "Save Items" : "Update Items"}
+      </button>
     </div>
   );
 }

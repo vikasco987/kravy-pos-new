@@ -60,6 +60,9 @@ model Item {
 
   clerkId String
   userId  String @db.ObjectId
+
+  isActive     Boolean  @default(true)
+
   user    User   @relation(fields: [userId], references: [id])
 
   purchases Purchase[]
@@ -179,6 +182,8 @@ model User {
 
   createdAt DateTime   @default(now())
   purchases Purchase[]
+
+  activities ActivityLog[]
 }
 
 //////////////////////////////////////////////////
@@ -262,4 +267,18 @@ model Purchase {
   total    Float
 
   createdAt DateTime @default(now())
+}
+
+//////////////////////////////////////////////////
+// ActivityLog
+//////////////////////////////////////////////////
+
+model ActivityLog {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  action    String
+  meta      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }

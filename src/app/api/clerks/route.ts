@@ -1,36 +1,31 @@
 import { NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { userId } = getAuth(req);
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    // Fetch all clerks (users) from DB
-    const clerks = await prisma.user.findMany({
+    const users = await prisma.user.findMany({
+      // 🔴 IMPORTANT: NO take, NO skip
       select: {
         clerkId: true,
         email: true,
+        name: true,
       },
       orderBy: {
         email: "asc",
       },
     });
 
-    // Always return array (safe for frontend)
+    const clerks = users
+      .filter((u) => u.clerkId) // safety
+      .map((u) => ({
+        clerkId: u.clerkId,
+        label: u.name?.trim() || u.email,
+        email: u.email,
+      }));
+
     return NextResponse.json(clerks);
   } catch (error) {
     console.error("CLERKS FETCH ERROR:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch clerks" },
-      { status: 500 }
-    );
+    return NextResponse.json([], { status: 200 });
   }
 }

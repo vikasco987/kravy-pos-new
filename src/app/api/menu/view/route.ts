@@ -4,7 +4,6 @@ import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    // ✅ Correct auth method when proxy.ts includes /api
     const { userId: clerkId } = getAuth(req);
 
     if (!clerkId) {
@@ -14,13 +13,12 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // ✅ Fetch menu items for this clerk user
     const items = await prisma.item.findMany({
       where: {
-        clerkId: clerkId,
+        clerkId,
       },
       orderBy: {
-        createdAt: "desc",
+        updatedAt: "desc",
       },
       include: {
         category: true,
@@ -29,9 +27,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(items);
   } catch (error) {
-    console.error("Menu view error:", error);
+    console.error("MENU VIEW ERROR:", error);
     return NextResponse.json(
-      { error: "Failed to fetch menu" },
+      { error: "Failed to fetch menu items" },
       { status: 500 }
     );
   }

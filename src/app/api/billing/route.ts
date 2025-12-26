@@ -703,9 +703,8 @@
 
 
 
-
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
@@ -724,6 +723,12 @@ interface ProductInput {
 
 export async function POST(req: Request) {
   try {
+    const { userId: clerkUserId } = getAuth(req);
+
+    if (!clerkUserId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
 
     const {
@@ -743,14 +748,6 @@ export async function POST(req: Request) {
       logoUrl,
       websiteUrl,
     } = body;
-
-    /* ---------- AUTH ---------- */
-    const session = await auth();
-    const clerkUserId = session.userId;
-
-    if (!clerkUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     if (!Array.isArray(products) || products.length === 0) {
       return NextResponse.json(
@@ -778,7 +775,7 @@ export async function POST(req: Request) {
       },
     });
 
-    /* ---------- BUILD BILL ITEMS (JSON) ---------- */
+    /* ---------- BUILD BILL ITEMS ---------- */
     const billItems = products.map((p: ProductInput) => {
       const item = items.find((i) => i.id === p.productId);
       if (!item) throw new Error("Products mismatch");
@@ -896,10 +893,9 @@ export async function POST(req: Request) {
 
 /* ===================== LIST BILLS ===================== */
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const session = await auth();
-    const clerkUserId = session.userId;
+    const { userId: clerkUserId } = getAuth(req);
 
     if (!clerkUserId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
