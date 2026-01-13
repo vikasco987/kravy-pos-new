@@ -180,6 +180,8 @@ model User {
   profiles BusinessProfile[]
   uploads  Upload[]
 
+  isDisabled Boolean @default(false)
+
   createdAt DateTime   @default(now())
   purchases Purchase[]
 
@@ -281,4 +283,33 @@ model ActivityLog {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+
+//////////////////////////////////////////////////
+// BillManager
+//////////////////////////////////////////////////
+
+model BillManager {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  clerkUserId   String
+  billNumber    String   @unique
+  createdAt     DateTime @default(now())
+
+  items         Json
+
+  subtotal      Float
+  discount      Float
+  tax           Float
+  total         Float
+
+  paymentMode   String
+  paymentStatus String
+  upiTxnRef     String?
+
+  customerName  String?
+  customerPhone String?
+
+  isDeleted     Boolean  @default(false)
 }

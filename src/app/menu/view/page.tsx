@@ -861,7 +861,7 @@ categoryMap.set(UNCATEGORISED_ID, {
           </div>
 
           <div className="flex items-center gap-3">
-            <button onClick={() => { try { localStorage.setItem("pendingCart", JSON.stringify(cart)); localStorage.setItem("pendingTotal", totalPrice.toString()); window.location.href = "/billing"; } catch (e) { console.error(e); setToast("Unable to go to billing"); } }} className="px-4 py-2 bg-green-600 text-white rounded">Generate Payment Slip</button>
+            <button onClick={() => { try { localStorage.setItem("pendingCart", JSON.stringify(cart)); localStorage.setItem("pendingTotal", totalPrice.toString()); window.location.href = "/billing/new"; } catch (e) { console.error(e); setToast("Unable to go to billing"); } }} className="px-4 py-2 bg-green-600 text-white rounded">Generate Payment Slip</button>
           </div>
         </motion.div>
       )}

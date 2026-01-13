@@ -1,34 +1,27 @@
 "use client";
 
-import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
-
+import Link from "next/link";
 
 export default function SettingsPage() {
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState<string>("");
 
-useEffect(() => {
-  fetch("/api/user/me")
-    .then((r) => r.json())
-    .then((d) => setRole(d?.role || ""));
-}, []);
-
-const isAdmin = role === "ADMIN";
-
+  useEffect(() => {
+    fetch("/api/user/me")
+      .then((res) => res.json())
+      .then((data) => setRole(data.role))
+      .catch(() => {});
+  }, []);
 
   return (
-    <div className="max-w-4xl p-6 mx-auto">
-      <h1 className="text-2xl font-semibold mb-6">
-        Settings
-      </h1>
+    <div className="max-w-4xl p-26 space-y-4">
+      <h1 className="text-2xl font-semibold">Settings</h1>
 
       <div className="grid gap-4 sm:grid-cols-2">
-
-        {/* Profile */}
+        {/* PROFILE */}
         <Link
           href="/settings/profile"
-          className="block rounded-lg border p-4 hover:bg-gray-50 dark:hover:bg-zinc-800"
+          className="border rounded-lg p-4 hover:bg-gray-50"
         >
           <p className="font-medium">Profile</p>
           <p className="text-sm text-gray-500">
@@ -36,45 +29,41 @@ const isAdmin = role === "ADMIN";
           </p>
         </Link>
 
-        {/* Activity */}
+        {/* ACTIVITY */}
         <Link
           href="/settings/activity"
-          className="block rounded-lg border p-4 hover:bg-gray-50 dark:hover:bg-zinc-800"
+          className="border rounded-lg p-4 hover:bg-gray-50"
         >
           <p className="font-medium">Activity Log</p>
           <p className="text-sm text-gray-500">
-            View your recent actions
+            View recent actions
           </p>
         </Link>
 
-        {/* ADMIN: Staff Activity */}
-        {isAdmin && (
-          <Link
-            href="/settings/activity/admin"
-            className="block rounded-lg border p-4 hover:bg-gray-50 dark:hover:bg-zinc-800"
-          >
-            <p className="font-medium">Staff Activity</p>
-            <p className="text-sm text-gray-500">
-              View staff login & actions
-            </p>
-          </Link>
+        {/* 🔐 ADMIN ONLY */}
+        {role === "ADMIN" && (
+          <>
+            <Link
+              href="/admin/users"
+              className="border rounded-lg p-4 hover:bg-gray-50"
+            >
+              <p className="font-medium">User Management</p>
+              <p className="text-sm text-gray-500">
+                Manage users and roles
+              </p>
+            </Link>
+
+            <Link
+              href="/admin/reports"
+              className="border rounded-lg p-4 hover:bg-gray-50"
+            >
+              <p className="font-medium">Reports</p>
+              <p className="text-sm text-gray-500">
+                Sales and system reports
+              </p>
+            </Link>
+          </>
         )}
-
-        {/* Coming Soon */}
-        <div className="rounded-lg border p-4 opacity-60">
-          <p className="font-medium">Billing</p>
-          <p className="text-sm text-gray-500">
-            Coming soon
-          </p>
-        </div>
-
-        <div className="rounded-lg border p-4 opacity-60">
-          <p className="font-medium">Security</p>
-          <p className="text-sm text-gray-500">
-            Coming soon
-          </p>
-        </div>
-
       </div>
     </div>
   );

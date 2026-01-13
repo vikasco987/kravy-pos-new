@@ -142,3 +142,43 @@
     right: 8px;
   }
 }
+.admin {
+  color: #dc2626; /* red */
+  font-weight: 600;
+}
+.adminWrapper {
+  position: relative;
+}
+
+.adminBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: #dc2626;
+  padding: 6px 8px;
+}
+
+.adminDropdown {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  min-width: 160px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+}
+
+.dropdownItem {
+  display: block;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #111827;
+  text-decoration: none;
+}
+
+.dropdownItem:hover {
+  background: #f3f4f6;
+}

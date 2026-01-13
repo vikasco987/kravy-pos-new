@@ -4,7 +4,9 @@ import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    // 🔐 Clerk auth (App Router safe)
+    /* =====================
+       AUTH
+    ===================== */
     const { userId: clerkId } = getAuth(req);
 
     if (!clerkId) {
@@ -14,7 +16,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const { items } = await req.json();
+    const body = await req.json();
+    const items = body?.items;
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -23,40 +26,50 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1️⃣ Find internal DB user
+    /* =====================
+       FETCH USER + ROLE
+    ===================== */
     const user = await prisma.user.findUnique({
       where: { clerkId },
-      select: { id: true },
+      select: { id: true, role: true },
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: "User record not found for this clerk" },
+        { error: "User not found" },
         { status: 400 }
       );
     }
 
-    // 2️⃣ Bulk insert items
+    const isAdmin = user.role === "ADMIN";
+
+    /* =====================
+       BULK INSERT
+    ===================== */
     const result = await prisma.item.createMany({
       data: items.map((item: any) => ({
-        // required
-        name: item.name,
-        userId: user.id,          // Mongo ObjectId (string)
-        clerkId:
-      item.clerkId && item.clerkId.length > 0  // ✅ FIX: respect row-level clerk selection
-        ? item.clerkId
-        : clerkId,     
+        /* REQUIRED */
+        name: String(item.name || "").trim(),
+        userId: user.id,
 
-        // optional
+        // 🔐 ROLE RULE
+        clerkId: isAdmin
+          ? item.clerkId?.length
+            ? item.clerkId
+            : clerkId
+          : clerkId,
+
+        /* OPTIONAL */
         description: item.description ?? null,
-        price: item.price ? Number(item.price) : null,
-        sellingPrice: item.price ? Number(item.price) : null,
+        price:
+          item.price != null ? Number(item.price) : null,
+        sellingPrice:
+          item.price != null ? Number(item.price) : null,
         gst: item.gst ?? null,
         unit: item.unit ?? null,
         barcode: item.barcode ?? null,
         imageUrl: item.imageUrl ?? null,
         categoryId: item.categoryId ?? null,
-
         isActive: item.isActive ?? true,
       })),
     });
@@ -65,10 +78,17 @@ export async function POST(req: Request) {
       success: true,
       insertedCount: result.count,
     });
-  } catch (err) {
-    console.error("ITEM BULK SAVE ERROR:", err);
+  } catch (error) {
+    console.error("BULK CREATE ERROR:", error);
+
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Failed to save items",
+        reason:
+          error instanceof Error
+            ? error.message
+            : "Unknown error",
+      },
       { status: 500 }
     );
   }

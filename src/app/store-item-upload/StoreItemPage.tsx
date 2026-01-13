@@ -7,16 +7,17 @@ import toast from "react-hot-toast";
 
 /* =============================
    TYPES
-   ============================= */
+============================= */
 type Category = { id: string; name: string };
+
 type ClerkOption = {
   clerkId: string;
-  label: string;   // name or email (display)
+  label: string;
   email: string;
 };
 
 type StoreItem = {
-  id?: string;                 // present in update mode
+  id?: string;
   name: string;
   price: number | null;
   categoryId: string | null;
@@ -27,46 +28,61 @@ type StoreItem = {
 
 /* =============================
    COMPONENT
-   ============================= */
+============================= */
 export default function StoreItemPage() {
   const { userId } = useAuth();
   const router = useRouter();
 
-  // mode: create (bulk upload) | update (edit existing)
   const [mode, setMode] = useState<"create" | "update">("create");
   const [loadingItems, setLoadingItems] = useState(false);
 
   const [items, setItems] = useState<StoreItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [clerks, setClerks] = useState<ClerkOption[]>([]);
+
   const [search, setSearch] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [bulkClerkId, setBulkClerkId] = useState<string>("");
+
+  const [bulkClerkId, setBulkClerkId] = useState("");
+  const [applyClerkToAll, setApplyClerkToAll] = useState(true);
   const [clerkSearch, setClerkSearch] = useState("");
   const [showClerkDropdown, setShowClerkDropdown] = useState(false);
 
-  const filteredClerks = useMemo(() => {
-  return clerks.filter((c) =>
-    c.label.toLowerCase().includes(clerkSearch.toLowerCase())
-  );
-  }, [clerks, clerkSearch]);
-
-
   /* =============================
      LOAD MASTER DATA
-     ============================= */
+  ============================= */
   useEffect(() => {
     fetch("/api/categories").then(r => r.json()).then(setCategories);
     fetch("/api/clerks").then(r => r.json()).then(setClerks);
   }, []);
 
   /* =============================
-     FETCH EXISTING ITEMS (UPDATE)
-     ============================= */
+     CLERK FILTER
+  ============================= */
+  const filteredClerks = useMemo(() => {
+    return clerks.filter(c =>
+      c.label.toLowerCase().includes(clerkSearch.toLowerCase())
+    );
+  }, [clerks, clerkSearch]);
+
+  /* =============================
+     DUPLICATE & VALIDATION
+  ============================= */
+  const duplicateNames = useMemo(() => {
+    const names = items.map(i => i.name.trim().toLowerCase());
+    return names.filter((n, i) => names.indexOf(n) !== i);
+  }, [items]);
+
+  const hasErrors =
+    items.some(i => !i.name.trim() || i.price == null) ||
+    duplicateNames.length > 0;
+
+  /* =============================
+     FETCH EXISTING ITEMS
+  ============================= */
   const fetchExistingItems = async () => {
     try {
       setLoadingItems(true);
-
       const res = await fetch("/api/menu/view");
       const data = await res.json();
 
@@ -75,23 +91,22 @@ export default function StoreItemPage() {
         return;
       }
 
-      const mapped: StoreItem[] = data.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        categoryId: item.categoryId ?? null,
-        clerkId: item.clerkId ?? null,
-        imageUrl: item.imageUrl ?? null,
-        isActive: item.isActive ?? true,
-      }));
+      setItems(
+        data.map((i: any) => ({
+          id: i.id,
+          name: i.name,
+          price: i.price,
+          categoryId: i.categoryId ?? null,
+          clerkId: i.clerkId ?? null,
+          imageUrl: i.imageUrl ?? null,
+          isActive: i.isActive ?? true,
+        }))
+      );
 
-      setItems(mapped);
-      setSearch("");
       setMode("update");
       toast.success("Items loaded for update");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to fetch items");
+    } catch {
+      toast.error("Failed to load items");
     } finally {
       setLoadingItems(false);
     }
@@ -99,41 +114,52 @@ export default function StoreItemPage() {
 
   /* =============================
      ENSURE CATEGORY
-     ============================= */
-  const ensureCategory = async (name: string): Promise<Category> => {
+  ============================= */
+  const ensureCategory = async (name: string) => {
     const res = await fetch("/api/categories/ensure", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     });
     const cat = await res.json();
-
     setCategories(prev =>
       prev.some(c => c.id === cat.id) ? prev : [...prev, cat]
     );
-
     return cat;
   };
 
   /* =============================
-     EXCEL UPLOAD (CREATE)
-     ============================= */
-  const handleExcelUpload = async (file: File) => {
-    const XLSX = await import("xlsx");
-    const buffer = await file.arrayBuffer();
-    const wb = XLSX.read(buffer, { type: "array" });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    const raw = XLSX.utils.sheet_to_json<any>(sheet, { defval: "" });
+     FILE UPLOAD (CSV + EXCEL)
+  ============================= */
+  const handleFileUpload = async (file: File) => {
+    if (file.name.endsWith(".csv")) {
+      const Papa = (await import("papaparse")).default;
+      Papa.parse(file, {
+        header: true,
+        complete: async result => {
+          await processRows(result.data as any[]);
+        },
+      });
+    } else {
+      const XLSX = await import("xlsx");
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer);
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<any>(sheet);
+      await processRows(rows);
+    }
+  };
 
+  const processRows = async (rows: any[]) => {
     const newItems: StoreItem[] = [];
 
-    for (const row of raw) {
+    for (const row of rows) {
       const name = String(row.name || row.Name || "").trim();
       if (!name) continue;
 
       let categoryId: string | null = null;
       if (row.category || row.Category) {
-        const cat = await ensureCategory(String(row.category || row.Category));
+        const cat = await ensureCategory(row.category || row.Category);
         categoryId = cat.id;
       }
 
@@ -141,7 +167,7 @@ export default function StoreItemPage() {
         name,
         price: Number(row.price || row.Price || 0),
         categoryId,
-        clerkId: userId || null,
+        clerkId: userId ?? null,
         imageUrl: null,
         isActive: true,
       });
@@ -149,25 +175,18 @@ export default function StoreItemPage() {
 
     setItems(newItems);
     setMode("create");
-    setSearch("");
     toast.success(`Loaded ${newItems.length} items`);
   };
 
   /* =============================
      IMAGE UPLOAD
-     ============================= */
-  const uploadImage = async (file: File): Promise<string> => {
+  ============================= */
+  const uploadImage = async (file: File) => {
     const fd = new FormData();
     fd.append("file", file);
-
-    const res = await fetch("/api/upload/image", {
-      method: "POST",
-      body: fd,
-    });
-
-    if (!res.ok) throw new Error("Upload failed");
-    const data = await res.json();
-    return data.url;
+    const res = await fetch("/api/upload/image", { method: "POST", body: fd });
+    if (!res.ok) throw new Error();
+    return (await res.json()).url;
   };
 
   const handleImageFile = async (file: File, index: number) => {
@@ -181,46 +200,43 @@ export default function StoreItemPage() {
     }
   };
 
-  const handleDrop = async (
-    e: React.DragEvent<HTMLDivElement>,
-    index: number
-  ) => {
-    e.preventDefault();
-    setDragIndex(null);
-
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      await handleImageFile(file, index);
-    } else {
-      toast.error("Please drop an image file");
-    }
-  };
-
   /* =============================
-     VALIDATION (ONLY REQUIRED FIELDS)
-     ============================= */
-  const hasErrors = items.some(
-    i => !i.name?.trim() || i.price == null
-  );
+      ADD MANUAL ITEM             
+  ============================= */
+    const addManualItem = () => {
+  setItems((prev) => [
+    ...prev,
+    {
+      name: "",
+      price: null,
+      categoryId: null,
+      clerkId: userId ?? null,
+      imageUrl: null,
+      isActive: true,
+    },
+  ]);
+
+  // keep mode consistent
+  if (mode !== "create") {
+    setMode("create");
+  }
+};
+
 
   /* =============================
      SAVE / UPDATE
-     ============================= */
+  ============================= */
   const saveItems = async () => {
     const res = await fetch("/api/store-items/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ items }),
     });
-
     const data = await res.json();
-
-    if (res.ok && data?.insertedCount > 0) {
+    if (res.ok) {
       toast.success(`${data.insertedCount} items saved`);
       router.push("/menu/view");
-    } else {
-      toast.error(data?.error || "Save failed");
-    }
+    } else toast.error(data?.error || "Save failed");
   };
 
   const updateItems = async () => {
@@ -229,69 +245,80 @@ export default function StoreItemPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ items }),
     });
-
-    if (res.ok) {
-      toast.success("Items updated");
-    } else {
-      toast.error("Update failed");
-    }
+    res.ok ? toast.success("Items updated") : toast.error("Update failed");
   };
 
   const handleSave = () => {
-    if (hasErrors || items.length === 0) return;
+    if (!items.length) return toast.error("No items");
+    if (hasErrors) return toast.error("Fix errors first");
     mode === "create" ? saveItems() : updateItems();
   };
 
   const displayedItems = search
-    ? items.filter(i =>
-        i.name.toLowerCase().includes(search.toLowerCase())
-      )
+    ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
     : items;
 
   /* =============================
      RENDER
-     ============================= */
+  ============================= */
   return (
-    <div className="p-24 space-y-4">
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
+    <div className="p-24 space-y-6">
+      <div className="flex justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Store Item Uploading</h1>
+          <h1 className="text-2xl font-bold">Store Item Upload</h1>
           <p className="text-sm text-gray-500">
-            {mode === "create"
-              ? "Upload new items"
-              : "Update existing items"}
+            {mode === "create" ? "Bulk create items" : "Update existing items"}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchExistingItems}
-          disabled={loadingItems}
-          className="px-4 py-2 border rounded"
-        >
-          {loadingItems ? "Loading..." : "Update"}
-        </button>
+        <div className="flex gap-2">
+          <button onClick={fetchExistingItems} className="border px-4 py-2">
+            Update
+          </button>
+          <button
+            onClick={() => {
+              setItems([]);
+              setMode("create");
+            }}
+            className="border px-4 py-2 text-red-600"
+          >
+            Clear All
+          </button>
+        </div>
+      </div>
+
+      {/* SUMMARY */}
+      <div className="flex gap-6 text-sm text-gray-600">
+        <span>Total: <b>{items.length}</b></span>
+        <span>Duplicates: <b>{duplicateNames.length}</b></span>
+        <span>Mode: <b>{mode}</b></span>
       </div>
 
       {/* ACTIONS */}
-      <div className="flex gap-3">
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={e =>
-            e.target.files && handleExcelUpload(e.target.files[0])
-          }
-        />
-        <input
-          className="border rounded px-3 py-2"
-          placeholder="Search item"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-      </div>
+      <div className="flex gap-4 items-center">
+  <input
+    type="file"
+    accept=".xlsx,.xls,.csv"
+    onChange={e => e.target.files && handleFileUpload(e.target.files[0])}
+  />
+  <input
+    className="border px-3 py-2"
+    placeholder="Search item"
+    value={search}
+    onChange={e => setSearch(e.target.value)}
+  />
 
-      {/* TABLE */}
+  {/* ➕ MANUAL ADD ITEM */}
+  <button
+    type="button"
+    onClick={addManualItem}
+    className="px-4 py-2 border rounded bg-white hover:bg-gray-50"
+  >
+    + Add Item
+  </button>
+</div>
+            
+            {/* TABLE */}
       <div className="overflow-x-auto border rounded bg-white">
         <table className="min-w-[1100px] w-full text-sm">
           <thead className="bg-gray-100">
@@ -556,9 +583,8 @@ export default function StoreItemPage() {
       )}
 
       <button
-        type="button"
         onClick={handleSave}
-        disabled={hasErrors || items.length === 0}
+        disabled={hasErrors}
         className="px-6 py-3 bg-black text-white rounded disabled:opacity-50"
       >
         {mode === "create" ? "Save Items" : "Update Items"}

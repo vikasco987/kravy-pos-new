@@ -1,260 +1,232 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type BillItem = {
+type BillManager = {
   id: string;
-  name: string;
-  qty: number;
-  rate: number;
+  billNumber: string;
+  createdAt: string;
+  total: number;
+  paymentMode: string;
+  paymentStatus: string;
+  customerName?: string | null;
+  customerPhone?: string | null;  
+  isHeld?: boolean;
 };
 
 export default function BillingPage() {
-  const receiptRef = useRef<HTMLDivElement | null>(null);
+  const [bills, setBills] = useState<BillManager[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // SHOP DETAILS
-  const SHOP = {
-    name: "KRAVY SPICE VILLA",
-    address: "Main Road, Gurugram, Haryana",
-    gstin: "06ABCDE1234F1Z2",
-    tagline: "Fresh food, fast service ❤️",
-    upiId: "kravy@upi", // change later
-  };
+  async function fetchBills() {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/bill-manager", {
+        cache: "no-store",
+      });
 
-  // BILL META
-  const [billNumber, setBillNumber] = useState("");
-  const [billDate, setBillDate] = useState("");
+      if (!res.ok) throw new Error("Failed to fetch bills");
+
+      const data = await res.json();
+      setBills(data.bills ?? []);
+    } catch (err) {
+      console.error("FETCH BILLS ERROR:", err);
+      setError("Failed to load bills");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    setBillNumber(`SV-${Date.now()}`);
-    setBillDate(new Date().toLocaleString());
+    fetchBills();
   }, []);
 
-  // PAYMENT
-  const [paymentMode, setPaymentMode] = useState("Cash");
-  const [paymentStatus, setPaymentStatus] = useState<"Pending" | "Paid">("Pending");
-  const [upiTxnRef, setUpiTxnRef] = useState("");
+  if (loading) return <p className="p-6">Loading bills...</p>;
+  if (error) return <p className="p-6 text-red-500">{error}</p>;
 
-  // DISCOUNT
-  const [billDiscountPercent, setBillDiscountPercent] = useState(0);
+  return (
+    <div className="p-6 space-y-6 pt-20">
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-xl font-semibold">Bills</h1>
 
-  // ITEMS
-  const [items, setItems] = useState<BillItem[]>([]);
+        <Link
+          href="/billing/new"
+          className="bg-black text-white px-4 py-2 rounded"
+        >
+          + New Bill
+        </Link>
+      </div>
 
-  // LOAD ITEMS FROM MENU
-  useEffect(() => {
-    const raw = localStorage.getItem("pendingCart");
-    if (!raw) return;
+      {/* EMPTY STATE */}
+      {bills.length === 0 && (
+        <p className="text-gray-500">No bills created yet</p>
+      )}
 
-    const cart = JSON.parse(raw);
-    const parsed: BillItem[] = Object.values(cart).map((it: any) => ({
-      id: it.id,
-      name: it.name,
-      qty: it.quantity,
-      rate: Number(it.price ?? 0),
-    }));
-    setItems(parsed);
-  }, []);
+      {/* TABLE */}
+      <div className="bg-white border rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-left">
+            <tr>
+              <th className="p-3">Bill No</th>
+              <th className="p-3">Customer</th>
+              <th className="p-3">Phone No</th>
+              <th className="p-3">Date</th>
+              <th className="p-3">Amount</th>
+              <th className="p-3">Payment</th>
+              <th className="p-3">Status</th>
+              <th className="p-3 text-right">Actions</th>
+            </tr>
+          </thead>
 
-  // QTY CONTROLS
-  const inc = (id: string) =>
-    setItems((s) => s.map((i) => (i.id === id ? { ...i, qty: i.qty + 1 } : i)));
+          <tbody>
+            {bills.map((bill) => (
+              <tr key={bill.id} className="border-t hover:bg-gray-50">
+                <td className="p-3 font-medium">
+                  {bill.billNumber}
+                </td>
 
-  const dec = (id: string) =>
-    setItems((s) =>
-      s.map((i) => (i.id === id ? { ...i, qty: i.qty - 1 } : i)).filter((i) => i.qty > 0)
+                <td className="p-3">
+                  {bill.customerName || "Walk-in Customer"}
+                </td>
+
+                <td className="p-3 text-gray-600">
+                  {bill.customerPhone || "—"}
+                </td>
+                <td className="p-3">
+                  {new Date(bill.createdAt).toLocaleString()}
+                </td>
+                <td className="p-3">
+                  ₹{bill.total.toFixed(2)}
+                </td>
+
+                <td className="p-3">
+                  {bill.paymentMode}
+                </td>
+
+                <td className="p-3">
+                  <StatusBadge status={bill.paymentStatus} />
+                </td>
+
+                <td className="p-3 text-right">
+                  <BillActions bill={bill} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- ACTION MENU ---------- */
+
+function BillActions({ bill }: { bill: BillManager }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative inline-block text-right">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="px-2 py-1 rounded hover:bg-gray-100"
+      >
+        ⋮
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 mt-1 w-44 bg-white border rounded shadow z-20"
+          onMouseLeave={() => setOpen(false)}
+        >
+          <ActionItem
+            label="View"
+            onClick={() => (window.location.href = `/billing/${bill.id}`)}
+          />
+          <ActionItem
+            label="Print"
+            onClick={() => window.open(`/billing/${bill.id}`, "_blank")}
+          />
+          <ActionItem
+            label="Share"
+            onClick={() => alert("Share PDF coming next")}
+          />
+          <ActionItem
+            label="Download PDF"
+            onClick={() => alert("Download PDF coming next")}
+          />
+         <ActionItem
+  label={bill.isHeld ? "Resume Bill" : "Hold Bill"}
+  onClick={async () => {
+    if (bill.isHeld) {
+      // 👉 RESUME
+      window.location.href = `/billing/new?resume=${bill.id}`;
+    } else {
+      // 👉 HOLD
+      await fetch(`/api/bill-manager/${bill.id}/hold`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isHeld: true }),
+      });
+      fetchBills();
+    }
+  }}
+/>
+
+
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ActionItem({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
+    >
+      {label}
+    </button>
+  );
+}
+
+/* ---------- STATUS BADGE ---------- */
+
+function StatusBadge({
+  status,
+  isHeld,
+}: {
+  status: string;
+  isHeld?: boolean;
+}) {
+  if (isHeld) {
+    return (
+      <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded">
+        HELD
+      </span>
     );
-
-  const remove = (id: string) =>
-    setItems((s) => s.filter((i) => i.id !== id));
-
-  // CLEAR BILL
-  function clearBill() {
-    if (!confirm("Clear current bill?")) return;
-    setItems([]);
-    setBillDiscountPercent(0);
-    setPaymentMode("Cash");
-    setPaymentStatus("Pending");
-    setUpiTxnRef("");
-    localStorage.removeItem("pendingCart");
   }
 
-  // CALCULATIONS
-  const GST = 5;
-  const totalBeforeDiscount = items.reduce((a, i) => a + i.qty * i.rate, 0);
-  const discountAmount = (totalBeforeDiscount * billDiscountPercent) / 100;
-  const subTotal = totalBeforeDiscount - discountAmount;
-  const gstAmount = (subTotal * GST) / 100;
-  const cgst = gstAmount / 2;
-  const sgst = gstAmount / 2;
-  const finalTotal = subTotal + gstAmount;
-
-  // UPI
-  const upiLink = `upi://pay?pa=${SHOP.upiId}&pn=${encodeURIComponent(
-    SHOP.name
-  )}&am=${finalTotal.toFixed(2)}&cu=INR`;
-
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-    upiLink
-  )}`;
-
-  // SAVE
-  async function saveBill() {
-    await fetch("/api/billing", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        billNumber,
-        billDate,
-        items,
-        billDiscountPercent,
-        finalTotal,
-        paymentMode,
-        paymentStatus,
-        upiTxnRef,
-      }),
-    });
-  }
-
-  // PRINT
-  function printReceipt() {
-    if (!receiptRef.current) return;
-    const html = document.body.innerHTML;
-    document.body.innerHTML = receiptRef.current.outerHTML;
-    window.print();
-    document.body.innerHTML = html;
+  if (status?.toLowerCase() === "paid") {
+    return (
+      <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
+        PAID
+      </span>
+    );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <h1 className="text-xl font-bold mb-4">Billing</h1>
-
-      {/* TOP ACTIONS */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <Link href="/menu/view" className="border px-3 py-1 rounded">
-          ➕ Add More Items
-        </Link>
-
-        <Link href="/billing/history" className="border px-3 py-1 rounded">
-          🧾 Last Bills
-        </Link>
-
-        <button onClick={clearBill} className="border px-3 py-1 rounded text-red-600">
-          🧹 Clear Bill
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
-        {/* ITEMS */}
-        <div className="bg-white border rounded-lg">
-          <div className="grid grid-cols-[1fr_80px_120px_100px] bg-green-500 text-white px-3 py-2 text-sm font-semibold">
-            <div>Item</div>
-            <div>Rate</div>
-            <div>Qty</div>
-            <div>Amount</div>
-          </div>
-
-          {items.length === 0 && (
-            <div className="p-4 text-sm text-gray-500">No items added</div>
-          )}
-
-          {items.map((i) => (
-            <div key={i.id} className="grid grid-cols-[1fr_80px_120px_100px] px-3 py-2 border-b items-center text-sm">
-              <div>{i.name}</div>
-              <div>₹{i.rate}</div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => dec(i.id)} className="border px-2">−</button>
-                <span>{i.qty}</span>
-                <button onClick={() => inc(i.id)} className="border px-2">+</button>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>₹{(i.qty * i.rate).toFixed(2)}</span>
-                <button onClick={() => remove(i.id)} className="text-red-600 ml-2">✕</button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* SUMMARY */}
-        <div className="bg-white border rounded-lg p-4 space-y-3 text-sm">
-          <div className="flex justify-between"><span>Total</span><span>₹{totalBeforeDiscount.toFixed(2)}</span></div>
-
-          <div>
-            <label className="text-xs">Discount (%)</label>
-            <input
-              type="number"
-              value={billDiscountPercent}
-              onChange={(e) => setBillDiscountPercent(Math.min(Math.max(Number(e.target.value), 0), 100))}
-              className="border p-1 w-full"
-            />
-          </div>
-
-          <div className="flex justify-between"><span>Sub Total</span><span>₹{subTotal.toFixed(2)}</span></div>
-          <div className="flex justify-between"><span>CGST</span><span>₹{cgst.toFixed(2)}</span></div>
-          <div className="flex justify-between"><span>SGST</span><span>₹{sgst.toFixed(2)}</span></div>
-
-          <div className="flex justify-between font-bold text-lg border-t pt-2">
-            <span>Total Amount</span>
-            <span>₹{finalTotal.toFixed(2)}</span>
-          </div>
-
-          {/* PAYMENT */}
-          <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} className="border p-2 w-full">
-            <option>Cash</option>
-            <option>UPI</option>
-            <option>Card</option>
-          </select>
-
-          {paymentMode === "UPI" && (
-            <>
-              <img src={qrUrl} className="mx-auto" />
-              <a href={upiLink} className="block text-center text-green-600 underline">
-                Pay via UPI App
-              </a>
-              <input
-                placeholder="UPI Txn Ref"
-                value={upiTxnRef}
-                onChange={(e) => setUpiTxnRef(e.target.value)}
-                className="border p-2 w-full"
-              />
-              <select value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value as any)} className="border p-2 w-full">
-                <option value="Pending">Payment Pending</option>
-                <option value="Paid">Payment Paid</option>
-              </select>
-            </>
-          )}
-
-          <div className="flex gap-2">
-            <button onClick={saveBill} className="flex-1 bg-gray-200 py-2 rounded">
-              Save
-            </button>
-            <button onClick={() => { saveBill(); printReceipt(); }} className="flex-1 bg-green-600 text-white py-2 rounded">
-              Save & Print
-            </button>
-          </div>
-
-          <div className="text-center text-xs text-gray-500">{SHOP.tagline}</div>
-        </div>
-      </div>
-
-      {/* PRINT */}
-      <div ref={receiptRef} className="hidden print:block w-[80mm] text-[12px]">
-        <div className="text-center font-bold">{SHOP.name}</div>
-        <hr />
-        {items.map((i) => (
-          <div key={i.id} className="flex justify-between">
-            <span>{i.name} × {i.qty}</span>
-            <span>₹{(i.qty * i.rate).toFixed(2)}</span>
-          </div>
-        ))}
-        <hr />
-        <div className="flex justify-between font-bold">TOTAL <span>₹{finalTotal.toFixed(2)}</span></div>
-        <div className="text-center">Payment: {paymentMode}</div>
-        {paymentMode === "UPI" && <div className="text-center">Txn Ref: {upiTxnRef || "Pending"}</div>}
-        <div className="text-center">{SHOP.tagline}</div>
-        <div className="text-center">Thank you 🙏</div>
-      </div>
-    </div>
+    <span className="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded">
+      PENDING
+    </span>
   );
 }
