@@ -1,268 +1,109 @@
-
-
-// //src/components/Sidebar.tsx
-
-// "use client";
-
-// import React from "react";
-// import Link from "next/link";
-// import styles from "./Sidebar.module.css";
-// import {
-//   FaHome,
-//   FaUpload,
-//   FaUtensils,
-//   FaUsers,
-//   FaReceipt,
-//   FaUser,
-//   FaCog,
-// } from "react-icons/fa";
-// import { useSidebar } from "./SidebarContext";
-
-// export default function Sidebar() {
-//   const { collapsed, setCollapsed } = useSidebar();
-
-//   // close handler for backdrop / mobile
-//   const close = () => setCollapsed(true);
-
-//   // collapse helper used on nav clicks
-//   const handleNavClick = () => {
-//     // collapse immediately
-//     setCollapsed(true);
-//   };
-
-//   return (
-//     <>
-//       <aside
-//         className={`${styles.sidebar} ${collapsed ? styles.collapsed : styles.expanded}`}
-//         aria-hidden={collapsed}
-//       >
-//         <div className={styles.inner}>
-//           <nav className={styles.nav} aria-label="Main">
-//             <Link href="/" className={styles.item} onClick={handleNavClick}>
-//               <FaHome className={styles.icon} />
-//               <span className={styles.label}>Home</span>
-//             </Link>
-
-//             <Link href="/menu/upload" className={styles.item} onClick={handleNavClick}>
-//               <FaUpload className={styles.icon} />
-//               <span className={styles.label}>Uploads</span>
-//             </Link>
-
-//             <Link href="/menu/view" className={styles.item} onClick={handleNavClick}>
-//               <FaUtensils className={styles.icon} />
-//               <span className={styles.label}>Menu / Items</span>
-//             </Link>
-
-//             <Link href="/billing" className={styles.item} onClick={handleNavClick}>
-//              <FaReceipt className={styles.icon} />
-//                <span className={styles.label}>Billing</span>
-//             </Link>
-
-
-//             {/* ✅ FIXED: correct lowercase path */}
-//             <Link href="/parties" className={styles.item} onClick={handleNavClick}>
-//               <FaUsers className={styles.icon} />
-//               <span className={styles.label}>Parties</span>
-//             </Link>
-
-//             {/* ✅ FIXED lowercase */}
-//             <Link href="/bills" className={styles.item} onClick={handleNavClick}>
-//               <FaReceipt className={styles.icon} />
-//               <span className={styles.label}>Bills</span>
-//             </Link>
-
-
-//             <Link href="/profile" className={styles.item} onClick={handleNavClick}>
-//   <FaUser className={styles.icon} />
-//   <span className={styles.label}>Business Profile</span>
-// </Link>
-
-
-
-//           </nav>
-
-//           {/* bottom actions: settings + copyright */}
-//           <div className={styles.bottomActions}>
-//             <Link href="/settings" className={styles.settings} onClick={handleNavClick}>
-//               <FaCog className={styles.icon} />
-//               <span className={styles.label}>Settings</span>
-//             </Link>
-
-//             <div className={styles.footer}>© Kravy Billing 2025</div>
-//           </div>
-//         </div>
-//       </aside>
-
-//       {/* Backdrop for mobile overlay */}
-//       <div
-//         role="button"
-//         aria-label="Close sidebar"
-//         className={styles.backdrop}
-//         onClick={close}
-//       />
-//     </>
-//   );
-// }
-
-
-
-//last working version ---------------------------------------------------------------------------------
-
-
-
 "use client";
 
-import React, { useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import styles from "./Sidebar.module.css";
 import {
   FaHome,
   FaUpload,
   FaUtensils,
-  FaUsers,
+  FaBoxes,
   FaReceipt,
+  FaUsers,
   FaUser,
   FaCog,
-  FaBoxes,
+  FaChevronDown,
+  FaChevronRight,
 } from "react-icons/fa";
 import { useSidebar } from "./SidebarContext";
 
 export default function Sidebar() {
-  const { collapsed, setCollapsed } = useSidebar();
+  const { collapsed } = useSidebar();
+  const [billingOpen, setBillingOpen] = useState(false);
 
-  /** Close sidebar safely */
-  const closeSidebar = () => setCollapsed(true);
-
-  /** Close on any navigation click */
-  const handleNavClick = () => {
-    setCollapsed(true);
-  };
-
-  /**
-   * 🔹 Global click listener
-   * Fired from ClientLayout (tap anywhere)
-   * UI-only, no backend impact
-   */
-  useEffect(() => {
-    const handleGlobalClose = () => setCollapsed(true);
-    window.addEventListener("kravy-close-sidebar", handleGlobalClose);
-    return () =>
-      window.removeEventListener("kravy-close-sidebar", handleGlobalClose);
-  }, [setCollapsed]);
-
-  /**
-   * 🔐 Admin-only logic placeholder
-   * Can be replaced later with real auth
-   */
   const isAdmin = true;
 
   return (
-    <>
-      {/* SIDEBAR */}
-      <aside
-        className={`${styles.sidebar} ${
-          collapsed ? styles.collapsed : styles.expanded
-        }`}
-        aria-hidden={collapsed}
-      >
-        <div className={styles.inner}>
-          <nav className={styles.nav} aria-label="Main navigation">
-            <Link href="/" className={styles.item} onClick={handleNavClick}>
-              <FaHome className={styles.icon} />
-              <span className={styles.label}>Home</span>
-            </Link>
+    <aside
+      className={`${styles.sidebar} ${
+        collapsed ? styles.collapsed : ""
+      }`}
+    >
+      <div className={styles.inner}>
 
-            <Link
-              href="/menu/upload"
-              className={styles.item}
-              onClick={handleNavClick}
-            >
-              <FaUpload className={styles.icon} />
-              <span className={styles.label}>Uploads</span>
-            </Link>
+        <nav className={styles.nav}>
+          <Link
+            href="/"
+            className={styles.item}
+            data-label="Dashboard"
+          >
+            <FaHome />
+            <span>Dashboard</span>
+          </Link>
 
-            <Link
-              href="/menu/view"
-              className={styles.item}
-              onClick={handleNavClick}
-            >
-              <FaUtensils className={styles.icon} />
-              <span className={styles.label}>Menu / Items</span>
-            </Link>
+          <Link
+            href="/menu/upload"
+            className={styles.item}
+            data-label="Uploads"
+          >
+            <FaUpload />
+            <span>Uploads</span>
+          </Link>
 
-            {isAdmin && (
-              <Link
-                href="/store-item-upload"
-                className={styles.item}
-                onClick={handleNavClick}
-              >
-                <FaBoxes className={styles.icon} />
-                <span className={styles.label}>Store Item Uploading</span>
-              </Link>
-            )}
+          <Link
+            href="/menu/view"
+            className={styles.item}
+            data-label="Menu / Items"
+          >
+            <FaUtensils />
+            <span>Menu / Items</span>
+          </Link>
 
-            <Link
-              href="/billing"
-              className={styles.item}
-              onClick={handleNavClick}
-            >
-              <FaReceipt className={styles.icon} />
-              <span className={styles.label}>Billing</span>
-            </Link>
 
-            <Link
-              href="/parties"
-              className={styles.item}
-              onClick={handleNavClick}
-            >
-              <FaUsers className={styles.icon} />
-              <span className={styles.label}>Parties</span>
-            </Link>
 
-            <Link
-              href="/bills"
-              className={styles.item}
-              onClick={handleNavClick}
-            >
-              <FaReceipt className={styles.icon} />
-              <span className={styles.label}>Bills</span>
-            </Link>
+          {/* BILLING */}
+          <button
+            className={`${styles.item} ${styles.dropdown}`}
+            data-label="Billing"
+            onClick={() => setBillingOpen((p) => !p)}
+          >
+            <div className={styles.dropdownLeft}>
+              <FaReceipt />
+              <span>Billing</span>
+            </div>
+          </button>
 
-            <Link
-              href="/profile"
-              className={styles.item}
-              onClick={handleNavClick}
-            >
-              <FaUser className={styles.icon} />
-              <span className={styles.label}>Business Profile</span>
-            </Link>
-          </nav>
+          {billingOpen && (
+            <div className={styles.subMenu}>
+              <Link href="/billing">Bill Manager</Link>
+              <Link href="/billing/checkout">Checkout Page</Link>
+              <Link href="/billing/deleted">Deleted Bills</Link>
+            </div>
+          )}
+        {isAdmin && (
+          <Link href="/store-item-upload" className={styles.item}> 
+          <FaBoxes /> <span>Store Items Uploading</span> </Link> )}
+          
+          <Link href="/parties" className={styles.item}>
+            <FaUsers />
+            <span>Parties</span>
+          </Link>
 
-          {/* BOTTOM */}
-          <div className={styles.bottomActions}>
-            <Link
-              href="/settings"
-              className={styles.settings}
-              onClick={handleNavClick}
-            >
-              <FaCog className={styles.icon} />
-              <span className={styles.label}>Settings</span>
-            </Link>
+          <Link href="/profile" className={styles.item}>
+            <FaUser />
+            <span>Business Profile</span>
+          </Link>
+        </nav>
 
-            <div className={styles.footer}>© Kravy Billing 2025</div>
-          </div>
+        <div className={styles.bottom}>
+          <Link href="/settings" className={styles.item}>
+            <FaCog />
+            <span>Settings</span>
+          </Link>
+
+          <div className={styles.footer}>© Kravy Billing 2025</div>
         </div>
-      </aside>
-
-      {/* MOBILE BACKDROP */}
-      {!collapsed && (
-        <div
-          className={styles.backdrop}
-          role="button"
-          aria-label="Close sidebar"
-          onClick={closeSidebar}
-        />
-      )}
-    </>
+      </div>
+    </aside>
   );
 }

@@ -54,6 +54,7 @@ model Item {
   unit         String?
   barcode      String?
   imageUrl     String?
+  image        String?   // ✅ THIS MUST EXIST
 
   categoryId String?   @db.ObjectId
   category   Category? @relation(fields: [categoryId], references: [id])
@@ -220,21 +221,29 @@ model Field {
 
 model BusinessProfile {
   id     String @id @default(auto()) @map("_id") @db.ObjectId
-  userId String
+
+  userId String @unique
   user   User   @relation(fields: [userId], references: [clerkId])
 
+  businessType       String?
   businessName       String?
   businessTagLine    String?
+
   contactPersonName  String?
   contactPersonPhone String?
+  contactPersonEmail String?
+
   upi                String?
+
+  profileImageUrl    String?
   logoUrl            String?
   signatureUrl       String?
 
-  gstNumber       String?
-  businessAddress String?
-  state           String?
-  pinCode         String?
+  gstNumber          String?
+  businessAddress    String?
+  state              String?
+  district           String?
+  pinCode            String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -300,16 +309,17 @@ model BillManager {
   items         Json
 
   subtotal      Float
-  discount      Float
-  tax           Float
+  tax           Float?
   total         Float
 
   paymentMode   String
   paymentStatus String
   upiTxnRef     String?
-
+  isHeld        Boolean  @default(false)
   customerName  String?
   customerPhone String?
 
-  isDeleted     Boolean  @default(false)
+  isDeleted       Boolean  @default(false)
+  deletedAt       DateTime?
+  deletedSnapshot Json?
 }

@@ -1,312 +1,184 @@
-/* ROOT */
-.home {
-  font-family: Inter, system-ui, Arial;
-  color: #111;
+.dashboard-home {
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-/* HERO */
-.hero {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 40px;
-  padding: 80px 20px;
-  background: linear-gradient(135deg, #0f172a, #020617);
-  color: white;
-}
-
-.hero-content {
-  animation: fadeUp 0.8s ease forwards;
-}
-
-.hero h1 {
-  font-size: 40px;
-  line-height: 1.2;
-}
-
-.hero p {
-  margin-top: 16px;
-  color: #cbd5f5;
-  max-width: 480px;
-}
-
-.hero-actions {
-  margin-top: 30px;
+/* HEADER */
+.dashboard-header {
   display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  margin-bottom: 16px;
 }
 
-/* BRAND TITLE */
-.brand-title {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
+.dashboard-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .brand-name {
-  font-size: 64px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  background: linear-gradient(90deg, #6366f1, #22d3ee);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #0f172a;
 }
 
-.brand-sub {
-  margin-top: 8px;
-  font-size: 22px;
-  font-weight: 500;
-  color: #c7d2fe;
+.dashboard-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
 }
 
-/* DESKTOP */
-@media (min-width: 768px) {
-  .brand-name {
-    font-size: 96px;
-  }
-
-  .brand-sub {
-    font-size: 26px;
-  }
+.dashboard-actions {
+  display: flex;
+  gap: 12px;
+}
+/* SECTION CARDS WRAPPER */
+.dashboard-cards {
+  padding: 0 24px 24px;
 }
 
-/* BUTTONS */
-.btn {
-  padding: 12px 22px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: all 0.25s ease;
+/* FORCE CARDS IN ONE ROW */
+.dashboard-cards > * {
+  display: grid;
+  grid-auto-flow: column;          /* 👈 key */
+  grid-auto-columns: minmax(220px, 1fr);
+  gap: 16px;
+  overflow-x: auto;                /* safety */
 }
 
-.btn.primary {
-  background: #6366f1;
-  color: white;
+/* Hide scrollbar (optional, clean look) */
+.dashboard-cards > *::-webkit-scrollbar {
+  display: none;
 }
 
-.btn.primary:hover {
-  transform: translateY(-2px);
-  background: #4f46e5;
+/* CHARTS */
+.dashboard-charts {
+  padding: 0 24px 24px;
 }
 
-.btn.outline {
-  border: 1px solid #c7d2fe;
-  color: #c7d2fe;
-}
-
-.btn.outline:hover {
+.chart-card {
   background: white;
-  color: #020617;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
 }
 
-.btn.big {
+/* TITLES */
+.section-title {
   font-size: 18px;
-  padding: 14px 28px;
-}
-
-/* HERO VISUAL */
-.hero-visual {
-  position: relative;
-  height: 200px;
-}
-
-.mock-card {
-  position: absolute;
-  width: 220px;
-  height: 140px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #6366f1, #22d3ee);
-  opacity: 0.9;
-  animation: float 4s ease-in-out infinite;
-}
-
-.mock-card.delay {
-  top: 30px;
-  left: 60px;
-  animation-delay: 1.5s;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #0f172a;
 }
 
 /* FEATURES */
-.features {
-  padding: 70px 20px;
-  text-align: center;
-}
-
-.features h2 {
-  font-size: 28px;
+.dashboard-features {
+  padding: 24px;
 }
 
 .feature-grid {
-  margin-top: 30px;
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .feature {
-  padding: 18px;
-  border-radius: 14px;
-  background: #f8fafc;
-  font-weight: 600;
-  transition: transform 0.2s ease;
-}
-
-.feature:hover {
-  transform: translateY(-4px);
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
 }
 
 /* STEPS */
-.steps {
-  background: #f1f5f9;
-  padding: 70px 20px;
-  text-align: center;
+.dashboard-steps {
+  padding: 24px;
 }
 
 .step-list {
-  margin-top: 30px;
   display: flex;
-  justify-content: center;
-  gap: 20px;
+  gap: 24px;
   flex-wrap: wrap;
 }
 
 .step {
   background: white;
-  padding: 20px 24px;
-  border-radius: 14px;
-  width: 160px;
-  animation: fadeUp 0.6s ease forwards;
+  padding: 18px;
+  border-radius: 12px;
+  width: 200px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
 }
 
 .step span {
   display: inline-block;
-  background: #6366f1;
-  color: white;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
   border-radius: 50%;
-  line-height: 32px;
-  margin-bottom: 10px;
-}
-
-/* CTA */
-.cta {
-  background: #020617;
+  background: #0f172a;
   color: white;
+  font-weight: 600;
   text-align: center;
-  padding: 70px 20px;
+  margin-bottom: 8px;
 }
 
-.cta p {
-  color: #cbd5f5;
-  margin: 10px 0 30px;
+/* BUTTONS (reuse existing style safely) */
+.btn {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-decoration: none;
+  font-weight: 500;
 }
 
-/* ANIMATIONS */
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.btn.primary {
+  background: #0849e3;
+  color: white;
 }
 
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+.btn.outline {
+  border: 1px solid #0f172a;
+  color: #0f172a;
 }
 
 /* RESPONSIVE */
-@media (min-width: 768px) {
-  .hero {
-    grid-template-columns: 1fr 1fr;
-    padding: 100px 60px;
-  }
-
-  .hero h1 {
-    font-size: 52px;
+@media (max-width: 900px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 }
-/* ============================= */
-/* SCROLL ANIMATIONS (CSS ONLY) */
-/* ============================= */
+/* =========================
+   DASHBOARD CARDS LAYOUT
+========================= */
 
-.scroll-fade,
-.scroll-rise,
-.scroll-slide,
-.scroll-zoom {
-  opacity: 0;
-  animation-fill-mode: forwards;
-  animation-timing-function: ease;
-  animation-duration: 0.7s;
+.dashboard-cards {
+  padding: 0 24px 24px;
 }
 
-/* Fade Up */
-.scroll-fade {
-  animation-name: fadeUp;
-  animation-timeline: view();
-  animation-range: entry 10% cover 35%;
+/* DEFAULT: DESKTOP – ALL IN ONE ROW */
+.dashboard-cards > * {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* adjust if card count changes */
+  gap: 16px;
 }
 
-/* Rise Cards */
-.scroll-rise {
-  animation-name: rise;
-  animation-timeline: view();
-  animation-range: entry 15% cover 40%;
-}
-
-/* Slide */
-.scroll-slide {
-  animation-name: slideIn;
-  animation-timeline: view();
-  animation-range: entry 20% cover 45%;
-}
-
-/* Zoom CTA */
-.scroll-zoom {
-  animation-name: zoomIn;
-  animation-timeline: view();
-  animation-range: entry 30% cover 50%;
-}
-
-/* KEYFRAMES */
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+/* TABLET */
+@media (max-width: 1024px) {
+  .dashboard-cards > * {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
+/* MOBILE */
+@media (max-width: 768px) {
+  .dashboard-cards {
+    padding: 0 16px 20px;
   }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
 
-@keyframes zoomIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
+  .dashboard-cards > * {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
 }

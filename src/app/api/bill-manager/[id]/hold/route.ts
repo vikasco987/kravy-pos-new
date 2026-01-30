@@ -23,7 +23,7 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json({ bill });
+    return NextResponse.json({ bill }); 
   } catch (err) {
     console.error("HOLD BILL ERROR:", err);
     return NextResponse.json(

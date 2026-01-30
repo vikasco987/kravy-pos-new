@@ -2,8 +2,7 @@
 
 import { ClerkProvider } from "@clerk/nextjs";
 import { SidebarProvider } from "@/components/SidebarContext";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import { SearchProvider } from "@/components/SearchContext";
 
 export default function Providers({
   children,
@@ -13,9 +12,9 @@ export default function Providers({
   return (
     <ClerkProvider>
       <SidebarProvider>
-        <Navbar />
-        <Sidebar />
-        <div id="page-root">{children}</div>
+        <SearchProvider>
+          {children}
+        </SearchProvider>
       </SidebarProvider>
     </ClerkProvider>
   );

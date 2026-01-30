@@ -47,6 +47,10 @@ export default function StoreItemPage() {
   const [applyClerkToAll, setApplyClerkToAll] = useState(true);
   const [clerkSearch, setClerkSearch] = useState("");
   const [showClerkDropdown, setShowClerkDropdown] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
 
   /* =============================
      LOAD MASTER DATA
@@ -74,7 +78,7 @@ export default function StoreItemPage() {
   }, [items]);
 
   const hasErrors =
-    items.some(i => !i.name.trim() || i.price == null) ||
+    items.some(i => !i.name.trim() || i.price == null || i.price <= 0) ||
     duplicateNames.length > 0;
 
   /* =============================
@@ -131,13 +135,25 @@ export default function StoreItemPage() {
   /* =============================
      FILE UPLOAD (CSV + EXCEL)
   ============================= */
-  const handleFileUpload = async (file: File) => {
+ const handleFileUpload = async (file: File) => {
+  try {
+    setUploading(true);
+    setUploadProgress(0);
+
+    // smooth fake progress while parsing
+    const progressTimer = setInterval(() => {
+      setUploadProgress((p) => (p < 90 ? p + 5 : p));
+    }, 150);
+
     if (file.name.endsWith(".csv")) {
       const Papa = (await import("papaparse")).default;
+
       Papa.parse(file, {
         header: true,
-        complete: async result => {
+        complete: async (result) => {
+          clearInterval(progressTimer);
           await processRows(result.data as any[]);
+          setUploadProgress(100);
         },
       });
     } else {
@@ -146,37 +162,57 @@ export default function StoreItemPage() {
       const wb = XLSX.read(buffer);
       const sheet = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<any>(sheet);
+
+      clearInterval(progressTimer);
       await processRows(rows);
+      setUploadProgress(100);
     }
-  };
+
+    setTimeout(() => {
+      setUploading(false);
+      setUploadProgress(0);
+    }, 500);
+  } catch {
+    setUploading(false);
+    setUploadProgress(0);
+    toast.error("File upload failed");
+  }
+};
+
 
   const processRows = async (rows: any[]) => {
-    const newItems: StoreItem[] = [];
+  const newItems: StoreItem[] = [];
+  const total = rows.length;
 
-    for (const row of rows) {
-      const name = String(row.name || row.Name || "").trim();
-      if (!name) continue;
+  for (let i = 0; i < total; i++) {
+    const row = rows[i];
 
-      let categoryId: string | null = null;
-      if (row.category || row.Category) {
-        const cat = await ensureCategory(row.category || row.Category);
-        categoryId = cat.id;
-      }
+    const name = String(row.name || row.Name || "").trim();
+    if (!name) continue;
 
-      newItems.push({
-        name,
-        price: Number(row.price || row.Price || 0),
-        categoryId,
-        clerkId: userId ?? null,
-        imageUrl: null,
-        isActive: true,
-      });
+    let categoryId: string | null = null;
+    if (row.category || row.Category) {
+      const cat = await ensureCategory(row.category || row.Category);
+      categoryId = cat.id;
     }
 
-    setItems(newItems);
-    setMode("create");
-    toast.success(`Loaded ${newItems.length} items`);
-  };
+    newItems.push({
+      name,
+      price: Number(row.price || row.Price || 0),
+      categoryId,
+      clerkId: userId ?? null,
+      imageUrl: null,
+      isActive: true,
+    });
+
+    // real progress based on rows
+    setUploadProgress(Math.min(95, Math.round(((i + 1) / total) * 100)));
+  }
+
+  setItems(newItems);
+  setMode("create");
+  toast.success(`Loaded ${newItems.length} items`);
+};
 
   /* =============================
      IMAGE UPLOAD
@@ -227,42 +263,132 @@ export default function StoreItemPage() {
      SAVE / UPDATE
   ============================= */
   const saveItems = async () => {
-    const res = await fetch("/api/store-items/bulk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      toast.success(`${data.insertedCount} items saved`);
-      router.push("/menu/view");
-    } else toast.error(data?.error || "Save failed");
-  };
+  const res = await fetch("/api/store-items/bulk", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    toast.error(data?.error || "Save failed");
+    return false;
+  }
+
+  toast.success(`${data.insertedCount} items saved successfully`);
+  return true;
+};
+
 
   const updateItems = async () => {
-    const res = await fetch("/api/store-items/bulk-update", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items }),
-    });
-    res.ok ? toast.success("Items updated") : toast.error("Update failed");
-  };
+  const validItems = items.filter(
+    i => i.id && i.name.trim() && i.price != null
+  );
 
-  const handleSave = () => {
-    if (!items.length) return toast.error("No items");
-    if (hasErrors) return toast.error("Fix errors first");
-    mode === "create" ? saveItems() : updateItems();
-  };
+  if (!validItems.length) {
+    toast.error("No valid items to update");
+    return false;
+  }
+
+  const res = await fetch("/api/store-items/bulk-update", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items: validItems }),
+  });
+
+  if (!res.ok) {
+    toast.error("Update failed");
+    return false;
+  }
+
+  toast.success("Items updated successfully");
+  return true;
+};
+
+const handleSave = async () => {
+  if (saving) return;
+
+  if (!items.length) {
+    toast.error("No items");
+    return;
+  }
+
+  if (hasErrors) {
+    toast.error(
+      mode === "update"
+        ? "Fix highlighted rows before updating"
+        : "Fix errors before saving"
+    );
+    return;
+  }
+
+  try {
+    setSaving(true);
+
+    let success = false;
+
+    if (mode === "create") {
+      success = await saveItems();
+    } else {
+      success = await updateItems();
+    }
+
+    if (success) {
+      router.push("/menu/view");
+    }
+  } finally {
+    setSaving(false);
+  }
+};
+  /* =============================
+     SEARCH FILTER
+  ============================= */
+
 
   const displayedItems = search
     ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
     : items;
 
+
+
+  const handleDrop = async (
+  e: React.DragEvent<HTMLDivElement>,
+  index: number
+) => {
+  e.preventDefault();
+  setDragIndex(null);
+
+  const file = e.dataTransfer.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    toast.error("Only image files allowed");
+    return;
+  }
+
+  await handleImageFile(file, index);
+};
+
+const isRowInvalid = (item: StoreItem) => {
+  // only highlight during UPDATE
+  if (mode !== "update") return false;
+
+  // only existing items
+  if (!item.id) return false;
+
+  if (!item.name.trim()) return true;
+  if (item.price == null) return true;
+
+  return false;
+};
+
+
   /* =============================
      RENDER
   ============================= */
   return (
-    <div className="p-24 space-y-6">
+    <div className="p-4 space-y-6">
       <div className="flex justify-between">
         <div>
           <h1 className="text-2xl font-bold">Store Item Upload</h1>
@@ -272,7 +398,7 @@ export default function StoreItemPage() {
         </div>
 
         <div className="flex gap-2">
-          <button onClick={fetchExistingItems} className="border px-4 py-2">
+          <button onClick={fetchExistingItems} className=" px-4 py-2 bg-blue-500 bordertext-white rounded-2xl text-white hover:bg-blue-600" >
             Update
           </button>
           <button
@@ -280,7 +406,7 @@ export default function StoreItemPage() {
               setItems([]);
               setMode("create");
             }}
-            className="border px-4 py-2 text-red-600"
+            className="px-4 py-2 bg-blue-500 bordertext-white rounded-2xl text-white hover:bg-blue-600"
           >
             Clear All
           </button>
@@ -296,23 +422,28 @@ export default function StoreItemPage() {
 
       {/* ACTIONS */}
       <div className="flex gap-4 items-center">
-  <input
-    type="file"
-    accept=".xlsx,.xls,.csv"
-    onChange={e => e.target.files && handleFileUpload(e.target.files[0])}
-  />
-  <input
-    className="border px-3 py-2"
-    placeholder="Search item"
-    value={search}
-    onChange={e => setSearch(e.target.value)}
-  />
+    <input
+      type="file"
+      accept=".xlsx,.xls,.csv"
+      disabled={uploading}
+      onChange={(e) =>
+        e.target.files && handleFileUpload(e.target.files[0])
+      }
+      className="border px-3 py-2 disabled:opacity-50"
+    />
+
+    <input
+      className="border px-3 py-2"
+      placeholder="Search item"
+      value={search}
+      onChange={e => setSearch(e.target.value)}
+    />
 
   {/* ➕ MANUAL ADD ITEM */}
   <button
     type="button"
     onClick={addManualItem}
-    className="px-4 py-2 border rounded bg-white hover:bg-gray-50"
+    className="px-4 py-2 border rounded bg-blue-500 hover:bg-blue-600 text-white"
   >
     + Add Item
   </button>
@@ -364,19 +495,18 @@ export default function StoreItemPage() {
           }}
         >
           {c.label}
-        </div>
-      ))}
+          </div>
+        ))}
 
-      {filteredClerks.length === 0 && (
-        <div className="px-3 py-2 text-sm text-gray-400">
-          No clerk found
-        </div>
-      )}
-    </div>
-  )}
-</th>
-
-
+                {filteredClerks.length === 0 && (
+                   <div className="px-3 py-2 text-sm text-gray-400">
+                    No clerk found
+                  </div>
+                )}
+              </div>
+            )}
+            </th>
+        
               <th className="p-3">Active</th>
               <th className="p-3">Delete</th>
             </tr>
@@ -384,7 +514,15 @@ export default function StoreItemPage() {
 
           <tbody>
             {displayedItems.map((item, i) => (
-              <tr key={item.id ?? i} className="border-t">
+              <tr
+                key={item.id ?? i}
+                className={`border-t ${
+                  isRowInvalid(item)
+                    ? "bg-red-50 border-red-300"
+                    : ""
+                }`}
+              >
+
                 {/* IMAGE */}
                {/* IMAGE */}
 <td className="p-3">
@@ -582,13 +720,45 @@ export default function StoreItemPage() {
         </p>
       )}
 
-      <button
-        onClick={handleSave}
-        disabled={hasErrors}
-        className="px-6 py-3 bg-black text-white rounded disabled:opacity-50"
-      >
-        {mode === "create" ? "Save Items" : "Update Items"}
-      </button>
+     <button
+      onClick={handleSave}
+      disabled={hasErrors || saving}
+      className="px-6 py-3 bg-blue-600 text-white rounded
+                flex items-center gap-2
+                disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {saving && (
+        <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      )}
+
+      {mode === "create"
+        ? saving
+          ? "Saving..."
+          : "Save Items"
+        : saving
+        ? "Updating..."
+        : "Update Items"}
+    </button>
+{uploading && (
+  <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+    <div className="bg-white rounded-lg p-6 w-[320px] text-center space-y-4">
+      <p className="font-medium">Uploading items…</p>
+
+      <div className="w-full h-2 bg-gray-200 rounded">
+        <div
+          className="h-2 bg-blue-600 rounded transition-all"
+          style={{ width: `${uploadProgress}%` }}
+        />
+      </div>
+
+      <p className="text-sm text-gray-500">
+        {uploadProgress}% completed
+      </p>
+    </div>
+  </div>
+)}
+
+
     </div>
   );
 }

@@ -328,7 +328,7 @@
 //                   console.error("Failed to save cart to localStorage", e);
 //                 }
 //               }}
-//               className="bg-green-600 px-4 py-2 rounded-xl text-white font-semibold hover:bg-green-700 transition"
+//               className="bg-blue-600 px-4 py-2 rounded-xl text-white font-semibold hover:bg-green-700 transition"
 //             >
 //               ✅ Generate Payment Slip
 //             </button>
@@ -704,7 +704,7 @@ categoryMap.set(UNCATEGORISED_ID, {
           </select>
           <div className="flex justify-end gap-2">
             <button onClick={onClose} className="px-3 py-2 rounded bg-gray-100">Cancel</button>
-            <button onClick={() => onSave(local)} className="px-3 py-2 rounded bg-green-600 text-white">Save</button>
+            <button onClick={() => onSave(local)} className="px-3 py-2 rounded bg-blue-600 text-white">Save</button>
           </div>
         </motion.div>
       </div>
@@ -769,7 +769,7 @@ categoryMap.set(UNCATEGORISED_ID, {
               <input placeholder="Max" type="number" value={priceMax === "" ? "" : String(priceMax)} onChange={(e) => setPriceMax(e.target.value === "" ? "" : Number(e.target.value))} className="border px-3 py-2 rounded w-20 flex-shrink-0" />
 
               <input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="New category" className="border px-3 py-2 rounded flex-shrink-0 w-40" />
-              <button onClick={createCategory} disabled={isCreatingCategory} className="px-3 py-2 rounded bg-indigo-600 text-white flex-shrink-0">{isCreatingCategory ? "Adding..." : "Add"}</button>
+              <button onClick={createCategory} disabled={isCreatingCategory} className="px-3 py-2 rounded bg-blue-600 text-white flex-shrink-0">{isCreatingCategory ? "Adding..." : "Add"}</button>
             </div>
           </div>
         </div>
@@ -779,7 +779,7 @@ categoryMap.set(UNCATEGORISED_ID, {
         <aside className="hidden md:block bg-white p-4 rounded-lg shadow h-fit sticky top-[90px] min-w-0">
           <h3 className="font-semibold mb-3">Categories</h3>
           <div className="flex flex-col gap-2 min-w-0">
-            <button onClick={() => { setFilterCategory("all"); setActiveCategory(null); }} className={`text-left px-3 py-2 rounded ${filterCategory === "all" ? "bg-green-500 text-white" : "hover:bg-gray-100"}`}>All Categories</button>
+            <button onClick={() => { setFilterCategory("all"); setActiveCategory(null); }} className={`text-left px-3 py-2 rounded ${filterCategory === "all" ? "bg-blue-500 text-white" : "hover:bg-gray-100"}`}>All Categories</button>
             {menus.map((m) => (
               <button key={m.id} onClick={() => { setFilterCategory(m.id); setActiveCategory(m.id); const el = document.getElementById(`cat-${m.id}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={`text-left px-3 py-2 rounded ${filterCategory === m.id ? "bg-green-500 text-white" : "hover:bg-gray-100"}`}>
                 <div className="flex justify-between items-center min-w-0">
@@ -861,7 +861,7 @@ categoryMap.set(UNCATEGORISED_ID, {
           </div>
 
           <div className="flex items-center gap-3">
-            <button onClick={() => { try { localStorage.setItem("pendingCart", JSON.stringify(cart)); localStorage.setItem("pendingTotal", totalPrice.toString()); window.location.href = "/billing/new"; } catch (e) { console.error(e); setToast("Unable to go to billing"); } }} className="px-4 py-2 bg-green-600 text-white rounded">Generate Payment Slip</button>
+            <button onClick={() => { try { localStorage.setItem("pendingCart", JSON.stringify(cart)); localStorage.setItem("pendingTotal", totalPrice.toString()); window.location.href = "/billing/checkout"; } catch (e) { console.error(e); setToast("Unable to go to billing"); } }} className="px-4 py-2 bg-blue-600 text-white rounded">Checkout</button>
           </div>
         </motion.div>
       )}

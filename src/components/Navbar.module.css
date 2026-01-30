@@ -1,184 +1,140 @@
 .header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 64px;
-  background: #ffffff;
-  border-bottom: 1px solid #e6e6e6;
-  z-index: 300;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 1px 0 rgba(16,24,40,0.03);
+  height: 60px;
+  background: #e6edff;
+  color: #000000;
+  border-bottom: 1px solid #1e293b;
+  flex-shrink: 0;
 }
 
 .inner {
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 16px;
-  box-sizing: border-box;
-  position: relative;
+  height: 100%;
+  padding: 0 18px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
 }
 
-/* LEFT SIDE */
+/* LEFT */
 .left {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
 }
 
 .collapseBtn {
-  background: #fff;
-  border: 1px solid #e6e6e6;
-  padding: 8px;
+  background: #d5d7db;
+  border: none;
+  color: #000000;
+  padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
+}
+
+.collapseBtn:hover {
+  background: #000000;
 }
 
 .brand {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-left: 6px;
-}
-
-.logo {
-  font-weight: 800;
-  font-size: 18px;
-  background: linear-gradient(90deg, #0ea5e9, #7c3aed);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.brandText {
+  font-size: 16px;
   font-weight: 600;
-  color: #0f172a;
-  font-size: 14px;
 }
 
-/* CENTER NAV */
+/* CENTER */
 .center {
-  flex: 1;
   display: flex;
-  justify-content: center;
-}
-
-.nav {
-  display: flex;
-  gap: 18px;
   align-items: center;
+  gap: 28px;        /* ⬆ spacing */
 }
 
-.link {
-  color: #111827;
+.center a {
+  font-size: 15px;
+  color: #000000;
   text-decoration: none;
-  font-weight: 600;
-  font-size: 14px;
-  padding: 6px 8px;
-  border-radius: 8px;
 }
 
-.link:hover {
-  background: #f3f4f6;
+.center a:hover {
+  color: black;
 }
 
-/* RIGHT SIDE */
-.right {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;                /* 🔥 Add this */
-  align-items: center;          /* 🔥 Centers Clerk avatar + sign-in */
-  gap: 12px;                    /* 🔥 Space between search + buttons */
-}
-
-.search {
-  height: 36px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid #e6e6e6;
-  min-width: 160px;
-}
-
-/* SIGN IN BUTTON */
-.signinBtn {
-  background: #4f46e5;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: 0.2s;
-}
-
-.signinBtn:hover {
-  background: #4338ca;
-}
-
-/* RESPONSIVE */
-@media (max-width: 880px) {
-  .center {
-    display: none;
-  }
-  .search {
-    display: none;
-  }
-  .left {
-    left: 8px;
-  }
-  .right {
-    right: 8px;
-  }
-}
+/* ADMIN */
 .admin {
-  color: #dc2626; /* red */
-  font-weight: 600;
-}
-.adminWrapper {
   position: relative;
 }
 
 .adminBtn {
   background: none;
   border: none;
+  color: #000000;
+  font-size: 15px;
   cursor: pointer;
-  font-weight: 600;
-  color: #dc2626;
-  padding: 6px 8px;
 }
 
 .adminDropdown {
   position: absolute;
-  top: 110%;
+  top: 36px;
   left: 0;
-  min-width: 160px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  min-width: 180px;
   z-index: 50;
 }
 
-.dropdownItem {
+.adminDropdown a {
   display: block;
   padding: 10px 14px;
   font-size: 14px;
-  color: #111827;
+  color: #000000;
   text-decoration: none;
 }
 
-.dropdownItem:hover {
-  background: #f3f4f6;
+.adminDropdown a:hover {
+  background: #0849e3;  
+}
+
+/* RIGHT */
+.right {
+  display: flex;
+  align-items: center;
+  gap: 16px;       /* ⬆ spacing */
+}
+
+.search {
+  background: #e5e5e5;
+  border: 1px solid #1e293b;
+  color: #e5e7eb;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 240px;
+}
+
+.search::placeholder {
+  color: #64748b;
+}
+
+.signin {
+  background: #1e293b;
+  border: none;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.signin:hover {
+  background: #334155;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .center {
+    display: none;
+  }
+
+  .search {
+    display: none;
+  }
 }

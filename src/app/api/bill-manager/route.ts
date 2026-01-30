@@ -31,9 +31,8 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/**
- * POST → Create bill
- */
+/* POST → Create bill */
+
 export async function POST(req: NextRequest) {
   try {
     const { userId: clerkUserId } = getAuth(req);
@@ -48,18 +47,31 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // ❌ DO NOT destructure billNumber
-    const {
-      items,
-      subtotal,
-      discount,
-      tax,
-      total,
-      paymentMode,
-      paymentStatus,
-      upiTxnRef,
-      customerName,
-      customerPhone,
-    } = body;
+   const {
+  items,
+  subtotal,
+  total,
+  paymentMode,
+  paymentStatus,
+  isHeld,
+  upiTxnRef,
+  customerName,
+  customerPhone,
+} = body;
+
+// ✅ HARD DEFAULTS (CRITICAL)
+const finalPaymentMode: "Cash" | "UPI" | "Card" =
+  paymentMode === "UPI" || paymentMode === "Card"
+    ? paymentMode
+    : "Cash";
+
+    // ✅ ALWAYS CALCULATE TAX ON SERVER
+    const GST_PERCENT = 5;
+
+    const calculatedTax = Number(
+      ((subtotal * GST_PERCENT) / 100).toFixed(2)
+    );
+
 
     // Basic validation
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -82,32 +94,34 @@ export async function POST(req: NextRequest) {
     )}`;
 
     // ✅ DERIVE FINAL PAYMENT STATUS (SOURCE OF TRUTH)
-        let finalPaymentStatus: string;
+       let finalPaymentStatus: string;
+if (isHeld === true) {
+  finalPaymentStatus = "HELD";
+} else if (finalPaymentMode === "Cash" || finalPaymentMode === "Card") {
+  finalPaymentStatus = "Paid";
+} else {
+  finalPaymentStatus =
+    paymentStatus === "Paid" ? "Paid" : "Pending";
+}
 
-        if (paymentMode === "Cash") {
-          finalPaymentStatus = "Paid";
-        } else {
-          // UPI / Card
-          finalPaymentStatus =
-            paymentStatus === "Paid" ? "Paid" : "Pending";
-        }
+
 
     const bill = await prisma.billManager.create({
-      data: {
-        clerkUserId,
-        billNumber,
-        items,
-        subtotal,
-        discount,
-        tax,
-        total,
-        paymentMode,
-        paymentStatus: finalPaymentStatus, // 🔥 FIX
-        upiTxnRef: upiTxnRef || null,
-        customerName: customerName || null,
-        customerPhone: customerPhone || null,
-      },
-    });
+  data: {
+    clerkUserId,
+    billNumber,
+    items,
+    subtotal,
+    tax: calculatedTax,
+    total,
+    paymentMode: finalPaymentMode,     // ✅ GUARANTEED
+    paymentStatus: finalPaymentStatus, // ✅ SOURCE OF TRUTH
+    isHeld: isHeld === true, // ✅ THIS LINE WAS MISSING
+    upiTxnRef: upiTxnRef || null,
+    customerName: customerName || null,
+    customerPhone: customerPhone || null,
+  },
+});
 
     return NextResponse.json({ bill });
   } catch (err) {

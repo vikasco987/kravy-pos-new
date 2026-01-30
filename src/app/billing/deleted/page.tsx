@@ -1,10 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
 type DeletedBill = {
-  id: string; // billHistory id
+  id: string;
   billId: string;
   createdAt: string;
   snapshot: {
@@ -22,28 +23,39 @@ type DeletedBill = {
 export default function DeletedBillsPage() {
   const [bills, setBills] = useState<DeletedBill[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/billing/deleted/list")
+    fetch("/api/bill-manager/deleted/list") // ✅ FIXED URL
       .then((r) => r.json())
       .then((d) => setBills(d.deleted ?? []))
       .finally(() => setLoading(false));
   }, []);
 
-  async function restore(historyId: string) {
-    if (!confirm("Restore this bill?")) return;
+ async function restore(billId: string) {
+  if (!confirm("Restore this bill?")) return;
 
-    await fetch(`/api/billing/deleted/restore/${historyId}`, {
+  const res = await fetch(
+    `/api/bill-manager/deleted/restore/${billId}`,
+    {
       method: "POST",
-    });
+    }
+  );
 
-    setBills((s) => s.filter((b) => b.id !== historyId));
+  if (!res.ok) {
+    alert("Failed to restore bill");
+    return;
   }
 
-  if (loading) return <p className="p-6">Loading deleted bills...</p>;
+  // optional: update UI instantly
+  setBills((prev) => prev.filter((b) => b.id !== billId));
+
+  // ✅ AUTO REDIRECT TO BILL MANAGER
+  router.push("/billing");
+}
 
   return (
-    <div className="p-26 space-y-6">
+    <div className="p-6 space-y-6 pt-20">
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">Deleted Bills</h1>
@@ -96,7 +108,7 @@ export default function DeletedBillsPage() {
                     <DeletedStatusBadge snap={snap} />
                   </td>
 
-                  <td className="p-3 text-right space-x-2">
+                  <td className="p-3 text-right">
                     <button
                       onClick={() => restore(b.id)}
                       className="text-green-600 text-sm"
@@ -110,10 +122,7 @@ export default function DeletedBillsPage() {
 
             {bills.length === 0 && (
               <tr>
-                <td
-                  colSpan={7}
-                  className="p-6 text-center text-gray-500"
-                >
+                <td colSpan={7} className="p-6 text-center text-gray-500">
                   No deleted bills
                 </td>
               </tr>
@@ -125,26 +134,28 @@ export default function DeletedBillsPage() {
   );
 }
 
-/* ---------- HELPERS ---------- */
+/* ---------- STATUS BADGE ---------- */
 
 function DeletedStatusBadge({
   snap,
 }: {
   snap: DeletedBill["snapshot"];
 }) {
-  if (snap.isHeld)
+  if (snap.isHeld) {
     return (
       <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded">
         HELD
       </span>
     );
+  }
 
-  if (snap.paymentStatus === "PAID")
+  if (snap.paymentStatus?.toLowerCase() === "paid") {
     return (
       <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
         PAID
       </span>
     );
+  }
 
   return (
     <span className="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded">

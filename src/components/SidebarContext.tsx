@@ -1,20 +1,22 @@
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from "react";
+
+import { createContext, useContext, useState } from "react";
 
 type SidebarContextType = {
   collapsed: boolean;
-  setCollapsed: (v: boolean) => void;
   toggle: () => void;
+  setCollapsed: (v: boolean) => void;
 };
 
-const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
+const SidebarContext = createContext<SidebarContextType | null>(null);
 
-export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsed] = useState<boolean>(false);
-  const toggle = () => setCollapsed((c) => !c);
+export function SidebarProvider({ children }: { children: React.ReactNode }) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const toggle = () => setCollapsed((p) => !p);
 
   return (
-    <SidebarContext.Provider value={{ collapsed, setCollapsed, toggle }}>
+    <SidebarContext.Provider value={{ collapsed, toggle, setCollapsed }}>
       {children}
     </SidebarContext.Provider>
   );
@@ -22,6 +24,8 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
 export function useSidebar() {
   const ctx = useContext(SidebarContext);
-  if (!ctx) throw new Error("useSidebar must be used inside SidebarProvider");
+  if (!ctx) {
+    throw new Error("useSidebar must be used inside SidebarProvider");
+  }
   return ctx;
 }

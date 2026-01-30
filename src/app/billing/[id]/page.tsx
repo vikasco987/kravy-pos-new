@@ -9,20 +9,21 @@ type BillItem = {
   rate: number;
 };
 
-type Bill = {
-  id: string;
-  billNumber: string;
-  createdAt: string;
-  items: BillItem[];
-  subtotal: number;
-  discount: number;
-  tax: number;
-  total: number;
-  paymentMode: string;
-  paymentStatus: string;
-  upiTxnRef?: string;
-  customerName?: string;
+type BusinessProfile = {
+  businessName: string;
+  businessTagLine?: string;
+  gstNumber?: string;
+  businessAddress?: string;
+  district?: string;
+  state?: string;
+  pinCode?: string;
 };
+
+type BillResponse = {
+  bill: Bill;
+  business: BusinessProfile | null;
+};
+
 
 export default function ViewBillPage({
   params,
@@ -33,16 +34,23 @@ export default function ViewBillPage({
   const { id } = use(params);
 
   const [bill, setBill] = useState<Bill | null>(null);
+  const [business, setBusiness] = useState<BusinessProfile | null>(null);  
   const [loading, setLoading] = useState(true);
   const receiptRef = useRef<HTMLDivElement>(null);
 
   // ✅ Fetch from BillManager API
   useEffect(() => {
-    fetch(`/api/bill-manager/${id}`)
-      .then((r) => r.json())
-      .then((data) => setBill(data))
-      .finally(() => setLoading(false));
-  }, [id]);
+  fetch(`/api/bill-manager/${id}`)
+    .then((r) => r.json())
+    .then((data: BillResponse) => {
+      setBill(data.bill);
+      setBusiness(data.business);
+    })
+    .finally(() => setLoading(false));
+}, [id]);
+
+
+  // ✅ Print receipt function    
 
 
   function printReceipt() {
@@ -196,9 +204,51 @@ export default function ViewBillPage({
         ref={receiptRef}
         className="hidden print:block w-[80mm] text-[12px]"
       >
-        <div className="text-center font-bold">
-          KRAVY SPICE VILLA
-        </div>
+        {/* LOGO */}
+          {business?.logoUrl && (
+            <div className="flex justify-center mb-1">
+              <img
+                src={business.logoUrl}
+                alt={business.businessName}
+                className="max-h-[40px] object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+            </div>
+          )}
+
+       <div className="text-center font-bold text-[13px]">
+          {business?.businessName}
+          </div>
+
+          {(business?.businessAddress ||
+            business?.district ||
+            business?.state ||
+            business?.pinCode) && (
+            <div className="text-center text-[9px]">
+              {business.businessAddress}
+              {business.district && `, ${business.district}`}
+              {business.state && `, ${business.state}`}
+              {business.pinCode && ` - ${business.pinCode}`}
+            </div>
+          )}
+
+          {business?.gstNumber && (
+            <div className="text-center text-[9px]">
+              GSTIN: {business.gstNumber}
+            </div>
+          )}
+           {/* BILL META */}
+            <div className="text-center text-[9px]">
+              Bill No: {bill.billNumber}
+            </div>
+            <div className="text-center text-[9px]">
+              Date: {new Date(bill.createdAt).toLocaleString()}
+            </div>
+
+            <hr />
+            
         <hr />
           {(bill.customerName || bill.customerPhone) && (
           <>
@@ -207,29 +257,100 @@ export default function ViewBillPage({
           <hr />
           </>
           )}
-
-        {bill.items.map((i, idx) => (
-          <div key={idx} className="flex justify-between">
-            <span>
-              {i.name} × {i.qty}
-            </span>
-            <span>
-              ₹{(i.qty * i.rate).toFixed(2)}
-            </span>
+        {/* ITEM HEADER */}
+          <div className="flex justify-between font-semibold text-[9px] border-b border-dashed pb-1">
+            <span className="w-[28mm]">Item</span>
+            <span className="w-[8mm] text-right">Qty</span>
+            <span className="w-[10mm] text-right">Rate</span>
+            <span className="w-[12mm] text-right">Amt</span>
           </div>
-        ))}
 
-        <hr />
-        <div className="flex justify-between font-bold">
-          TOTAL <span>₹{bill.total.toFixed(2)}</span>
-        </div>
+       {/* ITEMS */}
+          {bill.items.map((i, idx) => (
+            <div
+              key={idx}
+              className="flex justify-between text-[9px] mt-1"
+            >
+              <span className="w-[28mm] truncate">
+                {i.name}
+              </span>
+              <span className="w-[8mm] text-right">
+                {i.qty}
+              </span>
+              <span className="w-[10mm] text-right">
+                {i.rate.toFixed(2)}
+              </span>
+              <span className="w-[12mm] text-right">
+                {(i.qty * i.rate).toFixed(2)}
+              </span>
+            </div>
+          ))}
+          <div className="border-t border-dashed my-1" />
 
-        <div className="text-center">
-          Payment: {bill.paymentMode}
-        </div>
-        <div className="text-center">
-          Thank you
-        </div>
+          {/* SUBTOTAL */}
+          <div className="flex justify-between text-[9px]">
+            <span>Subtotal</span>
+            <span>₹{bill.subtotal.toFixed(2)}</span>
+          </div>
+
+          {/* GST */}
+          <div className="flex justify-between text-[9px]">
+            <span>GST</span>
+            <span>₹{bill.tax.toFixed(2)}</span>
+          </div>
+
+          <div className="border-t border-dashed my-1" />
+
+          {/* GRAND TOTAL */}
+          <div className="flex justify-between font-bold text-[11px]">
+            <span>GRAND TOTAL</span>
+            <span>₹{bill.total.toFixed(2)}</span>
+          </div>
+
+          <div className="border-t border-dashed my-1" />
+
+         {/* PAYMENT MODE */}
+<div className="text-center text-[9px]">
+  Payment: {bill.paymentMode}
+</div>
+
+{/* UPI QR INSIDE RECEIPT */}
+{bill.paymentMode === "UPI" && business?.upi && (
+  <>
+    <div className="flex justify-center my-2">
+      <img
+        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+          `upi://pay?pa=${business.upi}&pn=${encodeURIComponent(
+            business.businessName
+          )}&am=${bill.total}&cu=INR`
+        )}`}
+        alt="UPI QR"
+        className="w-[28mm]"
+      />
+    </div>
+
+    <div className="text-center text-[9px]">
+      Scan & Pay via UPI
+    </div>
+
+    {bill.upiTxnRef && (
+      <div className="text-center text-[9px]">
+        Txn Ref: {bill.upiTxnRef}
+      </div>
+    )}
+  </>
+)}
+
+          {business?.businessTagLine && (
+            <div className="text-center text-[9px] mt-1">
+              {business.businessTagLine}
+            </div>
+          )}
+
+          <div className="text-center font-semibold text-[10px] mt-1">
+            Thank you 🙏
+          </div>
+
       </div>
     </div>
   );
