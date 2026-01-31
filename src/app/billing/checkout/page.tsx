@@ -1413,3 +1413,10 @@ function printReceipt() {
     </div>
   );
 }
+
+
+
+
+
+//iuytgfdfghjk
+//ufghjkl;;lkjhgf
