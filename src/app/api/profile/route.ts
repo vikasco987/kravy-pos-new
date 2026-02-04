@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 
 /* =============================
    GET BUSINESS PROFILE
 ============================= */
 export async function GET(request: Request) {
   try {
-    const { userId } = getAuth(request);
+    const { userId } = auth();
 
     if (!userId) {
       return NextResponse.json(
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 ============================= */
 export async function POST(request: Request) {
   try {
-    const { userId } = getAuth(request);
+    const { userId } = auth();
 
     if (!userId) {
       return NextResponse.json(

@@ -152,7 +152,7 @@ export default function ProfilePage() {
           <div>
             <p className="text-gray-500">Account Created</p>
             <p className="font-medium">
-              {new Date(user.createdAt).toLocaleString()}
+            {user.createdAt ? new Date(user.createdAt).toLocaleString() : "—"}
             </p>
           </div>
         </div>

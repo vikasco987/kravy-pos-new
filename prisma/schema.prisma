@@ -66,8 +66,6 @@ model Item {
 
   user    User   @relation(fields: [userId], references: [id])
 
-  purchases Purchase[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -84,84 +82,28 @@ model Party {
   dob       DateTime?
   createdBy String
   user      User?     @relation(fields: [createdBy], references: [clerkId])
-  bills     Bill[]
+
+  bills     BillManager[]
+
   createdAt DateTime  @default(now())
 }
 
-//////////////////////////////////////////////////
-// BILL (POS CORE)
-//////////////////////////////////////////////////
-
-model Bill {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-
-  userId      String  @db.ObjectId
-  clerkUserId String?
-  user        User    @relation(fields: [userId], references: [id])
-
-  customerId String? @db.ObjectId
-  customer   Party?  @relation(fields: [customerId], references: [id])
-
-  billNumber String
-  createdAt  DateTime @default(now())
-
-  items Json
-
-  subtotal        Float
-  billDiscountPct Float?
-  discountAmount  Float?
-  taxableAmount   Float
-  gstPercent      Float?
-  cgst            Float
-  sgst            Float
-  total           Float
-
-  paymentMode   String
-  paymentStatus String
-  upiTxnRef     String?
-
-  isHeld    Boolean   @default(false)
-  holdBy    String?
-  holdAt    DateTime?
-  resumedAt DateTime?
-
-  companyName    String?
-  companyAddress String?
-  companyPhone   String?
-  gstNumber      String?
-  logoUrl        String?
-  websiteUrl     String?
-
-  history  BillHistory[]
-  payments Payment[]
-}
-
-//////////////////////////////////////////////////
-// BILL HISTORY
-//////////////////////////////////////////////////
-
-model BillHistory {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  billId    String   @db.ObjectId
-  bill      Bill     @relation(fields: [billId], references: [id])
-  action    String
-  snapshot  Json
-  createdAt DateTime @default(now())
-}
 
 //////////////////////////////////////////////////
 // PAYMENT
 //////////////////////////////////////////////////
 
 model Payment {
-  id     String   @id @default(auto()) @map("_id") @db.ObjectId
-  billId String   @db.ObjectId
-  bill   Bill     @relation(fields: [billId], references: [id])
+  id     String       @id @default(auto()) @map("_id") @db.ObjectId
+  billId String       @db.ObjectId
+  bill   BillManager  @relation(fields: [billId], references: [id])
+
   amount Float
   mode   String
   txnRef String?
   paidAt DateTime @default(now())
 }
+
 
 //////////////////////////////////////////////////
 // USER
@@ -175,7 +117,7 @@ model User {
   role    Role   @default(USER)
 
   items    Item[]
-  bills    Bill[]
+  bills    BillManager[]
   parties  Party[]
   forms    Form[]
   profiles BusinessProfile[]
@@ -184,7 +126,6 @@ model User {
   isDisabled Boolean @default(false)
 
   createdAt DateTime   @default(now())
-  purchases Purchase[]
 
   activities ActivityLog[]
 }
@@ -262,25 +203,6 @@ model Upload {
 }
 
 //////////////////////////////////////////////////
-// Purchase
-//////////////////////////////////////////////////
-
-model Purchase {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
-  userId String
-  user   User   @relation(fields: [userId], references: [clerkId])
-
-  itemId String @db.ObjectId
-  item   Item   @relation(fields: [itemId], references: [id])
-
-  quantity Float
-  price    Float
-  total    Float
-
-  createdAt DateTime @default(now())
-}
-
-//////////////////////////////////////////////////
 // ActivityLog
 //////////////////////////////////////////////////
 
@@ -303,6 +225,8 @@ model BillManager {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
 
   clerkUserId   String
+  user          User     @relation(fields: [clerkUserId], references: [clerkId])
+
   billNumber    String   @unique
   createdAt     DateTime @default(now())
 
@@ -316,8 +240,14 @@ model BillManager {
   paymentStatus String
   upiTxnRef     String?
   isHeld        Boolean  @default(false)
+
   customerName  String?
   customerPhone String?
+
+  partyId       String?   @db.ObjectId
+  party         Party?    @relation(fields: [partyId], references: [id])
+
+  payments      Payment[]   // ✅ ADD THIS
 
   isDeleted       Boolean  @default(false)
   deletedAt       DateTime?

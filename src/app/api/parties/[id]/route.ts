@@ -1,11 +1,11 @@
 // src/app/api/parties/[id]/route.ts
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 
 export async function PUT(req: NextRequest, context: any) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     // `params` can be a Promise in this environment — await it
@@ -38,7 +38,7 @@ export async function PUT(req: NextRequest, context: any) {
 
 export async function DELETE(req: NextRequest, context: any) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const params = await context.params;

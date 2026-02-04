@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = auth(); // ✅ FIX
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
 
     const logs = await prisma.activityLog.findMany({
       orderBy: { createdAt: "desc" },
-      take: 200, // safety limit
+      take: 200,
       include: {
         user: {
           select: {

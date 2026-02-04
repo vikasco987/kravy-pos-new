@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 export async function PUT(req: Request) {
@@ -7,7 +7,7 @@ export async function PUT(req: Request) {
     /* =====================
        AUTH
     ===================== */
-    const { userId: clerkId } = getAuth(req);
+    const { userId: clerkId } = auth();
 
     if (!clerkId) {
       return NextResponse.json(

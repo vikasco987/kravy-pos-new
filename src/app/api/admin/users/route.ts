@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { clerkClient, getAuth } from "@clerk/nextjs/server";
+import { clerkClient, auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 /* =========================
@@ -7,7 +7,7 @@ import prisma from "@/lib/prisma";
 ========================= */
 export async function GET(req: Request) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = auth();
 
     if (!userId) {
       return NextResponse.json(
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
 ========================= */
 export async function POST(req: Request) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = auth();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

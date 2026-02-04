@@ -14,10 +14,11 @@ export async function POST(req: Request) {
     });
 
     // Optional: update payment status
-    await prisma.bill.update({
-      where: { id: billId },
-      data: { paymentStatus: "Paid" },
-    });
+   await prisma.billManager.update({
+  where: { id: billId },
+  data: { paymentStatus: "Paid" },
+});
+
 
     return NextResponse.json(payment);
   } catch (error: any) {

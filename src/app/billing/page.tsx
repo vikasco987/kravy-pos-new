@@ -2,7 +2,7 @@
 import Link from "next/link"; 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { i } from "node_modules/framer-motion/dist/types.d-BJcRxCew";
+import { motion } from "framer-motion";
 import { formatWhatsAppNumber } from "@/lib/whatsapp";
 import { useSearch } from "@/components/SearchContext";
 
@@ -75,9 +75,7 @@ export default function BillingPage() {
         </Link>
       </div>
     </div>
-
-
-      </div>
+</div>
 
       {/* EMPTY STATE */}
       {bills.length === 0 && (

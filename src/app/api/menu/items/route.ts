@@ -1,12 +1,12 @@
 //src/app/api/menu/items/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
     // 1️⃣ Get logged-in Clerk user
-    const { userId: clerkId } = getAuth(req);
+    const { userId: clerkId } = auth();
 
     if (!clerkId) {
       return NextResponse.json(

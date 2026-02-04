@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(req: Request) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = auth(); // ✅ FIX
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -35,7 +36,8 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json(logs);
-  } catch {
+  } catch (error) {
+    console.error("ADMIN ACTIVITY LIST ERROR:", error);
     return NextResponse.json(
       { error: "Failed to load activity logs" },
       { status: 500 }

@@ -2,14 +2,13 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
-import { createClerkClient } from "@clerk/backend";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    // 1️⃣ Auth check
-    const { userId } = getAuth(req);
+    // 1️⃣ Auth check (App Router)
+    const { userId } = auth();
 
     if (!userId) {
       return NextResponse.json(
@@ -18,7 +17,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2️⃣ Verify ADMIN
+    // 2️⃣ Verify ADMIN from DB
     const admin = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: { id: true, role: true },
@@ -31,11 +30,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3️⃣ Parse body
+    // 3️⃣ Parse request body
     const body = await req.json();
     const { targetUserId, disable } = body;
 
-    if (!targetUserId || typeof disable !== "boolean") {
+    if (
+      typeof targetUserId !== "string" ||
+      typeof disable !== "boolean"
+    ) {
       return NextResponse.json(
         { error: "Invalid request body" },
         { status: 400 }
@@ -62,36 +64,33 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5️⃣ Clerk client
-    const clerk = createClerkClient({
-      secretKey: process.env.CLERK_SECRET_KEY!,
+    // 5️⃣ Disable / enable user in Clerk (metadata-based)
+    await clerkClient.users.updateUser(targetUser.clerkId, {
+      publicMetadata: {
+        disabled: disable,
+      },
     });
 
-    // 6️⃣ Ban / unban user in Clerk
-    await clerk.users.updateUser(targetUser.clerkId, {
-      banned: disable,
-    });
-
-    // 7️⃣ Force logout if disabling
+    // 6️⃣ Force logout if disabling
     if (disable) {
-      const sessions = await clerk.sessions.getSessionList({
+      const sessions = await clerkClient.sessions.getSessionList({
         userId: targetUser.clerkId,
       });
 
       await Promise.all(
         sessions.data.map((s) =>
-          clerk.sessions.revokeSession(s.id)
+          clerkClient.sessions.revokeSession(s.id)
         )
       );
     }
 
-    // 8️⃣ Update DB
+    // 7️⃣ Update DB status
     await prisma.user.update({
       where: { id: targetUserId },
       data: { isDisabled: disable },
     });
 
-    // 9️⃣ Activity log (optional but good)
+    // 8️⃣ Activity log
     await prisma.activityLog.create({
       data: {
         userId: admin.id,

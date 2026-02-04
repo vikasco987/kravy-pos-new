@@ -1,16 +1,20 @@
+// src/app/api/admin/users/invite/route.ts
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
-import { createClerkClient } from "@clerk/backend";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    // 🔐 Auth (safe in App Router)
-    const { userId } = getAuth(req);
+    // 🔐 Auth (App Router safe)
+    const { userId } = auth();
+
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     // 🔐 Admin check (DB is source of truth)
@@ -20,24 +24,28 @@ export async function POST(req: Request) {
     });
 
     if (!me || me.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403 }
+      );
     }
 
-    const { email, role } = await req.json();
+    // 📦 Parse body
+    const body = await req.json();
+    const { email, role } = body;
 
-    if (!email || !["USER", "SELLER", "ADMIN"].includes(role)) {
+    if (
+      typeof email !== "string" ||
+      !["USER", "SELLER", "ADMIN"].includes(role)
+    ) {
       return NextResponse.json(
         { error: "Invalid input" },
         { status: 400 }
       );
     }
 
-    // ✅ Correct Clerk backend client
-    const clerk = createClerkClient({
-      secretKey: process.env.CLERK_SECRET_KEY!,
-    });
-
-    const invite = await clerk.invitations.createInvitation({
+    // 📧 Create Clerk invitation
+    const invite = await clerkClient.invitations.createInvitation({
       emailAddress: email,
       publicMetadata: { role },
       redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/sign-up`,
@@ -52,10 +60,13 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      invitationId: invite.id,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        invitationId: invite.id,
+      },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error("INVITE USER ERROR:", error);
 
