@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     /* =====================
        AUTH
     ===================== */
-    const { userId: clerkId } = auth();
+    const { userId: clerkId } = await auth();
 
     if (!clerkId) {
       return NextResponse.json(

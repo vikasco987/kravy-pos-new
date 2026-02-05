@@ -198,9 +198,11 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
@@ -237,9 +239,10 @@ export async function POST(req: NextRequest) {
 }
 
 // Keep or add GET/DELETE as you need them (your previous handlers can remain)
+
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const parties = await prisma.party.findMany({
@@ -256,7 +259,7 @@ export async function GET(req: NextRequest) {
 // Optional: DELETE by body if you had earlier fallback code
 export async function DELETE(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => ({} as any));

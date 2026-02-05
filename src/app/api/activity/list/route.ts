@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const { userId } = auth(); // ✅ FIX HERE
+    const { userId } = await auth(); // ✅ FIX HERE
 
     if (!userId) {
       return NextResponse.json([], { status: 401 });

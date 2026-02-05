@@ -7,7 +7,7 @@ import prisma from "@/lib/prisma";
  */
 export async function GET(req: NextRequest) {
   try {
-    const { userId: clerkUserId } = auth();
+    const { userId: clerkUserId } = await auth();
 
     if (!clerkUserId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId: clerkUserId } = auth();
+    const { userId: clerkUserId } = await auth();
 
     if (!clerkUserId) {
       return NextResponse.json(

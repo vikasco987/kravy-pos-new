@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 
+export const runtime = "nodejs";
+
 /* =============================
    GET BUSINESS PROFILE
 ============================= */
 export async function GET(request: Request) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
 
     if (!userId) {
       return NextResponse.json(
@@ -35,7 +37,7 @@ export async function GET(request: Request) {
 ============================= */
 export async function POST(request: Request) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
 
     if (!userId) {
       return NextResponse.json(

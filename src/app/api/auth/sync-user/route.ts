@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { request } from "https";
 
 export async function POST() {
   try {
-    const { userId: clerkId } = auth();
+    const { userId: clerkId } = await auth();
 
     if (!clerkId) {
       return NextResponse.json({ ok: false }, { status: 401 });

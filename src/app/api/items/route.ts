@@ -290,7 +290,7 @@
 // --------------------------------- */
 // export async function GET(req: Request) {
 //   try {
-//     const { userId: clerkId } = auth();
+//     const { userId: clerkId } = auth(req);
 
 //     if (!clerkId) {
 //       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -331,7 +331,7 @@
 // --------------------------------- */
 // export async function POST(req: Request) {
 //   try {
-//     const { userId: clerkId } = auth();
+//     const { userId: clerkId } = auth(req);
 
 //     if (!clerkId) {
 //       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -379,7 +379,7 @@
 // --------------------------------- */
 // export async function PUT(req: Request) {
 //   try {
-//     const { userId: clerkId } = auth();
+//     const { userId: clerkId } = auth(req);
 
 //     if (!clerkId) {
 //       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -435,7 +435,7 @@
 // --------------------------------- */
 // export async function DELETE(req: Request) {
 //   try {
-//     const { userId: clerkId } = auth();
+//     const { userId: clerkId } = auth(req);
 
 //     if (!clerkId) {
 //       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -502,6 +502,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { request } from "http";
 
 /* --------------------------------
    Helper: find or create DB user
@@ -536,7 +537,7 @@ async function findOrCreateDBUser(clerkId: string) {
 --------------------------------- */
 export async function GET(req: Request) {
   try {
-    const { userId: clerkId } = auth();
+    const { userId: clerkId } = await auth();
 
     if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -577,7 +578,7 @@ export async function GET(req: Request) {
 --------------------------------- */
 export async function POST(req: Request) {
   try {
-    const { userId: clerkId } = auth();
+    const { userId: clerkId } = await auth();
 
     if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -624,7 +625,7 @@ export async function POST(req: Request) {
 --------------------------------- */
 export async function PUT(req: Request) {
   try {
-    const { userId: clerkId } = auth();
+    const { userId: clerkId } = await auth();
 
     if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -680,7 +681,7 @@ export async function PUT(req: Request) {
 --------------------------------- */
 export async function DELETE(req: Request) {
   try {
-    const { userId: clerkId } = auth();
+    const { userId: clerkId } = await auth();
 
     if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

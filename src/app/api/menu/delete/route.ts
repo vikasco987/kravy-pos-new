@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 export async function DELETE(req: NextRequest) {
   try {
     // ✅ App Router auth (correct)
-    const session = await auth();
+    const session = await await auth();
     const userId = session.userId;
 
     if (!userId) {

@@ -5,7 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 
 export async function PUT(req: NextRequest, context: any) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     // `params` can be a Promise in this environment — await it
@@ -38,7 +38,7 @@ export async function PUT(req: NextRequest, context: any) {
 
 export async function DELETE(req: NextRequest, context: any) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const params = await context.params;

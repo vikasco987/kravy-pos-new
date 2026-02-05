@@ -8,7 +8,7 @@ import prisma from "@/lib/prisma";
 export async function POST(req: Request) {
   try {
     // 1️⃣ Auth check (App Router)
-    const { userId } = auth();
+    const { userId } = await auth();
 
     if (!userId) {
       return NextResponse.json(

@@ -89,7 +89,7 @@ export default function CreateUserPage() {
             className="w-full border rounded px-3 py-2"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Dipti Singh"
+            placeholder="Enter Business Name"          
           />
         </div>
 

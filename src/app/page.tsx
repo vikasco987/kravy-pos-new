@@ -4,6 +4,8 @@ import Link from "next/link";
 import "./home.css";
 import { SectionCards } from "@/components/section-cards";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
+import { auth } from "@clerk/nextjs/server";
+
 
 export default function HomePage() {
   return (

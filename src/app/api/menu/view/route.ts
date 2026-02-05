@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId: clerkId } = auth();
+    const { userId: clerkId } = await auth();
 
     if (!clerkId) {
       return NextResponse.json(
