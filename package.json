@@ -1,4 +1,6 @@
-{
+// This is a basic example of a package.json file for a Next.js project with various dependencies and scripts.
+
+  {
   "name": "billing-backend",
   "version": "0.1.0",
   "private": true,
