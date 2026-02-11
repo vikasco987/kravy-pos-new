@@ -1,4 +1,3 @@
-// This is a basic example of a package.json file for a Next.js project with various dependencies and scripts.
 
   {
   "name": "billing-backend",
@@ -6,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "prisma generate && next build",
     "vercel-build": "prisma generate && next build",
     "start": "next start",
