@@ -32,12 +32,14 @@ export async function GET(req: NextRequest) {
 
     // 3️⃣ Return array directly (IMPORTANT)
     return NextResponse.json(items);
-  } catch (error) {
-    console.error("MENU ITEMS API ERROR:", error);
-
-    return NextResponse.json(
-      { error: "Failed to fetch menu items" },
-      { status: 500 }
-    );
-  }
+  } catch (error: any) {
+  console.error("MENU VIEW ERROR:", error);
+  return NextResponse.json(
+    { 
+      error: "Failed to fetch menu items",
+      message: error?.message || "Unknown error"
+    },
+    { status: 500 }
+  );
+}
 }
