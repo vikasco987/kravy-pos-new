@@ -63,26 +63,28 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+// 5️⃣ Get Clerk client
+const client = await clerkClient();
 
-    // 5️⃣ Disable / enable user in Clerk (metadata-based)
-   await (await clerkClient()).users.updateUser(targetUser.clerkId, {
+// Disable / enable user in Clerk
+await client.users.updateUser(targetUser.clerkId, {
   publicMetadata: {
     disabled: disable,
   },
 });
 
-    // 6️⃣ Force logout if disabling
-    if (disable) {
-      const sessions = await clerkClient.sessions.getSessionList({
-        userId: targetUser.clerkId,
-      });
+// 6️⃣ Force logout if disabling
+if (disable) {
+  const sessions = await client.sessions.getSessionList({
+    userId: targetUser.clerkId,
+  });
 
-      await Promise.all(
-        sessions.data.map((s) =>
-          clerkClient.sessions.revokeSession(s.id)
-        )
-      );
-    }
+  await Promise.all(
+    sessions.data.map((s) =>
+      client.sessions.revokeSession(s.id)
+    )
+  );
+}
 
     // 7️⃣ Update DB status
     await prisma.user.update({

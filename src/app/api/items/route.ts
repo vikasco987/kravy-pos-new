@@ -264,20 +264,23 @@ async function findOrCreateDBUser(clerkId: string) {
   });
 
   if (!user) {
-    // ✅ fetch Clerk user to get email
-    const clerkUser = await clerkClient.users.getUser(clerkId);
+    // Get Clerk client (IMPORTANT)
+const client = await clerkClient();
 
-    user = await prisma.user.create({
-      data: {
-        clerkId,
-        name: clerkUser.fullName ?? "",
-        email:
-          clerkUser.emailAddresses[0]?.emailAddress ??
-          `no-email-${clerkId}@example.com`,
-      },
-      select: { id: true },
-    });
-  }
+// ✅ fetch Clerk user to get email
+const clerkUser = await client.users.getUser(clerkId);
+
+user = await prisma.user.create({
+  data: {
+    clerkId,
+    name: clerkUser.fullName ?? "",
+    email:
+      clerkUser.emailAddresses[0]?.emailAddress ??
+      `no-email-${clerkId}@example.com`,
+  },
+  select: { id: true },
+});
+}
 
   return user;
 }

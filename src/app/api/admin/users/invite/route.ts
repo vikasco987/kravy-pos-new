@@ -43,13 +43,16 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+// Get Clerk client
+const client = await clerkClient();
 
-    // 📧 Create Clerk invitation
-    const invite = await clerkClient.invitations.createInvitation({
-      emailAddress: email,
-      publicMetadata: { role },
-      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/sign-up`,
-    });
+// 📧 Create Clerk invitation
+const invite = await client.invitations.createInvitation({
+  emailAddress: email,
+  publicMetadata: { role },
+  redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/sign-up`,
+});
+
 
     // 🧾 Audit log
     await prisma.activityLog.create({

@@ -10,13 +10,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 🔹 Get full Clerk user to read metadata
-    const clerkUser = await clerkClient.users.getUser(userId);
+   // Get Clerk client
+    const client = await clerkClient();
 
-   const rawRole =
-  clerkUser.publicMetadata?.role ||
-  clerkUser.privateMetadata?.role ||
-  "USER";
+    // 🔹 Get full Clerk user to read metadata
+    const clerkUser = await client.users.getUser(userId);
+
+    const rawRole =
+      clerkUser.publicMetadata?.role ||
+      clerkUser.privateMetadata?.role ||
+      "USER";
 
 // 🔹 normalize role to Prisma enum
 const roleFromClerk =

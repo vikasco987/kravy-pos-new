@@ -106,14 +106,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Create user in Clerk
-    const clerkUser = await clerkClient.users.createUser({
+   // Get Clerk client (do this once at top of handler)
+    const client = await clerkClient();
+
+  // ✅ Create user in Clerk
+    const clerkUser = await client.users.createUser({
       emailAddress: [email],
       password,
       firstName,
       lastName,
-      publicMetadata: { role },
+      publicMetadata: {
+        role,
+      },
     });
+
 
     // ✅ Store in DB
     const user = await prisma.user.create({
