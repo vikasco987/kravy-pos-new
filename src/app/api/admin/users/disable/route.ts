@@ -65,11 +65,11 @@ export async function POST(req: Request) {
     }
 
     // 5️⃣ Disable / enable user in Clerk (metadata-based)
-    await clerkClient.users.updateUser(targetUser.clerkId, {
-      publicMetadata: {
-        disabled: disable,
-      },
-    });
+   await (await clerkClient()).users.updateUser(targetUser.clerkId, {
+  publicMetadata: {
+    disabled: disable,
+  },
+});
 
     // 6️⃣ Force logout if disabling
     if (disable) {
