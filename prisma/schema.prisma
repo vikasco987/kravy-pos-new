@@ -44,6 +44,9 @@ model Category {
 }
 
 //////////////////////////////////////////////////
+// ITEM
+//////////////////////////////////////////////////
+
 model Item {
   id           String  @id @default(auto()) @map("_id") @db.ObjectId
   name         String
