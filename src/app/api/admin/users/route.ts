@@ -109,7 +109,7 @@ export async function POST(req: Request) {
    // Get Clerk client (do this once at top of handler)
     const client = await clerkClient();
 
-  // ✅ Create user in Clerk
+// ✅ Create user in Clerk
     const clerkUser = await client.users.createUser({
       emailAddress: [email],
       password,

@@ -244,7 +244,7 @@ function BrandBox({
       </Button>
 
       {/* Avatar */}
-      <div className="mx-auto w-32 h-32 rounded-full p-[3px] bg-gradient-to-tr from-primary via-purple-500 to-pink-500">
+      <div className="mx-auto w-32 h-32 rounded-full p-[3px] bg-linear-to-tr from-primary via-purple-500 to-pink-500">
         <div className="relative w-full h-full rounded-full overflow-hidden bg-gray-100">
           <Image
             src={data.profileImageUrl || data.logoUrl || "/no-image.png"}
