@@ -384,9 +384,10 @@
 
   /* ======================================================*/ 
 
-  "use client";
+"use client";
 
-import React, { use, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import type {
   BillManager,
@@ -418,18 +419,15 @@ type BillResponse = {
 
 
 
-export default function ViewBillPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  // ✅ Next.js 16 async params
-  const { id } = use(params);
+export default function ViewBillPage() {
+  const params = useParams();
+  const id = params.id as string;
 
   const [bill, setBill] = useState<BillManager | null>(null);
   const [business, setBusiness] = useState<PrismaBusinessProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const receiptRef = useRef<HTMLDivElement>(null);
+
 
   // ✅ Fetch from BillManager API
   useEffect(() => {
