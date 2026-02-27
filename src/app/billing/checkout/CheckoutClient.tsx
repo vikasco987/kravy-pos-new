@@ -699,6 +699,7 @@ function printReceipt() {
           </p>
 
 {/* ================= PRINT (58mm) ================= */}
+
 <div
   ref={receiptRef}
   data-paper="58" // change to "80" for 80mm printer

@@ -1,47 +1,34 @@
-// "use client";
-
-// import { ReactNode } from "react";
-
-// export default function ClientLayout({
-//   children,
-// }: {
-//   children: ReactNode;
-// }) {
-//   const handleGlobalClick = () => {
-//     if (typeof window !== "undefined") {
-//       window.dispatchEvent(new CustomEvent("kravy-close-sidebar"));
-//     }
-//   };
-
-//   return (
-//     <div className="min-h-screen w-full" onClick={handleGlobalClick}>
-//       {children}
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { ReactNode } from "react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
+import { useSidebar } from "@/components/SidebarContext";
 
 export default function ClientLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  const { collapsed } = useSidebar();
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      {/* STATIC NAVBAR */}
+      {/* NAVBAR */}
       <Navbar />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* STATIC SIDEBAR */}
+        {/* SIDEBAR */}
         <Sidebar />
 
-        {/* ONLY THIS SCROLLS */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+        {/* CONTENT AREA */}
+        <main
+          className="flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300"
+          style={{
+            marginLeft: collapsed ? "70px" : "240px",
+            marginTop: "2px", // navbar height
+          }}
+        >
           {children}
         </main>
       </div>

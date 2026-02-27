@@ -13,12 +13,12 @@ import { useSearch } from "@/components/SearchContext";
 
 
 export default function Navbar() {
-  const { collapsed, toggle } = useSidebar();
   const [role, setRole] = useState("");
   const [adminOpen, setAdminOpen] = useState(false);
   const { query, setQuery } = useSearch();
   const dropdownRef = useRef<HTMLDivElement>(null);
-
+  const { collapsed, toggle } = useSidebar();  
+  const toggleBtnRef = useRef<HTMLButtonElement>(null);
 
 
   /* Fetch role */
@@ -62,16 +62,17 @@ export default function Navbar() {
       <div className={styles.inner}>
         {/* LEFT */}
         <div className={styles.left}>
-          <button
-            className={styles.collapseBtn}
-            onClick={toggle}
-            aria-label="Toggle sidebar"
-          >
-            {collapsed ? "☰" : "⟨"}
-          </button>
+        <button
+          ref={toggleBtnRef}
+          className={styles.collapseBtn}
+          onClick={toggle}
+          aria-label="Toggle sidebar"
+        >
+          {collapsed ? "☰" : "⟨"}
+        </button>
 
-          <span className={styles.brand}>Kravy Billing</span>
-        </div>
+        <span className={styles.brand}>Kravy Billing</span>
+      </div>
 
         {/* CENTER */}
         <nav className={styles.center}>

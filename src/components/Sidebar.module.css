@@ -132,3 +132,21 @@
   opacity: 1;
   transform: translateY(-50%) translateX(4px);
 }
+
+
+
+.sidebar {
+  position: fixed;
+  top: 60px; /* same as navbar height */
+  left: 0;
+  height: calc(100vh - 60px);
+  width: 240px;
+  background: #e5edff;
+  color: white;
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+
+.collapsed {
+  width: 70px;
+}
