@@ -12,7 +12,7 @@ type SidebarContextType = {
   collapsed: boolean;
   toggle: () => void;
   setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
-  toggleBtnRef: React.RefObject<HTMLButtonElement>;
+toggleBtnRef: React.RefObject<HTMLButtonElement | null>;
 };
 
 const SidebarContext = createContext<SidebarContextType | null>(null);
