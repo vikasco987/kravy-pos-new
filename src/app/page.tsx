@@ -1,147 +1,101 @@
-// "use client";
-
-// import Link from "next/link";
-// import "./home.css";
-// import { SectionCards } from "@/components/section-cards";
-// import { ChartAreaInteractive } from "@/components/chart-area-interactive";
-// import { auth } from "@clerk/nextjs/server";
 
 
-// export default function HomePage() {
-//   return (
-//     <main className="dashboard-home">
-//       {/* TOP HEADER */}
-//       <section className="dashboard-header">
-//         <div>
-//           <h1 className="dashboard-title">
-//             <span className="brand-name">KRAVY</span> Dashboard
-//           </h1>
-//           <p className="dashboard-subtitle">
-//             Overview of your billing, sales, and activity
-//           </p>
-//         </div>
-
-//         <div className="dashboard-actions">
-//           <Link href="/billing/checkout" className="btn primary">
-//             Start Billing
-//           </Link>
-//           <Link href="/menu/view" className="btn outline">
-//             View Menu
-//           </Link>
-//         </div>
-//       </section>
-
-//       {/* SECTION CARDS (PARALLEL, TOP PRIORITY) */}
-//       <section className="dashboard-cards">
-//         <SectionCards />
-//       </section>
-
-//       {/* CHARTS */}
-//       <section className="dashboard-charts">
-//         <div className="chart-card">
-//           <h2 className="section-title">Sales Overview</h2>
-//           <ChartAreaInteractive />
-//         </div>
-//       </section>
-
-//       {/* FEATURES */}
-//       <section className="dashboard-features">
-//         <h2 className="section-title">Why Kravy Billing?</h2>
-
-//         <div className="feature-grid">
-//           <div className="feature">⚡ Fast Billing</div>
-//           <div className="feature">📋 Easy Menu Management</div>
-//           <div className="feature">👥 Party & Customer Records</div>
-//           <div className="feature">📊 Sales Tracking</div>
-//           <div className="feature">📱 Mobile Friendly</div>
-//           <div className="feature">🔒 Secure & Reliable</div>
-//         </div>
-//       </section>
-
-//       {/* HOW IT WORKS */}
-//       <section className="dashboard-steps">
-//         <h2 className="section-title">How It Works</h2>
-
-//         <div className="step-list">
-//           <div className="step">
-//             <span>1</span>
-//             <p>Add Menu Items</p>
-//           </div>
-//           <div className="step">
-//             <span>2</span>
-//             <p>Create Bill</p>
-//           </div>
-//           <div className="step">
-//             <span>3</span>
-//             <p>Track Sales</p>
-//           </div>
-//         </div>
-//       </section>
-//     </main>
-//   );
-// }
-
-import Link from "next/link";
-import "./home.css";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { SectionCards } from "@/components/section-cards";
-import { AnalyticsDashboard } from "@/components/analytics-dashboard";
-import { DashboardAnalytics } from "@/components/dashboard-analytics";
+import {
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+} from "@clerk/nextjs";
+import Image from "next/image";
 
 export default async function HomePage() {
   const { userId } = await auth();
 
-  if (!userId) {
-    redirect("/sign-in");
+  if (userId) {
+    redirect("/dashboard");
   }
 
   return (
-    <main className="dashboard-container">
+    <main className="relative min-h-screen bg-gradient-to-br from-white via-blue-50 to-indigo-100 overflow-hidden">
 
-      {/* HEADER */}
-      <section className="dashboard-header">
-        <div className="header-left">
-          <h1>
-            <span className="brand">KRAVY</span> Dashboard
-          </h1>
-          <p>Manage billing, track revenue, and monitor business growth.</p>
+      {/* Background Image Layer */}
+      <div className="absolute inset-0 -z-10">
+        <Image
+          src="/landing-gradient.svg"
+          alt="Background"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-40"
+        />
+      </div>
+
+      {/* Container */}
+      <div className="mx-auto max-w-7xl px-6 lg:px-20 py-16 lg:py-24">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-12">
+
+          {/* LEFT CONTENT */}
+          <div className="text-center md:text-left space-y-6">
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+              Smart Billing <br />
+              <span className="text-blue-600">Made Simple</span>
+            </h1>
+
+            <p className="text-base sm:text-lg text-gray-600 max-w-xl mx-auto md:mx-0">
+              Powerful invoicing, real-time analytics, and revenue tracking
+              built for modern businesses. Manage bills, track payments,
+              and grow faster with intelligent insights.
+            </p>
+
+            <SignedOut>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-4">
+
+                <SignUpButton
+                  mode="modal"
+                  afterSignUpUrl="/dashboard"
+                >
+                  <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 transition-all duration-300 text-white font-medium px-8 py-3 rounded-xl shadow-md">
+                    Get Started Free
+                  </button>
+                </SignUpButton>
+
+                <SignInButton
+                  mode="modal"
+                  afterSignInUrl="/dashboard"
+                >
+                  <button className="w-full sm:w-auto border border-gray-300 hover:bg-gray-100 transition-all duration-300 text-gray-800 font-medium px-8 py-3 rounded-xl">
+                    Login
+                  </button>
+                </SignInButton>
+
+              </div>
+            </SignedOut>
+
+            <div className="pt-6 text-sm text-gray-500">
+              No credit card required • Secure authentication • Cloud ready
+            </div>
+
+          </div>
+
+          {/* RIGHT SIDE IMAGE */}
+          {/* Visible on medium and above */}
+          <div className="relative hidden md:flex justify-center">
+            <Image
+              src="/dashboard-mockup.png"
+              alt="Dashboard Preview"
+              width={750}
+              height={500}
+              priority
+              className="rounded-2xl shadow-2xl border bg-white"
+            />
+          </div>
+
         </div>
 
-        <div className="header-actions">
-          <Link href="/billing/checkout" className="btn-primary">
-            + New Bill
-          </Link>
-          <Link href="/menu/view" className="btn-secondary">
-            Manage Menu
-          </Link>
-        </div>
-      </section>
-
-      
-      {/* ENTERPRISE ANALYTICS GRID */}
-      <section>
-        <DashboardAnalytics />
-      </section>
-
-      {/* INFO SECTION */}
-      <section className="info-section">
-        <div className="info-card">
-          <h3>Fast & Smart Billing</h3>
-          <p>Create bills quickly with optimized checkout flow.</p>
-        </div>
-
-        <div className="info-card">
-          <h3>Real-Time Analytics</h3>
-          <p>Monitor daily, weekly, and monthly revenue.</p>
-        </div>
-
-        <div className="info-card">
-          <h3>Secure & Reliable</h3>
-          <p>Protected with Clerk authentication and secure backend.</p>
-        </div>
-      </section>
-
+      </div>
     </main>
   );
 }

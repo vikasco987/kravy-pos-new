@@ -1,16 +1,6 @@
 
 
 
-//wdrftyujiklkjhgfdsasdfghjkl
-//asdfghjklkjhgfdssdfghjk
-//lkjhgfdsdfghjkl;lkjuytrewertyukl
-
-
-
-
-
-
-
 
 "use client";
 import { Upload } from "lucide-react";

@@ -2,8 +2,7 @@
 import type { ReactNode } from "react";
 import "./globals.css";
 import Providers from "@/components/Providers";
-import ClientLayout from "@/components/ClientLayout";
-import { auth } from "@clerk/nextjs/server";
+import { SidebarProvider } from "@/components/SidebarContext";
 
 export const metadata = {
   title: "Kravy Billing",
@@ -14,12 +13,13 @@ export default function RootLayout({
 }: {
   children: ReactNode;
 }) {
-
   return (
     <html lang="en">
-      <body className="h-screen overflow-hidden bg-gray-50">
+      <body className="bg-gray-50">
         <Providers>
-          <ClientLayout>{children}</ClientLayout>
+          <SidebarProvider>
+            {children}
+          </SidebarProvider>
         </Providers>
       </body>
     </html>

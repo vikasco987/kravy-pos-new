@@ -1,0 +1,31 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Main Background Gradient -->
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"></stop>
+      <stop offset="50%" stop-color="#e6f0ff"></stop>
+      <stop offset="100%" stop-color="#2563eb"></stop>
+    </linearGradient>
+
+    <!-- Soft Radial Glow -->
+    <radialGradient id="glow1" cx="70%" cy="30%" r="40%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.4"></stop>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"></stop>
+    </radialGradient>
+
+    <radialGradient id="glow2" cx="20%" cy="80%" r="50%">
+      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.4"></stop>
+      <stop offset="100%" stop-color="#60a5fa" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+
+  <!-- Base Gradient -->
+  <rect width="1920" height="1080" fill="url(#bgGradient)"></rect>
+
+  <!-- Floating Glow Effects -->
+  <circle cx="1400" cy="300" r="500" fill="url(#glow1)"></circle>
+  <circle cx="400" cy="900" r="600" fill="url(#glow2)"></circle>
+
+  <!-- Soft Wave Shape -->
+  <path d="M0 700 C 400 600, 800 850, 1200 700 C 1600 550, 1920 750, 1920 750 L1920 1080 L0 1080 Z" fill="white" opacity="0.2"></path>
+</svg>
