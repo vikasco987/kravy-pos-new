@@ -5,12 +5,12 @@
 
 import { useState, useRef, useEffect, ChangeEvent } from "react";
 import { motion } from "framer-motion";
-import ImageUpload from "@/components/uploaditems/ImageUpload";
-import CategorySelect from "@/components/uploaditems/CategorySelect";
-import GstTaxSection from "@/components/uploaditems/GstTaxSection";
-import ProductDetailsSection from "@/components/uploaditems/ProductDetailsSection";
-import InventorySection from "@/components/uploaditems/InventorySection";
-import DisplaySection from "@/components/uploaditems/DisplaySection";
+import ImageUpload from "@/app/dashboard/components/uploaditems/ImageUpload";
+import CategorySelect from "@/app/dashboard/components/uploaditems/CategorySelect";
+import GstTaxSection from "@/app/dashboard/components/uploaditems/GstTaxSection";
+import ProductDetailsSection from "@/app/dashboard/components/uploaditems/ProductDetailsSection";
+import InventorySection from "@/app/dashboard/components/uploaditems/InventorySection";
+import DisplaySection from "@/app/dashboard/components/uploaditems/DisplaySection";
 
 export default function Page() {
   const [image, setImage] = useState<string | null>(null);
