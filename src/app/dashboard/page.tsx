@@ -252,8 +252,8 @@ bills.forEach((bill) => {
 
 const recentBills = bills.slice(0, 5).map((bill) => ({
   billNumber: bill.billNumber,
-  customerName: bill.customerName,
-  paymentMode: bill.paymentMode,
+  customerName: bill.customerName ?? undefined,
+  paymentMode: bill.paymentMode,      
   total: bill.total,
   createdAt: bill.createdAt.toLocaleDateString(),
 }));

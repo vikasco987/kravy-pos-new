@@ -42,7 +42,7 @@
 
 interface Bill {
   billNumber: string;
-  customerName?: string;
+  customerName?: string | null;
   paymentMode: string;
   total: number;
   createdAt: string;

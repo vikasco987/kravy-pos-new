@@ -298,7 +298,7 @@ export default function TopItems({
                       <XAxis
                         dataKey="date"
                         tickFormatter={(v) =>
-                          new Date(v).getDate()
+                         new Date(v).getDate().toString()
                         }
                         tick={{ fontSize: 10 }}
                       />

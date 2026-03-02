@@ -55,7 +55,7 @@ export default async function HomePage() {
 
                 <SignUpButton
                   mode="modal"
-                  afterSignUpUrl="/dashboard"
+                 forceRedirectUrl="/dashboard"
                 >
                   <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 transition-all duration-300 text-white font-medium px-8 py-3 rounded-xl shadow-md">
                     Get Started Free
@@ -64,7 +64,7 @@ export default async function HomePage() {
 
                 <SignInButton
                   mode="modal"
-                  afterSignInUrl="/dashboard"
+                  forceRedirectUrl="/dashboard"
                 >
                   <button className="w-full sm:w-auto border border-gray-300 hover:bg-gray-100 transition-all duration-300 text-gray-800 font-medium px-8 py-3 rounded-xl">
                     Login
