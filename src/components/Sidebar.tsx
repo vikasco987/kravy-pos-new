@@ -119,8 +119,9 @@ const navGroups = [
     items: [
       { icon: <Home size={18} />, label: "Dashboard", href: "/dashboard", badge: "Home", badgeColor: "#10B981" },
       { icon: <ShoppingCart size={18} />, label: "New Order", href: "/dashboard/billing/checkout", badge: "Live", badgeColor: "#FF6B35" },
-      { icon: <Receipt size={18} />, label: "Bill Manager", href: "/dashboard/billing" },
       { icon: <QrCode size={18} />, label: "QR Orders", href: "/dashboard/qr-orders", badge: "Scan", badgeColor: "#8B5CF6" },
+      { icon: <Activity size={18} />, label: "Workflow (New)", href: "/dashboard/workflow", badge: "Hot", badgeColor: "#EF4444" },
+      { icon: <Receipt size={18} />, label: "Bill Manager", href: "/dashboard/billing" },
     ]
   },
   {
@@ -131,6 +132,7 @@ const navGroups = [
       { icon: <Upload size={18} />, label: "Upload Menu", href: "/dashboard/menu/upload" },
       { icon: <Users size={18} />, label: "Customers", href: "/dashboard/parties" },
       { icon: <Package size={18} />, label: "Inventory", href: "/dashboard/inventory" },
+      { icon: <LayoutGrid size={18} />, label: "Tables", href: "/dashboard/tables" },
     ]
   },
   {

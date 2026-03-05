@@ -205,7 +205,9 @@ const ZOMATO_CSS = `
 export default function PublicMenuPage() {
     const { clerkId } = useParams() as { clerkId: string };
     const searchParams = useSearchParams();
+    // QR url will pass the actual table record id; optionally also a human-readable name
     const tableId = searchParams.get("tableId") || "Counter";
+    const tableName = searchParams.get("tableName") || tableId;
 
     const [items, setItems] = useState<MenuItem[]>([]);
     const [profile, setProfile] = useState<BusinessProfile | null>(null);
@@ -305,7 +307,7 @@ export default function PublicMenuPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     clerkUserId: clerkId,
-                    tableId: tableId,
+                    tableId: tableId, // actual record id
                     items: orderItems,
                     total: cartTotal,
                     customerName: "QR Customer",
@@ -387,7 +389,7 @@ export default function PublicMenuPage() {
                         ) : (
                             <div style={{ width: '100%', height: '190px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eee', fontSize: '3rem' }}>🍽️</div>
                         )}
-                        <div className="table-badge"><div className="live-dot"></div><span>Table {tableId} · Active</span></div>
+                        <div className="table-badge"><div className="live-dot"></div><span>Table {tableName} · Active</span></div>
                     </div>
                     <div className="rest-body">
                         <div className="rest-name">{profile?.businessName || "Restaurant Menu"}</div>
