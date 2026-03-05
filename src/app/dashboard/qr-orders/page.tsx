@@ -123,6 +123,26 @@ export default function QROrdersPage() {
         img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
     };
 
+    const handleSaveQR = async () => {
+        if (!tableId.trim()) {
+            toast.error("Please enter a table name to save.");
+            return;
+        }
+        try {
+            const res = await fetch("/api/tables", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: tableId.trim() }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            toast.success(`QR code for table "${tableId}" saved successfully!`);
+            setTableId(""); // clear input
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to save QR code.");
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex h-[60vh] items-center justify-center">
@@ -138,6 +158,13 @@ export default function QROrdersPage() {
                     <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">QR Menu Builder</h1>
                     <p className="text-slate-500 mt-1 font-medium">Generate table-wise QR codes & view your live public menu.</p>
                 </div>
+                <Button
+                    onClick={() => window.location.href = '/dashboard/tables'}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 py-3 font-bold flex items-center gap-2 shadow-md hover:shadow-indigo-600/20 active:scale-95 transition-all"
+                >
+                    <TableIcon className="w-5 h-5" />
+                    View All QR Codes
+                </Button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -195,7 +222,7 @@ export default function QROrdersPage() {
                         </div>
 
                         {/* ACTIONS */}
-                        <div className="grid grid-cols-2 gap-4 mt-8">
+                        <div className="grid grid-cols-3 gap-4 mt-8">
                             <Button
                                 onClick={handleDownloadQR}
                                 className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl py-6 font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-indigo-600/20 active:scale-95 transition-all"
@@ -210,6 +237,13 @@ export default function QROrdersPage() {
                             >
                                 <LinkIcon className="w-5 h-5" />
                                 Copy URL
+                            </Button>
+                            <Button
+                                onClick={handleSaveQR}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl py-6 font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-emerald-600/20 active:scale-95 transition-all"
+                            >
+                                <QrCode className="w-5 h-5" />
+                                Save QR Code
                             </Button>
                         </div>
                     </div>
@@ -285,6 +319,6 @@ export default function QROrdersPage() {
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }
