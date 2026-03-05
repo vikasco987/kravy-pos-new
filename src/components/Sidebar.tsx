@@ -127,6 +127,7 @@ const navGroups = [
     group: "MANAGE",
     items: [
       { icon: <UtensilsCrossed size={18} />, label: "Menu Items", href: "/dashboard/menu/view" },
+      { icon: <Upload size={18} />, label: "Menu Manager", href: "/dashboard/menu/edit", badge: "New", badgeColor: "#FF6B35" },
       { icon: <Upload size={18} />, label: "Upload Menu", href: "/dashboard/menu/upload" },
       { icon: <Users size={18} />, label: "Customers", href: "/dashboard/parties" },
       { icon: <Package size={18} />, label: "Inventory", href: "/dashboard/inventory" },
