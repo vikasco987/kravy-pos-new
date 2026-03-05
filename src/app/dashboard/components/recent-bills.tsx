@@ -1,44 +1,7 @@
-// "use client";
-
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-// interface Bill {
-//   id: string;
-//   customer: string;
-//   amount: number;
-//   date: string;
-// }
-
-// interface RecentBillsProps {
-//   bills: Bill[];
-// }
-
-// export default function RecentBills({ bills }: RecentBillsProps) {
-//   return (
-//     <Card className="rounded-2xl shadow-sm">
-//       <CardHeader>
-//         <CardTitle>Recent Bills</CardTitle>
-//       </CardHeader>
-
-//       <CardContent className="space-y-4">
-//         {bills.map((bill) => (
-//           <div
-//             key={bill.id}
-//             className="flex justify-between items-center border-b pb-2"
-//           >
-//             <div>
-//               <p className="text-sm font-medium">{bill.customer}</p>
-//               <p className="text-xs text-muted-foreground">{bill.date}</p>
-//             </div>
-//             <p className="font-semibold">₹{bill.amount}</p>
-//           </div>
-//         ))}
-//       </CardContent>
-//     </Card>
-//   );
-// }
-
 "use client";
+
+import { Receipt, History, User, Banknote, Smartphone } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface Bill {
   billNumber: string;
@@ -58,95 +21,249 @@ export default function RecentBills({
   deletedBills = [],
 }: Props) {
   const format = (num: number) =>
-    new Intl.NumberFormat("en-IN").format(num);
+    new Intl.NumberFormat("en-IN").format(Math.round(num));
 
   const PaymentBadge = ({ mode }: { mode: string }) => {
     const lower = mode?.toLowerCase() || "";
-
-    const color =
-      lower.includes("cash")
-        ? "bg-green-100 text-green-700"
-        : lower.includes("upi")
-        ? "bg-blue-100 text-blue-700"
-        : "bg-gray-100 text-gray-600";
+    const isUPI = lower.includes("upi");
+    const color = isUPI ? "#8B5CF6" : "#10B981";
+    const Icon = isUPI ? Smartphone : Banknote;
 
     return (
-      <span
-        className={`px-2 py-1 rounded-md text-xs font-medium ${color}`}
-      >
-        {mode}
+      <span style={{
+        fontSize: "0.6rem",
+        fontWeight: 700,
+        padding: "3px 8px",
+        borderRadius: "20px",
+        fontFamily: "monospace",
+        background: `${color}15`,
+        color: color,
+        border: `1px solid ${color}33`,
+        display: "flex",
+        alignItems: "center",
+        gap: "3px"
+      }}>
+        <Icon size={9} />
+        {mode.toUpperCase()}
       </span>
     );
   };
 
-  const Card = ({
+  const BillCard = ({
     title,
     bills,
+    icon,
+    accentColor,
     deleted = false,
   }: {
     title: string;
     bills: Bill[];
+    icon: React.ReactNode;
+    accentColor: string;
     deleted?: boolean;
   }) => (
-    <div className="rounded-2xl bg-white shadow-sm p-4 space-y-4 h-full">
-      <h3 className="text-base font-semibold">{title}</h3>
+    <div style={{
+      background: "var(--kravy-surface)",
+      border: "1px solid var(--kravy-border)",
+      borderRadius: "24px",
+      padding: "24px",
+      display: "flex",
+      flexDirection: "column",
+      gap: "16px",
+      position: "relative",
+      overflow: "hidden",
+      boxShadow: "var(--kravy-card-shadow)"
+    }}>
+      {/* Top accent line */}
+      <div style={{
+        position: "absolute",
+        top: 0,
+        left: "24px",
+        right: "24px",
+        height: "2px",
+        background: `linear-gradient(90deg, ${accentColor}, transparent)`,
+        borderRadius: "0 0 8px 8px"
+      }} />
 
-      <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-        {bills.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            No bills found
-          </p>
-        )}
+      {/* Glow */}
+      <div style={{
+        position: "absolute",
+        top: "-40px",
+        right: "-40px",
+        width: "140px",
+        height: "140px",
+        background: `${accentColor}10`,
+        borderRadius: "50%",
+        filter: "blur(50px)",
+        pointerEvents: "none"
+      }} />
 
-        {bills.map((bill) => (
-          <div
-            key={bill.billNumber}
-            className={`flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 rounded-xl border ${
-              deleted
-                ? "bg-red-50 border-red-200"
-                : "bg-gray-50"
-            }`}
-          >
-            {/* Left */}
-            <div>
-              <strong className="text-sm">
-                #{bill.billNumber}
-              </strong>
-              <p className="text-xs text-muted-foreground">
-                {bill.customerName || "Walk-in"}
-              </p>
-            </div>
-
-            {/* Right */}
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <PaymentBadge mode={bill.paymentMode} />
-
-              <span className="font-semibold">
-                ₹ {format(bill.total)}
-              </span>
-
-              <span className="text-xs text-muted-foreground">
-                {bill.createdAt}
-              </span>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{
+            width: "40px",
+            height: "40px",
+            borderRadius: "12px",
+            background: `${accentColor}18`,
+            border: `1px solid ${accentColor}30`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: accentColor
+          }}>
+            {icon}
+          </div>
+          <div>
+            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "#F1F0EC" }}>{title}</h3>
+            <div style={{ fontSize: "0.68rem", color: "#6B7280", fontFamily: "monospace" }}>
+              {bills.length} record{bills.length !== 1 ? "s" : ""}
             </div>
           </div>
-        ))}
+        </div>
+        {bills.length > 0 && (
+          <div style={{
+            fontSize: "0.65rem",
+            fontWeight: 700,
+            padding: "4px 10px",
+            borderRadius: "20px",
+            background: `${accentColor}12`,
+            color: accentColor,
+            border: `1px solid ${accentColor}25`
+          }}>
+            Latest 5
+          </div>
+        )}
+      </div>
+
+      {/* Bills List */}
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+        maxHeight: "320px",
+        overflowY: "auto",
+        overflowX: "hidden",
+        paddingRight: "4px"
+      }}>
+        {bills.length === 0 ? (
+          <div style={{
+            textAlign: "center",
+            padding: "40px 0",
+            color: "#4A5568",
+            fontSize: "0.82rem",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "10px"
+          }}>
+            <div style={{ fontSize: "2rem", opacity: 0.5 }}>📭</div>
+            No records found
+          </div>
+        ) : (
+          bills.map((bill, idx) => (
+            <motion.div
+              key={bill.billNumber}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.06 }}
+              style={{
+                padding: "14px 16px",
+                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(255,255,255,0.05)",
+                borderRadius: "14px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                transition: "all 0.2s"
+              }}
+              onHoverStart={(e) => {
+                (e.target as HTMLElement).style?.setProperty?.("background", "rgba(255,255,255,0.05)");
+              }}
+            >
+              {/* Left */}
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{
+                  width: "38px",
+                  height: "38px",
+                  borderRadius: "10px",
+                  background: `${accentColor}12`,
+                  border: `1px solid ${accentColor}20`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: accentColor,
+                  fontSize: "0.65rem",
+                  fontWeight: 900,
+                  fontFamily: "monospace"
+                }}>
+                  #{bill.billNumber.slice(-2)}
+                </div>
+                <div>
+                  <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#E2E8F0" }}>
+                    Bill #{bill.billNumber}
+                  </div>
+                  <div style={{
+                    fontSize: "0.7rem",
+                    color: "#6B7280",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    marginTop: "2px"
+                  }}>
+                    <User size={9} />
+                    {bill.customerName || "Walk-in Customer"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right */}
+              <div style={{ textAlign: "right" }}>
+                <div style={{
+                  fontSize: "1rem",
+                  fontWeight: 800,
+                  color: deleted ? "#EF4444" : "#F1F0EC",
+                  letterSpacing: "-0.3px",
+                  marginBottom: "4px"
+                }}>
+                  ₹{format(bill.total)}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", justifyContent: "flex-end" }}>
+                  <PaymentBadge mode={bill.paymentMode} />
+                  <span style={{
+                    fontSize: "0.6rem",
+                    color: "#4A5568",
+                    fontFamily: "monospace",
+                    whiteSpace: "nowrap"
+                  }}>
+                    {bill.createdAt}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          ))
+        )}
       </div>
     </div>
   );
 
   return (
-    <div
-      className="
-        grid gap-6
-        grid-cols-1
-        lg:grid-cols-2
-      "
-    >
-      <Card title="Recent Bills" bills={recentBills} />
-      <Card
-        title="Recently Deleted Bills"
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+      gap: "20px"
+    }}>
+      <BillCard
+        title="Recent Sales"
+        bills={recentBills}
+        icon={<Receipt size={20} />}
+        accentColor="#2563EB"
+      />
+      <BillCard
+        title="Deleted History"
         bills={deletedBills}
+        icon={<History size={20} />}
+        accentColor="#EF4444"
         deleted
       />
     </div>

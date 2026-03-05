@@ -5,30 +5,23 @@ import { useRouter } from "next/navigation";
 import { DayPicker, DateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { motion, AnimatePresence } from "framer-motion";
+import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 
 export default function DateFilter() {
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [mode, setMode] =
-    useState<"quick" | "single" | "range">("quick");
-
-  const [selectedDate, setSelectedDate] =
-    useState<Date | undefined>();
-
-  const [range, setRange] =
-    useState<DateRange | undefined>();
-
-  const [label, setLabel] = useState("Today");
+  const [mode, setMode] = useState<"quick" | "single" | "range">("quick");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [range, setRange] = useState<DateRange | undefined>();
+  const [label, setLabel] = useState("Last 30 Days");
 
   useEffect(() => {
-    const checkScreen = () =>
-      setIsMobile(window.innerWidth < 640);
+    const checkScreen = () => setIsMobile(window.innerWidth < 640);
     checkScreen();
     window.addEventListener("resize", checkScreen);
-    return () =>
-      window.removeEventListener("resize", checkScreen);
+    return () => window.removeEventListener("resize", checkScreen);
   }, []);
 
   const formatDate = (date: Date) =>
@@ -53,78 +46,70 @@ export default function DateFilter() {
 
   const applyRange = () => {
     if (!range?.from || !range?.to) return;
-
-    const diff =
-      (range.to.getTime() - range.from.getTime()) /
-        (1000 * 60 * 60 * 24) +
-      1;
-
-    setLabel(
-      `${formatDate(range.from)} - ${formatDate(range.to)}`
-    );
-
+    const diff = (range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24) + 1;
+    setLabel(`${formatDate(range.from)} - ${formatDate(range.to)}`);
     router.push(`/dashboard?range=${Math.floor(diff)}`);
     setOpen(false);
   };
 
   return (
     <div className="relative">
-
-      {/* BUTTON */}
       <button
         onClick={() => setOpen(true)}
-        className="px-4 py-2 bg-white border rounded-xl text-sm font-medium shadow-sm hover:bg-gray-50 flex items-center gap-2"
+        style={{
+          padding: "10px 18px",
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: "14px",
+          color: "#F1F0EC",
+          fontSize: "0.85rem",
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          cursor: "pointer",
+          transition: "all 0.2s"
+        }}
       >
+        <CalendarIcon size={16} color="#FF6B35" />
         {label}
-        <span className="text-xs">▾</span>
+        <ChevronDown size={14} color="#4A5568" />
       </button>
 
       <AnimatePresence>
         {open && (
           <>
-            {/* BACKDROP */}
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.4 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black z-40"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
               onClick={() => setOpen(false)}
             />
 
-            {/* DESKTOP DROPDOWN */}
-            {!isMobile && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                className={`
-absolute right-0 mt-2
-bg-white border rounded-xl shadow-xl z-50
-overflow-hidden
-max-w-[95vw]
-transition-all duration-300
-${mode === "quick"
-  ? "min-w-max w-auto"
-  : "w-[320px] sm:w-[360px]"}
-`}
-              >
-                <Content />
-              </motion.div>
-            )}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              style={{
+                position: isMobile ? "fixed" : "absolute",
+                bottom: isMobile ? "0" : "auto",
+                top: isMobile ? "auto" : "calc(100% + 12px)",
+                right: isMobile ? "0" : "0",
+                width: isMobile ? "100%" : "320px",
+                background: "#0D0F1A",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: isMobile ? "24px 24px 0 0" : "20px",
+                padding: "24px",
+                boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
+                zIndex: 110,
+                color: "#F1F0EC"
+              }}
+            >
+              {isMobile && <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.1)", borderRadius: "10px", margin: "0 auto 20px" }} />}
 
-            {/* MOBILE DRAWER */}
-            {isMobile && (
-              <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ duration: 0.3 }}
-                className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-50 p-4 max-h-[85vh] overflow-y-auto"
-              >
-                <div className="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mb-4" />
-                <Content />
-              </motion.div>
-            )}
+              <Content />
+            </motion.div>
           </>
         )}
       </AnimatePresence>
@@ -133,99 +118,94 @@ ${mode === "quick"
 
   function Content() {
     return (
-      <>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {mode === "quick" && (
-          <div className="text-sm space-y-1">
+          <>
+            <h4 style={{ fontSize: "0.75rem", fontWeight: 700, color: "#4A5568", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>Quick Selection</h4>
             {[
               { label: "Today", value: 1 },
               { label: "Yesterday", value: 2 },
               { label: "Last 7 Days", value: 7 },
               { label: "Last 30 Days", value: 30 },
-              {
-                label: "This Month",
-                value: new Date().getDate(),
-              },
+              { label: "This Month", value: new Date().getDate() },
               { label: "Last Month", value: 30 },
             ].map((item) => (
               <button
                 key={item.label}
-                onClick={() =>
-                  applyQuick(item.label, item.value)
-                }
-                className="block w-full text-left px-3 py-2 rounded-md hover:bg-gray-100"
+                onClick={() => applyQuick(item.label, item.value)}
+                style={{
+                  textAlign: "left",
+                  padding: "10px 14px",
+                  background: "transparent",
+                  border: "none",
+                  borderRadius: "10px",
+                  color: "#F1F0EC",
+                  fontSize: "0.9rem",
+                  cursor: "pointer",
+                  transition: "background 0.2s"
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 {item.label}
               </button>
             ))}
 
-            <div className="border-t my-2" />
+            <div style={{ height: "1px", background: "rgba(255,255,255,0.05)", margin: "8px 0" }} />
 
             <button
               onClick={() => setMode("single")}
-              className="block w-full text-left px-3 py-2 rounded-md hover:bg-gray-100"
+              style={{
+                textAlign: "left", padding: "10px 14px", background: "transparent", border: "none",
+                borderRadius: "10px", color: "#FF6B35", fontSize: "0.9rem", cursor: "pointer", fontWeight: 700
+              }}
             >
               Custom Date
             </button>
-
             <button
               onClick={() => setMode("range")}
-              className="block w-full text-left px-3 py-2 rounded-md hover:bg-gray-100"
+              style={{
+                textAlign: "left", padding: "10px 14px", background: "transparent", border: "none",
+                borderRadius: "10px", color: "#FF6B35", fontSize: "0.9rem", cursor: "pointer", fontWeight: 700
+              }}
             >
               Custom Range
             </button>
+          </>
+        )}
+
+        {(mode === "single" || mode === "range") && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <DayPicker
+              mode={mode}
+              selected={mode === "single" ? selectedDate : range}
+              onSelect={mode === "single" ? (d) => setSelectedDate(d as Date) : (r) => setRange(r as DateRange)}
+              styles={{
+                head_cell: { color: "#4A5568", fontSize: "0.75rem" },
+                cell: { color: "#F1F0EC" },
+                nav_button: { color: "#F1F0EC" }
+              }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
+              <button
+                onClick={() => setMode("quick")}
+                style={{ background: "none", border: "none", color: "#4A5568", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600 }}
+              >
+                Back
+              </button>
+              <button
+                onClick={mode === "single" ? applySingle : applyRange}
+                style={{
+                  background: "#FF6B35", border: "none", color: "white",
+                  padding: "8px 20px", borderRadius: "10px", cursor: "pointer", fontSize: "0.85rem", fontWeight: 700
+                }}
+              >
+                Apply
+              </button>
+            </div>
           </div>
         )}
-
-        {mode === "single" && (
-          <>
-            <DayPicker
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              numberOfMonths={1}
-            />
-            <div className="flex justify-between mt-4">
-              <button
-                onClick={() => setMode("quick")}
-                className="text-sm text-gray-500"
-              >
-                Back
-              </button>
-              <button
-                onClick={applySingle}
-                className="bg-black text-white px-3 py-1 rounded-md text-sm"
-              >
-                Apply
-              </button>
-            </div>
-          </>
-        )}
-
-        {mode === "range" && (
-          <>
-            <DayPicker
-              mode="range"
-              selected={range}
-              onSelect={setRange}
-              numberOfMonths={1}
-            />
-            <div className="flex justify-between mt-4">
-              <button
-                onClick={() => setMode("quick")}
-                className="text-sm text-gray-500"
-              >
-                Back
-              </button>
-              <button
-                onClick={applyRange}
-                className="bg-black text-white px-3 py-1 rounded-md text-sm"
-              >
-                Apply
-              </button>
-            </div>
-          </>
-        )}
-      </>
+      </div>
     );
   }
 }
