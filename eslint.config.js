@@ -1,5 +1,5 @@
 // eslint.config.js
-import { FlatCompat } from '@eslint/eslintrc-compat';
+import { FlatCompat } from '@eslint/eslintrc';
 
 const compat = new FlatCompat({
   baseDirectory: process.cwd(),

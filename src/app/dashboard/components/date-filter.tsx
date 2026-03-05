@@ -176,16 +176,29 @@ export default function DateFilter() {
 
         {(mode === "single" || mode === "range") && (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <DayPicker
-              mode={mode}
-              selected={mode === "single" ? selectedDate : range}
-              onSelect={mode === "single" ? (d) => setSelectedDate(d as Date) : (r) => setRange(r as DateRange)}
-              styles={{
-                head_cell: { color: "#4A5568", fontSize: "0.75rem" },
-                cell: { color: "#F1F0EC" },
-                nav_button: { color: "#F1F0EC" }
-              }}
-            />
+            {mode === "single" ? (
+              <DayPicker
+                mode="single"
+                selected={selectedDate}
+                onSelect={(d) => setSelectedDate(d as Date)}
+                styles={{
+                  head_cell: { color: "#4A5568", fontSize: "0.75rem" },
+                  cell: { color: "#F1F0EC" },
+                  nav_button: { color: "#F1F0EC" }
+                }}
+              />
+            ) : mode === "range" ? (
+              <DayPicker
+                mode="range"
+                selected={range}
+                onSelect={(r) => setRange(r as DateRange)}
+                styles={{
+                  head_cell: { color: "#4A5568", fontSize: "0.75rem" },
+                  cell: { color: "#F1F0EC" },
+                  nav_button: { color: "#F1F0EC" }
+                }}
+              />
+            ) : null}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
               <button
                 onClick={() => setMode("quick")}
