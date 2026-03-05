@@ -95,9 +95,8 @@ export default function ResponsiveHeader() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-shadow bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm ${
-          scrolled ? "shadow-md" : ""
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-shadow bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm ${scrolled ? "shadow-md" : ""
+          }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -175,15 +174,15 @@ export default function ResponsiveHeader() {
 
                 {mounted && open && typeof document !== "undefined"
                   ? ReactDOM.createPortal(
-                      <div style={{ position: "fixed", top: 64, right: 28, zIndex: 9999 }}>{profileMenu}</div>,
-                      document.body
-                    )
+                    <div style={{ position: "fixed", top: 64, right: 28, zIndex: 9999 }}>{profileMenu}</div>,
+                    document.body
+                  )
                   : null}
               </div>
 
               {/* mobile menu button */}
               <button aria-label="open mobile menu" className="md:hidden p-2 rounded-md border border-slate-200 dark:border-slate-700">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M3 6H21M3 12H21M3 18H21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M3 6H21M3 12H21M3 18H21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             </div>
           </div>
@@ -192,3 +191,7 @@ export default function ResponsiveHeader() {
     </>
   );
 }
+
+
+//kjhbjk
+//lkjhbn
