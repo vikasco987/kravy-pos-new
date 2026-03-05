@@ -89,7 +89,7 @@
 
 //     const dbUser = await findOrCreateDBUser(clerkId);
 //     const body = await req.json();
-    
+
 
 //     if (!body?.name || body.price == null || !body.categoryId) {
 //       return NextResponse.json(
@@ -265,22 +265,22 @@ async function findOrCreateDBUser(clerkId: string) {
 
   if (!user) {
     // Get Clerk client (IMPORTANT)
-const client = await clerkClient();
+    const client = await clerkClient();
 
-// ✅ fetch Clerk user to get email
-const clerkUser = await client.users.getUser(clerkId);
+    // ✅ fetch Clerk user to get email
+    const clerkUser = await client.users.getUser(clerkId);
 
-user = await prisma.user.create({
-  data: {
-    clerkId,
-    name: clerkUser.fullName ?? "",
-    email:
-      clerkUser.emailAddresses[0]?.emailAddress ??
-      `no-email-${clerkId}@example.com`,
-  },
-  select: { id: true },
-});
-}
+    user = await prisma.user.create({
+      data: {
+        clerkId,
+        name: clerkUser.fullName ?? "",
+        email:
+          clerkUser.emailAddresses[0]?.emailAddress ??
+          `no-email-${clerkId}@example.com`,
+      },
+      select: { id: true },
+    });
+  }
 
   return user;
 }
@@ -357,6 +357,7 @@ export async function POST(req: Request) {
             : Number(body.price),
         unit: body.unit || null,
         imageUrl: body.imageUrl || null,
+        description: body.description || null,
         clerkId,
         category: { connect: { id: String(body.categoryId) } },
         user: { connect: { id: dbUser.id } },
@@ -385,7 +386,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { id, name, sellingPrice, unit, categoryId, imageUrl } = body;
+    const { id, name, sellingPrice, unit, categoryId, imageUrl, description } = body;
 
     if (!id || !name) {
       return NextResponse.json(
@@ -414,6 +415,7 @@ export async function PUT(req: Request) {
           sellingPrice !== undefined ? Number(sellingPrice) : undefined,
         unit: unit ?? undefined,
         imageUrl: imageUrl ?? undefined,
+        description: description ?? undefined,
         categoryId:
           categoryId === "uncategorised" ? null : categoryId ?? undefined,
       },
@@ -447,7 +449,7 @@ export async function DELETE(req: Request) {
       try {
         const body = await req.json();
         id = body?.id || null;
-      } catch {}
+      } catch { }
     }
 
     if (!id) {

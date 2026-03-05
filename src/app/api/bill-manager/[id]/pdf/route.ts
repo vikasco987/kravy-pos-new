@@ -130,7 +130,7 @@ import { PDFDocument, StandardFonts } from "pdf-lib";
 
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const { userId } = await auth();
 
@@ -138,9 +138,11 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await context.params;
+
   /* ================= FETCH BILL ================= */
   const bill = await prisma.billManager.findUnique({
-    where: { id: context.params.id },
+    where: { id },
   });
 
   if (!bill) {
@@ -178,10 +180,8 @@ export async function GET(
     business?.pinCode
   ) {
     line(
-      `${business?.businessAddress || ""}${
-        business?.district ? ", " + business.district : ""
-      }${business?.state ? ", " + business.state : ""}${
-        business?.pinCode ? " - " + business.pinCode : ""
+      `${business?.businessAddress || ""}${business?.district ? ", " + business.district : ""
+      }${business?.state ? ", " + business.state : ""}${business?.pinCode ? " - " + business.pinCode : ""
       }`,
       9
     );
@@ -207,17 +207,17 @@ export async function GET(
 
 
   /* ================= ITEMS ================= */
-    const items = Array.isArray(bill.items) ? bill.items : [];
+  const items = Array.isArray(bill.items) ? bill.items : [];
 
-    if (items.length === 0) {
-      line("No items");
-    } else {
-      items.forEach((i: any) => {
-        line(
-          `${i.name} x${i.qty}   ₹${(i.qty * i.rate).toFixed(2)}`
-        );
-      });
-    }
+  if (items.length === 0) {
+    line("No items");
+  } else {
+    items.forEach((i: any) => {
+      line(
+        `${i.name} x${i.qty}   ₹${(i.qty * i.rate).toFixed(2)}`
+      );
+    });
+  }
 
   /* ================= TOTAL ================= */
   line(`TOTAL: ₹${bill.total.toFixed(2)}`, 11);
