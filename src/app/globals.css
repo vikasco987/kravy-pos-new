@@ -116,22 +116,709 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
+
+/* =====================================================
+   KRAVY POS — PREMIUM DESIGN SYSTEM v3.0
+   Inter font + Glassmorphism + Micro-animations
+===================================================== */
+
+/* ── Google Inter Font via CSS ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+body,
+* {
+  font-family: 'Inter', var(--font-inter), system-ui, -apple-system, sans-serif !important;
+}
+
+/* ─────────────────────────────────────────
+   DARK MODE DESIGN TOKENS (Default)
+───────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --kravy-bg: #06080F;
+  --kravy-bg-2: #090C18;
+  --kravy-bg-card: rgba(255, 255, 255, 0.032);
+  --kravy-bg-card-hover: rgba(255, 255, 255, 0.06);
+  --kravy-bg-glass: rgba(255, 255, 255, 0.04);
+
+  /* Surfaces */
+  --kravy-surface: rgba(255, 255, 255, 0.035);
+  --kravy-surface-2: rgba(255, 255, 255, 0.06);
+  --kravy-surface-hover: rgba(255, 255, 255, 0.065);
+
+  /* Borders */
+  --kravy-border: rgba(255, 255, 255, 0.08);
+  --kravy-border-strong: rgba(255, 255, 255, 0.15);
+  --kravy-border-glow: rgba(139, 92, 246, 0.3);
+
+  /* Typography */
+  --kravy-text-primary: #F4F3F0;
+  --kravy-text-secondary: #A0AEC0;
+  --kravy-text-muted: #718096;
+  --kravy-text-faint: #4A5568;
+
+  /* Navbar / Sidebar */
+  --kravy-navbar-bg: rgba(6, 8, 15, 0.92);
+  --kravy-navbar-border: rgba(255, 255, 255, 0.07);
+
+  /* Shadows */
+  --kravy-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --kravy-shadow-md: 0 4px 20px rgba(0, 0, 0, 0.45);
+  --kravy-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.55);
+  --kravy-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 4px 20px rgba(0, 0, 0, 0.4);
+
+  /* Brand Colors */
+  --kravy-orange: #FF6B35;
+  --kravy-amber: #F59E0B;
+  --kravy-purple: #8B5CF6;
+  --kravy-blue: #3B82F6;
+  --kravy-green: #10B981;
+  --kravy-red: #EF4444;
+  --kravy-pink: #EC4899;
+  --kravy-cyan: #06B6D4;
+  --kravy-accent: #FF6B35;
+  --kravy-accent-purple: #8B5CF6;
+
+  /* Misc */
+  --kravy-radius: 16px;
+  --kravy-radius-sm: 10px;
+  --kravy-radius-lg: 24px;
+  --kravy-input-bg: rgba(255, 255, 255, 0.05);
+  --kravy-input-border: rgba(255, 255, 255, 0.1);
+  --kravy-table-header: rgba(255, 255, 255, 0.025);
+  --kravy-table-row-hover: rgba(255, 255, 255, 0.028);
+  --kravy-scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --kravy-skeleton: rgba(255, 255, 255, 0.06);
+  --kravy-badge-bg: rgba(255, 255, 255, 0.06);
+}
+
+/* ─────────────────────────────────────────
+   LIGHT MODE TOKENS
+───────────────────────────────────────── */
+html:not(.dark) {
+  --kravy-bg: #EEF0F8;
+  --kravy-bg-2: #E4E7F4;
+  --kravy-bg-card: rgba(255, 255, 255, 0.9);
+  --kravy-bg-card-hover: #ffffff;
+  --kravy-bg-glass: rgba(255, 255, 255, 0.7);
+
+  --kravy-surface: rgba(255, 255, 255, 0.85);
+  --kravy-surface-2: rgba(255, 255, 255, 0.95);
+  --kravy-surface-hover: #ffffff;
+
+  --kravy-border: rgba(0, 0, 0, 0.07);
+  --kravy-border-strong: rgba(0, 0, 0, 0.12);
+  --kravy-border-glow: rgba(139, 92, 246, 0.25);
+
+  --kravy-text-primary: #0F172A;
+  --kravy-text-secondary: #334155;
+  --kravy-text-muted: #64748B;
+  --kravy-text-faint: #94A3B8;
+
+  --kravy-navbar-bg: rgba(238, 240, 248, 0.94);
+  --kravy-navbar-border: rgba(0, 0, 0, 0.06);
+
+  --kravy-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --kravy-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --kravy-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.14);
+  --kravy-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 4px 16px rgba(0, 0, 0, 0.09);
+
+  --kravy-purple: #7C3AED;
+  --kravy-green: #059669;
+  --kravy-accent-purple: #7C3AED;
+
+  --kravy-input-bg: rgba(255, 255, 255, 0.95);
+  --kravy-input-border: rgba(0, 0, 0, 0.1);
+  --kravy-table-header: rgba(0, 0, 0, 0.03);
+  --kravy-table-row-hover: rgba(0, 0, 0, 0.02);
+  --kravy-scrollbar-thumb: rgba(0, 0, 0, 0.12);
+  --kravy-skeleton: rgba(0, 0, 0, 0.06);
+  --kravy-badge-bg: rgba(0, 0, 0, 0.04);
+}
+
+/* ─────────────────────────────────────────
+   GLOBAL RESETS
+───────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--kravy-bg) !important;
+  color: var(--kravy-text-primary) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+/* ─────────────────────────────────────────
+   SCROLLBAR
+───────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--kravy-scrollbar-thumb) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--kravy-scrollbar-thumb);
+  border-radius: 999px;
+}
+
+/* ─────────────────────────────────────────
+   PREMIUM KEYFRAME ANIMATIONS
+───────────────────────────────────────── */
+
+/* Page entry */
+@keyframes kravyFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes kravyFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes kravySlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Shimmer loading */
+@keyframes kravyShimmer {
+  0% {
+    background-position: -600px 0;
+  }
+
+  100% {
+    background-position: 600px 0;
+  }
+}
+
+/* Pulse glow */
+@keyframes kravyPulse {
+
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* Rotating border */
+@keyframes kravySpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Floating */
+@keyframes kravyFloat {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Number count up (visual trick via clip-path) */
+@keyframes kravyCountUp {
+  from {
+    clip-path: inset(100% 0 0 0);
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─────────────────────────────────────────
+   UTILITY ANIMATION CLASSES
+───────────────────────────────────────── */
+.kravy-page-fade {
+  animation: kravyFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.kravy-fade-in {
+  animation: kravyFadeIn 0.4s ease forwards;
+}
+
+.kravy-slide-right {
+  animation: kravySlideRight 0.4s ease forwards;
+}
+
+.kravy-float {
+  animation: kravyFloat 5s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────────
+   KRAVY CARD — Premium Glass Card
+───────────────────────────────────────── */
+.kravy-card {
+  background: var(--kravy-surface);
+  border: 1px solid var(--kravy-border);
+  border-radius: var(--kravy-radius-lg);
+  box-shadow: var(--kravy-card-shadow);
+  transition:
+    background 0.35s cubic-bezier(.4, 0, .2, 1),
+    border-color 0.35s,
+    box-shadow 0.35s,
+    transform 0.25s cubic-bezier(.4, 0, .2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.kravy-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      transparent 60%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.kravy-card:hover::before {
+  opacity: 1;
+}
+
+.kravy-card:hover {
+  box-shadow:
+    var(--kravy-card-shadow),
+    0 0 0 1px rgba(139, 92, 246, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Card with colored top-border accent */
+.kravy-card-accent-green {
+  border-top: 2px solid #10B981 !important;
+}
+
+.kravy-card-accent-orange {
+  border-top: 2px solid #FF6B35 !important;
+}
+
+.kravy-card-accent-purple {
+  border-top: 2px solid #8B5CF6 !important;
+}
+
+.kravy-card-accent-amber {
+  border-top: 2px solid #F59E0B !important;
+}
+
+/* ─────────────────────────────────────────
+   GLASS PANEL
+───────────────────────────────────────── */
+.kravy-glass {
+  background: var(--kravy-bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--kravy-border);
+}
+
+/* ─────────────────────────────────────────
+   KRAVY BUTTON SYSTEM
+───────────────────────────────────────── */
+.kravy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--kravy-radius-sm);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s cubic-bezier(.4, 0, .2, 1);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.kravy-btn-primary {
+  background: linear-gradient(135deg, #FF6B35, #F59E0B);
+  color: white;
+  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.38);
+}
+
+.kravy-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
+  filter: brightness(1.06);
+}
+
+.kravy-btn-primary:active {
+  transform: translateY(0);
+}
+
+.kravy-btn-secondary {
+  background: var(--kravy-surface);
+  color: var(--kravy-text-secondary);
+  border: 1px solid var(--kravy-border);
+}
+
+.kravy-btn-secondary:hover {
+  background: var(--kravy-surface-hover);
+  border-color: var(--kravy-border-strong);
+  color: var(--kravy-text-primary);
+}
+
+.kravy-btn-ghost {
+  background: transparent;
+  color: var(--kravy-text-muted);
+}
+
+.kravy-btn-ghost:hover {
+  background: var(--kravy-surface);
+  color: var(--kravy-text-primary);
+}
+
+/* ─────────────────────────────────────────
+   KRAVY INPUT SYSTEM
+───────────────────────────────────────── */
+.kravy-input {
+  background: var(--kravy-input-bg);
+  border: 1px solid var(--kravy-input-border);
+  color: var(--kravy-text-primary);
+  border-radius: var(--kravy-radius-sm);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
+  width: 100%;
+  font-family: inherit;
+}
+
+.kravy-input:focus {
+  border-color: var(--kravy-accent-purple);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.14);
+  background: var(--kravy-surface-2);
+}
+
+.kravy-input::placeholder {
+  color: var(--kravy-text-faint);
+}
+
+/* ─────────────────────────────────────────
+   KRAVY TABLE
+───────────────────────────────────────── */
+.kravy-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.kravy-table thead tr {
+  background: var(--kravy-table-header);
+}
+
+.kravy-table thead th {
+  color: var(--kravy-text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--kravy-border);
+  white-space: nowrap;
+}
+
+.kravy-table tbody tr {
+  border-bottom: 1px solid var(--kravy-border);
+  transition: background 0.15s;
+}
+
+.kravy-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.kravy-table tbody tr:hover {
+  background: var(--kravy-table-row-hover);
+}
+
+.kravy-table tbody td {
+  padding: 14px 18px;
+  color: var(--kravy-text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.kravy-table tbody td.muted {
+  color: var(--kravy-text-muted);
+  font-weight: 400;
+}
+
+/* ─────────────────────────────────────────
+   KRAVY BADGE
+───────────────────────────────────────── */
+.kravy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* ─────────────────────────────────────────
+   LOADING SKELETON
+───────────────────────────────────────── */
+.kravy-skeleton {
+  background: linear-gradient(90deg,
+      var(--kravy-skeleton) 0%,
+      rgba(255, 255, 255, 0.06) 50%,
+      var(--kravy-skeleton) 100%);
+  background-size: 600px 100%;
+  animation: kravyShimmer 1.6s ease-in-out infinite;
+  border-radius: 10px;
+}
+
+/* ─────────────────────────────────────────
+   STAT CARD — Interior glow orb
+───────────────────────────────────────── */
+.kravy-stat-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(45px);
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+/* ─────────────────────────────────────────
+   SECTION DIVIDER
+───────────────────────────────────────── */
+.kravy-divider {
+  height: 1px;
+  background: linear-gradient(90deg,
+      transparent,
+      var(--kravy-border-strong),
+      transparent);
+  margin: 4px 0;
+}
+
+/* ─────────────────────────────────────────
+   PAGE SECTION HEADER
+───────────────────────────────────────── */
+.kravy-page-title {
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: -1.2px;
+  color: var(--kravy-text-primary);
+  line-height: 1;
+}
+
+.kravy-page-subtitle {
+  font-size: 0.78rem;
+  color: var(--kravy-text-muted);
+  font-weight: 500;
+  letter-spacing: 0.1px;
+}
+
+/* ─────────────────────────────────────────
+   HIGHLIGHT GRADIENT TEXT
+───────────────────────────────────────── */
+.kravy-gradient-text {
+  background: linear-gradient(135deg, #FF6B35, #F59E0B, #8B5CF6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─────────────────────────────────────────
+   ICON BOX SIZES
+───────────────────────────────────────── */
+.kravy-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.kravy-icon-box-sm {
+  width: 34px;
+  height: 34px;
+}
+
+.kravy-icon-box-md {
+  width: 42px;
+  height: 42px;
+}
+
+.kravy-icon-box-lg {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+}
+
+/* ─────────────────────────────────────────
+   TOOLTIP
+───────────────────────────────────────── */
+.kravy-tooltip {
+  background: linear-gradient(135deg, #0D0F1C, #131525);
+  border: 1px solid var(--kravy-border-strong);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: var(--kravy-shadow-lg);
+  color: var(--kravy-text-primary);
+  font-size: 0.82rem;
+}
+
+/* ─────────────────────────────────────────
+   LIVE INDICATOR DOT
+───────────────────────────────────────── */
+.kravy-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22C55E;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+  animation: kravyLivePulse 2s ease-in-out infinite;
+}
+
+@keyframes kravyLivePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+  }
+
+  70% {
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+/* ─────────────────────────────────────────
+   PREMIUM STAT CARD
+───────────────────────────────────────── */
+.kravy-stat-card {
+  background: var(--kravy-surface);
+  border: 1px solid var(--kravy-border);
+  border-radius: 22px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--kravy-card-shadow);
+  transition:
+    transform 0.25s cubic-bezier(.4, 0, .2, 1),
+    box-shadow 0.25s,
+    background 0.3s,
+    border-color 0.3s;
+  cursor: default;
+}
+
+.kravy-stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.12) 50%,
+      transparent 100%);
+}
+
+.kravy-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    var(--kravy-shadow-lg),
+    0 0 0 1px rgba(139, 92, 246, 0.15);
+}
+
+/* ─────────────────────────────────────────
+   PROGRESS BAR
+───────────────────────────────────────── */
+.kravy-progress-track {
+  height: 5px;
+  background: var(--kravy-surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.kravy-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 1.2s cubic-bezier(.4, 0, .2, 1);
+}
+
 /* ---- FIX: Mobile category bar spacing ---- */
 
 /* Space reserved under sticky filter bar */
 .mobile-category-wrapper {
-  margin-top: 68px; /* height of filter bar + gap */
+  margin-top: 68px;
+  /* height of filter bar + gap */
 }
 
 /* Make sure nothing overlaps on mobile */
 @media (max-width: 768px) {
   .filter-sticky-bar {
     position: sticky;
-    top: 64px; /* header height */
+    top: 64px;
+    /* header height */
     z-index: 40;
     background: var(--background);
     padding-bottom: 6px;
@@ -139,7 +826,8 @@
 
   .mobile-category-wrapper {
     position: relative;
-    z-index: 39; /* just under filter bar */
+    z-index: 39;
+    /* just under filter bar */
   }
 }
 
@@ -156,6 +844,7 @@
     opacity: 0;
     transform: translateY(40px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -168,9 +857,17 @@
 
 /* Floating animation */
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-18px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-18px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
 }
 
 .float {
@@ -413,7 +1110,7 @@ section {
   border-radius: 18px;
   padding: 25px;
   border: 1px solid #f3f4f6;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.04);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
 }
 
 /* ===============================
@@ -500,4 +1197,3 @@ section {
     justify-content: space-between;
   }
 }
-
