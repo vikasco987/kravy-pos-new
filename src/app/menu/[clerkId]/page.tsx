@@ -195,11 +195,55 @@ const ZOMATO_CSS = `
   .tstep::after { content: ''; position: absolute; top: 13px; left: 55%; width: 90%; height: 2px; background: var(--border); }
   .tstep:last-child::after { display: none; }
   .tstep.done::after { background: var(--green); }
+  .tstep.active-s::after { background: linear-gradient(90deg, var(--green), var(--border)); }
   .tdot { width: 26px; height: 26px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; margin: 0 auto 4px; position: relative; z-index: 1; }
   .tstep.done .tdot { background: var(--green); }
+  .tstep.active-s .tdot { background: #F97316; box-shadow: 0 0 0 4px rgba(249,115,22,0.2); animation: sPulse 1.5s infinite; }
+  @keyframes sPulse { 0%,100%{box-shadow:0 0 0 4px rgba(249,115,22,0.2)} 50%{box-shadow:0 0 0 8px rgba(249,115,22,0.08)} }
   .tlabel { font-size: 0.58rem; font-weight: 800; color: var(--text3); }
   .tstep.done .tlabel { color: var(--green); }
+  .tstep.active-s .tlabel { color: #F97316; }
   .more-btn { width: 100%; background: var(--red); border: none; border-radius: 12px; color: #fff; font-size: 0.9rem; font-weight: 900; font-family: 'Nunito', sans-serif; padding: 14px; cursor: pointer; }
+  .track-btn { width: 100%; background: var(--green); border: none; border-radius: 12px; color: #fff; font-size: 0.9rem; font-weight: 900; font-family: 'Nunito', sans-serif; padding: 14px; cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+  /* TRACKING VIEW */
+  .track-view { position: fixed; inset: 0; z-index: 300; background: var(--bg); overflow-y: auto; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .track-view.show { opacity: 1; pointer-events: all; }
+  .tv-hero { background: linear-gradient(135deg, #1a1a26, #12121a); padding: 32px 20px; text-align: center; position: relative; overflow: hidden; }
+  .tv-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(212,163,83,0.15), transparent); pointer-events: none; }
+  .tv-oid { display: inline-block; background: rgba(212,163,83,0.15); border: 1px solid rgba(212,163,83,0.3); border-radius: 20px; padding: 4px 14px; font-size: 0.68rem; font-weight: 800; color: #D4A353; letter-spacing: 1px; margin-bottom: 14px; }
+  .tv-icon { font-size: 3.5rem; margin-bottom: 10px; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .tv-title { font-size: 1.4rem; font-weight: 900; color: #F0EAD6; margin-bottom: 4px; }
+  .tv-sub { font-size: 0.8rem; color: rgba(240,234,214,0.55); font-weight: 600; }
+  .tv-table-pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(249,115,22,0.15); border: 1px solid rgba(249,115,22,0.3); border-radius: 8px; padding: 6px 14px; margin-top: 14px; }
+  .tv-table-pill span { font-size: 0.75rem; font-weight: 800; color: #F97316; }
+  .tv-stepper { background: var(--white); padding: 20px; margin-bottom: 8px; }
+  .tv-step-title { font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 18px; }
+  .tv-items { background: var(--white); padding: 18px 20px; margin-bottom: 8px; }
+  .tv-items-title { font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 14px; }
+  .tv-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #F5F5F5; }
+  .tv-item:last-child { border-bottom: none; }
+  .tv-i-left { display: flex; align-items: center; gap: 8px; }
+  .tv-i-name { font-size: 0.82rem; font-weight: 700; }
+  .tv-i-qty { font-size: 0.72rem; color: var(--text3); }
+  .tv-i-price { font-size: 0.82rem; font-weight: 800; }
+  .tv-bill { background: var(--white); padding: 18px 20px; margin-bottom: 8px; }
+  .tv-bill-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 4px 0; color: var(--text2); font-weight: 600; }
+  .tv-bill-row.total { font-weight: 900; font-size: 0.92rem; color: var(--text); padding-top: 10px; margin-top: 6px; border-top: 1px dashed var(--border); }
+  .tv-bill-row.total span:last-child { color: var(--red); }
+  .tv-close-wrap { padding: 14px 20px 28px; display: flex; gap: 10px; }
+  .tv-back-btn { flex: 1; background: var(--white); border: 2px solid var(--red); color: var(--red); border-radius: 12px; padding: 14px; font-size: 0.9rem; font-weight: 900; font-family: 'Nunito', sans-serif; cursor: pointer; text-align: center; }
+  .tv-add-btn { flex: 1; background: var(--red); border: none; border-radius: 12px; color: #fff; padding: 14px; font-size: 0.9rem; font-weight: 900; font-family: 'Nunito', sans-serif; cursor: pointer; text-align: center; }
+
+  /* FLOATING TRACK BTN */
+  .floating-track { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 90; padding: 10px 14px 22px; background: linear-gradient(180deg, transparent, rgba(244,244,244,0.95) 20%); }
+  .ft-inner { background: var(--green); border-radius: 14px; padding: 13px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: 0 6px 24px rgba(61,155,110,0.38); }
+  .ft-inner:active { transform: scale(0.99); }
+  .ft-l { display: flex; align-items: center; gap: 10px; }
+  .ft-badge { background: rgba(255,255,255,0.22); border-radius: 7px; padding: 3px 9px; font-size: 0.78rem; font-weight: 900; color: #fff; }
+  .ft-lbl { font-size: 0.88rem; font-weight: 800; color: #fff; }
+  .ft-arrow { color: rgba(255,255,255,0.75); font-size: 1.1rem; }
 `;
 
 export default function PublicMenuPage() {
@@ -224,6 +268,12 @@ export default function PublicMenuPage() {
     const [orderId, setOrderId] = useState("");
     const [activeTab, setActiveTab] = useState("All");
 
+    // ORDER TRACKING STATE
+    const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
+    const [trackingStatus, setTrackingStatus] = useState<string>("PENDING");
+    const [trackingOrder, setTrackingOrder] = useState<any>(null);
+    const [showTracking, setShowTracking] = useState(false);
+
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -244,6 +294,24 @@ export default function PublicMenuPage() {
         }
         fetchData();
     }, [clerkId]);
+
+    // POLL ORDER STATUS when we have a tracking order
+    useEffect(() => {
+        if (!trackingOrderId) return;
+        const poll = async () => {
+            try {
+                const res = await fetch(`/api/public/orders?id=${trackingOrderId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setTrackingStatus(data.status);
+                    setTrackingOrder(data);
+                }
+            } catch { }
+        };
+        poll();
+        const interval = setInterval(poll, 5000);
+        return () => clearInterval(interval);
+    }, [trackingOrderId]);
 
     const CATS = useMemo(() => {
         const cats = Array.from(new Set(items.map(it => it.category?.name || "Other")));
@@ -315,9 +383,13 @@ export default function PublicMenuPage() {
             });
 
             if (res.ok) {
+                const orderData = await res.json();
                 setShowSheet(false);
-                const newOrderId = 'ORD' + Date.now().toString(36).toUpperCase().slice(-6);
-                setOrderId(newOrderId);
+                const realId = orderData.id;
+                setOrderId('ORD-' + realId.slice(-6).toUpperCase());
+                setTrackingOrderId(realId);
+                setTrackingStatus('PENDING');
+                setTrackingOrder(orderData);
                 setShowSuccess(true);
                 setCart({});
 
@@ -571,8 +643,96 @@ export default function PublicMenuPage() {
                         <div className="tstep"><div className="tdot">🔥</div><div className="tlabel">Cooking</div></div>
                         <div className="tstep"><div className="tdot">🍽️</div><div className="tlabel">Ready!</div></div>
                     </div>
+                    <button className="track-btn" onClick={() => { setShowSuccess(false); setShowTracking(true); }}>📍 Track Your Order</button>
                     <button className="more-btn" onClick={() => setShowSuccess(false)}>+ Add More Items</button>
                 </div>
+
+                {/* ═══ ORDER TRACKING VIEW ═══ */}
+                <div className={`track-view ${showTracking ? 'show' : ''}`}>
+                    <div className="tv-hero">
+                        <div className="tv-oid">{orderId}</div>
+                        <div className="tv-icon">
+                            {trackingStatus === 'PENDING' ? '✅' : trackingStatus === 'PREPARING' ? '🔥' : trackingStatus === 'READY' ? '🍽️' : '😊'}
+                        </div>
+                        <div className="tv-title">
+                            {trackingStatus === 'PENDING' ? 'Order Received!' : trackingStatus === 'PREPARING' ? 'Being Prepared...' : trackingStatus === 'READY' ? 'Ready to Serve!' : 'Served! Enjoy!'}
+                        </div>
+                        <div className="tv-sub">
+                            {trackingStatus === 'PENDING' ? 'Waiting for kitchen to confirm' : trackingStatus === 'PREPARING' ? 'Chef is cooking your food 🔥' : trackingStatus === 'READY' ? 'Waiter is bringing your food' : 'Thank you for dining with us!'}
+                        </div>
+                        <div className="tv-table-pill"><span>🪑 Table {tableName}</span></div>
+                    </div>
+
+                    {/* Stepper */}
+                    <div className="tv-stepper">
+                        <div className="tv-step-title">Order Progress</div>
+                        <div className="track">
+                            {[
+                                { label: 'Received', icon: '✅', key: 'PENDING' },
+                                { label: 'Confirmed', icon: '👨‍🍳', key: 'CONFIRMED' },
+                                { label: 'Preparing', icon: '🔥', key: 'PREPARING' },
+                                { label: 'Ready!', icon: '🍽️', key: 'READY' },
+                            ].map((step, idx) => {
+                                const statusOrder = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'COMPLETED'];
+                                const currentIdx = statusOrder.indexOf(trackingStatus);
+                                const stepIdx = statusOrder.indexOf(step.key);
+                                const isDone = stepIdx < currentIdx;
+                                const isActive = stepIdx === currentIdx;
+                                return (
+                                    <div key={step.key} className={`tstep ${isDone ? 'done' : isActive ? 'active-s' : ''}`}>
+                                        <div className="tdot">{step.icon}</div>
+                                        <div className="tlabel">{step.label}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Items Ordered */}
+                    {trackingOrder?.items && (
+                        <div className="tv-items">
+                            <div className="tv-items-title">Your Items</div>
+                            {(trackingOrder.items as any[]).map((it: any, idx: number) => (
+                                <div className="tv-item" key={idx}>
+                                    <div className="tv-i-left">
+                                        <span className="tv-i-name">{it.name}</span>
+                                        <span className="tv-i-qty">×{it.quantity}</span>
+                                    </div>
+                                    <span className="tv-i-price">₹{(it.price || 0) * (it.quantity || 1)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Bill */}
+                    {trackingOrder && (
+                        <div className="tv-bill">
+                            <div className="tv-items-title">Bill Summary</div>
+                            <div className="tv-bill-row"><span>Subtotal</span><span>₹{(trackingOrder.total / 1.05).toFixed(2)}</span></div>
+                            <div className="tv-bill-row"><span>GST (5%)</span><span>₹{(trackingOrder.total - trackingOrder.total / 1.05).toFixed(2)}</span></div>
+                            <div className="tv-bill-row total"><span>Total</span><span>₹{trackingOrder.total}</span></div>
+                        </div>
+                    )}
+
+                    {/* Buttons */}
+                    <div className="tv-close-wrap">
+                        <button className="tv-back-btn" onClick={() => setShowTracking(false)}>← Back to Menu</button>
+                        <button className="tv-add-btn" onClick={() => setShowTracking(false)}>+ Add More Items</button>
+                    </div>
+                </div>
+
+                {/* FLOATING TRACK BUTTON — visible when order exists and not in tracking/success/sheet */}
+                {trackingOrderId && !showTracking && !showSuccess && !showSheet && (
+                    <div className="floating-track">
+                        <div className="ft-inner" onClick={() => setShowTracking(true)}>
+                            <div className="ft-l">
+                                <div className="ft-badge">📍 LIVE</div>
+                                <span className="ft-lbl">Track Your Order</span>
+                            </div>
+                            <span className="ft-arrow">›</span>
+                        </div>
+                    </div>
+                )}
 
             </div>
         </>

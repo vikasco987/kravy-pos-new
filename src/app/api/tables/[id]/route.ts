@@ -15,7 +15,7 @@ export async function PUT(
 
     const { id } = params;
     const body = await request.json();
-    const { name, location, capacity, isActive } = body;
+    const { name } = body;
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
       return NextResponse.json(
@@ -59,9 +59,6 @@ export async function PUT(
       where: { id },
       data: {
         name: name.trim(),
-        location: location?.trim() || null,
-        capacity: capacity && typeof capacity === "number" ? capacity : null,
-        isActive: isActive !== undefined ? isActive : existingTable.isActive,
       },
     });
 

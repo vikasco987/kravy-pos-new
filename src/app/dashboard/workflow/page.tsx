@@ -1,8 +1,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Head from "next/head";
 import { toast } from "sonner";
-import "./workflow.css";
+import {
+    LayoutDashboard, ChefHat, MapPin, CreditCard,
+    Clock, Bell, TrendingUp, ArrowRight, Check,
+    Flame, UtensilsCrossed, Plus, Trash2, Eye
+} from "lucide-react";
 
 // --- TYPES ---
 type OrderItem = { itemId: string; name: string; price: number; quantity: number; isVeg?: boolean };
@@ -15,406 +18,511 @@ type Order = {
     customerName?: string;
     createdAt: string;
 };
-type Stats = {
-    todaySales: number;
-    totalOrders: number;
-    activeOrders: number;
-    avgOrder: number;
-};
 type TableStatus = { id: string; name: string; isOccupied: boolean };
 
-export default function CompleteWorkflow() {
-    const [activeTab, setActiveTab] = useState<"track" | "kitchen" | "dashboard" | "payment">("dashboard");
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+const TABS = [
+    { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { key: "kitchen", label: "Kitchen Display", icon: ChefHat },
+    { key: "track", label: "Order Tracking", icon: MapPin },
+    { key: "payment", label: "Payment & Bill", icon: CreditCard },
+] as const;
+type TabKey = (typeof TABS)[number]["key"];
 
-    // Real Data states
-    const [stats, setStats] = useState<Stats>({ todaySales: 0, totalOrders: 0, activeOrders: 0, avgOrder: 0 });
+export default function CompleteWorkflow() {
+    const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
+    const [orders, setOrders] = useState<Order[]>([]);
     const [tablesList, setTablesList] = useState<TableStatus[]>([]);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    const [payMethod, setPayMethod] = useState("upi");
+    const [paid, setPaid] = useState(false);
+    const [clock, setClock] = useState("");
+    const [dateStr, setDateStr] = useState("");
 
-    // Stats derived from orders
-    const computeStats = (allOrders: Order[]) => {
-        let sales = 0;
-        let active = 0;
-        allOrders.forEach(o => {
-            sales += o.total;
-            if (o.status !== "COMPLETED") active++;
-        });
-        setStats({
-            todaySales: sales,
-            totalOrders: allOrders.length,
-            activeOrders: active,
-            avgOrder: allOrders.length ? sales / allOrders.length : 0
-        });
-    };
-
+    // Fetch orders
     const fetchOrders = async () => {
         try {
             const res = await fetch("/api/orders");
-            if (!res.ok) throw new Error("Failed to fetch");
+            if (!res.ok) throw new Error("fail");
             const data: Order[] = await res.json();
             setOrders(data);
-            computeStats(data);
-
-            // Select the first order by default for tracking/payment preview
-            if (data.length > 0 && !selectedOrder) {
-                setSelectedOrder(data[0]);
-            }
-        } catch (err) {
-            console.error(err);
-        }
+            if (data.length > 0 && !selectedOrder) setSelectedOrder(data[0]);
+        } catch { }
     };
 
+    // Fetch real tables from DB
+    const fetchTables = async () => {
+        try {
+            const res = await fetch("/api/tables");
+            if (!res.ok) throw new Error("fail");
+            setTablesList(
+                (await res.json()).map((t: any) => ({
+                    id: t.id, name: t.name,
+                    isOccupied: orders.some(o => o.table?.id === t.id && o.status !== "COMPLETED")
+                }))
+            );
+        } catch { }
+    };
+
+    useEffect(() => { fetchOrders(); const i = setInterval(fetchOrders, 10000); return () => clearInterval(i); }, []);
+    useEffect(() => { fetchTables(); }, [orders]);
     useEffect(() => {
-        fetchOrders();
-        const interval = setInterval(fetchOrders, 10000); // Polling every 10s for live feel
-        return () => clearInterval(interval);
+        const tick = () => setClock(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+        tick(); const i = setInterval(tick, 1000); return () => clearInterval(i);
     }, []);
-
-    // Compute table status based on active orders
     useEffect(() => {
-        const fetchTables = async () => {
-            try {
-                const res = await fetch('/api/tables');
-                if (!res.ok) throw new Error('failed');
-                const data: { id: string; name: string }[] = await res.json();
-
-                const ts: TableStatus[] = data.map((t) => {
-                    // check occupancy by order.table id (orders include table via prisma.include)
-                    const hasOrder = orders.some(
-                        (o) => o.table?.id === t.id && o.status !== 'COMPLETED'
-                    );
-                    return { id: t.id, name: t.name, isOccupied: hasOrder };
-                });
-
-                setTablesList(ts);
-            } catch (err) {
-                console.error('could not fetch tables', err);
-            }
-        };
-        fetchTables();
-    }, [orders]);
-
+        setDateStr(new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }));
+    }, []);
 
     const updateOrderStatus = async (orderId: string, newStatus: string) => {
         try {
-            const res = await fetch("/api/orders", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ orderId, status: newStatus })
-            });
-            if (res.ok) {
-                fetchOrders();
-                toast.success(`Order status updated to ${newStatus}`);
-            }
-        } catch (e) {
-            toast.error("Error updating status");
-        }
+            const res = await fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId, status: newStatus }) });
+            if (res.ok) { fetchOrders(); toast.success(`Status → ${newStatus}`); }
+        } catch { toast.error("Error updating status"); }
     };
 
-    // Clock
-    const [clock, setClock] = useState("--:-- --");
-    useEffect(() => {
-        const tick = () => {
-            setClock(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-        };
-        tick();
-        const t = setInterval(tick, 1000);
-        return () => clearInterval(t);
-    }, []);
+    const handleAddTable = async () => {
+        const name = window.prompt("Enter new table name (e.g., T-15):");
+        if (!name) return;
+        try {
+            const res = await fetch("/api/tables", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+            if (res.ok) { toast.success("Table added"); fetchTables(); } else toast.error("Failed");
+        } catch { toast.error("Error"); }
+    };
+    const handleDeleteTable = async (id: string, name: string) => {
+        if (!confirm(`Delete table ${name}?`)) return;
+        try {
+            const res = await fetch(`/api/tables?id=${id}`, { method: "DELETE" });
+            if (res.ok) { toast.success("Table deleted"); fetchTables(); } else toast.error("Failed");
+        } catch { toast.error("Error"); }
+    };
 
-    const [dateStr, setDateStr] = useState("");
-    useEffect(() => {
-        setDateStr(new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ' · Main Branch');
-    }, []);
-
-
-    const newOrders = orders.filter(o => o.status === "PENDING" || !o.status);
+    // Computed
+    const newOrders = orders.filter(o => o.status === "PENDING");
     const prepOrders = orders.filter(o => o.status === "PREPARING");
     const readyOrders = orders.filter(o => o.status === "READY");
     const liveOrders = orders.filter(o => o.status !== "COMPLETED");
+    const todaySales = orders.reduce((s, o) => s + o.total, 0);
+    const avgOrder = orders.length ? todaySales / orders.length : 0;
 
-    const [payMethod, setPayMethod] = useState("upi");
-    const [paid, setPaid] = useState(false);
+    // Status helpers
+    const statusColor = (s: string) => {
+        if (s === "PENDING") return "bg-red-50 text-red-600 border-red-200";
+        if (s === "PREPARING") return "bg-orange-50 text-orange-600 border-orange-200";
+        if (s === "READY") return "bg-green-50 text-green-600 border-green-200";
+        return "bg-slate-50 text-slate-500 border-slate-200";
+    };
 
     return (
-        <div className="wf-body">
-            {/* NAV TABS */}
-            <div className="nav-bar">
-                <div className="nav-inner">
-                    <button className={`nav-tab ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-                        <span>📊</span> Staff Dashboard
-                    </button>
-                    <button className={`nav-tab ${activeTab === 'kitchen' ? 'active' : ''}`} onClick={() => setActiveTab('kitchen')}>
-                        <span>👨🍳</span> Kitchen Display
-                    </button>
-                    <button className={`nav-tab ${activeTab === 'track' ? 'active' : ''}`} onClick={() => setActiveTab('track')}>
-                        <span>📍</span> Order Tracking
-                    </button>
-                    <button className={`nav-tab ${activeTab === 'payment' ? 'active' : ''}`} onClick={() => setActiveTab('payment')}>
-                        <span>💳</span> Payment & Bill
-                    </button>
+        <div className="min-h-screen bg-slate-50">
+            {/* ═══ TAB BAR ═══ */}
+            <div className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                        {TABS.map(t => {
+                            const Icon = t.icon;
+                            const isActive = activeTab === t.key;
+                            return (
+                                <button key={t.key} onClick={() => setActiveTab(t.key)}
+                                    className={`flex items-center gap-2 px-5 py-4 text-sm font-bold whitespace-nowrap border-b-2 transition-all ${isActive ? "text-indigo-600 border-indigo-600" : "text-slate-400 border-transparent hover:text-slate-600"}`}>
+                                    <Icon className="w-4 h-4" />
+                                    {t.label}
+                                    {t.key === "kitchen" && newOrders.length > 0 && (
+                                        <span className="ml-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-black">{newOrders.length}</span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
-            {/* =======================
-          SCREEN 1: TRACKING 
-          ======================= */}
-            <div className={`screen track-screen ${activeTab === 'track' ? 'active' : ''}`}>
-                {!selectedOrder ? (
-                    <div className="p-8 text-center text-slate-500 font-bold">No active orders to track. Select from Dashboard API.</div>
-                ) : (
-                    <>
-                        <div className="track-hero">
-                            <div className="track-order-id">ORD-{selectedOrder.id.slice(-6).toUpperCase()}</div>
-                            <div className="track-status-icon">
-                                {selectedOrder.status === 'PENDING' ? '✅' : selectedOrder.status === 'PREPARING' ? '🔥' : '🍽️'}
+            <div className="max-w-7xl mx-auto p-4 sm:p-6">
+
+                {/* ═══════════════════════════
+                   SCREEN 1: STAFF DASHBOARD
+                ═══════════════════════════ */}
+                {activeTab === "dashboard" && (
+                    <div className="space-y-6 animate-in fade-in duration-300">
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-2xl font-extrabold text-slate-900">Good Evening 👋</h1>
+                                <p className="text-sm text-slate-500 font-medium mt-1">{dateStr}</p>
                             </div>
-                            <div className="track-status-title">
-                                {selectedOrder.status === 'PENDING' ? 'Order Received!' : selectedOrder.status === 'PREPARING' ? 'Khana Ban Raha Hai...' : 'Ready to Serve!'}
-                            </div>
-                            <div className="track-status-sub">
-                                {selectedOrder.status === 'PENDING' ? 'Please wait, checking with kitchen' : selectedOrder.status === 'PREPARING' ? 'Kitchen is preparing your delicious meal' : 'Your meal is arriving in minutes'}
-                            </div>
-                            <div className="track-table-pill"><span>🪑 {selectedOrder.table?.name || 'T-?'} &nbsp;·&nbsp; {selectedOrder.items?.length || 0} Items &nbsp;·&nbsp; ₹{selectedOrder.total}</span></div>
+                            <button className="relative w-10 h-10 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center">
+                                <Bell className="w-5 h-5 text-red-500" />
+                                {liveOrders.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-black">{liveOrders.length}</span>}
+                            </button>
                         </div>
 
-                        <div className="progress-wrap">
-                            <div className="prog-title">Order Progress</div>
-                            <div className="stepper">
-                                <div className="stepper-line"></div>
-                                <div className="stepper-progress" style={{ height: selectedOrder.status === 'READY' ? '88%' : selectedOrder.status === 'PREPARING' ? '62%' : '12%' }}></div>
-
-                                <div className="step-item">
-                                    <div className="step-dot done">✅</div>
-                                    <div className="step-info"><div className="step-name">Order Received</div></div>
-                                </div>
-
-                                <div className="step-item">
-                                    <div className={`step-dot ${['PREPARING', 'READY'].includes(selectedOrder.status) ? 'done' : 'active'}`}>👨🍳</div>
-                                    <div className="step-info"><div className="step-name">Kitchen Confirmed</div></div>
-                                </div>
-
-                                <div className="step-item">
-                                    <div className={`step-dot ${selectedOrder.status === 'READY' ? 'done' : selectedOrder.status === 'PREPARING' ? 'active' : 'pending'}`}>🔥</div>
-                                    <div className="step-info"><div className="step-name">Preparing Your Order</div></div>
-                                </div>
-
-                                <div className="step-item">
-                                    <div className={`step-dot ${selectedOrder.status === 'READY' ? 'active' : 'pending'}`}>🍽️</div>
-                                    <div className="step-info"><div className="step-name">Ready to Serve</div></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="order-summary">
-                            <div className="os-title">Your Items</div>
-                            {selectedOrder.items?.map((it, idx) => (
-                                <div className="os-item" key={idx}>
-                                    <div className="os-left"><div className={`os-vdot ${it.isVeg === false ? 'nv' : 'v'}`}></div><span className="os-name">{it.name}</span><span className="os-qty">×{it.quantity}</span></div>
-                                    <span className="os-price">₹{it.price * it.quantity}</span>
+                        {/* Stats */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {[
+                                { label: "Today's Sales", value: `₹${(todaySales / 1000).toFixed(1)}K`, color: "text-green-600", bg: "bg-green-50", border: "border-green-200" },
+                                { label: "Total Orders", value: orders.length, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" },
+                                { label: "Active Orders", value: liveOrders.length, color: "text-red-600", bg: "bg-red-50", border: "border-red-200" },
+                                { label: "Avg Order", value: `₹${avgOrder.toFixed(0)}`, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-200" },
+                            ].map((s, i) => (
+                                <div key={i} className={`${s.bg} ${s.border} border rounded-2xl p-5`}>
+                                    <p className={`text-2xl font-extrabold ${s.color}`}>{s.value}</p>
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">{s.label}</p>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="bill-card">
-                            <div className="os-title">Bill Summary</div>
-                            <div className="bill-row2"><span>Subtotal</span><span>₹{(selectedOrder.total / 1.05).toFixed(2)}</span></div>
-                            <div className="bill-row2"><span>GST (5%)</span><span>₹{(selectedOrder.total - (selectedOrder.total / 1.05)).toFixed(2)}</span></div>
-                            <div className="bill-row2 total"><span>Total Payable</span><span>₹{selectedOrder.total}</span></div>
-                        </div>
-
-                        <button className="add-more-btn">+ Add More Items</button>
-                    </>)}
-            </div>
-
-            {/* =======================
-          SCREEN 2: KITCHEN 
-          ======================= */}
-            <div className={`screen kds-screen ${activeTab === 'kitchen' ? 'active' : ''}`}>
-                <div className="kds-header">
-                    <div>
-                        <div className="kds-title">🍳 Kitchen Display</div>
-                        <div className="kds-clock">{clock}</div>
-                    </div>
-                    <div className="kds-live"><div className="kds-live-dot"></div>Live</div>
-                </div>
-
-                <div className="kds-cols">
-                    {/* NEW */}
-                    <div>
-                        <div className="kds-col-header new"><span>🔴 New</span><span className="kds-count">{newOrders.length}</span></div>
-                        {newOrders.map((o) => (
-                            <div className="kds-card new-order" key={o.id}>
-                                <div className="kds-card-head"><span className="kds-table">{o.table?.name || 'T-?'}</span><span className="kds-timer">NEW</span></div>
-                                <div className="kds-items">
-                                    {o.items?.map((it, i) => (
-                                        <div className="kds-item" key={i}><div className="kds-item-left"><div className="kds-item-dot v"></div><span className="kds-item-name">{it.name}</span></div><span className="kds-item-qty">×{it.quantity}</span></div>
+                        {/* Live Orders */}
+                        <div>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-extrabold text-slate-900">🔴 Live Orders</h2>
+                                <span className="text-sm font-bold text-indigo-600 cursor-pointer">See All →</span>
+                            </div>
+                            {liveOrders.length === 0 ? (
+                                <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center">
+                                    <UtensilsCrossed className="w-12 h-12 text-slate-200 mx-auto mb-3" />
+                                    <p className="font-bold text-slate-400">No active orders right now</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {liveOrders.map(o => (
+                                        <div key={o.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-indigo-300 transition-colors">
+                                            <div className="p-4 flex items-center gap-3">
+                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-black ${statusColor(o.status)}`}>
+                                                    {o.table?.name || "T-?"}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-extrabold text-slate-900 font-mono">ORD-{o.id.slice(-6).toUpperCase()}</p>
+                                                    <p className="text-xs text-slate-400 font-medium">{o.items?.length} items</p>
+                                                </div>
+                                                <span className={`text-[11px] font-black px-3 py-1 rounded-full border ${statusColor(o.status)}`}>{o.status}</span>
+                                                <span className="text-base font-black text-slate-900">₹{o.total}</span>
+                                            </div>
+                                            <div className="px-4 pb-3 flex gap-2 flex-wrap">
+                                                {o.status === "PENDING" && <ActionBtn label="Confirm" onClick={() => updateOrderStatus(o.id, "PREPARING")} variant="red" />}
+                                                {o.status === "PREPARING" && <ActionBtn label="Mark Ready" onClick={() => updateOrderStatus(o.id, "READY")} variant="orange" />}
+                                                {o.status === "READY" && <ActionBtn label="Mark Served" onClick={() => updateOrderStatus(o.id, "COMPLETED")} variant="green" />}
+                                                <ActionBtn label="Track" onClick={() => { setSelectedOrder(o); setActiveTab("track"); }} variant="slate" />
+                                                <ActionBtn label="Checkout" onClick={() => { setSelectedOrder(o); setPaid(false); setActiveTab("payment"); }} variant="indigo" />
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
-                                <div className="kds-action"><button className="kds-btn confirm" onClick={() => updateOrderStatus(o.id, 'PREPARING')}>Confirm Order →</button></div>
-                            </div>
-                        ))}
-                    </div>
+                            )}
+                        </div>
 
-                    {/* PREPARING */}
-                    <div>
-                        <div className="kds-col-header prep"><span>🔥 Preparing</span><span className="kds-count">{prepOrders.length}</span></div>
-                        {prepOrders.map((o) => (
-                            <div className="kds-card preparing" key={o.id}>
-                                <div className="kds-card-head"><span className="kds-table">{o.table?.name || 'T-?'}</span><span className="kds-timer">COOKING</span></div>
-                                <div className="kds-items">
-                                    {o.items?.map((it, i) => (
-                                        <div className="kds-item" key={i}><div className="kds-item-left"><div className="kds-item-dot v"></div><span className="kds-item-name">{it.name}</span></div><span className="kds-item-qty">×{it.quantity}</span></div>
+                        {/* Table Status */}
+                        <div>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-extrabold text-slate-900">🪑 Table Status</h2>
+                                <button onClick={handleAddTable} className="flex items-center gap-1 text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                                    <Plus className="w-4 h-4" /> Add Table
+                                </button>
+                            </div>
+                            {tablesList.length === 0 ? (
+                                <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center">
+                                    <p className="font-bold text-slate-400">No tables yet. Add your first table!</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                                    {tablesList.map(t => (
+                                        <div key={t.id} className={`relative rounded-2xl p-4 text-center border-2 transition-all ${t.isOccupied ? "bg-orange-50 border-orange-200" : "bg-green-50 border-green-200"}`}>
+                                            <button onClick={() => handleDeleteTable(t.id, t.name)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] font-black opacity-0 hover:opacity-100 group-hover:opacity-100 transition-opacity" style={{ opacity: 0.6 }}>×</button>
+                                            <p className={`text-lg font-black ${t.isOccupied ? "text-orange-600" : "text-green-600"}`}>{t.name}</p>
+                                            <p className={`text-[10px] font-bold uppercase tracking-wider mt-1 ${t.isOccupied ? "text-orange-400" : "text-green-400"}`}>{t.isOccupied ? "Occupied" : "Free"}</p>
+                                            <div className={`w-2 h-2 rounded-full mx-auto mt-2 ${t.isOccupied ? "bg-orange-400" : "bg-green-400"}`} />
+                                        </div>
                                     ))}
                                 </div>
-                                <div className="kds-action"><button className="kds-btn start" onClick={() => updateOrderStatus(o.id, 'READY')}>Mark as Ready →</button></div>
-                            </div>
-                        ))}
+                            )}
+                        </div>
                     </div>
+                )}
 
-                    {/* READY */}
-                    <div>
-                        <div className="kds-col-header ready"><span>✅ Ready</span><span className="kds-count">{readyOrders.length}</span></div>
-                        {readyOrders.map((o) => (
-                            <div className="kds-card ready-order" key={o.id}>
-                                <div className="kds-card-head"><span className="kds-table">{o.table?.name || 'T-?'}</span><span className="kds-timer">SERVE</span></div>
-                                <div className="kds-items">
-                                    {o.items?.map((it, i) => (
-                                        <div className="kds-item" key={i}><div className="kds-item-left"><div className="kds-item-dot v"></div><span className="kds-item-name">{it.name}</span></div><span className="kds-item-qty">×{it.quantity}</span></div>
+
+                {/* ═══════════════════════════
+                   SCREEN 2: KITCHEN DISPLAY
+                ═══════════════════════════ */}
+                {activeTab === "kitchen" && (
+                    <div className="space-y-4 animate-in fade-in duration-300">
+                        <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-4">
+                            <div>
+                                <h1 className="text-xl font-extrabold text-slate-900">🍳 Kitchen Display</h1>
+                                <p className="text-sm font-mono text-slate-400">{clock}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-sm font-bold text-green-600">Live</span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {/* NEW */}
+                            <KdsColumn title="🔴 New" count={newOrders.length} color="red" orders={newOrders}
+                                actionLabel="Confirm →" onAction={(id) => updateOrderStatus(id, "PREPARING")} />
+                            {/* PREPARING */}
+                            <KdsColumn title="🔥 Preparing" count={prepOrders.length} color="orange" orders={prepOrders}
+                                actionLabel="Mark Ready →" onAction={(id) => updateOrderStatus(id, "READY")} />
+                            {/* READY */}
+                            <KdsColumn title="✅ Ready" count={readyOrders.length} color="green" orders={readyOrders}
+                                actionLabel="Served ✓" onAction={(id) => updateOrderStatus(id, "COMPLETED")} />
+                        </div>
+                    </div>
+                )}
+
+
+                {/* ═══════════════════════════
+                   SCREEN 3: ORDER TRACKING
+                ═══════════════════════════ */}
+                {activeTab === "track" && (
+                    <div className="max-w-lg mx-auto space-y-4 animate-in fade-in duration-300">
+                        {!selectedOrder ? (
+                            <EmptyState msg="Select an order from the Dashboard to track it." />
+                        ) : (
+                            <>
+                                {/* Hero */}
+                                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 text-center text-white">
+                                    <p className="text-xs font-bold tracking-widest text-amber-400 mb-3 bg-amber-400/10 inline-block px-3 py-1 rounded-full">
+                                        ORD-{selectedOrder.id.slice(-6).toUpperCase()}
+                                    </p>
+                                    <p className="text-5xl mb-3">{selectedOrder.status === "PENDING" ? "✅" : selectedOrder.status === "PREPARING" ? "🔥" : "🍽️"}</p>
+                                    <h2 className="text-xl font-extrabold">
+                                        {selectedOrder.status === "PENDING" ? "Order Received!" : selectedOrder.status === "PREPARING" ? "Being Prepared..." : "Ready to Serve!"}
+                                    </h2>
+                                    <p className="text-sm text-white/50 mt-1 font-medium">
+                                        {selectedOrder.status === "PENDING" ? "Waiting for kitchen confirmation" : selectedOrder.status === "PREPARING" ? "Chef is cooking your food" : "Waiter is on the way"}
+                                    </p>
+                                    <div className="mt-4 inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 rounded-lg px-4 py-2">
+                                        <span className="text-sm font-black text-orange-400">🪑 {selectedOrder.table?.name || "T-?"} · {selectedOrder.items?.length || 0} Items · ₹{selectedOrder.total}</span>
+                                    </div>
+                                </div>
+
+                                {/* Stepper */}
+                                <div className="bg-white border border-slate-200 rounded-2xl p-6">
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-5">Order Progress</p>
+                                    {[
+                                        { label: "Order Received", icon: "✅", done: true },
+                                        { label: "Kitchen Confirmed", icon: "👨‍🍳", done: ["PREPARING", "READY"].includes(selectedOrder.status) },
+                                        { label: "Preparing", icon: "🔥", done: selectedOrder.status === "READY", active: selectedOrder.status === "PREPARING" },
+                                        { label: "Ready to Serve", icon: "🍽️", active: selectedOrder.status === "READY" },
+                                    ].map((step, i, arr) => (
+                                        <div key={i} className="flex items-start gap-4 mb-0">
+                                            <div className="flex flex-col items-center">
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg border-2 ${step.done ? "bg-green-500 border-green-500 shadow-lg shadow-green-500/20" : step.active ? "bg-orange-500 border-orange-500 shadow-lg shadow-orange-500/20 animate-pulse" : "bg-slate-100 border-slate-200"}`}>
+                                                    {step.icon}
+                                                </div>
+                                                {i < arr.length - 1 && <div className={`w-0.5 h-8 ${step.done ? "bg-green-400" : "bg-slate-200"}`} />}
+                                            </div>
+                                            <div className="pt-2">
+                                                <p className={`text-sm font-bold ${step.done || step.active ? "text-slate-900" : "text-slate-300"}`}>{step.label}</p>
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
-                                <div className="kds-action"><button className="kds-btn done-btn" onClick={() => updateOrderStatus(o.id, 'COMPLETED')}>Served ✓</button></div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
 
-            {/* =======================
-          SCREEN 3: DASHBOARD 
-          ======================= */}
-            <div className={`screen dash-screen ${activeTab === 'dashboard' ? 'active' : ''}`}>
-                <div className="dash-topbar">
-                    <div><div className="dash-greeting">Good Evening 👋</div><div className="dash-date">{dateStr}</div></div>
-                    <div className="dash-alert-btn"><span>🔔</span><div className="alert-badge">{liveOrders.length}</div></div>
-                </div>
-
-                <div className="stat-grid">
-                    <div className="stat-card" style={{ "--c": "#22C55E" } as any}><div className="stat-val">₹{(stats.todaySales / 1000).toFixed(1)}K</div><div className="stat-lbl">Today's Sales</div></div>
-                    <div className="stat-card" style={{ "--c": "#F97316" } as any}><div className="stat-val">{stats.totalOrders}</div><div className="stat-lbl">Total Orders</div></div>
-                    <div className="stat-card" style={{ "--c": "#EF4444" } as any}><div className="stat-val">{stats.activeOrders}</div><div className="stat-lbl">Active Orders</div></div>
-                    <div className="stat-card" style={{ "--c": "#D4A353" } as any}><div className="stat-val">₹{(stats.avgOrder).toFixed(0)}</div><div className="stat-lbl">Avg Order</div></div>
-                </div>
-
-                <div className="section-hd"><h2>🔴 Live Orders</h2><span className="see-all">See All →</span></div>
-                {liveOrders.map(o => (
-                    <div className="order-card" key={o.id} onClick={() => { setSelectedOrder(o); }}>
-                        <div className="oc-head">
-                            <div className="oc-table-badge" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.25)' }}>{o.table?.name || 'T-?'}</div>
-                            <div className="oc-info"><div className="oc-id">ORD-{o.id.slice(-6).toUpperCase()}</div><div className="oc-meta">{o.items.length} items · Realtime</div></div>
-                            <span className="oc-status" style={{ background: 'rgba(249,115,22,0.15)', color: '#F97316' }}>{o.status}</span>
-                            <span className="oc-amount">₹{o.total}</span>
-                        </div>
-                        <div className="oc-footer">
-                            {o.status === "PENDING" && <button className="oc-action" onClick={() => updateOrderStatus(o.id, 'PREPARING')}>Confirm</button>}
-                            {o.status === "PREPARING" && <button className="oc-action" onClick={() => updateOrderStatus(o.id, 'READY')}>Mark Ready</button>}
-                            {o.status === "READY" && <button className="oc-action" onClick={() => updateOrderStatus(o.id, 'COMPLETED')}>Mark Served</button>}
-                            <button className="oc-action" onClick={() => { setSelectedOrder(o); setActiveTab('track'); }}>Track View</button>
-                            <button className="oc-action" onClick={() => { setSelectedOrder(o); setActiveTab('payment'); }}>Checkout</button>
-                        </div>
-                    </div>
-                ))}
-
-                <div className="table-map">
-                    <div className="section-hd" style={{ padding: 0, marginBottom: '10px' }}><h2>🪑 Table Status</h2></div>
-                    <div className="table-grid">
-                        {tablesList.map(t => (
-                            <div key={t.id} className={`table-cell ${t.isOccupied ? 'occ' : 'free'}`}>
-                                <div className="tc-num">{t.name}</div>
-                                <div className="tc-status">{t.isOccupied ? 'Occupied' : 'Free'}</div>
-                                <div className="tc-dot"></div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* =======================
-          SCREEN 4: PAYMENT 
-          ======================= */}
-            <div className={`screen pay-screen ${activeTab === 'payment' ? 'active' : ''}`}>
-                {!selectedOrder ? (
-                    <div className="p-8 text-center text-slate-500 font-bold">No order selected for checkout.</div>
-                ) : (
-                    <>
-                        <div className="pay-header">
-                            <div className="pay-header-content">
-                                <button className="pay-back" onClick={() => setActiveTab('dashboard')}>←</button>
-                                <div className="pay-header-info">
-                                    <div className="pay-header-title">Payment & Bill</div>
-                                    <div className="pay-header-sub">Table {selectedOrder.table?.name || 'T-?'} · Order ORD-{selectedOrder.id.slice(-6).toUpperCase()}</div>
+                                {/* Items */}
+                                <div className="bg-white border border-slate-200 rounded-2xl p-6">
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Your Items</p>
+                                    {selectedOrder.items?.map((it, idx) => (
+                                        <div key={idx} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-3 h-3 rounded-sm border-2 ${it.isVeg === false ? "border-red-500" : "border-green-500"}`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full m-auto mt-[1px] ${it.isVeg === false ? "bg-red-500" : "bg-green-500"}`} />
+                                                </div>
+                                                <span className="font-bold text-slate-800">{it.name}</span>
+                                                <span className="text-xs text-slate-400 font-medium">×{it.quantity}</span>
+                                            </div>
+                                            <span className="font-black text-slate-900">₹{it.price * it.quantity}</span>
+                                        </div>
+                                    ))}
                                 </div>
-                            </div>
-                        </div>
 
-                        <div className="receipt">
-                            <div className="receipt-header">
-                                <div className="receipt-restaurant">🍽️ Kravy System</div>
-                                <div class="receipt-address">Realtime Web API Based</div>
+                                {/* Bill */}
+                                <div className="bg-white border border-slate-200 rounded-2xl p-6">
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Bill Summary</p>
+                                    <div className="flex justify-between text-sm text-slate-500 font-semibold py-1"><span>Subtotal</span><span>₹{(selectedOrder.total / 1.05).toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-sm text-slate-500 font-semibold py-1"><span>GST (5%)</span><span>₹{(selectedOrder.total - selectedOrder.total / 1.05).toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-base font-black text-slate-900 border-t border-dashed border-slate-300 mt-3 pt-3"><span>Total</span><span className="text-red-600">₹{selectedOrder.total}</span></div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+
+
+                {/* ═══════════════════════════
+                   SCREEN 4: PAYMENT & BILL
+                ═══════════════════════════ */}
+                {activeTab === "payment" && (
+                    <div className="max-w-lg mx-auto space-y-4 animate-in fade-in duration-300">
+                        {!selectedOrder ? (
+                            <EmptyState msg="Select an order from the Dashboard to checkout." />
+                        ) : (
+                            <>
+                                {/* Header */}
+                                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 flex items-center gap-4">
+                                    <button onClick={() => setActiveTab("dashboard")} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white text-lg shrink-0">←</button>
+                                    <div>
+                                        <h2 className="text-lg font-extrabold text-white">Payment & Bill</h2>
+                                        <p className="text-sm text-white/40 font-medium">Table {selectedOrder.table?.name || "T-?"} · ORD-{selectedOrder.id.slice(-6).toUpperCase()}</p>
+                                    </div>
+                                </div>
+
+                                {/* Receipt */}
+                                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                                    <div className="p-6 text-center border-b border-dashed border-slate-300">
+                                        <p className="text-xl font-extrabold text-slate-900">🍽️ Kravy System</p>
+                                        <p className="text-xs text-slate-400 font-medium mt-1">Realtime Web API Based</p>
+                                    </div>
+                                    <div className="px-6 py-3 flex justify-between text-xs text-slate-400 font-medium">
+                                        <span>Date: {new Date().toLocaleDateString("en-IN")}</span>
+                                        <span>Time: {new Date().toLocaleTimeString("en-IN")}</span>
+                                    </div>
+                                    <div className="px-6 pb-4">
+                                        {selectedOrder.items?.map((it, idx) => (
+                                            <div key={idx} className="flex justify-between py-2.5 border-b border-slate-100 last:border-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-slate-800">{it.name}</span>
+                                                    <span className="text-xs text-slate-400">×{it.quantity}</span>
+                                                </div>
+                                                <span className="font-black text-slate-900">₹{it.price * it.quantity}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="px-6 py-4 border-t border-dashed border-slate-300">
+                                        <div className="flex justify-between text-sm text-slate-500 font-semibold py-1"><span>Subtotal</span><span>₹{(selectedOrder.total / 1.05).toFixed(2)}</span></div>
+                                        <div className="flex justify-between text-sm text-slate-500 font-semibold py-1"><span>GST (5%)</span><span>₹{(selectedOrder.total - selectedOrder.total / 1.05).toFixed(2)}</span></div>
+                                        <div className="flex justify-between text-lg font-black text-slate-900 border-t-2 border-slate-900 mt-3 pt-3"><span>Total</span><span className="text-red-600">₹{selectedOrder.total}</span></div>
+                                    </div>
+                                </div>
+
+                                {/* Payment Methods */}
+                                <div className="bg-white border border-slate-200 rounded-2xl p-6">
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Payment Method</p>
+                                    {[
+                                        { key: "upi", icon: "📱", title: "UPI / QR Code", desc: "GPay, PhonePe, Paytm" },
+                                        { key: "cash", icon: "💵", title: "Cash", desc: "Pay cash to waiter" },
+                                        { key: "card", icon: "💳", title: "Card", desc: "Visa, Mastercard, RuPay" },
+                                    ].map(m => (
+                                        <button key={m.key} onClick={() => setPayMethod(m.key)}
+                                            className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 mb-3 last:mb-0 transition-all ${payMethod === m.key ? "border-red-500 bg-red-50" : "border-slate-200 hover:border-slate-300"}`}>
+                                            <span className="text-2xl">{m.icon}</span>
+                                            <div className="text-left flex-1">
+                                                <p className={`font-bold ${payMethod === m.key ? "text-red-600" : "text-slate-800"}`}>{m.title}</p>
+                                                <p className="text-xs text-slate-400 font-medium">{m.desc}</p>
+                                            </div>
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${payMethod === m.key ? "border-red-500 bg-red-500" : "border-slate-300"}`}>
+                                                {payMethod === m.key && <div className="w-2 h-2 rounded-full bg-white" />}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {payMethod === "upi" && (
+                                    <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-6 text-center">
+                                        <div className="w-28 h-28 bg-white rounded-2xl border border-green-200 flex items-center justify-center text-5xl mx-auto mb-3">📲</div>
+                                        <p className="font-black text-slate-800 font-mono">business@upi</p>
+                                        <p className="text-2xl font-black text-green-600 mt-1">₹{selectedOrder.total}</p>
+                                        <p className="text-xs text-slate-400 mt-1">Scan or enter UPI ID in app</p>
+                                    </div>
+                                )}
+
+                                {!paid ? (
+                                    <button onClick={() => { setPaid(true); updateOrderStatus(selectedOrder.id, "COMPLETED"); }}
+                                        className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 text-white text-lg font-black shadow-lg shadow-red-500/30 active:scale-[0.98] transition-transform">
+                                        ✅ Confirm Payment — ₹{selectedOrder.total}
+                                    </button>
+                                ) : (
+                                    <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-8 text-center">
+                                        <p className="text-5xl mb-2">🎉</p>
+                                        <p className="text-xl font-black text-green-600">Payment Successful!</p>
+                                        <p className="text-sm text-slate-500 mt-1">₹{selectedOrder.total} received. Order Completed.</p>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ─── HELPER COMPONENTS ────────────────────────────────────
+
+function ActionBtn({ label, onClick, variant }: { label: string; onClick: () => void; variant: string }) {
+    const styles: Record<string, string> = {
+        red: "bg-red-50 text-red-600 border-red-200 hover:bg-red-100",
+        orange: "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100",
+        green: "bg-green-50 text-green-600 border-green-200 hover:bg-green-100",
+        indigo: "bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100",
+        slate: "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100",
+    };
+    return (
+        <button onClick={(e) => { e.stopPropagation(); onClick(); }}
+            className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors ${styles[variant] || styles.slate}`}>
+            {label}
+        </button>
+    );
+}
+
+function KdsColumn({ title, count, color, orders, actionLabel, onAction }: {
+    title: string; count: number; color: string; orders: Order[];
+    actionLabel: string; onAction: (id: string) => void;
+}) {
+    const colors: Record<string, { header: string; card: string; btn: string }> = {
+        red: { header: "bg-red-50 text-red-600 border-red-200", card: "border-t-red-500", btn: "bg-red-50 text-red-600 border-red-200 hover:bg-red-100" },
+        orange: { header: "bg-orange-50 text-orange-600 border-orange-200", card: "border-t-orange-500", btn: "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100" },
+        green: { header: "bg-green-50 text-green-600 border-green-200", card: "border-t-green-500", btn: "bg-green-50 text-green-600 border-green-200 hover:bg-green-100" },
+    };
+    const c = colors[color] || colors.red;
+
+    return (
+        <div>
+            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border ${c.header} mb-3`}>
+                <span className="text-sm font-black">{title}</span>
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white ${color === "red" ? "bg-red-500" : color === "orange" ? "bg-orange-500" : "bg-green-500"}`}>{count}</span>
+            </div>
+            {orders.length === 0 ? (
+                <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center">
+                    <p className="text-sm text-slate-300 font-bold">No orders</p>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {orders.map(o => (
+                        <div key={o.id} className={`bg-white border border-slate-200 rounded-2xl overflow-hidden border-t-4 ${c.card}`}>
+                            <div className="p-4 flex items-center justify-between border-b border-slate-100">
+                                <span className="font-black text-slate-900">{o.table?.name || "T-?"}</span>
+                                <span className="text-xs font-mono text-slate-400">ORD-{o.id.slice(-6).toUpperCase()}</span>
                             </div>
-                            <div className="receipt-meta"><span>Date: {new Date().toLocaleDateString('en-IN')}</span><span>Time: {new Date().toLocaleTimeString('en-IN')}</span></div>
-                            <hr className="receipt-divider" />
-                            <div className="receipt-items">
-                                {selectedOrder.items?.map((it, idx) => (
-                                    <div className="ri-row" key={idx}>
-                                        <div className="ri-left"><span className="ri-name">{it.name}</span><span className="ri-qty">×{it.quantity}</span></div>
-                                        <span className="ri-price">₹{it.price * it.quantity}</span>
+                            <div className="p-4 space-y-2">
+                                {o.items?.map((it, i) => (
+                                    <div key={i} className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-1.5 h-1.5 rounded-full ${it.isVeg === false ? "bg-red-500" : "bg-green-500"}`} />
+                                            <span className="text-sm font-semibold text-slate-700">{it.name}</span>
+                                        </div>
+                                        <span className="text-xs font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">×{it.quantity}</span>
                                     </div>
                                 ))}
                             </div>
-                            <div className="bill-totals">
-                                <div className="bt-row"><span>Subtotal</span><span>₹{(selectedOrder.total / 1.05).toFixed(2)}</span></div>
-                                <div className="bt-row"><span>GST (5%)</span><span>₹{(selectedOrder.total - (selectedOrder.total / 1.05)).toFixed(2)}</span></div>
-                                <div className="bt-row grand"><span>Total</span><span>₹{selectedOrder.total}</span></div>
+                            <div className="p-3 border-t border-slate-100">
+                                <button onClick={() => onAction(o.id)}
+                                    className={`w-full py-2.5 rounded-xl border text-sm font-black transition-colors ${c.btn}`}>
+                                    {actionLabel}
+                                </button>
                             </div>
                         </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
-                        <div className="pay-options-section">
-                            <div className="pos-title">Choose Payment Method</div>
-                            <div className={`pay-method-card ${payMethod === 'upi' ? 'selected' : ''}`} onClick={() => setPayMethod('upi')}>
-                                <div className="pmc-icon">📱</div>
-                                <div className="pmc-info"><div className="pmc-name">UPI / QR Code</div><div className="pmc-desc">GPay, PhonePe, Paytm</div></div>
-                                <div className="pmc-radio"></div>
-                            </div>
-                            <div className={`pay-method-card ${payMethod === 'cash' ? 'selected' : ''}`} onClick={() => setPayMethod('cash')}>
-                                <div className="pmc-icon">💵</div>
-                                <div className="pmc-info"><div className="pmc-name">Cash</div><div className="pmc-desc">Pay cash to waiter</div></div>
-                                <div className="pmc-radio"></div>
-                            </div>
-                        </div>
-
-                        {payMethod === 'upi' && (
-                            <div className="upi-pay-box">
-                                <div className="upi-qr-big">📲</div>
-                                <div className="upi-pay-id">business@upi</div>
-                                <div className="upi-pay-amount">₹{selectedOrder.total}</div>
-                            </div>
-                        )}
-
-                        {!paid ? (
-                            <button className="pay-now-btn" onClick={() => setPaid(true)}>✅ Confirm Payment — ₹{selectedOrder.total}</button>
-                        ) : (
-                            <div className="paid-success show">
-                                <span className="paid-icon">🎉</span>
-                                <div className="paid-title">Payment Successful!</div>
-                                <div className="paid-sub">₹{selectedOrder.total} received. Order Completed.</div>
-                            </div>
-                        )}
-                    </>)}
-            </div>
-
+function EmptyState({ msg }: { msg: string }) {
+    return (
+        <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center">
+            <UtensilsCrossed className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+            <p className="font-bold text-slate-400">{msg}</p>
         </div>
     );
 }
