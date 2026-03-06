@@ -61,9 +61,9 @@ export default function StatsGrid({ data }: Props) {
       value: `₹${fmt(upi)}`,
       sub: "Digital transactions",
       icon: <Smartphone size={20} strokeWidth={2.5} />,
-      accent: "#8B5CF6",
-      gradient: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)",
-      glow: "rgba(139,92,246,0.3)",
+      accent: "var(--kravy-brand)",
+      gradient: "var(--kravy-brand)",
+      glow: "var(--kravy-brand)",
       trend: true,
       showTrend: false,
     },
@@ -101,6 +101,7 @@ export default function StatsGrid({ data }: Props) {
             position: "absolute", top: 0, left: 0, right: 0,
             height: "2px",
             background: s.gradient,
+            opacity: 0.8,
             borderRadius: "22px 22px 0 0",
           }} />
 
@@ -109,6 +110,7 @@ export default function StatsGrid({ data }: Props) {
             width: "130px", height: "130px",
             top: "-40px", right: "-40px",
             background: s.glow,
+            opacity: 0.25,
           }} />
 
           {/* Second subtle orb */}
@@ -128,7 +130,7 @@ export default function StatsGrid({ data }: Props) {
               background: s.gradient,
               display: "flex", alignItems: "center", justifyContent: "center",
               color: "white",
-              boxShadow: `0 6px 20px ${s.glow}`,
+              boxShadow: `0 6px 20px ${s.glow === "var(--kravy-brand)" ? "rgba(139,92,246,0.3)" : s.glow}`,
               position: "relative",
               zIndex: 1,
             }}>
@@ -203,7 +205,7 @@ export default function StatsGrid({ data }: Props) {
             <div style={{
               fontSize: "0.72rem",
               color: s.showTrend ? (s.trend ? "#10B981" : "#EF4444") : "var(--kravy-text-faint)",
-              fontWeight: 500,
+              fontWeight: 600,
               display: "flex", alignItems: "center", gap: "4px",
             }}>
               {s.showTrend && (s.trend ? <TrendingUp size={11} /> : <TrendingDown size={11} />)}

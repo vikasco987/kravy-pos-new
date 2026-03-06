@@ -127,22 +127,22 @@ export default function TablesPage() {
   if (!user) return <div className="p-6 text-red-500">Not signed in</div>;
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-8">
+    <div className="max-w-7xl mx-auto p-6 space-y-8 transition-colors">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Table Management</h1>
-          <p className="text-slate-500 mt-1">Create and manage QR codes for your restaurant tables</p>
+          <h1 className="text-3xl font-black text-[var(--kravy-text-primary)] tracking-tight">Table Management</h1>
+          <p className="text-[var(--kravy-text-muted)] mt-1 font-medium italic">Create and manage digital menus for your restaurant tables</p>
         </div>
       </div>
 
       {/* Add Table Form */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Plus className="w-5 h-5 text-blue-600" />
+      <div className="bg-[var(--kravy-surface)] rounded-2xl border border-[var(--kravy-border)] p-8 shadow-xl">
+        <h2 className="text-lg font-black mb-6 flex items-center gap-2 text-[var(--kravy-text-primary)]">
+          <Plus className="w-5 h-5 text-[var(--kravy-brand)]" />
           Add New Table
         </h2>
-        <div className="flex gap-3">
+        <div className="flex gap-4">
           <input
             type="text"
             placeholder="Table name (e.g., T-01, VIP-1, Balcony)"
@@ -151,9 +151,9 @@ export default function TablesPage() {
             onKeyPress={(e) => {
               if (e.key === "Enter") createTable();
             }}
-            className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-3 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
           />
-          <Button onClick={createTable} className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Button onClick={createTable} className="bg-[var(--kravy-brand)] hover:bg-indigo-700 text-white font-black px-6 rounded-xl shadow-lg shadow-indigo-500/20 active:scale-95 transition-all">
             <Plus className="w-4 h-4 mr-2" />
             Add Table
           </Button>
@@ -163,58 +163,58 @@ export default function TablesPage() {
       {/* Tables List */}
       {loading ? (
         <div className="text-center py-12">
-          <p className="text-slate-500 animate-pulse">Loading tables...</p>
+          <p className="text-[var(--kravy-text-muted)] animate-pulse">Scanning tables...</p>
         </div>
       ) : tables.length === 0 ? (
-        <div className="bg-slate-50 rounded-lg border border-slate-200 p-12 text-center">
-          <TableIcon className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">No tables yet. Create one above.</p>
+        <div className="bg-[var(--kravy-bg-2)]/30 rounded-3xl border border-dashed border-[var(--kravy-border)] p-16 text-center">
+          <TableIcon className="w-16 h-16 text-[var(--kravy-border)] mx-auto mb-6 opacity-50" />
+          <p className="text-[var(--kravy-text-muted)] font-bold text-lg">No tables found. Add your first table above.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {tables.map((table) => (
-            <div key={table.id} className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div key={table.id} className="bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
               {/* Table Name */}
-              <h3 className="font-bold text-lg mb-4 text-slate-900">{table.name}</h3>
+              <h3 className="font-black text-2xl mb-6 text-[var(--kravy-text-primary)] tracking-tight">{table.name}</h3>
 
               {/* QR Code */}
-              <div className="flex justify-center mb-4 bg-slate-50 p-4 rounded-lg" id={`qr-${table.id}`}>
-                <QRCode value={generateTableUrl(table.id, table.name)} size={120} />
+              <div className="flex justify-center mb-8 bg-white p-6 rounded-2xl shadow-inner shadow-black/5" id={`qr-${table.id}`}>
+                <QRCode value={generateTableUrl(table.id, table.name)} size={150} />
               </div>
 
               {/* Actions */}
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 gap-3">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-start"
+                  className="w-full justify-start border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/30 text-[var(--kravy-text-primary)] font-black uppercase tracking-widest text-[10px] rounded-xl h-11 hover:bg-[var(--kravy-surface-hover)]"
                   onClick={() => copyTableUrl(table.id, table.name)}
                 >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy Menu Link
+                  <Copy className="w-4 h-4 mr-2 text-[var(--kravy-brand)]" />
+                  Copy Link
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-start"
+                  className="w-full justify-start border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/30 text-[var(--kravy-text-primary)] font-black uppercase tracking-widest text-[10px] rounded-xl h-11 hover:bg-[var(--kravy-surface-hover)]"
                   onClick={() => downloadTableQR(table)}
                 >
-                  <Download className="w-4 h-4 mr-2" />
+                  <Download className="w-4 h-4 mr-2 text-[var(--kravy-brand)]" />
                   Download QR
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-start"
+                  className="w-full justify-start border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/30 text-[var(--kravy-text-primary)] font-black uppercase tracking-widest text-[10px] rounded-xl h-11 hover:bg-[var(--kravy-surface-hover)]"
                   onClick={() => window.open(generateTableUrl(table.id, table.name), "_blank")}
                 >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Preview Menu
+                  <Eye className="w-4 h-4 mr-2 text-[var(--kravy-brand)]" />
+                  Preview
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="w-full justify-start border-rose-500/20 bg-rose-500/5 text-rose-500 font-black uppercase tracking-widest text-[10px] rounded-xl h-11 hover:bg-rose-500 hover:text-white transition-all mt-2"
                   onClick={() => deleteTable(table.id)}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />

@@ -26,7 +26,7 @@ export default function RecentBills({
   const PaymentBadge = ({ mode }: { mode: string }) => {
     const lower = mode?.toLowerCase() || "";
     const isUPI = lower.includes("upi");
-    const color = isUPI ? "#8B5CF6" : "#10B981";
+    const color = isUPI ? "var(--kravy-brand)" : "#10B981";
     const Icon = isUPI ? Smartphone : Banknote;
 
     return (
@@ -36,9 +36,9 @@ export default function RecentBills({
         padding: "3px 8px",
         borderRadius: "20px",
         fontFamily: "monospace",
-        background: `${color}15`,
+        background: isUPI ? "rgba(139, 92, 246, 0.1)" : "rgba(16, 185, 129, 0.1)",
         color: color,
-        border: `1px solid ${color}33`,
+        border: `1px solid ${isUPI ? "rgba(139, 92, 246, 0.2)" : "rgba(16, 185, 129, 0.2)"}`,
         display: "flex",
         alignItems: "center",
         gap: "3px"
@@ -115,8 +115,8 @@ export default function RecentBills({
             {icon}
           </div>
           <div>
-            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "#F1F0EC" }}>{title}</h3>
-            <div style={{ fontSize: "0.68rem", color: "#6B7280", fontFamily: "monospace" }}>
+            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>{title}</h3>
+            <div style={{ fontSize: "0.68rem", color: "var(--kravy-text-muted)", fontFamily: "monospace" }}>
               {bills.length} record{bills.length !== 1 ? "s" : ""}
             </div>
           </div>
@@ -150,7 +150,7 @@ export default function RecentBills({
           <div style={{
             textAlign: "center",
             padding: "40px 0",
-            color: "#4A5568",
+            color: "var(--kravy-text-muted)",
             fontSize: "0.82rem",
             display: "flex",
             flexDirection: "column",
@@ -169,8 +169,8 @@ export default function RecentBills({
               transition={{ delay: idx * 0.06 }}
               style={{
                 padding: "14px 16px",
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.05)",
+                background: "var(--kravy-bg-2)",
+                border: "1px solid var(--kravy-border)",
                 borderRadius: "14px",
                 display: "flex",
                 justifyContent: "space-between",
@@ -178,7 +178,10 @@ export default function RecentBills({
                 transition: "all 0.2s"
               }}
               onHoverStart={(e) => {
-                (e.target as HTMLElement).style?.setProperty?.("background", "rgba(255,255,255,0.05)");
+                (e.target as HTMLElement).style?.setProperty?.("background", "var(--kravy-surface-hover)");
+              }}
+              onHoverEnd={(e) => {
+                (e.target as HTMLElement).style?.setProperty?.("background", "var(--kravy-bg-2)");
               }}
             >
               {/* Left */}
@@ -200,12 +203,12 @@ export default function RecentBills({
                   #{bill.billNumber.slice(-2)}
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#E2E8F0" }}>
+                  <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-primary)" }}>
                     Bill #{bill.billNumber}
                   </div>
                   <div style={{
                     fontSize: "0.7rem",
-                    color: "#6B7280",
+                    color: "var(--kravy-text-muted)",
                     display: "flex",
                     alignItems: "center",
                     gap: "4px",
@@ -222,7 +225,7 @@ export default function RecentBills({
                 <div style={{
                   fontSize: "1rem",
                   fontWeight: 800,
-                  color: deleted ? "#EF4444" : "#F1F0EC",
+                  color: deleted ? "#EF4444" : "var(--kravy-text-primary)",
                   letterSpacing: "-0.3px",
                   marginBottom: "4px"
                 }}>
@@ -232,7 +235,7 @@ export default function RecentBills({
                   <PaymentBadge mode={bill.paymentMode} />
                   <span style={{
                     fontSize: "0.6rem",
-                    color: "#4A5568",
+                    color: "var(--kravy-text-faint)",
                     fontFamily: "monospace",
                     whiteSpace: "nowrap"
                   }}>

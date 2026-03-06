@@ -82,8 +82,9 @@ export default function BillingPage() {
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
             <div style={{
               width: "6px", height: "32px",
-              background: "linear-gradient(180deg, #FF6B35, #F59E0B)",
-              borderRadius: "10px"
+              background: "var(--kravy-brand)",
+              borderRadius: "10px",
+              boxShadow: "0 0 15px rgba(79, 70, 229, 0.4)"
             }} />
             <h1 style={{
               fontSize: "1.75rem", fontWeight: 900,
@@ -111,11 +112,11 @@ export default function BillingPage() {
           <Link href="/dashboard/billing/checkout" style={{ textDecoration: "none" }}>
             <button style={{
               display: "flex", alignItems: "center", gap: "8px",
-              padding: "10px 20px", borderRadius: "12px", border: "none",
-              background: "linear-gradient(135deg, #FF6B35, #F59E0B)",
-              color: "white", fontSize: "0.85rem", fontWeight: 700,
+              padding: "10px 20px", borderRadius: "14px", border: "none",
+              background: "var(--kravy-brand)",
+              color: "white", fontSize: "0.85rem", fontWeight: 800,
               cursor: "pointer", transition: "all 0.2s",
-              boxShadow: "0 4px 16px rgba(255,107,53,0.35)"
+              boxShadow: "0 4px 20px rgba(79, 70, 229, 0.3)"
             }}>
               <Plus size={16} />
               New Order
@@ -127,10 +128,10 @@ export default function BillingPage() {
       {/* ── Stats Row ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
         {[
-          { label: "Total Revenue", value: `₹${format(totalRevenue)}`, icon: <IndianRupee size={18} />, color: "#10B981" },
-          { label: "Total Bills", value: bills.length.toString(), icon: <Receipt size={18} />, color: "#FF6B35" },
-          { label: "Paid Bills", value: paidBills.toString(), icon: <CreditCard size={18} />, color: "#8B5CF6" },
-          { label: "On Hold", value: heldBills.toString(), icon: <Clock size={18} />, color: "#F59E0B" },
+          { label: "Total Revenue", value: `₹${format(totalRevenue)}`, icon: <IndianRupee size={18} />, color: "rgb(16 185 129)" },
+          { label: "Total Bills", value: bills.length.toString(), icon: <Receipt size={18} />, color: "rgb(99 102 241)" },
+          { label: "Paid Bills", value: paidBills.toString(), icon: <CreditCard size={18} />, color: "rgb(139 92 246)" },
+          { label: "On Hold", value: heldBills.toString(), icon: <Clock size={18} />, color: "rgb(245 158 11)" },
         ].map((s, i) => (
           <motion.div
             key={i}
@@ -141,8 +142,8 @@ export default function BillingPage() {
             style={{ padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px" }}
           >
             <div style={{
-              width: "40px", height: "40px", borderRadius: "12px",
-              background: `${s.color}18`, border: `1px solid ${s.color}30`,
+              width: "44px", height: "44px", borderRadius: "14px",
+              background: `${s.color}15`, border: `1px solid ${s.color}25`,
               display: "flex", alignItems: "center", justifyContent: "center",
               color: s.color, flexShrink: 0
             }}>
@@ -184,9 +185,10 @@ export default function BillingPage() {
           </div>
           <Link href="/dashboard/billing/checkout">
             <button style={{
-              marginTop: "8px", padding: "10px 24px", borderRadius: "12px", border: "none",
-              background: "linear-gradient(135deg, #FF6B35, #F59E0B)", color: "white",
-              fontSize: "0.88rem", fontWeight: 700, cursor: "pointer"
+              marginTop: "8px", padding: "10px 24px", borderRadius: "14px", border: "none",
+              background: "var(--kravy-brand)", color: "white",
+              fontSize: "0.88rem", fontWeight: 800, cursor: "pointer",
+              boxShadow: "0 4px 20px rgba(79, 70, 229, 0.2)"
             }}>
               + Create First Bill
             </button>
@@ -317,16 +319,16 @@ export default function BillingPage() {
 function PaymentBadge({ mode }: { mode: string }) {
   const lower = mode?.toLowerCase() || "";
   const isUPI = lower.includes("upi");
-  const color = isUPI ? "#8B5CF6" : "#10B981";
+  const color = isUPI ? "rgb(139 92 246)" : "rgb(16 185 129)";
   const Icon = isUPI ? Smartphone : Banknote;
   return (
     <span style={{
-      display: "inline-flex", alignItems: "center", gap: "4px",
-      fontSize: "0.62rem", fontWeight: 700, padding: "3px 9px",
+      display: "inline-flex", alignItems: "center", gap: "6px",
+      fontSize: "0.65rem", fontWeight: 800, padding: "4px 10px",
       borderRadius: "20px", fontFamily: "monospace",
-      background: `${color}15`, color: color, border: `1px solid ${color}35`
+      background: `${color}15`, color: color, border: `1px solid ${color}25`
     }}>
-      <Icon size={10} />{mode?.toUpperCase()}
+      <Icon size={12} />{mode?.toUpperCase()}
     </span>
   );
 }
@@ -336,10 +338,10 @@ function StatusBadge({ status, isHeld }: { status: string; isHeld?: boolean }) {
   if (isHeld || status?.toLowerCase() === "held") {
     return (
       <span style={{
-        display: "inline-flex", alignItems: "center", gap: "4px",
-        fontSize: "0.62rem", fontWeight: 700, padding: "3px 9px",
-        borderRadius: "20px", background: "rgba(245,158,11,0.15)",
-        color: "#F59E0B", border: "1px solid rgba(245,158,11,0.35)"
+        display: "inline-flex", alignItems: "center", gap: "6px",
+        fontSize: "0.65rem", fontWeight: 800, padding: "4px 10px",
+        borderRadius: "20px", background: "rgba(245, 158, 11, 0.1)",
+        color: "rgb(245 158 11)", border: "1px solid rgba(245, 158, 11, 0.2)"
       }}>
         ⏸ HELD
       </span>
@@ -348,10 +350,10 @@ function StatusBadge({ status, isHeld }: { status: string; isHeld?: boolean }) {
   if (status?.toLowerCase() === "paid") {
     return (
       <span style={{
-        display: "inline-flex", alignItems: "center", gap: "4px",
-        fontSize: "0.62rem", fontWeight: 700, padding: "3px 9px",
-        borderRadius: "20px", background: "rgba(16,185,129,0.15)",
-        color: "#10B981", border: "1px solid rgba(16,185,129,0.35)"
+        display: "inline-flex", alignItems: "center", gap: "6px",
+        fontSize: "0.65rem", fontWeight: 800, padding: "4px 10px",
+        borderRadius: "20px", background: "rgba(16, 185, 129, 0.1)",
+        color: "rgb(16 185 129)", border: "1px solid rgba(16, 185, 129, 0.2)"
       }}>
         ✓ PAID
       </span>
@@ -359,10 +361,10 @@ function StatusBadge({ status, isHeld }: { status: string; isHeld?: boolean }) {
   }
   return (
     <span style={{
-      display: "inline-flex", alignItems: "center", gap: "4px",
-      fontSize: "0.62rem", fontWeight: 700, padding: "3px 9px",
-      borderRadius: "20px", background: "rgba(239,68,68,0.15)",
-      color: "#EF4444", border: "1px solid rgba(239,68,68,0.35)"
+      display: "inline-flex", alignItems: "center", gap: "6px",
+      fontSize: "0.65rem", fontWeight: 800, padding: "4px 10px",
+      borderRadius: "20px", background: "rgba(244, 63, 94, 0.1)",
+      color: "rgb(244 63 94)", border: "1px solid rgba(244, 63, 94, 0.2)"
     }}>
       ◌ PENDING
     </span>
@@ -378,19 +380,19 @@ function BillActions({ bill, refresh }: { bill: BillManager; refresh: () => void
     {
       label: "View Details",
       icon: <Eye size={14} />,
-      color: "#8B5CF6",
+      color: "rgb(99 102 241)",
       onClick: () => router.push(`/billing/${bill.id}`)
     },
     {
       label: "Print Bill",
       icon: <Printer size={14} />,
-      color: "#6B7280",
+      color: "var(--kravy-text-muted)",
       onClick: () => window.open(`/billing/${bill.id}`, "_blank")
     },
     {
       label: "WhatsApp",
       icon: <MessageCircle size={14} />,
-      color: "#25D366",
+      color: "rgb(37 211 102)",
       onClick: () => {
         const phone = formatWhatsAppNumber(bill.customerPhone);
         const pdfUrl = `${window.location.origin}/api/bill-manager/${bill.id}/pdf`;
@@ -403,13 +405,13 @@ function BillActions({ bill, refresh }: { bill: BillManager; refresh: () => void
     ...(bill.isHeld ? [{
       label: "Resume Order",
       icon: <Play size={14} />,
-      color: "#F59E0B",
+      color: "rgb(245 158 11)",
       onClick: () => router.push(`/billing/checkout?resumeBillId=${bill.id}`)
     }] : []),
     {
       label: "Delete",
       icon: <Trash2 size={14} />,
-      color: "#EF4444",
+      color: "rgb(244 63 94)",
       onClick: async () => {
         if (!confirm("Delete this bill? You can view it later in Deleted Bills.")) return;
         const res = await fetch(`/api/bill-manager/${bill.id}`, { method: "DELETE" });

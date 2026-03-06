@@ -19,15 +19,15 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <div style={{
-        background: "linear-gradient(135deg, #0D0F1A, #111827)",
-        border: "1px solid rgba(139,92,246,0.3)",
+        background: "var(--kravy-surface-hover)",
+        border: "1px solid var(--kravy-border-strong)",
         borderRadius: "14px",
         padding: "14px 18px",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
         color: "var(--kravy-text-primary)"
       }}>
-        <div style={{ fontSize: "0.72rem", color: "#6B7280", fontFamily: "monospace", marginBottom: "6px" }}>{label}</div>
-        <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#8B5CF6" }}>
+        <div style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", fontFamily: "monospace", marginBottom: "6px" }}>{label}</div>
+        <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--kravy-brand)" }}>
           ₹{new Intl.NumberFormat("en-IN").format(Math.round(payload[0]?.value || 0))}
         </div>
         {payload[1] && (
@@ -64,8 +64,9 @@ export default function RevenueChart({ data }: RevenueChartProps) {
         right: "-60px",
         width: "200px",
         height: "200px",
-        background: "rgba(139,92,246,0.12)",
+        background: "var(--kravy-brand)",
         borderRadius: "50%",
+        opacity: 0.12,
         filter: "blur(60px)",
         pointerEvents: "none"
       }} />
@@ -78,17 +79,17 @@ export default function RevenueChart({ data }: RevenueChartProps) {
               width: "36px",
               height: "36px",
               borderRadius: "10px",
-              background: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
+              background: "var(--kravy-brand)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 16px rgba(139,92,246,0.4)"
+              boxShadow: "0 4px 16px rgba(139,92,246,0.3)"
             }}>
               <TrendingUp size={18} color="white" />
             </div>
-            <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "#F1F0EC" }}>Revenue Analytics</h3>
+            <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>Revenue Analytics</h3>
           </div>
-          <p style={{ fontSize: "0.72rem", color: "#6B7280", fontFamily: "monospace", paddingLeft: "46px" }}>
+          <p style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", fontFamily: "monospace", paddingLeft: "46px" }}>
             Sales performance over selected period
           </p>
         </div>
@@ -98,9 +99,9 @@ export default function RevenueChart({ data }: RevenueChartProps) {
             fontWeight: 700,
             padding: "6px 12px",
             borderRadius: "20px",
-            background: "rgba(139,92,246,0.12)",
-            color: "#8B5CF6",
-            border: "1px solid rgba(139,92,246,0.25)",
+            background: "var(--kravy-bg-2)",
+            color: "var(--kravy-brand)",
+            border: "1px solid var(--kravy-border)",
             fontFamily: "monospace"
           }}>
             Peak: ₹{new Intl.NumberFormat("en-IN").format(Math.round(maxRevenue))}
@@ -115,7 +116,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          color: "#4A5568",
+          color: "var(--kravy-text-muted)",
           gap: "12px"
         }}>
           <div style={{ fontSize: "2rem" }}>📊</div>
@@ -127,8 +128,8 @@ export default function RevenueChart({ data }: RevenueChartProps) {
             <AreaChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                  <stop offset="5%" stopColor="var(--kravy-brand)" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="var(--kravy-brand)" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="colorBills" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.3} />
@@ -138,31 +139,31 @@ export default function RevenueChart({ data }: RevenueChartProps) {
               <CartesianGrid
                 strokeDasharray="3 3"
                 vertical={false}
-                stroke="rgba(255,255,255,0.04)"
+                stroke="var(--kravy-border)"
               />
               <XAxis
                 dataKey="date"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#4A5568", fontSize: 10, fontFamily: "monospace" }}
+                tick={{ fill: "var(--kravy-text-faint)", fontSize: 10, fontFamily: "monospace" }}
                 dy={8}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#4A5568", fontSize: 10, fontFamily: "monospace" }}
+                tick={{ fill: "var(--kravy-text-faint)", fontSize: 10, fontFamily: "monospace" }}
                 tickFormatter={(v) => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
               />
               <Tooltip content={<CustomTooltip />} />
               <Area
                 type="monotone"
                 dataKey="revenue"
-                stroke="#8B5CF6"
+                stroke="var(--kravy-brand)"
                 strokeWidth={2.5}
                 fillOpacity={1}
                 fill="url(#colorRev)"
-                dot={{ fill: "#8B5CF6", r: 3, strokeWidth: 0 }}
-                activeDot={{ r: 6, fill: "#8B5CF6" }}
+                dot={{ fill: "var(--kravy-brand)", r: 3, strokeWidth: 0 }}
+                activeDot={{ r: 6, fill: "var(--kravy-brand)" }}
               />
             </AreaChart>
           </ResponsiveContainer>

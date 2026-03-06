@@ -41,18 +41,17 @@ export default function Page() {
     fetchProfile();
   }, [fetchProfile]);
 
- if (loading) {
-  return (
-    <div className="p-6 space-y-4">
-      {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="h-24 rounded-lg bg-muted animate-pulse"
-        />
-      ))}
-    </div>
-  );
-}
+  if (loading) {
+    return (
+      <div className="max-w-5xl mx-auto p-8 space-y-8 animate-pulse">
+        <div className="h-64 rounded-[40px] bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)]" />
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="h-48 rounded-3xl bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)]" />
+          <div className="h-48 rounded-3xl bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)]" />
+        </div>
+      </div>
+    );
+  }
 
   if (!profile) {
     return <ProfileEmpty />;

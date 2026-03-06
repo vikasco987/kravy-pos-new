@@ -24,12 +24,38 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { clerkUserId, tableId, items, total, customerName, customerPhone } = body;
+        const { clerkUserId, tableId, items, total, customerName, customerPhone, caseType, parentOrderId } = body;
 
         if (!clerkUserId || !items || !total) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
+        // Case 1: MERGE INTO EXISTING ORDER
+        if (caseType === "merge" && parentOrderId) {
+            const existing = await prisma.order.findUnique({ where: { id: parentOrderId } });
+            if (!existing) return NextResponse.json({ error: "Parent order not found" }, { status: 404 });
+
+            // Mark new items explicitly so kitchen can highlight them
+            const newItems = items.map((i: any) => ({ ...i, isNew: true, addedAt: new Date().toISOString() }));
+
+            // Append rather than replace
+            const currentItems = Array.isArray(existing.items) ? existing.items : [];
+            const updatedItems = [...currentItems, ...newItems];
+
+            const updatedOrder = await prisma.order.update({
+                where: { id: parentOrderId },
+                data: {
+                    items: updatedItems,
+                    total: existing.total + parseFloat(total),
+                    isMerged: true,
+                    mergedAt: new Date(),
+                },
+                include: { table: true },
+            });
+            return NextResponse.json(updatedOrder);
+        }
+
+        // Case 2 & 3: NEW ORDER (Separate / Round 2)
         const order = await prisma.order.create({
             data: {
                 clerkUserId,
@@ -39,6 +65,8 @@ export async function POST(req: NextRequest) {
                 customerName,
                 customerPhone,
                 status: "PENDING",
+                caseType: caseType || "new",
+                parentOrderId: parentOrderId || null,
             },
             include: {
                 table: true,

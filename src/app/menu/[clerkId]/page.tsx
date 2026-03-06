@@ -182,6 +182,39 @@ const ZOMATO_CSS = `
   .place-btn { margin: 12px 16px 12px; width: calc(100% - 32px); background: var(--red); border: none; border-radius: 12px; color: #fff; font-size: 0.95rem; font-weight: 900; font-family: 'Nunito', sans-serif; padding: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 18px rgba(226,55,68,0.32); transition: all 0.14s; }
   .place-btn:active { transform: scale(0.99); }
 
+  /* CASE BANNERS & STRIPS */
+  .case-banner { padding: 12px 16px; background: var(--white); border-bottom: 1px solid var(--border); }
+  .cb-badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; padding: 3px 9px; font-size: 0.62rem; font-weight: 800; margin-bottom: 3px; }
+  .cb-badge.merge { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .cb-badge.new { background: var(--orange-bg); color: #F97316; border: 1px solid rgba(249,115,22,0.3); }
+  .cb-badge.round2 { background: var(--blue-bg); color: #3B82F6; border: 1px solid rgba(59,130,246,0.3); }
+  .cb-title { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 800; }
+  .cb-sub { font-size: 0.65rem; color: var(--text2); margin-top: 1px; }
+  .prev-order-strip { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin: 10px 16px; display: flex; align-items: center; gap: 8px; }
+  .pos-icon { font-size: 1rem; flex-shrink: 0; }
+  .pos-info { flex: 1; }
+  .pos-title { font-size: 0.72rem; font-weight: 800; color: var(--text); }
+  .pos-items { font-size: 0.65rem; color: var(--text2); }
+  .pos-total { font-size: 0.78rem; font-weight: 900; color: var(--text); }
+
+  /* WARNING SHEET */
+  .warn-box { background: var(--orange-bg); border: 1.5px solid rgba(249,115,22,0.3); border-radius: 14px; padding: 16px; margin-bottom: 16px; display: flex; gap: 12px; align-items: flex-start; }
+  .wb-icon { font-size: 1.6rem; flex-shrink: 0; }
+  .wb-title { font-size: 0.88rem; font-weight: 800; color: #92400E; margin-bottom: 4px; }
+  .wb-desc { font-size: 0.75rem; color: #B45309; line-height: 1.6; }
+  .info-box { background: var(--blue-bg); border: 1.5px solid rgba(59,130,246,0.25); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.75rem; color: #1E40AF; line-height: 1.6; }
+  .sheet-btn { width: 100%; padding: 13px; border-radius: 12px; border: none; cursor: pointer; font-size: 0.88rem; font-weight: 900; font-family: 'Nunito', sans-serif; transition: all 0.15s; margin-bottom: 8px; }
+  .sheet-btn.orange { background: #F97316; color: #fff; box-shadow: 0 4px 14px rgba(249,115,22,0.28); }
+  .sheet-btn.ghost { background: var(--bg); color: var(--text2); border: 1px solid var(--border); }
+  .cs-detail-box { background: var(--bg); border-radius: 14px; padding: 14px; margin-top: 12px; margin-bottom: 18px; text-align: left; width: 100%; }
+  .cdb-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .cdb-row:last-child { border-bottom: none; font-weight: 900; font-size: 0.85rem; }
+
+  /* CART COLORS */
+  .cart-inner.green { background: var(--green); }
+  .cart-inner.orange { background: #F97316; }
+  .cart-inner.blue { background: #3B82F6; }
+
   /* SUCCESS */
   .success { position: fixed; inset: 0; z-index: 300; background: var(--white); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .success.show { opacity: 1; pointer-events: all; }
@@ -267,6 +300,10 @@ export default function PublicMenuPage() {
     const [showSuccess, setShowSuccess] = useState(false);
     const [orderId, setOrderId] = useState("");
     const [activeTab, setActiveTab] = useState("All");
+
+    // ADD MORE ITEMS STATE
+    const [actionCase, setActionCase] = useState<"merge" | "separate" | "round2" | null>(null);
+    const [showWarning, setShowWarning] = useState(false);
 
     // ORDER TRACKING STATE
     const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
@@ -356,6 +393,28 @@ export default function PublicMenuPage() {
     const gst = Math.round(cartSubtotal * 0.05);
     const cartTotal = cartSubtotal + gst;
 
+    const handleAddMore = () => {
+        setShowSuccess(false);
+        setShowTracking(false);
+        setCart({}); // clear cart for new items
+
+        if (trackingStatus === 'PENDING') {
+            setActionCase('merge');
+            toast.success("Merge mode — items will be added to your exact order");
+        } else if (trackingStatus === 'PREPARING') {
+            setShowWarning(true);
+        } else {
+            setActionCase('round2');
+            toast.success("Round 2 — menu is open for more items!");
+        }
+    };
+
+    const confirmSeparateOrder = () => {
+        setShowWarning(false);
+        setActionCase('separate');
+        toast.success("New Order #2 started");
+    };
+
     const placeOrder = async () => {
         if (Object.keys(cart).length === 0) return;
 
@@ -379,6 +438,8 @@ export default function PublicMenuPage() {
                     items: orderItems,
                     total: cartTotal,
                     customerName: "QR Customer",
+                    caseType: actionCase || "new",
+                    parentOrderId: actionCase ? trackingOrderId : null,
                 }),
             });
 
@@ -387,9 +448,17 @@ export default function PublicMenuPage() {
                 setShowSheet(false);
                 const realId = orderData.id;
                 setOrderId('ORD-' + realId.slice(-6).toUpperCase());
-                setTrackingOrderId(realId);
+
+                // If merge, keep the old trackingOrderId, else use new
+                if (actionCase !== 'merge') {
+                    setTrackingOrderId(realId);
+                    setTrackingOrder(orderData);
+                } else {
+                    setTrackingOrder(orderData);
+                }
+
                 setTrackingStatus('PENDING');
-                setTrackingOrder(orderData);
+                setActionCase(null);
                 setShowSuccess(true);
                 setCart({});
 
@@ -504,7 +573,7 @@ export default function PublicMenuPage() {
                 </div>
 
                 {/* CATEGORY TABS */}
-                {!searchQ && (
+                {!searchQ && !actionCase && (
                     <div className="cat-tabs-wrap">
                         <div className="tabs-inner">
                             {CATS.map(c => {
@@ -520,6 +589,29 @@ export default function PublicMenuPage() {
                                 );
                             })}
                         </div>
+                    </div>
+                )}
+
+                {/* CASE BANNERS */}
+                {actionCase === 'merge' && (
+                    <div className="case-banner">
+                        <div className="cb-badge merge">🔀 Merge Mode</div>
+                        <div className="cb-title">Add More Items</div>
+                        <div className="cb-sub">These items will be merged into your exact order #{orderId}</div>
+                    </div>
+                )}
+                {actionCase === 'separate' && (
+                    <div className="case-banner">
+                        <div className="cb-badge new">📋 New Order</div>
+                        <div className="cb-title">Starting Order #2</div>
+                        <div className="cb-sub">Your previous items are preparing. These will come separately.</div>
+                    </div>
+                )}
+                {actionCase === 'round2' && (
+                    <div className="case-banner">
+                        <div className="cb-badge round2">🔄 Round 2</div>
+                        <div className="cb-title">What's Next? 😊</div>
+                        <div className="cb-sub">Desserts, drinks or anything else for Round 2!</div>
                     </div>
                 )}
 
@@ -562,10 +654,12 @@ export default function PublicMenuPage() {
 
                 {/* CART BAR */}
                 <div className={`cart-bar ${cartItemsCount > 0 && !showSheet ? 'show' : ''}`}>
-                    <div className="cart-inner" onClick={() => setShowSheet(true)}>
+                    <div className={`cart-inner ${actionCase === 'merge' ? 'green' : actionCase === 'separate' ? 'orange' : actionCase === 'round2' ? 'blue' : ''}`} onClick={() => setShowSheet(true)}>
                         <div className="cart-l">
                             <div className="cart-cnt">{cartItemsCount} {cartItemsCount === 1 ? 'item' : 'items'}</div>
-                            <span className="cart-lbl">View Cart</span>
+                            <span className="cart-lbl">
+                                {actionCase === 'merge' ? 'Merge & Update' : actionCase === 'separate' ? 'Place Order #2' : actionCase === 'round2' ? 'Place Round 2' : 'View Cart'}
+                            </span>
                         </div>
                         <div className="cart-r">
                             <span className="cart-tot">₹{cartTotal.toLocaleString('en-IN')}</span>
@@ -575,7 +669,7 @@ export default function PublicMenuPage() {
                 </div>
 
                 {/* DIM OVERLAY */}
-                <div className={`dim ${showSheet ? 'show' : ''}`} onClick={() => setShowSheet(false)}></div>
+                <div className={`dim ${showSheet || showWarning ? 'show' : ''}`} onClick={() => { setShowSheet(false); setShowWarning(false); }}></div>
 
                 {/* SHEET */}
                 <div className={`sheet ${showSheet ? 'show' : ''}`}>
@@ -626,9 +720,34 @@ export default function PublicMenuPage() {
                     </div>
 
                     <button className="place-btn" onClick={placeOrder}>
-                        <span>Place Order</span>
+                        <span>{actionCase === 'merge' ? 'Merge Order' : actionCase === 'round2' ? 'Place Round 2' : 'Place Order'}</span>
                         <span style={{ opacity: 0.82 }}>₹{cartTotal.toLocaleString('en-IN')}</span>
                     </button>
+                </div>
+
+                {/* WARNING SHEET */}
+                <div className={`sheet ${showWarning ? 'show' : ''}`}>
+                    <div className="sheet-pill"></div>
+                    <div className="sheet-head">
+                        <div style={{ fontSize: '1rem', fontWeight: 900 }}>⚠️ Order is already cooking</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text2)', marginTop: '2px' }}>New items will start as a separate order</div>
+                    </div>
+                    <div style={{ padding: '16px 18px' }}>
+                        <div className="warn-box">
+                            <div className="wb-icon">🔥</div>
+                            <div>
+                                <div className="wb-title">Kitchen is preparing Order 1!</div>
+                                <div className="wb-desc">We cannot merge into the existing order anymore. These new items will go as a separate order.</div>
+                            </div>
+                        </div>
+                        <div className="info-box">
+                            💡 <b>Bill Summary:</b> Both orders will show up on a single final bill.
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <button className="sheet-btn orange" onClick={confirmSeparateOrder}>➕ Yes, Create New Order</button>
+                            <button className="sheet-btn ghost" onClick={() => setShowWarning(false)}>Cancel</button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* SUCCESS */}
@@ -644,7 +763,7 @@ export default function PublicMenuPage() {
                         <div className="tstep"><div className="tdot">🍽️</div><div className="tlabel">Ready!</div></div>
                     </div>
                     <button className="track-btn" onClick={() => { setShowSuccess(false); setShowTracking(true); }}>📍 Track Your Order</button>
-                    <button className="more-btn" onClick={() => setShowSuccess(false)}>+ Add More Items</button>
+                    <button className="more-btn" onClick={handleAddMore}>+ Add More Items</button>
                 </div>
 
                 {/* ═══ ORDER TRACKING VIEW ═══ */}
@@ -717,12 +836,12 @@ export default function PublicMenuPage() {
                     {/* Buttons */}
                     <div className="tv-close-wrap">
                         <button className="tv-back-btn" onClick={() => setShowTracking(false)}>← Back to Menu</button>
-                        <button className="tv-add-btn" onClick={() => setShowTracking(false)}>+ Add More Items</button>
+                        <button className="tv-add-btn" onClick={handleAddMore}>+ Add More Items</button>
                     </div>
                 </div>
 
                 {/* FLOATING TRACK BUTTON — visible when order exists and not in tracking/success/sheet */}
-                {trackingOrderId && !showTracking && !showSuccess && !showSheet && (
+                {trackingOrderId && !showTracking && !showSuccess && !showSheet && !actionCase && (
                     <div className="floating-track">
                         <div className="ft-inner" onClick={() => setShowTracking(true)}>
                             <div className="ft-l">

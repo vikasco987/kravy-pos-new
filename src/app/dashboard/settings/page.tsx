@@ -121,23 +121,23 @@ export default function SettingsPage() {
       </div>
 
       {/* ── Appearance Card ── */}
-      <div className="kravy-card" style={{ padding: "24px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+      <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] p-8 shadow-xl">
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
           <div style={{
-            width: "38px", height: "38px", borderRadius: "10px",
+            width: "48px", height: "48px", borderRadius: "14px",
             background: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 14px rgba(139,92,246,0.4)"
+            boxShadow: "0 8px 20px rgba(139,92,246,0.4)"
           }}>
-            <Palette size={18} color="white" />
+            <Palette size={24} color="white" />
           </div>
           <div>
-            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>Appearance</h3>
-            <p style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", fontFamily: "monospace" }}>Choose your preferred display theme</p>
+            <h3 style={{ fontSize: "1.25rem", fontWeight: 900, color: "var(--kravy-text-primary)", letterSpacing: "-0.5px" }}>Appearance</h3>
+            <p style={{ fontSize: "0.8rem", color: "var(--kravy-text-muted)", fontFamily: "monospace" }}>Choose your preferred display theme</p>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
           {[
             { key: "light", label: "☀️ Light", desc: "Bright, clean interface" },
             { key: "dark", label: "🌙 Dark", desc: "Easy on the eyes" },
@@ -147,22 +147,27 @@ export default function SettingsPage() {
               key={opt.key}
               onClick={() => setTheme(opt.key as any)}
               style={{
-                flex: "1 1 160px", padding: "16px 18px", borderRadius: "14px",
-                border: `2px solid ${theme === opt.key ? "var(--kravy-accent-purple)" : "var(--kravy-border)"}`,
+                flex: "1 1 200px", padding: "24px", borderRadius: "24px",
+                border: "2px solid",
+                borderColor: theme === opt.key ? "var(--kravy-brand)" : "var(--kravy-border)",
                 background: theme === opt.key
-                  ? "var(--kravy-accent-purple)12"
-                  : "var(--kravy-surface)",
-                cursor: "pointer", textAlign: "left", transition: "all 0.2s"
+                  ? "var(--kravy-bg-2)"
+                  : "transparent",
+                cursor: "pointer", textAlign: "left", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                position: "relative", overflow: "hidden"
               }}
+              className="hover:scale-[1.02] active:scale-[0.98]"
             >
-              <div style={{ fontSize: "1rem", marginBottom: "4px" }}>{opt.label}</div>
-              <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", fontFamily: "monospace" }}>{opt.desc}</div>
+              <div style={{ fontSize: "1.1rem", fontWeight: 800, marginBottom: "8px", color: "var(--kravy-text-primary)" }}>{opt.label}</div>
+              <div style={{ fontSize: "0.75rem", color: "var(--kravy-text-muted)", fontFamily: "monospace", lineHeight: 1.5 }}>{opt.desc}</div>
               {theme === opt.key && (
                 <div style={{
-                  marginTop: "8px", fontSize: "0.62rem", fontWeight: 700,
-                  color: "var(--kravy-accent-purple)", fontFamily: "monospace"
+                  marginTop: "12px", fontSize: "0.7rem", fontWeight: 900,
+                  color: "var(--kravy-brand)", fontFamily: "monospace",
+                  display: "flex", alignItems: "center", gap: "4px"
                 }}>
-                  ✓ Active
+                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "currentColor" }} />
+                  ACTIVE THEME
                 </div>
               )}
             </button>
@@ -174,13 +179,14 @@ export default function SettingsPage() {
       {settingsGroups.map((group, gi) => (
         <div key={gi}>
           <div style={{
-            fontSize: "0.65rem", fontWeight: 700, color: "var(--kravy-text-muted)",
-            textTransform: "uppercase", letterSpacing: "1.5px",
-            fontFamily: "monospace", marginBottom: "12px", paddingLeft: "4px"
+            fontSize: "0.75rem", fontWeight: 900, color: "var(--kravy-text-muted)",
+            textTransform: "uppercase", letterSpacing: "2.5px",
+            fontFamily: "monospace", marginBottom: "16px", paddingLeft: "8px",
+            opacity: 0.8
           }}>
             {group.title}
           </div>
-          <div className="kravy-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] overflow-hidden shadow-xl">
             {group.items.map((item, ii) => (
               <motion.div
                 key={ii}

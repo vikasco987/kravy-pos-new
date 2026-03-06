@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./SidebarContext";
+import { useTheme } from "./ThemeProvider";
 import { useUser, SignOutButton } from "@clerk/nextjs";
 import {
   LayoutGrid,
@@ -138,10 +139,10 @@ const navGroups = [
   {
     group: "ANALYTICS",
     items: [
-      { icon: <BarChart3 size={18} />, label: "Sales Reports", href: "/dashboard/reports/sales" },
-      { icon: <PieChart size={18} />, label: "Payment Analytics", href: "/dashboard/reports/payments" },
-      { icon: <TrendingUp size={18} />, label: "Growth Metrics", href: "/dashboard/reports/growth" },
-      { icon: <Activity size={18} />, label: "Live Stats", href: "/dashboard/analytics/live" },
+      { icon: <BarChart3 size={18} />, label: "Sales Reports", href: "#", badge: "Soon", badgeColor: "#64748B" },
+      { icon: <PieChart size={18} />, label: "Payment Analytics", href: "#", badge: "Soon", badgeColor: "#64748B" },
+      { icon: <TrendingUp size={18} />, label: "Growth Metrics", href: "#", badge: "Soon", badgeColor: "#64748B" },
+      { icon: <Activity size={18} />, label: "Live Stats", href: "#", badge: "Soon", badgeColor: "#64748B" },
     ]
   },
   {
@@ -164,8 +165,10 @@ const navGroups = [
 
 export default function Sidebar() {
   const { collapsed, setCollapsed } = useSidebar();
+  const { resolvedTheme } = useTheme();
   const pathname = usePathname();
   const { user } = useUser();
+  const isDark = resolvedTheme === "dark";
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -179,8 +182,12 @@ export default function Sidebar() {
       width: collapsed ? "72px" : "280px",
       minWidth: collapsed ? "72px" : "280px",
       height: "100vh",
-      background: "linear-gradient(145deg, #0F0F23 0%, #1A1A2E 50%, #16213E 100%)",
-      borderRight: "1px solid rgba(139,92,246,0.15)",
+      background: isDark
+        ? "linear-gradient(145deg, #0F0F23 0%, #1A1A2E 50%, #16213E 100%)"
+        : "linear-gradient(145deg, #F8FAFC 0%, #F1F5F9 50%, #E2E8F0 100%)",
+      borderRight: isDark
+        ? "1px solid rgba(139,92,246,0.15)"
+        : "1px solid rgba(139,92,246,0.1)",
       display: "flex",
       flexDirection: "column",
       transition: "all 0.4s cubic-bezier(.4,0,.2,1)",
@@ -188,7 +195,9 @@ export default function Sidebar() {
       top: 0,
       left: 0,
       zIndex: 50,
-      boxShadow: "4px 0 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.08)",
+      boxShadow: isDark
+        ? "4px 0 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.08)"
+        : "4px 0 24px rgba(0,0,0,0.04), 0 0 0 1px rgba(139,92,246,0.05)",
       overflow: "hidden",
     }}>
 
@@ -224,9 +233,13 @@ export default function Sidebar() {
         padding: collapsed ? "24px 0" : "24px 24px",
         display: "flex", alignItems: "center",
         justifyContent: collapsed ? "center" : "space-between",
-        borderBottom: "1px solid rgba(139,92,246,0.15)",
+        borderBottom: isDark
+          ? "1px solid rgba(139,92,246,0.15)"
+          : "1px solid rgba(0,0,0,0.05)",
         minHeight: "80px",
-        background: "linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.04))",
+        background: isDark
+          ? "linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.04))"
+          : "linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4))",
         backdropFilter: "blur(20px)",
         position: "relative",
         zIndex: 10,
@@ -274,9 +287,15 @@ export default function Sidebar() {
                 initial={{ opacity: 0, y: -15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, ease: "easeOut" }}
-                style={{ fontSize: "1.2rem", fontWeight: 900, color: "#FFFFFF", letterSpacing: "-1px", lineHeight: 1 }}
+                style={{
+                  fontSize: "1.2rem",
+                  fontWeight: 900,
+                  color: isDark ? "#FFFFFF" : "#1E293B",
+                  letterSpacing: "-1px",
+                  lineHeight: 1
+                }}
               >
-                kravy<span style={{ color: "#8B5CF6", textShadow: "0 0 20px rgba(139,92,246,0.7)" }}>POS</span>
+                kravy<span style={{ color: "#8B5CF6", textShadow: isDark ? "0 0 20px rgba(139,92,246,0.7)" : "none" }}>POS</span>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
@@ -417,9 +436,11 @@ export default function Sidebar() {
           <div key={group.group} style={{ marginBottom: "12px" }}>
             {!collapsed && (
               <div style={{
-                fontSize: "0.58rem", fontWeight: 800, color: "rgba(255,255,255,0.25)",
+                fontSize: "0.58rem", fontWeight: 800,
+                color: isDark ? "rgba(255,255,255,0.25)" : "var(--kravy-text-muted)",
                 letterSpacing: "2px", padding: "12px 10px 6px",
                 textTransform: "uppercase",
+                opacity: isDark ? 1 : 0.7,
               }}>{group.group}</div>
             )}
             {group.items.map((item, index) => {
@@ -439,7 +460,10 @@ export default function Sidebar() {
                         width: "100%", display: "flex", alignItems: "center",
                         gap: "12px", padding: collapsed ? "13px 0" : "11px 12px",
                         justifyContent: collapsed ? "center" : "flex-start",
-                        borderRadius: "14px", cursor: "pointer",
+                        borderRadius: "14px",
+                        cursor: item.href === "#" ? "not-allowed" : "pointer",
+                        pointerEvents: item.href === "#" ? "none" : "auto",
+                        opacity: item.href === "#" ? 0.6 : 1,
                         marginBottom: "3px", transition: "all 0.25s cubic-bezier(.4,0,.2,1)",
                         background: isActive
                           ? "linear-gradient(135deg, rgba(255,107,53,0.22) 0%, rgba(245,158,11,0.08) 100%)"
@@ -455,7 +479,7 @@ export default function Sidebar() {
                     >
                       <motion.span
                         animate={{
-                          color: isActive ? "#FF6B35" : "rgba(255,255,255,0.38)",
+                          color: isActive ? "#FF6B35" : (isDark ? "rgba(255,255,255,0.38)" : "var(--kravy-text-muted)"),
                           scale: isActive ? 1.1 : 1,
                         }}
                         transition={{ duration: 0.2 }}
@@ -463,7 +487,7 @@ export default function Sidebar() {
                           flexShrink: 0,
                           display: "flex",
                           alignItems: "center",
-                          filter: isActive ? "drop-shadow(0 0 8px rgba(255,107,53,0.6))" : "none",
+                          filter: isActive ? (isDark ? "drop-shadow(0 0 8px rgba(255,107,53,0.6))" : "none") : "none",
                         }}
                       >
                         {item.icon}
@@ -478,7 +502,9 @@ export default function Sidebar() {
                           <motion.span
                             animate={{
                               fontWeight: isActive ? 700 : 500,
-                              color: isActive ? "#FFFFFF" : "rgba(255,255,255,0.5)",
+                              color: isActive
+                                ? (isDark ? "#FFFFFF" : "var(--kravy-orange)")
+                                : (isDark ? "rgba(255,255,255,0.5)" : "var(--kravy-text-secondary)"),
                             }}
                             transition={{ duration: 0.2 }}
                             style={{ flex: 1, textAlign: "left", fontSize: "0.875rem", letterSpacing: "-0.01em" }}
@@ -533,7 +559,7 @@ export default function Sidebar() {
         transition={{ delay: 0.8 }}
         style={{
           padding: collapsed ? "12px 0" : "16px 14px",
-          borderTop: "1px solid rgba(255,255,255,0.08)",
+          borderTop: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)",
           display: "flex", alignItems: "center",
           justifyContent: collapsed ? "center" : "flex-start",
           gap: "12px",
@@ -581,7 +607,8 @@ export default function Sidebar() {
           >
             <motion.div
               style={{
-                fontSize: "0.82rem", fontWeight: 700, color: "#E2E8F0",
+                fontSize: "0.82rem", fontWeight: 700,
+                color: isDark ? "#E2E8F0" : "#1E293B",
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
               }}
               whileHover={{ color: "#FF6B35" }}
@@ -596,7 +623,7 @@ export default function Sidebar() {
             >
               <div style={{
                 width: "6px", height: "6px", borderRadius: "50%",
-                background: "#10B981", boxShadow: "0 0 6px #10B981",
+                background: "#10B981", boxShadow: isDark ? "0 0 6px #10B981" : "none",
               }} />
               {user?.primaryEmailAddress?.emailAddress ? "Authorized Access" : "Admin Panel"}
             </motion.div>
@@ -613,7 +640,8 @@ export default function Sidebar() {
                 whileHover={{ scale: 1.1, backgroundColor: "rgba(255,107,53,0.1)", color: "#FF6B35" }}
                 whileTap={{ scale: 0.9 }}
                 style={{
-                  background: "none", border: "none", color: "#6B7280",
+                  background: "none", border: "none",
+                  color: isDark ? "#6B7280" : "var(--kravy-text-muted)",
                   cursor: "pointer", display: "flex", alignItems: "center",
                   padding: "6px", borderRadius: "8px", transition: "all 0.3s",
                 }}

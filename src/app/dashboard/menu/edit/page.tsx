@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Copy, Plus, Edit2, Trash2, Image as ImageIcon, UtensilsCrossed, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ export default function MenuEditPage() {
     const [items, setItems] = useState<MenuItem[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
+    const [mounted, setMounted] = useState(false);
 
     // Form states
     const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -59,6 +61,7 @@ export default function MenuEditPage() {
     };
 
     useEffect(() => {
+        setMounted(true);
         loadData();
     }, []);
 
@@ -142,17 +145,17 @@ export default function MenuEditPage() {
     if (loading) {
         return (
             <div className="flex justify-center mt-20">
-                <p className="text-slate-500 font-medium animate-pulse">Loading menu manager...</p>
+                <p className="text-[var(--kravy-text-muted)] font-medium animate-pulse">Loading menu manager...</p>
             </div>
         );
     }
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 p-6">
+        <div className="max-w-6xl mx-auto space-y-8 p-6 transition-colors duration-300">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Menu Manager</h1>
-                    <p className="text-slate-500 mt-1 font-medium">Add, edit, and organize your digital menu items.</p>
+                    <h1 className="text-3xl font-extrabold text-[var(--kravy-text-primary)] tracking-tight">Menu Manager</h1>
+                    <p className="text-[var(--kravy-text-muted)] mt-1 font-medium">Add, edit, and organize your digital menu items.</p>
                 </div>
                 <Button
                     onClick={openAddModal}
@@ -164,54 +167,54 @@ export default function MenuEditPage() {
             </div>
 
             {/* LISTING MENU ITEMS */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-[var(--kravy-surface)] rounded-2xl border border-[var(--kravy-border)] shadow-sm overflow-hidden">
                 {items.length === 0 ? (
                     <div className="flex flex-col items-center justify-center p-16 text-center">
-                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                            <UtensilsCrossed className="w-10 h-10 text-slate-300" />
+                        <div className="w-20 h-20 bg-[var(--kravy-bg-2)] rounded-full flex items-center justify-center mb-4">
+                            <UtensilsCrossed className="w-10 h-10 text-[var(--kravy-text-faint)]" />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-2">No Items Found</h3>
-                        <p className="text-slate-500 max-w-sm">Create your first menu item by clicking the "Add New Item" button.</p>
+                        <h3 className="text-xl font-bold text-[var(--kravy-text-primary)] mb-2">No Items Found</h3>
+                        <p className="text-[var(--kravy-text-muted)] max-w-sm">Create your first menu item by clicking the "Add New Item" button.</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-slate-50 border-b border-slate-200">
-                                    <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-widester">Item</th>
-                                    <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-widester text-right">Price</th>
-                                    <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-widester text-center">Actions</th>
+                                <tr className="bg-[var(--kravy-table-header)] border-b border-[var(--kravy-border)]">
+                                    <th className="py-4 px-6 text-xs font-bold text-[var(--kravy-text-muted)] uppercase tracking-widester">Item</th>
+                                    <th className="py-4 px-6 text-xs font-bold text-[var(--kravy-text-muted)] uppercase tracking-widester text-right">Price</th>
+                                    <th className="py-4 px-6 text-xs font-bold text-[var(--kravy-text-muted)] uppercase tracking-widester text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {items.map((item) => (
-                                    <tr key={item.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+                                    <tr key={item.id} className="border-b border-[var(--kravy-border)] last:border-0 hover:bg-[var(--kravy-table-row-hover)] transition-colors">
                                         <td className="py-4 px-6">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-14 h-14 rounded-xl shrink-0 overflow-hidden bg-slate-100 flex items-center justify-center border border-slate-200">
+                                                <div className="w-14 h-14 rounded-xl shrink-0 overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center border border-[var(--kravy-border)]">
                                                     {item.imageUrl ? (
                                                         <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <ImageIcon className="w-6 h-6 text-slate-300" />
+                                                        <ImageIcon className="w-6 h-6 text-[var(--kravy-text-faint)]" />
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                                                    <h4 className="font-bold text-[var(--kravy-text-primary)] text-base flex items-center gap-2">
                                                         {item.name}
                                                     </h4>
                                                     <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-[10px] font-bold tracking-widest uppercase bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md border border-slate-200">
+                                                        <span className="text-[10px] font-bold tracking-widest uppercase bg-[var(--kravy-badge-bg)] text-[var(--kravy-text-secondary)] px-2 py-0.5 rounded-md border border-[var(--kravy-border)]">
                                                             {item.category?.name || "Uncategorised"}
                                                         </span>
                                                         {item.description && (
-                                                            <p className="text-xs text-slate-500 truncate max-w-[200px] sm:max-w-xs">{item.description}</p>
+                                                            <p className="text-xs text-[var(--kravy-text-muted)] truncate max-w-[200px] sm:max-w-xs">{item.description}</p>
                                                         )}
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-right">
-                                            <span className="font-black text-slate-900">₹{item.price || 0}</span>
+                                            <span className="font-black text-[var(--kravy-text-primary)]">₹{item.price || 0}</span>
                                         </td>
                                         <td className="py-4 px-6">
                                             <div className="flex items-center justify-center gap-2">
@@ -237,17 +240,16 @@ export default function MenuEditPage() {
                 )}
             </div>
 
-            {/* ADD/EDIT MODAL */}
-            {isFormOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-slate-900">
+            {mounted && isFormOpen && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+                    <div className="bg-[var(--kravy-surface)] rounded-3xl shadow-2xl border border-[var(--kravy-border-strong)] w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="px-6 py-5 border-b border-[var(--kravy-border)] flex items-center justify-between bg-[var(--kravy-table-header)]">
+                            <h2 className="text-xl font-black text-[var(--kravy-text-primary)]">
                                 {editingItem ? "Edit Menu Item" : "Add New Item"}
                             </h2>
                             <button
                                 onClick={() => setIsFormOpen(false)}
-                                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
+                                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--kravy-surface-hover)] text-[var(--kravy-text-muted)] transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -256,11 +258,11 @@ export default function MenuEditPage() {
                         <div className="p-6 overflow-y-auto no-scrollbar">
                             <form id="item-form" onSubmit={handleSave} className="space-y-5">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Item Name *</label>
+                                    <label className="block text-sm font-bold text-[var(--kravy-text-secondary)] mb-1.5 uppercase tracking-wider">Item Name *</label>
                                     <input
                                         type="text"
                                         required
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none font-semibold"
+                                        className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl px-4 py-3 text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none font-semibold"
                                         placeholder="e.g. Paneer Tikka"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -343,7 +345,8 @@ export default function MenuEditPage() {
                             </Button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
         </div>

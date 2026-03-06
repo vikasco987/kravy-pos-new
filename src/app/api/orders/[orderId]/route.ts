@@ -35,8 +35,8 @@ export async function GET(
     let items = [];
     try {
       items = Array.isArray(order.items)
-        ? order.items
-        : JSON.parse(order.items || "[]");
+        ? (order.items as unknown as any[])
+        : [];
     } catch (e) {
       items = [];
     }

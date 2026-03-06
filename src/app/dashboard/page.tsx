@@ -262,7 +262,7 @@ export default async function DashboardPage({
               </div>
               <div>
                 <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>Business Insights</h3>
-                <p style={{ fontSize: "0.72rem", color: "#6B7280", fontFamily: "monospace" }}>
+                <p style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", fontFamily: "monospace" }}>
                   AI-powered analysis for your store
                 </p>
               </div>
@@ -305,8 +305,8 @@ export default async function DashboardPage({
                 }
               ].map((stat, i) => (
                 <div key={i} style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
+                  background: "var(--kravy-bg-2)",
+                  border: "1px solid var(--kravy-border)",
                   borderRadius: "14px",
                   padding: "14px",
                   textAlign: "center"
@@ -321,7 +321,7 @@ export default async function DashboardPage({
                   </div>
                   <div style={{
                     fontSize: "0.65rem",
-                    color: "#6B7280",
+                    color: "var(--kravy-text-muted)",
                     fontFamily: "monospace",
                     marginTop: "4px",
                     textTransform: "uppercase",
@@ -341,10 +341,10 @@ export default async function DashboardPage({
                 fontSize: "0.68rem",
                 fontWeight: 700,
                 padding: "5px 12px",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "var(--kravy-bg-2)",
+                border: "1px solid var(--kravy-border)",
                 borderRadius: "20px",
-                color: "#6B7280",
+                color: "var(--kravy-text-muted)",
                 fontFamily: "monospace"
               }}>
                 {tag}
