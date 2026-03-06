@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /* =============================
    GET BUSINESS PROFILE
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
       update: {
         businessType: body.businessType ?? null,
         businessName: body.businessName ?? null,
-        businessTagLine: body.businessTagline ?? null,
+        businessTagLine: body.businessTagline ?? body.businessTagLine ?? null,
 
         contactPersonName: body.contactName ?? null,
         contactPersonPhone: body.contactPhone ?? null,
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
 
         businessType: body.businessType ?? null,
         businessName: body.businessName ?? null,
-        businessTagLine: body.businessTagline ?? null,
+        businessTagLine: body.businessTagline ?? body.businessTagLine ?? null,
 
         contactPersonName: body.contactName ?? null,
         contactPersonPhone: body.contactPhone ?? null,

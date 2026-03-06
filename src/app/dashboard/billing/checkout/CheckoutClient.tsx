@@ -172,7 +172,7 @@ export default function CheckoutClient() {
   }
 
   /* ================= CUSTOMER ================= */
-  const [showCustomer, setShowCustomer] = useState(true);
+  const [showCustomer, setShowCustomer] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
 
@@ -219,7 +219,7 @@ export default function CheckoutClient() {
   useEffect(() => {
     async function fetchBusinessProfile() {
       try {
-        const res = await fetch("/api/profile");
+        const res = await fetch("/api/profile", { cache: "no-store" });
         if (!res.ok) return;
 
         const data = await res.json();
