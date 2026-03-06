@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   UserCircle, Activity, Users, BarChart3,
-  ChevronRight, Shield, Bell, Palette, HelpCircle, Database
+  ChevronRight, Shield, Bell, Palette, HelpCircle, Database, Percent
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -38,6 +38,13 @@ export default function SettingsPage() {
           color: "#10B981",
           label: "Activity Log",
           desc: "View recent actions and login history"
+        },
+        {
+          href: "/dashboard/settings/tax",
+          icon: <Percent size={20} />,
+          color: "#F59E0B",
+          label: "Tax Management",
+          desc: "Enable/Disable GST and configure tax rates"
         },
       ]
     },

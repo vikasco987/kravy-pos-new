@@ -211,6 +211,8 @@ export default function CheckoutClient() {
     pinCode?: string;
     upi?: string;
     logoUrl?: string;
+    taxEnabled?: boolean;
+    taxRate?: number;
   } | null>(null);
 
 
@@ -233,6 +235,8 @@ export default function CheckoutClient() {
             pinCode: data.pinCode,
             upi: data.upi,
             logoUrl: data.logoUrl,
+            taxEnabled: data.taxEnabled ?? true,
+            taxRate: data.taxRate ?? 5.0,
           });
         }
       } catch (err) {
@@ -246,15 +250,16 @@ export default function CheckoutClient() {
 
   /* ================= TOTALS ================= */
 
-  const GST = 5;
+  const taxActive = business?.taxEnabled ?? true;
+  const currentTaxRate = business?.taxRate ?? 5.0;
 
   const subtotal = Number(
     items.reduce((a, i) => a + i.qty * i.rate, 0).toFixed(2)
   );
 
-  const gstAmount = Number(
-    ((subtotal * GST) / 100).toFixed(2)
-  );
+  const gstAmount = taxActive
+    ? Number(((subtotal * currentTaxRate) / 100).toFixed(2))
+    : 0;
 
   const cgst = Number((gstAmount / 2).toFixed(2));
   const sgst = Number((gstAmount / 2).toFixed(2));
@@ -562,10 +567,12 @@ export default function CheckoutClient() {
               <span className="text-[var(--kravy-text-primary)] font-bold">₹{subtotal.toFixed(2)}</span>
             </div>
 
-            <div className="flex justify-between text-sm text-[var(--kravy-text-muted)] font-medium">
-              <span>GST (5%)</span>
-              <span className="text-[var(--kravy-text-primary)] font-bold">₹{gstAmount.toFixed(2)}</span>
-            </div>
+            {taxActive && (
+              <div className="flex justify-between text-sm text-[var(--kravy-text-muted)] font-medium">
+                <span>GST ({currentTaxRate}%)</span>
+                <span className="text-[var(--kravy-text-primary)] font-bold">₹{gstAmount.toFixed(2)}</span>
+              </div>
+            )}
 
             <div className="flex justify-between items-center py-2 border-y border-[var(--kravy-border)]/50">
               <span className="font-black text-[var(--kravy-text-primary)] uppercase tracking-widest text-xs">Total Order</span>
@@ -796,10 +803,12 @@ export default function CheckoutClient() {
                 <span>₹{subtotal.toFixed(2)}</span>
               </div>
 
-              <div className="flex justify-between">
-                <span>GST</span>
-                <span>₹{gstAmount.toFixed(2)}</span>
-              </div>
+              {taxActive && (
+                <div className="flex justify-between">
+                  <span>GST ({currentTaxRate}%)</span>
+                  <span>₹{gstAmount.toFixed(2)}</span>
+                </div>
+              )}
 
               <div className="border-t border-dashed my-1" />
 
