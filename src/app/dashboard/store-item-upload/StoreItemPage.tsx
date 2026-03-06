@@ -495,28 +495,28 @@ export default function StoreItemPage() {
                 />
 
                 {showClerkDropdown && (
-    <div className="absolute z-20 mt-1 w-full max-h-48 overflow-auto bg-[var(--kravy-surface-2)] border border-[var(--kravy-border-strong)] rounded-xl shadow-2xl backdrop-blur-xl">
-      {filteredClerks.map((c) => (
-        <div
-          key={c.clerkId}
-          className="px-4 py-2.5 text-xs font-bold text-[var(--kravy-text-primary)] cursor-pointer hover:bg-[var(--kravy-brand)]/10 hover:text-[var(--kravy-brand)] transition-colors border-b border-[var(--kravy-border)] last:border-0"
-          onClick={() => {
-            setBulkClerkId(c.clerkId);
-            setItems((prev) =>
-              prev.map((it) => ({
-                ...it,
-                clerkId: c.clerkId,
-              }))
-            );
-            setShowClerkDropdown(false);
-            setClerkSearch(c.label);
-          }}
-        >
-          {c.label}
-          </div>
-        ))}
-
-            </th>
+                  <div className="absolute z-20 mt-1 w-full max-h-48 overflow-auto bg-[var(--kravy-surface-2)] border border-[var(--kravy-border-strong)] rounded-xl shadow-2xl backdrop-blur-xl">
+                    {filteredClerks.map((c) => (
+                      <div
+                        key={c.clerkId}
+                        className="px-4 py-2.5 text-xs font-bold text-[var(--kravy-text-primary)] cursor-pointer hover:bg-[var(--kravy-brand)]/10 hover:text-[var(--kravy-brand)] transition-colors border-b border-[var(--kravy-border)] last:border-0"
+                        onClick={() => {
+                          setBulkClerkId(c.clerkId);
+                          setItems((prev) =>
+                            prev.map((it) => ({
+                              ...it,
+                              clerkId: c.clerkId,
+                            }))
+                          );
+                          setShowClerkDropdown(false);
+                          setClerkSearch(c.label);
+                        }}
+                      >
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </th>
               <th className="py-4 px-6 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] text-center">Status</th>
               <th className="py-4 px-6 text-xs font-black uppercase tracking-widest text-rose-500 text-center">Delete</th>
             </tr>
@@ -635,6 +635,7 @@ export default function StoreItemPage() {
                         )
                       }
                     />
+                  </div>
                 </td>
 
                 {/* CATEGORY */}
@@ -662,6 +663,28 @@ export default function StoreItemPage() {
                   </select>
                 </td>
 
+                {/* CLERK (ROW) */}
+                <td className="py-4 px-6">
+                  <select
+                    className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-lg px-3 py-2 w-full text-xs font-bold text-[var(--kravy-text-primary)] outline-none focus:ring-1 focus:ring-[var(--kravy-brand)]"
+                    value={item.clerkId || ""}
+                    onChange={(e) =>
+                      setItems((prev) =>
+                        prev.map((it, idx) =>
+                          idx === i ? { ...it, clerkId: e.target.value } : it
+                        )
+                      )
+                    }
+                  >
+                    <option value="">Select clerk</option>
+                    {clerks.map((c) => (
+                      <option key={c.clerkId} value={c.clerkId}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+
                 <td className="py-4 px-6 text-center">
                   <div className="flex items-center justify-center">
                     <input
@@ -678,6 +701,7 @@ export default function StoreItemPage() {
                         )
                       }
                     />
+                  </div>
                 </td>
 
                 <td className="py-4 px-6 text-center">
@@ -698,14 +722,16 @@ export default function StoreItemPage() {
         </table>
       </div>
 
-      {hasErrors && (
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-center gap-3">
-          <span className="text-xl">🛑</span>
-          <p className="text-rose-500 text-sm font-bold uppercase tracking-widest">
-            Critical Error: Fix highlighed rows (Name/Price missing) before proceeding.
-          </p>
-        </div>
-      )}
+      {
+        hasErrors && (
+          <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-center gap-3">
+            <span className="text-xl">🛑</span>
+            <p className="text-rose-500 text-sm font-bold uppercase tracking-widest">
+              Critical Error: Fix highlighed rows (Name/Price missing) before proceeding.
+            </p>
+          </div>
+        )
+      }
 
       <button
         onClick={handleSave}
@@ -727,24 +753,26 @@ export default function StoreItemPage() {
             ? "Syncing Updates..."
             : "Sync Menu Updates"}
       </button>
-      {uploading && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-[320px] text-center space-y-4">
-            <p className="font-medium">Uploading items…</p>
+      {
+        uploading && (
+          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+            <div className="bg-white rounded-lg p-6 w-[320px] text-center space-y-4">
+              <p className="font-medium">Uploading items…</p>
 
-            <div className="w-full h-2 bg-gray-200 rounded">
-              <div
-                className="h-2 bg-blue-600 rounded transition-all"
-                style={{ width: `${uploadProgress}%` }}
-              />
+              <div className="w-full h-2 bg-gray-200 rounded">
+                <div
+                  className="h-2 bg-blue-600 rounded transition-all"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+
+              <p className="text-sm text-gray-500">
+                {uploadProgress}% completed
+              </p>
             </div>
-
-            <p className="text-sm text-gray-500">
-              {uploadProgress}% completed
-            </p>
           </div>
-        </div>
-      )}
+        )
+      }
 
 
     </div>
