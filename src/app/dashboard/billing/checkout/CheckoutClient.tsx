@@ -211,6 +211,8 @@ export default function CheckoutClient() {
     pinCode?: string;
     upi?: string;
     logoUrl?: string;
+    taxEnabled?: boolean;
+    taxRate?: number;
   } | null>(null);
 
 
@@ -233,6 +235,8 @@ export default function CheckoutClient() {
             pinCode: data.pinCode,
             upi: data.upi,
             logoUrl: data.logoUrl,
+            taxEnabled: data.taxEnabled ?? true,
+            taxRate: data.taxRate ?? 5.0,
           });
         }
       } catch (err) {
@@ -246,15 +250,16 @@ export default function CheckoutClient() {
 
   /* ================= TOTALS ================= */
 
-  const GST = 5;
+  const taxActive = business?.taxEnabled ?? true;
+  const currentTaxRate = business?.taxRate ?? 5.0;
 
   const subtotal = Number(
     items.reduce((a, i) => a + i.qty * i.rate, 0).toFixed(2)
   );
 
-  const gstAmount = Number(
-    ((subtotal * GST) / 100).toFixed(2)
-  );
+  const gstAmount = taxActive
+    ? Number(((subtotal * currentTaxRate) / 100).toFixed(2))
+    : 0;
 
   const cgst = Number((gstAmount / 2).toFixed(2));
   const sgst = Number((gstAmount / 2).toFixed(2));
@@ -374,7 +379,7 @@ export default function CheckoutClient() {
               onClick={() => setActiveCategory("All")}
               className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${activeCategory === "All"
                 ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-lg shadow-indigo-500/30"
-                : "bg-[var(--kravy-bg-2)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-indigo-500/50"
+                : "bg-[var(--kravy-bg-2)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)]"
                 }`}
             >
               All
@@ -386,7 +391,7 @@ export default function CheckoutClient() {
                 onClick={() => setActiveCategory(cat)}
                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all whitespace-nowrap ${activeCategory === cat
                   ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-lg shadow-indigo-500/30"
-                  : "bg-[var(--kravy-bg-2)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-indigo-500/50"
+                  : "bg-[var(--kravy-bg-2)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)]"
                   }`}
               >
                 {cat}
@@ -528,7 +533,7 @@ export default function CheckoutClient() {
           )}
 
           {/* CART ITEMS */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
             {items.length === 0 && (
               <p className="text-sm text-gray-500">
                 No items added
@@ -554,7 +559,7 @@ export default function CheckoutClient() {
           </div>
 
           {/* CHECKOUT */}
-          <div className="border-t border-[var(--kravy-border)] p-6 bg-[var(--kravy-bg-2)]/30 space-y-3">
+          <div className="border-t border-[var(--kravy-border)] p-4 bg-[var(--kravy-bg-2)]/30 space-y-2">
 
             {/* TOTALS */}
             <div className="flex justify-between text-sm text-[var(--kravy-text-muted)] font-medium">
@@ -562,10 +567,12 @@ export default function CheckoutClient() {
               <span className="text-[var(--kravy-text-primary)] font-bold">₹{subtotal.toFixed(2)}</span>
             </div>
 
-            <div className="flex justify-between text-sm text-[var(--kravy-text-muted)] font-medium">
-              <span>GST (5%)</span>
-              <span className="text-[var(--kravy-text-primary)] font-bold">₹{gstAmount.toFixed(2)}</span>
-            </div>
+            {taxActive && (
+              <div className="flex justify-between text-sm text-[var(--kravy-text-muted)] font-medium">
+                <span>GST ({currentTaxRate}%)</span>
+                <span className="text-[var(--kravy-text-primary)] font-bold">₹{gstAmount.toFixed(2)}</span>
+              </div>
+            )}
 
             <div className="flex justify-between items-center py-2 border-y border-[var(--kravy-border)]/50">
               <span className="font-black text-[var(--kravy-text-primary)] uppercase tracking-widest text-xs">Total Order</span>
@@ -796,10 +803,12 @@ export default function CheckoutClient() {
                 <span>₹{subtotal.toFixed(2)}</span>
               </div>
 
-              <div className="flex justify-between">
-                <span>GST</span>
-                <span>₹{gstAmount.toFixed(2)}</span>
-              </div>
+              {taxActive && (
+                <div className="flex justify-between">
+                  <span>GST ({currentTaxRate}%)</span>
+                  <span>₹{gstAmount.toFixed(2)}</span>
+                </div>
+              )}
 
               <div className="border-t border-dashed my-1" />
 
