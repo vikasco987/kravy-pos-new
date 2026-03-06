@@ -116,49 +116,46 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const navGroups = [
   {
-    group: "MAIN",
+    group: "OPERATIONS",
     items: [
-      { icon: <Home size={18} />, label: "Dashboard", href: "/dashboard", badge: "Home", badgeColor: "#10B981" },
-      { icon: <ShoppingCart size={18} />, label: "New Order", href: "/dashboard/billing/checkout", badge: "Live", badgeColor: "#FF6B35" },
-      { icon: <QrCode size={18} />, label: "QR Orders", href: "/dashboard/qr-orders", badge: "Scan", badgeColor: "#8B5CF6" },
-      { icon: <Activity size={18} />, label: "Workflow (New)", href: "/dashboard/workflow", badge: "Hot", badgeColor: "#EF4444" },
-      { icon: <Receipt size={18} />, label: "Bill Manager", href: "/dashboard/billing" },
+      { icon: <Home size={18} />, label: "Dashboard", href: "/dashboard", badge: "Live", badgeColor: "#10B981" },
+      { icon: <ShoppingCart size={18} />, label: "POS Billing", href: "/dashboard/billing/checkout", badge: "New", badgeColor: "#FF6B35" },
+      { icon: <LayoutGrid size={18} />, label: "Table Management", href: "/dashboard/tables" },
+      { icon: <Receipt size={18} />, label: "Bill History", href: "/dashboard/billing" },
+      { icon: <Activity size={18} />, label: "Service Workflow", href: "/dashboard/workflow", badge: "Hot", badgeColor: "#EF4444" },
     ]
   },
   {
-    group: "MANAGE",
+    group: "STORE CATALOG",
     items: [
-      { icon: <UtensilsCrossed size={18} />, label: "View Menu", href: "/dashboard/menu/view" },
+      { icon: <UtensilsCrossed size={18} />, label: "Digital Menu", href: "/dashboard/menu/view" },
       { icon: <PlusCircle size={18} />, label: "Add Single Item", href: "/dashboard/menu/upload" },
-      { icon: <Upload size={18} />, label: "Bulk Menu Upload", href: "/dashboard/store-item-upload", badge: "Fast", badgeColor: "#FF6B35" },
-      { icon: <Settings size={18} />, label: "Menu Manager", href: "/dashboard/menu/edit" },
-      { icon: <Users size={18} />, label: "Customers", href: "/dashboard/parties" },
-      { icon: <Package size={18} />, label: "Inventory", href: "/dashboard/inventory" },
-      { icon: <LayoutGrid size={18} />, label: "Tables", href: "/dashboard/tables" },
+      { icon: <Upload size={18} />, label: "Bulk Spreadsheet Upload", href: "/dashboard/store-item-upload", badge: "Fast", badgeColor: "#FF6B35" },
+      { icon: <Settings size={18} />, label: "Menu Organizer", href: "/dashboard/menu/edit" },
     ]
   },
   {
-    group: "ANALYTICS",
+    group: "RELATIONS & STOCK",
     items: [
-      { icon: <BarChart3 size={18} />, label: "Sales Reports", href: "#", badge: "Soon", badgeColor: "#64748B" },
-      { icon: <PieChart size={18} />, label: "Payment Analytics", href: "#", badge: "Soon", badgeColor: "#64748B" },
+      { icon: <Users size={18} />, label: "Party Directory", href: "/dashboard/parties" },
+      { icon: <Package size={18} />, label: "Inventory Stock", href: "/dashboard/inventory" },
+      { icon: <QrCode size={18} />, label: "QR Order Hub", href: "/dashboard/qr-orders", badge: "Scan", badgeColor: "#8B5CF6" },
+    ]
+  },
+  {
+    group: "INTELLIGENCE",
+    items: [
+      { icon: <BarChart3 size={18} />, label: "Sales Analytics", href: "#", badge: "Soon", badgeColor: "#64748B" },
+      { icon: <PieChart size={18} />, label: "Payment Reports", href: "#", badge: "Soon", badgeColor: "#64748B" },
       { icon: <TrendingUp size={18} />, label: "Growth Metrics", href: "#", badge: "Soon", badgeColor: "#64748B" },
-      { icon: <Activity size={18} />, label: "Live Stats", href: "#", badge: "Soon", badgeColor: "#64748B" },
     ]
   },
   {
-    group: "BUSINESS",
+    group: "SYSTEM CONFIG",
     items: [
-      { icon: <UserCircle size={18} />, label: "Business Profile", href: "/dashboard/profile" },
-      { icon: <Archive size={18} />, label: "Deleted Bills", href: "/dashboard/billing/deleted" },
-      { icon: <Database size={18} />, label: "Data Backup", href: "/dashboard/backup" },
-      { icon: <Shield size={18} />, label: "Security", href: "/dashboard/security" },
-    ]
-  },
-  {
-    group: "SETTINGS",
-    items: [
-      { icon: <Settings size={18} />, label: "Settings", href: "/dashboard/settings" },
+      { icon: <UserCircle size={18} />, label: "Store Profile", href: "/dashboard/profile" },
+      { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings" },
+      { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup" },
       { icon: <HelpCircle size={18} />, label: "Help & Support", href: "/dashboard/help" },
     ]
   }
