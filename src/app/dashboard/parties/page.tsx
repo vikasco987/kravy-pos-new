@@ -401,8 +401,8 @@ export default function PartiesPage() {
   // UI: loading / error
   if (loading)
     return (
-      <div className="p-6 flex justify-center items-center">
-        <div className="text-gray-600">Loading parties…</div>
+      <div className="p-6 flex justify-center items-center h-[50vh]">
+        <div className="text-[var(--kravy-text-muted)] animate-pulse">Loading party records…</div>
       </div>
     );
 
@@ -415,37 +415,36 @@ export default function PartiesPage() {
     );
 
   return (
-    // added top padding so page content sits below a fixed header
-    <div className="px-4 py-6 max-w-6xl mx-auto pt-20">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-        <h1 className="text-2xl font-bold">🧾 Party List</h1>
+    <div className="px-4 py-6 max-w-6xl mx-auto pt-24 transition-colors">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+        <h1 className="text-3xl font-black text-[var(--kravy-text-primary)] tracking-tight">🧾 Customers & Parties</h1>
 
         <div className="flex flex-wrap gap-2 items-center">
           <div className="flex items-center gap-2">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search name / phone / address"
-              className="px-3 py-2 border rounded-lg w-56"
+              placeholder="Search customers…"
+              className="px-4 py-2 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl w-64 outline-none focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm"
             />
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="px-3 py-2 border rounded-lg">
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="px-4 py-2 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl outline-none focus:ring-1 focus:ring-[var(--kravy-brand)] font-black uppercase tracking-widest text-[10px]">
               <option value="name">Sort: Name</option>
               <option value="phone">Sort: Phone</option>
-              <option value="dob">Sort: DOB</option>
+              <option value="dob">Sort: Birthday</option>
             </select>
             <button
               onClick={() => setSortDir((s) => (s === "asc" ? "desc" : "asc"))}
-              className="px-3 py-2 border rounded-lg"
+              className="px-4 py-2 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] rounded-xl hover:bg-[var(--kravy-surface-hover)] transition-colors"
               title="Toggle sort direction"
             >
-              {sortDir === "asc" ? "Asc" : "Desc"}
+              {sortDir === "asc" ? "↑ Asc" : "↓ Desc"}
             </button>
           </div>
 
           <div className="flex gap-2">
-            <button onClick={openAdd} className="px-4 py-2 bg-green-600 text-white rounded-lg">➕ Add</button>
-            <button onClick={exportCSV} className="px-4 py-2 bg-gray-700 text-white rounded-lg">Export CSV</button>
-            <Link href="/parties/add" className="px-4 py-2 border rounded-lg hidden md:inline-flex items-center">Add Page</Link>
+            <button onClick={openAdd} className="px-5 py-2.5 bg-[var(--kravy-brand)] text-white font-black rounded-xl shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all">➕ Add Party</button>
+            <button onClick={exportCSV} className="px-5 py-2.5 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] font-black rounded-xl hover:bg-[var(--kravy-surface-hover)] transition-all">Export CSV</button>
+            <Link href="/parties/add" className="px-4 py-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hidden md:inline-flex items-center text-[10px] font-black uppercase tracking-widest">Add Page</Link>
           </div>
         </div>
       </div>
@@ -453,22 +452,24 @@ export default function PartiesPage() {
       {/* Mobile: card list */}
       <div className="md:hidden space-y-3">
         {visible.length === 0 && (
-          <div className="p-3 bg-yellow-50 border rounded">No parties found.</div>
+          <div className="p-8 text-center bg-[var(--kravy-bg-2)]/50 border border-dashed border-[var(--kravy-border)] rounded-2xl text-[var(--kravy-text-muted)]">
+            No party records found match your search.
+          </div>
         )}
         {visible.map((p) => (
-          <div key={p.id} className="bg-white border rounded-lg p-3 shadow-sm">
+          <div key={p.id} className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl p-5 shadow-sm">
             <div className="flex justify-between items-start gap-3">
               <div>
-                <div className="font-semibold text-gray-800">{p.name}</div>
-                <div className="text-sm text-gray-500">{p.phone}</div>
-                {p.address && <div className="text-sm text-gray-600 mt-2">{p.address}</div>}
+                <div className="font-black text-[var(--kravy-text-primary)] text-lg">{p.name}</div>
+                <div className="text-xs font-black text-[var(--kravy-brand)] mt-0.5 font-mono">{p.phone}</div>
+                {p.address && <div className="text-sm text-[var(--kravy-text-muted)] mt-3 leading-relaxed">{p.address}</div>}
               </div>
 
-              <div className="flex flex-col gap-2 items-end">
-                <div className="text-xs text-gray-400">{formatDate(p.dob)}</div>
+              <div className="flex flex-col gap-3 items-end">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] px-2 py-1 rounded">{formatDate(p.dob)}</div>
                 <div className="flex gap-2">
-                  <button onClick={() => openEdit(p)} className="px-3 py-1 border rounded text-sm">Edit</button>
-                  <button onClick={() => handleDelete(p.id)} className="px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
+                  <button onClick={() => openEdit(p)} className="px-4 py-1.5 border border-[var(--kravy-border)] rounded-xl text-xs font-bold text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg-2)]">Edit</button>
+                  <button onClick={() => handleDelete(p.id)} className="px-4 py-1.5 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-bold hover:bg-rose-500 hover:text-white transition-all">Delete</button>
                 </div>
               </div>
             </div>
@@ -477,33 +478,33 @@ export default function PartiesPage() {
       </div>
 
       {/* Desktop / tablet: table */}
-      <div className="hidden md:block bg-white rounded-lg border overflow-x-auto">
+      <div className="hidden md:block bg-[var(--kravy-surface)] rounded-2xl border border-[var(--kravy-border)] overflow-hidden shadow-xl">
         <table className="min-w-full">
-          <thead className="bg-gray-100">
+          <thead className="bg-[var(--kravy-bg-2)]/50">
             <tr>
-              <th className="py-3 px-4 text-left text-sm font-medium">Name</th>
-              <th className="py-3 px-4 text-left text-sm font-medium">Phone</th>
-              <th className="py-3 px-4 text-left text-sm font-medium">Address</th>
-              <th className="py-3 px-4 text-left text-sm font-medium">DOB</th>
-              <th className="py-3 px-4 text-right text-sm font-medium">Actions</th>
+              <th className="py-4 px-6 text-left text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Customer Name</th>
+              <th className="py-4 px-6 text-left text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Phone</th>
+              <th className="py-4 px-6 text-left text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Address / Location</th>
+              <th className="py-4 px-6 text-left text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Birthday</th>
+              <th className="py-4 px-6 text-right text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Actions</th>
             </tr>
           </thead>
           <tbody>
             {visible.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-sm text-gray-500">No parties found.</td>
+                <td colSpan={5} className="p-8 text-center text-sm text-[var(--kravy-text-muted)] italic">No records found.</td>
               </tr>
             )}
             {visible.map((p) => (
-              <tr key={p.id} className="border-t last:border-b">
-                <td className="py-3 px-4 align-top">{p.name}</td>
-                <td className="py-3 px-4 align-top">{p.phone}</td>
-                <td className="py-3 px-4 align-top">{p.address || "—"}</td>
-                <td className="py-3 px-4 align-top">{formatDate(p.dob)}</td>
-                <td className="py-3 px-4 align-top text-right">
+              <tr key={p.id} className="border-t border-[var(--kravy-border)] hover:bg-[var(--kravy-bg-2)]/30 transition-colors">
+                <td className="py-4 px-6 align-middle font-black text-[var(--kravy-text-primary)]">{p.name}</td>
+                <td className="py-4 px-6 align-middle font-black text-[var(--kravy-brand)] font-mono text-sm">{p.phone}</td>
+                <td className="py-4 px-6 align-middle text-sm text-[var(--kravy-text-muted)] line-clamp-1 font-medium italic">{p.address || "—"}</td>
+                <td className="py-4 px-6 align-middle text-sm text-[var(--kravy-text-primary)] font-black font-mono">{formatDate(p.dob)}</td>
+                <td className="py-4 px-6 align-middle text-right">
                   <div className="inline-flex gap-2">
-                    <button onClick={() => openEdit(p)} className="px-3 py-1 border rounded">Edit</button>
-                    <button onClick={() => handleDelete(p.id)} className="px-3 py-1 bg-red-600 text-white rounded">Delete</button>
+                    <button onClick={() => openEdit(p)} className="px-4 py-1.5 border border-[var(--kravy-border)] rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-surface-hover)] transition-colors">Edit</button>
+                    <button onClick={() => handleDelete(p.id)} className="px-4 py-1.5 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">Delete</button>
                   </div>
                 </td>
               </tr>
@@ -515,9 +516,8 @@ export default function PartiesPage() {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed right-4 bottom-4 px-4 py-2 rounded shadow-lg z-50 ${
-            toast.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-          }`}
+          className={`fixed right-8 bottom-8 px-6 py-4 rounded-2xl shadow-2xl z-[100] font-bold text-sm animate-in slide-in-from-bottom-5 ${toast.type === "success" ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"
+            }`}
         >
           {toast.text}
         </div>
@@ -541,19 +541,11 @@ export default function PartiesPage() {
 /* ----- Modal + PartyForm components (local) ----- */
 
 function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   // changed alignment so modal content starts below any fixed header (items-start + top padding)
   return (
-    <div className="fixed inset-0 z-60 flex items-start justify-center p-4 pt-24">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-50 w-full max-w-md bg-white rounded-lg shadow-lg p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-[70] w-full max-w-md bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] shadow-2xl p-8 overflow-hidden animate-in zoom-in-95 duration-200">
         {children}
       </div>
     </div>
@@ -597,56 +589,64 @@ function PartyForm({ initial, onCancel, onSave, saving }: {
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        // ensure we pass the expected types back (dob as string or empty)
         await onSave(form);
       }}
-      className="space-y-3"
+      className="space-y-6"
     >
-      <h3 className="text-lg font-semibold">{initial.id === "new" ? "Add Party" : "Edit Party"}</h3>
-
       <div>
-        <label className="text-sm font-medium">Name</label>
-        <input
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          required
-          className="mt-1 w-full px-3 py-2 border rounded"
-        />
-      </div>
-<div>
-        <label className="text-sm font-medium">Phone</label>
-        <input
-          value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          required
-          className="mt-1 w-full px-3 py-2 border rounded"
-        />
+        <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] tracking-tight">{initial.id === "new" ? "New Customer" : "Edit Customer"}</h3>
+        <p className="text-sm text-[var(--kravy-text-muted)] mt-1">Fill in the details below to manage party.</p>
       </div>
 
-      <div>
-        <label className="text-sm font-medium">Address</label>
-        <input
-          value={form.address}
-          onChange={(e) => setForm({ ...form, address: e.target.value })}
-          className="mt-1 w-full px-3 py-2 border rounded"
-        />
-      </div>
+      <div className="space-y-4">
+        <div className="grid gap-2">
+          <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1">Full Name</label>
+          <input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+            placeholder="e.g. John Doe"
+            className="w-full px-4 py-3 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
+          />
+        </div>
 
-      <div>
-        <label className="text-sm font-medium">Date of Birth</label>
+        <div className="grid gap-2">
+          <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1">Phone Number</label>
+          <input
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            required
+            placeholder="e.g. +91 9876543210"
+            className="w-full px-4 py-3 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 font-medium font-mono"
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1">Complete Address</label>
+          <textarea
+            value={form.address}
+            onChange={(e: any) => setForm({ ...form, address: e.target.value })}
+            rows={2}
+            placeholder="Street, City, Building..."
+            className="w-full px-4 py-3 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 font-medium resize-none"
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1">Birthday (YYYY-MM-DD)</label>
           <input
             value={form.dob ?? ""}
             onChange={(e) => setForm({ ...form, dob: e.target.value })}
-            placeholder="YYYY-MM-DD"
-            className="mt-1 w-full px-3 py-2 border rounded"
+            placeholder="1995-12-25"
+            className="w-full px-4 py-3 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
           />
+        </div>
       </div>
 
-      <div className="flex gap-2 justify-end">
-        <button type="button" onClick={handleReset} className="px-3 py-2 border rounded">Reset</button>
-        <button type="button" onClick={onCancel} className="px-3 py-2 border rounded">Cancel</button>
-        <button type="submit" disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded">
-          {saving ? "Saving…" : "Save"}
+      <div className="flex gap-3 justify-end pt-4">
+        <button type="button" onClick={onCancel} className="flex-1 py-3 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-[var(--kravy-bg-2)] transition-all">Cancel</button>
+        <button type="submit" disabled={saving} className="flex-[2] py-3 bg-[var(--kravy-brand)] text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all text-xs uppercase tracking-widest">
+          {saving ? "Saving Record..." : "Confirm & Save"}
         </button>
       </div>
     </form>

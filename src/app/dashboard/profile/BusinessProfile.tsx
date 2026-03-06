@@ -185,144 +185,151 @@ export default function BusinessProfile({
   }
   /* ================= SMALL HELPERS ================= */
 
-function Info({
-  label,
-  value,
-  fallback = "-",
-}: {
-  label: string;
-  value?: string | null;
-  fallback?: string;
-}) {
-  return (
-    <div className="flex justify-between gap-4 text-sm py-1">
-      <span className="text-gray-500">{label}</span>
-      <span className="font-medium text-right text-gray-900">
-        {value || fallback}
-      </span>
-    </div>
-  );
-}
-
-function BrandBox({
-  label,
-  url,
-}: {
-  label: string;
-  url?: string | null;
-}) {
-  return (
-    <div className="text-center">
-      <div className="relative h-32 w-full rounded-xl border bg-gray-100 overflow-hidden">
-        <Image
-          src={url || "/no-image.png"}
-          alt={label}
-          fill
-          className="object-contain p-4"
-        />
+  function Info({
+    label,
+    value,
+    fallback = "-",
+  }: {
+    label: string;
+    value?: string | null;
+    fallback?: string;
+  }) {
+    return (
+      <div className="flex justify-between gap-4 text-sm py-1">
+        <span className="text-[var(--kravy-text-muted)] font-medium">{label}</span>
+        <span className="font-bold text-right text-[var(--kravy-text-primary)]">
+          {value || fallback}
+        </span>
       </div>
-      <p className="mt-2 text-sm text-muted-foreground">{label}</p>
-    </div>
-  );
-}
+    );
+  }
 
-
-  return (
-    <div className="max-w-5xl mx-auto p-6">
-  <Card className="rounded-3xl bg-white/80 backdrop-blur-xl shadow-xl border border-gray-200 overflow-hidden">
-    {/* ================= TOP PROFILE ================= */}
-    <div className="relative px-8 pt-12 pb-8 text-center">
-      {/* Edit */}
-      <Button
-        size="sm"
-        variant="outline"
-        className="absolute top-6 right-6 rounded-full shadow-sm"
-        onClick={() => setEditMode(true)}
-      >
-        <Pencil size={14} />
-        Edit
-      </Button>
-
-      {/* Avatar */}
-      <div className="mx-auto w-32 h-32 rounded-full p-[3px] bg-linear-to-tr from-primary via-purple-500 to-pink-500">
-        <div className="relative w-full h-full rounded-full overflow-hidden bg-gray-100">
+  function BrandBox({
+    label,
+    url,
+  }: {
+    label: string;
+    url?: string | null;
+  }) {
+    return (
+      <div className="text-center group">
+        <div className="relative h-32 w-full rounded-2xl border border-[var(--kravy-border)] bg-[var(--kravy-bg-2)] overflow-hidden shadow-inner group-hover:border-indigo-500/50 transition-colors">
           <Image
-            src={data.profileImageUrl || data.logoUrl || "/no-image.png"}
-            alt="Business Profile"
+            src={url || "/no-image.png"}
+            alt={label}
             fill
-            className="object-cover"
+            className="object-contain p-4"
           />
         </div>
+        <p className="mt-2 text-sm text-muted-foreground">{label}</p>
       </div>
+    );
+  }
 
-      <h1 className="mt-5 text-3xl font-semibold tracking-tight">
-        {data.businessName}
-      </h1>
 
-      <p className="mt-1 text-sm text-muted-foreground max-w-md mx-auto">
-        {data.businessTagLine || "—"}
-      </p>
+  return (
+    <div className="max-w-5xl mx-auto p-6 transition-colors duration-300">
+      <Card className="rounded-[40px] bg-[var(--kravy-surface)] backdrop-blur-xl shadow-2xl border border-[var(--kravy-border)] overflow-hidden">
+        {/* ================= TOP PROFILE ================= */}
+        <div className="relative px-8 pt-12 pb-8 text-center">
+          {/* Edit */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="absolute top-6 right-6 rounded-full shadow-sm"
+            onClick={() => setEditMode(true)}
+          >
+            <Pencil size={14} />
+            Edit
+          </Button>
 
-      <div className="flex justify-center gap-2 mt-4 flex-wrap">
-        {data.state && (
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-            {data.state}
-          </span>
-        )}
-        {data.district && (
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-600">
-            {data.district}
-          </span>
-        )}
-      </div>
+          {/* Avatar */}
+          <div className="mx-auto w-36 h-36 rounded-full p-1 bg-gradient-to-tr from-[var(--kravy-brand)] via-purple-500 to-pink-500 shadow-xl shadow-indigo-500/20">
+            <div className="relative w-full h-full rounded-full overflow-hidden bg-[var(--kravy-bg-2)] border-4 border-[var(--kravy-surface)]">
+              <Image
+                src={data.profileImageUrl || data.logoUrl || "/no-image.png"}
+                alt="Business Profile"
+                fill
+                className="object-cover"
+              />
+            </div>
+          </div>
+
+          <h1 className="mt-6 text-3xl font-black tracking-tight text-[var(--kravy-text-primary)]">
+            {data.businessName}
+          </h1>
+
+          <p className="mt-1 text-sm text-muted-foreground max-w-md mx-auto">
+            {data.businessTagLine || "—"}
+          </p>
+
+          <div className="flex justify-center gap-2 mt-4 flex-wrap">
+            {data.state && (
+              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-[var(--kravy-brand)]/10 text-[var(--kravy-brand)] border border-[var(--kravy-brand)]/20">
+                {data.state}
+              </span>
+            )}
+            {data.district && (
+              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                {data.district}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* ================= DIVIDER ================= */}
+        <div className="border-t border-[var(--kravy-border)] mx-8" />
+
+        {/* ================= DETAILS GRID ================= */}
+        <div className="grid md:grid-cols-2 gap-8 px-8 py-8">
+          {/* CONTACT */}
+          <div>
+            <h3 className="text-xs font-black text-[var(--kravy-text-muted)] mb-5 uppercase tracking-widest flex items-center gap-2">
+              <div className="w-1.5 h-3 bg-[var(--kravy-brand)] rounded-full" />
+              Customer Information
+            </h3>
+
+            <div className="space-y-2 bg-[var(--kravy-bg-2)] p-6 rounded-3xl border border-[var(--kravy-border)]">
+              <Info label="Contact Person" value={data.contactPersonName} />
+              <Info label="Phone" value={data.contactPersonPhone} />
+              <Info label="Email" value={data.contactPersonEmail} />
+              <Info label="UPI" value={data.upi} fallback="Not Added" />
+            </div>
+          </div>
+
+          {/* BUSINESS */}
+          <div>
+            <h3 className="text-xs font-bold text-[var(--kravy-text-muted)] mb-5 uppercase tracking-widest flex items-center gap-2">
+              <div className="w-1 h-3 bg-purple-500 rounded-full" />
+              Business Details
+            </h3>
+
+            <div className="space-y-2 bg-[var(--kravy-bg-2)] p-6 rounded-3xl border border-[var(--kravy-border)]">
+              <Info label="Business Type" value={data.businessType} />
+              <Info label="GST Number" value={data.gstNumber} fallback="Not Registered" />
+              <Info label="Address" value={data.businessAddress} />
+              <Info label="State" value={data.state} />
+              <Info label="District" value={data.district} />
+              <Info label="PIN Code" value={data.pinCode} />
+            </div>
+          </div>
+        </div>
+
+        {/* ================= BRANDING ================= */}
+        <div className="border-t border-[var(--kravy-border)] mx-8" />
+
+        <div className="px-8 py-8">
+          <h3 className="text-xs font-black text-[var(--kravy-text-muted)] mb-5 uppercase tracking-widest flex items-center gap-2">
+            <div className="w-1.5 h-3 bg-pink-500 rounded-full" />
+            Branding
+          </h3>
+
+          <div className="grid sm:grid-cols-2 gap-6">
+            <BrandBox label="Logo" url={data.logoUrl} />
+            <BrandBox label="Signature" url={data.signatureUrl} />
+          </div>
+        </div>
+      </Card>
     </div>
-
-    {/* ================= DIVIDER ================= */}
-    <div className="border-t" />
-
-    {/* ================= DETAILS GRID ================= */}
-    <div className="grid md:grid-cols-2 gap-8 px-8 py-8">
-      {/* CONTACT */}
-      <div>
-        <h3 className="text-sm font-semibold text-gray-500 mb-4">
-          Customer Information
-        </h3>
-
-        <Info label="Contact Person" value={data.contactPersonName} />
-        <Info label="Phone" value={data.contactPersonPhone} />
-        <Info label="Email" value={data.contactPersonEmail} />
-        <Info label="UPI" value={data.upi} fallback="Not Added" />
-      </div>
-
-      {/* BUSINESS */}
-      <div>
-        <h3 className="text-sm font-semibold text-gray-500 mb-4">
-          Business Details
-        </h3>
-
-        <Info label="Business Type" value={data.businessType} />
-        <Info label="GST Number" value={data.gstNumber} fallback="Not Registered" />
-        <Info label="Address" value={data.businessAddress} />
-        <Info label="State" value={data.state} />
-        <Info label="District" value={data.district} />
-        <Info label="PIN Code" value={data.pinCode} />
-      </div>
-    </div>
-
-    {/* ================= BRANDING ================= */}
-    <div className="border-t" />
-
-    <div className="px-8 py-8">
-      <h3 className="text-sm font-semibold text-gray-500 mb-4">
-        Branding
-      </h3>
-
-      <div className="grid sm:grid-cols-2 gap-6">
-        <BrandBox label="Logo" url={data.logoUrl} />
-        <BrandBox label="Signature" url={data.signatureUrl} />
-      </div>
-    </div>
-  </Card>
-</div>
   );
 }

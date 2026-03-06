@@ -99,7 +99,7 @@ export default function PaymentModeChart({ paymentSplit }: Props) {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            color: "#4A5568",
+            color: "var(--kravy-text-muted)",
             gap: "12px"
           }}>
             <div style={{ fontSize: "2rem" }}>💳</div>
@@ -152,9 +152,9 @@ export default function PaymentModeChart({ paymentSplit }: Props) {
           gap: "12px",
           marginTop: "16px",
           padding: "14px 16px",
-          background: "rgba(255,255,255,0.03)",
+          background: "var(--kravy-bg-2)",
           borderRadius: "14px",
-          border: "1px solid rgba(255,255,255,0.05)"
+          border: "1px solid var(--kravy-border)"
         }}>
           {data.map((item) => (
             <div key={item.name} style={{

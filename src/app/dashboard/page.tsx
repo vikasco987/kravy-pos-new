@@ -305,8 +305,8 @@ export default async function DashboardPage({
                 }
               ].map((stat, i) => (
                 <div key={i} style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
+                  background: "var(--kravy-bg-2)",
+                  border: "1px solid var(--kravy-border)",
                   borderRadius: "14px",
                   padding: "14px",
                   textAlign: "center"
@@ -341,7 +341,7 @@ export default async function DashboardPage({
                 fontSize: "0.68rem",
                 fontWeight: 700,
                 padding: "5px 12px",
-                background: "rgba(255,255,255,0.04)",
+                background: "var(--kravy-bg-2)",
                 border: "1px solid var(--kravy-border)",
                 borderRadius: "20px",
                 color: "var(--kravy-text-muted)",

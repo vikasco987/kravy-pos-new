@@ -32,50 +32,50 @@ export default function DeletedBillsPage() {
       .finally(() => setLoading(false));
   }, []);
 
- async function restore(billId: string) {
-  if (!confirm("Restore this bill?")) return;
+  async function restore(billId: string) {
+    if (!confirm("Restore this bill?")) return;
 
-  const res = await fetch(
-    `/api/bill-manager/deleted/restore/${billId}`,
-    {
-      method: "POST",
+    const res = await fetch(
+      `/api/bill-manager/deleted/restore/${billId}`,
+      {
+        method: "POST",
+      }
+    );
+
+    if (!res.ok) {
+      alert("Failed to restore bill");
+      return;
     }
-  );
 
-  if (!res.ok) {
-    alert("Failed to restore bill");
-    return;
+    // optional: update UI instantly
+    setBills((prev) => prev.filter((b) => b.id !== billId));
+
+    // ✅ AUTO REDIRECT TO BILL MANAGER
+    router.push("/billing");
   }
-
-  // optional: update UI instantly
-  setBills((prev) => prev.filter((b) => b.id !== billId));
-
-  // ✅ AUTO REDIRECT TO BILL MANAGER
-  router.push("/billing");
-}
 
   return (
     <div className="p-6 space-y-6 pt-20">
       {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Deleted Bills</h1>
-        <Link href="/billing" className="text-sm text-blue-600">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-black text-[var(--kravy-text-primary)] tracking-tight">🗑️ Deleted Bills</h1>
+        <Link href="/dashboard/billing" className="px-4 py-2 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] font-bold rounded-xl hover:bg-[var(--kravy-surface-hover)] transition-all">
           ← Back to Bills
         </Link>
       </div>
 
       {/* TABLE */}
-      <div className="bg-white border rounded-xl overflow-hidden">
+      <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl overflow-hidden shadow-xl">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left">
+          <thead className="bg-[var(--kravy-bg-2)]/50">
             <tr>
-              <th className="p-3">Bill No</th>
-              <th className="p-3">Customer</th>
-              <th className="p-3">Deleted At</th>
-              <th className="p-3">Amount</th>
-              <th className="p-3">Payment</th>
-              <th className="p-3">Status</th>
-              <th className="p-3 text-right">Actions</th>
+              <th className="p-4 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Bill No</th>
+              <th className="p-4 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Customer</th>
+              <th className="p-4 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Deleted At</th>
+              <th className="p-4 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Amount</th>
+              <th className="p-4 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Payment</th>
+              <th className="p-4 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] text-center">Status</th>
+              <th className="p-4 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] text-right">Actions</th>
             </tr>
           </thead>
 
@@ -83,35 +83,37 @@ export default function DeletedBillsPage() {
             {bills.map((b) => {
               const snap = b.snapshot;
               return (
-                <tr key={b.id} className="border-t hover:bg-gray-50">
-                  <td className="p-3 font-medium">
+                <tr key={b.id} className="border-t border-[var(--kravy-border)] hover:bg-[var(--kravy-bg-2)]/30 transition-colors">
+                  <td className="p-4 font-black text-[var(--kravy-text-primary)]">
                     {snap.billNumber}
                   </td>
 
-                  <td className="p-3">
+                  <td className="p-4 font-bold text-[var(--kravy-text-primary)]">
                     {snap.customer?.name ?? "Walk-in Customer"}
                   </td>
 
-                  <td className="p-3">
+                  <td className="p-4 text-[var(--kravy-text-muted)] font-medium font-mono text-xs">
                     {new Date(b.createdAt).toLocaleString()}
                   </td>
 
-                  <td className="p-3">
+                  <td className="p-4 font-black text-[var(--kravy-text-primary)]">
                     ₹{Number(snap.total).toFixed(2)}
                   </td>
 
-                  <td className="p-3">
-                    {snap.paymentMode}
+                  <td className="p-4">
+                    <span className="px-3 py-1 bg-indigo-500/10 text-indigo-500 rounded-full text-[10px] font-black uppercase tracking-wider">
+                      {snap.paymentMode}
+                    </span>
                   </td>
 
-                  <td className="p-3">
+                  <td className="p-4 text-center">
                     <DeletedStatusBadge snap={snap} />
                   </td>
 
-                  <td className="p-3 text-right">
+                  <td className="p-4 text-right">
                     <button
                       onClick={() => restore(b.id)}
-                      className="text-green-600 text-sm"
+                      className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-xl text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
                     >
                       Restore
                     </button>
@@ -143,7 +145,7 @@ function DeletedStatusBadge({
 }) {
   if (snap.isHeld) {
     return (
-      <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded">
+      <span className="px-2.5 py-1 text-[10px] bg-amber-500/10 text-amber-500 rounded-full font-black tracking-widest">
         HELD
       </span>
     );
@@ -151,14 +153,14 @@ function DeletedStatusBadge({
 
   if (snap.paymentStatus?.toLowerCase() === "paid") {
     return (
-      <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
+      <span className="px-2.5 py-1 text-[10px] bg-emerald-500/10 text-emerald-500 rounded-full font-black tracking-widest">
         PAID
       </span>
     );
   }
 
   return (
-    <span className="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded">
+    <span className="px-2.5 py-1 text-[10px] bg-rose-500/10 text-rose-500 rounded-full font-black tracking-widest">
       PENDING
     </span>
   );

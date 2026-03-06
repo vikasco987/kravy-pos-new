@@ -26,11 +26,11 @@ export default function TopItems({
       : 1;
 
   const colors = [
-    { primary: "#F59E0B", glow: "rgba(245,158,11,0.4)" },
-    { primary: "#9CA3AF", glow: "rgba(156,163,175,0.3)" },
-    { primary: "#CD7F32", glow: "rgba(205,127,50,0.3)" },
-    { primary: "#8B5CF6", glow: "rgba(139,92,246,0.3)" },
-    { primary: "#10B981", glow: "rgba(16,185,129,0.3)" },
+    { primary: "#F59E0B", glow: "rgba(245,158,11,0.3)" },
+    { primary: "var(--kravy-text-faint)", glow: "var(--kravy-border)" },
+    { primary: "#CD7F32", glow: "rgba(205,127,50,0.2)" },
+    { primary: "var(--kravy-brand)", glow: "rgba(139,92,246,0.3)" },
+    { primary: "#10B981", glow: "rgba(16,185,129,0.2)" },
   ];
 
   const rankLabels = ["🥇", "🥈", "🥉", "4th", "5th"];
@@ -66,11 +66,11 @@ export default function TopItems({
             width: "40px",
             height: "40px",
             borderRadius: "12px",
-            background: "linear-gradient(135deg, #F59E0B, #D97706)",
+            background: "var(--kravy-brand)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 4px 16px rgba(245,158,11,0.4)"
+            boxShadow: "0 4px 16px rgba(139,92,246,0.3)"
           }}>
             <Flame size={20} color="white" />
           </div>
@@ -88,10 +88,10 @@ export default function TopItems({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "rgba(245,158,11,0.12)",
-          border: "1px solid rgba(245,158,11,0.2)"
+          background: "rgba(139, 92, 246, 0.1)",
+          border: "1px solid rgba(139, 92, 246, 0.2)"
         }}>
-          <Trophy size={16} color="#F59E0B" />
+          <Trophy size={16} color="var(--kravy-brand)" />
         </div>
       </div>
 
@@ -101,7 +101,7 @@ export default function TopItems({
           <div style={{
             textAlign: "center",
             padding: "40px 0",
-            color: "#4A5568",
+            color: "var(--kravy-text-muted)",
             fontSize: "0.82rem",
             display: "flex",
             flexDirection: "column",
@@ -138,7 +138,7 @@ export default function TopItems({
                       borderRadius: "8px",
                       background: index < 3
                         ? `${color.primary}18`
-                        : "rgba(255,255,255,0.04)",
+                        : "var(--kravy-bg-2)",
                       border: `1px solid ${color.primary}30`,
                       display: "flex",
                       alignItems: "center",
@@ -185,7 +185,7 @@ export default function TopItems({
                 {/* Progress bar */}
                 <div style={{
                   height: "5px",
-                  background: "rgba(255,255,255,0.05)",
+                  background: "var(--kravy-bg-2)",
                   borderRadius: "10px",
                   overflow: "hidden"
                 }}>

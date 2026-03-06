@@ -15,17 +15,17 @@ export default function InventoryPage() {
     { id: 5, name: "Burger Buns", category: "Bakery", stock: 200, unit: "pcs", minStock: 100, status: "in-stock" },
   ];
 
-  const filteredItems = inventoryItems.filter(item => 
+  const filteredItems = inventoryItems.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (selectedCategory === "all" || item.category === selectedCategory)
   );
 
   const getStatusStyle = (status: string) => {
-    switch(status) {
-      case "in-stock": return { color: "#10B981", background: "rgba(16,185,129,0.1)" };
-      case "low-stock": return { color: "#F59E0B", background: "rgba(245,158,11,0.1)" };
-      case "out-of-stock": return { color: "#EF4444", background: "rgba(239,68,68,0.1)" };
-      default: return { color: "#6B7280", background: "rgba(107,114,128,0.1)" };
+    switch (status) {
+      case "in-stock": return { color: "rgb(16 185 129)", background: "rgba(16, 185, 129, 0.1)" };
+      case "low-stock": return { color: "rgb(245 158 11)", background: "rgba(245, 158, 11, 0.1)" };
+      case "out-of-stock": return { color: "rgb(244 63 94)", background: "rgba(244, 63, 94, 0.1)" };
+      default: return { color: "var(--kravy-text-muted)", background: "var(--kravy-bg-2)" };
     }
   };
 
@@ -34,26 +34,26 @@ export default function InventoryPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: "#F1F0EC", letterSpacing: "-1px" }}>
+          <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: "var(--kravy-text-primary)", letterSpacing: "-1px" }}>
             Inventory Management
           </h1>
-          <p style={{ fontSize: "0.85rem", color: "#4A5568", marginTop: "4px" }}>
+          <p style={{ fontSize: "0.85rem", color: "var(--kravy-text-muted)", marginTop: "4px" }}>
             Track and manage your restaurant inventory in real-time.
           </p>
         </div>
         <button style={{
-          background: "linear-gradient(135deg, #FF6B35, #F59E0B)",
+          background: "var(--kravy-brand)",
           color: "white",
           border: "none",
           padding: "12px 24px",
-          borderRadius: "12px",
-          fontWeight: 700,
+          borderRadius: "14px",
+          fontWeight: 800,
           fontSize: "0.9rem",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           gap: "8px",
-          boxShadow: "0 4px 16px rgba(255,107,53,0.3)"
+          boxShadow: "0 4px 20px rgba(79, 70, 229, 0.2)"
         }}>
           <Plus size={18} /> Add Item
         </button>
@@ -62,67 +62,67 @@ export default function InventoryPage() {
       {/* Stats Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
         <div style={{
-          background: "rgba(255,255,255,0.02)",
-          border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: "16px",
-          padding: "20px",
-          backdropFilter: "blur(10px)"
+          background: "var(--kravy-surface)",
+          border: "1px solid var(--kravy-border)",
+          borderRadius: "20px",
+          padding: "24px",
+          boxShadow: "var(--kravy-card-shadow)"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div style={{
-              width: "48px", height: "48px", borderRadius: "12px",
-              background: "rgba(16,185,129,0.1)", color: "#10B981",
+              width: "52px", height: "52px", borderRadius: "14px",
+              background: "rgba(16, 185, 129, 0.1)", color: "rgb(16 185 129)",
               display: "flex", alignItems: "center", justifyContent: "center"
             }}>
               <Package size={24} />
             </div>
             <div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#F1F0EC" }}>470</div>
-              <div style={{ fontSize: "0.75rem", color: "#4A5568" }}>Total Items</div>
+              <div style={{ fontSize: "1.75rem", fontWeight: 900, color: "var(--kravy-text-primary)", lineHeight: 1 }}>470</div>
+              <div style={{ fontSize: "0.8rem", color: "var(--kravy-text-muted)", fontWeight: 600, marginTop: "4px" }}>Total Items</div>
             </div>
           </div>
         </div>
 
         <div style={{
-          background: "rgba(255,255,255,0.02)",
-          border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: "16px",
-          padding: "20px",
-          backdropFilter: "blur(10px)"
+          background: "var(--kravy-surface)",
+          border: "1px solid var(--kravy-border)",
+          borderRadius: "20px",
+          padding: "24px",
+          boxShadow: "var(--kravy-card-shadow)"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div style={{
-              width: "48px", height: "48px", borderRadius: "12px",
-              background: "rgba(245,158,11,0.1)", color: "#F59E0B",
+              width: "52px", height: "52px", borderRadius: "14px",
+              background: "rgba(245, 158, 11, 0.1)", color: "rgb(245 158 11)",
               display: "flex", alignItems: "center", justifyContent: "center"
             }}>
               <Filter size={24} />
             </div>
             <div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#F1F0EC" }}>2</div>
-              <div style={{ fontSize: "0.75rem", color: "#4A5568" }}>Low Stock</div>
+              <div style={{ fontSize: "1.75rem", fontWeight: 900, color: "var(--kravy-text-primary)", lineHeight: 1 }}>2</div>
+              <div style={{ fontSize: "0.8rem", color: "var(--kravy-text-muted)", fontWeight: 600, marginTop: "4px" }}>Low Stock</div>
             </div>
           </div>
         </div>
 
         <div style={{
-          background: "rgba(255,255,255,0.02)",
-          border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: "16px",
-          padding: "20px",
-          backdropFilter: "blur(10px)"
+          background: "var(--kravy-surface)",
+          border: "1px solid var(--kravy-border)",
+          borderRadius: "20px",
+          padding: "24px",
+          boxShadow: "var(--kravy-card-shadow)"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div style={{
-              width: "48px", height: "48px", borderRadius: "12px",
-              background: "rgba(139,92,246,0.1)", color: "#8B5CF6",
+              width: "52px", height: "52px", borderRadius: "14px",
+              background: "rgba(99, 102, 241, 0.1)", color: "rgb(99 102 241)",
               display: "flex", alignItems: "center", justifyContent: "center"
             }}>
               <Download size={24} />
             </div>
             <div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#F1F0EC" }}>5</div>
-              <div style={{ fontSize: "0.75rem", color: "#4A5568" }}>Categories</div>
+              <div style={{ fontSize: "1.75rem", fontWeight: 900, color: "var(--kravy-text-primary)", lineHeight: 1 }}>5</div>
+              <div style={{ fontSize: "0.8rem", color: "var(--kravy-text-muted)", fontWeight: 600, marginTop: "4px" }}>Categories</div>
             </div>
           </div>
         </div>
@@ -131,7 +131,7 @@ export default function InventoryPage() {
       {/* Filters */}
       <div style={{ display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ position: "relative", flex: 1, minWidth: "300px" }}>
-          <Search size={18} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#6B7280" }} />
+          <Search size={18} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--kravy-text-muted)" }} />
           <input
             type="text"
             placeholder="Search inventory items..."
@@ -140,25 +140,25 @@ export default function InventoryPage() {
             style={{
               width: "100%",
               padding: "12px 16px 12px 44px",
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "var(--kravy-input-bg)",
+              border: "1px solid var(--kravy-input-border)",
               borderRadius: "12px",
-              color: "#F1F0EC",
+              color: "var(--kravy-text-primary)",
               fontSize: "0.9rem",
               outline: "none"
             }}
           />
         </div>
-        
+
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
           style={{
             padding: "12px 16px",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--kravy-input-bg)",
+            border: "1px solid var(--kravy-input-border)",
             borderRadius: "12px",
-            color: "#F1F0EC",
+            color: "var(--kravy-text-primary)",
             fontSize: "0.9rem",
             outline: "none",
             cursor: "pointer"
@@ -174,31 +174,31 @@ export default function InventoryPage() {
 
       {/* Inventory Table */}
       <div style={{
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        background: "var(--kravy-surface)",
+        border: "1px solid var(--kravy-border)",
         borderRadius: "16px",
         overflow: "hidden",
-        backdropFilter: "blur(10px)"
+        boxShadow: "var(--kravy-card-shadow)"
       }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "rgba(255,255,255,0.02)" }}>
-                <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "#4A5568" }}>Item Name</th>
-                <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "#4A5568" }}>Category</th>
-                <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "#4A5568" }}>Current Stock</th>
-                <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "#4A5568" }}>Min Stock</th>
-                <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "#4A5568" }}>Status</th>
-                <th style={{ padding: "16px", textAlign: "center", fontSize: "0.85rem", fontWeight: 700, color: "#4A5568" }}>Actions</th>
+              <tr style={{ background: "var(--kravy-table-header)" }}>
+                <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-muted)" }}>Item Name</th>
+                <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-muted)" }}>Category</th>
+                <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-muted)" }}>Current Stock</th>
+                <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-muted)" }}>Min Stock</th>
+                <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-muted)" }}>Status</th>
+                <th style={{ padding: "16px", textAlign: "center", fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-muted)" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredItems.map((item) => (
-                <tr key={item.id} style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                  <td style={{ padding: "16px", color: "#F1F0EC", fontWeight: 500 }}>{item.name}</td>
-                  <td style={{ padding: "16px", color: "#6B7280" }}>{item.category}</td>
-                  <td style={{ padding: "16px", color: "#F1F0EC" }}>{item.stock} {item.unit}</td>
-                  <td style={{ padding: "16px", color: "#6B7280" }}>{item.minStock} {item.unit}</td>
+                <tr key={item.id} style={{ borderTop: "1px solid var(--kravy-border)" }}>
+                  <td style={{ padding: "16px", color: "var(--kravy-text-primary)", fontWeight: 500 }}>{item.name}</td>
+                  <td style={{ padding: "16px", color: "var(--kravy-text-muted)" }}>{item.category}</td>
+                  <td style={{ padding: "16px", color: "var(--kravy-text-primary)" }}>{item.stock} {item.unit}</td>
+                  <td style={{ padding: "16px", color: "var(--kravy-text-muted)" }}>{item.minStock} {item.unit}</td>
                   <td style={{ padding: "16px" }}>
                     <span style={{
                       padding: "4px 12px",
@@ -211,23 +211,26 @@ export default function InventoryPage() {
                       {item.status === "in-stock" ? "In Stock" : item.status === "low-stock" ? "Low Stock" : "Out of Stock"}
                     </span>
                   </td>
-                  <td style={{ padding: "16px" }}>
-                    <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+                  <td style={{ padding: "16px text-right" }}>
+                    <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
                       <button style={{
-                        background: "rgba(59,130,246,0.1)", color: "#3B82F6",
-                        border: "none", borderRadius: "8px", padding: "6px", cursor: "pointer"
+                        background: "rgba(99, 102, 241, 0.1)", color: "rgb(99 102 241)",
+                        border: "none", borderRadius: "10px", padding: "8px", cursor: "pointer",
+                        transition: "all 0.2s"
                       }}>
                         <Eye size={16} />
                       </button>
                       <button style={{
-                        background: "rgba(245,158,11,0.1)", color: "#F59E0B",
-                        border: "none", borderRadius: "8px", padding: "6px", cursor: "pointer"
+                        background: "rgba(245, 158, 11, 0.1)", color: "rgb(245 158 11)",
+                        border: "none", borderRadius: "10px", padding: "8px", cursor: "pointer",
+                        transition: "all 0.2s"
                       }}>
                         <Edit size={16} />
                       </button>
                       <button style={{
-                        background: "rgba(239,68,68,0.1)", color: "#EF4444",
-                        border: "none", borderRadius: "8px", padding: "6px", cursor: "pointer"
+                        background: "rgba(244, 63, 94, 0.1)", color: "rgb(244 63 94)",
+                        border: "none", borderRadius: "10px", padding: "8px", cursor: "pointer",
+                        transition: "all 0.2s"
                       }}>
                         <Trash2 size={16} />
                       </button>

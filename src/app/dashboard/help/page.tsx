@@ -37,7 +37,7 @@ export default function HelpPage() {
     },
   ];
 
-  const filteredFAQs = faqItems.filter(item => 
+  const filteredFAQs = faqItems.filter(item =>
     item.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.answer.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -47,21 +47,21 @@ export default function HelpPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: "#F1F0EC", letterSpacing: "-1px" }}>
+          <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: "var(--kravy-text-primary)", letterSpacing: "-1px" }}>
             Help & Support Center
           </h1>
-          <p style={{ fontSize: "0.85rem", color: "#4A5568", marginTop: "4px" }}>
+          <p style={{ fontSize: "0.85rem", color: "var(--kravy-text-muted)", marginTop: "4px", fontStyle: "italic" }}>
             Find answers, tutorials, and get assistance when you need it.
           </p>
         </div>
         <div style={{ display: "flex", gap: "12px" }}>
           <button style={{
-            background: "rgba(255,255,255,0.06)",
-            color: "#F1F0EC",
-            border: "1px solid rgba(255,255,255,0.1)",
+            background: "var(--kravy-bg-2)",
+            color: "var(--kravy-text-primary)",
+            border: "1px solid var(--kravy-border)",
             padding: "12px 20px",
             borderRadius: "12px",
-            fontWeight: 600,
+            fontWeight: 700,
             fontSize: "0.9rem",
             cursor: "pointer",
             display: "flex",
@@ -71,18 +71,18 @@ export default function HelpPage() {
             <Phone size={18} /> Contact Support
           </button>
           <button style={{
-            background: "linear-gradient(135deg, #FF6B35, #F59E0B)",
+            background: "var(--kravy-brand)",
             color: "white",
             border: "none",
             padding: "12px 20px",
             borderRadius: "12px",
-            fontWeight: 600,
+            fontWeight: 700,
             fontSize: "0.9rem",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            boxShadow: "0 4px 16px rgba(255,107,53,0.3)"
+            boxShadow: "0 4px 16px rgba(139,92,246,0.3)"
           }}>
             <MessageSquare size={18} /> Live Chat
           </button>
@@ -91,7 +91,7 @@ export default function HelpPage() {
 
       {/* Quick Search */}
       <div style={{ position: "relative", maxWidth: "600px" }}>
-        <Search size={20} style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", color: "#6B7280" }} />
+        <Search size={20} style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", color: "var(--kravy-text-muted)" }} />
         <input
           type="text"
           placeholder="Search for help articles, FAQs, and tutorials..."
@@ -100,10 +100,10 @@ export default function HelpPage() {
           style={{
             width: "100%",
             padding: "16px 20px 16px 52px",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--kravy-input-bg)",
+            border: "1px solid var(--kravy-input-border)",
             borderRadius: "16px",
-            color: "#F1F0EC",
+            color: "var(--kravy-text-primary)",
             fontSize: "0.95rem",
             outline: "none"
           }}
@@ -112,7 +112,7 @@ export default function HelpPage() {
 
       {/* Help Categories */}
       <div>
-        <h2 style={{ fontSize: "1.3rem", fontWeight: 800, color: "#F1F0EC", marginBottom: "20px" }}>
+        <h2 style={{ fontSize: "1.3rem", fontWeight: 900, color: "var(--kravy-text-primary)", marginBottom: "20px", letterSpacing: "-0.5px" }}>
           Browse Help Categories
         </h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
@@ -120,45 +120,45 @@ export default function HelpPage() {
             <div
               key={category.id}
               style={{
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: "16px",
+                background: "var(--kravy-surface)",
+                border: "1px solid var(--kravy-border)",
+                borderRadius: "24px",
                 padding: "24px",
                 cursor: "pointer",
                 transition: "all 0.3s",
-                backdropFilter: "blur(10px)"
+                boxShadow: "var(--kravy-card-shadow)"
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "rgba(255,107,53,0.05)";
                 e.currentTarget.style.borderColor = "rgba(255,107,53,0.2)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.02)";
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
+                e.currentTarget.style.background = "var(--kravy-surface)";
+                e.currentTarget.style.borderColor = "var(--kravy-border)";
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
                 <div style={{
-                  width: "48px", height: "48px", borderRadius: "12px",
-                  background: "rgba(255,107,53,0.1)", color: "#FF6B35",
+                  width: "48px", height: "48px", borderRadius: "14px",
+                  background: "var(--kravy-brand)", color: "white",
                   display: "flex", alignItems: "center", justifyContent: "center"
                 }}>
                   {category.icon}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#F1F0EC", marginBottom: "4px" }}>
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--kravy-text-primary)", marginBottom: "4px" }}>
                     {category.name}
                   </h3>
-                  <p style={{ fontSize: "0.8rem", color: "#6B7280", lineHeight: "1.4" }}>
+                  <p style={{ fontSize: "0.8rem", color: "var(--kravy-text-muted)", lineHeight: "1.4" }}>
                     {category.description}
                   </p>
                 </div>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "0.75rem", color: "#4A5568" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--kravy-text-muted)", fontStyle: "italic" }}>
                   {category.articles} articles
                 </span>
-                <ChevronRight size={16} style={{ color: "#6B7280" }} />
+                <ChevronRight size={16} style={{ color: "var(--kravy-text-muted)" }} />
               </div>
             </div>
           ))}
@@ -167,7 +167,7 @@ export default function HelpPage() {
 
       {/* FAQ Section */}
       <div>
-        <h2 style={{ fontSize: "1.3rem", fontWeight: 800, color: "#F1F0EC", marginBottom: "20px" }}>
+        <h2 style={{ fontSize: "1.3rem", fontWeight: 900, color: "var(--kravy-text-primary)", marginBottom: "20px", letterSpacing: "-0.5px" }}>
           Frequently Asked Questions
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -175,33 +175,35 @@ export default function HelpPage() {
             <div
               key={index}
               style={{
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: "16px",
+                background: "var(--kravy-surface)",
+                border: "1px solid var(--kravy-border)",
+                borderRadius: "20px",
                 padding: "20px",
-                backdropFilter: "blur(10px)"
+                boxShadow: "var(--kravy-card-shadow)"
               }}
             >
               <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
                 <div style={{
-                  width: "32px", height: "32px", borderRadius: "8px",
-                  background: "rgba(139,92,246,0.1)", color: "#8B5CF6",
+                  width: "32px", height: "32px", borderRadius: "10px",
+                  background: "var(--kravy-brand)", color: "white",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   flexShrink: 0, marginTop: "4px"
                 }}>
                   <HelpCircle size={18} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#F1F0EC", marginBottom: "8px" }}>
+                  <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--kravy-text-primary)", marginBottom: "8px" }}>
                     {faq.question}
                   </h3>
-                  <p style={{ fontSize: "0.85rem", color: "#6B7280", lineHeight: "1.6", marginBottom: "12px" }}>
+                  <p style={{ fontSize: "0.85rem", color: "var(--kravy-text-muted)", lineHeight: "1.6", marginBottom: "12px" }}>
                     {faq.answer}
                   </p>
                   <span style={{
-                    fontSize: "0.75rem", color: "#FF6B35",
-                    background: "rgba(255,107,53,0.1)", padding: "4px 10px",
-                    borderRadius: "12px", fontWeight: 600
+                    fontSize: "0.75rem", color: "var(--kravy-brand)",
+                    background: "rgba(139, 92, 246, 0.1)", border: "1px solid rgba(139, 92, 246, 0.2)",
+                    padding: "4px 12px",
+                    borderRadius: "10px", fontWeight: 900,
+                    textTransform: "uppercase", letterSpacing: "1px"
                   }}>
                     {faq.category}
                   </span>
@@ -214,51 +216,52 @@ export default function HelpPage() {
 
       {/* Contact Support */}
       <div style={{
-        background: "linear-gradient(135deg, rgba(255,107,53,0.1), rgba(245,158,11,0.05))",
-        border: "1px solid rgba(255,107,53,0.2)",
-        borderRadius: "20px",
-        padding: "32px",
+        background: "var(--kravy-bg-2)",
+        border: "1px solid var(--kravy-border)",
+        borderRadius: "32px",
+        padding: "48px 32px",
         textAlign: "center",
-        backdropFilter: "blur(10px)"
+        boxShadow: "var(--kravy-card-shadow)"
       }}>
         <div style={{
-          width: "64px", height: "64px", borderRadius: "16px",
-          background: "rgba(255,107,53,0.2)", color: "#FF6B35",
+          width: "64px", height: "64px", borderRadius: "18px",
+          background: "var(--kravy-brand)", color: "white",
           display: "flex", alignItems: "center", justifyContent: "center",
-          margin: "0 auto 20px"
+          margin: "0 auto 24px",
+          boxShadow: "0 8px 24px rgba(139,92,246,0.3)"
         }}>
           <MessageSquare size={32} />
         </div>
-        <h2 style={{ fontSize: "1.4rem", fontWeight: 800, color: "#F1F0EC", marginBottom: "12px" }}>
+        <h2 style={{ fontSize: "1.6rem", fontWeight: 900, color: "var(--kravy-text-primary)", marginBottom: "12px" }}>
           Still need help?
         </h2>
-        <p style={{ fontSize: "0.95rem", color: "#6B7280", marginBottom: "24px", maxWidth: "500px", margin: "0 auto 24px" }}>
+        <p style={{ fontSize: "0.9rem", color: "var(--kravy-text-muted)", marginBottom: "32px", maxWidth: "500px", margin: "0 auto 32px", fontStyle: "italic" }}>
           Our support team is available 24/7 to help you with any questions or issues you might have.
         </p>
         <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
           <button style={{
-            background: "linear-gradient(135deg, #FF6B35, #F59E0B)",
+            background: "var(--kravy-brand)",
             color: "white",
             border: "none",
-            padding: "14px 28px",
-            borderRadius: "12px",
-            fontWeight: 700,
+            padding: "16px 36px",
+            borderRadius: "14px",
+            fontWeight: 800,
             fontSize: "0.95rem",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            boxShadow: "0 4px 16px rgba(255,107,53,0.3)"
+            boxShadow: "0 8px 20px rgba(139,92,246,0.3)"
           }}>
             <Send size={18} /> Start Live Chat
           </button>
           <button style={{
-            background: "rgba(255,255,255,0.06)",
-            color: "#F1F0EC",
-            border: "1px solid rgba(255,255,255,0.1)",
-            padding: "14px 28px",
-            borderRadius: "12px",
-            fontWeight: 700,
+            background: "var(--kravy-bg-2)",
+            color: "var(--kravy-text-primary)",
+            border: "1px solid var(--kravy-border)",
+            padding: "16px 36px",
+            borderRadius: "14px",
+            fontWeight: 800,
             fontSize: "0.95rem",
             cursor: "pointer",
             display: "flex",

@@ -691,25 +691,83 @@ export default function ViewMenuPage() {
 
     if (!mounted) return null;
     return createPortal(
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-        <motion.div initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-[10000]">
-          <h3 className="text-lg font-semibold mb-3">Edit item</h3>
-          <label className="text-sm">Name</label>
-          <input className="w-full border rounded px-3 py-2 mb-3" value={local.name} onChange={(e) => setLocal({ ...local, name: e.target.value })} />
-          <label className="text-sm">Price</label>
-          <input className="w-full border rounded px-3 py-2 mb-3" type="number" value={local.price ?? ""} onChange={(e) => setLocal({ ...local, price: e.target.value === "" ? null : Number(e.target.value) })} />
-          <label className="text-sm">Unit</label>
-          <input className="w-full border rounded px-3 py-2 mb-3" value={local.unit ?? ""} onChange={(e) => setLocal({ ...local, unit: e.target.value })} />
-          <label className="text-sm">Image URL</label>
-          <input className="w-full border rounded px-3 py-2 mb-3" value={local.imageUrl ?? ""} onChange={(e) => setLocal({ ...local, imageUrl: e.target.value })} />
-          <label className="text-sm">Category</label>
-          <select value={local.categoryId ?? "uncategorised"} onChange={(e) => setLocal({ ...local, categoryId: e.target.value })} className="w-full border rounded px-3 py-2 mb-4">
-            {allCategories.map((c) => <option key={c.id} value={c.id === "all" ? "uncategorised" : c.id}>{c.name}</option>)}
-          </select>
-          <div className="flex justify-end gap-2">
-            <button onClick={onClose} className="px-3 py-2 rounded bg-gray-100">Cancel</button>
-            <button onClick={() => onSave(local)} className="px-4 py-2 font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/20 text-white">Save Changes</button>
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+        <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] shadow-2xl w-full max-w-md p-8 z-[10000] overflow-hidden">
+          {/* Background Decoration */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
+
+          <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] mb-6 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+              <span className="text-xl">✏️</span>
+            </div>
+            Edit Item
+          </h3>
+
+          <div className="space-y-5">
+            <div>
+              <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Item Name</label>
+              <input
+                className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
+                value={local.name}
+                onChange={(e) => setLocal({ ...local, name: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Price (₹)</label>
+                <input
+                  className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+                  type="number"
+                  value={local.price ?? ""}
+                  onChange={(e) => setLocal({ ...local, price: e.target.value === "" ? null : Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Unit</label>
+                <input
+                  className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
+                  value={local.unit ?? ""}
+                  onChange={(e) => setLocal({ ...local, unit: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Image URL</label>
+              <input
+                className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
+                value={local.imageUrl ?? ""}
+                onChange={(e) => setLocal({ ...local, imageUrl: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Category</label>
+              <select
+                value={local.categoryId ?? "uncategorised"}
+                onChange={(e) => setLocal({ ...local, categoryId: e.target.value })}
+                className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+              >
+                {allCategories.map((c) => <option key={c.id} value={c.id === "all" ? "uncategorised" : c.id} className="bg-[var(--kravy-bg)]">{c.name}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-8">
+            <button
+              onClick={onClose}
+              className="px-6 py-3 rounded-xl font-bold text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-surface-hover)] transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => onSave(local)}
+              className="px-8 py-3 font-black rounded-xl bg-indigo-600 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/30 text-white active:scale-95"
+            >
+              Save Changes
+            </button>
           </div>
         </motion.div>
       </div>, document.body
@@ -722,16 +780,21 @@ export default function ViewMenuPage() {
     if (!mounted) return null;
 
     return createPortal(
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 z-[10000]">
-          <h3 className="text-xl font-bold mb-2">Delete Item</h3>
-          <p className="text-sm text-slate-500 font-medium mb-6">Are you sure you want to delete <span className="font-bold text-slate-900">"{item.name}"</span>? This cannot be undone.</p>
-          <div className="flex justify-end gap-3 mt-4">
-            <button onClick={onClose} className="px-4 py-2 font-bold text-slate-600 rounded-xl hover:bg-slate-100 transition-colors">Cancel</button>
-            <button onClick={() => onConfirm()} className="px-4 py-2 font-bold rounded-xl bg-red-600 hover:bg-red-700 transition-colors shadow-md shadow-red-600/20 text-white">Delete</button>
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+        <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] shadow-2xl w-full max-w-sm p-8 z-[10000] text-center">
+          <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="text-3xl">⚠️</span>
           </div>
-        </div>
+          <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] mb-3 tracking-tight">Delete Item?</h3>
+          <p className="text-[var(--kravy-text-muted)] font-medium mb-8 leading-relaxed">
+            Are you sure you want to delete <span className="font-black text-[var(--kravy-text-primary)]">"{item.name}"</span>? This action cannot be undone.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={onClose} className="px-6 py-4 font-black text-[var(--kravy-text-muted)] rounded-2xl hover:bg-[var(--kravy-surface-hover)] transition-all">Cancel</button>
+            <button onClick={() => onConfirm()} className="px-6 py-4 font-black rounded-2xl bg-rose-600 hover:bg-rose-700 transition-all shadow-xl shadow-rose-500/20 text-white active:scale-95">Delete</button>
+          </div>
+        </motion.div>
       </div>, document.body
     );
   }
@@ -820,18 +883,18 @@ export default function ViewMenuPage() {
             <span className="text-xs font-bold text-[var(--kravy-text-muted)] bg-[var(--kravy-badge-bg)] px-2 py-0.5 rounded-full">Explore Menu</span>
           </h2>
 
-          {groupedForUI.length === 0 && <p className="text-sm text-gray-600">No items match your filters.</p>}
+          {groupedForUI.length === 0 && <p className="text-sm text-[var(--kravy-text-muted)] font-medium opacity-60 mt-10 text-center">No items match your filters.</p>}
 
-          <div className="space-y-10">
+          <div className="space-y-10 mt-6">
             {groupedForUI.map((cat) => (
               <section key={cat.id} id={`cat-${cat.id}`} className="min-w-0">
-                <h3 className="font-bold text-[var(--kravy-text-primary)] text-lg mb-5 flex items-center gap-3">
+                <h3 className="font-black text-[var(--kravy-text-primary)] text-xl mb-6 flex items-center gap-4">
                   {cat.name}
-                  <div className="flex-1 h-[1px] bg-gradient-to-r from-[var(--kravy-border-strong)] to-transparent" />
+                  <div className="flex-1 h-[2px] bg-gradient-to-r from-[var(--kravy-border-strong)] to-transparent opacity-30" />
                 </h3>
 
                 {cat.items.length === 0 ? (
-                  <p className="text-sm text-gray-500">No items here.</p>
+                  <p className="text-sm text-[var(--kravy-text-muted)] font-medium opacity-60">No items available in this category.</p>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                     {cat.items.map((item) => {
@@ -904,7 +967,12 @@ export default function ViewMenuPage() {
       {editingItem && <EditModal item={editingItem} onClose={() => setEditingItem(null)} onSave={async (u) => await saveEdit(u)} />}
       {deletingItem && <ConfirmDelete item={deletingItem} onClose={() => setDeletingItem(null)} onConfirm={() => confirmDelete(deletingItem!)} />}
 
-      {toast && <div className="fixed right-4 bottom-28 bg-black text-white px-4 py-2 rounded shadow z-[100]">{toast}</div>}
+      {toast && (
+        <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed right-8 bottom-32 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] z-[100] font-bold flex items-center gap-3 ring-1 ring-white/10">
+          <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">✓</div>
+          {toast}
+        </motion.div>
+      )}
     </div>
   );
 }

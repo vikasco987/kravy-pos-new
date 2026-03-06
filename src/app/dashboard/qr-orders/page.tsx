@@ -152,15 +152,15 @@ export default function QROrdersPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8 p-6">
-            <div className="flex items-start justify-between">
+        <div className="max-w-7xl mx-auto space-y-8 p-6 transition-colors">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">QR Menu Builder</h1>
-                    <p className="text-slate-500 mt-1 font-medium">Generate table-wise QR codes & view your live public menu.</p>
+                    <h1 className="text-3xl font-black text-[var(--kravy-text-primary)] tracking-tight">QR Menu Builder</h1>
+                    <p className="text-[var(--kravy-text-muted)] mt-1 font-medium">Generate table-wise QR codes & view your live public menu.</p>
                 </div>
                 <Button
                     onClick={() => window.location.href = '/dashboard/tables'}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 py-3 font-bold flex items-center gap-2 shadow-md hover:shadow-indigo-600/20 active:scale-95 transition-all"
+                    className="bg-[var(--kravy-brand)] hover:bg-indigo-700 text-white rounded-2xl px-8 py-6 font-black flex items-center gap-3 shadow-xl shadow-indigo-600/20 active:scale-95 transition-all w-full md:w-auto"
                 >
                     <TableIcon className="w-5 h-5" />
                     View All QR Codes
@@ -170,143 +170,145 @@ export default function QROrdersPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* LEFT: QR CODE MAKER */}
                 <div className="lg:col-span-5 space-y-6">
-                    <div className="bg-white rounded-[24px] border border-slate-200 p-8 shadow-sm">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center">
-                                <QrCode className="w-5 h-5 text-indigo-600" />
+                    <div className="bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] p-8 shadow-xl">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="w-12 h-12 rounded-2xl bg-[var(--kravy-brand)]/10 flex items-center justify-center">
+                                <QrCode className="w-6 h-6 text-[var(--kravy-brand)]" />
                             </div>
-                            <h2 className="text-lg font-bold text-slate-900">Create QR Code</h2>
+                            <h2 className="text-xl font-black text-[var(--kravy-text-primary)] tracking-tight">Create QR Code</h2>
                         </div>
 
                         <div className="space-y-4 mb-8">
-                            <label className="block text-sm font-bold text-slate-700">Table Number (Optional)</label>
+                            <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1">Table Number (Optional)</label>
                             <div className="relative">
-                                <TableIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                                <TableIcon className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)] w-5 h-5" />
                                 <Input
                                     type="text"
                                     placeholder="e.g. 05, VIP-1, T-12..."
-                                    className="pl-12 py-6 bg-slate-50 border-slate-200 rounded-2xl text-lg font-semibold focus:ring-4 focus:ring-indigo-600/10 transition-all placeholder:font-normal"
+                                    className="pl-14 py-7 bg-[var(--kravy-bg-2)] border-[var(--kravy-border)] rounded-2xl text-xl font-black text-[var(--kravy-text-primary)] focus:ring-4 focus:ring-[var(--kravy-brand)]/10 transition-all placeholder:font-normal placeholder:opacity-40"
                                     value={tableId}
                                     onChange={(e) => setTableId(e.target.value)}
                                 />
                             </div>
-                            <p className="text-sm text-slate-500">Leaving this blank creates a generic "Express Order" QR code.</p>
+                            <p className="text-sm text-[var(--kravy-text-muted)] ml-1">Leaving this blank creates a generic "Express Order" QR code.</p>
                         </div>
 
                         {/* DISPLAY QR */}
-                        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-8 flex flex-col items-center justify-center relative shadow-inner">
-                            <p className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">{profile?.businessName || "Your Menu"}</p>
+                        <div className="bg-[var(--kravy-bg-2)]/50 border-2 border-dashed border-[var(--kravy-border)] rounded-[40px] p-10 flex flex-col items-center justify-center relative">
+                            <p className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest mb-8">{profile?.businessName || "Your Menu"}</p>
 
                             <div
                                 ref={qrRef}
-                                className="bg-white p-4 rounded-[20px] shadow-lg border border-slate-100 mb-6 transition-transform hover:scale-105 duration-300"
+                                className="bg-white p-6 rounded-[32px] shadow-2xl border border-black/5 mb-8 transition-transform hover:scale-105 duration-300 ring-8 ring-white/10"
                             >
                                 {publicMenuUrl ? (
-                                    <QRCode value={publicMenuUrl} size={180} />
+                                    <QRCode value={publicMenuUrl} size={200} />
                                 ) : (
-                                    <div className="w-[180px] h-[180px] bg-slate-100 flex items-center justify-center rounded-xl">
-                                        <QrCode className="w-12 h-12 text-slate-300" />
+                                    <div className="w-[200px] h-[200px] bg-slate-50 flex items-center justify-center rounded-2xl">
+                                        <QrCode className="w-16 h-16 text-slate-200" />
                                     </div>
                                 )}
                             </div>
 
                             {tableId ? (
-                                <div className="px-4 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full">
-                                    <p className="font-bold text-indigo-700 text-sm">TABLE - {tableId}</p>
+                                <div className="px-6 py-2 bg-[var(--kravy-brand)]/10 border border-[var(--kravy-brand)]/20 rounded-full">
+                                    <p className="font-black text-[var(--kravy-brand)] text-xs tracking-widest uppercase">TABLE {tableId}</p>
                                 </div>
                             ) : (
-                                <div className="px-4 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full">
-                                    <p className="font-bold text-emerald-700 text-sm">GENERAL MENU</p>
+                                <div className="px-6 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                                    <p className="font-black text-emerald-500 text-xs tracking-widest uppercase">LIVE MENU</p>
                                 </div>
                             )}
                         </div>
 
                         {/* ACTIONS */}
-                        <div className="grid grid-cols-3 gap-4 mt-8">
+                        <div className="flex flex-col gap-3 mt-8">
                             <Button
                                 onClick={handleDownloadQR}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl py-6 font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-indigo-600/20 active:scale-95 transition-all"
+                                className="w-full bg-[var(--kravy-brand)] hover:bg-indigo-700 text-white rounded-2xl py-7 font-black flex items-center justify-center gap-3 shadow-xl shadow-indigo-600/20 active:scale-95 transition-all"
                             >
                                 <Download className="w-5 h-5" />
-                                Download QR
+                                DOWNLOAD PNG
                             </Button>
-                            <Button
-                                onClick={handleCopyLink}
-                                variant="outline"
-                                className="border-2 border-slate-200 hover:border-indigo-600 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded-2xl py-6 font-bold flex items-center justify-center gap-2 transition-all"
-                            >
-                                <LinkIcon className="w-5 h-5" />
-                                Copy URL
-                            </Button>
-                            <Button
-                                onClick={handleSaveQR}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl py-6 font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-emerald-600/20 active:scale-95 transition-all"
-                            >
-                                <QrCode className="w-5 h-5" />
-                                Save QR Code
-                            </Button>
+                            <div className="grid grid-cols-2 gap-3">
+                                <Button
+                                    onClick={handleCopyLink}
+                                    variant="outline"
+                                    className="border-2 border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/30 hover:bg-[var(--kravy-brand)]/10 hover:border-[var(--kravy-brand)]/30 text-[var(--kravy-text-muted)] hover:text-[var(--kravy-brand)] rounded-2xl py-7 font-black flex items-center justify-center gap-2 transition-all"
+                                >
+                                    <LinkIcon className="w-5 h-5 text-[var(--kravy-brand)]" />
+                                    COPY URL
+                                </Button>
+                                <Button
+                                    onClick={handleSaveQR}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl py-7 font-black flex items-center justify-center gap-2 shadow-xl shadow-emerald-600/20 active:scale-95 transition-all"
+                                >
+                                    <QrCode className="w-5 h-5" />
+                                    SAVE QR
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* RIGHT: REAL MENU PREVIEW */}
                 <div className="lg:col-span-7 space-y-6">
-                    <div className="bg-white rounded-[24px] border border-slate-200 p-8 shadow-sm h-full max-h-[800px] flex flex-col">
-                        <div className="flex items-center justify-between mb-6 pb-6 border-b border-slate-100">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
-                                    <Smartphone className="w-5 h-5 text-emerald-600" />
+                    <div className="bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] p-8 shadow-xl h-full max-h-[900px] flex flex-col">
+                        <div className="flex items-center justify-between mb-8 pb-8 border-b border-[var(--kravy-border)]">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-[20px] bg-emerald-500/10 flex items-center justify-center shadow-inner">
+                                    <Smartphone className="w-7 h-7 text-emerald-500" />
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-bold text-slate-900">Live Menu View</h2>
-                                    <p className="text-xs text-slate-500 font-medium">This is EXACTLY what customers see.</p>
+                                    <h2 className="text-xl font-black text-[var(--kravy-text-primary)] tracking-tight">Live Menu View</h2>
+                                    <p className="text-xs text-[var(--kravy-text-muted)] font-black uppercase tracking-widest mt-1">Real-time Customer Preview</p>
                                 </div>
                             </div>
                             <Button
                                 onClick={() => window.open(publicMenuUrl, '_blank')}
                                 variant="outline"
-                                className="rounded-full text-xs font-bold border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300"
+                                className="rounded-2xl px-6 h-12 text-sm font-black border-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white shadow-xl shadow-emerald-500/10 transition-all"
                             >
                                 <Share2 className="w-4 h-4 mr-2" />
-                                Open Customer UI
+                                OPEN PREVIEW
                             </Button>
                         </div>
 
                         {/* REAL ITEMS PREVIEW */}
                         {items.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-center">
-                                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                    <UtensilsCrossed className="w-10 h-10 text-slate-300" />
+                            <div className="flex-1 flex flex-col items-center justify-center text-center p-10">
+                                <div className="w-24 h-24 bg-[var(--kravy-bg-2)]/50 rounded-full flex items-center justify-center mb-6 border border-dashed border-[var(--kravy-border)]">
+                                    <UtensilsCrossed className="w-10 h-10 text-[var(--kravy-text-muted)] opacity-50" />
                                 </div>
-                                <h3 className="text-lg font-bold text-slate-900">Your Menu is Empty</h3>
-                                <p className="text-sm text-slate-500 mt-2 max-w-sm">
-                                    Add items in the 'Menu' section to see them appear on your public QR ordering page.
+                                <h3 className="text-xl font-black text-[var(--kravy-text-primary)]">Your Menu is Empty</h3>
+                                <p className="text-sm text-[var(--kravy-text-muted)] mt-3 max-w-sm leading-relaxed">
+                                    Items from your Menus section will appear here for customers scanning your QR codes.
                                 </p>
                             </div>
                         ) : (
-                            <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-2">
+                            <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-2 pb-6">
                                 {items.map((item) => (
-                                    <div key={item.id} className="flex items-center gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                                        <div className="w-16 h-16 rounded-xl bg-slate-200 flex-shrink-0 overflow-hidden relative">
+                                    <div key={item.id} className="flex items-center gap-5 bg-[var(--kravy-bg-2)]/40 p-5 rounded-[24px] border border-[var(--kravy-border)] hover:bg-[var(--kravy-bg-2)]/60 transition-colors">
+                                        <div className="w-20 h-20 rounded-2xl bg-[var(--kravy-surface)] flex-shrink-0 overflow-hidden relative shadow-lg ring-1 ring-black/5">
                                             {item.imageUrl ? (
                                                 <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-indigo-50">
-                                                    <UtensilsCrossed className="w-6 h-6 text-indigo-200" />
+                                                <div className="w-full h-full flex items-center justify-center bg-indigo-500/5">
+                                                    <UtensilsCrossed className="w-8 h-8 text-indigo-500/20" />
                                                 </div>
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <div className="w-3 h-3 rounded-sm border border-slate-300 flex items-center justify-center">
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${item.isVeg !== false ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <div className="w-4 h-4 rounded-[4px] border border-[var(--kravy-border)] bg-[var(--kravy-surface)] flex items-center justify-center shadow-sm">
+                                                    <div className={`w-2 h-2 rounded-full ${item.isVeg !== false ? 'bg-emerald-500' : 'bg-rose-500 shadow-rose-500/50 shadow-md'}`}></div>
                                                 </div>
-                                                <h4 className="font-bold text-slate-900 truncate">{item.name}</h4>
+                                                <h4 className="font-black text-[var(--kravy-text-primary)] text-lg truncate tracking-tight">{item.name}</h4>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <p className="text-sm font-black text-slate-700">₹{item.sellingPrice || item.price || 0}</p>
+                                                <p className="text-lg font-black text-[var(--kravy-brand)] tracking-tight">₹{item.sellingPrice || item.price || 0}</p>
                                                 {item.category?.name && (
-                                                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">
+                                                    <span className="text-[10px] uppercase tracking-widest font-black text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] px-2.5 py-1 rounded-lg border border-[var(--kravy-border)]">
                                                         {item.category.name}
                                                     </span>
                                                 )}
