@@ -162,10 +162,19 @@ model Order {
   tableId       String?  @db.ObjectId
   table         Table?   @relation(fields: [tableId], references: [id])
   
-  items         Json     // Array of { name, price, quantity, itemId }
+  items         Json     // Array of { name, price, quantity, itemId, addedAt, addedInCase }
   total         Float
   
-  status        String   @default("PENDING") // PENDING, ACCEPTED, REJECTED, COMPLETED
+  status        String   @default("PENDING") // PENDING, ACCEPTING, ACCEPTED, PREPARING, READY, SERVED, COMPLETED
+  
+  // For Case 1 (Merge)
+  parentOrderId String?  @db.ObjectId
+  caseType      String?  // "merge", "separate", "round2"
+  isMerged      Boolean  @default(false)
+  mergedAt      DateTime?
+  
+  // For Case 2 (Separate) - Track related orders
+  relatedOrders String[] @db.ObjectId  // Array of order IDs in same session
   
   customerName  String?
   customerPhone String?

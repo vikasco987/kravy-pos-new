@@ -47,6 +47,8 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
   const [showCart, setShowCart] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [confirmScreen, setConfirmScreen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Case-specific data
   const [mergedItems, setMergedItems] = useState<string[]>([]);
@@ -54,7 +56,7 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
   const [round2Items, setRound2Items] = useState<string[]>([]);
 
   // Default mock data (replace with props data in production)
-  const mockOrderData: CaseData = {
+  const mockOrderData: CaseData = orderData || {
     orderId: "#MH2X9K",
     tableId: "T-04",
     status: "received",
@@ -88,26 +90,67 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
     setCartTotal(newTotal);
   }, [cartItems]);
 
-  const handleSubmitOrder = useCallback(() => {
+  const handleSubmitOrder = useCallback(async () => {
     if (cartItems.length === 0) {
       toast.error("Please add items first!");
       return;
     }
 
-    const itemNames = cartItems.map((ci) => ci.name).join(", ");
+    setSubmitError(null);
+    setIsSubmitting(true);
 
-    if (currentFlow === "case1") {
-      setMergedItems(cartItems.map((ci) => ci.name));
-    } else if (currentFlow === "case2") {
-      setNewOrderItems(cartItems.map((ci) => ci.name));
-    } else if (currentFlow === "case3") {
-      setRound2Items(cartItems.map((ci) => ci.name));
+    try {
+      if (currentFlow === "case1") {
+        // Case 1: Merge items to existing order
+        const orderId = mockOrderData.orderId.replace("#", "");
+        
+        const response = await fetch(`/api/orders/${orderId}/merge-items`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: cartItems.map(item => ({
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+            })),
+            caseType: "merge",
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to merge items");
+        }
+
+        const result = await response.json();
+        setMergedItems(cartItems.map((ci) => ci.name));
+        setConfirmScreen(true);
+        setShowCart(false);
+        toast.success(`✅ ${cartItems.length} item(s) merged to order!`);
+        
+        console.log("Merge result:", result);
+      } else if (currentFlow === "case2") {
+        // Case 2: Create separate order (will implement next)
+        setNewOrderItems(cartItems.map((ci) => ci.name));
+        setConfirmScreen(true);
+        setShowCart(false);
+        toast.success("📋 New order placed!");
+      } else if (currentFlow === "case3") {
+        // Case 3: Round 2 (will implement next)
+        setRound2Items(cartItems.map((ci) => ci.name));
+        setConfirmScreen(true);
+        setShowCart(false);
+        toast.success("🎉 Round 2 order placed!");
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Failed to submit order";
+      setSubmitError(errorMsg);
+      toast.error(errorMsg);
+      console.error("Submit order error:", error);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setConfirmScreen(true);
-    setShowCart(false);
-    toast.success("Order placed successfully! ✓");
-  }, [cartItems, currentFlow]);
+  }, [cartItems, currentFlow, mockOrderData]);
 
   const handleFlowChange = (flow: OrderCase) => {
     setCurrentFlow(flow);
@@ -270,22 +313,39 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
 
           {confirmScreen && (
             <div className="confirm-screen">
-              <span className="cs-icon">🔀</span>
-              <div className="cs-title">Order Updated!</div>
-              <div className="cs-sub">Naye items pehle order mein merge ho gaye. Kitchen ko updated order mil gaya!</div>
-              <div className="cs-detail-box">
-                <div className="cdb-row">
-                  <span>Added Items</span>
-                  <span style={{ color: "var(--green)" }}>{mergedItems.join(", ")}</span>
-                </div>
-                <div className="cdb-row">
-                  <span>Total</span>
-                  <span>₹{mockOrderData.currentTotal + cartTotal}</span>
-                </div>
-              </div>
-              <button className="cs-btn primary" onClick={() => handleFlowChange("case1")}>
-                ← Back to Tracking
-              </button>
+              {submitError ? (
+                <>
+                  <span className="cs-icon">❌</span>
+                  <div className="cs-title">Error!</div>
+                  <div className="cs-sub">{submitError}</div>
+                  <button className="cs-btn primary" onClick={() => {
+                    setConfirmScreen(false);
+                    setSubmitError(null);
+                    setShowCart(true);
+                  }}>
+                    ← Try Again
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="cs-icon">🔀</span>
+                  <div className="cs-title">Order Updated!</div>
+                  <div className="cs-sub">Naye items pehle order mein merge ho gaye. Kitchen ko updated order mil gaya!</div>
+                  <div className="cs-detail-box">
+                    <div className="cdb-row">
+                      <span>Added Items</span>
+                      <span style={{ color: "var(--green)" }}>{mergedItems.join(", ")}</span>
+                    </div>
+                    <div className="cdb-row">
+                      <span>Total</span>
+                      <span>₹{mockOrderData.currentTotal + cartTotal}</span>
+                    </div>
+                  </div>
+                  <button className="cs-btn primary" onClick={() => handleFlowChange("case1")}>
+                    ← Back to Tracking
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -683,10 +743,14 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
       {/* FLOATING CART */}
       {showCart && cartItems.length > 0 && !confirmScreen && (
         <div className="cart-bar show">
-          <div className={`cart-inner ${currentFlow === "case1" ? "green" : currentFlow === "case2" ? "orange" : "blue"}`} onClick={handleSubmitOrder}>
+          <div 
+            className={`cart-inner ${currentFlow === "case1" ? "green" : currentFlow === "case2" ? "orange" : "blue"}`}
+            onClick={handleSubmitOrder}
+            style={{ opacity: isSubmitting ? 0.6 : 1, cursor: isSubmitting ? "not-allowed" : "pointer" }}
+          >
             <div style={{ display: "flex", alignItems: "center" }}>
-              <span className="cart-cnt">{cartItems.length}</span>
-              <span className="cart-lbl">Place Order</span>
+              <span className="cart-cnt">{isSubmitting ? "..." : cartItems.length}</span>
+              <span className="cart-lbl">{isSubmitting ? "Submitting..." : "Place Order"}</span>
             </div>
             <span className="cart-tot">₹{cartTotal}</span>
           </div>
