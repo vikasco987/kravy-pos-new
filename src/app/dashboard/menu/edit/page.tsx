@@ -159,10 +159,10 @@ export default function MenuEditPage() {
                 </div>
                 <Button
                     onClick={openAddModal}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-6 px-6 font-bold shadow-md shadow-indigo-600/20 active:scale-95 transition-all flex items-center gap-2"
+                    className="bg-[var(--kravy-brand)] hover:brightness-110 text-white rounded-xl py-6 px-6 font-black uppercase tracking-widest text-xs shadow-lg shadow-[var(--kravy-brand)]/20 active:scale-95 transition-all flex items-center gap-2"
                 >
                     <Plus className="w-5 h-5" />
-                    Add New Item
+                    Add Manual Item
                 </Button>
             </div>
 
@@ -220,13 +220,13 @@ export default function MenuEditPage() {
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
                                                     onClick={() => openEditModal(item)}
-                                                    className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-100 transition-colors"
+                                                    className="w-10 h-10 rounded-xl bg-[var(--kravy-brand)]/10 text-[var(--kravy-brand)] flex items-center justify-center hover:bg-[var(--kravy-brand)] hover:text-white transition-all"
                                                 >
                                                     <Edit2 className="w-4 h-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(item.id, item.name)}
-                                                    className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors"
+                                                    className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -271,21 +271,21 @@ export default function MenuEditPage() {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-1.5">Price (₹) *</label>
+                                        <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] mb-1.5 uppercase tracking-widest">Price (₹) *</label>
                                         <input
                                             type="number"
                                             required
                                             min="0"
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none font-semibold"
+                                            className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl px-4 py-3 text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all outline-none font-black text-emerald-500"
                                             placeholder="0.00"
                                             value={formData.price}
                                             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-1.5">Category</label>
+                                        <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] mb-1.5 uppercase tracking-widest">Category</label>
                                         <select
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none font-semibold"
+                                            className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl px-4 py-3 text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all outline-none font-bold text-sm"
                                             value={formData.categoryId}
                                             onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                                         >
@@ -298,9 +298,9 @@ export default function MenuEditPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Description</label>
+                                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] mb-1.5 uppercase tracking-widest">Description</label>
                                     <textarea
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none resize-none h-24"
+                                        className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl px-4 py-3 text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all outline-none resize-none h-24 font-medium"
                                         placeholder="Write a tasty description..."
                                         value={formData.description}
                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -308,30 +308,30 @@ export default function MenuEditPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Image URL</label>
+                                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] mb-1.5 uppercase tracking-widest">Image URL</label>
                                     <div className="flex gap-3 items-center">
-                                        <div className="w-14 h-14 shrink-0 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
-                                            {formData.imageUrl ? <img src={formData.imageUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-5 h-5 text-slate-300" />}
+                                        <div className="w-14 h-14 shrink-0 rounded-xl bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] flex items-center justify-center overflow-hidden">
+                                            {formData.imageUrl ? <img src={formData.imageUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-5 h-5 text-[var(--kravy-text-faint)]" />}
                                         </div>
                                         <input
                                             type="url"
-                                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none text-sm"
+                                            className="flex-1 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl px-4 py-3 text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all outline-none text-xs font-mono"
                                             placeholder="https://example.com/image.jpg"
                                             value={formData.imageUrl}
                                             onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                                         />
                                     </div>
-                                    <p className="text-xs text-slate-500 mt-2 font-medium">Paste a direct link to an image. External links are fully supported.</p>
+                                    <p className="text-[10px] text-[var(--kravy-text-muted)] mt-2 font-bold uppercase tracking-wider">Paste a direct link to an image.</p>
                                 </div>
                             </form>
                         </div>
 
-                        <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                        <div className="p-5 border-t border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/50 flex justify-end gap-3">
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => setIsFormOpen(false)}
-                                className="px-6 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-200 font-bold"
+                                className="px-6 rounded-xl border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-surface-hover)] font-black uppercase tracking-widest text-xs"
                             >
                                 Cancel
                             </Button>
@@ -339,9 +339,9 @@ export default function MenuEditPage() {
                                 type="submit"
                                 form="item-form"
                                 disabled={isSaving}
-                                className="px-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+                                className="px-8 rounded-xl bg-[var(--kravy-brand)] hover:brightness-110 text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-[var(--kravy-brand)]/20 active:scale-95 transition-all"
                             >
-                                {isSaving ? "Saving..." : "Save Item"}
+                                {isSaving ? "Saving..." : editingItem ? "Update Item" : "Create Item"}
                             </Button>
                         </div>
                     </div>

@@ -128,9 +128,10 @@ const navGroups = [
   {
     group: "MANAGE",
     items: [
-      { icon: <UtensilsCrossed size={18} />, label: "Menu Items", href: "/dashboard/menu/view" },
-      { icon: <Upload size={18} />, label: "Menu Manager", href: "/dashboard/menu/edit", badge: "New", badgeColor: "#FF6B35" },
-      { icon: <Upload size={18} />, label: "Upload Menu", href: "/dashboard/menu/upload" },
+      { icon: <UtensilsCrossed size={18} />, label: "View Menu", href: "/dashboard/menu/view" },
+      { icon: <PlusCircle size={18} />, label: "Add Single Item", href: "/dashboard/menu/upload" },
+      { icon: <Upload size={18} />, label: "Bulk Menu Upload", href: "/dashboard/store-item-upload", badge: "Fast", badgeColor: "#FF6B35" },
+      { icon: <Settings size={18} />, label: "Menu Manager", href: "/dashboard/menu/edit" },
       { icon: <Users size={18} />, label: "Customers", href: "/dashboard/parties" },
       { icon: <Package size={18} />, label: "Inventory", href: "/dashboard/inventory" },
       { icon: <LayoutGrid size={18} />, label: "Tables", href: "/dashboard/tables" },
