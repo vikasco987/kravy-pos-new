@@ -75,8 +75,8 @@ export default function TopItems({
             <Flame size={20} color="white" />
           </div>
           <div>
-            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "#F1F0EC" }}>Top Sellers</h3>
-            <p style={{ fontSize: "0.72rem", color: "#6B7280", fontFamily: "monospace" }}>
+            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>Top Sellers</h3>
+            <p style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", fontFamily: "monospace" }}>
               Best performing dishes
             </p>
           </div>
@@ -167,14 +167,14 @@ export default function TopItems({
                     <div style={{
                       fontSize: "0.88rem",
                       fontWeight: 800,
-                      color: "#F1F0EC",
+                      color: "var(--kravy-text-primary)",
                       letterSpacing: "-0.3px"
                     }}>
                       ₹{format(item.totalRevenue)}
                     </div>
                     <div style={{
                       fontSize: "0.62rem",
-                      color: "#6B7280",
+                      color: "var(--kravy-text-muted)",
                       fontFamily: "monospace"
                     }}>
                       {item.totalSold} units

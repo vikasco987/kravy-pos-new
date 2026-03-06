@@ -115,8 +115,8 @@ export default function RecentBills({
             {icon}
           </div>
           <div>
-            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "#F1F0EC" }}>{title}</h3>
-            <div style={{ fontSize: "0.68rem", color: "#6B7280", fontFamily: "monospace" }}>
+            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>{title}</h3>
+            <div style={{ fontSize: "0.68rem", color: "var(--kravy-text-muted)", fontFamily: "monospace" }}>
               {bills.length} record{bills.length !== 1 ? "s" : ""}
             </div>
           </div>
@@ -200,12 +200,12 @@ export default function RecentBills({
                   #{bill.billNumber.slice(-2)}
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#E2E8F0" }}>
+                  <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-primary)" }}>
                     Bill #{bill.billNumber}
                   </div>
                   <div style={{
                     fontSize: "0.7rem",
-                    color: "#6B7280",
+                    color: "var(--kravy-text-muted)",
                     display: "flex",
                     alignItems: "center",
                     gap: "4px",
@@ -222,7 +222,7 @@ export default function RecentBills({
                 <div style={{
                   fontSize: "1rem",
                   fontWeight: 800,
-                  color: deleted ? "#EF4444" : "#F1F0EC",
+                  color: deleted ? "#EF4444" : "var(--kravy-text-primary)",
                   letterSpacing: "-0.3px",
                   marginBottom: "4px"
                 }}>

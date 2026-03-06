@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./SidebarContext";
+import { useTheme } from "./ThemeProvider";
 import { useUser, SignOutButton } from "@clerk/nextjs";
 import {
   LayoutGrid,
@@ -164,8 +165,10 @@ const navGroups = [
 
 export default function Sidebar() {
   const { collapsed, setCollapsed } = useSidebar();
+  const { resolvedTheme } = useTheme();
   const pathname = usePathname();
   const { user } = useUser();
+  const isDark = resolvedTheme === "dark";
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -179,8 +182,12 @@ export default function Sidebar() {
       width: collapsed ? "72px" : "280px",
       minWidth: collapsed ? "72px" : "280px",
       height: "100vh",
-      background: "linear-gradient(145deg, #0F0F23 0%, #1A1A2E 50%, #16213E 100%)",
-      borderRight: "1px solid rgba(139,92,246,0.15)",
+      background: isDark
+        ? "linear-gradient(145deg, #0F0F23 0%, #1A1A2E 50%, #16213E 100%)"
+        : "linear-gradient(145deg, #F8FAFC 0%, #F1F5F9 50%, #E2E8F0 100%)",
+      borderRight: isDark
+        ? "1px solid rgba(139,92,246,0.15)"
+        : "1px solid rgba(139,92,246,0.1)",
       display: "flex",
       flexDirection: "column",
       transition: "all 0.4s cubic-bezier(.4,0,.2,1)",
@@ -188,7 +195,9 @@ export default function Sidebar() {
       top: 0,
       left: 0,
       zIndex: 50,
-      boxShadow: "4px 0 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.08)",
+      boxShadow: isDark
+        ? "4px 0 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.08)"
+        : "4px 0 24px rgba(0,0,0,0.04), 0 0 0 1px rgba(139,92,246,0.05)",
       overflow: "hidden",
     }}>
 
@@ -224,9 +233,13 @@ export default function Sidebar() {
         padding: collapsed ? "24px 0" : "24px 24px",
         display: "flex", alignItems: "center",
         justifyContent: collapsed ? "center" : "space-between",
-        borderBottom: "1px solid rgba(139,92,246,0.15)",
+        borderBottom: isDark
+          ? "1px solid rgba(139,92,246,0.15)"
+          : "1px solid rgba(0,0,0,0.05)",
         minHeight: "80px",
-        background: "linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.04))",
+        background: isDark
+          ? "linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.04))"
+          : "linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4))",
         backdropFilter: "blur(20px)",
         position: "relative",
         zIndex: 10,
@@ -274,9 +287,15 @@ export default function Sidebar() {
                 initial={{ opacity: 0, y: -15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, ease: "easeOut" }}
-                style={{ fontSize: "1.2rem", fontWeight: 900, color: "#FFFFFF", letterSpacing: "-1px", lineHeight: 1 }}
+                style={{
+                  fontSize: "1.2rem",
+                  fontWeight: 900,
+                  color: isDark ? "#FFFFFF" : "#1E293B",
+                  letterSpacing: "-1px",
+                  lineHeight: 1
+                }}
               >
-                kravy<span style={{ color: "#8B5CF6", textShadow: "0 0 20px rgba(139,92,246,0.7)" }}>POS</span>
+                kravy<span style={{ color: "#8B5CF6", textShadow: isDark ? "0 0 20px rgba(139,92,246,0.7)" : "none" }}>POS</span>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
@@ -581,7 +600,8 @@ export default function Sidebar() {
           >
             <motion.div
               style={{
-                fontSize: "0.82rem", fontWeight: 700, color: "#E2E8F0",
+                fontSize: "0.82rem", fontWeight: 700,
+                color: isDark ? "#E2E8F0" : "#1E293B",
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
               }}
               whileHover={{ color: "#FF6B35" }}

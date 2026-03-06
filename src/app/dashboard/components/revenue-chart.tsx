@@ -19,15 +19,15 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <div style={{
-        background: "linear-gradient(135deg, #0D0F1A, #111827)",
-        border: "1px solid rgba(139,92,246,0.3)",
+        background: "var(--kravy-surface-hover)",
+        border: "1px solid var(--kravy-border-strong)",
         borderRadius: "14px",
         padding: "14px 18px",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
         color: "var(--kravy-text-primary)"
       }}>
-        <div style={{ fontSize: "0.72rem", color: "#6B7280", fontFamily: "monospace", marginBottom: "6px" }}>{label}</div>
-        <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#8B5CF6" }}>
+        <div style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", fontFamily: "monospace", marginBottom: "6px" }}>{label}</div>
+        <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--kravy-accent-purple)" }}>
           ₹{new Intl.NumberFormat("en-IN").format(Math.round(payload[0]?.value || 0))}
         </div>
         {payload[1] && (
@@ -86,9 +86,9 @@ export default function RevenueChart({ data }: RevenueChartProps) {
             }}>
               <TrendingUp size={18} color="white" />
             </div>
-            <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "#F1F0EC" }}>Revenue Analytics</h3>
+            <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>Revenue Analytics</h3>
           </div>
-          <p style={{ fontSize: "0.72rem", color: "#6B7280", fontFamily: "monospace", paddingLeft: "46px" }}>
+          <p style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", fontFamily: "monospace", paddingLeft: "46px" }}>
             Sales performance over selected period
           </p>
         </div>
@@ -144,13 +144,13 @@ export default function RevenueChart({ data }: RevenueChartProps) {
                 dataKey="date"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#4A5568", fontSize: 10, fontFamily: "monospace" }}
+                tick={{ fill: "var(--kravy-text-faint)", fontSize: 10, fontFamily: "monospace" }}
                 dy={8}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#4A5568", fontSize: 10, fontFamily: "monospace" }}
+                tick={{ fill: "var(--kravy-text-faint)", fontSize: 10, fontFamily: "monospace" }}
                 tickFormatter={(v) => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
               />
               <Tooltip content={<CustomTooltip />} />

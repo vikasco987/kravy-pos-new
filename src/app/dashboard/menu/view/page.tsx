@@ -395,6 +395,7 @@
 
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
@@ -452,80 +453,80 @@ export default function ViewMenuPage() {
   }, [toast]);
 
   useEffect(() => {
-  const fetchMenus = async () => {
-    setLoading(true);
-    setError(null);
+    const fetchMenus = async () => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const res = await fetch("/api/menu/view", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      try {
+        const res = await fetch("/api/menu/view", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `Failed (${res.status})`);
-      }
-
-      const items = await res.json();
-      console.log("MENU ITEMS:", items);
-
-      if (!Array.isArray(items)) {
-        throw new Error("Menu API did not return array");
-      }
-
-     const UNCATEGORISED_ID = "__uncategorised__";
-
-const categoryMap = new Map<string, MenuCategory>();
-
-categoryMap.set(UNCATEGORISED_ID, {
-  id: UNCATEGORISED_ID,
-  name: "Uncategorised",
-  items: [],
-});
-
-      items.forEach((it: any) => {
-        const catId = it.category?.id ?? UNCATEGORISED_ID;
-        const catName = it.category?.name ?? "Uncategorised";
-
-        if (!categoryMap.has(catId)) {
-          categoryMap.set(catId, {
-            id: catId,
-            name: catName,
-            items: [],
-          });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || `Failed (${res.status})`);
         }
 
-        categoryMap.get(catId)!.items.push({
-          id: String(it.id),
-          name: it.name ?? "Unnamed",
-          price:
-            typeof it.sellingPrice === "number"
-              ? it.sellingPrice
-              : it.price ?? null,
-          imageUrl: it.imageUrl ?? null,
-          unit: it.unit ?? null,
-          categoryId: catId,
+        const items = await res.json();
+        console.log("MENU ITEMS:", items);
+
+        if (!Array.isArray(items)) {
+          throw new Error("Menu API did not return array");
+        }
+
+        const UNCATEGORISED_ID = "__uncategorised__";
+
+        const categoryMap = new Map<string, MenuCategory>();
+
+        categoryMap.set(UNCATEGORISED_ID, {
+          id: UNCATEGORISED_ID,
+          name: "Uncategorised",
+          items: [],
         });
-      });
 
-      const finalCategories = Array.from(categoryMap.values()).filter(
-        (c) => c.items.length > 0
-      );
+        items.forEach((it: any) => {
+          const catId = it.category?.id ?? UNCATEGORISED_ID;
+          const catName = it.category?.name ?? "Uncategorised";
 
-      setMenus(finalCategories);
-      setActiveCategory(finalCategories[0]?.id ?? null);
-    } catch (err: any) {
-      console.error("Error fetching menus:", err);
-      setError(err.message || "Failed to load menu");
-    } finally {
-      setLoading(false);
-    }
-  };
+          if (!categoryMap.has(catId)) {
+            categoryMap.set(catId, {
+              id: catId,
+              name: catName,
+              items: [],
+            });
+          }
 
-  fetchMenus();
-}, []);
+          categoryMap.get(catId)!.items.push({
+            id: String(it.id),
+            name: it.name ?? "Unnamed",
+            price:
+              typeof it.sellingPrice === "number"
+                ? it.sellingPrice
+                : it.price ?? null,
+            imageUrl: it.imageUrl ?? null,
+            unit: it.unit ?? null,
+            categoryId: catId,
+          });
+        });
+
+        const finalCategories = Array.from(categoryMap.values()).filter(
+          (c) => c.items.length > 0
+        );
+
+        setMenus(finalCategories);
+        setActiveCategory(finalCategories[0]?.id ?? null);
+      } catch (err: any) {
+        console.error("Error fetching menus:", err);
+        setError(err.message || "Failed to load menu");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenus();
+  }, []);
 
   const allCategories = useMemo(() => [{ id: "all", name: "All Categories" }, ...menus.map((m) => ({ id: m.id, name: m.name }))], [menus]);
 
@@ -616,17 +617,17 @@ categoryMap.set(UNCATEGORISED_ID, {
     if (!updated?.id) return;
     try {
       const res = await fetch("/api/items", {
-  method: "PUT",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    id: updated.id,
-    name: updated.name,
-    sellingPrice: updated.price,
-    unit: updated.unit,
-    categoryId: updated.categoryId,
-    imageUrl: updated.imageUrl,
-  }),
-});
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: updated.id,
+          name: updated.name,
+          sellingPrice: updated.price,
+          unit: updated.unit,
+          categoryId: updated.categoryId,
+          imageUrl: updated.imageUrl,
+        }),
+      });
 
       if (!res.ok) throw new Error(await res.text().catch(() => `Failed (${res.status})`));
       setMenus((prev) => prev.map((cat) => ({ ...cat, items: cat.items.map((it) => it.id === updated.id ? { ...it, ...updated } : it) })));
@@ -641,11 +642,11 @@ categoryMap.set(UNCATEGORISED_ID, {
   async function confirmDelete(item: MenuItem) {
     if (!item?.id) return;
     try {
-     const res = await fetch("/api/items", {
-  method: "DELETE",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ id: item.id }),
-});
+      const res = await fetch("/api/items", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id }),
+      });
 
       if (!res.ok) throw new Error(await res.text().catch(() => `Failed (${res.status})`));
       setMenus((prev) => prev.map((cat) => ({ ...cat, items: cat.items.filter((it) => it.id !== item.id) })));
@@ -662,13 +663,13 @@ categoryMap.set(UNCATEGORISED_ID, {
     if (!name) { setToast("Category name required"); return; }
     setIsCreatingCategory(true);
     try {
-    const res = await fetch("/api/categories", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ name }),
-});
-  
-    if (!res.ok) throw new Error(await res.text().catch(() => `Failed (${res.status})`));
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+
+      if (!res.ok) throw new Error(await res.text().catch(() => `Failed (${res.status})`));
       const data = await res.json().catch(() => null);
       const newCat = data?.id ? { id: data.id, name: data.name || name, items: [] } : { id: String(Date.now()), name, items: [] };
       setMenus((prev) => [newCat, ...prev]);
@@ -684,11 +685,15 @@ categoryMap.set(UNCATEGORISED_ID, {
 
   function EditModal({ item, onClose, onSave }: { item: MenuItem; onClose: () => void; onSave: (u: MenuItem) => void }) {
     const [local, setLocal] = useState<MenuItem>(item);
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
     useEffect(() => setLocal(item), [item]);
-    return (
-      <div className="fixed inset-0 z-60 flex items-center justify-center">
-        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-        <motion.div initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-white rounded-lg shadow-xl w-full max-w-lg p-5 z-50">
+
+    if (!mounted) return null;
+    return createPortal(
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+        <motion.div initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-[10000]">
           <h3 className="text-lg font-semibold mb-3">Edit item</h3>
           <label className="text-sm">Name</label>
           <input className="w-full border rounded px-3 py-2 mb-3" value={local.name} onChange={(e) => setLocal({ ...local, name: e.target.value })} />
@@ -704,26 +709,30 @@ categoryMap.set(UNCATEGORISED_ID, {
           </select>
           <div className="flex justify-end gap-2">
             <button onClick={onClose} className="px-3 py-2 rounded bg-gray-100">Cancel</button>
-            <button onClick={() => onSave(local)} className="px-3 py-2 rounded bg-blue-600 text-white">Save</button>
+            <button onClick={() => onSave(local)} className="px-4 py-2 font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/20 text-white">Save Changes</button>
           </div>
         </motion.div>
-      </div>
+      </div>, document.body
     );
   }
 
   function ConfirmDelete({ item, onClose, onConfirm }: { item: MenuItem; onClose: () => void; onConfirm: () => void }) {
-    return (
-      <div className="fixed inset-0 z-60 flex items-center justify-center">
-        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-        <div className="relative bg-white rounded-lg shadow-xl w-full max-w-sm p-5 z-50">
-          <h3 className="text-lg font-semibold mb-2">Delete</h3>
-          <p className="text-sm text-gray-600 mb-4">Delete "{item.name}"? This cannot be undone.</p>
-          <div className="flex justify-end gap-2">
-            <button onClick={onClose} className="px-3 py-2 rounded bg-gray-100">Cancel</button>
-            <button onClick={() => onConfirm()} className="px-3 py-2 rounded bg-red-600 text-white">Delete</button>
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+    if (!mounted) return null;
+
+    return createPortal(
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 z-[10000]">
+          <h3 className="text-xl font-bold mb-2">Delete Item</h3>
+          <p className="text-sm text-slate-500 font-medium mb-6">Are you sure you want to delete <span className="font-bold text-slate-900">"{item.name}"</span>? This cannot be undone.</p>
+          <div className="flex justify-end gap-3 mt-4">
+            <button onClick={onClose} className="px-4 py-2 font-bold text-slate-600 rounded-xl hover:bg-slate-100 transition-colors">Cancel</button>
+            <button onClick={() => onConfirm()} className="px-4 py-2 font-bold rounded-xl bg-red-600 hover:bg-red-700 transition-colors shadow-md shadow-red-600/20 text-white">Delete</button>
           </div>
         </div>
-      </div>
+      </div>, document.body
     );
   }
 
@@ -732,11 +741,11 @@ categoryMap.set(UNCATEGORISED_ID, {
 
   return (
     // prevent horizontal overflow site-wide
-    <div className="min-h-screen bg-gray-50 pb-28 overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--kravy-bg)] pb-28 overflow-x-hidden transition-colors duration-300">
       {/* sticky search/filter bar below header
           - top value should match header height (header is 64px -> top-16)
           - horizontal scroll: overflow-x-auto with flex-nowrap so controls can scroll left-right */}
-      <div className="filter-sticky-bar sticky top-16 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+      <div className="filter-sticky-bar sticky top-16 z-40 bg-[var(--kravy-navbar-bg)] backdrop-blur-md border-b border-[var(--kravy-border)] transition-colors">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
             {/* horizontally scrollable container */}
@@ -745,57 +754,60 @@ categoryMap.set(UNCATEGORISED_ID, {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search items or category..."
-                className="border px-3 py-2 rounded w-64 min-w-[180px] flex-shrink-0"
+                className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl w-64 min-w-[180px] flex-shrink-0 outline-none focus:ring-2 focus:ring-indigo-500/20"
               />
 
-              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as any)} className="border px-3 py-2 rounded flex-shrink-0">
-                {allCategories.map((c) => <option key={c.id} value={c.id as any}>{c.name}</option>)}
+              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as any)} className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl flex-shrink-0 outline-none">
+                {allCategories.map((c) => <option key={c.id} value={c.id as any} className="bg-[var(--kravy-bg)]">{c.name}</option>)}
               </select>
 
-              <select value={filterHasImage} onChange={(e) => setFilterHasImage(e.target.value as any)} className="border px-3 py-2 rounded flex-shrink-0">
-                <option value="any">Any image</option>
-                <option value="only">Has image</option>
-                <option value="no">No image</option>
+              <select value={filterHasImage} onChange={(e) => setFilterHasImage(e.target.value as any)} className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl flex-shrink-0 outline-none">
+                <option value="any" className="bg-[var(--kravy-bg)]">Any image</option>
+                <option value="only" className="bg-[var(--kravy-bg)]">Has image</option>
+                <option value="no" className="bg-[var(--kravy-bg)]">No image</option>
               </select>
 
-              <select value={sortMode} onChange={(e) => setSortMode(e.target.value as any)} className="border px-3 py-2 rounded flex-shrink-0">
-                <option value="alpha_asc">A → Z</option>
-                <option value="alpha_desc">Z → A</option>
-                <option value="price_asc">Price low → high</option>
-                <option value="price_desc">Price high → low</option>
+              <select value={sortMode} onChange={(e) => setSortMode(e.target.value as any)} className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl flex-shrink-0 outline-none">
+                <option value="alpha_asc" className="bg-[var(--kravy-bg)]">A → Z</option>
+                <option value="alpha_desc" className="bg-[var(--kravy-bg)]">Z → A</option>
+                <option value="price_asc" className="bg-[var(--kravy-bg)]">Price low → high</option>
+                <option value="price_desc" className="bg-[var(--kravy-bg)]">Price high → low</option>
               </select>
 
-              <input placeholder="Min" type="number" value={priceMin === "" ? "" : String(priceMin)} onChange={(e) => setPriceMin(e.target.value === "" ? "" : Number(e.target.value))} className="border px-3 py-2 rounded w-20 flex-shrink-0" />
-              <input placeholder="Max" type="number" value={priceMax === "" ? "" : String(priceMax)} onChange={(e) => setPriceMax(e.target.value === "" ? "" : Number(e.target.value))} className="border px-3 py-2 rounded w-20 flex-shrink-0" />
+              <input placeholder="Min" type="number" value={priceMin === "" ? "" : String(priceMin)} onChange={(e) => setPriceMin(e.target.value === "" ? "" : Number(e.target.value))} className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl w-20 flex-shrink-0 outline-none" />
+              <input placeholder="Max" type="number" value={priceMax === "" ? "" : String(priceMax)} onChange={(e) => setPriceMax(e.target.value === "" ? "" : Number(e.target.value))} className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl w-20 flex-shrink-0 outline-none" />
 
-              <input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="New category" className="border px-3 py-2 rounded flex-shrink-0 w-40" />
-              <button onClick={createCategory} disabled={isCreatingCategory} className="px-3 py-2 rounded bg-blue-600 text-white flex-shrink-0">{isCreatingCategory ? "Adding..." : "Add"}</button>
+              <input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="New category" className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl flex-shrink-0 w-40 outline-none" />
+              <button onClick={createCategory} disabled={isCreatingCategory} className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold flex-shrink-0 hover:bg-indigo-700 transition-colors">{isCreatingCategory ? "Adding..." : "Add Category"}</button>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6 mt-4">
-        <aside className="hidden md:block bg-white p-4 rounded-lg shadow h-fit sticky top-[90px] min-w-0">
-          <h3 className="font-semibold mb-3">Categories</h3>
-          <div className="flex flex-col gap-2 min-w-0">
-            <button onClick={() => { setFilterCategory("all"); setActiveCategory(null); }} className={`text-left px-3 py-2 rounded ${filterCategory === "all" ? "bg-blue-500 text-white" : "hover:bg-gray-100"}`}>All Categories</button>
+        <aside className="hidden md:block bg-[var(--kravy-surface)] p-5 rounded-2xl border border-[var(--kravy-border)] shadow-sm h-fit sticky top-[95px] min-w-0">
+          <h3 className="font-bold text-[var(--kravy-text-primary)] mb-4 flex items-center gap-2">
+            <div className="w-1.5 h-4 bg-indigo-500 rounded-full" />
+            Categories
+          </h3>
+          <div className="flex flex-col gap-1.5 min-w-0">
+            <button onClick={() => { setFilterCategory("all"); setActiveCategory(null); }} className={`text-left px-4 py-2.5 rounded-xl font-medium transition-all ${filterCategory === "all" ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20" : "text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-surface-hover)]"}`}>All Categories</button>
             {menus.map((m) => (
-              <button key={m.id} onClick={() => { setFilterCategory(m.id); setActiveCategory(m.id); const el = document.getElementById(`cat-${m.id}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={`text-left px-3 py-2 rounded ${filterCategory === m.id ? "bg-green-500 text-white" : "hover:bg-gray-100"}`}>
+              <button key={m.id} onClick={() => { setFilterCategory(m.id); setActiveCategory(m.id); const el = document.getElementById(`cat-${m.id}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={`text-left px-4 py-2.5 rounded-xl font-medium transition-all ${filterCategory === m.id ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20" : "text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-surface-hover)]"}`}>
                 <div className="flex justify-between items-center min-w-0">
                   <span className="truncate">{m.name}</span>
-                  <span className="text-xs text-slate-500 ml-2">({m.items.length})</span>
+                  <span className={`text-xs ${filterCategory === m.id ? "text-indigo-100" : "text-[var(--kravy-text-muted)]"} ml-2`}>({m.items.length})</span>
                 </div>
               </button>
             ))}
           </div>
         </aside>
 
-        <div className="md:hidden mobile-category-wrapper">
-          <div className="flex gap- overflow-x-auto pb-2 no-scrollbar">
-            <button onClick={() => { setFilterCategory("all"); setActiveCategory(null); }} className={`px-3 py-1 rounded-full text-sm ${filterCategory === "all" ? "bg-green-500 text-white" : "bg-white border"}`}>All</button>
+        <div className="md:hidden mobile-category-wrapper sticky top-36 z-30 py-2 bg-[var(--kravy-bg)]/80 backdrop-blur-sm">
+          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <button onClick={() => { setFilterCategory("all"); setActiveCategory(null); }} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-bold transition-all ${filterCategory === "all" ? "bg-indigo-600 text-white" : "bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-secondary)]"}`}>All</button>
             {menus.map((m) => (
-              <button key={m.id} onClick={() => { setFilterCategory(m.id); setActiveCategory(m.id); const el = document.getElementById(`cat-${m.id}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={`px-3 py-1 rounded-full text-sm ${filterCategory === m.id ? "bg-green-500 text-white" : "bg-white border"}`}>
+              <button key={m.id} onClick={() => { setFilterCategory(m.id); setActiveCategory(m.id); const el = document.getElementById(`cat-${m.id}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-bold transition-all ${filterCategory === m.id ? "bg-indigo-600 text-white" : "bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-secondary)]"}`}>
                 {m.name}
               </button>
             ))}
@@ -803,14 +815,20 @@ categoryMap.set(UNCATEGORISED_ID, {
         </div>
 
         <main className="min-w-0">
-          <h2 className="text-2xl font-bold mb-4">Products</h2>
+          <h2 className="text-2xl font-black text-[var(--kravy-text-primary)] mb-6 flex items-center gap-3">
+            Products
+            <span className="text-xs font-bold text-[var(--kravy-text-muted)] bg-[var(--kravy-badge-bg)] px-2 py-0.5 rounded-full">Explore Menu</span>
+          </h2>
 
           {groupedForUI.length === 0 && <p className="text-sm text-gray-600">No items match your filters.</p>}
 
           <div className="space-y-10">
             {groupedForUI.map((cat) => (
               <section key={cat.id} id={`cat-${cat.id}`} className="min-w-0">
-                <h3 className="font-semibold mb-4">{cat.name}</h3>
+                <h3 className="font-bold text-[var(--kravy-text-primary)] text-lg mb-5 flex items-center gap-3">
+                  {cat.name}
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-[var(--kravy-border-strong)] to-transparent" />
+                </h3>
 
                 {cat.items.length === 0 ? (
                   <p className="text-sm text-gray-500">No items here.</p>
@@ -819,28 +837,28 @@ categoryMap.set(UNCATEGORISED_ID, {
                     {cat.items.map((item) => {
                       const inCart = cart[item.id]?.quantity ?? 0;
                       return (
-                        <motion.div key={item.id} layout whileHover={{ scale: 1.02 }} className={`bg-white p-3 rounded-xl shadow relative cursor-pointer min-w-0 ${inCart > 0 ? "ring-2 ring-green-200" : ""}`} onClick={() => addToCart(item)}>
-                          {inCart > 0 && <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">{inCart}</div>}
+                        <motion.div key={item.id} layout whileHover={{ scale: 1.03, y: -4 }} className={`bg-[var(--kravy-surface)] p-4 rounded-2xl border border-[var(--kravy-border)] shadow-sm relative cursor-pointer min-w-0 transition-all ${inCart > 0 ? "ring-2 ring-indigo-500 border-indigo-500" : "hover:border-indigo-400/50"}`} onClick={() => addToCart(item)}>
+                          {inCart > 0 && <div className="absolute top-3 left-3 bg-indigo-600 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-lg z-10">{inCart}</div>}
 
-                          <div className="w-full h-36 mb-3 relative rounded overflow-hidden bg-gray-100 flex items-center justify-center min-w-0">
+                          <div className="w-full h-40 mb-4 relative rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center min-w-0 shadow-inner">
                             {item.imageUrl ? (
-                              <Image src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="(max-width: 768px) 50vw, 25vw" />
+                              <Image src={item.imageUrl} alt={item.name} fill className="object-cover transition-transform duration-500 group-hover:scale-110" sizes="(max-width: 768px) 50vw, 25vw" />
                             ) : (
-                              <div className="text-gray-400">No Image</div>
+                              <div className="text-[var(--kravy-text-faint)] font-bold text-xs uppercase tracking-widest">No Image</div>
                             )}
                           </div>
 
                           <div className="flex flex-col items-start gap-1">
                             <div className="flex items-center justify-between w-full">
-                              <h4 className="font-semibold text-sm md:text-base truncate max-w-[70%]">{item.name}</h4>
-                              <div className="flex items-center gap-2">
-                                <button onClick={(e) => { e.stopPropagation(); setEditingItem(item); }} className="px-2 py-1 text-xs bg-blue-100 rounded">Edit</button>
-                                <button onClick={(e) => { e.stopPropagation(); setDeletingItem(item); }} className="px-2 py-1 text-xs bg-red-100 rounded">Delete</button>
+                              <h4 className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base truncate max-w-[65%] group-hover:text-indigo-500 transition-colors">{item.name}</h4>
+                              <div className="flex items-center gap-1.5">
+                                <button onClick={(e) => { e.stopPropagation(); setEditingItem(item); }} className="p-1.5 text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:scale-110 transition-transform">Edit</button>
+                                <button onClick={(e) => { e.stopPropagation(); setDeletingItem(item); }} className="p-1.5 text-xs bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:scale-110 transition-transform">Delete</button>
                               </div>
                             </div>
 
-                            <div className="text-green-600 font-bold">{formatPrice(item.price)}</div>
-                            {item.unit && <div className="text-xs text-gray-500">{item.unit}</div>}
+                            <div className="text-indigo-600 dark:text-indigo-400 font-extrabold text-base">{formatPrice(item.price)}</div>
+                            {item.unit && <div className="text-[0.65rem] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter opacity-70">{item.unit}</div>}
                           </div>
                         </motion.div>
                       );
@@ -854,14 +872,31 @@ categoryMap.set(UNCATEGORISED_ID, {
       </div>
 
       {totalItems > 0 && (
-        <motion.div initial={{ y: 80 }} animate={{ y: 0 }} className="fixed left-4 right-4 bottom-4 z-50 bg-white border rounded-xl shadow-lg px-4 py-3 flex items-center justify-between max-w-6xl mx-auto">
-          <div className="flex items-center gap-4">
-            <div className="font-semibold">🛒 {totalItems} item(s)</div>
-            <div className="text-gray-700 font-semibold">Total: {formatPrice(totalPrice)}</div>
+        <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed left-4 right-4 bottom-6 z-50 bg-[var(--kravy-surface)] border border-indigo-500/30 backdrop-blur-xl rounded-2xl shadow-2xl px-6 py-4 flex items-center justify-between max-w-5xl mx-auto ring-1 ring-white/10">
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col">
+              <span className="text-[var(--kravy-text-primary)] font-black text-lg">{totalItems} <span className="text-sm font-medium text-[var(--kravy-text-muted)]">Selected</span></span>
+              <span className="text-indigo-600 dark:text-indigo-400 font-extrabold text-xl">{formatPrice(totalPrice)}</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <button onClick={() => { try { localStorage.setItem("pendingCart", JSON.stringify(cart)); localStorage.setItem("pendingTotal", totalPrice.toString()); window.location.href = "/billing/checkout"; } catch (e) { console.error(e); setToast("Unable to go to billing"); } }} className="px-4 py-2 bg-blue-600 text-white rounded">Checkout</button>
+            <button
+              onClick={() => {
+                try {
+                  localStorage.setItem("pendingCart", JSON.stringify(cart));
+                  localStorage.setItem("pendingTotal", totalPrice.toString());
+                  window.location.href = "/billing/checkout";
+                } catch (e) {
+                  console.error(e);
+                  setToast("Unable to go to billing");
+                }
+              }}
+              className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition-all active:scale-95 flex items-center gap-2"
+            >
+              Proceed to Bill
+              <div className="w-5 h-5 flex items-center justify-center bg-white/20 rounded-full text-xs">→</div>
+            </button>
           </div>
         </motion.div>
       )}
@@ -869,7 +904,7 @@ categoryMap.set(UNCATEGORISED_ID, {
       {editingItem && <EditModal item={editingItem} onClose={() => setEditingItem(null)} onSave={async (u) => await saveEdit(u)} />}
       {deletingItem && <ConfirmDelete item={deletingItem} onClose={() => setDeletingItem(null)} onConfirm={() => confirmDelete(deletingItem!)} />}
 
-      {toast && <div className="fixed right-4 bottom-28 bg-black text-white px-4 py-2 rounded shadow z-60">{toast}</div>}
+      {toast && <div className="fixed right-4 bottom-28 bg-black text-white px-4 py-2 rounded shadow z-[100]">{toast}</div>}
     </div>
   );
 }

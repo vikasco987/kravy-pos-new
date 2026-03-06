@@ -14,14 +14,14 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     return (
       <div style={{
-        background: "linear-gradient(135deg, #0D0F1A, #111827)",
-        border: "1px solid rgba(255,255,255,0.1)",
+        background: "var(--kravy-surface-hover)",
+        border: "1px solid var(--kravy-border-strong)",
         borderRadius: "12px",
         padding: "12px 16px",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-        color: "#F1F0EC"
+        boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+        color: "var(--kravy-text-primary)"
       }}>
-        <div style={{ fontSize: "0.72rem", color: "#6B7280", marginBottom: "4px" }}>{payload[0].name}</div>
+        <div style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", marginBottom: "4px" }}>{payload[0].name}</div>
         <div style={{ fontSize: "1rem", fontWeight: 800, color: payload[0].payload.color }}>
           ₹{new Intl.NumberFormat("en-IN").format(Math.round(payload[0].value))}
         </div>
@@ -85,8 +85,8 @@ export default function PaymentModeChart({ paymentSplit }: Props) {
           <Wallet size={18} color="white" />
         </div>
         <div>
-          <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "#F1F0EC" }}>Payment Split</h3>
-          <p style={{ fontSize: "0.72rem", color: "#6B7280", fontFamily: "monospace" }}>Cash vs UPI breakdown</p>
+          <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>Payment Split</h3>
+          <p style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", fontFamily: "monospace" }}>Cash vs UPI breakdown</p>
         </div>
       </div>
 
@@ -172,12 +172,12 @@ export default function PaymentModeChart({ paymentSplit }: Props) {
                   background: item.color,
                   boxShadow: `0 0 8px ${item.color}`
                 }} />
-                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#9CA3AF" }}>{item.name}</span>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--kravy-text-muted)" }}>{item.name}</span>
               </div>
               <div style={{ fontSize: "0.9rem", fontWeight: 800, color: item.color }}>
                 ₹{format(item.value)}
               </div>
-              <div style={{ fontSize: "0.65rem", color: "#6B7280", fontFamily: "monospace" }}>
+              <div style={{ fontSize: "0.65rem", color: "var(--kravy-text-faint)", fontFamily: "monospace" }}>
                 {total > 0 ? Math.round((item.value / total) * 100) : 0}%
               </div>
             </div>

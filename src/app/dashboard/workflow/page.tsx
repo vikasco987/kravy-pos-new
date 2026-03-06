@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 // --- TYPES ---
-type OrderItem = { itemId: string; name: string; price: number; quantity: number; isVeg?: boolean };
+type OrderItem = { itemId: string; name: string; price: number; quantity: number; isVeg?: boolean; isNew?: boolean };
 type Order = {
     id: string;
     items: OrderItem[];
@@ -17,6 +17,9 @@ type Order = {
     table?: { id: string; name: string };
     customerName?: string;
     createdAt: string;
+    caseType?: string;
+    parentOrderId?: string;
+    isMerged?: boolean;
 };
 type TableStatus = { id: string; name: string; isOccupied: boolean };
 
@@ -104,6 +107,15 @@ export default function CompleteWorkflow() {
     const todaySales = orders.reduce((s, o) => s + o.total, 0);
     const avgOrder = orders.length ? todaySales / orders.length : 0;
 
+    // Session combining
+    const sessionOrders = selectedOrder?.table
+        ? liveOrders.filter(o => o.table?.id === selectedOrder.table?.id)
+        : selectedOrder ? [selectedOrder] : [];
+    const isCombinedBill = sessionOrders.length > 1;
+    const sessionTotal = sessionOrders.reduce((s, o) => s + o.total, 0);
+    const sessionSubtotal = sessionTotal / 1.05;
+    const sessionGst = sessionTotal - sessionSubtotal;
+
     // Status helpers
     const statusColor = (s: string) => {
         if (s === "PENDING") return "bg-red-50 text-red-600 border-red-200";
@@ -190,7 +202,12 @@ export default function CompleteWorkflow() {
                                                     {o.table?.name || "T-?"}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-extrabold text-slate-900 font-mono">ORD-{o.id.slice(-6).toUpperCase()}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-sm font-extrabold text-slate-900 font-mono">ORD-{o.id.slice(-6).toUpperCase()}</p>
+                                                        {o.isMerged && <span className="bg-green-100 text-green-700 text-[10px] font-black px-1.5 py-0.5 rounded-md">🔀 MERGED</span>}
+                                                        {o.caseType === 'round2' && <span className="bg-blue-100 text-blue-700 text-[10px] font-black px-1.5 py-0.5 rounded-md">🔄 ROUND 2</span>}
+                                                        {o.caseType === 'separate' && <span className="bg-orange-100 text-orange-700 text-[10px] font-black px-1.5 py-0.5 rounded-md">📋 SEPARATE</span>}
+                                                    </div>
                                                     <p className="text-xs text-slate-400 font-medium">{o.items?.length} items</p>
                                                 </div>
                                                 <span className={`text-[11px] font-black px-3 py-1 rounded-full border ${statusColor(o.status)}`}>{o.status}</span>
@@ -377,20 +394,31 @@ export default function CompleteWorkflow() {
                                         <span>Time: {new Date().toLocaleTimeString("en-IN")}</span>
                                     </div>
                                     <div className="px-6 pb-4">
-                                        {selectedOrder.items?.map((it, idx) => (
-                                            <div key={idx} className="flex justify-between py-2.5 border-b border-slate-100 last:border-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-slate-800">{it.name}</span>
-                                                    <span className="text-xs text-slate-400">×{it.quantity}</span>
-                                                </div>
-                                                <span className="font-black text-slate-900">₹{it.price * it.quantity}</span>
+                                        {isCombinedBill && (
+                                            <div className="mb-3 px-3 py-2 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-indigo-100 flex items-center justify-between">
+                                                <span>📋 Unified Bill</span>
+                                                <span>{sessionOrders.length} Orders</span>
+                                            </div>
+                                        )}
+                                        {sessionOrders.map((order, oIdx) => (
+                                            <div key={order.id} className={oIdx > 0 ? "mt-4" : ""}>
+                                                {isCombinedBill && <p className="text-[10px] font-black tracking-widest text-slate-400 mb-2">ORD-{order.id.slice(-6).toUpperCase()}</p>}
+                                                {order.items?.map((it, idx) => (
+                                                    <div key={idx} className="flex justify-between py-2 border-b border-slate-50 last:border-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-bold text-slate-800">{it.name}</span>
+                                                            <span className="text-xs text-slate-400">×{it.quantity}</span>
+                                                        </div>
+                                                        <span className="font-black text-slate-900">₹{it.price * it.quantity}</span>
+                                                    </div>
+                                                ))}
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="px-6 py-4 border-t border-dashed border-slate-300">
-                                        <div className="flex justify-between text-sm text-slate-500 font-semibold py-1"><span>Subtotal</span><span>₹{(selectedOrder.total / 1.05).toFixed(2)}</span></div>
-                                        <div className="flex justify-between text-sm text-slate-500 font-semibold py-1"><span>GST (5%)</span><span>₹{(selectedOrder.total - selectedOrder.total / 1.05).toFixed(2)}</span></div>
-                                        <div className="flex justify-between text-lg font-black text-slate-900 border-t-2 border-slate-900 mt-3 pt-3"><span>Total</span><span className="text-red-600">₹{selectedOrder.total}</span></div>
+                                    <div className="px-6 py-4 border-t border-dashed border-slate-300 bg-slate-50 mt-2">
+                                        <div className="flex justify-between text-sm text-slate-500 font-semibold py-1"><span>Subtotal</span><span>₹{sessionSubtotal.toFixed(2)}</span></div>
+                                        <div className="flex justify-between text-sm text-slate-500 font-semibold py-1"><span>GST (5%)</span><span>₹{sessionGst.toFixed(2)}</span></div>
+                                        <div className="flex justify-between text-lg font-black text-slate-900 border-t-2 border-slate-900 mt-3 pt-3"><span>Session Total</span><span className="text-red-600">₹{sessionTotal.toFixed(2)}</span></div>
                                     </div>
                                 </div>
 
@@ -420,21 +448,24 @@ export default function CompleteWorkflow() {
                                     <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-6 text-center">
                                         <div className="w-28 h-28 bg-white rounded-2xl border border-green-200 flex items-center justify-center text-5xl mx-auto mb-3">📲</div>
                                         <p className="font-black text-slate-800 font-mono">business@upi</p>
-                                        <p className="text-2xl font-black text-green-600 mt-1">₹{selectedOrder.total}</p>
+                                        <p className="text-2xl font-black text-green-600 mt-1">₹{sessionTotal}</p>
                                         <p className="text-xs text-slate-400 mt-1">Scan or enter UPI ID in app</p>
                                     </div>
                                 )}
 
                                 {!paid ? (
-                                    <button onClick={() => { setPaid(true); updateOrderStatus(selectedOrder.id, "COMPLETED"); }}
+                                    <button onClick={() => {
+                                        setPaid(true);
+                                        sessionOrders.forEach(o => updateOrderStatus(o.id, "COMPLETED"));
+                                    }}
                                         className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 text-white text-lg font-black shadow-lg shadow-red-500/30 active:scale-[0.98] transition-transform">
-                                        ✅ Confirm Payment — ₹{selectedOrder.total}
+                                        ✅ Confirm Payment — ₹{sessionTotal}
                                     </button>
                                 ) : (
                                     <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-8 text-center">
                                         <p className="text-5xl mb-2">🎉</p>
                                         <p className="text-xl font-black text-green-600">Payment Successful!</p>
-                                        <p className="text-sm text-slate-500 mt-1">₹{selectedOrder.total} received. Order Completed.</p>
+                                        <p className="text-sm text-slate-500 mt-1">₹{sessionTotal} received. Session Completed.</p>
                                     </div>
                                 )}
                             </>
@@ -490,17 +521,22 @@ function KdsColumn({ title, count, color, orders, actionLabel, onAction }: {
                     {orders.map(o => (
                         <div key={o.id} className={`bg-white border border-slate-200 rounded-2xl overflow-hidden border-t-4 ${c.card}`}>
                             <div className="p-4 flex items-center justify-between border-b border-slate-100">
-                                <span className="font-black text-slate-900">{o.table?.name || "T-?"}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-black text-slate-900">{o.table?.name || "T-?"}</span>
+                                    {o.isMerged && <span className="bg-green-100 text-green-700 text-[10px] font-black px-1.5 py-0.5 rounded-md">🔀 MERGED</span>}
+                                    {o.caseType === 'round2' && <span className="bg-blue-100 text-blue-700 text-[10px] font-black px-1.5 py-0.5 rounded-md">🔄 R2</span>}
+                                </div>
                                 <span className="text-xs font-mono text-slate-400">ORD-{o.id.slice(-6).toUpperCase()}</span>
                             </div>
                             <div className="p-4 space-y-2">
                                 {o.items?.map((it, i) => (
-                                    <div key={i} className="flex items-center justify-between">
+                                    <div key={i} className={`flex items-center justify-between p-1 rounded ${it.isNew ? 'bg-green-50 border border-green-100' : ''}`}>
                                         <div className="flex items-center gap-2">
                                             <div className={`w-1.5 h-1.5 rounded-full ${it.isVeg === false ? "bg-red-500" : "bg-green-500"}`} />
-                                            <span className="text-sm font-semibold text-slate-700">{it.name}</span>
+                                            <span className={`text-sm font-semibold ${it.isNew ? 'text-green-700' : 'text-slate-700'}`}>{it.name}</span>
+                                            {it.isNew && <span className="text-[9px] font-black text-green-600 uppercase tracking-widest leading-none ml-1">NEW</span>}
                                         </div>
-                                        <span className="text-xs font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">×{it.quantity}</span>
+                                        <span className={`text-xs font-black px-2 py-0.5 rounded-md ${it.isNew ? 'text-green-800 bg-green-200/50' : 'text-slate-500 bg-slate-100'}`}>×{it.quantity}</span>
                                     </div>
                                 ))}
                             </div>

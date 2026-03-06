@@ -65,8 +65,8 @@ export async function PUT(
     let existingItems: OrderItem[] = [];
     try {
       existingItems = Array.isArray(existingOrder.items)
-        ? existingOrder.items
-        : JSON.parse(existingOrder.items || "[]");
+        ? (existingOrder.items as unknown as OrderItem[])
+        : [];
     } catch (e) {
       existingItems = [];
     }
@@ -91,7 +91,7 @@ export async function PUT(
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: {
-        items: mergedItems,
+        items: mergedItems as any,
         total: newTotal,
         isMerged: true,
         mergedAt: new Date(),
@@ -105,7 +105,7 @@ export async function PUT(
       const user = await prisma.user.findUnique({
         where: { clerkId: clerkId },
       });
-      
+
       if (user) {
         await prisma.activityLog.create({
           data: {
