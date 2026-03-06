@@ -20,7 +20,7 @@ export default function TaxSettingsPage() {
     useEffect(() => {
         async function fetchProfile() {
             try {
-                const res = await fetch("/api/profile");
+                const res = await fetch("/api/profile", { cache: "no-store" });
                 if (!res.ok) throw new Error("Failed to fetch profile");
                 const data = await res.json();
                 setBusinessProfile(data);
