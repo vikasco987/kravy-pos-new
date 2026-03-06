@@ -41,6 +41,7 @@ import {
   Filter,
   Search,
   Menu,
+  Percent,
   X,
   Check,
   AlertCircle,
@@ -151,9 +152,12 @@ const navGroups = [
     ]
   },
   {
-    group: "ADMNISTRATION",
+
+    group: "ADMINISTRATION",
     items: [
-      { icon: <UserCircle size={18} />, label: "Business Settings", href: "/dashboard/profile" },
+      { icon: <UserCircle size={18} />, label: "Business Profile", href: "/dashboard/profile" },
+      { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings" },
+      { icon: <Percent size={18} />, label: "Tax Management", href: "/dashboard/settings/tax", badge: "GST", badgeColor: "#F59E0B" },
       { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup" },
       { icon: <Archive size={18} />, label: "Archive & Trash", href: "/dashboard/billing/deleted" },
       { icon: <HelpCircle size={18} />, label: "Help & Support", href: "/dashboard/help" },

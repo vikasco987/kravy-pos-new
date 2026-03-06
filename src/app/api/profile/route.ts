@@ -71,6 +71,8 @@ export async function POST(request: Request) {
         state: body.state ?? null,
         district: body.district ?? null,
         pinCode: body.pinCode ?? null,
+        taxEnabled: body.taxEnabled ?? true,
+        taxRate: body.taxRate ?? 5.0,
       },
 
       create: {
@@ -95,6 +97,8 @@ export async function POST(request: Request) {
         state: body.state ?? null,
         district: body.district ?? null,
         pinCode: body.pinCode ?? null,
+        taxEnabled: body.taxEnabled ?? true,
+        taxRate: body.taxRate ?? 5.0,
       },
     });
 
