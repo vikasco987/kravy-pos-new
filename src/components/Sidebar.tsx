@@ -152,6 +152,7 @@ const navGroups = [
     ]
   },
   {
+
     group: "ADMINISTRATION",
     items: [
       { icon: <UserCircle size={18} />, label: "Business Profile", href: "/dashboard/profile" },
