@@ -16,7 +16,8 @@ type MenuItem = {
   name: string;
   price: number;
   unit?: string | null;
-  imageUrl?: string | null; // ✅ ADD THIS  
+  imageUrl?: string | null;
+  description?: string | null; // ✅ ADDED
   category?: {
     id: string;
     name: string;
@@ -81,13 +82,23 @@ export default function CheckoutClient() {
   useEffect(() => {
     async function fetchMenu() {
       try {
-        const res = await fetch("/api/menu/items");
+        // Add timestamp to prevent browser cache from showing old prices
+        const res = await fetch(`/api/menu/items?t=${Date.now()}`, {
+          cache: 'no-store'
+        });
         if (!res.ok) return;
 
         const data = await res.json();
 
-        // ✅ API returns array directly
-        setMenuItems(data);
+        // ✅ API returns array directly, but we map to ensure pos uses 'sellingPrice'
+        const mapped = (data || []).map((it: any) => ({
+          ...it,
+          // Prioritize sellingPrice as it's the one edited in 'Browse Products'
+          price: typeof it.sellingPrice === 'number' ? it.sellingPrice : (it.price ?? 0),
+          description: it.description || "" // Ensure description is synced
+        }));
+
+        setMenuItems(mapped);
       } catch (err) {
         console.error("Menu fetch failed", err);
       } finally {
@@ -504,9 +515,16 @@ export default function CheckoutClient() {
 
                   {/* CONTENT */}
                   <div className="p-3 lg:p-4 flex flex-col flex-1 justify-between">
-                    <p className="text-xs lg:text-sm font-bold text-[var(--kravy-text-primary)] mb-auto group-hover:text-indigo-500 transition-colors line-clamp-2">
-                      {m.name}
-                    </p>
+                    <div>
+                      <p className="text-xs lg:text-sm font-bold text-[var(--kravy-text-primary)] group-hover:text-indigo-500 transition-colors line-clamp-1">
+                        {m.name}
+                      </p>
+                      {m.description && (
+                        <p className="text-[10px] text-[var(--kravy-text-muted)] line-clamp-1 leading-tight mt-0.5 font-medium">
+                          {m.description}
+                        </p>
+                      )}
+                    </div>
 
                     <div className="flex justify-between items-center mt-2 group-hover:scale-105 transition-transform origin-left">
                       <p className="text-xs lg:text-sm text-emerald-500 font-extrabold">
