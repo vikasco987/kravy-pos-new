@@ -417,12 +417,12 @@ export default function CheckoutClient() {
   /* ================= UI ================= */
 
   return (
-    <div className="h-full max-h-[calc(100vh-100px)] lg:h-[calc(100vh-80px)] bg-[var(--kravy-bg)] p-2 lg:p-4 transition-colors overflow-hidden">
+    <div className="h-[calc(100vh-80px)] lg:h-[calc(100vh-80px)] bg-[var(--kravy-bg)] p-2 lg:p-4 transition-colors">
       <div className="flex flex-col lg:grid lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_400px] gap-4 lg:gap-6 h-full overflow-hidden">
 
 
         {/* ================= LEFT : MENU ITEMS ================= */}
-        <div className="bg-[var(--kravy-surface)] rounded-2xl p-4 lg:p-6 overflow-y-auto border border-[var(--kravy-border)] shadow-sm relative flex flex-col min-h-0">
+        <div className="bg-[var(--kravy-surface)] rounded-2xl p-4 lg:p-6 border border-[var(--kravy-border)] shadow-sm relative flex flex-col min-h-0 overflow-hidden">
           <div className="flex justify-between items-center mb-4 lg:mb-5">
             <h2 className="text-lg lg:text-xl font-bold text-[var(--kravy-text-primary)]">Menu Catalog</h2>
           </div>
@@ -474,7 +474,7 @@ export default function CheckoutClient() {
           )}
 
           {/* MENU GRID */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 lg:gap-4 overflow-y-auto pr-2">
+          <div className="flex-1 grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 overflow-y-auto pr-2 pb-10 scrollbar-hide">
             {filteredMenuItems.map((m) => {
               const inCart = items.find((i) => i.id === m.id);
 
@@ -485,10 +485,10 @@ export default function CheckoutClient() {
                   key={m.id}
                   onClick={() => addToCart(m)}
                   className="group relative border border-[var(--kravy-border)] rounded-2xl overflow-hidden cursor-pointer
-                 hover:shadow-xl hover:border-[var(--kravy-brand)] transition-all duration-300 bg-[var(--kravy-bg-2)]"
+                 hover:shadow-xl hover:border-[var(--kravy-brand)] transition-all duration-300 bg-[var(--kravy-bg-2)] flex flex-col min-h-[160px] lg:min-h-[200px]"
                 >
-                  {/* IMAGE */}
-                  <div className="h-32 w-full bg-[var(--kravy-surface)] overflow-hidden">
+                  {/* IMAGE - Force stability */}
+                  <div className="relative aspect-[4/3] w-full bg-[var(--kravy-surface)] overflow-hidden shrink-0 border-b border-[var(--kravy-border)]/50">
                     <img
                       src={m.imageUrl || "/no-image.png"}
                       alt={m.name}
@@ -503,17 +503,17 @@ export default function CheckoutClient() {
 
 
                   {/* CONTENT */}
-                  <div className="p-3 lg:p-4">
-                    <p className="text-xs lg:text-sm font-bold text-[var(--kravy-text-primary)] truncate group-hover:text-indigo-500 transition-colors">
+                  <div className="p-3 lg:p-4 flex flex-col flex-1 justify-between">
+                    <p className="text-xs lg:text-sm font-bold text-[var(--kravy-text-primary)] mb-auto group-hover:text-indigo-500 transition-colors line-clamp-2">
                       {m.name}
                     </p>
 
-                    <div className="flex justify-between items-center mt-1 lg:mt-2">
+                    <div className="flex justify-between items-center mt-2 group-hover:scale-105 transition-transform origin-left">
                       <p className="text-xs lg:text-sm text-emerald-500 font-extrabold">
                         ₹{m.price.toFixed(2)}
                       </p>
-                      <p className="text-[10px] uppercase font-black text-[var(--kravy-text-muted)] tracking-widest">
-                        {m.unit ? `Per ${m.unit}` : ""}
+                      <p className="text-[9px] uppercase font-black text-[var(--kravy-text-muted)] tracking-widest truncate ml-2">
+                        {m.unit ? `${m.unit}` : ""}
                       </p>
                     </div>
                   </div>
@@ -809,7 +809,7 @@ export default function CheckoutClient() {
               {business?.logoUrl && (
                 <div className="flex justify-center mb-1">
                   <img
-                    src={business.logoUrl}
+                    src={business?.logoUrl}
                     alt="Logo"
                     className="max-h-[28mm] object-contain"
                   />
@@ -827,10 +827,10 @@ export default function CheckoutClient() {
                 business?.state ||
                 business?.pinCode) && (
                   <div className="text-center text-[9px]">
-                    {business.businessAddress}
-                    {business.district && `, ${business.district}`}
-                    {business.state && `, ${business.state}`}
-                    {business.pinCode && ` - ${business.pinCode}`}
+                    {business?.businessAddress}
+                    {business?.district && `, ${business.district}`}
+                    {business?.state && `, ${business.state}`}
+                    {business?.pinCode && ` - ${business.pinCode}`}
                   </div>
                 )}
 
