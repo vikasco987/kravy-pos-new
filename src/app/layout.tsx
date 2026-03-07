@@ -2,7 +2,6 @@
 import type { ReactNode } from "react";
 import "./globals.css";
 import Providers from "@/components/Providers";
-import { SidebarProvider } from "@/components/SidebarContext";
 import { Inter } from "next/font/google";
 
 const inter = Inter({
@@ -25,9 +24,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}>
         <Providers>
-          <SidebarProvider>
-            {children}
-          </SidebarProvider>
+          {children}
         </Providers>
       </body>
     </html>

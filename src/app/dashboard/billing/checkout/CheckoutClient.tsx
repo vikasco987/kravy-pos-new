@@ -417,18 +417,18 @@ export default function CheckoutClient() {
   /* ================= UI ================= */
 
   return (
-    <div className="h-[calc(100vh-80px)] bg-[var(--kravy-bg)] p-4 transition-colors">
-      <div className="grid grid-cols-[1fr_390px] gap-6 h-full">
+    <div className="h-full max-h-[calc(100vh-100px)] lg:h-[calc(100vh-80px)] bg-[var(--kravy-bg)] p-2 lg:p-4 transition-colors overflow-hidden">
+      <div className="flex flex-col lg:grid lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_400px] gap-4 lg:gap-6 h-full overflow-hidden">
 
 
         {/* ================= LEFT : MENU ITEMS ================= */}
-        <div className="bg-[var(--kravy-surface)] rounded-2xl p-6 overflow-y-auto border border-[var(--kravy-border)] shadow-sm relative">
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-xl font-bold text-[var(--kravy-text-primary)]">Menu Catalog</h2>
+        <div className="bg-[var(--kravy-surface)] rounded-2xl p-4 lg:p-6 overflow-y-auto border border-[var(--kravy-border)] shadow-sm relative flex flex-col min-h-0">
+          <div className="flex justify-between items-center mb-4 lg:mb-5">
+            <h2 className="text-lg lg:text-xl font-bold text-[var(--kravy-text-primary)]">Menu Catalog</h2>
           </div>
 
           {/* CATEGORY TABS */}
-          <div className="flex gap-2 mb-3 overflow-x-auto">
+          <div className="flex gap-1.5 lg:gap-2 mb-3 lg:mb-4 overflow-x-auto pb-1 scrollbar-hide">
             <button
               onClick={() => setActiveCategory("All")}
               className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${activeCategory === "All"
@@ -443,7 +443,7 @@ export default function CheckoutClient() {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all whitespace-nowrap ${activeCategory === cat
+                className={`px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg lg:rounded-xl text-[10px] lg:text-xs font-black uppercase tracking-widest border transition-all whitespace-nowrap ${activeCategory === cat
                   ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-lg shadow-indigo-500/30"
                   : "bg-[var(--kravy-bg-2)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)]"
                   }`}
@@ -454,14 +454,14 @@ export default function CheckoutClient() {
           </div>
 
           {/* SEARCH */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)]" size={16} />
+          <div className="relative mb-4 lg:mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)]" size={14} />
             <input
               type="text"
               placeholder="Search items…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] h-11 pl-10 pr-4 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] h-9 lg:h-11 pl-9 lg:pl-10 pr-4 w-full rounded-lg lg:rounded-xl text-xs lg:text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
             />
           </div>
 
@@ -474,7 +474,7 @@ export default function CheckoutClient() {
           )}
 
           {/* MENU GRID */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 lg:gap-4 overflow-y-auto pr-2">
             {filteredMenuItems.map((m) => {
               const inCart = items.find((i) => i.id === m.id);
 
@@ -503,13 +503,13 @@ export default function CheckoutClient() {
 
 
                   {/* CONTENT */}
-                  <div className="p-4">
-                    <p className="text-sm font-bold text-[var(--kravy-text-primary)] truncate group-hover:text-indigo-500 transition-colors">
+                  <div className="p-3 lg:p-4">
+                    <p className="text-xs lg:text-sm font-bold text-[var(--kravy-text-primary)] truncate group-hover:text-indigo-500 transition-colors">
                       {m.name}
                     </p>
 
-                    <div className="flex justify-between items-center mt-2">
-                      <p className="text-sm text-emerald-500 font-extrabold">
+                    <div className="flex justify-between items-center mt-1 lg:mt-2">
+                      <p className="text-xs lg:text-sm text-emerald-500 font-extrabold">
                         ₹{m.price.toFixed(2)}
                       </p>
                       <p className="text-[10px] uppercase font-black text-[var(--kravy-text-muted)] tracking-widest">
@@ -546,10 +546,10 @@ export default function CheckoutClient() {
           </div>
         </div>
         {/* ================= RIGHT : CART ================= */}
-        <div className="bg-[var(--kravy-surface)] rounded-2xl flex flex-col border border-[var(--kravy-border)] shadow-xl overflow-hidden">
+        <div className="bg-[var(--kravy-surface)] rounded-2xl flex flex-col border border-[var(--kravy-border)] shadow-xl overflow-hidden min-h-0">
 
           {/* HEADER */}
-          <div className="border-b border-[var(--kravy-border)] p-6 bg-[var(--kravy-bg-2)]/50">
+          <div className="border-b border-[var(--kravy-border)] p-4 lg:p-6 bg-[var(--kravy-bg-2)]/50 shrink-0">
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-lg font-black text-[var(--kravy-text-primary)] leading-tight">Billing Invoice</p>
@@ -592,14 +592,14 @@ export default function CheckoutClient() {
           </button>
 
           {showCustomer && (
-            <div className="p-6 space-y-4 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/30">
+            <div className="p-4 lg:p-6 space-y-3 lg:space-y-4 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/30 shrink-0">
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Name</label>
                 <input
                   placeholder="Full Name"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] p-2.5 w-full rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] p-2 lg:p-2.5 w-full rounded-lg lg:rounded-xl text-xs lg:text-sm outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
               <div className="space-y-1">
@@ -608,7 +608,7 @@ export default function CheckoutClient() {
                   placeholder="Phone Number"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] p-2.5 w-full rounded-xl text-sm outline-none focus:ring-1 focus:ring-[var(--kravy-brand)] font-mono"
+                  className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] p-2 lg:p-2.5 w-full rounded-lg lg:rounded-xl text-xs lg:text-sm outline-none focus:ring-1 focus:ring-[var(--kravy-brand)] font-mono"
                 />
               </div>
             </div>
@@ -641,7 +641,7 @@ export default function CheckoutClient() {
           </div>
 
           {/* CHECKOUT */}
-          <div className="border-t border-[var(--kravy-border)] p-4 bg-[var(--kravy-bg-2)]/30 space-y-2">
+          <div className="border-t border-[var(--kravy-border)] p-3 lg:p-4 bg-[var(--kravy-bg-2)]/30 space-y-1.5 lg:space-y-2 shrink-0">
 
             {/* TOTALS */}
             <div className="flex justify-between text-sm text-[var(--kravy-text-muted)] font-medium">
@@ -672,7 +672,7 @@ export default function CheckoutClient() {
                 onChange={(e) =>
                   setPaymentMode(e.target.value as "Cash" | "UPI" | "Card")
                 }
-                className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] p-3 w-full rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-sm font-bold"
+                className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] p-2 lg:p-3 w-full rounded-lg lg:rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-xs lg:text-sm font-bold"
               >
                 <option value="Cash">💵 Cash</option>
                 <option value="UPI">📱 Digital UPI</option>
@@ -709,7 +709,7 @@ export default function CheckoutClient() {
                     onChange={(e) =>
                       setPaymentStatus(e.target.value as "Pending" | "Paid")
                     }
-                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] p-3 w-full rounded-xl text-sm outline-none font-black uppercase tracking-widest"
+                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] p-2 lg:p-3 w-full rounded-lg lg:rounded-xl text-xs lg:text-sm outline-none font-black uppercase tracking-widest"
                   >
                     <option value="Pending">🕒 Payment Pending</option>
                     <option value="Paid">✅ Payment Received</option>
@@ -785,8 +785,8 @@ export default function CheckoutClient() {
                   !business ||
                   (paymentMode === "UPI" && paymentStatus !== "Paid")
                 }
-                className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black py-3 rounded-xl
-                        disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/20 active:scale-95 transition-all text-sm"
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black py-2 lg:py-3 rounded-lg lg:rounded-xl
+                        disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/20 active:scale-95 transition-all text-xs lg:text-sm"
               >
                 🖨️ Print
               </button>
