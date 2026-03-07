@@ -17,7 +17,6 @@ type MenuItem = {
   price: number;
   unit?: string | null;
   imageUrl?: string | null;
-  description?: string | null; // ✅ ADDED
   category?: {
     id: string;
     name: string;
@@ -91,12 +90,20 @@ export default function CheckoutClient() {
         const data = await res.json();
 
         // ✅ API returns array directly, but we map to ensure pos uses 'sellingPrice'
-        const mapped = (data || []).map((it: any) => ({
-          ...it,
-          // Prioritize sellingPrice as it's the one edited in 'Browse Products'
-          price: typeof it.sellingPrice === 'number' ? it.sellingPrice : (it.price ?? 0),
-          description: it.description || "" // Ensure description is synced
-        }));
+        const mapped = (data || []).map((it: any) => {
+          // Robust price detection
+          const sPrice = Number(it.sellingPrice);
+          const bPrice = Number(it.price);
+
+          const finalPrice = (!isNaN(sPrice) && it.sellingPrice !== null)
+            ? sPrice
+            : (!isNaN(bPrice) ? bPrice : 0);
+
+          return {
+            ...it,
+            price: finalPrice
+          };
+        });
 
         setMenuItems(mapped);
       } catch (err) {
@@ -516,21 +523,16 @@ export default function CheckoutClient() {
                   {/* CONTENT */}
                   <div className="p-3 lg:p-4 flex flex-col flex-1 justify-between">
                     <div>
-                      <p className="text-xs lg:text-sm font-bold text-[var(--kravy-text-primary)] group-hover:text-indigo-500 transition-colors line-clamp-1">
+                      <p className="text-xs lg:text-sm font-bold text-[var(--kravy-text-primary)] group-hover:text-indigo-500 transition-colors line-clamp-2">
                         {m.name}
                       </p>
-                      {m.description && (
-                        <p className="text-[10px] text-[var(--kravy-text-muted)] line-clamp-1 leading-tight mt-0.5 font-medium">
-                          {m.description}
-                        </p>
-                      )}
                     </div>
 
-                    <div className="flex justify-between items-center mt-2 group-hover:scale-105 transition-transform origin-left">
-                      <p className="text-xs lg:text-sm text-emerald-500 font-extrabold">
+                    <div className="flex justify-between items-end mt-3">
+                      <p className="text-sm lg:text-base text-emerald-500 font-extrabold leading-none">
                         ₹{m.price.toFixed(2)}
                       </p>
-                      <p className="text-[9px] uppercase font-black text-[var(--kravy-text-muted)] tracking-widest truncate ml-2">
+                      <p className="text-[10px] uppercase font-black text-[var(--kravy-text-muted)] tracking-widest truncate ml-2 leading-none">
                         {m.unit ? `${m.unit}` : ""}
                       </p>
                     </div>
