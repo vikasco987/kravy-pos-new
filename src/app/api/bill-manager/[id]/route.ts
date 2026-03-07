@@ -88,8 +88,10 @@ export async function PUT(
     const tax = Number(((subtotal * GST_PERCENT) / 100).toFixed(2));
 
     /* ---------- PAYMENT STATUS ---------- */
-    let finalPaymentStatus: "Paid" | "Pending";
-    if (finalPaymentMode === "Cash" || finalPaymentMode === "Card") {
+    let finalPaymentStatus: string;
+    if (body.isHeld === true) {
+      finalPaymentStatus = "HELD";
+    } else if (finalPaymentMode === "Cash" || finalPaymentMode === "Card") {
       finalPaymentStatus = "Paid";
     } else {
       finalPaymentStatus = paymentStatus === "Paid" ? "Paid" : "Pending";
@@ -106,7 +108,7 @@ export async function PUT(
         paymentMode: finalPaymentMode,
         paymentStatus: finalPaymentStatus,
 
-        isHeld: false, // 🔥 RESUME → UNHOLD
+        isHeld: body.isHeld === true, // Respect isHeld from body
         upiTxnRef: finalPaymentMode === "UPI" ? upiTxnRef : null,
 
         customerName: customerName || null,
@@ -152,8 +154,8 @@ export async function DELETE(
     }
 
     await prisma.billManager.update({
-        where: { id },
-        data: {
+      where: { id },
+      data: {
         isDeleted: true,
         deletedAt: new Date(),
         deletedSnapshot: {
