@@ -7,6 +7,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Clock, Trash2, Play, X, Search } from "lucide-react";
 
 /* ================= TYPES ================= */
 
@@ -40,9 +41,31 @@ export default function CheckoutClient() {
   const resumeBillId = searchParams.get("resumeBillId");
   const [activeBillId, setActiveBillId] = useState<string | null>(null);
 
+  /* ================= HELD BILLS STATE ================= */
+  const [heldBills, setHeldBills] = useState<any[]>([]);
+  const [showHeldBills, setShowHeldBills] = useState(false);
+  const [heldBillsLoading, setHeldBillsLoading] = useState(false);
 
+  async function fetchHeldBills() {
+    try {
+      setHeldBillsLoading(true);
+      const res = await fetch("/api/bill-manager", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        // Filter only held bills
+        const onlyHeld = (data.bills || []).filter((b: any) => b.isHeld);
+        setHeldBills(onlyHeld);
+      }
+    } catch (err) {
+      console.error("Fetch held bills error", err);
+    } finally {
+      setHeldBillsLoading(false);
+    }
+  }
 
-  /* ================= BILL META ================= */
+  useEffect(() => {
+    fetchHeldBills();
+  }, []);
 
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState("");
@@ -310,19 +333,24 @@ export default function CheckoutClient() {
       total: finalTotal,
 
       paymentMode,        // Cash | UPI | Card
-      paymentStatus,      // Paid | Pending (backend will finalise)
+      paymentStatus: isHeld ? "HELD" : paymentStatus, // ✅ Handle held status explicitly
       upiTxnRef: paymentMode === "UPI" ? upiTxnRef : null,
 
       isHeld,             // ✅ THIS ENABLES HOLD
-      resumeBillId, // ✅ SEND THIS TO UNHOLD
-
       customerName: customerName || "Walk-in Customer",
       customerPhone: customerPhone || null,
     };
 
     try {
-      const res = await fetch("/api/bill-manager", {
-        method: "POST",
+      // ✅ IF RESUMING, USE PUT TO UPDATE EXISTING
+      const url = resumeBillId
+        ? `/api/bill-manager/${resumeBillId}`
+        : "/api/bill-manager";
+
+      const method = resumeBillId ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -339,6 +367,30 @@ export default function CheckoutClient() {
       console.error("Save bill error", err);
       alert("Something went wrong");
       return null;
+    }
+  }
+
+  /* ================= DELETE HELD BILL ================= */
+  async function deleteHeldBill(id: string) {
+    if (!confirm("Permanently delete this held bill?")) return;
+    try {
+      const res = await fetch(`/api/bill-manager/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        alert("Bill deleted");
+        if (resumeBillId === id) {
+          router.replace("/dashboard/billing/checkout"); // reset if we are currently resuming this one
+          setItems([]);
+          setCustomerName("");
+          setCustomerPhone("");
+        }
+        return true;
+      } else {
+        alert("Failed to delete bill");
+        return false;
+      }
+    } catch (err) {
+      console.error("Delete bill error", err);
+      return false;
     }
   }
 
@@ -370,8 +422,10 @@ export default function CheckoutClient() {
 
 
         {/* ================= LEFT : MENU ITEMS ================= */}
-        <div className="bg-[var(--kravy-surface)] rounded-2xl p-6 overflow-y-auto border border-[var(--kravy-border)] shadow-sm">
-          <h2 className="text-xl font-bold mb-5 text-[var(--kravy-text-primary)]">Menu Catalog</h2>
+        <div className="bg-[var(--kravy-surface)] rounded-2xl p-6 overflow-y-auto border border-[var(--kravy-border)] shadow-sm relative">
+          <div className="flex justify-between items-center mb-5">
+            <h2 className="text-xl font-bold text-[var(--kravy-text-primary)]">Menu Catalog</h2>
+          </div>
 
           {/* CATEGORY TABS */}
           <div className="flex gap-2 mb-3 overflow-x-auto">
@@ -400,13 +454,16 @@ export default function CheckoutClient() {
           </div>
 
           {/* SEARCH */}
-          <input
-            type="text"
-            placeholder="Search items…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] h-11 px-4 w-full rounded-xl mb-6 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
-          />
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)]" size={16} />
+            <input
+              type="text"
+              placeholder="Search items…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] h-11 pl-10 pr-4 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+            />
+          </div>
 
           {menuLoading && (
             <p className="text-sm text-[var(--kravy-text-muted)] animate-pulse">Loading menu items…</p>
@@ -493,10 +550,35 @@ export default function CheckoutClient() {
 
           {/* HEADER */}
           <div className="border-b border-[var(--kravy-border)] p-6 bg-[var(--kravy-bg-2)]/50">
-            <p className="text-lg font-black text-[var(--kravy-text-primary)]">Billing Invoice</p>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-500/10 text-indigo-500 rounded uppercase tracking-wider">{billNumber}</span>
-              <span className="text-[10px] font-bold text-[var(--kravy-text-muted)] truncate">{billDate}</span>
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-lg font-black text-[var(--kravy-text-primary)] leading-tight">Billing Invoice</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-500/10 text-indigo-500 rounded uppercase tracking-wider">{billNumber}</span>
+                  <span className="text-[10px] font-bold text-[var(--kravy-text-muted)] truncate">{billDate}</span>
+                </div>
+              </div>
+
+              {/* HELD BILLS BADGE */}
+              <button
+                onClick={() => {
+                  setShowHeldBills(true);
+                  fetchHeldBills();
+                }}
+                className="relative group p-2.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-xl hover:bg-amber-500/20 transition-all"
+                title="View Held Bills"
+              >
+                <Clock size={20} />
+                {heldBills.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full border-2 border-[var(--kravy-surface)] shadow-sm">
+                    {heldBills.length}
+                  </span>
+                )}
+                {/* Tooltip on hover */}
+                <span className="absolute bottom-full right-0 mb-2 whitespace-nowrap bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none font-bold">
+                  {heldBills.length} Held Orders
+                </span>
+              </button>
             </div>
           </div>
 
@@ -648,6 +730,8 @@ export default function CheckoutClient() {
                   setItems([]);          // clear cart
                   setCustomerName("");
                   setCustomerPhone("");
+                  fetchHeldBills(); // refresh list
+                  if (resumeBillId) router.replace("/dashboard/billing/checkout"); // clear resume ID
                 }}
                 disabled={items.length === 0}
                 className="flex-1 border-2 border-amber-500/50 text-amber-500 font-bold py-3 rounded-xl
@@ -674,6 +758,8 @@ export default function CheckoutClient() {
                   // ✅ NEW BILL META
                   setBillNumber(`SV-${Date.now()}`);
                   setBillDate(new Date().toLocaleString());
+
+                  if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
                 disabled={items.length === 0}
                 className="flex-1 bg-[var(--kravy-surface-hover)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] font-bold py-3 rounded-xl
@@ -857,6 +943,112 @@ export default function CheckoutClient() {
           </div>
         </div>
       </div>
+
+      {/* ================= HELD BILLS DRAWER ================= */}
+      {showHeldBills && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowHeldBills(false)}
+          />
+          <div className="relative w-full max-w-md bg-[var(--kravy-surface)] h-full shadow-2xl flex flex-col border-l border-[var(--kravy-border)] animate-in slide-in-from-right duration-300">
+            <div className="p-6 border-b border-[var(--kravy-border)] flex justify-between items-center bg-[var(--kravy-bg-2)]/50">
+              <div>
+                <h3 className="text-xl font-black text-[var(--kravy-text-primary)]">Held Bills</h3>
+                <p className="text-xs text-[var(--kravy-text-muted)] font-bold uppercase tracking-widest mt-1">
+                  {heldBills.length} Orders Paused
+                </p>
+              </div>
+              <button
+                onClick={() => setShowHeldBills(false)}
+                className="p-2 hover:bg-red-500/10 text-[var(--kravy-text-muted)] hover:text-red-500 rounded-xl transition-all"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {heldBillsLoading ? (
+                <div className="flex flex-col items-center justify-center h-64 gap-3">
+                  <div className="w-8 h-8 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+                  <p className="text-sm font-bold text-[var(--kravy-text-muted)]">Loading your bills...</p>
+                </div>
+              ) : heldBills.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 text-center p-8 opacity-50">
+                  <Clock size={48} className="mb-4 text-indigo-500" />
+                  <p className="font-bold text-[var(--kravy-text-primary)]">No held bills found</p>
+                  <p className="text-xs mt-1">Orders you put on hold will appear here</p>
+                </div>
+              ) : (
+                heldBills.map((bill) => (
+                  <div
+                    key={bill.id}
+                    className={`group p-4 rounded-2xl border transition-all hover:shadow-lg ${resumeBillId === bill.id
+                      ? "bg-indigo-500/5 border-indigo-500 shadow-indigo-500/10"
+                      : "bg-[var(--kravy-bg-2)] border-[var(--kravy-border)] hover:border-indigo-500/50"
+                      }`}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded">#{bill.billNumber}</span>
+                          {resumeBillId === bill.id && (
+                            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Active Now</span>
+                          )}
+                        </div>
+                        <h4 className="font-black text-[var(--kravy-text-primary)] mt-2">
+                          {bill.customerName || "Walk-in Customer"}
+                        </h4>
+                        <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-0.5">
+                          {new Date(bill.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-black text-[var(--kravy-brand)]">₹{bill.total.toFixed(2)}</p>
+                        <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter">
+                          {bill.items.length} Items
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setShowHeldBills(false);
+                          router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`);
+                        }}
+                        disabled={resumeBillId === bill.id}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 disabled:opacity-50 transition-all shadow-lg shadow-indigo-500/20"
+                      >
+                        <Play size={14} fill="currentColor" />
+                        Resume
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const ok = await deleteHeldBill(bill.id);
+                          if (ok) fetchHeldBills();
+                        }}
+                        className="w-12 flex items-center justify-center py-2.5 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all border border-red-500/20"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-6 border-t border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/30">
+              <button
+                onClick={() => setShowHeldBills(false)}
+                className="w-full py-3 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-xl font-bold text-sm text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-bg-2)] transition-all"
+              >
+                Close Drawer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
