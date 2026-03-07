@@ -1102,7 +1102,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Clock, Trash2, Play, X, Search, ChevronDown, User, Printer, Save, PauseCircle } from "lucide-react";
+import {
+  Clock, Trash2, Play, X, Search, ChevronDown, User, Printer,
+  Save, PauseCircle, RefreshCw
+} from "lucide-react";
+import { toast } from "sonner";
 
 /* ================= TYPES ================= */
 
@@ -1392,9 +1396,32 @@ export default function CheckoutClient() {
                 <h2 className="text-base md:text-lg font-black text-[var(--kravy-text-primary)] tracking-tight">
                   Menu Catalog
                 </h2>
-                <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5 font-medium">
-                  {filteredMenuItems.length} items available
-                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-xs text-[var(--kravy-text-muted)] font-medium">
+                    {filteredMenuItems.length} items available
+                  </p>
+                  <button
+                    onClick={() => {
+                      // Hard refetch with cache bust
+                      fetch(`/api/menu/items?t=${Date.now()}`)
+                        .then(r => r.json())
+                        .then(data => {
+                          const mapped = (data || []).map((it: any) => {
+                            const sPrice = Number(it.sellingPrice);
+                            const bPrice = Number(it.price);
+                            const finalPrice = (!isNaN(sPrice) && it.sellingPrice !== null) ? sPrice : (!isNaN(bPrice) ? bPrice : 0);
+                            return { ...it, price: finalPrice };
+                          });
+                          setMenuItems(mapped);
+                          toast.success("Menu Synchronized");
+                        });
+                    }}
+                    className="p-1.5 rounded-lg border border-[var(--kravy-border)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)] transition-all bg-[var(--kravy-bg)]"
+                    title="Sync Menu"
+                  >
+                    <RefreshCw size={12} className={menuLoading ? "animate-spin" : ""} />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1421,8 +1448,8 @@ export default function CheckoutClient() {
               <button
                 onClick={() => setActiveCategory("All")}
                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition-all whitespace-nowrap flex-shrink-0 ${activeCategory === "All"
-                    ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md shadow-indigo-500/25"
-                    : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)]"
+                  ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md shadow-indigo-500/25"
+                  : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)]"
                   }`}
               >
                 All
@@ -1432,8 +1459,8 @@ export default function CheckoutClient() {
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
                   className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-wider border transition-all whitespace-nowrap flex-shrink-0 ${activeCategory === cat
-                      ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md shadow-indigo-500/25"
-                      : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)]"
+                    ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md shadow-indigo-500/25"
+                    : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)]"
                     }`}
                 >
                   {cat}
@@ -1465,8 +1492,8 @@ export default function CheckoutClient() {
           {!menuLoading && filteredMenuItems.length > 0 && (
             /* ✅ FIX: min-h-0 + overflow-y-auto on a proper scroll container
                grid items always render at their natural size — no squeezing */
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 md:px-5 py-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 md:px-5 py-4 scrollbar-hide">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
                 {filteredMenuItems.map((m) => {
                   const inCart = items.find((i) => i.id === m.id);
                   return (
@@ -1669,7 +1696,7 @@ export default function CheckoutClient() {
                 >
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-[var(--kravy-text-primary)] truncate text-sm">{i.name}</p>
-                    <p className="text-xs font-bold text-[var(--kravy-brand)]/70 mt-0.5">
+                    <p className="text-xs font-black text-emerald-600 mt-1">
                       {i.qty} × ₹{i.rate.toFixed(2)}
                     </p>
                   </div>
@@ -1743,8 +1770,8 @@ export default function CheckoutClient() {
                     key={mode}
                     onClick={() => setPaymentMode(mode)}
                     className={`py-2.5 rounded-xl border font-black text-xs transition-all ${paymentMode === mode
-                        ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md shadow-indigo-500/25"
-                        : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)]"
+                      ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md shadow-indigo-500/25"
+                      : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)]"
                       }`}
                   >
                     {mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : "💳"} {mode}
@@ -1776,10 +1803,10 @@ export default function CheckoutClient() {
                       key={s}
                       onClick={() => setPaymentStatus(s)}
                       className={`py-2 rounded-xl border font-black text-xs transition-all ${paymentStatus === s
-                          ? s === "Paid"
-                            ? "bg-emerald-500 border-emerald-500 text-white"
-                            : "bg-amber-500 border-amber-500 text-white"
-                          : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)]"
+                        ? s === "Paid"
+                          ? "bg-emerald-500 border-emerald-500 text-white"
+                          : "bg-amber-500 border-amber-500 text-white"
+                        : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)]"
                         }`}
                     >
                       {s === "Pending" ? "🕒 Pending" : "✅ Received"}
@@ -1890,10 +1917,10 @@ export default function CheckoutClient() {
           )}
           <div className="my-1 border-t border-dashed" />
           <div className="flex justify-between font-semibold text-[9px]">
-            <span className="w-[26mm]">Desc</span>
+            <span className="w-[26mm]">Item Name</span>
             <span className="w-[8mm] text-right">Qty</span>
             <span className="w-[10mm] text-right">Rate</span>
-            <span className="w-[10mm] text-right">Amt</span>
+            <span className="w-[10mm] text-right">Total</span>
           </div>
           <div className="border-t border-dashed my-1" />
           {items.map((i) => (
@@ -1973,8 +2000,8 @@ export default function CheckoutClient() {
                   <div
                     key={bill.id}
                     className={`rounded-2xl border overflow-hidden transition-all ${resumeBillId === bill.id
-                        ? "bg-[var(--kravy-brand)]/5 border-[var(--kravy-brand)] shadow-md shadow-indigo-500/10"
-                        : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] hover:border-[var(--kravy-brand)]/50"
+                      ? "bg-[var(--kravy-brand)]/5 border-[var(--kravy-brand)] shadow-md shadow-indigo-500/10"
+                      : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] hover:border-[var(--kravy-brand)]/50"
                       }`}
                   >
                     {/* Card Top */}

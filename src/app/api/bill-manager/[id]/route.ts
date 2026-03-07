@@ -131,7 +131,7 @@ export async function PUT(
 ====================================================== */
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -139,13 +139,13 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await context.params;
+    const { id } = await params;
 
+    // Find the bill first to verify ownership and check if it's held
     const bill = await prisma.billManager.findFirst({
       where: {
         id,
         clerkUserId: userId,
-        isDeleted: false,
       },
     });
 
@@ -153,30 +153,17 @@ export async function DELETE(
       return NextResponse.json({ error: "Bill not found" }, { status: 404 });
     }
 
-    await prisma.billManager.update({
+    // Perform permanent delete as requested by the user
+    // This also fixes the TypeError which was likely linked to the soft-delete snapshot logic
+    await prisma.billManager.delete({
       where: { id },
-      data: {
-        isDeleted: true,
-        deletedAt: new Date(),
-        deletedSnapshot: {
-          billNumber: bill.billNumber,
-          total: bill.total,
-          paymentMode: bill.paymentMode,
-          paymentStatus: bill.paymentStatus,
-          isHeld: bill.isHeld,
-          customer: {
-            name: bill.customerName,
-            phone: bill.customerPhone,
-          },
-        },
-      },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, deletedPermanently: true });
   } catch (err) {
     console.error("DELETE BILL ERROR:", err);
     return NextResponse.json(
-      { error: "Failed to delete bill" },
+      { error: "Failed to delete bill permanently" },
       { status: 500 }
     );
   }
