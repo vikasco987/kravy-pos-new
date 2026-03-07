@@ -808,11 +808,11 @@ export default function ViewMenuPage() {
       {/* sticky search/filter bar below header
           - top value should match header height (header is 64px -> top-16)
           - horizontal scroll: overflow-x-auto with flex-nowrap so controls can scroll left-right */}
-      <div className="filter-sticky-bar sticky top-16 z-40 bg-[var(--kravy-navbar-bg)] backdrop-blur-md border-b border-[var(--kravy-border)] transition-colors">
+      <div className="filter-sticky-bar sticky top-[72px] z-40 bg-[var(--kravy-navbar-bg)] backdrop-blur-md border-b border-[var(--kravy-border)] transition-colors">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
             {/* horizontally scrollable container */}
-            <div className="flex gap-3 items-center overflow-x-auto no-scrollbar py-1 w-full min-w-0">
+            <div className="flex gap-2 items-center overflow-x-auto no-scrollbar py-1 w-full min-w-0 mask-fade-right">
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

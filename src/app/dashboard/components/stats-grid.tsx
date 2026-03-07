@@ -85,7 +85,7 @@ export default function StatsGrid({ data }: Props) {
       animate="show"
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
         gap: "18px",
       }}
     >

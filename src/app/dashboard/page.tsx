@@ -281,12 +281,7 @@ export default async function DashboardPage({
             </p>
 
             {/* Mini Stats Row */}
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "12px",
-              marginBottom: "20px"
-            }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
               {[
                 {
                   label: "Avg. Order",

@@ -181,8 +181,8 @@ export default function Sidebar() {
 
   return (
     <aside style={{
-      width: collapsed ? "72px" : "280px",
-      minWidth: collapsed ? "72px" : "280px",
+      width: collapsed ? "72px" : "260px",
+      minWidth: collapsed ? "72px" : "260px",
       height: "100vh",
       background: isDark
         ? "linear-gradient(145deg, #0F0F23 0%, #1A1A2E 50%, #16213E 100%)"
@@ -193,10 +193,6 @@ export default function Sidebar() {
       display: "flex",
       flexDirection: "column",
       transition: "all 0.4s cubic-bezier(.4,0,.2,1)",
-      position: "fixed",
-      top: 0,
-      left: 0,
-      zIndex: 50,
       boxShadow: isDark
         ? "4px 0 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.08)"
         : "4px 0 24px rgba(0,0,0,0.04), 0 0 0 1px rgba(139,92,246,0.05)",
