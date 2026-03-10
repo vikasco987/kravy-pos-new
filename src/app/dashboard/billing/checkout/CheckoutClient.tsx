@@ -1104,7 +1104,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock, Trash2, Play, X, Search, ChevronDown, User, Printer,
-  Save, PauseCircle, RefreshCw
+  Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut
 } from "lucide-react";
 import { toast } from "sonner";
 import { kravy } from "@/lib/sounds";
@@ -1139,10 +1139,12 @@ export default function CheckoutClient() {
   const resumeBillId = searchParams.get("resumeBillId");
   const [activeBillId, setActiveBillId] = useState<string | null>(null);
 
-  /* ================= HELD BILLS STATE ================= */
+  /* ================= HELD BILLS & PREVIEW STATE ================= */
   const [heldBills, setHeldBills] = useState<any[]>([]);
   const [showHeldBills, setShowHeldBills] = useState(false);
   const [heldBillsLoading, setHeldBillsLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewZoom, setPreviewZoom] = useState(1);
 
   async function fetchHeldBills() {
     try {
@@ -1827,13 +1829,13 @@ export default function CheckoutClient() {
             )}
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {/* Hold */}
               <button
                 onClick={async () => {
                   const bill = await saveBill(true);
                   if (!bill) return;
-                  kravy.ping(); // Hold confirmation sound
+                  kravy.ping(); 
                   setItems([]); setCustomerName(""); setCustomerPhone("");
                   fetchHeldBills();
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
@@ -1852,7 +1854,7 @@ export default function CheckoutClient() {
                 onClick={async () => {
                   const bill = await saveBill();
                   if (!bill) return;
-                  kravy.success(); // Save success sound
+                  kravy.success(); 
                   setItems([]); setCustomerName(""); setCustomerPhone("");
                   setUpiTxnRef(""); setPaymentMode("Cash"); setPaymentStatus("Paid");
                   setBillNumber(`SV-${Date.now()}`);
@@ -1867,6 +1869,23 @@ export default function CheckoutClient() {
               >
                 <Save size={14} /> Save
               </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {/* Preview */}
+              <button
+                onClick={() => {
+                  kravy.open();
+                  setPreviewZoom(1);
+                  setShowPreview(true);
+                }}
+                disabled={items.length === 0}
+                className="flex items-center justify-center gap-1.5 py-3 rounded-xl border-2
+                  border-indigo-500/30 text-indigo-500 font-black text-xs bg-indigo-500/5
+                  hover:bg-indigo-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                <Eye size={14} /> Preview Bill
+              </button>
 
               {/* Print */}
               <button
@@ -1874,7 +1893,7 @@ export default function CheckoutClient() {
                   if (!business) { alert("Business profile not loaded yet"); return; }
                   const bill = await saveBill();
                   if (!bill) return;
-                  kravy.payment(); // 💰 Cash register sound on print
+                  kravy.payment(); 
                   printReceipt();
                 }}
                 disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
@@ -1884,7 +1903,7 @@ export default function CheckoutClient() {
                   hover:-translate-y-0.5 active:scale-95
                   disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 transition-all"
               >
-                <Printer size={14} /> Print
+                <Printer size={14} /> Print Bill
               </button>
             </div>
 
@@ -2228,6 +2247,132 @@ export default function CheckoutClient() {
         </div>
       )}
 
+      {/* ════════════════════════════════════════════
+          BILL PREVIEW MODAL
+      ════════════════════════════════════════════ */}
+      {showPreview && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPreview(false)} />
+          
+          <div className="relative bg-[var(--kravy-bg)] w-full max-w-[500px] h-[90vh] flex flex-col rounded-3xl shadow-2xl border border-[var(--kravy-border)] overflow-hidden animate-in zoom-in-95 duration-200">
+            
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-[var(--kravy-border)] bg-[var(--kravy-surface)] flex items-center justify-between shrink-0">
+              <div>
+                <h3 className="text-sm font-black text-[var(--kravy-text-primary)]">Bill Preview</h3>
+                <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-wider mt-0.5">Check before printing</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setPreviewZoom(z => Math.max(0.5, z - 0.1))} className="w-8 h-8 rounded-lg bg-[var(--kravy-bg)] border border-[var(--kravy-border)] flex items-center justify-center text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)] transition-colors"><ZoomOut size={14} /></button>
+                <span className="text-xs font-bold text-[var(--kravy-text-secondary)] w-9 text-center">{(previewZoom * 100).toFixed(0)}%</span>
+                <button onClick={() => setPreviewZoom(z => Math.min(2, z + 0.1))} className="w-8 h-8 rounded-lg bg-[var(--kravy-bg)] border border-[var(--kravy-border)] flex items-center justify-center text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)] transition-colors"><ZoomIn size={14} /></button>
+                <div className="w-px h-5 bg-[var(--kravy-border)] mx-1" />
+                <button onClick={() => { kravy.close(); setShowPreview(false); }} className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all">
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Preview Area (Rendered like paper) */}
+            <div className="flex-1 overflow-auto bg-[#E5E5E5] dark:bg-[#1A1A1A] p-6 flex flex-col items-center justify-start">
+              <div 
+                className="bg-white text-black p-4 shadow-xl transition-transform origin-top mx-auto"
+                style={{ 
+                  width: '58mm', 
+                  minHeight: '100px',
+                  transform: `scale(${previewZoom * 1.5})`, // 1.5x base scale so it's readable on screen
+                  marginBottom: `${previewZoom * 100}px` // extra space for transform
+                }}
+              >
+                {/* Clone of receiptRef content but visible */}
+                <div className="font-mono text-[10px] leading-tight">
+                  {business?.logoUrl && (
+                    <div className="flex justify-center mb-1">
+                      <img src={business?.logoUrl} alt="Logo" className="max-h-[28mm] object-contain" />
+                    </div>
+                  )}
+                  <div className="text-center font-bold text-[12px]">{business?.businessName}</div>
+                  {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
+                    <div className="text-center text-[9px]">
+                      {business?.businessAddress}
+                      {business?.district && `, ${business.district}`}
+                      {business?.state && `, ${business.state}`}
+                      {business?.pinCode && ` - ${business.pinCode}`}
+                    </div>
+                  )}
+                  {business?.gstNumber && <div className="text-center text-[9px]">GSTIN: {business.gstNumber}</div>}
+                  <div className="text-center text-[9px] mt-1">
+                    <div>Bill No: {billNumber}</div>
+                    <div>Date: {billDate}</div>
+                  </div>
+                  <div className="my-1 border-t border-dashed border-gray-400" />
+                  {(customerName || customerPhone) && (
+                    <div className="text-[9px]">
+                      <div>Customer: {customerName || "Walk-in Customer"}</div>
+                      {customerPhone && <div>Phone: {customerPhone}</div>}
+                    </div>
+                  )}
+                  <div className="my-1 border-t border-dashed border-gray-400" />
+                  <div className="flex justify-between font-semibold text-[9px]">
+                    <span className="w-[26mm]">Item Name</span>
+                    <span className="w-[8mm] text-right">Qty</span>
+                    <span className="w-[10mm] text-right">Rate</span>
+                    <span className="w-[10mm] text-right">Total</span>
+                  </div>
+                  <div className="border-t border-dashed border-gray-400 my-1" />
+                  {items.map((i) => (
+                    <div key={i.id} className="flex justify-between text-[9px]">
+                      <span className="w-[26mm] truncate">{i.name}</span>
+                      <span className="w-[8mm] text-right">{i.qty}</span>
+                      <span className="w-[10mm] text-right">{i.rate.toFixed(2)}</span>
+                      <span className="w-[10mm] text-right">{(i.qty * i.rate).toFixed(2)}</span>
+                    </div>
+                  ))}
+                  <div className="my-1 border-t border-dashed border-gray-400" />
+                  <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
+                  {taxActive && <div className="flex justify-between"><span>GST ({currentTaxRate}%)</span><span>₹{gstAmount.toFixed(2)}</span></div>}
+                  <div className="border-t border-dashed border-gray-400 my-1" />
+                  <div className="flex justify-between font-bold text-[11px]"><span>GRAND TOTAL</span><span>₹{finalTotal.toFixed(2)}</span></div>
+                  <div className="border-t border-dashed border-gray-400 my-1" />
+                  <div className="text-center text-[9px]">Payment: {paymentMode}</div>
+                  {paymentMode === "UPI" && (
+                    <>
+                      <div className="flex justify-center my-2"><img src={qrUrl} alt="UPI QR" className="w-[30mm]" /></div>
+                      <div className="text-center text-[9px]">Txn Ref: {upiTxnRef || "Pending"}</div>
+                    </>
+                  )}
+                  {business?.businessTagLine && <div className="text-center text-[9px] mt-1">{business.businessTagLine}</div>}
+                  <div className="text-center font-semibold mt-1">Thank you 🙏</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Action */}
+            <div className="px-5 py-4 border-t border-[var(--kravy-border)] bg-[var(--kravy-surface)] shrink-0 flex gap-3">
+              <button
+                onClick={() => { kravy.close(); setShowPreview(false); }}
+                className="flex-1 py-3.5 rounded-xl border border-[var(--kravy-border)] font-bold text-sm text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-bg)] transition-all"
+              >
+                Close
+              </button>
+              <button
+                onClick={async () => {
+                  if (!business) { alert("Business profile not loaded yet"); return; }
+                  const bill = await saveBill();
+                  if (!bill) return;
+                  kravy.payment(); 
+                  printReceipt();
+                  setShowPreview(false);
+                }}
+                disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
+                className="flex-[2] py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Printer size={16} /> Print Direct
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
