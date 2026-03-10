@@ -361,6 +361,17 @@ export async function POST(req: Request) {
         clerkId,
         category: { connect: { id: String(body.categoryId) } },
         user: { connect: { id: dbUser.id } },
+        // Enhanced Fields
+        isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : true,
+        isBestseller: Boolean(body.isBestseller),
+        isRecommended: Boolean(body.isRecommended),
+        isNew: Boolean(body.isNew),
+        spiciness: body.spiciness || null,
+        rating: body.rating != null ? Number(body.rating) : 4.5,
+        hiName: body.hiName || null,
+        mrName: body.mrName || null,
+        taName: body.taName || null,
+        upsellText: body.upsellText || null,
       },
     });
 
@@ -418,6 +429,16 @@ export async function PUT(req: Request) {
         description: description ?? undefined,
         categoryId:
           categoryId === "uncategorised" ? null : categoryId ?? undefined,
+        isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : undefined,
+        isBestseller: body.isBestseller !== undefined ? Boolean(body.isBestseller) : undefined,
+        isRecommended: body.isRecommended !== undefined ? Boolean(body.isRecommended) : undefined,
+        isNew: body.isNew !== undefined ? Boolean(body.isNew) : undefined,
+        spiciness: body.spiciness !== undefined ? body.spiciness : undefined,
+        rating: body.rating !== undefined ? Number(body.rating) : undefined,
+        hiName: body.hiName !== undefined ? body.hiName : undefined,
+        mrName: body.mrName !== undefined ? body.mrName : undefined,
+        taName: body.taName !== undefined ? body.taName : undefined,
+        upsellText: body.upsellText !== undefined ? body.upsellText : undefined,
       },
     });
 

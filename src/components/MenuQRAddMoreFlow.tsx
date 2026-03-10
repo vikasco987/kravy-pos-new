@@ -21,26 +21,29 @@ type CaseData = {
   items: Array<{ name: string; qty: number; price: number }>;
   createdAt: string;
   currentTotal: number;
+  customerName?: string;
+  customerPhone?: string;
 };
 
 interface MenuQRAddMoreFlowProps {
   onClose?: () => void;
   caseType?: "merge" | "separate" | "round2";
   orderData?: CaseData;
+  clerkUserId?: string;
 }
 
-const MENU_ITEMS = [
-  { id: "dal-makhani", name: "Dal Makhani", desc: "Black lentils, butter & cream", price: 260, veg: true },
-  { id: "mango-lassi", name: "Mango Lassi", desc: "Fresh mango yogurt drink", price: 120, veg: true },
-  { id: "paneer-tikka", name: "Paneer Tikka", desc: "Grilled cottage cheese", price: 280, veg: true },
-  { id: "chicken-65", name: "Chicken 65", desc: "Spicy fried chicken", price: 320, veg: false },
-  { id: "chicken-biryani", name: "Chicken Biryani", desc: "Hyderabadi dum biryani", price: 360, veg: false },
-  { id: "gulab-jamun", name: "Gulab Jamun", desc: "2 pcs in sugar syrup", price: 120, veg: true },
-  { id: "kulfi-falooda", name: "Kulfi Falooda", desc: "Indian ice cream with falooda", price: 160, veg: true },
-  { id: "masala-chai", name: "Masala Chai", desc: "Spiced tea with ginger", price: 60, veg: true },
-];
+interface MenuItem {
+  id: string;
+  name: string;
+  description?: string;
+  price?: number;
+  sellingPrice?: number;
+  isVeg?: boolean;
+}
 
-export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderData }: MenuQRAddMoreFlowProps) {
+// removed hardcoded MENU_ITEMS
+
+export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderData, clerkUserId }: MenuQRAddMoreFlowProps) {
   const [currentFlow, setCurrentFlow] = useState<OrderCase>("case1");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartTotal, setCartTotal] = useState(0);
@@ -49,11 +52,17 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
   const [confirmScreen, setConfirmScreen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoadingMenu, setIsLoadingMenu] = useState(false);
 
   // Case-specific data
   const [mergedItems, setMergedItems] = useState<string[]>([]);
   const [newOrderItems, setNewOrderItems] = useState<string[]>([]);
   const [round2Items, setRound2Items] = useState<string[]>([]);
+
+  // Combined session data
+  const [sessionData, setSessionData] = useState<any>(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
 
   // Default mock data (replace with props data in production)
   const mockOrderData: CaseData = orderData || {
@@ -68,7 +77,64 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
     currentTotal: 540,
   };
 
-  const handleAddItem = useCallback((item: (typeof MENU_ITEMS)[0]) => {
+  const fetchSessionData = useCallback(async () => {
+    const orderId = mockOrderData.orderId.replace("#", "");
+    setIsLoadingSession(true);
+    try {
+      const res = await fetch(`/api/public/orders/${orderId}/combined-bill`);
+      if (res.ok) {
+        const data = await res.json();
+        setSessionData(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch session data:", err);
+    } finally {
+      setIsLoadingSession(false);
+    }
+  }, [mockOrderData.orderId]);
+
+  // Fetch full menu on mount if clerkUserId is available
+  React.useEffect(() => {
+    if (clerkUserId) {
+      setIsLoadingMenu(true);
+      fetch(`/api/public/menu?clerkId=${clerkUserId}`)
+        .then(res => res.json())
+        .then(data => {
+          setMenuItems(data);
+        })
+        .catch(err => {
+          console.error("Failed to fetch menu:", err);
+          toast.error("Failed to load menu");
+        })
+        .finally(() => setIsLoadingMenu(false));
+    }
+  }, [clerkUserId]);
+
+  // Fetch session data when switching to kitchen or bill
+  React.useEffect(() => {
+    if (currentFlow === "kitchen" || currentFlow === "bill") {
+      fetchSessionData();
+    }
+  }, [currentFlow, fetchSessionData]);
+
+  // Set flow based on caseType prop or orderData status
+  React.useEffect(() => {
+    if (caseType === "separate") setCurrentFlow("case2");
+    else if (caseType === "round2") setCurrentFlow("case3");
+    else if (orderData?.status) {
+      const s = orderData.status.toUpperCase();
+      if (["PENDING", "ACCEPTING", "RECEIVED"].includes(s)) setCurrentFlow("case1");
+      else if (["ACCEPTED", "PREPARING", "READY"].includes(s)) setCurrentFlow("case2");
+      else if (["SERVED", "COMPLETED"].includes(s)) setCurrentFlow("case3");
+    }
+  }, [caseType, orderData]);
+
+  const [showCartItems, setShowCartItems] = useState(false);
+
+
+
+
+  const handleAddItem = useCallback((item: { id: string; name: string; price: number; veg: boolean; desc: string }) => {
     const existingItem = cartItems.find((ci) => ci.name === item.name);
 
     if (existingItem) {
@@ -84,9 +150,17 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
   }, [cartItems]);
 
   const handleRemoveItem = useCallback((itemName: string) => {
-    const updated = cartItems.filter((ci) => ci.name !== itemName);
-    setCartItems(updated);
-    const newTotal = updated.reduce((sum, ci) => sum + ci.price * ci.quantity, 0);
+    let newItems = [...cartItems];
+    const idx = newItems.findIndex(i => i.name === itemName);
+    if (idx > -1) {
+      if (newItems[idx].quantity > 1) {
+        newItems[idx] = { ...newItems[idx], quantity: newItems[idx].quantity - 1 };
+      } else {
+        newItems.splice(idx, 1);
+      }
+    }
+    setCartItems(newItems);
+    const newTotal = newItems.reduce((sum, ci) => sum + ci.price * ci.quantity, 0);
     setCartTotal(newTotal);
   }, [cartItems]);
 
@@ -103,17 +177,22 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
       if (currentFlow === "case1") {
         // Case 1: Merge items to existing order
         const orderId = mockOrderData.orderId.replace("#", "");
-        
-        const response = await fetch(`/api/orders/${orderId}/merge-items`, {
-          method: "PUT",
+
+        const response = await fetch(`/api/public/orders`, {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            clerkUserId: clerkUserId,
             items: cartItems.map(item => ({
               name: item.name,
               price: item.price,
               quantity: item.quantity,
+              addedAt: new Date().toISOString(),
+              addedInCase: "merge"
             })),
+            total: cartTotal,
             caseType: "merge",
+            parentOrderId: orderId,
           }),
         });
 
@@ -127,20 +206,50 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
         setConfirmScreen(true);
         setShowCart(false);
         toast.success(`✅ ${cartItems.length} item(s) merged to order!`);
-        
+
         console.log("Merge result:", result);
-      } else if (currentFlow === "case2") {
-        // Case 2: Create separate order (will implement next)
-        setNewOrderItems(cartItems.map((ci) => ci.name));
+      } else if (currentFlow === "case2" || currentFlow === "case3") {
+        // Case 2 & 3: Create separate / round 2 order
+        const orderId = mockOrderData.orderId.replace("#", "");
+
+        const response = await fetch(`/api/public/orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clerkUserId: clerkUserId,
+            tableId: orderData?.tableId,
+            items: cartItems.map(item => ({
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              addedAt: new Date().toISOString(),
+              addedInCase: currentFlow === "case2" ? "separate" : "round2",
+            })),
+            total: cartTotal,
+            customerName: orderData?.customerName || "Customer",
+            customerPhone: orderData?.customerPhone,
+            caseType: currentFlow === "case2" ? "separate" : "round2",
+            parentOrderId: orderId,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to place order");
+        }
+
+        const result = await response.json();
+
+        if (currentFlow === "case2") {
+          setNewOrderItems(cartItems.map((ci) => ci.name));
+        } else {
+          setRound2Items(cartItems.map((ci) => ci.name));
+        }
+
         setConfirmScreen(true);
         setShowCart(false);
-        toast.success("📋 New order placed!");
-      } else if (currentFlow === "case3") {
-        // Case 3: Round 2 (will implement next)
-        setRound2Items(cartItems.map((ci) => ci.name));
-        setConfirmScreen(true);
-        setShowCart(false);
-        toast.success("🎉 Round 2 order placed!");
+        toast.success(currentFlow === "case2" ? "📋 New separate order placed!" : "🎉 Round 2 order placed!");
+        console.log("New order result:", result);
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Failed to submit order";
@@ -188,73 +297,12 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
 
   return (
     <div className="qr-addmore-flow">
-      {/* MASTER NAV */}
-      <div className="master-nav">
-        <div className="mn-title">MenuQR — Add More Items Flow</div>
-        <div className="mn-tabs">
-          <button
-            className={`mn-tab ${currentFlow === "case1" ? "active" : ""}`}
-            onClick={() => handleFlowChange("case1")}
-          >
-            Case 1 — Edit Order
-            <span className="case-badge green">Merge</span>
-          </button>
-          <button
-            className={`mn-tab ${currentFlow === "case2" ? "active" : ""}`}
-            onClick={() => handleFlowChange("case2")}
-          >
-            Case 2 — New Order
-            <span className="case-badge orange">Separate</span>
-          </button>
-          <button
-            className={`mn-tab ${currentFlow === "case3" ? "active" : ""}`}
-            onClick={() => handleFlowChange("case3")}
-          >
-            Case 3 — Round 2
-            <span className="case-badge blue">Served</span>
-          </button>
-          <button
-            className={`mn-tab ${currentFlow === "kitchen" ? "active" : ""}`}
-            onClick={() => handleFlowChange("kitchen")}
-          >
-            🍳 Kitchen View
-          </button>
-          <button
-            className={`mn-tab ${currentFlow === "bill" ? "active" : ""}`}
-            onClick={() => handleFlowChange("bill")}
-          >
-            🧾 Combined Bill
-          </button>
-        </div>
-      </div>
+
 
       {/* CASE 1: MERGE */}
       {currentFlow === "case1" && (
         <div className="flow-screen case-1">
-          <div className="case-header">
-            <div className="ch-tag green">✅ Case 1 — Kitchen ne abhi tak accept nahi kiya</div>
-            <div className="ch-title">Order Edit Karo — Merge Ho Jaayega</div>
-            <div className="ch-desc">
-              Customer ne order diya lekin kitchen ne accept nahi kiya abhi. Is case mein naye items seedha pehle order mein add ho jaate hain.
-            </div>
-          </div>
 
-          <div className="flow-steps">
-            <div className="fs-step done">
-              <div className="fs-dot done">✓</div>
-              <div className="fs-lbl">Order Placed</div>
-            </div>
-            <div className="fs-line done"></div>
-            <div className="fs-step active">
-              <div className="fs-dot active">➕</div>
-              <div className="fs-lbl">Add Items</div>
-            </div>
-            <div className="fs-line"></div>
-            <div className="fs-step">
-              <div className="fs-dot pending">🔀</div>
-              <div className="fs-lbl">Merged</div>
-            </div>
-          </div>
 
           <div className="order-status-card">
             <div className="osc-top">
@@ -282,31 +330,40 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
             <button className="add-more-btn green" onClick={() => setShowCart(true)}>
               ✏️ Edit Order — Add More Items
             </button>
-            <div className="status-hint green">✓ Kitchen ne abhi accept nahi kiya — merge ho jaayega!</div>
+
           </div>
 
           {/* MENU ITEMS */}
           {showCart && !confirmScreen && (
             <div className="menu-section">
               <div className="menu-mini-header">
-                <div className="mmh-badge merge">🔀 Merge Mode — Same Order</div>
                 <div className="mmh-title">Aur Items Add Karo</div>
-                <div className="mmh-sub">Yeh items pehle order {mockOrderData.orderId} mein add honge</div>
+                <div className="mmh-sub">Search for more delicious food</div>
               </div>
 
-              {MENU_ITEMS.map((item) => (
-                <div key={item.id} className="mitem-compact">
-                  <div className={`mic-dot ${item.veg ? "v" : "nv"}`}></div>
-                  <div className="mic-info">
-                    <div className="mic-name">{item.name}</div>
-                    <div className="mic-desc">{item.desc}</div>
+              {isLoadingMenu ? (
+                <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>Loading menu...</div>
+              ) : (
+                menuItems.map((item) => (
+                  <div key={item.id} className="mitem-compact">
+                    <div className={`mic-dot ${item.isVeg ? "v" : "nv"}`}></div>
+                    <div className="mic-info">
+                      <div className="mic-name">{item.name}</div>
+                      <div className="mic-desc">{item.description}</div>
+                    </div>
+                    <span className="mic-price">₹{item.sellingPrice || item.price}</span>
+                    <button className="add-btn-sm" onClick={() => handleAddItem({
+                      id: item.id,
+                      name: item.name,
+                      price: item.sellingPrice || item.price || 0,
+                      veg: item.isVeg || false,
+                      desc: item.description || ""
+                    })}>
+                      ADD
+                    </button>
                   </div>
-                  <span className="mic-price">₹{item.price}</span>
-                  <button className="add-btn-sm" onClick={() => handleAddItem(item)}>
-                    ADD
-                  </button>
-                </div>
-              ))}
+                ))
+              )}
               <div style={{ height: "100px" }} />
             </div>
           )}
@@ -330,18 +387,8 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
                 <>
                   <span className="cs-icon">🔀</span>
                   <div className="cs-title">Order Updated!</div>
-                  <div className="cs-sub">Naye items pehle order mein merge ho gaye. Kitchen ko updated order mil gaya!</div>
-                  <div className="cs-detail-box">
-                    <div className="cdb-row">
-                      <span>Added Items</span>
-                      <span style={{ color: "var(--green)" }}>{mergedItems.join(", ")}</span>
-                    </div>
-                    <div className="cdb-row">
-                      <span>Total</span>
-                      <span>₹{mockOrderData.currentTotal + cartTotal}</span>
-                    </div>
-                  </div>
-                  <button className="cs-btn primary" onClick={() => handleFlowChange("case1")}>
+                  <div className="cs-sub">Your items have been added. Kitchen has received the updated order.</div>
+                  <button className="cs-btn primary" onClick={() => (onClose ? onClose() : handleFlowChange("case1"))}>
                     ← Back to Tracking
                   </button>
                 </>
@@ -354,13 +401,7 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
       {/* CASE 2: SEPARATE ORDER */}
       {currentFlow === "case2" && (
         <div className="flow-screen case-2">
-          <div className="case-header">
-            <div className="ch-tag orange">⚠️ Case 2 — Kitchen mein ban raha hai</div>
-            <div className="ch-title">Naya Alag Order Banega</div>
-            <div className="ch-desc">
-              Pehla order already kitchen mein ban raha hai. Naye items ek naaye order mein jaayenge — alag se aayenge.
-            </div>
-          </div>
+
 
           <div className="order-status-card">
             <div className="osc-top">
@@ -388,7 +429,7 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
             <button className="add-more-btn orange" onClick={() => setShowWarning(true)}>
               ➕ Kuch Aur Order Karo
             </button>
-            <div className="status-hint orange">⚠️ Naya alag order banega — separately aayega</div>
+
           </div>
 
           {showWarning && (
@@ -423,19 +464,29 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
                 <div className="mmh-sub">Yeh items alag se aayenge · Bill mein merge hoga</div>
               </div>
 
-              {MENU_ITEMS.map((item) => (
-                <div key={item.id} className="mitem-compact">
-                  <div className={`mic-dot ${item.veg ? "v" : "nv"}`}></div>
-                  <div className="mic-info">
-                    <div className="mic-name">{item.name}</div>
-                    <div className="mic-desc">{item.desc}</div>
+              {isLoadingMenu ? (
+                <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>Loading menu...</div>
+              ) : (
+                menuItems.map((item) => (
+                  <div key={item.id} className="mitem-compact">
+                    <div className={`mic-dot ${item.isVeg ? "v" : "nv"}`}></div>
+                    <div className="mic-info">
+                      <div className="mic-name">{item.name}</div>
+                      <div className="mic-desc">{item.description}</div>
+                    </div>
+                    <span className="mic-price">₹{item.sellingPrice || item.price}</span>
+                    <button className="add-btn-sm" onClick={() => handleAddItem({
+                      id: item.id,
+                      name: item.name,
+                      price: item.sellingPrice || item.price || 0,
+                      veg: item.isVeg || false,
+                      desc: item.description || ""
+                    })}>
+                      ADD
+                    </button>
                   </div>
-                  <span className="mic-price">₹{item.price}</span>
-                  <button className="add-btn-sm" onClick={() => handleAddItem(item)}>
-                    ADD
-                  </button>
-                </div>
-              ))}
+                ))
+              )}
               <div style={{ height: "100px" }} />
             </div>
           )}
@@ -443,23 +494,9 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
           {confirmScreen && (
             <div className="confirm-screen">
               <span className="cs-icon">📋</span>
-              <div className="cs-title">Order #2 Placed!</div>
-              <div className="cs-sub">Dono orders alag se aayenge — bill mein sab ek saath hoga.</div>
-              <div className="cs-detail-box">
-                <div className="cdb-row">
-                  <span>Order #1</span>
-                  <span style={{ color: "var(--orange)" }}>🔥 Preparing</span>
-                </div>
-                <div className="cdb-row">
-                  <span>Order #2 Items</span>
-                  <span>{newOrderItems.join(", ")}</span>
-                </div>
-                <div className="cdb-row">
-                  <span>Session Total</span>
-                  <span style={{ color: "var(--red)" }}>₹{mockOrderData.currentTotal + cartTotal}</span>
-                </div>
-              </div>
-              <button className="cs-btn primary" onClick={() => handleFlowChange("case2")}>
+              <div className="cs-title">Order Placed!</div>
+              <div className="cs-sub">Your new items are being prepared by the kitchen.</div>
+              <button className="cs-btn primary" onClick={() => (onClose ? onClose() : handleFlowChange("case2"))}>
                 ← Back to Tracking
               </button>
             </div>
@@ -470,11 +507,7 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
       {/* CASE 3: ROUND 2 */}
       {currentFlow === "case3" && (
         <div className="flow-screen case-3">
-          <div className="case-header">
-            <div className="ch-tag blue">🍽️ Case 3 — Pehla order serve ho gaya</div>
-            <div className="ch-title">Round 2 — Kuch Aur Mangwao!</div>
-            <div className="ch-desc">Pehla order serve ho chuka hai. Customer ab bilkul fresh se order de sakta hai.</div>
-          </div>
+
 
           <div className="order-status-card">
             <div className="osc-top">
@@ -502,7 +535,7 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
             <button className="add-more-btn blue" onClick={() => setShowCart(true)}>
               🔄 Round 2 — Kuch Aur Order Karo!
             </button>
-            <div className="status-hint blue">✓ Fresh order · Bill mein add hoga</div>
+
           </div>
 
           {showCart && !confirmScreen && (
@@ -513,19 +546,29 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
                 <div className="mmh-sub">Desserts, drinks ya kuch aur — sab welcome hai!</div>
               </div>
 
-              {MENU_ITEMS.map((item) => (
-                <div key={item.id} className="mitem-compact">
-                  <div className={`mic-dot ${item.veg ? "v" : "nv"}`}></div>
-                  <div className="mic-info">
-                    <div className="mic-name">{item.name}</div>
-                    <div className="mic-desc">{item.desc}</div>
+              {isLoadingMenu ? (
+                <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>Loading menu...</div>
+              ) : (
+                menuItems.map((item) => (
+                  <div key={item.id} className="mitem-compact">
+                    <div className={`mic-dot ${item.isVeg ? "v" : "nv"}`}></div>
+                    <div className="mic-info">
+                      <div className="mic-name">{item.name}</div>
+                      <div className="mic-desc">{item.description}</div>
+                    </div>
+                    <span className="mic-price">₹{item.sellingPrice || item.price}</span>
+                    <button className="add-btn-sm" onClick={() => handleAddItem({
+                      id: item.id,
+                      name: item.name,
+                      price: item.sellingPrice || item.price || 0,
+                      veg: item.isVeg || false,
+                      desc: item.description || ""
+                    })}>
+                      ADD
+                    </button>
                   </div>
-                  <span className="mic-price">₹{item.price}</span>
-                  <button className="add-btn-sm" onClick={() => handleAddItem(item)}>
-                    ADD
-                  </button>
-                </div>
-              ))}
+                ))
+              )}
               <div style={{ height: "100px" }} />
             </div>
           )}
@@ -533,23 +576,9 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
           {confirmScreen && (
             <div className="confirm-screen">
               <span className="cs-icon">🎉</span>
-              <div className="cs-title">Round 2 Order Placed!</div>
-              <div className="cs-sub">Kitchen mein gaya! Final bill mein dono orders ek saath dikhengi.</div>
-              <div className="cs-detail-box">
-                <div className="cdb-row">
-                  <span>Order #1 (Served)</span>
-                  <span style={{ color: "var(--green)" }}>₹540 ✓</span>
-                </div>
-                <div className="cdb-row">
-                  <span>Round 2 Items</span>
-                  <span style={{ color: "var(--blue)" }}>{round2Items.join(", ")}</span>
-                </div>
-                <div className="cdb-row">
-                  <span>Session Total</span>
-                  <span style={{ color: "var(--red)" }}>₹{mockOrderData.currentTotal + cartTotal}</span>
-                </div>
-              </div>
-              <button className="cs-btn primary" onClick={() => handleFlowChange("case3")}>
+              <div className="cs-title">Order Received!</div>
+              <div className="cs-sub">The kitchen is working on your new items. Enjoy your meal!</div>
+              <button className="cs-btn primary" onClick={() => (onClose ? onClose() : handleFlowChange("case3"))}>
                 ← Back to Tracking
               </button>
             </div>
@@ -564,82 +593,63 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
             <div className="kw-header">
               <div>
                 <div className="kw-title">🍳 Kitchen Display</div>
-                <div className="kw-subtitle">Multiple orders — ek table</div>
+                <div className="kw-subtitle">Orders Summary — Table {sessionData?.table?.name}</div>
               </div>
               <div className="kw-live">
                 <div className="kw-dot"></div>LIVE
               </div>
             </div>
 
-            <div className="kw-table-header">
-              <div>
-                <div className="kwth-table">Table T-04</div>
-                <div className="kwth-session">Session started 3:20 PM · Waiter: Ravi</div>
-              </div>
-              <div className="kwth-total">
-                <div className="kwth-amount">₹1,420</div>
-                <div className="kwth-orders">3 orders · Session total</div>
-              </div>
-            </div>
+            {isLoadingSession ? (
+              <div style={{ padding: "40px", textAlign: "center" }}>Loading orders...</div>
+            ) : !sessionData ? (
+              <div style={{ padding: "40px", textAlign: "center" }}>No orders found for this session</div>
+            ) : (
+              <>
+                <div className="kw-table-header">
+                  <div>
+                    <div className="kwth-table">Table {sessionData.table?.name || mockOrderData.tableId}</div>
+                    <div className="kwth-session">Session Order Tracking</div>
+                  </div>
+                  <div className="kwth-total">
+                    <div className="kwth-amount">₹{sessionData.grandTotal}</div>
+                    <div className="kwth-orders">{sessionData.orders.length} orders · Session total</div>
+                  </div>
+                </div>
 
-            <div className="k-order-section merged">
-              <div className="ko-label">Case 1 — Merged Order</div>
-              <div className="k-order">
-                <div className="ko-head">
-                  <div className="ko-id">
-                    <span className="ko-num">Order #MH2X9K (Merged)</span>
-                    <span className="ko-status-chip merged">🔀 Merged</span>
-                  </div>
-                  <span className="ko-timer">⏱ 8 min ago</span>
+                <div className="kw-orders-list" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  {sessionData.orders.map((order: any, idx: number) => (
+                    <div key={order.id} className={`k-order-section ${order.caseType === "merge" ? "merged" : ""}`}>
+                      <div className="ko-label">
+                        {order.caseType === "merge" ? "Merged Changes" :
+                          order.caseType === "separate" ? "Separate Order" :
+                            order.caseType === "round2" ? "Round 2" : "Initial Order"}
+                      </div>
+                      <div className={`k-order ${order.caseType === "separate" || order.caseType === "round2" ? "new-order" : ""}`}>
+                        <div className="ko-head">
+                          <div className="ko-id">
+                            <span className="ko-num">Order #{order.id.slice(-6)}</span>
+                            <span className={`ko-status-chip ${order.status.toLowerCase()}`}>
+                              {order.status}
+                            </span>
+                          </div>
+                          <span className="ko-timer">⏱ {new Date(order.createdAt).toLocaleTimeString()}</span>
+                        </div>
+                        <div className="ko-items">
+                          {Array.isArray(order.items) && order.items.map((item: any, i: number) => (
+                            <div key={i} className={`ko-item ${item.isNew ? "highlighted" : ""}`}>
+                              <div className={`ko-vdot ${item.isVeg ? "v" : "nv"}`}></div>
+                              <span className="ko-item-name">{item.isNew ? "+ " : ""}{item.name}</span>
+                              <span className="ko-item-qty">×{item.quantity}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="ko-items">
-                  <div className="ko-item">
-                    <div className="ko-vdot nv"></div>
-                    <span className="ko-item-name">Butter Chicken</span>
-                    <span className="ko-item-qty">×1</span>
-                  </div>
-                  <div className="ko-item highlighted">
-                    <div className="ko-vdot v"></div>
-                    <span className="ko-item-name">+ Dal Makhani (ADDED)</span>
-                    <span className="ko-item-qty">×1</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="k-order-section">
-              <div className="ko-label">Case 2 — Two Separate Orders</div>
-              <div className="k-order">
-                <div className="ko-head">
-                  <div className="ko-id">
-                    <span className="ko-num">Order #KX7P2M — #1</span>
-                    <span className="ko-status-chip preparing">🔥 Preparing</span>
-                  </div>
-                </div>
-                <div className="ko-items">
-                  <div className="ko-item">
-                    <div className="ko-vdot v"></div>
-                    <span className="ko-item-name">Paneer Tikka</span>
-                    <span className="ko-item-qty">×1</span>
-                  </div>
-                </div>
-              </div>
-              <div className="k-order new-order">
-                <div className="ko-head">
-                  <div className="ko-id">
-                    <span className="ko-num">Order #KX7P2M — #2</span>
-                    <span className="ko-status-chip new">🆕 New</span>
-                  </div>
-                </div>
-                <div className="ko-items">
-                  <div className="ko-item">
-                    <div className="ko-vdot v"></div>
-                    <span className="ko-item-name">Mango Lassi</span>
-                    <span className="ko-item-qty">×1</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -647,74 +657,51 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
       {/* COMBINED BILL */}
       {currentFlow === "bill" && (
         <div className="flow-screen bill-view">
-          <div className="case-header">
-            <div className="ch-tag blue">🧾 Final Bill — Table T-04</div>
-            <div className="ch-title">Saare Orders Ka Combined Bill</div>
-          </div>
-
           <div className="bill-wrap">
-            <div className="bill-order-block">
-              <div className="bob-header">
-                <span className="bob-num ord1">Order #1</span>
-                <span style={{ fontSize: "0.62rem", color: "var(--green)", fontWeight: "700" }}>✓ Served</span>
-                <span className="bob-total">₹540</span>
-              </div>
-              <div className="bob-item">
-                <div className="bob-dot nv"></div>
-                <span className="bob-name">Butter Chicken</span>
-                <span className="bob-qty">×1</span>
-                <span className="bob-price">₹380</span>
-              </div>
-              <div className="bob-item">
-                <div className="bob-dot v"></div>
-                <span className="bob-name">Garlic Naan</span>
-                <span className="bob-qty">×2</span>
-                <span className="bob-price">₹160</span>
-              </div>
-            </div>
+            {isLoadingSession ? (
+              <div style={{ padding: "40px", textAlign: "center" }}>Calculating bill...</div>
+            ) : !sessionData ? (
+              <div style={{ padding: "40px", textAlign: "center" }}>No bill data available</div>
+            ) : (
+              <>
+                {sessionData.orders.map((order: any, index: number) => (
+                  <div key={order.id} className="bill-order-block">
+                    <div className="bob-header">
+                      <span className={`bob-num ord${(index % 2) + 1}`}>Order #{index + 1}</span>
+                      <span style={{ fontSize: "0.62rem", color: "var(--green)", fontWeight: "700" }}>{order.status}</span>
+                      <span className="bob-total">₹{order.total}</span>
+                    </div>
+                    {Array.isArray(order.items) && order.items.map((item: any, i: number) => (
+                      <div key={i} className="bob-item">
+                        <div className={`bob-dot ${item.isVeg ? "v" : "nv"}`}></div>
+                        <span className="bob-name">{item.name}</span>
+                        <span className="bob-qty">×{item.quantity}</span>
+                        <span className="bob-price">₹{item.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
 
-            <div className="bill-order-block">
-              <div className="bob-header">
-                <span className="bob-num ord2">Order #2</span>
-                <span style={{ fontSize: "0.62rem", color: "var(--orange)", fontWeight: "700" }}>🔥 Preparing</span>
-                <span className="bob-total">₹380</span>
-              </div>
-              <div className="bob-item">
-                <div className="bob-dot v"></div>
-                <span className="bob-name">Dal Makhani</span>
-                <span className="bob-qty">×1</span>
-                <span className="bob-price">₹260</span>
-              </div>
-              <div className="bob-item">
-                <div className="bob-dot v"></div>
-                <span className="bob-name">Mango Lassi</span>
-                <span className="bob-qty">×1</span>
-                <span className="bob-price">₹120</span>
-              </div>
-            </div>
-
-            <div className="bill-totals">
-              <div className="bt-row">
-                <span>Subtotal (2 orders)</span>
-                <span>₹920</span>
-              </div>
-              <div className="bt-row">
-                <span>CGST (2.5%)</span>
-                <span>₹23</span>
-              </div>
-              <div className="bt-row">
-                <span>SGST (2.5%)</span>
-                <span>₹23</span>
-              </div>
-              <div className="bt-row savings">
-                <span>👑 Loyalty Discount</span>
-                <span>−₹20</span>
-              </div>
-              <div className="bt-row total">
-                <span>Grand Total</span>
-                <span>₹946</span>
-              </div>
-            </div>
+                <div className="bill-totals">
+                  <div className="bt-row">
+                    <span>Subtotal ({sessionData.orders.length} orders)</span>
+                    <span>₹{sessionData.subtotal}</span>
+                  </div>
+                  <div className="bt-row">
+                    <span>CGST (2.5%)</span>
+                    <span>₹{sessionData.cgst}</span>
+                  </div>
+                  <div className="bt-row">
+                    <span>SGST (2.5%)</span>
+                    <span>₹{sessionData.sgst}</span>
+                  </div>
+                  <div className="bt-row total">
+                    <span>Grand Total</span>
+                    <span>₹{sessionData.grandTotal}</span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="pay-section">
@@ -734,25 +721,61 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
               </div>
             </div>
             <button className="place-btn" onClick={() => toast.success("Payment confirmed! ✓")}>
-              ✅ Confirm Payment — ₹946
+              ✅ Confirm Payment — ₹{sessionData?.grandTotal || 0}
             </button>
           </div>
         </div>
       )}
 
-      {/* FLOATING CART */}
-      {showCart && cartItems.length > 0 && !confirmScreen && (
+      {/* FLOATING CART Overlay */}
+      {showCart && cartItems.length > 0 && showCartItems && !confirmScreen && (
+        <div className="cart-items-overlay" onClick={() => setShowCartItems(false)}>
+          <div className="cart-items-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="cis-header">
+              <span className="cis-title">Selected Items</span>
+              <button className="cis-close" onClick={() => setShowCartItems(false)}>✕</button>
+            </div>
+            <div className="cis-list">
+              {cartItems.map((ci, idx) => (
+                <div key={idx} className="cis-item">
+                  <div className="cis-item-info">
+                    <div className="cis-item-name">{ci.name}</div>
+                    <div className="cis-item-price">₹{ci.price}</div>
+                  </div>
+                  <div className="cis-qty-wrap">
+                    <button className="qty-btn" onClick={() => handleRemoveItem(ci.name)}>−</button>
+                    <span className="qty-num">{ci.quantity}</span>
+                    <button className="qty-btn" onClick={() => handleAddItem({ id: "", name: ci.name, price: ci.price, veg: true, desc: "" })}>+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="cis-footer">
+              <div className="cis-total">
+                <span>Total</span>
+                <span>₹{cartTotal}</span>
+              </div>
+              <button className="place-btn-final" onClick={handleSubmitOrder} disabled={isSubmitting}>
+                {isSubmitting ? "Placing Order..." : "Confirm & Place Order"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FLOATING CART BAR */}
+      {showCart && cartItems.length > 0 && !confirmScreen && !showCartItems && (
         <div className="cart-bar show">
-          <div 
+          <div
             className={`cart-inner ${currentFlow === "case1" ? "green" : currentFlow === "case2" ? "orange" : "blue"}`}
-            onClick={handleSubmitOrder}
+            onClick={() => setShowCartItems(true)}
             style={{ opacity: isSubmitting ? 0.6 : 1, cursor: isSubmitting ? "not-allowed" : "pointer" }}
           >
             <div style={{ display: "flex", alignItems: "center" }}>
               <span className="cart-cnt">{isSubmitting ? "..." : cartItems.length}</span>
-              <span className="cart-lbl">{isSubmitting ? "Submitting..." : "Place Order"}</span>
+              <span className="cart-lbl">View Selected Items</span>
             </div>
-            <span className="cart-tot">₹{cartTotal}</span>
+            <span className="cart-tot">₹{cartTotal} ›</span>
           </div>
         </div>
       )}

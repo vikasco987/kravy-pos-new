@@ -1,10 +1,45 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, Suspense } from "react";
 import Image from "next/image";
 import { useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    ChevronLeft,
+    Search,
+    Star,
+    ShoppingBag,
+    X,
+    Minus,
+    Plus,
+    ChevronRight,
+    Flame,
+    Clock,
+    Gift,
+    MessageSquare,
+    CheckCircle2,
+    Phone,
+    User,
+    ArrowRight,
+    Info,
+    Tag,
+    Users,
+    Terminal,
+    History,
+    AlertCircle,
+    RefreshCw,
+    Award,
+    Sparkles,
+    ChevronDown,
+    Check
+} from "lucide-react";
+import { saveOrderLocally } from "@/lib/orderStorage";
+import ActiveOrderBanner from "@/components/ActiveOrderBanner";
 
+/**
+ * TYPES
+ */
 type MenuItem = {
     id: string;
     name: string;
@@ -14,317 +49,267 @@ type MenuItem = {
     imageUrl?: string | null;
     unit?: string | null;
     categoryId?: string | null;
-    category?: { name: string };
-    isVeg?: boolean;
+    category?: { id: string; name: string };
+    isVeg: boolean;
+    isBestseller: boolean;
+    isRecommended: boolean;
+    isNew: boolean;
+    spiciness?: string;
+    rating?: number;
+    hiName?: string;
+    mrName?: string;
+    taName?: string;
+    upsellText?: string;
+    ico?: string;
 };
 
 type BusinessProfile = {
     businessName: string;
     logoUrl?: string;
     businessAddress?: string;
+    businessTagLine?: string;
+    taxEnabled?: boolean;
+    taxRate?: number;
 };
 
-const ZOMATO_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+type ComboSelection = {
+    type: 'fixed' | 'choice';
+    itemId?: string;
+    categoryId?: string;
+    qty?: number;
+    label?: string;
+};
 
-  .qr-wrapper {
-    --red: #E23744; --red-bg: #FFF0F1; --green: #3D9B6E; --green-bg: #EAF7F0;
-    --text: #1C1C1C; --text2: #696969; --text3: #ABABAB;
-    --border: #EBEBEB; --bg: #F4F4F4; --white: #FFFFFF;
-    
-    background: var(--bg); font-family: 'Nunito', sans-serif; color: var(--text); 
-    max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative;
-  }
-  .qr-wrapper * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+type Combo = {
+    id: string;
+    name: string;
+    description?: string;
+    price: number;
+    imageUrl?: string;
+    selections: ComboSelection[];
+};
 
-  /* STICKY HEADER */
-  .sticky-hdr { position: sticky; top: 0; z-index: 60; background: var(--white); box-shadow: 0 1px 0 var(--border); }
-  .top-bar { display: flex; align-items: center; gap: 10px; padding: 11px 14px; }
-  .back-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--bg); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
-  .top-info { flex: 1; min-width: 0; }
-  .top-name { font-size: 0.95rem; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .top-sub { font-size: 0.67rem; color: var(--text3); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .top-actions { display: flex; gap: 6px; }
-  .action-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--bg); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+type Offer = {
+    id: string;
+    title: string;
+    description?: string;
+    code?: string;
+    discountType: string;
+    discountValue: number;
+    minOrderValue?: number;
+};
 
-  /* RESTAURANT CARD */
-  .rest-card { background: var(--white); margin-bottom: 8px; }
-  .rest-img-wrap { position: relative; overflow: hidden; background: #EEE; }
-  .rest-img-wrap img { width: 100%; height: 190px; object-fit: cover; display: block; }
-  .rest-img-wrap::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.48) 100%); }
-  .table-badge { position: absolute; bottom: 12px; left: 14px; z-index: 1; background: rgba(0,0,0,0.65); backdrop-filter: blur(6px); border-radius: 6px; padding: 5px 10px; display: flex; align-items: center; gap: 5px; }
-  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #4CD964; animation: blink 1.4s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-  .table-badge span { font-size: 0.7rem; font-weight: 800; color: #fff; }
-  .rest-body { padding: 14px 14px 0; }
-  .rest-name { font-size: 1.3rem; font-weight: 900; margin-bottom: 3px; }
-  .rest-cuisine { font-size: 0.75rem; color: var(--text2); font-weight: 600; margin-bottom: 10px; }
-  .rest-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
-  .chip { display: flex; align-items: center; gap: 4px; border: 1px solid var(--border); border-radius: 6px; padding: 4px 9px; font-size: 0.72rem; font-weight: 700; background: var(--white); }
-  .chip.g { color: var(--green); border-color: #b2dfc8; background: var(--green-bg); }
-  .chip-divider { width: 1px; height: 16px; background: var(--border); }
-  .offer-row { background: #FFF6E6; border: 1px solid #FFD980; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; display: flex; align-items: center; gap: 7px; font-size: 0.73rem; font-weight: 700; color: #995500; }
+type Reward = {
+    id: string;
+    title: string;
+    description: string;
+    pointsRequired: number;
+    isActive: boolean;
+};
 
-  /* SEARCH */
-  .search-wrap { background: var(--white); padding: 10px 14px; margin-bottom: 8px; }
-  .search-inner { display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 10px; padding: 10px 14px; border: 1.5px solid transparent; transition: border-color 0.2s; }
-  .search-inner:focus-within { border-color: var(--red); background: var(--white); }
-  .search-inner input { flex: 1; border: none; background: transparent; outline: none; font-size: 0.85rem; font-family: 'Nunito', sans-serif; color: var(--text); margin: 0; padding: 0; }
-  .search-inner input::placeholder { color: var(--text3); }
+type ReviewData = {
+    id: string;
+    customerName: string;
+    rating: number;
+    comment: string;
+    createdAt: string;
+    tableId?: string;
+    imageUrl?: string | null;
+};
 
-  /* VEG TOGGLE */
-  .veg-row { background: var(--white); padding: 9px 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .veg-left { display: flex; align-items: center; gap: 8px; }
-  .veg-track { width: 40px; height: 22px; border-radius: 11px; background: var(--border); position: relative; cursor: pointer; transition: background 0.22s; }
-  .veg-track.on { background: var(--green); }
-  .veg-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; position: absolute; top: 3px; left: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.18); transition: left 0.22s; }
-  .veg-track.on .veg-thumb { left: 21px; }
-  .veg-lbl { font-size: 0.8rem; font-weight: 700; }
-  .legend { display: flex; align-items: center; gap: 10px; }
-  .leg-item { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 700; color: var(--text2); }
-  .leg-dot { width: 13px; height: 13px; border-radius: 2px; border: 1.5px solid; display: flex; align-items: center; justify-content: center; }
-  .leg-dot::after { content: ''; width: 6px; height: 6px; border-radius: 50%; }
-  .leg-dot.v { border-color: var(--green); }
-  .leg-dot.v::after { background: var(--green); }
-  .leg-dot.nv { border-color: var(--red); }
-  .leg-dot.nv::after { background: var(--red); }
-
-  /* CATEGORY TABS */
-  .cat-tabs-wrap { position: sticky; top: 57px; z-index: 50; background: var(--white); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
-  .cat-tabs-wrap::-webkit-scrollbar { display: none; }
-  .tabs-inner { display: inline-flex; }
-  .ctab { padding: 12px 15px; font-size: 0.8rem; font-weight: 700; color: var(--text2); border-bottom: 2.5px solid transparent; cursor: pointer; white-space: nowrap; background: none; border-left: none; border-right: none; border-top: none; transition: all 0.18s; font-family: 'Nunito', sans-serif; }
-  .ctab.active { color: var(--red); border-bottom-color: var(--red); }
-  .ctab-n { font-size: 0.6rem; font-weight: 800; background: var(--bg); border-radius: 10px; padding: 1px 5px; margin-left: 3px; }
-  .ctab.active .ctab-n { background: var(--red-bg); color: var(--red); }
-
-  /* SECTION */
-  .section { background: var(--white); margin-bottom: 8px; }
-  .sec-hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 6px; cursor: pointer; }
-  .sec-left { display: flex; align-items: center; gap: 7px; }
-  .sec-ico { font-size: 1.1rem; }
-  .sec-name { font-size: 0.95rem; font-weight: 900; }
-  .sec-cnt { font-size: 0.7rem; color: var(--text3); font-weight: 600; }
-  .sec-arr { font-size: 0.7rem; color: var(--text3); transition: transform 0.2s; }
-  .sec-arr.down { transform: rotate(-90deg); }
-  .sec-line { height: 1px; background: var(--border); margin: 6px 14px; }
-
-  /* MENU ITEM */
-  .mitem { display: flex; gap: 10px; padding: 14px 14px; border-bottom: 1px solid #F7F7F7; align-items: flex-start; }
-  .mitem:last-child { border-bottom: none; }
-  .mitem-left { flex: 1; min-width: 0; }
-  .type-dot { width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
-  .type-dot.v { border-color: var(--green); }
-  .type-dot.v::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
-  .type-dot.nv { border-color: var(--red); }
-  .type-dot.nv::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
-  .mname-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
-  .mname { font-size: 0.9rem; font-weight: 800; line-height: 1.25; }
-  .mdesc { font-size: 0.73rem; color: var(--text2); line-height: 1.5; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
-  .mprice { font-size: 0.95rem; font-weight: 900; }
-  .mitem-right { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
-  .mthumb { width: 108px; height: 92px; border-radius: 12px; overflow: hidden; position: relative; background: var(--bg); }
-  .mthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .mthumb-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2.4rem; background: linear-gradient(135deg, #FFF0F1, #FFF8EC); color: #ccc; }
-  .add-wrap { margin-top: -13px; position: relative; z-index: 1; }
-  .add-btn { background: var(--white); border: 1.5px solid var(--red); color: var(--red); border-radius: 8px; padding: 6px 18px; font-size: 0.82rem; font-weight: 900; cursor: pointer; font-family: 'Nunito', sans-serif; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(226,55,68,0.13); transition: all 0.15s; }
-  .add-btn:hover { background: var(--red-bg); }
-  .add-btn:active { transform: scale(0.95); }
-  .qty-wrap { display: flex; align-items: center; background: var(--red); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(226,55,68,0.28); }
-  .qbtn { width: 30px; height: 32px; background: transparent; border: none; color: #fff; font-size: 1.1rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.12s; font-family: 'Nunito', sans-serif; }
-  .qbtn:active { background: rgba(255,255,255,0.15); }
-  .qnum { font-size: 0.88rem; font-weight: 900; color: #fff; min-width: 22px; text-align: center; }
-
-  /* CART BAR */
-  .cart-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(110%); width: 100%; max-width: 480px; z-index: 100; padding: 10px 14px 22px; transition: transform 0.3s cubic-bezier(.4,0,.2,1); background: linear-gradient(180deg, transparent, rgba(244,244,244,0.92) 20%); }
-  .cart-bar.show { transform: translateX(-50%) translateY(0); }
-  .cart-inner { background: var(--red); border-radius: 14px; padding: 13px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: 0 6px 24px rgba(226,55,68,0.38); transition: transform 0.14s; }
-  .cart-inner:active { transform: scale(0.99); }
-  .cart-l { display: flex; align-items: center; gap: 10px; }
-  .cart-cnt { background: rgba(255,255,255,0.22); border-radius: 7px; padding: 3px 9px; font-size: 0.78rem; font-weight: 900; color: #fff; }
-  .cart-lbl { font-size: 0.88rem; font-weight: 800; color: #fff; }
-  .cart-r { display: flex; align-items: center; gap: 5px; }
-  .cart-tot { font-size: 0.9rem; font-weight: 900; color: #fff; }
-  .cart-arrow { color: rgba(255,255,255,0.75); font-size: 1.1rem; }
-
-  /* ORDER SHEET */
-  .dim { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.48); opacity: 0; pointer-events: none; transition: opacity 0.25s; }
-  .dim.show { opacity: 1; pointer-events: all; }
-  .sheet { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%); width: 100%; max-width: 480px; z-index: 201; background: var(--white); border-radius: 20px 20px 0 0; max-height: 86vh; overflow-y: auto; scrollbar-width: none; transition: transform 0.3s cubic-bezier(.4,0,.2,1); padding-bottom: 20px;}
-  .sheet::-webkit-scrollbar { display: none; }
-  .sheet.show { transform: translateX(-50%) translateY(0); }
-  .sheet-pill { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
-  .sheet-head { padding: 13px 16px 12px; border-bottom: 1px solid var(--border); font-size: 1rem; font-weight: 900; }
-  .s-item { display: flex; align-items: center; gap: 9px; padding: 11px 16px; border-bottom: 1px solid #F7F7F7; }
-  .si-dot { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-  .si-dot.v { border-color: var(--green); }
-  .si-dot.v::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
-  .si-dot.nv { border-color: var(--red); }
-  .si-dot.nv::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--red); }
-  .si-name { flex: 1; font-size: 0.84rem; font-weight: 700; }
-  .si-ctrl { display: flex; align-items: center; background: var(--red); border-radius: 7px; overflow: hidden; }
-  .si-btn { width: 26px; height: 26px; background: transparent; border: none; color: #fff; font-size: 1rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; }
-  .si-n { font-size: 0.8rem; font-weight: 900; color: #fff; min-width: 18px; text-align: center; }
-  .si-price { font-size: 0.84rem; font-weight: 800; min-width: 54px; text-align: right; }
-  .bill-sec { padding: 14px 16px; border-top: 7px solid var(--bg); }
-  .bill-sec-hd { font-size: 0.78rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-  .bill-ln { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; padding: 3px 0; color: var(--text2); }
-  .bill-ln.tot { font-weight: 900; font-size: 0.9rem; color: var(--text); padding-top: 10px; margin-top: 6px; border-top: 1px dashed var(--border); }
-  .bill-ln.tot span:last-child { color: var(--red); }
-  .pay-sec { padding: 14px 16px; border-top: 7px solid var(--bg); }
-  .pay-sec-hd { font-size: 0.78rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-  .pay-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .pay-opt { border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 6px; text-align: center; cursor: pointer; transition: all 0.15s; background: var(--white); }
-  .pay-opt.sel { border-color: var(--red); background: var(--red-bg); }
-  .pay-opt-ico { font-size: 1.3rem; display: block; margin-bottom: 3px; }
-  .pay-opt-lbl { font-size: 0.62rem; font-weight: 800; color: var(--text2); }
-  .pay-opt.sel .pay-opt-lbl { color: var(--red); }
-  .place-btn { margin: 12px 16px 12px; width: calc(100% - 32px); background: var(--red); border: none; border-radius: 12px; color: #fff; font-size: 0.95rem; font-weight: 900; font-family: 'Nunito', sans-serif; padding: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 18px rgba(226,55,68,0.32); transition: all 0.14s; }
-  .place-btn:active { transform: scale(0.99); }
-
-  /* CASE BANNERS & STRIPS */
-  .case-banner { padding: 12px 16px; background: var(--white); border-bottom: 1px solid var(--border); }
-  .cb-badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; padding: 3px 9px; font-size: 0.62rem; font-weight: 800; margin-bottom: 3px; }
-  .cb-badge.merge { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
-  .cb-badge.new { background: var(--orange-bg); color: #F97316; border: 1px solid rgba(249,115,22,0.3); }
-  .cb-badge.round2 { background: var(--blue-bg); color: #3B82F6; border: 1px solid rgba(59,130,246,0.3); }
-  .cb-title { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 800; }
-  .cb-sub { font-size: 0.65rem; color: var(--text2); margin-top: 1px; }
-  .prev-order-strip { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin: 10px 16px; display: flex; align-items: center; gap: 8px; }
-  .pos-icon { font-size: 1rem; flex-shrink: 0; }
-  .pos-info { flex: 1; }
-  .pos-title { font-size: 0.72rem; font-weight: 800; color: var(--text); }
-  .pos-items { font-size: 0.65rem; color: var(--text2); }
-  .pos-total { font-size: 0.78rem; font-weight: 900; color: var(--text); }
-
-  /* WARNING SHEET */
-  .warn-box { background: var(--orange-bg); border: 1.5px solid rgba(249,115,22,0.3); border-radius: 14px; padding: 16px; margin-bottom: 16px; display: flex; gap: 12px; align-items: flex-start; }
-  .wb-icon { font-size: 1.6rem; flex-shrink: 0; }
-  .wb-title { font-size: 0.88rem; font-weight: 800; color: #92400E; margin-bottom: 4px; }
-  .wb-desc { font-size: 0.75rem; color: #B45309; line-height: 1.6; }
-  .info-box { background: var(--blue-bg); border: 1.5px solid rgba(59,130,246,0.25); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.75rem; color: #1E40AF; line-height: 1.6; }
-  .sheet-btn { width: 100%; padding: 13px; border-radius: 12px; border: none; cursor: pointer; font-size: 0.88rem; font-weight: 900; font-family: 'Nunito', sans-serif; transition: all 0.15s; margin-bottom: 8px; }
-  .sheet-btn.orange { background: #F97316; color: #fff; box-shadow: 0 4px 14px rgba(249,115,22,0.28); }
-  .sheet-btn.ghost { background: var(--bg); color: var(--text2); border: 1px solid var(--border); }
-  .cs-detail-box { background: var(--bg); border-radius: 14px; padding: 14px; margin-top: 12px; margin-bottom: 18px; text-align: left; width: 100%; }
-  .cdb-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; border-bottom: 1px solid var(--border); }
-  .cdb-row:last-child { border-bottom: none; font-weight: 900; font-size: 0.85rem; }
-
-  /* CART COLORS */
-  .cart-inner.green { background: var(--green); }
-  .cart-inner.orange { background: #F97316; }
-  .cart-inner.blue { background: #3B82F6; }
-
-  /* SUCCESS */
-  .success { position: fixed; inset: 0; z-index: 300; background: var(--white); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-  .success.show { opacity: 1; pointer-events: all; }
-  .success-ico { font-size: 5.5rem; margin-bottom: 14px; animation: popIn 0.5s cubic-bezier(.4,0,.2,1); }
-  @keyframes popIn { 0%{transform:scale(0.4);opacity:0} 70%{transform:scale(1.08)} 100%{transform:scale(1);opacity:1} }
-  .success-h { font-size: 1.5rem; font-weight: 900; margin-bottom: 6px; text-align: center; }
-  .success-p { font-size: 0.83rem; color: var(--text2); text-align: center; line-height: 1.65; margin-bottom: 16px; font-weight: 600; }
-  .success-id { background: var(--bg); border-radius: 8px; padding: 8px 18px; font-size: 0.75rem; font-weight: 800; color: var(--text2); font-family: monospace; margin-bottom: 22px; }
-  .track { display: flex; width: 100%; margin-bottom: 24px; }
-  .tstep { flex: 1; text-align: center; position: relative; }
-  .tstep::after { content: ''; position: absolute; top: 13px; left: 55%; width: 90%; height: 2px; background: var(--border); }
-  .tstep:last-child::after { display: none; }
-  .tstep.done::after { background: var(--green); }
-  .tstep.active-s::after { background: linear-gradient(90deg, var(--green), var(--border)); }
-  .tdot { width: 26px; height: 26px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; margin: 0 auto 4px; position: relative; z-index: 1; }
-  .tstep.done .tdot { background: var(--green); }
-  .tstep.active-s .tdot { background: #F97316; box-shadow: 0 0 0 4px rgba(249,115,22,0.2); animation: sPulse 1.5s infinite; }
-  @keyframes sPulse { 0%,100%{box-shadow:0 0 0 4px rgba(249,115,22,0.2)} 50%{box-shadow:0 0 0 8px rgba(249,115,22,0.08)} }
-  .tlabel { font-size: 0.58rem; font-weight: 800; color: var(--text3); }
-  .tstep.done .tlabel { color: var(--green); }
-  .tstep.active-s .tlabel { color: #F97316; }
-  .more-btn { width: 100%; background: var(--red); border: none; border-radius: 12px; color: #fff; font-size: 0.9rem; font-weight: 900; font-family: 'Nunito', sans-serif; padding: 14px; cursor: pointer; }
-  .track-btn { width: 100%; background: var(--green); border: none; border-radius: 12px; color: #fff; font-size: 0.9rem; font-weight: 900; font-family: 'Nunito', sans-serif; padding: 14px; cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-
-  /* TRACKING VIEW */
-  .track-view { position: fixed; inset: 0; z-index: 300; background: var(--bg); overflow-y: auto; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-  .track-view.show { opacity: 1; pointer-events: all; }
-  .tv-hero { background: linear-gradient(135deg, #1a1a26, #12121a); padding: 32px 20px; text-align: center; position: relative; overflow: hidden; }
-  .tv-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(212,163,83,0.15), transparent); pointer-events: none; }
-  .tv-oid { display: inline-block; background: rgba(212,163,83,0.15); border: 1px solid rgba(212,163,83,0.3); border-radius: 20px; padding: 4px 14px; font-size: 0.68rem; font-weight: 800; color: #D4A353; letter-spacing: 1px; margin-bottom: 14px; }
-  .tv-icon { font-size: 3.5rem; margin-bottom: 10px; animation: float 3s ease-in-out infinite; }
-  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-  .tv-title { font-size: 1.4rem; font-weight: 900; color: #F0EAD6; margin-bottom: 4px; }
-  .tv-sub { font-size: 0.8rem; color: rgba(240,234,214,0.55); font-weight: 600; }
-  .tv-table-pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(249,115,22,0.15); border: 1px solid rgba(249,115,22,0.3); border-radius: 8px; padding: 6px 14px; margin-top: 14px; }
-  .tv-table-pill span { font-size: 0.75rem; font-weight: 800; color: #F97316; }
-  .tv-stepper { background: var(--white); padding: 20px; margin-bottom: 8px; }
-  .tv-step-title { font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 18px; }
-  .tv-items { background: var(--white); padding: 18px 20px; margin-bottom: 8px; }
-  .tv-items-title { font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 14px; }
-  .tv-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #F5F5F5; }
-  .tv-item:last-child { border-bottom: none; }
-  .tv-i-left { display: flex; align-items: center; gap: 8px; }
-  .tv-i-name { font-size: 0.82rem; font-weight: 700; }
-  .tv-i-qty { font-size: 0.72rem; color: var(--text3); }
-  .tv-i-price { font-size: 0.82rem; font-weight: 800; }
-  .tv-bill { background: var(--white); padding: 18px 20px; margin-bottom: 8px; }
-  .tv-bill-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 4px 0; color: var(--text2); font-weight: 600; }
-  .tv-bill-row.total { font-weight: 900; font-size: 0.92rem; color: var(--text); padding-top: 10px; margin-top: 6px; border-top: 1px dashed var(--border); }
-  .tv-bill-row.total span:last-child { color: var(--red); }
-  .tv-close-wrap { padding: 14px 20px 28px; display: flex; gap: 10px; }
-  .tv-back-btn { flex: 1; background: var(--white); border: 2px solid var(--red); color: var(--red); border-radius: 12px; padding: 14px; font-size: 0.9rem; font-weight: 900; font-family: 'Nunito', sans-serif; cursor: pointer; text-align: center; }
-  .tv-add-btn { flex: 1; background: var(--red); border: none; border-radius: 12px; color: #fff; padding: 14px; font-size: 0.9rem; font-weight: 900; font-family: 'Nunito', sans-serif; cursor: pointer; text-align: center; }
-
-  /* FLOATING TRACK BTN */
-  .floating-track { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 90; padding: 10px 14px 22px; background: linear-gradient(180deg, transparent, rgba(244,244,244,0.95) 20%); }
-  .ft-inner { background: var(--green); border-radius: 14px; padding: 13px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: 0 6px 24px rgba(61,155,110,0.38); }
-  .ft-inner:active { transform: scale(0.99); }
-  .ft-l { display: flex; align-items: center; gap: 10px; }
-  .ft-badge { background: rgba(255,255,255,0.22); border-radius: 7px; padding: 3px 9px; font-size: 0.78rem; font-weight: 900; color: #fff; }
-  .ft-lbl { font-size: 0.88rem; font-weight: 800; color: #fff; }
-  .ft-arrow { color: rgba(255,255,255,0.75); font-size: 1.1rem; }
-`;
-
-export default function PublicMenuPage() {
+/**
+ * COMPONENTS
+ */
+function PublicMenu() {
     const { clerkId } = useParams() as { clerkId: string };
     const searchParams = useSearchParams();
-    // QR url will pass the actual table record id; optionally also a human-readable name
     const tableId = searchParams.get("tableId") || "Counter";
     const tableName = searchParams.get("tableName") || tableId;
 
+    // Data State
     const [items, setItems] = useState<MenuItem[]>([]);
     const [profile, setProfile] = useState<BusinessProfile | null>(null);
     const [loading, setLoading] = useState(true);
+    const [reviews, setReviews] = useState<ReviewData[]>([]);
+    const [combos, setCombos] = useState<Combo[]>([]);
+    const [offers, setOffers] = useState<Offer[]>([]);
+    const [rewards, setRewards] = useState<Reward[]>([]);
 
+    // UI State
+    const [activeTab, setActiveTab] = useState<"menu" | "reviews" | "loyalty" | "gallery">("menu");
     const [cart, setCart] = useState<Record<string, number>>({});
+    const [instructions, setInstructions] = useState<Record<string, string>>({});
     const [searchQ, setSearchQ] = useState("");
     const [vegOnly, setVegOnly] = useState(false);
-    const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-    const [payM, setPayM] = useState("upi");
+    const [activeLang, setActiveLang] = useState<"en" | "hi" | "mr" | "ta">("en");
+    const [activeCategory, setActiveCategory] = useState("all");
+    const [showCartSheet, setShowCartSheet] = useState(false);
+    const [loyaltyOn, setLoyaltyOn] = useState(false);
 
-    const [showSheet, setShowSheet] = useState(false);
-    const [showSuccess, setShowSuccess] = useState(false);
-    const [orderId, setOrderId] = useState("");
-    const [activeTab, setActiveTab] = useState("All");
+    // User Data
+    const [customerPhone, setCustomerPhone] = useState("");
+    const [customerName, setCustomerName] = useState("");
+    const [loyaltyPoints, setLoyaltyPoints] = useState(0);
 
-    // ADD MORE ITEMS STATE
-    const [actionCase, setActionCase] = useState<"merge" | "separate" | "round2" | null>(null);
-    const [showWarning, setShowWarning] = useState(false);
+    // Order Flow
+    const [orderStatus, setOrderStatus] = useState<"none" | "placing" | "placed">("none");
+    const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
+    const [lastOrderItems, setLastOrderItems] = useState<any[]>([]);
+    const [recentOrderIds, setRecentOrderIds] = useState<string[]>([]);
+    const [showRecentOrders, setShowRecentOrders] = useState(false);
+    const [activeCombo, setActiveCombo] = useState<Combo | null>(null);
+    const [comboSelections, setComboSelections] = useState<Record<number, string>>({});
+    const [combosCart, setCombosCart] = useState<{ id: string, name: string, price: number, selections: any[] }[]>([]);
 
-    // ORDER TRACKING STATE
-    const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
-    const [trackingStatus, setTrackingStatus] = useState<string>("PENDING");
-    const [trackingOrder, setTrackingOrder] = useState<any>(null);
-    const [showTracking, setShowTracking] = useState(false);
+    // Review State
+    const [showReviewSheet, setShowReviewSheet] = useState(false);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewComment, setReviewComment] = useState("");
+    const [reviewImageUrl, setReviewImageUrl] = useState("");
+    const [reviewImageUploading, setReviewImageUploading] = useState(false);
+    const [reviewSubmitting, setReviewSubmitting] = useState(false);
+    const [helpfulReviews, setHelpfulReviews] = useState<Record<string, boolean>>({});
+    const [reviewFilter, setReviewFilter] = useState<number | null>(null);
+
+    // Gallery State
+    type GalleryImg = { id: string; imageUrl: string; category: string; caption: string | null; };
+    const [galleryImages, setGalleryImages] = useState<GalleryImg[]>([]);
+    const [galleryFilter, setGalleryFilter] = useState("all");
+    const [galleryLightbox, setGalleryLightbox] = useState<GalleryImg | null>(null);
+
+    // Realistic curated avatar images for a "Genuine" feel
+    const getAvatarUrl = (name: string, seed?: string) => {
+        const avatars = [
+            'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1554151228-14d9def656e4?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1542178243-ed2003b5adad?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1583512603805-3cc6b41f3edb?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1544717297-fa15739a5443?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=120&h=120&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&h=120&fit=crop&q=80'
+        ];
+        let hash = 0;
+        const seedValue = (name === "Guest" || name === "Anonymous" || !name) && seed ? seed : (name || "Guest");
+        for (let i = 0; i < seedValue.length; i++) {
+            hash = seedValue.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return avatars[Math.abs(hash) % avatars.length];
+    };
+
+    const getAvatarColor = (name: string) => {
+        const colors = [
+            'from-pink-500 to-rose-500',
+            'from-purple-500 to-indigo-500',
+            'from-blue-500 to-cyan-500',
+            'from-teal-500 to-emerald-500',
+            'from-green-500 to-lime-500',
+            'from-yellow-500 to-amber-500',
+            'from-orange-500 to-orange-600',
+            'from-red-500 to-red-600',
+            'from-fuchsia-500 to-purple-600',
+            'from-violet-500 to-purple-500',
+        ];
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return colors[Math.abs(hash) % colors.length];
+    };
+
+    // Realistic Indian names for Guest reviews
+    const getIndianName = (seed: string) => {
+        const names = [
+            "Rahul S.", "Priya P.", "Amit K.", "Neha S.", "Vikram G.",
+            "Anjali D.", "Suresh R.", "Kavita J.", "Deepak V.", "Pooja M.",
+            "Rohan M.", "Sneha K.", "Aditya N.", "Kriti S.", "Varun D.",
+            "Vivek T.", "Megha C.", "Siddharth B.", "Tara R.", "Karan S."
+        ];
+        let hash = 0;
+        for (let i = 0; i < seed.length; i++) {
+            hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return names[Math.abs(hash) % names.length];
+    };
 
     const searchInputRef = useRef<HTMLInputElement>(null);
 
+    // Initialize recent orders from localStorage
+    useEffect(() => {
+        const saved = localStorage.getItem(`recent_orders_${clerkId}`);
+        if (saved) {
+            try {
+                setRecentOrderIds(JSON.parse(saved));
+            } catch (e) {
+                console.error("Failed to parse recent orders");
+            }
+        }
+    }, [clerkId]);
+
+    // Save recent orders to localStorage
+    useEffect(() => {
+        if (recentOrderIds.length > 0) {
+            localStorage.setItem(`recent_orders_${clerkId}`, JSON.stringify(recentOrderIds));
+        }
+    }, [recentOrderIds, clerkId]);
+
+    // Initialize customer details from localStorage
+    useEffect(() => {
+        const savedPhone = localStorage.getItem('kravy_customer_phone');
+        const savedName = localStorage.getItem('kravy_customer_name');
+        if (savedPhone) setCustomerPhone(savedPhone);
+        if (savedName) setCustomerName(savedName);
+    }, []);
+
+    // Save customer details to localStorage automatically
+    useEffect(() => {
+        if (customerPhone && customerPhone.length === 10) localStorage.setItem('kravy_customer_phone', customerPhone);
+    }, [customerPhone]);
+
+    useEffect(() => {
+        if (customerName) localStorage.setItem('kravy_customer_name', customerName);
+    }, [customerName]);
+
+    // Fetch Data
     useEffect(() => {
         if (!clerkId) return;
         async function fetchData() {
             try {
-                const res = await fetch(`/api/public/menu/${clerkId}`);
-                const data = await res.json();
-                if (data.error) throw new Error(data.error);
-                setItems(data.items || []);
-                setProfile(data.profile || null);
+                const [menuRes, reviewsRes] = await Promise.all([
+                    fetch(`/api/public/menu/${clerkId}`),
+                    fetch(`/api/public/reviews?clerkUserId=${clerkId}`)
+                ]);
+
+                const menuData = await menuRes.json();
+                const reviewsData = await reviewsRes.json();
+
+                if (menuData.items) setItems(menuData.items);
+                if (menuData.profile) setProfile(menuData.profile);
+                if (menuData.combos) setCombos(menuData.combos);
+                if (menuData.offers) setOffers(menuData.offers);
+                if (menuData.rewards) setRewards(menuData.rewards);
+                if (Array.isArray(reviewsData)) setReviews(reviewsData);
+
+                // Fetch gallery
+                const galRes = await fetch(`/api/public/gallery/${clerkId}`);
+                if (galRes.ok) {
+                    const galData = await galRes.json();
+                    if (Array.isArray(galData)) setGalleryImages(galData);
+                }
             } catch (err) {
-                console.error("Fetch error:", err);
-                toast.error("Failed to load menu");
+                toast.error("Connection lost");
             } finally {
                 setLoading(false);
             }
@@ -332,564 +317,1505 @@ export default function PublicMenuPage() {
         fetchData();
     }, [clerkId]);
 
-    // POLL ORDER STATUS when we have a tracking order
+    // Handle Phone Change for Loyalty
     useEffect(() => {
-        if (!trackingOrderId) return;
-        const poll = async () => {
-            try {
-                const res = await fetch(`/api/public/orders?id=${trackingOrderId}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setTrackingStatus(data.status);
-                    setTrackingOrder(data);
-                }
-            } catch { }
-        };
-        poll();
-        const interval = setInterval(poll, 5000);
-        return () => clearInterval(interval);
-    }, [trackingOrderId]);
+        if (customerPhone.length === 10) {
+            fetch(`/api/public/loyalty?phone=${customerPhone}&clerkUserId=${clerkId}`)
+                .then(r => r.json())
+                .then(d => {
+                    setLoyaltyPoints(d.loyaltyPoints || 0);
+                    if (d.name) setCustomerName(d.name);
+                });
+        }
+    }, [customerPhone, clerkId]);
 
-    const CATS = useMemo(() => {
+    // Derived Values
+    const categories = useMemo(() => {
         const cats = Array.from(new Set(items.map(it => it.category?.name || "Other")));
-        return cats.map((name) => ({ id: name.replace(/\s+/g, '-'), name: name, icon: '🍽️' }));
+        return ["all", ...cats];
     }, [items]);
 
-    const getItems = () => {
-        return items.filter(m => {
-            // If vegOnly is true, only include items that are explicitly veg. 
-            // If isVeg is undefined, we assume it's NOT exclusively veg to be safe, or we can assume it's veg. Let's assume isVeg === true for veg items.
-            const isVegMatch = vegOnly ? (m.isVeg === true) : true;
-            const isSearchMatch = !searchQ || m.name.toLowerCase().includes(searchQ.toLowerCase());
-            return isVegMatch && isSearchMatch;
+    const filteredItems = useMemo(() => {
+        return items.filter(it => {
+            const matchVeg = vegOnly ? it.isVeg : true;
+            const matchSearch = (it.name.toLowerCase().includes(searchQ.toLowerCase())) ||
+                (it.hiName?.includes(searchQ));
+            const matchCat = activeCategory === "all" || it.category?.name === activeCategory;
+            return matchVeg && matchSearch && matchCat;
         });
+    }, [items, vegOnly, searchQ, activeCategory]);
+
+    const cartCount = Object.values(cart).reduce((a, b) => a + b, 0) + combosCart.length;
+    const itemSubtotal = Object.entries(cart).reduce((sum, [id, qty]) => {
+        const item = items.find(i => i.id === id);
+        return sum + (item ? (item.sellingPrice || item.price || 0) * qty : 0);
+    }, 0);
+    const comboSubtotal = combosCart.reduce((sum, c) => sum + c.price, 0);
+    const subtotal = itemSubtotal + comboSubtotal;
+    // Dynamic tax from business profile
+    const taxEnabled = profile?.taxEnabled ?? true;
+    const taxRate = profile?.taxRate ?? 5;
+    const tax = taxEnabled ? Math.round(subtotal * taxRate / 100) : 0;
+    const loyaltyDisc = loyaltyOn ? 32 : 0;
+    const total = subtotal + tax - loyaltyDisc;
+
+    // Actions
+    const addToCart = (id: string) => {
+        setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+        toast.success("Added to cart", { duration: 800, position: "top-center" });
     };
 
-    const filteredItems = getItems();
-
-    const getItemPrice = (item: MenuItem) => item.sellingPrice || item.price || 0;
-
-    const toggleSec = (id: string) => {
-        setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
-    };
-
-    const updateCart = (itemId: string, delta: number) => {
+    const updateQty = (id: string, delta: number) => {
         setCart(prev => {
-            const newQty = (prev[itemId] || 0) + delta;
-            if (newQty <= 0) {
-                const { [itemId]: _, ...rest } = prev;
+            const newVal = (prev[id] || 0) + delta;
+            if (newVal <= 0) {
+                const { [id]: _, ...rest } = prev;
                 return rest;
             }
-            return { ...prev, [itemId]: newQty };
+            return { ...prev, [id]: newVal };
         });
     };
 
-    // Cart summary
-    const cartItemsCount = Object.values(cart).reduce((sum, q) => sum + q, 0);
-    const cartSubtotal = Object.entries(cart).reduce((sum, [id, qty]) => {
-        const item = items.find(i => i.id === id);
-        return sum + (item ? getItemPrice(item) * qty : 0);
-    }, 0);
-    const gst = Math.round(cartSubtotal * 0.05);
-    const cartTotal = cartSubtotal + gst;
+    const addComboToCart = () => {
+        if (!activeCombo) return;
+        const completeSelections = activeCombo.selections.map((s, idx) => {
+            if (s.type === 'choice' && !comboSelections[idx]) return null;
+            return s.type === 'fixed'
+                ? { type: 'fixed', itemId: s.itemId, name: items.find(it => it.id === s.itemId)?.name, price: items.find(it => it.id === s.itemId)?.price || 0 }
+                : { type: 'choice', itemId: comboSelections[idx], name: items.find(it => it.id === comboSelections[idx])?.name, price: items.find(it => it.id === comboSelections[idx])?.price || 0 };
+        });
 
-    const handleAddMore = () => {
-        setShowSuccess(false);
-        setShowTracking(false);
-        setCart({}); // clear cart for new items
-
-        if (trackingStatus === 'PENDING') {
-            setActionCase('merge');
-            toast.success("Merge mode — items will be added to your exact order");
-        } else if (trackingStatus === 'PREPARING') {
-            setShowWarning(true);
-        } else {
-            setActionCase('round2');
-            toast.success("Round 2 — menu is open for more items!");
+        if (completeSelections.some(s => s === null)) {
+            toast.error("Please complete all selections");
+            return;
         }
-    };
 
-    const confirmSeparateOrder = () => {
-        setShowWarning(false);
-        setActionCase('separate');
-        toast.success("New Order #2 started");
+        setCombosCart(prev => [...prev, {
+            id: activeCombo.id,
+            name: activeCombo.name,
+            price: activeCombo.price,
+            selections: completeSelections
+        }]);
+        setActiveCombo(null);
+        setComboSelections({});
+        toast.success("Combo added to cart!");
     };
 
     const placeOrder = async () => {
-        if (Object.keys(cart).length === 0) return;
+        if (!customerPhone || customerPhone.length < 10) {
+            toast.error("Enter phone number to place order");
+            return;
+        }
+        setOrderStatus("placing");
+        try {
+            const orderItems = Object.entries(cart).map(([id, qty]) => {
+                const item = items.find(i => i.id === id);
+                return {
+                    itemId: id,
+                    name: item?.name,
+                    price: item?.sellingPrice || item?.price,
+                    quantity: qty,
+                    total: (item?.sellingPrice || item?.price || 0) * qty,
+                    instruction: instructions[id]
+                };
+            });
 
-        const orderItems = items
-            .filter(it => cart[it.id])
-            .map(it => ({
-                id: it.id,
-                name: it.name,
-                price: getItemPrice(it),
-                quantity: cart[it.id],
-                total: getItemPrice(it) * cart[it.id]
+            const comboOrderItems = combosCart.map((combo) => ({
+                itemId: combo.id,
+                name: combo.name,
+                price: combo.price,
+                quantity: 1,
+                total: combo.price,
+                isCombo: true,
+                selections: combo.selections
             }));
 
-        try {
+            const allOrderItems = [...orderItems, ...comboOrderItems];
+
             const res = await fetch("/api/public/orders", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     clerkUserId: clerkId,
-                    tableId: tableId, // actual record id
-                    items: orderItems,
-                    total: cartTotal,
-                    customerName: "QR Customer",
-                    caseType: actionCase || "new",
-                    parentOrderId: actionCase ? trackingOrderId : null,
-                }),
+                    tableId,
+                    items: allOrderItems,
+                    total,
+                    customerName: customerName || "Guest",
+                    customerPhone,
+                    caseType: "new"
+                })
             });
 
             if (res.ok) {
                 const orderData = await res.json();
-                setShowSheet(false);
-                const realId = orderData.id;
-                setOrderId('ORD-' + realId.slice(-6).toUpperCase());
-
-                // If merge, keep the old trackingOrderId, else use new
-                if (actionCase !== 'merge') {
-                    setTrackingOrderId(realId);
-                    setTrackingOrder(orderData);
-                } else {
-                    setTrackingOrder(orderData);
-                }
-
-                setTrackingStatus('PENDING');
-                setActionCase(null);
-                setShowSuccess(true);
+                setPlacedOrderId(orderData.id);
+                setLastOrderItems(orderItems);
+                setOrderStatus("placed");
                 setCart({});
+                setShowCartSheet(false);
 
-                setTimeout(() => {
-                    setShowSuccess(false);
-                }, 7000);
+                // Add to recent orders if not already there
+                setRecentOrderIds(prev => {
+                    if (prev.includes(orderData.id)) return prev;
+                    return [orderData.id, ...prev].slice(0, 5); // Keep last 5
+                });
+
+                // Auto-save for tracking recovery
+                saveOrderLocally({
+                    orderId: orderData.id,
+                    phone: customerPhone,
+                    tableId: tableId,
+                    total: total,
+                    status: "PENDING",
+                    clerkUserId: clerkId
+                });
             } else {
-                const err = await res.json();
-                toast.error(err.error || "Failed to place order");
+                const error = await res.json();
+                toast.error(error.error || "Failed to place order");
+                setOrderStatus("none");
             }
         } catch (err) {
             toast.error("Failed to place order");
+            setOrderStatus("none");
         }
     };
 
-    // ScrollSpy
-    useEffect(() => {
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(e => {
-                if (e.isIntersecting) {
-                    const id = e.target.id.replace('sec-', '');
-                    setActiveTab(id);
-                }
+    const handleReviewImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setReviewImageUploading(true);
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const res = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
             });
-        }, { threshold: 0.25, rootMargin: '-60px 0px -55% 0px' });
+            const data = await res.json();
+            if (data.secure_url) {
+                setReviewImageUrl(data.secure_url);
+                toast.success("Photo added successfully!");
+            } else {
+                toast.error("Failed to upload photo");
+            }
+        } catch (error) {
+            toast.error("Something went wrong");
+        } finally {
+            setReviewImageUploading(false);
+        }
+    };
 
-        document.querySelectorAll('.section').forEach(el => observer.observe(el));
-        return () => observer.disconnect();
-    }, [filteredItems, collapsed]);
+    const handlePostReview = async () => {
+        if (!customerPhone || customerPhone.length < 10) {
+            toast.error("Review ke liye phone number zaroori hai (+50 pts ke liye)");
+            return;
+        }
 
-    const goSec = (id: string) => {
-        setActiveTab(id);
-        const el = document.getElementById('sec-' + id);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setReviewSubmitting(true);
+        try {
+            const res = await fetch("/api/public/reviews", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    clerkUserId: clerkId,
+                    rating: reviewRating,
+                    comment: reviewComment,
+                    customerName: customerName || "Guest",
+                    customerPhone,
+                    tableId,
+                    imageUrl: reviewImageUrl
+                })
+            });
+
+            if (res.ok) {
+                toast.success("Review posted! +50 points added 👑");
+                setShowReviewSheet(false);
+                setReviewComment("");
+                setReviewImageUrl("");
+                setReviewRating(5);
+                // Refresh reviews
+                const reviewRes = await fetch(`/api/public/reviews?clerkUserId=${clerkId}`);
+                if (reviewRes.ok) {
+                    const data = await reviewRes.json();
+                    setReviews(data);
+                }
+                // Update loyalty points locally
+                setLoyaltyPoints(p => Number(p) + 50);
+            } else {
+                toast.error("Failed to post review");
+            }
+        } catch (err) {
+            toast.error("Error posting review");
+        } finally {
+            setReviewSubmitting(false);
+        }
+    };
+
+    const handleRedeemReward = async (rewardId: string, pointsRequired: number) => {
+        if (!customerPhone || customerPhone.length < 10) {
+            toast.error("Rewards ke liye phone number zaroori hai");
+            return;
+        }
+
+        if (loyaltyPoints < pointsRequired) {
+            toast.error("Insufficient points");
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/public/loyalty", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    phone: customerPhone,
+                    clerkUserId: clerkId,
+                    pointsToRedeem: pointsRequired
+                })
+            });
+
+            if (res.ok) {
+                toast.success("Reward Redeemed! Check your order or bill for details.");
+                setLoyaltyPoints(prev => prev - pointsRequired);
+            } else {
+                const err = await res.json();
+                toast.error(err.error || "Redemption failed");
+            }
+        } catch (err) {
+            toast.error("Something went wrong");
+        }
     };
 
     if (loading) return (
-        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F4F4F4', flexDirection: 'column' }}>
-            <div style={{ fontSize: '2rem', animation: 'blink 1s infinite' }}>🍽️</div>
-            <div style={{ marginTop: '10px', color: '#666', fontFamily: 'sans-serif' }}>Loading menu...</div>
+        <div className="flex h-screen items-center justify-center bg-[#F4F4F4]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E23744]"></div>
         </div>
     );
 
     return (
-        <>
-            <style dangerouslySetInnerHTML={{ __html: ZOMATO_CSS }} />
-            <div className="qr-wrapper">
+        <div className="max-w-[480px] mx-auto bg-[#F4F4F4] min-h-screen relative font-sans text-[#1C1C1C]">
 
-                {/* HEADER */}
-                <div className="sticky-hdr">
-                    <div className="top-bar">
-                        <button className="back-btn" onClick={() => window.history.back()}>←</button>
-                        <div className="top-info">
-                            <div className="top-name">{profile?.businessName || "Digital Menu"}</div>
-                            <div className="top-sub">{profile?.businessAddress || "Restaurant • Dine-in"}</div>
-                        </div>
-                        <div className="top-actions">
-                            <button className="action-btn" onClick={() => searchInputRef.current?.focus()}>🔍</button>
-                            <button className="action-btn">♡</button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* RESTAURANT CARD */}
-                <div className="rest-card">
-                    <div className="rest-img-wrap">
-                        {profile?.logoUrl ? (
-                            <img src={profile.logoUrl} alt={profile.businessName} />
-                        ) : (
-                            <div style={{ width: '100%', height: '190px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eee', fontSize: '3rem' }}>🍽️</div>
-                        )}
-                        <div className="table-badge"><div className="live-dot"></div><span>Table {tableName} · Active</span></div>
-                    </div>
-                    <div className="rest-body">
-                        <div className="rest-name">{profile?.businessName || "Restaurant Menu"}</div>
-                        <div className="rest-cuisine">{profile?.businessAddress || "Various cuisines available"}</div>
-                        <div className="rest-chips">
-                            <div className="chip g">★ 4.5 <span style={{ fontWeight: 500, color: '#3D9B6E', fontSize: '0.68rem' }}>(1.2K)</span></div>
-                            <div className="chip-divider"></div>
-                            <div className="chip">⏱ 20–30 mins</div>
-                        </div>
-                        <div className="offer-row">🏷️ Online Menu Powered by KravyPOS</div>
-                    </div>
-                </div>
-
-                {/* SEARCH */}
-                <div className="search-wrap">
-                    <div className="search-inner">
-                        <span style={{ fontSize: '0.9rem', color: 'var(--text3)' }}>🔍</span>
-                        <input
-                            type="text"
-                            placeholder="Search within menu"
-                            value={searchQ}
-                            onChange={(e) => setSearchQ(e.target.value)}
-                            ref={searchInputRef}
-                        />
-                    </div>
-                </div>
-
-                {/* VEG TOGGLE */}
-                <div className="veg-row">
-                    <div className="veg-left">
-                        <div className={`veg-track ${vegOnly ? 'on' : ''}`} onClick={() => setVegOnly(!vegOnly)}>
-                            <div className="veg-thumb"></div>
-                        </div>
-                        <span className="veg-lbl">Veg Only</span>
-                    </div>
-                    <div className="legend">
-                        <div className="leg-item"><div className="leg-dot v"></div> Veg</div>
-                        <div className="leg-item"><div className="leg-dot nv"></div> Non-veg</div>
-                    </div>
-                </div>
-
-                {/* CATEGORY TABS */}
-                {!searchQ && !actionCase && (
-                    <div className="cat-tabs-wrap">
-                        <div className="tabs-inner">
-                            {CATS.map(c => {
-                                const count = filteredItems.filter(m => (m.category?.name || "Other").replace(/\s+/g, '-') === c.id).length;
-                                return (
-                                    <button
-                                        key={c.id}
-                                        className={`ctab ${activeTab === c.id ? 'active' : ''}`}
-                                        onClick={() => goSec(c.id)}
-                                    >
-                                        {c.name}<span className="ctab-n">{count}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                {/* CASE BANNERS */}
-                {actionCase === 'merge' && (
-                    <div className="case-banner">
-                        <div className="cb-badge merge">🔀 Merge Mode</div>
-                        <div className="cb-title">Add More Items</div>
-                        <div className="cb-sub">These items will be merged into your exact order #{orderId}</div>
-                    </div>
-                )}
-                {actionCase === 'separate' && (
-                    <div className="case-banner">
-                        <div className="cb-badge new">📋 New Order</div>
-                        <div className="cb-title">Starting Order #2</div>
-                        <div className="cb-sub">Your previous items are preparing. These will come separately.</div>
-                    </div>
-                )}
-                {actionCase === 'round2' && (
-                    <div className="case-banner">
-                        <div className="cb-badge round2">🔄 Round 2</div>
-                        <div className="cb-title">What's Next? 😊</div>
-                        <div className="cb-sub">Desserts, drinks or anything else for Round 2!</div>
-                    </div>
-                )}
-
-                {/* MENU LIST */}
-                <div style={{ paddingBottom: '88px' }}>
-                    {searchQ ? (
-                        <div className="section">
-                            <div className="sec-hdr">
-                                <div className="sec-left">
-                                    <span className="sec-ico">🔍</span>
-                                    <span className="sec-name">Results</span>
-                                    <span className="sec-cnt">({filteredItems.length})</span>
-                                </div>
-                            </div>
-                            <div className="sec-line"></div>
-                            {filteredItems.map(item => <MenuItemCard key={item.id} item={item} qty={cart[item.id] || 0} onUpdate={updateCart} />)}
-                        </div>
-                    ) : (
-                        CATS.map(c => {
-                            const its = filteredItems.filter(i => (i.category?.name || "Other").replace(/\s+/g, '-') === c.id);
-                            if (!its.length) return null;
-                            const isCol = collapsed[c.id];
-                            return (
-                                <div className="section" id={`sec-${c.id}`} key={c.id}>
-                                    <div className="sec-hdr" onClick={() => toggleSec(c.id)}>
-                                        <div className="sec-left">
-                                            <span className="sec-ico">{c.icon}</span>
-                                            <span className="sec-name">{c.name}</span>
-                                            <span className="sec-cnt">({its.length})</span>
-                                        </div>
-                                        <span className={`sec-arr ${isCol ? 'down' : ''}`}>▾</span>
-                                    </div>
-                                    <div className="sec-line"></div>
-                                    {!isCol && its.map(item => <MenuItemCard key={item.id} item={item} qty={cart[item.id] || 0} onUpdate={updateCart} />)}
-                                </div>
-                            );
-                        })
-                    )}
-                </div>
-
-                {/* CART BAR */}
-                <div className={`cart-bar ${cartItemsCount > 0 && !showSheet ? 'show' : ''}`}>
-                    <div className={`cart-inner ${actionCase === 'merge' ? 'green' : actionCase === 'separate' ? 'orange' : actionCase === 'round2' ? 'blue' : ''}`} onClick={() => setShowSheet(true)}>
-                        <div className="cart-l">
-                            <div className="cart-cnt">{cartItemsCount} {cartItemsCount === 1 ? 'item' : 'items'}</div>
-                            <span className="cart-lbl">
-                                {actionCase === 'merge' ? 'Merge & Update' : actionCase === 'separate' ? 'Place Order #2' : actionCase === 'round2' ? 'Place Round 2' : 'View Cart'}
-                            </span>
-                        </div>
-                        <div className="cart-r">
-                            <span className="cart-tot">₹{cartTotal.toLocaleString('en-IN')}</span>
-                            <span className="cart-arrow">›</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* DIM OVERLAY */}
-                <div className={`dim ${showSheet || showWarning ? 'show' : ''}`} onClick={() => { setShowSheet(false); setShowWarning(false); }}></div>
-
-                {/* SHEET */}
-                <div className={`sheet ${showSheet ? 'show' : ''}`}>
-                    <div className="sheet-pill"></div>
-                    <div className="sheet-head">🛒 Your Order — Table {tableId}</div>
-
-                    <div>
-                        {Object.entries(cart).map(([id, qty]) => {
-                            const item = items.find(i => i.id === id);
-                            if (!item) return null;
-                            return (
-                                <div className="s-item" key={id}>
-                                    <div className={`si-dot ${item.isVeg !== false ? 'v' : 'nv'}`}></div>
-                                    <div className="si-name">{item.name}</div>
-                                    <div className="si-ctrl">
-                                        <button className="si-btn" onClick={() => updateCart(id, -1)}>−</button>
-                                        <span className="si-n">{qty}</span>
-                                        <button className="si-btn" onClick={() => updateCart(id, 1)}>+</button>
-                                    </div>
-                                    <div className="si-price">₹{(getItemPrice(item) * qty).toLocaleString('en-IN')}</div>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    <div className="bill-sec">
-                        <div className="bill-sec-hd">Bill Details</div>
-                        <div>
-                            <div className="bill-ln"><span>Item Total</span><span>₹{cartSubtotal.toLocaleString('en-IN')}</span></div>
-                            <div className="bill-ln"><span>GST & Charges (5%)</span><span>₹{gst.toLocaleString('en-IN')}</span></div>
-                            <div className="bill-ln tot"><span>To Pay</span><span>₹{cartTotal.toLocaleString('en-IN')}</span></div>
-                        </div>
-                    </div>
-
-                    <div className="pay-sec">
-                        <div className="pay-sec-hd">Payment Method</div>
-                        <div className="pay-grid">
-                            <div className={`pay-opt ${payM === 'upi' ? 'sel' : ''}`} onClick={() => setPayM('upi')}>
-                                <span className="pay-opt-ico">📱</span><span className="pay-opt-lbl">UPI / QR</span>
-                            </div>
-                            <div className={`pay-opt ${payM === 'cash' ? 'sel' : ''}`} onClick={() => setPayM('cash')}>
-                                <span className="pay-opt-ico">💵</span><span className="pay-opt-lbl">Cash</span>
-                            </div>
-                            <div className={`pay-opt ${payM === 'card' ? 'sel' : ''}`} onClick={() => setPayM('card')}>
-                                <span className="pay-opt-ico">💳</span><span className="pay-opt-lbl">Card</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button className="place-btn" onClick={placeOrder}>
-                        <span>{actionCase === 'merge' ? 'Merge Order' : actionCase === 'round2' ? 'Place Round 2' : 'Place Order'}</span>
-                        <span style={{ opacity: 0.82 }}>₹{cartTotal.toLocaleString('en-IN')}</span>
+            {/* ── TOP NAV ── */}
+            <nav className="sticky top-0 z-[100] bg-white shadow-sm">
+                <div className="flex items-center gap-3 px-3.5 py-3 border-b border-[#EBEBEB]">
+                    <button className="w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center">
+                        <ChevronLeft size={18} />
                     </button>
-                </div>
-
-                {/* WARNING SHEET */}
-                <div className={`sheet ${showWarning ? 'show' : ''}`}>
-                    <div className="sheet-pill"></div>
-                    <div className="sheet-head">
-                        <div style={{ fontSize: '1rem', fontWeight: 900 }}>⚠️ Order is already cooking</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text2)', marginTop: '2px' }}>New items will start as a separate order</div>
+                    <div className="flex-1">
+                        <div className="text-[0.95rem] font-[900]">{profile?.businessName || "Masala House"}</div>
+                        <div className="text-[0.67rem] text-[#ABABAB] font-[600] uppercase tracking-wider">North Indian · Table {tableName}</div>
                     </div>
-                    <div style={{ padding: '16px 18px' }}>
-                        <div className="warn-box">
-                            <div className="wb-icon">🔥</div>
-                            <div>
-                                <div className="wb-title">Kitchen is preparing Order 1!</div>
-                                <div className="wb-desc">We cannot merge into the existing order anymore. These new items will go as a separate order.</div>
-                            </div>
-                        </div>
-                        <div className="info-box">
-                            💡 <b>Bill Summary:</b> Both orders will show up on a single final bill.
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <button className="sheet-btn orange" onClick={confirmSeparateOrder}>➕ Yes, Create New Order</button>
-                            <button className="sheet-btn ghost" onClick={() => setShowWarning(false)}>Cancel</button>
-                        </div>
+                    <div className="flex gap-1.5">
+                        <button className="w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center" onClick={() => searchInputRef.current?.focus()}>
+                            <Search size={16} />
+                        </button>
+                        <button className="relative w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center" onClick={() => setActiveTab("loyalty")}>
+                            <Gift size={16} />
+                            <span className="absolute -top-1 -right-1 bg-[#3B82F6] text-white text-[0.5rem] font-[900] px-1 py-0.5 rounded-md border-2 border-white">{activeLang.toUpperCase()}</span>
+                        </button>
+                        <button className="relative w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center transition-all active:scale-90" onClick={() => setActiveTab("loyalty")}>
+                            <History size={16} className={recentOrderIds.length > 0 ? "text-[#E23744]" : ""} />
+                            {recentOrderIds.length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#E23744] rounded-full border-2 border-white animate-pulse" />
+                            )}
+                        </button>
                     </div>
                 </div>
-
-                {/* SUCCESS */}
-                <div className={`success ${showSuccess ? 'show' : ''}`}>
-                    <div className="success-ico">🎉</div>
-                    <div className="success-h">Order Placed!</div>
-                    <div className="success-p">Your order has been sent to the kitchen.<br />It will be ready soon!</div>
-                    <div className="success-id">{orderId}</div>
-                    <div className="track">
-                        <div className="tstep done"><div className="tdot">✅</div><div className="tlabel">Received</div></div>
-                        <div className="tstep"><div className="tdot">👨‍🍳</div><div className="tlabel">Preparing</div></div>
-                        <div className="tstep"><div className="tdot">🔥</div><div className="tlabel">Cooking</div></div>
-                        <div className="tstep"><div className="tdot">🍽️</div><div className="tlabel">Ready!</div></div>
-                    </div>
-                    <button className="track-btn" onClick={() => { setShowSuccess(false); setShowTracking(true); }}>📍 Track Your Order</button>
-                    <button className="more-btn" onClick={handleAddMore}>+ Add More Items</button>
-                </div>
-
-                {/* ═══ ORDER TRACKING VIEW ═══ */}
-                <div className={`track-view ${showTracking ? 'show' : ''}`}>
-                    <div className="tv-hero">
-                        <div className="tv-oid">{orderId}</div>
-                        <div className="tv-icon">
-                            {trackingStatus === 'PENDING' ? '✅' : trackingStatus === 'PREPARING' ? '🔥' : trackingStatus === 'READY' ? '🍽️' : '😊'}
-                        </div>
-                        <div className="tv-title">
-                            {trackingStatus === 'PENDING' ? 'Order Received!' : trackingStatus === 'PREPARING' ? 'Being Prepared...' : trackingStatus === 'READY' ? 'Ready to Serve!' : 'Served! Enjoy!'}
-                        </div>
-                        <div className="tv-sub">
-                            {trackingStatus === 'PENDING' ? 'Waiting for kitchen to confirm' : trackingStatus === 'PREPARING' ? 'Chef is cooking your food 🔥' : trackingStatus === 'READY' ? 'Waiter is bringing your food' : 'Thank you for dining with us!'}
-                        </div>
-                        <div className="tv-table-pill"><span>🪑 Table {tableName}</span></div>
-                    </div>
-
-                    {/* Stepper */}
-                    <div className="tv-stepper">
-                        <div className="tv-step-title">Order Progress</div>
-                        <div className="track">
-                            {[
-                                { label: 'Received', icon: '✅', key: 'PENDING' },
-                                { label: 'Confirmed', icon: '👨‍🍳', key: 'CONFIRMED' },
-                                { label: 'Preparing', icon: '🔥', key: 'PREPARING' },
-                                { label: 'Ready!', icon: '🍽️', key: 'READY' },
-                            ].map((step, idx) => {
-                                const statusOrder = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'COMPLETED'];
-                                const currentIdx = statusOrder.indexOf(trackingStatus);
-                                const stepIdx = statusOrder.indexOf(step.key);
-                                const isDone = stepIdx < currentIdx;
-                                const isActive = stepIdx === currentIdx;
-                                return (
-                                    <div key={step.key} className={`tstep ${isDone ? 'done' : isActive ? 'active-s' : ''}`}>
-                                        <div className="tdot">{step.icon}</div>
-                                        <div className="tlabel">{step.label}</div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Items Ordered */}
-                    {trackingOrder?.items && (
-                        <div className="tv-items">
-                            <div className="tv-items-title">Your Items</div>
-                            {(trackingOrder.items as any[]).map((it: any, idx: number) => (
-                                <div className="tv-item" key={idx}>
-                                    <div className="tv-i-left">
-                                        <span className="tv-i-name">{it.name}</span>
-                                        <span className="tv-i-qty">×{it.quantity}</span>
-                                    </div>
-                                    <span className="tv-i-price">₹{(it.price || 0) * (it.quantity || 1)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Bill */}
-                    {trackingOrder && (
-                        <div className="tv-bill">
-                            <div className="tv-items-title">Bill Summary</div>
-                            <div className="tv-bill-row"><span>Subtotal</span><span>₹{(trackingOrder.total / 1.05).toFixed(2)}</span></div>
-                            <div className="tv-bill-row"><span>GST (5%)</span><span>₹{(trackingOrder.total - trackingOrder.total / 1.05).toFixed(2)}</span></div>
-                            <div className="tv-bill-row total"><span>Total</span><span>₹{trackingOrder.total}</span></div>
-                        </div>
-                    )}
-
-                    {/* Buttons */}
-                    <div className="tv-close-wrap">
-                        <button className="tv-back-btn" onClick={() => setShowTracking(false)}>← Back to Menu</button>
-                        <button className="tv-add-btn" onClick={handleAddMore}>+ Add More Items</button>
-                    </div>
-                </div>
-
-                {/* FLOATING TRACK BUTTON — visible when order exists and not in tracking/success/sheet */}
-                {trackingOrderId && !showTracking && !showSuccess && !showSheet && !actionCase && (
-                    <div className="floating-track">
-                        <div className="ft-inner" onClick={() => setShowTracking(true)}>
-                            <div className="ft-l">
-                                <div className="ft-badge">📍 LIVE</div>
-                                <span className="ft-lbl">Track Your Order</span>
-                            </div>
-                            <span className="ft-arrow">›</span>
-                        </div>
+                {recentOrderIds.length > 0 && (
+                    <div className="flex bg-[#F0FDF4] px-3.5 py-2 overflow-x-auto no-scrollbar gap-2.5 border-b border-[#DCFCE7]">
+                        <span className="text-[0.65rem] font-[900] text-[#166534] uppercase tracking-wider shrink-0 flex items-center gap-1">
+                            <Clock size={12} /> Active:
+                        </span>
+                        {recentOrderIds.map(id => (
+                            <button
+                                key={id}
+                                onClick={() => window.location.href = `/order-tracking/${id}`}
+                                className="bg-white border border-[#22C55E]/30 rounded-full px-2.5 py-1 text-[0.65rem] font-[800] text-[#15803d] flex items-center gap-1 shrink-0 shadow-sm shadow-green-50"
+                            >
+                                Track Order #{id.slice(-4).toUpperCase()} ↗
+                            </button>
+                        ))}
                     </div>
                 )}
+                <div className="flex border-b border-[#EBEBEB] overflow-x-auto scrollbar-none">
+                    {(["menu", "reviews", "gallery", "loyalty"] as const).map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`flex-shrink-0 flex-1 py-2.5 text-[0.72rem] font-[800] capitalize transition-all border-b-[2.5px] min-w-[70px] ${activeTab === tab ? "text-[#E23744] border-[#E23744]" : "text-[#696969] border-transparent"}`}
+                        >
+                            {tab === "menu" ? "🍛 Menu" : tab === "reviews" ? "⭐ Reviews" : tab === "gallery" ? "📸 Gallery" : "🎁 Loyalty"}
+                        </button>
+                    ))}
+                </div>
+            </nav>
 
+            {/* ── CONTENT SCREENS ── */}
+            <main className="pb-32">
+                <AnimatePresence mode="wait">
+
+                    {/* MENU SCREEN */}
+                    {activeTab === "menu" && (
+                        <motion.div key="menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                            <ActiveOrderBanner tableId={tableId} clerkId={clerkId} />
+
+                            {/* RESTAURANT HERO */}
+                            <div className="bg-white mb-2">
+                                <div className="relative overflow-hidden h-[180px]">
+                                    <Image src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80" alt="Restaurant" fill className="object-cover" />
+                                    <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-black/45" />
+                                    <div className="absolute bottom-3 left-3.5 z-10 bg-black/65 backdrop-blur-md rounded-md px-2.5 py-1.5 flex items-center gap-1.5 border border-white/10">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#4CD964] animate-pulse" />
+                                        <span className="text-[0.7rem] font-[800] text-white">Table {tableName} · Active</span>
+                                    </div>
+                                    {loyaltyPoints > 0 && (
+                                        <div className="absolute bottom-3 right-3.5 z-10 bg-gradient-to-br from-[#D4A353] to-[#F0C060] rounded-lg px-2.5 py-1.5 flex items-center gap-1.5 shadow-lg">
+                                            <span className="text-[0.7rem] font-[900] text-white">👑 {loyaltyPoints} pts</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="px-3.5 py-3">
+                                    <div className="text-[1.25rem] font-[900] mb-0.5">{profile?.businessName || "Masala House"}</div>
+                                    <div className="text-[0.75rem] text-[#696969] font-[600] mb-2">North Indian, Mughlai, Biryani</div>
+                                    <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                                        <div className="flex items-center gap-1 border border-[#b2dfc8] bg-[#F0FDF4] rounded-md px-2 py-1 text-[0.72rem] font-[700] text-[#22C55E]">★ 4.3 (2.1K)</div>
+                                        <div className="w-[1px] h-4 bg-[#EBEBEB]" />
+                                        <div className="flex items-center gap-1 border border-[#EBEBEB] rounded-md px-2 py-1 text-[0.72rem] font-[700]">⏱ 20–30 min</div>
+                                        <div className="w-[1px] h-4 bg-[#EBEBEB]" />
+                                        <div className="flex items-center gap-1 border border-[#EBEBEB] rounded-md px-2 py-1 text-[0.72rem] font-[700]">₹350 for two</div>
+                                    </div>
+
+                                    {/* DYNAMIC OFFERS SLIDER */}
+                                    {offers.length > 0 ? (
+                                        <div className="flex gap-3 overflow-x-auto no-scrollbar mb-4 py-1">
+                                            {offers.map((offer) => (
+                                                <div key={offer.id} className="flex-shrink-0 min-w-[200px] bg-gradient-to-r from-orange-50 to-white border border-orange-200 rounded-xl p-3 relative overflow-hidden group shadow-sm">
+                                                    <div className="absolute top-0 right-0 w-8 h-8 bg-orange-100 rounded-full -mr-3 -mt-3 opacity-50" />
+                                                    <div className="flex items-start gap-2.5">
+                                                        <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm">
+                                                            <Tag size={16} />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-[0.8rem] font-[900] text-gray-800 leading-tight">
+                                                                {offer.discountType === 'PERCENTAGE' ? `${offer.discountValue}% OFF` : `₹${offer.discountValue} OFF`}
+                                                            </div>
+                                                            <div className="text-[0.6rem] font-[800] text-orange-600 uppercase tracking-wider mt-1 flex items-center gap-1">
+                                                                USE: <span className="bg-orange-100 px-1.5 py-0.5 rounded border border-orange-200">{offer.code}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {offer.minOrderValue && (
+                                                        <div className="mt-2 text-[0.55rem] font-bold text-gray-400 italic">
+                                                            Above ₹{offer.minOrderValue}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="bg-[#FFF6E6] border border-[#FFD980] rounded-md px-3 py-2 flex items-center gap-2 text-[0.73rem] font-[700] text-[#995500] mb-3">
+                                            🏷️ Great deals arriving soon!
+                                        </div>
+                                    )}
+
+                                    {/* LOYALTY MINI BAR */}
+                                    <div className="bg-gradient-to-br from-[#D4A353]/10 to-[#F0C060]/5 border border-[#D4A353]/30 rounded-xl px-3.5 py-2.5 flex items-center gap-2.5 mb-2" onClick={() => setActiveTab("loyalty")}>
+                                        <span className="text-[1.3rem]">👑</span>
+                                        <div className="flex-1">
+                                            <div className="text-[0.78rem] font-[800] text-[#7A5A00]">{loyaltyPoints} Loyalty Points</div>
+                                            <div className="text-[0.65rem] text-[#696969] mt-0.5">350 more for FREE Butter Chicken!</div>
+                                            <div className="h-1 bg-[#D4A353]/20 rounded-full mt-1 overflow-hidden">
+                                                <div className="h-full bg-gradient-to-r from-[#D4A353] to-[#F0C060]" style={{ width: `${(loyaltyPoints / 1000) * 100}%` }} />
+                                            </div>
+                                        </div>
+                                        <div className="text-[#D4A353] text-[1.1rem] font-extrabold">{loyaltyPoints}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* COMBOS STRIP */}
+                            {combos.length > 0 && (
+                                <div className="bg-white border-b border-[#EBEBEB] py-3.5 px-3.5">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="text-[0.68rem] font-[800] uppercase tracking-wider text-[#ABABAB]">Bundle & Save ✨</div>
+                                        <span className="text-[0.65rem] font-[800] text-[#8B5CF6] px-2 py-0.5 bg-[#8B5CF6]/10 rounded-full italic">Best Value</span>
+                                    </div>
+                                    <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+                                        {combos.map(combo => (
+                                            <div
+                                                key={combo.id}
+                                                className="flex-shrink-0 w-[240px] bg-white border border-indigo-100 rounded-2xl overflow-hidden shadow-sm relative group"
+                                                onClick={() => {
+                                                    setActiveCombo(combo);
+                                                    setComboSelections({});
+                                                }}
+                                            >
+                                                {/* Combo Image */}
+                                                <div className="h-28 relative overflow-hidden">
+                                                    {combo.imageUrl ? (
+                                                        <Image src={combo.imageUrl} alt={combo.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center text-indigo-200">
+                                                            <Sparkles size={32} />
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-md rounded-lg px-2 py-1 shadow-sm">
+                                                        <div className="text-[0.75rem] font-black text-indigo-600 leading-none">₹{combo.price}</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-3">
+                                                    <div className="flex items-start justify-between mb-1">
+                                                        <h4 className="text-[0.88rem] font-black text-gray-800 truncate flex-1">{combo.name}</h4>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-1 mt-2">
+                                                        {combo.selections.slice(0, 3).map((s, idx) => (
+                                                            <div key={idx} className="bg-white/60 border border-black/5 rounded-md px-1.5 py-0.5 text-[0.55rem] font-black text-gray-500 truncate max-w-[80px]">
+                                                                {s.type === 'fixed' ? items.find(it => it.id === s.itemId)?.name || "Item" : s.label}
+                                                            </div>
+                                                        ))}
+                                                        {combo.selections.length > 3 && <div className="text-[0.6rem] font-black text-indigo-400">+{combo.selections.length - 3} more</div>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* REORDER STRIP */}
+                            <div className="bg-white border-b border-[#EBEBEB] py-2.5 px-3.5">
+                                <div className="text-[0.68rem] font-[800] uppercase tracking-wider text-[#ABABAB] mb-2">🔄 Order Again</div>
+                                <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
+                                    {items.filter(i => i.isBestseller).slice(0, 5).map(it => (
+                                        <div key={it.id} className="flex-shrink-0 bg-[#F4F4F4] border border-[#EBEBEB] rounded-xl px-3 py-2.5 flex items-center gap-2" onClick={() => addToCart(it.id)}>
+                                            <span className="text-[1.2rem]">{it.ico || "🍽️"}</span>
+                                            <div>
+                                                <div className="text-[0.75rem] font-[800]">{it.name}</div>
+                                                <div className="text-[0.65rem] font-[700] text-[#696969]">₹{it.sellingPrice || it.price}</div>
+                                            </div>
+                                            <span className="text-[0.72rem] font-[900] text-[#E23744] ml-1">+ADD</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* GROUP ORDER BANNER */}
+                            <div className="m-3.5 bg-gradient-to-br from-[#8B5CF6]/10 to-[#3B82F6]/5 border border-[#8B5CF6]/20 rounded-xl px-3.5 py-2.5 flex items-center gap-3">
+                                <span className="text-[1.4rem]">👥</span>
+                                <div className="flex-1">
+                                    <div className="text-[0.8rem] font-[800] text-[#5B21B6]">Group Ordering</div>
+                                    <div className="text-[0.65rem] text-[#696969] mt-0.5">Sab log apna apna order karein ek saath</div>
+                                </div>
+                                <button className="bg-[#8B5CF6]/15 border border-[#8B5CF6]/30 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-[800] text-[#7C3AED]">Start →</button>
+                            </div>
+
+                            {/* LANGUAGE STRIP */}
+                            <div className="bg-white border-b border-[#EBEBEB] px-3.5 py-2 flex items-center justify-between">
+                                <span className="text-[0.7rem] font-[700] text-[#696969]">🌐 Menu Language</span>
+                                <div className="flex gap-1.5">
+                                    {(["en", "hi", "mr", "ta"] as const).map(ln => (
+                                        <button
+                                            key={ln}
+                                            onClick={() => setActiveLang(ln)}
+                                            className={`px-2.5 py-1 rounded-md text-[0.7rem] font-[800] transition-all border ${activeLang === ln ? "bg-blue-50 border-blue-500 text-blue-500" : "bg-gray-50 border-[#EBEBEB] text-[#696969]"}`}
+                                        >
+                                            {ln === "en" ? "English" : ln === "hi" ? "हिंदी" : ln === "mr" ? "मराठी" : "தமிழ்"}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* SEARCH */}
+                            <div className="bg-white p-2.5 mb-2">
+                                <div className="bg-[#F4F4F4] rounded-xl flex items-center gap-2 px-3.5 py-2.5 border border-transparent focus-within:border-[#E23744] focus-within:bg-white transition-all">
+                                    <Search size={16} className="text-[#ABABAB]" />
+                                    <input
+                                        ref={searchInputRef}
+                                        value={searchQ}
+                                        onChange={(e) => setSearchQ(e.target.value)}
+                                        placeholder="Search dishes..."
+                                        className="bg-transparent text-sm w-full outline-none font-[600]"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* VEG TOGGLE */}
+                            <div className="bg-white px-3.5 py-2.5 flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2.5">
+                                    <div
+                                        onClick={() => setVegOnly(!vegOnly)}
+                                        className={`w-10 h-[22px] rounded-full relative cursor-pointer transition-colors ${vegOnly ? "bg-[#22C55E]" : "bg-[#EBEBEB]"}`}
+                                    >
+                                        <div className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow-md transition-all ${vegOnly ? "left-[19px]" : "left-0.5"}`} />
+                                    </div>
+                                    <span className="text-[0.8rem] font-[700]">Veg Only</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1 text-[0.7rem] font-[700] text-[#696969]">
+                                        <div className="w-[13px] h-[13px] border-[1.5px] border-[#22C55E] flex items-center justify-center rounded-sm">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
+                                        </div> Veg
+                                    </div>
+                                    <div className="flex items-center gap-1 text-[0.7rem] font-[700] text-[#696969]">
+                                        <div className="w-[13px] h-[13px] border-[1.5px] border-[#E23744] flex items-center justify-center rounded-sm">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#E23744]" />
+                                        </div> Non-veg
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* CAT TABS (STIKY) */}
+                            <div className="sticky top-[93px] z-[50] bg-white border-b border-[#EBEBEB] overflow-x-auto no-scrollbar">
+                                <div className="inline-flex">
+                                    {categories.map(c => (
+                                        <button
+                                            key={c}
+                                            onClick={() => setActiveCategory(c)}
+                                            className={`px-4 py-3 text-[0.8rem] font-[700] capitalize whitespace-nowrap border-b-[2.5px] transition-all ${activeCategory === c ? "text-[#E23744] border-[#E23744]" : "text-[#696969] border-transparent"}`}
+                                        >
+                                            {c}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+
+                            {/* MENU CONTENT LIST */}
+                            <div className="bg-white">
+                                {filteredItems.map(item => (
+                                    <div key={item.id} className="flex gap-2.5 p-3.5 border-b border-[#F7F7F7] last:border-0 items-start">
+                                        <div className="flex-1 min-w-0">
+                                            <div className={`w-4 h-4 border-[1.5px] rounded-sm flex items-center justify-center mb-1.5 ${item.isVeg ? "border-[#22C55E]" : "border-[#E23744]"}`}>
+                                                <div className={`w-2 h-2 rounded-full ${item.isVeg ? "bg-[#22C55E]" : "bg-[#E23744]"}`} />
+                                            </div>
+                                            <div className="flex gap-1 mb-1">
+                                                {item.isBestseller && <span className="bg-[#FFF2E2] text-[#CC5500] text-[0.58rem] font-[800] px-1.5 py-0.5 rounded uppercase">🏅 Bestseller</span>}
+                                                {item.isRecommended && <span className="bg-[#F0FDF4] text-[#22C55E] text-[0.58rem] font-[800] px-1.5 py-0.5 rounded uppercase">👍 Chef Pick</span>}
+                                            </div>
+                                            <div className="flex items-center gap-1.5 mb-1">
+                                                <span className="text-[0.9rem] font-[800] leading-tight">
+                                                    {activeLang === "hi" && item.hiName ? item.hiName : item.name}
+                                                </span>
+                                                {item.rating && <span className="flex items-center gap-0.5 text-[0.62rem] font-[800] text-[#22C55E] bg-[#F0FDF4] px-1.5 py-0.5 rounded-md">★ {item.rating}</span>}
+                                            </div>
+                                            <p className="text-[0.73rem] text-[#696969] leading-relaxed line-clamp-2 mb-2">{item.description}</p>
+                                            <div className="text-[0.95rem] font-[900]">₹{item.sellingPrice || item.price}</div>
+                                        </div>
+                                        <div className="flex flex-col items-center flex-shrink-0">
+                                            <div className="w-[108px] h-[92px] rounded-xl overflow-hidden relative border border-[#EBEBEB]">
+                                                {item.imageUrl ? (
+                                                    <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gradient-to-br from-[#FFF0F1] to-[#FFF8EC] flex items-center justify-center text-4xl">{item.ico || "🥘"}</div>
+                                                )}
+                                            </div>
+                                            <div className="mt-[-13px] relative z-10 w-full flex justify-center px-2">
+                                                {cart[item.id] ? (
+                                                    <div className="bg-[#E23744] text-white rounded-lg flex items-center justify-between w-full h-[32px] px-1 shadow-lg shadow-red-100">
+                                                        <button onClick={() => updateQty(item.id, -1)} className="w-7 h-full flex items-center justify-center text-lg font-bold">−</button>
+                                                        <span className="text-[0.88rem] font-black">{cart[item.id]}</span>
+                                                        <button onClick={() => updateQty(item.id, 1)} className="w-7 h-full flex items-center justify-center text-lg font-bold">+</button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => addToCart(item.id)}
+                                                        className="bg-white border-[1.5px] border-[#E23744] text-[#E23744] rounded-lg px-4 py-1.5 text-[0.82rem] font-[900] shadow-md active:scale-95 transition-all w-full"
+                                                    >
+                                                        ADD
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="text-[0.58rem] text-[#ABABAB] mt-1 font-[600]">customisable</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                        </motion.div>
+                    )}
+
+                    {/* REVIEWS SCREEN */}
+                    {activeTab === "reviews" && (() => {
+                        const totalReviews = reviews.length;
+                        const avgRating = totalReviews > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / totalReviews) : 4.3;
+                        const starCounts = [5, 4, 3, 2, 1].map(s => reviews.filter(r => r.rating === s).length);
+                        const filteredReviews = reviewFilter ? reviews.filter(r => r.rating === reviewFilter) : reviews;
+                        return (
+                        <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-[#F4F4F4] min-h-screen">
+
+                            {/* TRUST BANNER */}
+                            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 flex items-center gap-3">
+                                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                                    <CheckCircle2 size={16} className="text-white" fill="currentColor" />
+                                </div>
+                                <div>
+                                    <div className="text-white text-[0.78rem] font-[900]">100% Verified QR Reviews</div>
+                                    <div className="text-emerald-100 text-[0.62rem] font-[600] mt-0.5">Only from walk-in customers who scanned the table QR menu</div>
+                                </div>
+                            </div>
+
+                            {/* RATING HERO */}
+                            <div className="bg-white px-5 pt-5 pb-4 mb-2">
+                                <div className="flex items-center gap-6">
+                                    <div className="text-center">
+                                        <div className="font-[Syne] text-[4rem] font-[900] text-[#1C1C1C] leading-none">{avgRating.toFixed(1)}</div>
+                                        <div className="flex justify-center gap-0.5 mt-1">
+                                            {[1,2,3,4,5].map(s => (
+                                                <span key={s} className={`text-[1.1rem] ${s <= Math.round(avgRating) ? 'text-[#D4A353]' : 'text-gray-200'}`}>★</span>
+                                            ))}
+                                        </div>
+                                        <div className="text-[0.65rem] text-[#ABABAB] font-[700] mt-1">{totalReviews} reviews</div>
+                                    </div>
+                                    <div className="flex-1 space-y-1.5">
+                                        {[5,4,3,2,1].map((star, i) => {
+                                            const cnt = starCounts[i];
+                                            const pct = totalReviews > 0 ? (cnt / totalReviews) * 100 : (star === 5 ? 58 : star === 4 ? 25 : 10);
+                                            return (
+                                                <button key={star} onClick={() => setReviewFilter(reviewFilter === star ? null : star)} className="flex items-center gap-2 w-full group">
+                                                    <span className="text-[0.68rem] font-[800] text-[#696969] w-2.5 shrink-0">{star}</span>
+                                                    <span className="text-[#D4A353] text-[0.6rem]">★</span>
+                                                    <div className="flex-1 h-1.5 bg-[#F4F4F4] rounded-full overflow-hidden">
+                                                        <motion.div
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${pct}%` }}
+                                                            transition={{ duration: 0.8, delay: i * 0.1 }}
+                                                            className={`h-full rounded-full ${reviewFilter === star ? 'bg-[#E23744]' : 'bg-[#D4A353]'}`}
+                                                        />
+                                                    </div>
+                                                    <span className="text-[0.6rem] font-[700] text-[#ABABAB] w-3 text-right shrink-0">{cnt}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                                {reviewFilter && (
+                                    <motion.button
+                                        initial={{ opacity: 0, y: -4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        onClick={() => setReviewFilter(null)}
+                                        className="mt-3 w-full bg-red-50 border border-red-100 rounded-xl py-2 text-[0.72rem] font-[900] text-[#E23744] flex items-center justify-center gap-1.5"
+                                    >
+                                        <X size={12} /> Showing {reviewFilter}★ only — Clear Filter
+                                    </motion.button>
+                                )}
+                            </div>
+
+                            {/* WRITE REVIEW CTA */}
+                            <div className="px-3.5 mb-2">
+                                <motion.div
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={() => setShowReviewSheet(true)}
+                                    className="bg-white rounded-2xl p-4 border border-[#EBEBEB] shadow-sm flex items-center gap-3 cursor-pointer"
+                                >
+                                    <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-amber-100">
+                                        <MessageSquare size={18} className="text-white" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="text-[0.85rem] font-[900] text-gray-800">Share Your Experience</div>
+                                        <div className="text-[0.65rem] text-[#ABABAB] font-[600] mt-0.5">Earn +50 loyalty points 👑 instantly</div>
+                                    </div>
+                                    <div className="bg-[#E23744] text-white text-[0.65rem] font-[900] px-2.5 py-1.5 rounded-lg shrink-0">Write ✍️</div>
+                                </motion.div>
+                            </div>
+
+                            {/* REVIEWS LIST */}
+                            <div className="px-3.5 space-y-3 pb-6">
+                                {filteredReviews.length === 0 && (
+                                    <div className="text-center py-10 text-[#ABABAB] text-[0.8rem] font-bold">No {reviewFilter}★ reviews yet.</div>
+                                )}
+                                {filteredReviews.map((r, idx) => {
+                                    const displayName = r.customerName && r.customerName !== "Guest" ? r.customerName : getIndianName(r.id);
+                                    const isGuest = !r.customerName || r.customerName === "Guest";
+                                    const isHelpful = helpfulReviews[r.id];
+                                    return (
+                                        <motion.div
+                                            key={r.id}
+                                            initial={{ opacity: 0, y: 12 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: idx * 0.04 }}
+                                            className="bg-white rounded-2xl border border-[#F0F0F0] shadow-sm overflow-hidden"
+                                        >
+                                            <div className="p-4">
+                                                {/* HEADER */}
+                                                <div className="flex items-start gap-3 mb-3">
+                                                    <div className="relative shrink-0">
+                                                        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${getAvatarColor(displayName)} overflow-hidden flex items-center justify-center shadow-md`}>
+                                                            <Image src={getAvatarUrl(r.customerName, r.id)} alt={displayName} fill className="object-cover" />
+                                                            <span className="text-white font-black text-base absolute">{displayName[0]?.toUpperCase()}</span>
+                                                        </div>
+                                                        <div className="absolute -bottom-1 -right-1 w-[18px] h-[18px] bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-50">
+                                                            <CheckCircle2 size={11} className="text-emerald-500" fill="currentColor" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-[900] text-[0.88rem] text-gray-900 truncate">{displayName}</div>
+                                                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                                            <span className="text-[0.58rem] font-[900] text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                                                                <CheckCircle2 size={8} className="text-emerald-500" /> Verified QR Customer
+                                                            </span>
+                                                            {isGuest && (
+                                                                <span className="text-[0.58rem] font-[800] text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded-full">✨ Guest</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="shrink-0 text-right">
+                                                        <div className="flex gap-0.5 justify-end mb-0.5">
+                                                            {[1,2,3,4,5].map(s => (
+                                                                <span key={s} className={`text-[0.7rem] ${s <= r.rating ? 'text-[#D4A353]' : 'text-gray-200'}`}>★</span>
+                                                            ))}
+                                                        </div>
+                                                        <div className="text-[0.6rem] text-[#ABABAB] font-[700]">
+                                                            {new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* REVIEW TEXT */}
+                                                {r.comment && (
+                                                    <div className="relative mb-3">
+                                                        <span className="absolute -left-1 -top-1 text-4xl text-gray-100 font-serif leading-none select-none">“</span>
+                                                        <p className="text-[0.82rem] text-gray-600 leading-relaxed font-[600] pl-4">{r.comment}</p>
+                                                    </div>
+                                                )}
+
+                                                {/* REVIEW IMAGE */}
+                                                {r.imageUrl && (
+                                                    <div className="w-full h-36 relative rounded-xl overflow-hidden border border-gray-100 mb-3">
+                                                        <Image src={r.imageUrl} alt="Review photo" fill className="object-cover" />
+                                                        <div className="absolute bottom-2 left-2 bg-black/40 backdrop-blur-sm text-white text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full">📸 Customer Photo</div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* FOOTER — HELPFUL */}
+                                            <div className="border-t border-gray-50 px-4 py-2.5 flex items-center justify-between">
+                                                <span className="text-[0.62rem] text-[#ABABAB] font-[700] italic">Was this review helpful?</span>
+                                                <button
+                                                    onClick={() => setHelpfulReviews(prev => ({ ...prev, [r.id]: !prev[r.id] }))}
+                                                    className={`flex items-center gap-1.5 text-[0.65rem] font-[800] px-2.5 py-1 rounded-full border transition-all ${
+                                                        isHelpful
+                                                            ? 'bg-blue-50 border-blue-200 text-blue-600'
+                                                            : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-blue-200 hover:text-blue-500'
+                                                    }`}
+                                                >
+                                                    👍 {isHelpful ? 'Helpful!' : 'Helpful'}
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
+                            </div>
+                        </motion.div>
+                        );
+                    })()}
+
+
+                    {/* GALLERY SCREEN */}
+                    {activeTab === "gallery" && (
+                        <motion.div key="gallery" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-[#F4F4F4] min-h-screen">
+
+                            {/* Hero Banner */}
+                            <div className="bg-gradient-to-br from-violet-600 to-indigo-700 px-5 py-6 relative overflow-hidden">
+                                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
+                                <div className="relative z-10">
+                                    <div className="text-white font-black text-lg">📸 Restaurant Gallery</div>
+                                    <div className="text-violet-200 text-[0.72rem] font-[600] mt-1">Real photos from our kitchen &amp; ambience</div>
+                                    <div className="flex gap-2 mt-3">
+                                        <span className="bg-white/20 text-white text-[0.6rem] font-black px-2.5 py-1 rounded-full">{galleryImages.length} Photos</span>
+                                        <span className="bg-white/20 text-white text-[0.6rem] font-black px-2.5 py-1 rounded-full">✅ Authentic</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Category Filter Pills */}
+                            {galleryImages.length > 0 && (
+                                <div className="px-4 py-3 flex gap-2 overflow-x-auto scrollbar-none">
+                                    {(["all", "food", "interior", "promo", "other"] as const).map(cat => {
+                                        const count = cat === "all" ? galleryImages.length : galleryImages.filter(i => i.category === cat).length;
+                                        if (count === 0 && cat !== "all") return null;
+                                        const labels: Record<string, string> = { all: "🌟 All", food: "🍛 Food", interior: "🪑 Interior", promo: "🎉 Offers", other: "📦 Other" };
+                                        return (
+                                            <button
+                                                key={cat}
+                                                onClick={() => setGalleryFilter(cat)}
+                                                className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-[0.7rem] font-black border transition-all ${galleryFilter === cat ? "bg-violet-600 text-white border-violet-600 shadow-md" : "bg-white text-gray-500 border-gray-200"}`}
+                                            >
+                                                {labels[cat]} ({count})
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* Images Grid */}
+                            <div className="px-4 pb-8">
+                                {galleryImages.length === 0 ? (
+                                    <div className="text-center py-16">
+                                        <div className="text-5xl mb-4">📷</div>
+                                        <p className="text-sm font-bold text-gray-500">Gallery coming soon!</p>
+                                        <p className="text-xs text-gray-400 mt-1">Restaurant is uploading photos</p>
+                                    </div>
+                                ) : (
+                                    <div className="columns-2 gap-3">
+                                        {(galleryFilter === "all" ? galleryImages : galleryImages.filter(i => i.category === galleryFilter)).map((img, idx) => (
+                                            <motion.div
+                                                key={img.id}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: idx * 0.05 }}
+                                                className="break-inside-avoid mb-3 rounded-2xl overflow-hidden bg-white shadow-sm cursor-pointer group"
+                                                onClick={() => setGalleryLightbox(img)}
+                                            >
+                                                <div className="relative w-full" style={{ paddingTop: idx % 3 === 0 ? "130%" : "80%" }}>
+                                                    <Image src={img.imageUrl} alt={img.caption || img.category} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                    <div className={`absolute top-2 left-2 text-[0.55rem] font-black px-1.5 py-0.5 rounded-full backdrop-blur-sm ${img.category === "food" ? "bg-orange-500/80 text-white" : img.category === "interior" ? "bg-blue-500/80 text-white" : img.category === "promo" ? "bg-purple-500/80 text-white" : "bg-gray-600/70 text-white"}`}>
+                                                        {img.category === "food" ? "🍛" : img.category === "interior" ? "🪑" : img.category === "promo" ? "🎉" : "📦"}
+                                                    </div>
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity w-9 h-9 bg-white/90 rounded-full flex items-center justify-center text-sm shadow-lg">🔍</div>
+                                                    </div>
+                                                </div>
+                                                {img.caption && (
+                                                    <div className="px-3 py-2">
+                                                        <p className="text-[0.68rem] font-[700] text-gray-600 leading-snug">{img.caption}</p>
+                                                    </div>
+                                                )}
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Lightbox */}
+                            <AnimatePresence>
+                                {galleryLightbox && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        onClick={() => setGalleryLightbox(null)}
+                                        className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-6 backdrop-blur-sm"
+                                    >
+                                        <motion.div
+                                            initial={{ scale: 0.8 }}
+                                            animate={{ scale: 1 }}
+                                            exit={{ scale: 0.8 }}
+                                            onClick={e => e.stopPropagation()}
+                                            className="relative max-w-sm w-full"
+                                        >
+                                            <div className="relative w-full rounded-2xl overflow-hidden bg-black" style={{ paddingTop: "90%" }}>
+                                                <Image src={galleryLightbox.imageUrl} alt={galleryLightbox.caption || ""} fill className="object-contain" />
+                                            </div>
+                                            {galleryLightbox.caption && (
+                                                <div className="text-white text-center text-sm font-bold mt-3 px-4">{galleryLightbox.caption}</div>
+                                            )}
+                                            <button
+                                                onClick={() => setGalleryLightbox(null)}
+                                                className="absolute -top-4 -right-4 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-xl text-gray-700 font-black text-lg"
+                                            >
+                                                ✕
+                                            </button>
+                                        </motion.div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
+                    )}
+
+                    {/* LOYALTY SCREEN */}
+                    {activeTab === "loyalty" && (
+                        <motion.div key="loyalty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-[#F4F4F4] min-h-screen">
+                            <div className="bg-gradient-to-br from-[#1a0a00] to-[#2d1500] p-7 text-center relative overflow-hidden mb-2">
+                                <div className="relative z-10">
+                                    <span className="text-3xl mb-2.5 block">👑</span>
+                                    <div className="font-[Syne] text-2xl font-[800] text-[#F0EAD6] mb-1">Gold Member</div>
+                                    <div className="text-[0.8rem] text-[#F0EAD6]/55 mb-4 px-10 leading-relaxed">Masala House Rewards - Earn points on every order!</div>
+                                    <div className="inline-flex items-baseline gap-1 mt-2">
+                                        <span className="font-[Syne] text-5xl font-[800] bg-gradient-to-br from-[#F0C060] to-[#D4A353] bg-clip-text text-transparent">{loyaltyPoints}</span>
+                                        <span className="text-[0.85rem] font-[800] text-[#D4A353]">pts</span>
+                                    </div>
+                                    <div className="mt-6">
+                                        <div className="flex justify-between text-[0.7rem] text-[#F0EAD6]/50 mb-1.5 font-bold">
+                                            <span>Gold (500 pts)</span>
+                                            <span>Platinum (1000 pts)</span>
+                                        </div>
+                                        <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                                            <div className="h-full bg-gradient-to-r from-[#D4A353] to-[#F0C060] transition-all duration-1000" style={{ width: `${(loyaltyPoints / 1000) * 100}%` }} />
+                                        </div>
+                                        <div className="text-[0.7rem] text-[#F0EAD6]/50 mt-2">350 pts aur — Platinum Member ban jao! 🚀</div>
+                                    </div>
+                                </div>
+                                <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(212,163,83,0.15),transparent)]" />
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 px-3.5 mb-2">
+                                <div className="bg-white rounded-xl p-3 text-center border border-[#EBEBEB]">
+                                    <div className="font-[Syne] text-lg font-[800]">{loyaltyPoints}</div>
+                                    <div className="text-[0.6rem] font-[700] text-[#ABABAB] uppercase">Total Points</div>
+                                </div>
+                                <div className="bg-white rounded-xl p-3 text-center border border-[#EBEBEB]">
+                                    <div className="font-[Syne] text-lg font-[800]">12</div>
+                                    <div className="text-[0.6rem] font-[700] text-[#ABABAB] uppercase">Visits</div>
+                                </div>
+                                <div className="bg-white rounded-xl p-3 text-center border border-[#EBEBEB]">
+                                    <div className="font-[Syne] text-lg font-[800]">₹4.2K</div>
+                                    <div className="text-[0.6rem] font-[700] text-[#ABABAB] uppercase">Total Spent</div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-4 mb-2">
+                                <div className="font-[Syne] text-[0.9rem] font-[800] mb-3.5 flex items-center justify-between px-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <Clock size={18} className="text-[#3B82F6]" /> Active/Recent Orders
+                                    </div>
+                                    <button
+                                        onClick={() => window.location.href = `/track?clerkUserId=${clerkId}`}
+                                        className="text-[10px] font-black text-[#3B82F6] uppercase tracking-widest bg-blue-50 px-2 py-1 rounded-md"
+                                    >
+                                        Find All 🔍
+                                    </button>
+                                </div>
+                                {recentOrderIds.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {recentOrderIds.map(id => (
+                                            <div key={id} onClick={() => window.location.href = `/order-tracking/${id}`} className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3.5 flex items-center justify-between active:scale-95 transition-all cursor-pointer">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-lg bg-white border border-[#EBEBEB] flex items-center justify-center text-xl">🍛</div>
+                                                    <div>
+                                                        <div className="text-[0.8rem] font-[900]">Order #{id.slice(-6).toUpperCase()}</div>
+                                                        <div className="text-[0.65rem] text-[#696969] font-[700]">Table {tableName} · View Live Tracking ↗</div>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight size={18} className="text-[#ABABAB]" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6 text-[#ABABAB] text-[0.75rem] font-bold">No recent orders found on this device.</div>
+                                )}
+                            </div>
+
+                            <div className="bg-white p-4 mb-2">
+                                <div className="font-[Syne] text-[0.9rem] font-[800] mb-3.5 px-0.5">🎁 Rewards Redeem Karo</div>
+                                <div className="space-y-3.5">
+                                    {rewards.length > 0 ? (
+                                        rewards.map((rew) => (
+                                            <div key={rew.id} className="flex items-center gap-3 py-3 border-b border-[#F7F7F7] last:border-0 hover:bg-gray-50/50 transition-all rounded-lg px-1">
+                                                <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl ${loyaltyPoints >= rew.pointsRequired ? "bg-amber-50" : "bg-gray-100 opacity-60"}`}>
+                                                    🎁
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="text-[0.7rem] text-[#696969] mt-0.5">{rew.description}</div>
+                                                    <div className="text-[0.7rem] font-[800] text-amber-600 mt-1 flex items-center gap-1">
+                                                        <Star size={12} fill="currentColor" /> {rew.pointsRequired} pts required
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRedeemReward(rew.id, rew.pointsRequired)}
+                                                    className={`px-4 py-2 rounded-lg text-[0.72rem] font-[900] shadow-sm transition-all ${loyaltyPoints >= rew.pointsRequired
+                                                        ? "bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-amber-100 active:scale-95"
+                                                        : "bg-gray-100 text-gray-400 border border-gray-200"
+                                                        }`}
+                                                    disabled={loyaltyPoints < rew.pointsRequired}
+                                                >
+                                                    {loyaltyPoints >= rew.pointsRequired ? "Redeem" : "Locked"}
+                                                </button>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-6 text-[#ABABAB] text-[0.75rem] font-bold">Stay tuned! More rewards coming soon.</div>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                </AnimatePresence>
+            </main>
+
+            {/* ── STICKY CART BAR ── */}
+            <div className={`fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-[110] px-3.5 pt-2.5 pb-5 backdrop-blur-md bg-[#F4F4F4]/70 transition-transform duration-300 ${cartCount > 0 && !showCartSheet ? "translate-y-0" : "translate-y-full"}`}>
+                <div onClick={() => setShowCartSheet(true)} className="bg-[#E23744] text-white rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-2xl active:scale-95 transition-all cursor-pointer">
+                    <div className="flex items-center gap-2.5 transition-all">
+                        <div className="bg-white/20 rounded-md px-2 py-1 text-[0.78rem] font-[900]">{cartCount} {cartCount === 1 ? "item" : "items"}</div>
+                        <span className="text-[0.88rem] font-[800] uppercase tracking-wide">View Cart</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[0.9rem] font-[900]">₹{total.toLocaleString("en-IN")}</span>
+                        <span className="text-xl">›</span>
+                    </div>
+                </div>
             </div>
-        </>
+
+            {/* ── ORDER SHEET (CART) ── */}
+            <AnimatePresence mode="wait">
+                {showCartSheet && (
+                    <>
+                        <motion.div
+                            key="cart-overlay"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowCartSheet(false)}
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200]"
+                        />
+                        <motion.div
+                            key="cart-sheet"
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white rounded-t-3xl z-[201] max-h-[88vh] overflow-y-auto no-scrollbar flex flex-col shadow-2xl"
+                        >
+                            <div className="w-10 h-1 bg-[#EBEBEB] rounded-full mx-auto mt-3" />
+                            <div className="px-4 py-3.5 border-b border-[#EBEBEB] flex items-center justify-between sticky top-0 bg-white z-10">
+                                <h3 className="text-lg font-[900]">🛒 Your Order — T-{tableName}</h3>
+                                <button onClick={() => setShowCartSheet(false)} className="w-7 h-7 bg-[#F4F4F4] rounded-lg flex items-center justify-center text-lg">✕</button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto no-scrollbar pb-32 px-4">
+                                {/* Combos List */}
+                                {combosCart.map((combo, cIdx) => (
+                                    <div key={`combo-${cIdx}`} className="py-4 border-b border-[#F7F7F7] bg-indigo-50/20">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <Sparkles size={16} className="text-indigo-500" />
+                                                <div className="font-[800] text-[0.88rem] text-indigo-700">{combo.name}</div>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    const newCart = [...combosCart];
+                                                    newCart.splice(cIdx, 1);
+                                                    setCombosCart(newCart);
+                                                }}
+                                                className="text-red-500 text-[0.65rem] font-black uppercase tracking-widest"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                        <div className="space-y-1.5 pl-6">
+                                            {combo.selections.map((s: any, sIdx: number) => (
+                                                <div key={sIdx} className="text-[0.7rem] text-[#64748B] font-bold flex items-center justify-between italic">
+                                                    <span>• {s.name}</span>
+                                                    <span className="text-[0.6rem]">Included</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="text-right mt-3 text-[0.84rem] font-black text-indigo-600">₹{combo.price}</div>
+                                    </div>
+                                ))}
+
+                                {/* Item List with Instructions */}
+                                {Object.entries(cart).map(([id, qty]) => {
+                                    const item = items.find(i => i.id === id);
+                                    if (!item) return null;
+                                    return (
+                                        <div key={id} className="py-4 border-b border-[#F7F7F7] space-y-3">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className={`w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center ${item.isVeg ? "border-[#22C55E]" : "border-[#E23744]"}`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${item.isVeg ? "bg-[#22C55E]" : "bg-[#E23744]"}`} />
+                                                </div>
+                                                <div className="flex-1 font-[700] text-[0.84rem]">{item.name}</div>
+                                                <div className="flex items-center bg-[#E23744] text-white rounded-lg h-7 gap-3 px-1.5 overflow-hidden">
+                                                    <button onClick={() => updateQty(id, -1)} className="text-lg font-bold">−</button>
+                                                    <span className="text-[0.8rem] font-black">{qty}</span>
+                                                    <button onClick={() => updateQty(id, 1)} className="text-lg font-bold">+</button>
+                                                </div>
+                                                <div className="text-[0.84rem] font-[800] min-w-[50px] text-right">₹{(item.sellingPrice || item.price || 0) * qty}</div>
+                                            </div>
+                                            <input
+                                                key={`instruction-${id}`}
+                                                value={instructions[id] || ""}
+                                                onChange={(e) => setInstructions(prev => ({ ...prev, [id]: e.target.value }))}
+                                                placeholder="Instructions? (e.g. No onion)"
+                                                autoComplete="off"
+                                                className="w-full bg-[#F4F4F4] border-none rounded-lg px-3 py-2 text-[0.72rem] font-[600] outline-none"
+                                            />
+                                        </div>
+                                    );
+                                })}
+
+                                {/* Loyalty Redeem */}
+                                <div className="bg-[#D4A353]/10 border border-[#D4A353]/25 rounded-xl m-4 p-3 flex items-center justify-between">
+                                    <div className="text-[0.78rem] font-[700] text-[#7A5A00]">👑 {loyaltyPoints} pts — ₹32.50 discount unlock?</div>
+                                    <div className={`w-[38px] h-[21px] rounded-full relative cursor-pointer transition-colors ${loyaltyOn ? "bg-[#D4A353]" : "bg-[#EBEBEB]"}`} onClick={() => setLoyaltyOn(!loyaltyOn)}>
+                                        <div className={`absolute top-[3px] w-[15px] h-[15px] bg-white rounded-full shadow-md transition-all ${loyaltyOn ? "left-[20px]" : "left-[3px]"}`} />
+                                    </div>
+                                </div>
+
+                                {/* Active Coupons Section */}
+                                {offers.length > 0 && (
+                                    <div className="p-4 bg-white border-t border-[#F7F7F7]">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Tag size={16} className="text-[#E23744]" />
+                                            <span className="text-[0.68rem] font-black uppercase tracking-widest text-[#ABABAB]">Available Coupons</span>
+                                        </div>
+                                        <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                                            {offers.map(offer => {
+                                                const isDisabled = subtotal < (offer.minOrderValue || 0);
+                                                return (
+                                                    <div
+                                                        key={offer.id}
+                                                        className={`flex-shrink-0 px-4 py-3 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1 min-w-[130px] transition-all ${isDisabled ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-red-50/30 border-[#E23744]/30'}`}
+                                                    >
+                                                        <div className={`text-[0.78rem] font-black uppercase tracking-tighter ${isDisabled ? 'text-gray-400' : 'text-[#E23744]'}`}>
+                                                            {offer.code || "OFFER"}
+                                                        </div>
+                                                        <div className="text-[0.6rem] font-bold text-gray-600">
+                                                            {offer.discountType === 'PERCENTAGE' ? `${offer.discountValue}% OFF` : `₹${offer.discountValue} OFF`}
+                                                        </div>
+                                                        {isDisabled && (
+                                                            <div className="text-[0.55rem] font-black text-gray-400 italic">Add ₹{(offer.minOrderValue || 0) - subtotal} more</div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Checkout Form */}
+                                <div className="px-4 space-y-3.5 mb-6">
+                                    <div className="text-[0.78rem] font-[900] uppercase tracking-wider">Checkout Options</div>
+                                    <div className="space-y-3">
+                                        <input
+                                            value={customerPhone}
+                                            onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                                            placeholder="Mobile Number"
+                                            type="tel"
+                                            className="w-full bg-[#F4F4F4] border border-[#EBEBEB] rounded-xl px-4 py-3.5 text-sm font-bold outline-none border-none shadow-sm"
+                                        />
+                                        <input
+                                            value={customerName}
+                                            onChange={(e) => setCustomerName(e.target.value)}
+                                            placeholder="Your Name (Optional)"
+                                            className="w-full bg-[#F4F4F4] border border-[#EBEBEB] rounded-xl px-4 py-3.5 text-sm font-bold outline-none border-none shadow-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Summary */}
+                                <div className="px-4 py-3.5 border-t-8 border-[#F4F4F4] space-y-1.5">
+                                    <div className="text-[0.78rem] font-[900] uppercase tracking-wider mb-2">Order Summary</div>
+                                    <div className="flex justify-between text-[0.8rem] text-[#696969] font-bold"><span>Subtotal</span><span>₹{subtotal}</span></div>
+                                    {taxEnabled && tax > 0 && (
+                                        <div className="flex justify-between text-[0.8rem] text-[#696969] font-bold">
+                                            <span>GST ({taxRate}%)</span><span>₹{tax}</span>
+                                        </div>
+                                    )}
+                                    {loyaltyDisc > 0 && <div className="flex justify-between text-[0.8rem] text-[#D4A353] font-bold"><span>👑 Loyalty Discount</span><span>−₹{loyaltyDisc}</span></div>}
+                                    <div className="flex justify-between items-center pt-2.5 mt-2 border-t border-dashed border-[#EBEBEB]">
+                                        <span className="text-[0.9rem] font-black italic">To Pay</span>
+                                        <span className="text-xl font-black text-[#E23744] italic tracking-tighter">₹{total}</span>
+                                    </div>
+                                </div>
+
+                                {/* Payment grid */}
+                                <div className="px-4 py-3.5 bg-white space-y-3">
+                                    <div className="text-[0.78rem] font-[900] uppercase tracking-wider">Payment Method</div>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {["UPI / QR", "Cash", "Card"].map((opt, i) => (
+                                            <div key={opt} className={`border-[1.5px] rounded-xl p-2 text-center cursor-pointer transition-all ${i === 0 ? "border-[#E23744] bg-red-50" : "border-[#EBEBEB]"}`}>
+                                                <div className="text-xl mb-1">{i === 0 ? "📱" : i === 1 ? "💵" : "💳"}</div>
+                                                <div className={`text-[0.62rem] font-[800] upper ${i === 0 ? "text-[#E23744]" : "text-[#696969]"}`}>{opt}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* STICKY BOTTOM BUTTON */}
+                            <div className="p-4.5 pb-8 bg-white border-t border-[#F4F4F4] z-50">
+                                <button
+                                    onClick={placeOrder}
+                                    disabled={orderStatus === "placing"}
+                                    className="w-full bg-[#E23744] text-white rounded-[14px] p-4.5 font-black text-[0.95rem] shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all text-center"
+                                >
+                                    {orderStatus === "placing" ? (
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        <>Place Order <span className="opacity-80">₹{total}</span></>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* ── SUCCESS SCREEN ── */}
+            <AnimatePresence>
+                {orderStatus === "placed" && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-white z-[300] flex flex-col p-6 overflow-y-auto no-scrollbar">
+                        <div className="flex-1 flex flex-col items-center justify-center text-center">
+                            <motion.div initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", damping: 12 }} className="text-[4rem] mb-2">🎉</motion.div>
+                            <h2 className="text-[1.3rem] font-[900] mb-1 tracking-tight">Order Placed Successfully!</h2>
+                            <p className="text-[0.78rem] text-[#696969] leading-relaxed mb-6 max-w-[280px] mx-auto">Kitchen mein order pahunch gaya hai.<br />Jaldi ready ho jaayega.</p>
+
+                            {/* Ordered Items Summary */}
+                            <div className="w-full bg-[#f9f9f9] rounded-2xl p-4 mb-6 border border-[#eee] text-left">
+                                <p className="text-[0.65rem] font-bold text-[#999] uppercase tracking-widest mb-2">Aapne Mangwaya:</p>
+                                <div className="space-y-2">
+                                    {lastOrderItems.map((item, idx) => (
+                                        <div key={idx} className="flex justify-between items-center">
+                                            <span className="text-[0.8rem] font-bold text-[#333]">{item.name} × {item.quantity}</span>
+                                            <span className="text-[0.8rem] text-[#666]">₹{item.total || (item.price * item.quantity)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-[#D4A353]/10 border border-[#D4A353]/30 rounded-xl px-5 py-2.5 flex items-center justify-between w-full mb-8">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xl">👑</span>
+                                    <span className="text-[0.75rem] font-[700] text-[#7A5A00]">Loyalty points earned!</span>
+                                </div>
+                                <span className="font-[Syne] text-[1.1rem] font-[800] text-[#D4A353]">+{Math.floor(total / 10)} pts</span>
+                            </div>
+
+                            <div className="flex w-full mb-8 gap-1">
+                                {[
+                                    { ico: "✅", lbl: "Received", done: true },
+                                    { ico: "👨🍳", lbl: "Preparing", done: false },
+                                    { ico: "🔥", lbl: "Cooking", done: false },
+                                    { ico: "🍽️", lbl: "Ready!", done: false }
+                                ].map((step, i) => (
+                                    <div key={i} className="flex-1 text-center relative">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm mx-auto mb-1.5 relative z-10 border transition-all ${step.done ? "bg-[#22C55E] border-transparent text-white" : "bg-[#F4F4F4] border-[#EBEBEB] text-[#ABABAB]"}`}>
+                                            {step.ico}
+                                        </div>
+                                        <div className={`text-[0.55rem] font-[800] ${step.done ? "text-[#22C55E]" : "text-[#ABABAB]"}`}>{step.lbl}</div>
+                                        {i < 3 && <div className={`absolute top-4 left-1/2 w-full h-[2px] -z-1 transition-all ${step.done ? "bg-[#22C55E]" : "bg-[#EBEBEB]"}`} />}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 pb-4">
+                            <button
+                                onClick={() => window.location.href = `/order-tracking/${placedOrderId}`}
+                                className="w-full bg-[#3B82F6] text-white rounded-[14px] py-4 font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
+                            >
+                                <History size={20} />
+                                Live Status Track Karein
+                            </button>
+                            <button
+                                onClick={() => setOrderStatus("none")}
+                                className="w-full border-2 border-[#E23744] text-[#E23744] rounded-[14px] py-4 font-black text-sm uppercase tracking-widest active:scale-95 transition-all text-center"
+                            >
+                                + Add More Items
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* REVIEW SHEET (Modal) */}
+            <AnimatePresence>
+                {showReviewSheet && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => !reviewSubmitting && setShowReviewSheet(false)}
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200]"
+                        />
+                        <motion.div
+                            key="review-sheet"
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white rounded-t-[40px] z-[201] max-h-[92vh] overflow-y-auto no-scrollbar flex flex-col shadow-[0_-20px_50px_rgba(0,0,0,0.15)]"
+                        >
+                            <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-4 mb-2" />
+
+                            {/* Premium Header */}
+                            <div className="px-8 pt-4 pb-6 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-100/50 rounded-full -mr-16 -mt-16 blur-2xl" />
+                                <div className="relative z-10 flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-2xl font-[Syne] font-[900] text-gray-900 tracking-tight leading-tight">Maza Aaya? ✨</h2>
+                                        <p className="text-[11px] font-[800] text-amber-600 uppercase tracking-[0.15em] mt-1 flex items-center gap-1.5">
+                                            <Award size={14} className="animate-pulse" /> Unlock Luxury Rewards
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowReviewSheet(false)}
+                                        className="w-10 h-10 bg-gray-50 hover:bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 transition-colors"
+                                    >
+                                        <span className="text-xl">✕</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="px-8 space-y-8 pb-10">
+                                {/* Interactive Star Rating */}
+                                <div className="bg-gray-50/50 rounded-[32px] p-6 border border-gray-100/80">
+                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-center mb-4">Aapka Anubhav</div>
+                                    <div className="flex justify-center gap-3">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <motion.button
+                                                key={star}
+                                                whileHover={{ scale: 1.2, rotate: 5 }}
+                                                whileTap={{ scale: 0.9 }}
+                                                onClick={() => setReviewRating(star)}
+                                                className={`text-4xl transition-all ${star <= reviewRating ? "text-[#D4A353] drop-shadow-[0_0_8px_rgba(212,163,83,0.4)]" : "text-gray-200"}`}
+                                            >
+                                                ★
+                                            </motion.button>
+                                        ))}
+                                    </div>
+                                    <motion.div
+                                        key={reviewRating}
+                                        initial={{ opacity: 0, y: 5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="text-[0.75rem] font-black text-[#D4A353] text-center mt-4 tracking-wide"
+                                    >
+                                        {reviewRating === 1 ? "EKDUM BEKAAR" : reviewRating === 2 ? "THIK THAK" : reviewRating === 3 ? "ACHA THA" : reviewRating === 4 ? "BOHAT BADIYA" : "LAJAWAAB! 😍"}
+                                    </motion.div>
+                                </div>
+
+                                {/* Review Typography Box */}
+                                <div className="space-y-3">
+                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-[0.15em] pl-1 flex items-center gap-2">
+                                        <div className="w-1 h-1 bg-amber-500 rounded-full" /> Comments & Photo
+                                    </label>
+                                    <div className="relative group">
+                                        <textarea
+                                            value={reviewComment}
+                                            onChange={(e) => setReviewComment(e.target.value)}
+                                            placeholder="Khana kaisa laga? Service kaisi thi?"
+                                            rows={4}
+                                            className="w-full bg-white border-2 border-gray-50 rounded-[24px] p-5 text-sm font-[700] outline-none focus:border-[#D4A353]/30 focus:bg-gray-50/30 transition-all resize-none shadow-sm"
+                                        />
+                                        <div className="absolute bottom-4 right-4 flex items-center gap-2">
+                                            {reviewImageUploading ? (
+                                                <div className="w-6 h-6 border-2 border-amber-500 border-t-white rounded-full animate-spin shadow-md" />
+                                            ) : reviewImageUrl ? (
+                                                <div className="relative w-10 h-10 rounded-md overflow-hidden border border-amber-200 shadow-sm cursor-pointer" onClick={() => document.getElementById("review-image-upload")?.click()}>
+                                                    <Image src={reviewImageUrl} alt="Review" fill className="object-cover" />
+                                                </div>
+                                            ) : (
+                                                <div className="flex bg-gray-50/80 rounded-full p-2 hover:bg-amber-50 cursor-pointer shadow-sm transition-colors border border-gray-100" onClick={() => document.getElementById("review-image-upload")?.click()} title="Add a photo">
+                                                    <span className="text-xl leading-none">📸</span>
+                                                </div>
+                                            )}
+                                            <input type="file" id="review-image-upload" accept="image/*" className="hidden" onChange={handleReviewImageUpload} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Luxury Loyalty Card Section */}
+                                <div className="relative group">
+                                    {customerPhone.length < 10 ? (
+                                        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[32px] p-6 text-white shadow-xl shadow-indigo-200/50 overflow-hidden relative">
+                                            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+                                            <div className="relative z-10 space-y-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+                                                        <Sparkles size={20} className="fill-white" />
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[11px] font-black uppercase tracking-[0.2em] opacity-70">VIP Member Benefit</span>
+                                                        <h3 className="text-sm font-black leading-tight">Claim +50 Coins Instantly</h3>
+                                                    </div>
+                                                </div>
+                                                <div className="relative mb-3">
+                                                    <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-60" />
+                                                    <input
+                                                        value={customerName}
+                                                        onChange={(e) => setCustomerName(e.target.value)}
+                                                        placeholder="Your Name (Optional)"
+                                                        className="w-full bg-white/10 border border-white/20 rounded-2xl px-10 py-3.5 text-sm font-black placeholder:text-white/40 focus:bg-white/20 outline-none backdrop-blur-sm transition-all"
+                                                    />
+                                                </div>
+                                                <div className="relative">
+                                                    <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-60" />
+                                                    <input
+                                                        value={customerPhone}
+                                                        onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                                                        placeholder="Mobile Number (Required)"
+                                                        className="w-full bg-white/10 border border-white/20 rounded-2xl px-10 py-3.5 text-sm font-black placeholder:text-white/40 focus:bg-white/20 outline-none backdrop-blur-sm transition-all shadow-md focus:shadow-indigo-500/20"
+                                                    />
+                                                </div>
+                                                <p className="text-[9px] font-bold opacity-60 text-center uppercase tracking-widest pt-1">Valid for loyalty redemption</p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <motion.div
+                                            initial={{ scale: 0.95, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            className="bg-emerald-50 rounded-[32px] p-6 border-2 border-emerald-100 flex items-center justify-between shadow-sm"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${getAvatarColor(customerName && customerName !== "Guest" ? customerName : getIndianName("preview"))} overflow-hidden shadow-lg shadow-black/5 flex items-center justify-center relative`}>
+                                                    <Image
+                                                        src={getAvatarUrl(customerName, "preview")}
+                                                        alt={customerName || "G"}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[11px] font-black text-emerald-800 uppercase tracking-widest">Rewards Profile Linked</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-black text-emerald-900">
+                                                            {customerName && customerName !== "Guest" ? customerName : `${getIndianName("preview")} (Verified Guest) ✨`} · {customerPhone}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => setCustomerPhone("")}
+                                                            className="text-[10px] font-bold text-emerald-600/60 transition-colors"
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="bg-emerald-500 text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter animate-bounce">
+                                                +50 Pts
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </div>
+
+                                {/* High-Impact Submit Button */}
+                                <button
+                                    onClick={handlePostReview}
+                                    disabled={reviewSubmitting || !reviewComment}
+                                    className="w-full h-16 bg-black text-white rounded-[24px] font-black text-[0.85rem] uppercase tracking-[0.25em] shadow-2xl active:scale-[0.98] transition-all disabled:opacity-20 disabled:grayscale relative overflow-hidden group"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                                    {reviewSubmitting ? (
+                                        <div className="flex items-center justify-center gap-3">
+                                            <div className="w-5 h-5 border-3 border-gray-600 border-t-white rounded-full animate-spin" />
+                                            <span>Posting Story...</span>
+                                        </div>
+                                    ) : "Post My Review 💎"}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            <style jsx global>{`
+        ::-webkit-scrollbar { display: none; }
+        * { scrollbar-width: none; }
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Nunito:wght@400;600;700;800;900&display=swap');
+      `}</style>
+        </div >
     );
 }
 
-function MenuItemCard({ item, qty, onUpdate }: { item: MenuItem, qty: number, onUpdate: (id: string, d: number) => void }) {
-    const price = item.sellingPrice || item.price || 0;
+export default function PublicMenuPage() {
     return (
-        <div className="mitem">
-            <div className="mitem-left">
-                <div className={`type-dot ${item.isVeg !== false ? 'v' : 'nv'}`}></div>
-                <div className="mname-row">
-                    <span className="mname">{item.name}</span>
-                </div>
-                {item.description && <div className="mdesc">{item.description}</div>}
-                <div className="mprice">₹{price.toLocaleString('en-IN')}</div>
-            </div>
-            <div className="mitem-right">
-                <div className="mthumb">
-                    {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.name} loading="lazy" />
-                    ) : (
-                        <div className="mthumb-ph">🍽️</div>
-                    )}
-                </div>
-                <div className="add-wrap">
-                    {qty === 0 ? (
-                        <button className="add-btn" onClick={() => onUpdate(item.id, 1)}>ADD</button>
-                    ) : (
-                        <div className="qty-wrap">
-                            <button className="qbtn" onClick={() => onUpdate(item.id, -1)}>−</button>
-                            <span className="qnum">{qty}</span>
-                            <button className="qbtn" onClick={() => onUpdate(item.id, 1)}>+</button>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
+        <Suspense fallback={<div className="h-screen flex items-center justify-center">Loading...</div>}>
+            <PublicMenu />
+        </Suspense>
     );
 }

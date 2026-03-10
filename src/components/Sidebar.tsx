@@ -111,7 +111,8 @@ import {
   Square,
   Circle,
   Triangle,
-  Hexagon
+  Hexagon,
+  Camera
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -141,6 +142,13 @@ const navGroups = [
       { icon: <Users size={18} />, label: "Customer Parties", href: "/dashboard/parties" },
       { icon: <Package size={18} />, label: "Inventory Stock", href: "/dashboard/inventory" },
       { icon: <QrCode size={18} />, label: "QR Order Terminal", href: "/dashboard/qr-orders", badge: "Scan", badgeColor: "#8B5CF6" },
+    ]
+  },
+  {
+    group: "MARKETING",
+    items: [
+      { icon: <Sparkles size={18} />, label: "Marketing Hub", href: "/dashboard/combos", badge: "Live", badgeColor: "#8B5CF6", showHorizontalGroup: true },
+      { icon: <Camera size={18} />, label: "Gallery Manager", href: "/dashboard/gallery", badge: "Photos", badgeColor: "#7C3AED" },
     ]
   },
   {
@@ -441,7 +449,7 @@ export default function Sidebar() {
                 opacity: isDark ? 1 : 0.7,
               }}>{group.group}</div>
             )}
-            {group.items.map((item, index) => {
+            {group.items.map((item: any, index) => {
               const isActive = pathname === item.href;
               return (
                 <motion.div
@@ -450,7 +458,7 @@ export default function Sidebar() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <Link href={item.href} style={{ textDecoration: 'none' }}>
+                  <Link href={item.href} style={{ textDecoration: 'none' }} prefetch={false}>
                     <motion.div
                       whileHover={{ scale: 1.02, x: 5 }}
                       whileTap={{ scale: 0.98 }}
@@ -528,7 +536,7 @@ export default function Sidebar() {
                           )}
                         </motion.div>
                       )}
-                      {isActive && (
+                      {isActive && !(item as any).showHorizontalGroup && (
                         <motion.div
                           initial={{ opacity: 0, scaleY: 0 }}
                           animate={{ opacity: 1, scaleY: 1 }}
@@ -543,6 +551,43 @@ export default function Sidebar() {
                       )}
                     </motion.div>
                   </Link>
+                  {(item as any).showHorizontalGroup && !collapsed && (
+                    <div style={{ display: 'flex', gap: '8px', padding: '0 12px 12px', marginTop: '-4px' }}>
+                      <Link href="/dashboard/combos" style={{ textDecoration: 'none', flex: 1 }} prefetch={false}>
+                        <div style={{
+                          background: pathname === '/dashboard/combos' ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.05)",
+                          border: pathname === '/dashboard/combos' ? "1px solid rgba(139,92,246,0.3)" : "1px solid rgba(139,92,246,0.1)",
+                          borderRadius: "8px", padding: "6px 0", textAlign: "center", transition: "all 0.2s",
+                          color: pathname === '/dashboard/combos' ? "#8B5CF6" : (isDark ? "rgba(255,255,255,0.6)" : "var(--kravy-text-secondary)")
+                        }}>
+                          <Sparkles size={14} style={{ margin: "0 auto 4px" }} />
+                          <div style={{ fontSize: "0.55rem", fontWeight: 700, textTransform: 'uppercase' }}>Combos</div>
+                        </div>
+                      </Link>
+                      <Link href="/dashboard/offers" style={{ textDecoration: 'none', flex: 1 }} prefetch={false}>
+                        <div style={{
+                          background: pathname === '/dashboard/offers' ? "rgba(245,158,11,0.15)" : "rgba(245,158,11,0.05)",
+                          border: pathname === '/dashboard/offers' ? "1px solid rgba(245,158,11,0.3)" : "1px solid rgba(245,158,11,0.1)",
+                          borderRadius: "8px", padding: "6px 0", textAlign: "center", transition: "all 0.2s",
+                          color: pathname === '/dashboard/offers' ? "#F59E0B" : (isDark ? "rgba(255,255,255,0.6)" : "var(--kravy-text-secondary)")
+                        }}>
+                          <Tag size={14} style={{ margin: "0 auto 4px" }} />
+                          <div style={{ fontSize: "0.55rem", fontWeight: 700, textTransform: 'uppercase' }}>Offers</div>
+                        </div>
+                      </Link>
+                      <Link href="/dashboard/rewards" style={{ textDecoration: 'none', flex: 1 }} prefetch={false}>
+                        <div style={{
+                          background: pathname === '/dashboard/rewards' ? "rgba(255,107,53,0.15)" : "rgba(255,107,53,0.05)",
+                          border: pathname === '/dashboard/rewards' ? "1px solid rgba(255,107,53,0.3)" : "1px solid rgba(255,107,53,0.1)",
+                          borderRadius: "8px", padding: "6px 0", textAlign: "center", transition: "all 0.2s",
+                          color: pathname === '/dashboard/rewards' ? "#FF6B35" : (isDark ? "rgba(255,255,255,0.6)" : "var(--kravy-text-secondary)")
+                        }}>
+                          <Gift size={14} style={{ margin: "0 auto 4px" }} />
+                          <div style={{ fontSize: "0.55rem", fontWeight: 700, textTransform: 'uppercase' }}>Loyalty</div>
+                        </div>
+                      </Link>
+                    </div>
+                  )}
                 </motion.div>
               );
             })}

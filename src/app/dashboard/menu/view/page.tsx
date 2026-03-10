@@ -404,9 +404,21 @@ type MenuItem = {
   id: string;
   name: string;
   price?: number | null;
+  sellingPrice?: number | null;
   imageUrl?: string | null;
   unit?: string | null;
   categoryId?: string | null;
+  description?: string | null;
+  isVeg: boolean;
+  isBestseller: boolean;
+  isRecommended: boolean;
+  isNew: boolean;
+  spiciness?: string | null;
+  rating?: number | null;
+  hiName?: string | null;
+  mrName?: string | null;
+  taName?: string | null;
+  upsellText?: string | null;
 };
 
 type MenuCategory = {
@@ -499,6 +511,7 @@ export default function ViewMenuPage() {
           }
 
           categoryMap.get(catId)!.items.push({
+            ...it,
             id: String(it.id),
             name: it.name ?? "Unnamed",
             price:
@@ -508,6 +521,10 @@ export default function ViewMenuPage() {
             imageUrl: it.imageUrl ?? null,
             unit: it.unit ?? null,
             categoryId: catId,
+            isVeg: it.isVeg ?? true,
+            isBestseller: !!it.isBestseller,
+            isRecommended: !!it.isRecommended,
+            isNew: !!it.isNew,
           });
         });
 
@@ -582,7 +599,7 @@ export default function ViewMenuPage() {
         const catName = menus.find((m) => m.id === cid)?.name ?? (cid === "uncategorised" ? "Uncategorised" : "Unknown");
         map.set(cid, { id: cid, name: catName, items: [] });
       }
-      map.get(it.categoryId ?? "uncategorised")!.items.push({ id: it.id, name: it.name, price: it.price, imageUrl: it.imageUrl, unit: it.unit, categoryId: it.categoryId });
+      map.get(it.categoryId ?? "uncategorised")!.items.push({ ...it });
     }
 
     const list: MenuCategory[] = [];
@@ -685,77 +702,240 @@ export default function ViewMenuPage() {
 
   function EditModal({ item, onClose, onSave }: { item: MenuItem; onClose: () => void; onSave: (u: MenuItem) => void }) {
     const [local, setLocal] = useState<MenuItem>(item);
+    const [tab, setTab] = useState<"basic" | "qr" | "lang">("basic");
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
     useEffect(() => setLocal(item), [item]);
 
     if (!mounted) return null;
+
     return createPortal(
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
-        <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] shadow-2xl w-full max-w-md p-8 z-[10000] overflow-hidden">
-          {/* Background Decoration */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
+        <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] shadow-2xl w-full max-w-lg p-0 z-[10000] overflow-hidden">
 
-          <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] mb-6 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
-              <span className="text-xl">✏️</span>
-            </div>
-            Edit Item
-          </h3>
+          <div className="p-8 pb-4">
+            <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] mb-6 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-xl">✏️</div>
+              Edit Item Details
+            </h3>
 
-          <div className="space-y-5">
-            <div>
-              <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Item Name</label>
-              <input
-                className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
-                value={local.name}
-                onChange={(e) => setLocal({ ...local, name: e.target.value })}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Price (₹)</label>
-                <input
-                  className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
-                  type="number"
-                  value={local.price ?? ""}
-                  onChange={(e) => setLocal({ ...local, price: e.target.value === "" ? null : Number(e.target.value) })}
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Unit</label>
-                <input
-                  className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
-                  value={local.unit ?? ""}
-                  onChange={(e) => setLocal({ ...local, unit: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Image URL</label>
-              <input
-                className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
-                value={local.imageUrl ?? ""}
-                onChange={(e) => setLocal({ ...local, imageUrl: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Category</label>
-              <select
-                value={local.categoryId ?? "uncategorised"}
-                onChange={(e) => setLocal({ ...local, categoryId: e.target.value })}
-                className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
-              >
-                {allCategories.map((c) => <option key={c.id} value={c.id === "all" ? "uncategorised" : c.id} className="bg-[var(--kravy-bg)]">{c.name}</option>)}
-              </select>
+            <div className="flex gap-2 mb-6 border-b border-[var(--kravy-border)]">
+              {(["basic", "qr", "lang"] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${tab === t ? "border-indigo-600 text-indigo-600" : "border-transparent text-[var(--kravy-text-muted)]"}`}
+                >
+                  {t === "basic" ? "Basic Info" : t === "qr" ? "QR Enhancements" : "Translations"}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-8">
+          <div className="px-8 max-h-[50vh] overflow-y-auto no-scrollbar pb-8">
+            {tab === "basic" && (
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Item Name</label>
+                  <input
+                    className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
+                    value={local.name}
+                    onChange={(e) => setLocal({ ...local, name: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Price (₹)</label>
+                    <input
+                      className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+                      type="number"
+                      value={local.price ?? ""}
+                      onChange={(e) => setLocal({ ...local, price: e.target.value === "" ? null : Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Selling Price (₹)</label>
+                    <input
+                      className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+                      type="number"
+                      value={local.sellingPrice ?? ""}
+                      onChange={(e) => setLocal({ ...local, sellingPrice: e.target.value === "" ? null : Number(e.target.value) })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Description</label>
+                  <textarea
+                    className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
+                    rows={3}
+                    value={local.description ?? ""}
+                    onChange={(e) => setLocal({ ...local, description: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Category</label>
+                    <select
+                      value={local.categoryId ?? "uncategorised"}
+                      onChange={(e) => setLocal({ ...local, categoryId: e.target.value })}
+                      className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+                    >
+                      {allCategories.map((c) => <option key={c.id} value={c.id === "all" ? "uncategorised" : c.id} className="bg-[var(--kravy-bg)]">{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Unit</label>
+                    <input
+                      className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
+                      value={local.unit ?? ""}
+                      onChange={(e) => setLocal({ ...local, unit: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Image URL</label>
+                  <input
+                    className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
+                    value={local.imageUrl ?? ""}
+                    onChange={(e) => setLocal({ ...local, imageUrl: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+
+            {tab === "qr" && (
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-3">Dietary Type</label>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setLocal({ ...local, isVeg: true })}
+                      className={`flex-1 py-3 rounded-xl border-2 font-black transition-all ${local.isVeg ? "border-green-500 bg-green-50 text-green-600" : "border-[var(--kravy-border)] text-[var(--kravy-text-muted)]"}`}
+                    >
+                      🥗 Vegetarian
+                    </button>
+                    <button
+                      onClick={() => setLocal({ ...local, isVeg: false })}
+                      className={`flex-1 py-3 rounded-xl border-2 font-black transition-all ${!local.isVeg ? "border-red-500 bg-red-50 text-red-600" : "border-[var(--kravy-border)] text-[var(--kravy-text-muted)]"}`}
+                    >
+                      🍗 Non-Veg
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1">Menu Badges</label>
+                    <div className="space-y-2">
+                      {[
+                        { id: "isBestseller", label: "Bestseller", icon: "🏅" },
+                        { id: "isRecommended", label: "Recommended", icon: "👍" },
+                        { id: "isNew", label: "New Launch", icon: "🆕" }
+                      ].map(b => (
+                        <label key={b.id} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--kravy-bg)] cursor-pointer hover:bg-[var(--kravy-surface-hover)] transition-all">
+                          <input
+                            type="checkbox"
+                            checked={(local as any)[b.id]}
+                            onChange={(e) => setLocal({ ...local, [b.id]: e.target.checked })}
+                            className="w-4 h-4 rounded accent-indigo-600"
+                          />
+                          <span className="text-sm font-bold">{b.icon} {b.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1">Properties</label>
+                    <div className="space-y-4">
+                      <div>
+                        <span className="block text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-tighter mb-1.5 underline">Spiciness Level</span>
+                        <div className="flex gap-1 bg-[var(--kravy-bg)] p-1 rounded-lg">
+                          {["mild", "medium", "hot"].map(s => (
+                            <button
+                              key={s}
+                              onClick={() => setLocal({ ...local, spiciness: s })}
+                              className={`flex-1 py-1 px-2 rounded-md font-black text-[10px] capitalize transition-all ${local.spiciness === s ? "bg-white shadow-sm text-indigo-600" : "text-[var(--kravy-text-muted)] hover:text-indigo-400"}`}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="block text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-tighter mb-1.5 underline">Base Rating (4-5)</span>
+                        <input
+                          type="number"
+                          step="0.1" max="5" min="3"
+                          className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-sm font-black px-3 py-2 rounded-lg"
+                          value={local.rating ?? 4.5}
+                          onChange={(e) => setLocal({ ...local, rating: Number(e.target.value) })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Upsell Suggestion (e.g. Best with Cold Coffee)</label>
+                  <input
+                    className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none font-medium text-xs italic"
+                    value={local.upsellText ?? ""}
+                    placeholder="Best with..."
+                    onChange={(e) => setLocal({ ...local, upsellText: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+
+            {tab === "lang" && (
+              <div className="space-y-5">
+                <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 mb-2">
+                  <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest leading-none mb-1">Smart Translate</p>
+                  <p className="text-[11px] text-indigo-500 leading-tight">Add translations for the QR menu to reach more customers!</p>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2 flex items-center justify-between">
+                    Hindi Name (हिन्दी)
+                    <button onClick={() => setLocal({ ...local, hiName: "पनीर टिक्का" })} className="text-[8px] text-indigo-500 font-black px-1.5 py-0.5 border border-indigo-200 rounded">Sample</button>
+                  </label>
+                  <input
+                    className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none font-bold"
+                    value={local.hiName ?? ""}
+                    placeholder="जैसे: पनीर टिक्का"
+                    onChange={(e) => setLocal({ ...local, hiName: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Marathi Name (मराठी)</label>
+                  <input
+                    className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none font-bold"
+                    value={local.mrName ?? ""}
+                    placeholder="मराठी नाव"
+                    onChange={(e) => setLocal({ ...local, mrName: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Tamil Name (தமிழ்)</label>
+                  <input
+                    className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none font-bold"
+                    value={local.taName ?? ""}
+                    placeholder="தமிழ் பெயர்"
+                    onChange={(e) => setLocal({ ...local, taName: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 p-8 pt-4 border-t border-[var(--kravy-border)] bg-[var(--kravy-surface)]">
             <button
               onClick={onClose}
               className="px-6 py-3 rounded-xl font-bold text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-surface-hover)] transition-all"
