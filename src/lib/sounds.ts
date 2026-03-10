@@ -1,250 +1,222 @@
 /**
- * 🔊 KravySound — Centralized Sound Engine
- * Uses Web Audio API (no MP3 files needed).
- * All sounds are programmatically synthesized.
- * Call `kravy.unlock()` on first user click to unblock browser audio policy.
+ * 🔊 KravySound — Centralized Sound Engine v2
+ * - No MP3 files needed (Web Audio API synthesis)
+ * - Auto-resumes AudioContext on any user gesture
+ * - Works in Next.js app router (safe SSR guards)
  */
 
-// ── Audio Context (shared, lazy-init) ─────────────────────────────────────────
-let ctx: AudioContext | null = null;
-let unlocked = false;
+// ── Shared AudioContext ────────────────────────────────────────────────────────
+let _ctx: AudioContext | null = null;
 
-function getCtx(): AudioContext | null {
+function ctx(): AudioContext | null {
     if (typeof window === "undefined") return null;
-    if (!ctx) {
-        ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (!_ctx) {
+        _ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
-    return ctx;
+    // Auto-resume if browser suspended it (no user gesture yet is OK — it'll play on next call after gesture)
+    if (_ctx.state === "suspended") {
+        _ctx.resume(); // fire-and-forget
+    }
+    return _ctx;
 }
 
+// ── Core tone helper ───────────────────────────────────────────────────────────
 function tone(
+    c: AudioContext,
     freq: number,
-    startTime: number,
+    startAt: number,
     duration: number,
-    gainVal: number = 0.3,
-    type: OscillatorType = "sine",
-    fadeIn = 0.01
+    volume: number = 0.3,
+    type: OscillatorType = "sine"
 ) {
-    const c = getCtx();
-    if (!c || !unlocked) return;
     const osc = c.createOscillator();
-    const g = c.createGain();
-    osc.connect(g);
-    g.connect(c.destination);
+    const gain = c.createGain();
+    osc.connect(gain);
+    gain.connect(c.destination);
     osc.type = type;
-    osc.frequency.setValueAtTime(freq, startTime);
-    g.gain.setValueAtTime(0, startTime);
-    g.gain.linearRampToValueAtTime(gainVal, startTime + fadeIn);
-    g.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-    osc.start(startTime);
-    osc.stop(startTime + duration + 0.05);
+    osc.frequency.setValueAtTime(freq, startAt);
+    gain.gain.setValueAtTime(0, startAt);
+    gain.gain.linearRampToValueAtTime(volume, startAt + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+    osc.start(startAt);
+    osc.stop(startAt + duration + 0.05);
 }
 
-function noise(startTime: number, duration: number, gain: number = 0.05) {
-    const c = getCtx();
-    if (!c || !unlocked) return;
-    const bufferSize = c.sampleRate * duration;
-    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-    const source = c.createBufferSource();
-    source.buffer = buffer;
-    const g = c.createGain();
-    g.gain.setValueAtTime(gain, startTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-    source.connect(g);
-    g.connect(c.destination);
-    source.start(startTime);
+function noise(c: AudioContext, startAt: number, duration: number, volume = 0.04) {
+    const buf = c.createBuffer(1, c.sampleRate * duration, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(volume, startAt);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+    src.connect(gain);
+    gain.connect(c.destination);
+    src.start(startAt);
 }
 
 // ── Sound Library ──────────────────────────────────────────────────────────────
 export const kravy = {
 
-    /** 🔓 Must call on first user interaction to unlock browser audio */
-    unlock() {
-        const c = getCtx();
-        if (!c) return;
-        if (c.state === "suspended") {
-            c.resume().then(() => { unlocked = true; });
-        } else {
-            unlocked = true;
-        }
-    },
-
-    /** 🖱️ Subtle UI click — buttons, nav items */
+    /** 🖱️ Subtle button/nav click */
     click() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(800, t, 0.08, 0.12, "sine");
+        tone(c, 800, t, 0.08, 0.1);
     },
 
-    /** ✅ Success / Save — form saved, action done */
+    /** ✅ Success — form saved, action done */
     success() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(523, t, 0.15, 0.25);        // C5
-        tone(659, t + 0.1, 0.15, 0.25); // E5
-        tone(784, t + 0.2, 0.3, 0.3);  // G5
+        tone(c, 523, t, 0.15, 0.22);
+        tone(c, 659, t + 0.1, 0.15, 0.22);
+        tone(c, 784, t + 0.2, 0.28, 0.28);
     },
 
-    /** ❌ Error / Failed */
+    /** ❌ Error / fail */
     error() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(220, t, 0.15, 0.3, "sawtooth");
-        tone(180, t + 0.15, 0.25, 0.25, "sawtooth");
+        tone(c, 220, t, 0.15, 0.28, "sawtooth");
+        tone(c, 180, t + 0.15, 0.22, 0.22, "sawtooth");
     },
 
-    /** 🗑️ Delete / Remove */
+    /** 🗑️ Delete / trash */
     trash() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(400, t, 0.06, 0.2, "square");
-        tone(280, t + 0.06, 0.1, 0.15, "square");
-        noise(t, 0.2, 0.04);
+        tone(c, 400, t, 0.06, 0.18, "square");
+        tone(c, 280, t + 0.06, 0.1, 0.14, "square");
+        noise(c, t, 0.2, 0.04);
     },
 
-    /** 🛒 Add to cart / Add item */
+    /** 🛒 Add to cart */
     add() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(660, t, 0.08, 0.2);
-        tone(880, t + 0.08, 0.12, 0.2);
+        tone(c, 660, t, 0.08, 0.2);
+        tone(c, 880, t + 0.08, 0.12, 0.2);
     },
 
     /** ➖ Remove from cart */
     remove() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(440, t, 0.06, 0.2);
-        tone(330, t + 0.06, 0.1, 0.15);
+        tone(c, 440, t, 0.06, 0.2);
+        tone(c, 330, t + 0.06, 0.1, 0.15);
     },
 
-    /** 🔔 New Order Bell — restaurant ding-dong */
+    /** 🔔 New Order — restaurant bell */
     orderBell() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(880, t, 0.5, 0.4);
-        tone(660, t + 0.2, 0.4, 0.3);
-        tone(880, t + 0.5, 0.5, 0.4);
-        tone(990, t + 0.7, 0.8, 0.35);
+        tone(c, 880, t, 0.5, 0.4);
+        tone(c, 660, t + 0.2, 0.4, 0.3);
+        tone(c, 880, t + 0.5, 0.5, 0.4);
+        tone(c, 990, t + 0.7, 0.8, 0.35);
     },
 
     /** ✅ Order accepted */
     orderAccept() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(440, t, 0.1, 0.2);
-        tone(554, t + 0.1, 0.1, 0.2);
-        tone(659, t + 0.2, 0.2, 0.25);
-        tone(880, t + 0.35, 0.3, 0.3);
+        [440, 554, 659, 880].forEach((f, i) =>
+            tone(c, f, t + i * 0.1, 0.2, 0.22)
+        );
     },
 
-    /** 🍽️ Order ready / served */
+    /** 🍽️ Order ready */
     orderReady() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        [523, 659, 784, 1047].forEach((f, i) => {
-            tone(f, t + i * 0.1, 0.3, 0.25);
-        });
+        [523, 659, 784, 1047].forEach((f, i) =>
+            tone(c, f, t + i * 0.1, 0.28, 0.22)
+        );
     },
 
     /** ❌ Order cancelled */
     orderCancel() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(440, t, 0.1, 0.3);
-        tone(370, t + 0.1, 0.15, 0.25);
-        tone(294, t + 0.25, 0.25, 0.2, "sawtooth");
+        tone(c, 440, t, 0.1, 0.28);
+        tone(c, 370, t + 0.1, 0.15, 0.22);
+        tone(c, 294, t + 0.25, 0.25, 0.18, "sawtooth");
     },
 
-    /** 💾 Upload / image uploaded */
+    /** 📤 Image uploaded */
     upload() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(300, t, 0.05, 0.1, "sine");
-        tone(600, t + 0.05, 0.05, 0.15);
-        tone(900, t + 0.1, 0.05, 0.2);
-        tone(1200, t + 0.15, 0.2, 0.25);
+        [300, 600, 900, 1200].forEach((f, i) =>
+            tone(c, f, t + i * 0.05, 0.15, 0.1 + i * 0.04)
+        );
     },
 
-    /** 💰 Payment / checkout */
+    /** 💰 Payment / order placed */
     payment() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        // Cash register "cha-ching" feel
-        noise(t, 0.05, 0.08);
-        tone(1047, t, 0.15, 0.35);
-        tone(1319, t + 0.12, 0.2, 0.3);
-        noise(t + 0.15, 0.06, 0.06);
+        noise(c, t, 0.05, 0.08);
+        tone(c, 1047, t, 0.15, 0.32);
+        tone(c, 1319, t + 0.12, 0.2, 0.28);
+        noise(c, t + 0.15, 0.06, 0.06);
     },
 
-    /** 🔁 Toggle / switch */
+    /** 🔁 Toggle switch */
     toggle() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(600, t, 0.04, 0.15, "square");
-        tone(900, t + 0.04, 0.06, 0.12, "square");
+        tone(c, 600, t, 0.04, 0.14, "square");
+        tone(c, 900, t + 0.04, 0.06, 0.1, "square");
     },
 
     /** ⭐ Review received */
     review() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        [523, 659, 784].forEach((f, i) => {
-            tone(f, t + i * 0.15, 0.4, 0.2);
-        });
+        [523, 659, 784].forEach((f, i) =>
+            tone(c, f, t + i * 0.15, 0.35, 0.18)
+        );
     },
 
-    /** 📋 Copy / clipboard */
+    /** 📋 Copy */
     copy() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(700, t, 0.05, 0.12);
-        tone(900, t + 0.05, 0.08, 0.12);
+        tone(c, 700, t, 0.05, 0.12);
+        tone(c, 900, t + 0.05, 0.08, 0.12);
     },
 
-    /** 🔍 Open / expand / modal */
+    /** 🔍 Open / expand */
     open() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(400, t, 0.05, 0.15);
-        tone(600, t + 0.05, 0.08, 0.18);
-        tone(800, t + 0.1, 0.1, 0.15);
+        [400, 600, 800].forEach((f, i) =>
+            tone(c, f, t + i * 0.05, 0.1, 0.14)
+        );
     },
 
-    /** 🚪 Close / dismiss / modal close */
+    /** 🚪 Close / dismiss */
     close() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        tone(600, t, 0.05, 0.1);
-        tone(400, t + 0.05, 0.08, 0.1);
+        tone(c, 600, t, 0.05, 0.1);
+        tone(c, 400, t + 0.05, 0.08, 0.1);
     },
 
-    /** 🔔 Gentle notification ping */
+    /** 🔔 Gentle ping */
     ping() {
-        const c = getCtx(); if (!c || !unlocked) return;
-        const t = c.currentTime;
-        tone(880, t, 0.3, 0.2);
+        const c = ctx(); if (!c) return;
+        tone(c, 880, c.currentTime, 0.3, 0.18);
     },
 
-    /** 📤 Print */
+    /** 🖨️ Print */
     print() {
-        const c = getCtx(); if (!c || !unlocked) return;
+        const c = ctx(); if (!c) return;
         const t = c.currentTime;
-        noise(t, 0.08, 0.05);
-        for (let i = 0; i < 3; i++) {
-            noise(t + 0.1 + i * 0.12, 0.1, 0.04);
-        }
+        noise(c, t, 0.08, 0.05);
+        for (let i = 0; i < 3; i++) noise(c, t + 0.1 + i * 0.12, 0.1, 0.04);
     },
 };
-
-// ── Auto-unlock on any interaction ────────────────────────────────────────────
-if (typeof window !== "undefined") {
-    const handlers = ["click", "keydown", "touchstart", "pointerdown"];
-    const doUnlock = () => {
-        kravy.unlock();
-        handlers.forEach(e => window.removeEventListener(e, doUnlock));
-    };
-    handlers.forEach(e => window.addEventListener(e, doUnlock, { once: true }));
-}

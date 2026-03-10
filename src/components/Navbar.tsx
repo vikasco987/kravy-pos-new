@@ -11,7 +11,8 @@ import {
 } from "@clerk/nextjs";
 import { useSearch } from "@/components/SearchContext";
 import { useTheme } from "@/components/ThemeProvider";
-import { Search, Bell, MapPin, Menu, X, Sun, Moon, Monitor } from "lucide-react";
+import { Search, Bell, MapPin, Menu, X, Sun, Moon, Monitor, Volume2 } from "lucide-react";
+import { kravy } from "@/lib/sounds";
 
 interface NavbarProps {
   isMobile?: boolean;
@@ -302,6 +303,28 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
               border: "2px solid var(--kravy-bg)"
             }} />
           </div>
+
+          {/* 🔊 Sound Test Button — Click to test audio */}
+          <button
+            onClick={() => kravy.orderBell()}
+            title="Test Sound 🔊"
+            style={{
+              width: isMobile ? "38px" : "40px",
+              height: isMobile ? "38px" : "40px",
+              borderRadius: "12px",
+              background: "var(--kravy-surface)",
+              border: "1px solid var(--kravy-border)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              color: "#10B981",
+              flexShrink: 0,
+              transition: "all 0.2s"
+            }}
+          >
+            <Volume2 size={isMobile ? 17 : 19} />
+          </button>
 
           {/* User Button */}
           {!isMobile && (
