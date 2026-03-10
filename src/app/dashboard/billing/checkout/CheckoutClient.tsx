@@ -2027,8 +2027,10 @@ export default function CheckoutClient() {
               {(business?.upi && business?.upiQrEnabled !== false) && (
                 <>
                   <div>Scan & Pay</div>
-                  <div className="flex justify-center my-1.5 border border-[var(--kravy-border)] p-1 rounded-md bg-white w-fit mx-auto">
-                    <img src={qrUrl} alt="UPI QR" className="w-[32mm] h-[32mm] mix-blend-multiply" />
+                  <div className="my-1.5 text-center">
+                    <div className="inline-block border border-[var(--kravy-border)] p-1 rounded-md bg-white">
+                      <img src={qrUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain block mix-blend-multiply" />
+                    </div>
                   </div>
                   <div className="mb-2">UPI: {business.upi}</div>
                 </>
@@ -2403,8 +2405,10 @@ export default function CheckoutClient() {
                       {(business?.upi && business?.upiQrEnabled !== false) && (
                         <>
                           <div>Scan & Pay</div>
-                          <div className="flex justify-center my-1.5 border border-gray-300 p-1 rounded-md bg-white w-fit mx-auto">
-                            <img src={qrUrl} alt="UPI QR" className="w-[32mm] h-[32mm] mix-blend-multiply" />
+                          <div className="my-1.5 text-center">
+                            <div className="inline-block border border-gray-300 p-1 rounded-md bg-white">
+                              <img src={qrUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain block mix-blend-multiply" />
+                            </div>
                           </div>
                           <div className="mb-2">UPI: {business.upi}</div>
                         </>
