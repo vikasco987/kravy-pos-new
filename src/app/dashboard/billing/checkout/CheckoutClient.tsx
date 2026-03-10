@@ -1346,7 +1346,12 @@ export default function CheckoutClient() {
     try {
       const url = resumeBillId ? `/api/bill-manager/${resumeBillId}` : "/api/bill-manager";
       const method = resumeBillId ? "PUT" : "POST";
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const res = await fetch(url, { 
+        method, 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify(payload),
+        keepalive: true // Guaranteed delivery even on print reload
+      });
       if (!res.ok) { const err = await res.json(); alert(err.error || "Failed to save bill"); return null; }
       const data = await res.json();
       return data.bill ?? data;
@@ -1889,10 +1894,12 @@ export default function CheckoutClient() {
 
               {/* Print */}
               <button
-                onClick={async () => {
+                onClick={() => {
                   if (!business) { alert("Business profile not loaded yet"); return; }
-                  const bill = await saveBill();
-                  if (!bill) return;
+                  
+                  // 🔥 FIRE & FORGET (So print dialog opens instantly with ZERO DELAY)
+                  saveBill().catch(console.error);
+
                   kravy.payment(); 
                   printReceipt();
                 }}
@@ -2356,10 +2363,12 @@ export default function CheckoutClient() {
                 Close
               </button>
               <button
-                onClick={async () => {
+                onClick={() => {
                   if (!business) { alert("Business profile not loaded yet"); return; }
-                  const bill = await saveBill();
-                  if (!bill) return;
+                  
+                  // 🔥 FIRE & FORGET (So print dialog opens instantly with ZERO DELAY)
+                  saveBill().catch(console.error);
+
                   kravy.payment(); 
                   printReceipt();
                   setShowPreview(false);
