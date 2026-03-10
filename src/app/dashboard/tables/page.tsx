@@ -34,6 +34,7 @@
 //       setTables(data);
 //     } catch (e) {
 //       console.error(e);
+kravy.error();
 //       toast.error("Failed to fetch tables");
 //     } finally {
 //       setLoading(false);
@@ -42,6 +43,7 @@
 
 //   const createTable = async () => {
 //     if (!newName.trim()) {
+kravy.error();
 //       toast.error("Please enter a table name");
 //       return;
 //     }
@@ -55,9 +57,11 @@
 //       const t: TableRecord = await res.json();
 //       setTables((prev) => [...prev, t]);
 //       setNewName("");
+kravy.success();
 //       toast.success(`Table "${newName}" created successfully!`);
 //     } catch (err) {
 //       console.error(err);
+kravy.error();
 //       toast.error("Failed to create table");
 //     }
 //   };
@@ -69,9 +73,11 @@
 //       const res = await fetch(`/api/tables?id=${id}`, { method: "DELETE" });
 //       if (!res.ok) throw new Error(await res.text());
 //       setTables((prev) => prev.filter((t) => t.id !== id));
+kravy.success();
 //       toast.success("Table deleted");
 //     } catch (err) {
 //       console.error(err);
+kravy.error();
 //       toast.error("Failed to delete table");
 //     }
 //   };
@@ -79,6 +85,7 @@
 //   const copyTableUrl = (id: string, name: string) => {
 //     const url = generateTableUrl(id, name);
 //     navigator.clipboard.writeText(url);
+kravy.success();
 //     toast.success("Table URL copied!");
 //   };
 
@@ -246,6 +253,7 @@ import {
   Table as TableIcon, Search, RefreshCw, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { kravy } from "@/lib/sounds";
 
 interface TableRecord {
   id: string;
@@ -277,6 +285,7 @@ export default function TablesPage() {
       setTables(data);
     } catch (e) {
       console.error(e);
+      kravy.error();
       toast.error("Failed to fetch tables");
     } finally {
       setLoading(false);
@@ -284,6 +293,7 @@ export default function TablesPage() {
   };
 
   const createTable = async () => {
+    kravy.error();
     if (!newName.trim()) { toast.error("Please enter a table name"); return; }
     try {
       const res = await fetch(`/api/tables`, {
@@ -295,9 +305,11 @@ export default function TablesPage() {
       const t: TableRecord = await res.json();
       setTables((prev) => [...prev, t]);
       setNewName("");
+      kravy.success();
       toast.success(`Table "${t.name}" created!`);
     } catch (err) {
       console.error(err);
+      kravy.error();
       toast.error("Failed to create table");
     }
   };
@@ -308,9 +320,11 @@ export default function TablesPage() {
       if (!res.ok) throw new Error(await res.text());
       setTables((prev) => prev.filter((t) => t.id !== id));
       setDeleteConfirmId(null);
+      kravy.success();
       toast.success("Table deleted");
     } catch (err) {
       console.error(err);
+      kravy.error();
       toast.error("Failed to delete table");
     }
   };
@@ -320,6 +334,7 @@ export default function TablesPage() {
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+    kravy.success();
     toast.success("Link copied!");
   };
 

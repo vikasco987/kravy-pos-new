@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { kravy } from "@/lib/sounds";
 
 type MenuItem = {
     id: string;
@@ -76,6 +77,7 @@ export default function QROrdersPage() {
 
     const handleCopyLink = () => {
         navigator.clipboard.writeText(publicMenuUrl);
+        kravy.success();
         toast.success("Public menu link copied to clipboard!");
     };
 
@@ -125,6 +127,7 @@ export default function QROrdersPage() {
 
     const handleSaveQR = async () => {
         if (!tableId.trim()) {
+            kravy.error();
             toast.error("Please enter a table name to save.");
             return;
         }
@@ -135,10 +138,12 @@ export default function QROrdersPage() {
                 body: JSON.stringify({ name: tableId.trim() }),
             });
             if (!res.ok) throw new Error(await res.text());
+            kravy.success();
             toast.success(`QR code for table "${tableId}" saved successfully!`);
             setTableId(""); // clear input
         } catch (err) {
             console.error(err);
+            kravy.error();
             toast.error("Failed to save QR code.");
         }
     };

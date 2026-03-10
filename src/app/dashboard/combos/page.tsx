@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import ImageUpload from "../components/uploaditems/ImageUpload";
+import { kravy } from "@/lib/sounds";
 import {
     Sheet,
     SheetContent,
@@ -91,6 +92,7 @@ export default function CombosPage() {
             setItems(await itemsRes.json());
             setCategories(await catsRes.json());
         } catch (error) {
+            kravy.error();
             toast.error("Failed to load data");
         } finally {
             setLoading(false);
@@ -122,6 +124,7 @@ export default function CombosPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (formData.selections.length === 0) {
+            kravy.error();
             toast.error("Add at least one item to the combo");
             return;
         }
@@ -137,6 +140,7 @@ export default function CombosPage() {
             });
 
             if (res.ok) {
+                kravy.success();
                 toast.success(editingCombo ? "Combo updated" : "Combo created");
                 setIsSheetOpen(false);
                 setEditingCombo(null);
@@ -144,9 +148,11 @@ export default function CombosPage() {
                 fetchData();
             } else {
                 const err = await res.json();
+                kravy.error();
                 toast.error(err.error || "Failed to save combo");
             }
         } catch (error) {
+            kravy.error();
             toast.error("Failed to save combo");
         }
     };
@@ -156,10 +162,12 @@ export default function CombosPage() {
         try {
             const res = await fetch(`/api/admin/combos/${id}`, { method: "DELETE" });
             if (res.ok) {
+                kravy.success();
                 toast.success("Combo deleted");
                 fetchData();
             }
         } catch (error) {
+            kravy.error();
             toast.error("Delete failed");
         }
     };

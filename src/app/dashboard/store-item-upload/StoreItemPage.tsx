@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Copy, Trash2, RefreshCw } from "lucide-react";
+import { kravy } from "@/lib/sounds";
 
 /* =============================
    TYPES
@@ -92,6 +93,7 @@ export default function StoreItemPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        kravy.error();
         toast.error(data?.error || "Failed to load items");
         return;
       }
@@ -109,8 +111,10 @@ export default function StoreItemPage() {
       );
 
       setMode("update");
+      kravy.success();
       toast.success("Items loaded for update");
     } catch {
+      kravy.error();
       toast.error("Failed to load items");
     } finally {
       setLoadingItems(false);
@@ -176,6 +180,7 @@ export default function StoreItemPage() {
     } catch {
       setUploading(false);
       setUploadProgress(0);
+      kravy.error();
       toast.error("File upload failed");
     }
   };
@@ -212,6 +217,7 @@ export default function StoreItemPage() {
 
     setItems(newItems);
     setMode("create");
+    kravy.success();
     toast.success(`Loaded ${newItems.length} items`);
   };
 
@@ -233,6 +239,7 @@ export default function StoreItemPage() {
         prev.map((it, i) => (i === index ? { ...it, imageUrl: url } : it))
       );
     } catch {
+      kravy.error();
       toast.error("Image upload failed");
     }
   };
@@ -273,10 +280,12 @@ export default function StoreItemPage() {
     const data = await res.json();
 
     if (!res.ok) {
+      kravy.error();
       toast.error(data?.error || "Save failed");
       return false;
     }
 
+    kravy.success();
     toast.success(`${data.insertedCount} items saved successfully`);
     return true;
   };
@@ -288,6 +297,7 @@ export default function StoreItemPage() {
     );
 
     if (!validItems.length) {
+      kravy.error();
       toast.error("No valid items to update");
       return false;
     }
@@ -299,10 +309,12 @@ export default function StoreItemPage() {
     });
 
     if (!res.ok) {
+      kravy.error();
       toast.error("Update failed");
       return false;
     }
 
+    kravy.success();
     toast.success("Items updated successfully");
     return true;
   };
@@ -311,11 +323,13 @@ export default function StoreItemPage() {
     if (saving) return;
 
     if (!items.length) {
+      kravy.error();
       toast.error("No items");
       return;
     }
 
     if (hasErrors) {
+      kravy.error();
       toast.error(
         mode === "update"
           ? "Fix highlighted rows before updating"
@@ -364,6 +378,7 @@ export default function StoreItemPage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
+      kravy.error();
       toast.error("Only image files allowed");
       return;
     }
@@ -605,6 +620,7 @@ export default function StoreItemPage() {
                       className="p-2 text-xs bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-lg hover:text-[var(--kravy-brand)] hover:border-[var(--kravy-brand)]/50 transition-colors"
                       onClick={() => {
                         navigator.clipboard.writeText(item.name);
+                        kravy.success();
                         toast.success("Copied!");
                       }}
                       title="Copy"
