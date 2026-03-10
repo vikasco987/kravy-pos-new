@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { kravy } from "@/lib/sounds";
 import {
     LayoutDashboard, ChefHat, MapPin, CreditCard,
     Clock, Bell, TrendingUp, ArrowRight, Check,
@@ -79,8 +80,8 @@ export default function CompleteWorkflow() {
     const updateOrderStatus = async (orderId: string, newStatus: string) => {
         try {
             const res = await fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId, status: newStatus }) });
-            if (res.ok) { fetchOrders(); toast.success(`Status → ${newStatus}`); }
-        } catch { toast.error("Error updating status"); }
+            if (res.ok) { kravy.success(); fetchOrders(); toast.success(`Status → ${newStatus}`); }
+        } catch { kravy.error(); toast.error("Error updating status"); }
     };
 
     const handleAddTable = async () => {
@@ -88,15 +89,15 @@ export default function CompleteWorkflow() {
         if (!name) return;
         try {
             const res = await fetch("/api/tables", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
-            if (res.ok) { toast.success("Table added"); fetchTables(); } else toast.error("Failed");
-        } catch { toast.error("Error"); }
+            if (res.ok) { kravy.success(); toast.success("Table added"); fetchTables(); } else { kravy.error(); toast.error("Failed"); }
+        } catch { kravy.error(); toast.error("Error"); }
     };
     const handleDeleteTable = async (id: string, name: string) => {
         if (!confirm(`Delete table ${name}?`)) return;
         try {
             const res = await fetch(`/api/tables?id=${id}`, { method: "DELETE" });
-            if (res.ok) { toast.success("Table deleted"); fetchTables(); } else toast.error("Failed");
-        } catch { toast.error("Error"); }
+            if (res.ok) { kravy.trash(); toast.success("Table deleted"); fetchTables(); } else { kravy.error(); toast.error("Failed"); }
+        } catch { kravy.error(); toast.error("Error"); }
     };
 
     // Computed

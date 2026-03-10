@@ -115,6 +115,7 @@ import {
   Camera
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { kravy } from "@/lib/sounds";
 
 const navGroups = [
   {
@@ -333,7 +334,7 @@ export default function Sidebar() {
         <motion.button
           whileHover={{ scale: 1.1, backgroundColor: "rgba(139,92,246,0.15)", borderColor: "rgba(139,92,246,0.3)" }}
           whileTap={{ scale: 0.9 }}
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => { kravy.toggle(); setCollapsed(!collapsed); }}
           style={{
             background: "rgba(139,92,246,0.08)",
             border: "1px solid rgba(139,92,246,0.2)",
@@ -458,7 +459,7 @@ export default function Sidebar() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <Link href={item.href} style={{ textDecoration: 'none' }} prefetch={false}>
+                  <Link href={item.href} style={{ textDecoration: 'none' }} prefetch={false} onClick={() => { if(item.href !== '#') kravy.click(); }}>
                     <motion.div
                       whileHover={{ scale: 1.02, x: 5 }}
                       whileTap={{ scale: 0.98 }}
@@ -553,7 +554,7 @@ export default function Sidebar() {
                   </Link>
                   {(item as any).showHorizontalGroup && !collapsed && (
                     <div style={{ display: 'flex', gap: '8px', padding: '0 12px 12px', marginTop: '-4px' }}>
-                      <Link href="/dashboard/combos" style={{ textDecoration: 'none', flex: 1 }} prefetch={false}>
+                      <Link href="/dashboard/combos" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => kravy.click()}>
                         <div style={{
                           background: pathname === '/dashboard/combos' ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.05)",
                           border: pathname === '/dashboard/combos' ? "1px solid rgba(139,92,246,0.3)" : "1px solid rgba(139,92,246,0.1)",
@@ -564,7 +565,7 @@ export default function Sidebar() {
                           <div style={{ fontSize: "0.55rem", fontWeight: 700, textTransform: 'uppercase' }}>Combos</div>
                         </div>
                       </Link>
-                      <Link href="/dashboard/offers" style={{ textDecoration: 'none', flex: 1 }} prefetch={false}>
+                      <Link href="/dashboard/offers" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => kravy.click()}>
                         <div style={{
                           background: pathname === '/dashboard/offers' ? "rgba(245,158,11,0.15)" : "rgba(245,158,11,0.05)",
                           border: pathname === '/dashboard/offers' ? "1px solid rgba(245,158,11,0.3)" : "1px solid rgba(245,158,11,0.1)",
@@ -575,7 +576,7 @@ export default function Sidebar() {
                           <div style={{ fontSize: "0.55rem", fontWeight: 700, textTransform: 'uppercase' }}>Offers</div>
                         </div>
                       </Link>
-                      <Link href="/dashboard/rewards" style={{ textDecoration: 'none', flex: 1 }} prefetch={false}>
+                      <Link href="/dashboard/rewards" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => kravy.click()}>
                         <div style={{
                           background: pathname === '/dashboard/rewards' ? "rgba(255,107,53,0.15)" : "rgba(255,107,53,0.05)",
                           border: pathname === '/dashboard/rewards' ? "1px solid rgba(255,107,53,0.3)" : "1px solid rgba(255,107,53,0.1)",
@@ -682,6 +683,7 @@ export default function Sidebar() {
               <motion.button
                 whileHover={{ scale: 1.1, backgroundColor: "rgba(255,107,53,0.1)", color: "#FF6B35" }}
                 whileTap={{ scale: 0.9 }}
+                onClick={() => kravy.close()}
                 style={{
                   background: "none", border: "none",
                   color: isDark ? "#6B7280" : "var(--kravy-text-muted)",

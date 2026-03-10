@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Copy, Plus, Edit2, Trash2, Image as ImageIcon, UtensilsCrossed, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { kravy } from "@/lib/sounds";
 
 type Category = {
     id: string;
@@ -54,6 +55,7 @@ export default function MenuEditPage() {
             if (catRes.ok) setCategories(await catRes.json());
         } catch (err) {
             console.error("Failed to load menu data:", err);
+            kravy.error();
             toast.error("Failed to load menu items");
         } finally {
             setLoading(false);
@@ -112,12 +114,14 @@ export default function MenuEditPage() {
             });
 
             if (!res.ok) throw new Error("Failed to save item");
+            kravy.success();
             toast.success(editingItem ? "Item updated successfully!" : "Item added successfully!");
 
             setIsFormOpen(false);
             loadData(); // Reload table
         } catch (err) {
             console.error(err);
+            kravy.error();
             toast.error("Error saving item");
         } finally {
             setIsSaving(false);
@@ -134,10 +138,12 @@ export default function MenuEditPage() {
             });
 
             if (!res.ok) throw new Error("Failed to delete item");
+            kravy.success();
             toast.success("Item deleted");
             setItems(items.filter(i => i.id !== id));
         } catch (err) {
             console.error(err);
+            kravy.error();
             toast.error("Error deleting item");
         }
     };

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { kravy } from "@/lib/sounds";
 import {
     ChevronLeft,
     Search,
@@ -362,6 +363,7 @@ function PublicMenu() {
     // Actions
     const addToCart = (id: string) => {
         setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+        kravy.add();
         toast.success("Added to cart", { duration: 800, position: "top-center" });
     };
 
@@ -369,9 +371,11 @@ function PublicMenu() {
         setCart(prev => {
             const newVal = (prev[id] || 0) + delta;
             if (newVal <= 0) {
+                kravy.remove();
                 const { [id]: _, ...rest } = prev;
                 return rest;
             }
+            kravy.click();
             return { ...prev, [id]: newVal };
         });
     };
@@ -398,6 +402,7 @@ function PublicMenu() {
         }]);
         setActiveCombo(null);
         setComboSelections({});
+        kravy.success();
         toast.success("Combo added to cart!");
     };
 
@@ -453,6 +458,7 @@ function PublicMenu() {
                 setOrderStatus("placed");
                 setCart({});
                 setShowCartSheet(false);
+                kravy.payment(); // 💰 Cash register sound on order placed
 
                 // Add to recent orders if not already there
                 setRecentOrderIds(prev => {
@@ -471,10 +477,12 @@ function PublicMenu() {
                 });
             } else {
                 const error = await res.json();
+                kravy.error();
                 toast.error(error.error || "Failed to place order");
                 setOrderStatus("none");
             }
         } catch (err) {
+            kravy.error();
             toast.error("Failed to place order");
             setOrderStatus("none");
         }
@@ -485,6 +493,7 @@ function PublicMenu() {
         if (!file) return;
 
         setReviewImageUploading(true);
+        kravy.upload();
         const formData = new FormData();
         formData.append("file", file);
 
@@ -496,11 +505,14 @@ function PublicMenu() {
             const data = await res.json();
             if (data.secure_url) {
                 setReviewImageUrl(data.secure_url);
+                kravy.success();
                 toast.success("Photo added successfully!");
             } else {
+                kravy.error();
                 toast.error("Failed to upload photo");
             }
         } catch (error) {
+            kravy.error();
             toast.error("Something went wrong");
         } finally {
             setReviewImageUploading(false);
@@ -509,6 +521,7 @@ function PublicMenu() {
 
     const handlePostReview = async () => {
         if (!customerPhone || customerPhone.length < 10) {
+            kravy.error();
             toast.error("Review ke liye phone number zaroori hai (+50 pts ke liye)");
             return;
         }
@@ -530,6 +543,7 @@ function PublicMenu() {
             });
 
             if (res.ok) {
+                kravy.review();
                 toast.success("Review posted! +50 points added 👑");
                 setShowReviewSheet(false);
                 setReviewComment("");
@@ -544,9 +558,11 @@ function PublicMenu() {
                 // Update loyalty points locally
                 setLoyaltyPoints(p => Number(p) + 50);
             } else {
+                kravy.error();
                 toast.error("Failed to post review");
             }
         } catch (err) {
+            kravy.error();
             toast.error("Error posting review");
         } finally {
             setReviewSubmitting(false);
@@ -607,14 +623,14 @@ function PublicMenu() {
                         <div className="text-[0.67rem] text-[#ABABAB] font-[600] uppercase tracking-wider">North Indian · Table {tableName}</div>
                     </div>
                     <div className="flex gap-1.5">
-                        <button className="w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center" onClick={() => searchInputRef.current?.focus()}>
+                        <button className="w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center" onClick={() => { kravy.ping(); searchInputRef.current?.focus(); }}>
                             <Search size={16} />
                         </button>
-                        <button className="relative w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center" onClick={() => setActiveTab("loyalty")}>
+                        <button className="relative w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center" onClick={() => { kravy.toggle(); setActiveTab("loyalty"); }}>
                             <Gift size={16} />
                             <span className="absolute -top-1 -right-1 bg-[#3B82F6] text-white text-[0.5rem] font-[900] px-1 py-0.5 rounded-md border-2 border-white">{activeLang.toUpperCase()}</span>
                         </button>
-                        <button className="relative w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center transition-all active:scale-90" onClick={() => setActiveTab("loyalty")}>
+                        <button className="relative w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center transition-all active:scale-90" onClick={() => { kravy.click(); setActiveTab("loyalty"); }}>
                             <History size={16} className={recentOrderIds.length > 0 ? "text-[#E23744]" : ""} />
                             {recentOrderIds.length > 0 && (
                                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#E23744] rounded-full border-2 border-white animate-pulse" />
@@ -642,7 +658,7 @@ function PublicMenu() {
                     {(["menu", "reviews", "gallery", "loyalty"] as const).map((tab) => (
                         <button
                             key={tab}
-                            onClick={() => setActiveTab(tab)}
+                            onClick={() => { kravy.click(); setActiveTab(tab); }}
                             className={`flex-shrink-0 flex-1 py-2.5 text-[0.72rem] font-[800] capitalize transition-all border-b-[2.5px] min-w-[70px] ${activeTab === tab ? "text-[#E23744] border-[#E23744]" : "text-[#696969] border-transparent"}`}
                         >
                             {tab === "menu" ? "🍛 Menu" : tab === "reviews" ? "⭐ Reviews" : tab === "gallery" ? "📸 Gallery" : "🎁 Loyalty"}
@@ -720,7 +736,7 @@ function PublicMenu() {
                                     )}
 
                                     {/* LOYALTY MINI BAR */}
-                                    <div className="bg-gradient-to-br from-[#D4A353]/10 to-[#F0C060]/5 border border-[#D4A353]/30 rounded-xl px-3.5 py-2.5 flex items-center gap-2.5 mb-2" onClick={() => setActiveTab("loyalty")}>
+                                    <div className="bg-gradient-to-br from-[#D4A353]/10 to-[#F0C060]/5 border border-[#D4A353]/30 rounded-xl px-3.5 py-2.5 flex items-center gap-2.5 mb-2" onClick={() => { kravy.toggle(); setActiveTab("loyalty"); }}>
                                         <span className="text-[1.3rem]">👑</span>
                                         <div className="flex-1">
                                             <div className="text-[0.78rem] font-[800] text-[#7A5A00]">{loyaltyPoints} Loyalty Points</div>
@@ -872,7 +888,7 @@ function PublicMenu() {
                                     {categories.map(c => (
                                         <button
                                             key={c}
-                                            onClick={() => setActiveCategory(c)}
+                                            onClick={() => { kravy.click(); setActiveCategory(c); }}
                                             className={`px-4 py-3 text-[0.8rem] font-[700] capitalize whitespace-nowrap border-b-[2.5px] transition-all ${activeCategory === c ? "text-[#E23744] border-[#E23744]" : "text-[#696969] border-transparent"}`}
                                         >
                                             {c}
@@ -1006,7 +1022,7 @@ function PublicMenu() {
                             <div className="px-3.5 mb-2">
                                 <motion.div
                                     whileTap={{ scale: 0.97 }}
-                                    onClick={() => setShowReviewSheet(true)}
+                                    onClick={() => { kravy.open(); setShowReviewSheet(true); }}
                                     className="bg-white rounded-2xl p-4 border border-[#EBEBEB] shadow-sm flex items-center gap-3 cursor-pointer"
                                 >
                                     <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-amber-100">
@@ -1338,7 +1354,7 @@ function PublicMenu() {
 
             {/* ── STICKY CART BAR ── */}
             <div className={`fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-[110] px-3.5 pt-2.5 pb-5 backdrop-blur-md bg-[#F4F4F4]/70 transition-transform duration-300 ${cartCount > 0 && !showCartSheet ? "translate-y-0" : "translate-y-full"}`}>
-                <div onClick={() => setShowCartSheet(true)} className="bg-[#E23744] text-white rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-2xl active:scale-95 transition-all cursor-pointer">
+                <div onClick={() => { kravy.open(); setShowCartSheet(true); }} className="bg-[#E23744] text-white rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-2xl active:scale-95 transition-all cursor-pointer">
                     <div className="flex items-center gap-2.5 transition-all">
                         <div className="bg-white/20 rounded-md px-2 py-1 text-[0.78rem] font-[900]">{cartCount} {cartCount === 1 ? "item" : "items"}</div>
                         <span className="text-[0.88rem] font-[800] uppercase tracking-wide">View Cart</span>
@@ -1359,7 +1375,7 @@ function PublicMenu() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            onClick={() => setShowCartSheet(false)}
+                            onClick={() => { kravy.close(); setShowCartSheet(false); }}
                             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200]"
                         />
                         <motion.div
@@ -1373,7 +1389,7 @@ function PublicMenu() {
                             <div className="w-10 h-1 bg-[#EBEBEB] rounded-full mx-auto mt-3" />
                             <div className="px-4 py-3.5 border-b border-[#EBEBEB] flex items-center justify-between sticky top-0 bg-white z-10">
                                 <h3 className="text-lg font-[900]">🛒 Your Order — T-{tableName}</h3>
-                                <button onClick={() => setShowCartSheet(false)} className="w-7 h-7 bg-[#F4F4F4] rounded-lg flex items-center justify-center text-lg">✕</button>
+                                <button onClick={() => { kravy.close(); setShowCartSheet(false); }} className="w-7 h-7 bg-[#F4F4F4] rounded-lg flex items-center justify-center text-lg">✕</button>
                             </div>
 
                             <div className="flex-1 overflow-y-auto no-scrollbar pb-32 px-4">
@@ -1441,7 +1457,7 @@ function PublicMenu() {
                                 {/* Loyalty Redeem */}
                                 <div className="bg-[#D4A353]/10 border border-[#D4A353]/25 rounded-xl m-4 p-3 flex items-center justify-between">
                                     <div className="text-[0.78rem] font-[700] text-[#7A5A00]">👑 {loyaltyPoints} pts — ₹32.50 discount unlock?</div>
-                                    <div className={`w-[38px] h-[21px] rounded-full relative cursor-pointer transition-colors ${loyaltyOn ? "bg-[#D4A353]" : "bg-[#EBEBEB]"}`} onClick={() => setLoyaltyOn(!loyaltyOn)}>
+                                    <div className={`w-[38px] h-[21px] rounded-full relative cursor-pointer transition-colors ${loyaltyOn ? "bg-[#D4A353]" : "bg-[#EBEBEB]"}`} onClick={() => { kravy.toggle(); setLoyaltyOn(!loyaltyOn); }}>
                                         <div className={`absolute top-[3px] w-[15px] h-[15px] bg-white rounded-full shadow-md transition-all ${loyaltyOn ? "left-[20px]" : "left-[3px]"}`} />
                                     </div>
                                 </div>
@@ -1621,7 +1637,7 @@ function PublicMenu() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            onClick={() => !reviewSubmitting && setShowReviewSheet(false)}
+                            onClick={() => { if (!reviewSubmitting) { kravy.close(); setShowReviewSheet(false); } }}
                             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200]"
                         />
                         <motion.div
@@ -1645,7 +1661,7 @@ function PublicMenu() {
                                         </p>
                                     </div>
                                     <button
-                                        onClick={() => setShowReviewSheet(false)}
+                                        onClick={() => { kravy.close(); setShowReviewSheet(false); }}
                                         className="w-10 h-10 bg-gray-50 hover:bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 transition-colors"
                                     >
                                         <span className="text-xl">✕</span>
@@ -1663,7 +1679,15 @@ function PublicMenu() {
                                                 key={star}
                                                 whileHover={{ scale: 1.2, rotate: 5 }}
                                                 whileTap={{ scale: 0.9 }}
-                                                onClick={() => setReviewRating(star)}
+                                                onClick={() => { 
+                                                    // Different pitch sounds for each star rating
+                                                    if (star === 1) kravy.error();
+                                                    else if (star === 2) kravy.remove();
+                                                    else if (star === 3) kravy.click();
+                                                    else if (star === 4) kravy.add();
+                                                    else kravy.success();
+                                                    setReviewRating(star);
+                                                }}
                                                 className={`text-4xl transition-all ${star <= reviewRating ? "text-[#D4A353] drop-shadow-[0_0_8px_rgba(212,163,83,0.4)]" : "text-gray-200"}`}
                                             >
                                                 ★

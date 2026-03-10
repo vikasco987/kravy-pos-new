@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { kravy } from "@/lib/sounds";
 import {
     Sheet,
     SheetContent,
@@ -74,6 +75,7 @@ export default function OffersPage() {
             const data = await res.json();
             setOffers(data);
         } catch (error) {
+            kravy.error();
             toast.error("Failed to load offers");
         } finally {
             setLoading(false);
@@ -97,6 +99,7 @@ export default function OffersPage() {
             });
 
             if (res.ok) {
+                kravy.success();
                 toast.success(editingOffer ? "Offer updated" : "Offer created");
                 setIsSheetOpen(false);
                 setEditingOffer(null);
@@ -115,9 +118,11 @@ export default function OffersPage() {
                 fetchOffers();
             } else {
                 const err = await res.json();
+                kravy.error();
                 toast.error(err.error || "Something went wrong");
             }
         } catch (error) {
+            kravy.error();
             toast.error("Failed to save offer");
         }
     };
@@ -127,10 +132,12 @@ export default function OffersPage() {
         try {
             const res = await fetch(`/api/admin/offers/${id}`, { method: "DELETE" });
             if (res.ok) {
+                kravy.success();
                 toast.success("Offer deleted");
                 fetchOffers();
             }
         } catch (error) {
+            kravy.error();
             toast.error("Delete failed");
         }
     };

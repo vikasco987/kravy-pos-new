@@ -10,6 +10,7 @@ import {
     PackageOpen, ReceiptText, AlertTriangle
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { kravy } from "@/lib/sounds";
 
 type Offer = {
     id: string;
@@ -61,6 +62,7 @@ export default function PricingSettingsPage() {
                 setTaxRate(profileData?.taxRate ?? 5.0);
                 setOffers(Array.isArray(offerData) ? offerData : []);
             } catch {
+                kravy.error();
                 toast.error("Error loading settings");
             } finally {
                 setLoading(false);
@@ -80,8 +82,10 @@ export default function PricingSettingsPage() {
                 body: JSON.stringify(payload),
             });
             if (!res.ok) throw new Error();
+            kravy.success();
             toast.success("Tax settings saved! ✅");
         } catch {
+            kravy.error();
             toast.error("Failed to save tax settings");
         } finally {
             setSaving(false);
@@ -89,7 +93,9 @@ export default function PricingSettingsPage() {
     }
 
     async function handleCreateOffer() {
+        kravy.error();
         if (!newOffer.title) { toast.error("Offer title required"); return; }
+        kravy.error();
         if (newOffer.discountValue <= 0) { toast.error("Discount must be > 0"); return; }
         setSavingOffer(true);
         try {
@@ -103,8 +109,10 @@ export default function PricingSettingsPage() {
             setOffers(prev => [created, ...prev]);
             setShowNewOffer(false);
             setNewOffer({ title: "", code: "", discountType: "PERCENTAGE", discountValue: 10, minOrderValue: 0 });
+            kravy.success();
             toast.success("Offer created! 🎉");
         } catch {
+            kravy.error();
             toast.error("Failed to create offer");
         } finally {
             setSavingOffer(false);
@@ -116,8 +124,10 @@ export default function PricingSettingsPage() {
             const res = await fetch(`/api/admin/offers?id=${id}`, { method: "DELETE" });
             if (!res.ok) throw new Error();
             setOffers(prev => prev.filter(o => o.id !== id));
+            kravy.success();
             toast.success("Offer deleted");
         } catch {
+            kravy.error();
             toast.error("Failed to delete offer");
         }
     }
@@ -132,6 +142,7 @@ export default function PricingSettingsPage() {
             if (!res.ok) throw new Error();
             setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, isActive: !o.isActive } : o));
         } catch {
+            kravy.error();
             toast.error("Failed to update offer");
         }
     }

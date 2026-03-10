@@ -43,6 +43,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useRealTimeNotifications } from "@/hooks/useRealTimeNotifications";
+import { kravy } from "@/lib/sounds";
 
 interface TableData {
     id: string;
@@ -170,6 +171,7 @@ export default function QRManagementPage() {
                 setStats(calculatedStats);
             }
         } catch (error) {
+            kravy.error();
             toast.error("Failed to fetch data");
         } finally {
             setLoading(false);
@@ -184,6 +186,7 @@ export default function QRManagementPage() {
 
     const createTable = async () => {
         if (!newTableName.trim()) {
+            kravy.error();
             toast.error("Table name is required");
             return;
         }
@@ -196,6 +199,7 @@ export default function QRManagementPage() {
             });
 
             if (response.ok) {
+                kravy.success();
                 toast.success("Table created successfully");
                 setNewTableName("");
                 fetchAllData();
@@ -203,6 +207,7 @@ export default function QRManagementPage() {
                 throw new Error("Failed to create table");
             }
         } catch (error) {
+            kravy.error();
             toast.error("Failed to create table");
         }
     };
@@ -216,12 +221,14 @@ export default function QRManagementPage() {
             });
 
             if (response.ok) {
+                kravy.success();
                 toast.success("Table deleted successfully");
                 fetchAllData();
             } else {
                 throw new Error("Failed to delete table");
             }
         } catch (error) {
+            kravy.error();
             toast.error("Failed to delete table");
         }
     };
@@ -235,12 +242,14 @@ export default function QRManagementPage() {
             });
 
             if (response.ok) {
+                kravy.success();
                 toast.success("Order status updated");
                 fetchAllData();
             } else {
                 throw new Error("Failed to update order");
             }
         } catch (error) {
+            kravy.error();
             toast.error("Failed to update order status");
         }
     };
@@ -254,6 +263,7 @@ export default function QRManagementPage() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        kravy.success();
         toast.success("QR code downloaded");
     };
 

@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { kravy } from "@/lib/sounds";
 
 type Reward = {
     id: string;
@@ -59,6 +60,7 @@ export default function RewardsPage() {
             const data = await res.json();
             setRewards(data);
         } catch (error) {
+            kravy.error();
             toast.error("Failed to load rewards");
         } finally {
             setLoading(false);
@@ -78,6 +80,7 @@ export default function RewardsPage() {
             });
 
             if (res.ok) {
+                kravy.success();
                 toast.success(editingReward ? "Reward updated" : "Reward created");
                 setIsOpen(false);
                 setEditingReward(null);
@@ -85,6 +88,7 @@ export default function RewardsPage() {
                 fetchRewards();
             }
         } catch (error) {
+            kravy.error();
             toast.error("Process failed");
         }
     };
@@ -94,10 +98,12 @@ export default function RewardsPage() {
         try {
             const res = await fetch(`/api/admin/rewards/${id}`, { method: "DELETE" });
             if (res.ok) {
+                kravy.success();
                 toast.success("Reward deleted");
                 fetchRewards();
             }
         } catch (error) {
+            kravy.error();
             toast.error("Delete failed");
         }
     };

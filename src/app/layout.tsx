@@ -14,6 +14,18 @@ const inter = Inter({
 export const metadata = {
   title: "KravyPOS — Smart Billing System",
   description: "Modern point-of-sale and billing system for restaurants and retail",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",          // resolves apple-touch-icon 404
+    shortcut: "/favicon.ico",
+  },
+  themeColor: "#FF6B35",
+  applicationName: "KravyPOS",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "KravyPOS",
+  },
 };
 
 export default function RootLayout({
