@@ -9,6 +9,7 @@ import {
     UtensilsCrossed, Sofa, Megaphone, Info
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { kravy } from "@/lib/sounds";
 
 type GalleryImage = {
     id: string;
@@ -90,8 +91,10 @@ export default function GalleryManagerPage() {
             const newImage = await res.json();
             setImages(prev => [newImage, ...prev]);
             setUploadCaption("");
+            kravy.upload();
             toast.success("Image added to gallery! 🖼️");
         } catch {
+            kravy.error();
             toast.error("Upload failed");
         } finally {
             setUploading(false);
@@ -104,8 +107,10 @@ export default function GalleryManagerPage() {
         try {
             await fetch(`/api/admin/gallery?id=${id}`, { method: "DELETE" });
             setImages(prev => prev.filter(i => i.id !== id));
+            kravy.trash();
             toast.success("Deleted");
         } catch {
+            kravy.error();
             toast.error("Failed to delete");
         }
     }
@@ -119,6 +124,7 @@ export default function GalleryManagerPage() {
             });
             const updated = await res.json();
             setImages(prev => prev.map(i => i.id === img.id ? updated : i));
+            kravy.toggle();
         } catch {
             toast.error("Failed to update");
         }
@@ -134,8 +140,10 @@ export default function GalleryManagerPage() {
             const updated = await res.json();
             setImages(prev => prev.map(i => i.id === id ? updated : i));
             setEditingId(null);
+            kravy.success();
             toast.success("Updated!");
         } catch {
+            kravy.error();
             toast.error("Failed to update");
         }
     }
@@ -270,7 +278,7 @@ export default function GalleryManagerPage() {
                             {/* Image */}
                             <div
                                 className="relative w-full h-40 cursor-pointer"
-                                onClick={() => setLightbox(img)}
+                                onClick={() => { kravy.open(); setLightbox(img); }}
                             >
                                 <Image src={img.imageUrl} alt={img.caption || img.category} fill className="object-cover" />
                                 {/* Category chip */}
@@ -356,7 +364,7 @@ export default function GalleryManagerPage() {
                                 <div className="bg-black/70 text-white text-sm font-bold text-center py-3 px-4">{lightbox.caption}</div>
                             )}
                             <button
-                                onClick={() => setLightbox(null)}
+                                onClick={() => { kravy.close(); setLightbox(null); }}
                                 className="absolute top-3 right-3 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/80 transition"
                             >
                                 <X size={16} />

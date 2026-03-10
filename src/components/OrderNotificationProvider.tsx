@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ShoppingBag, Star, Bell, ExternalLink } from "lucide-react";
+import { X, ShoppingBag, Bell, ExternalLink } from "lucide-react";
+import { kravy } from "@/lib/sounds";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface OrderNotification {
@@ -23,57 +24,7 @@ interface ReviewNotification {
     comment?: string;
 }
 
-// ─── Web Audio Bell Sound (no MP3 needed!) ────────────────────────────────────
-function playOrderSound() {
-    try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-
-        const playTone = (freq: number, startTime: number, duration: number, gain: number) => {
-            const osc = ctx.createOscillator();
-            const gainNode = ctx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(ctx.destination);
-            osc.type = "sine";
-            osc.frequency.setValueAtTime(freq, startTime);
-            gainNode.gain.setValueAtTime(0, startTime);
-            gainNode.gain.linearRampToValueAtTime(gain, startTime + 0.01);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-            osc.start(startTime);
-            osc.stop(startTime + duration);
-        };
-
-        // 🔔 "Ding-Dong" restaurant bell pattern
-        const now = ctx.currentTime;
-        playTone(880, now, 0.5, 0.4);        // High ding
-        playTone(660, now + 0.2, 0.4, 0.3);  // Mid dong
-        playTone(880, now + 0.5, 0.5, 0.4);  // Repeat high ding
-        playTone(990, now + 0.7, 0.8, 0.35); // Bright finish
-    } catch (e) {
-        console.warn("Audio not supported:", e);
-    }
-}
-
-function playReviewSound() {
-    try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const now = ctx.currentTime;
-        // Gentle chime
-        [523, 659, 784].forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain); gain.connect(ctx.destination);
-            osc.type = "sine";
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0, now + i * 0.15);
-            gain.gain.linearRampToValueAtTime(0.25, now + i * 0.15 + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.5);
-            osc.start(now + i * 0.15);
-            osc.stop(now + i * 0.15 + 0.5);
-        });
-    } catch (e) { /* silent */ }
-}
-
-// ─── New Order Popup Card ─────────────────────────────────────────────────────
+// ─── Main Hook + Provider ─────────────────────────────────────────────────────
 function OrderPopup({ order, onClose }: { order: OrderNotification; onClose: () => void }) {
     useEffect(() => {
         const t = setTimeout(onClose, 8000);
@@ -187,7 +138,7 @@ export function OrderNotificationProvider() {
                         );
 
                         if (newOrders.length > 0) {
-                            playOrderSound();
+                            kravy.orderBell();
 
                             newOrders.forEach((order: any) => {
                                 seenOrderIds.current.add(order.id);
@@ -230,7 +181,7 @@ export function OrderNotificationProvider() {
                         );
 
                         if (newReviews.length > 0) {
-                            playReviewSound();
+                            kravy.review();
                             newReviews.forEach((r: any) => {
                                 seenReviewIds.current.add(r.id);
                                 toast(`⭐ New ${r.rating}-star review from ${r.customerName || "a customer"}`, {

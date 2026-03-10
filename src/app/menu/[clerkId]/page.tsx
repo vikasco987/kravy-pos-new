@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { kravy } from "@/lib/sounds";
 import {
     ChevronLeft,
     Search,
@@ -362,6 +363,7 @@ function PublicMenu() {
     // Actions
     const addToCart = (id: string) => {
         setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+        kravy.add();
         toast.success("Added to cart", { duration: 800, position: "top-center" });
     };
 
@@ -369,9 +371,11 @@ function PublicMenu() {
         setCart(prev => {
             const newVal = (prev[id] || 0) + delta;
             if (newVal <= 0) {
+                kravy.remove();
                 const { [id]: _, ...rest } = prev;
                 return rest;
             }
+            kravy.click();
             return { ...prev, [id]: newVal };
         });
     };
@@ -398,6 +402,7 @@ function PublicMenu() {
         }]);
         setActiveCombo(null);
         setComboSelections({});
+        kravy.success();
         toast.success("Combo added to cart!");
     };
 
@@ -453,6 +458,7 @@ function PublicMenu() {
                 setOrderStatus("placed");
                 setCart({});
                 setShowCartSheet(false);
+                kravy.payment(); // 💰 Cash register sound on order placed
 
                 // Add to recent orders if not already there
                 setRecentOrderIds(prev => {
@@ -471,10 +477,12 @@ function PublicMenu() {
                 });
             } else {
                 const error = await res.json();
+                kravy.error();
                 toast.error(error.error || "Failed to place order");
                 setOrderStatus("none");
             }
         } catch (err) {
+            kravy.error();
             toast.error("Failed to place order");
             setOrderStatus("none");
         }
