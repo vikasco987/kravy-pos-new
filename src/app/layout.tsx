@@ -1,7 +1,8 @@
-// src/app/layout.tsx
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import TopProgressBar from "@/components/TopProgressBar";
 import { Inter } from "next/font/google";
 
 const inter = Inter({
@@ -24,6 +25,9 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}>
         <Providers>
+          <Suspense fallback={null}>
+            <TopProgressBar />
+          </Suspense>
           {children}
         </Providers>
       </body>

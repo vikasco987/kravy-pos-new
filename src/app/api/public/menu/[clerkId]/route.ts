@@ -32,7 +32,19 @@ export async function GET(
             where: { userId: clerkId },
         });
 
-        return NextResponse.json({ items, profile });
+        const combos = await prisma.combo.findMany({
+            where: { clerkUserId: clerkId, isActive: true },
+        });
+
+        const offers = await prisma.offer.findMany({
+            where: { clerkUserId: clerkId, isActive: true },
+        });
+
+        const rewards = await prisma.reward.findMany({
+            where: { clerkUserId: clerkId, isActive: true },
+        });
+
+        return NextResponse.json({ items, profile, combos, offers, rewards });
     } catch (error) {
         console.error("PUBLIC_MENU_ERROR:", error);
         return NextResponse.json({ error: "Failed to fetch menu" }, { status: 500 });

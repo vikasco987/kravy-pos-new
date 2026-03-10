@@ -201,10 +201,23 @@ export default function BillingPage() {
         <div className="kravy-card hidden md:block" style={{ overflow: "hidden", padding: 0 }}>
           <table className="kravy-table">
             <thead>
-              <tr>
-                {["Bill No", "Customer", "Phone", "Date & Time", "Amount", "Payment", "Status", "Actions"].map(h => (
-                  <th key={h} style={{ textAlign: h === "Actions" ? "right" : "left" }}>{h}</th>
-                ))}
+              <tr style={{ background: "rgba(0,0,0,0.02)" }}>
+                {/* Identification Group */}
+                <th style={{ textAlign: "left", background: "rgba(99, 102, 241, 0.05)", borderRight: "1px solid var(--kravy-border)" }}>Bill No</th>
+                
+                {/* Customer Group - Blueish */}
+                <th style={{ textAlign: "left", background: "rgba(59, 130, 246, 0.03)" }}>Customer</th>
+                <th style={{ textAlign: "left", background: "rgba(59, 130, 246, 0.03)", borderRight: "1px solid var(--kravy-border)" }}>Phone</th>
+                
+                {/* Timeline & Money - Greenish */}
+                <th style={{ textAlign: "left", background: "rgba(16, 185, 129, 0.03)" }}>Date & Time</th>
+                <th style={{ textAlign: "left", background: "rgba(16, 185, 129, 0.03)", borderRight: "1px solid var(--kravy-border)" }}>Amount</th>
+                
+                {/* Status Group - Amber/Purple */}
+                <th style={{ textAlign: "left", background: "rgba(139, 92, 246, 0.03)" }}>Payment</th>
+                <th style={{ textAlign: "left", background: "rgba(139, 92, 246, 0.03)", borderRight: "1px solid var(--kravy-border)" }}>Status</th>
+                
+                <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -215,7 +228,7 @@ export default function BillingPage() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: idx * 0.03 }}
                 >
-                  <td>
+                  <td style={{ background: "rgba(99, 102, 241, 0.02)", borderRight: "1px solid var(--kravy-border)" }}>
                     <span style={{
                       fontFamily: "monospace", fontWeight: 800,
                       fontSize: "0.82rem", color: "var(--kravy-accent)"
@@ -223,7 +236,7 @@ export default function BillingPage() {
                       #{bill.billNumber}
                     </span>
                   </td>
-                  <td>
+                  <td style={{ background: "rgba(59, 130, 246, 0.01)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <div style={{
                         width: "30px", height: "30px", borderRadius: "8px",
@@ -236,17 +249,17 @@ export default function BillingPage() {
                       <span style={{ fontWeight: 600 }}>{bill.customerName || "Walk-in"}</span>
                     </div>
                   </td>
-                  <td className="muted">{bill.customerPhone || "—"}</td>
-                  <td className="muted" style={{ fontSize: "0.78rem", fontFamily: "monospace" }}>
+                  <td className="muted" style={{ background: "rgba(59, 130, 246, 0.01)", borderRight: "1px solid var(--kravy-border)" }}>{bill.customerPhone || "—"}</td>
+                  <td className="muted" style={{ fontSize: "0.78rem", fontFamily: "monospace", background: "rgba(16, 185, 129, 0.01)" }}>
                     {new Date(bill.createdAt).toLocaleString('en-IN', {
                       day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
                     })}
                   </td>
-                  <td style={{ fontWeight: 800, color: "var(--kravy-text-primary)" }}>
+                  <td style={{ fontWeight: 800, color: "var(--kravy-text-primary)", background: "rgba(16, 185, 129, 0.01)", borderRight: "1px solid var(--kravy-border)" }}>
                     ₹{format(bill.total)}
                   </td>
-                  <td><PaymentBadge mode={bill.paymentMode} /></td>
-                  <td><StatusBadge status={bill.paymentStatus} isHeld={bill.isHeld} /></td>
+                  <td style={{ background: "rgba(139, 92, 246, 0.01)" }}><PaymentBadge mode={bill.paymentMode} /></td>
+                  <td style={{ background: "rgba(139, 92, 246, 0.01)", borderRight: "1px solid var(--kravy-border)" }}><StatusBadge status={bill.paymentStatus} isHeld={bill.isHeld} /></td>
                   <td style={{ textAlign: "right" }}>
                     <BillActions bill={bill} refresh={fetchBills} />
                   </td>
@@ -381,13 +394,13 @@ function BillActions({ bill, refresh }: { bill: BillManager; refresh: () => void
       label: "View Details",
       icon: <Eye size={14} />,
       color: "rgb(99 102 241)",
-      onClick: () => router.push(`/billing/${bill.id}`)
+      onClick: () => router.push(`/dashboard/billing/${bill.id}`)
     },
     {
       label: "Print Bill",
       icon: <Printer size={14} />,
       color: "var(--kravy-text-muted)",
-      onClick: () => window.open(`/billing/${bill.id}`, "_blank")
+      onClick: () => window.open(`/dashboard/billing/${bill.id}`, "_blank")
     },
     {
       label: "WhatsApp",
@@ -406,7 +419,7 @@ function BillActions({ bill, refresh }: { bill: BillManager; refresh: () => void
       label: "Resume Order",
       icon: <Play size={14} />,
       color: "rgb(245 158 11)",
-      onClick: () => router.push(`/billing/checkout?resumeBillId=${bill.id}`)
+      onClick: () => router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`)
     }] : []),
     {
       label: "Delete",
@@ -453,7 +466,7 @@ function BillActions({ bill, refresh }: { bill: BillManager; refresh: () => void
                 style={{
                   width: "100%", display: "flex", alignItems: "center", gap: "10px",
                   padding: "9px 12px", borderRadius: "10px", border: "none",
-                  background: "transparent", color: a.color === "#EF4444" ? "#EF4444" : "var(--kravy-text-secondary)",
+                  background: "transparent", color: a.color || "var(--kravy-text-secondary)",
                   fontSize: "0.85rem", fontWeight: 500, cursor: "pointer",
                   transition: "all 0.15s", textAlign: "left"
                 }}

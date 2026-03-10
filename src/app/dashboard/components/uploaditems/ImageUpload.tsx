@@ -20,8 +20,10 @@ export default function ImageUpload({
   // 🔹 Load saved image from localStorage on mount
   useEffect(() => {
     const savedImage = localStorage.getItem("uploadedImage");
-    if (savedImage) setImage(savedImage);
-  }, [setImage]);
+    if (savedImage && !image) {
+      setImage(savedImage);
+    }
+  }, []); // Only on mount to avoid loops with inline parent functions
 
   const handleFileSelect = async (file: File) => {
     const formData = new FormData();
@@ -84,11 +86,10 @@ export default function ImageUpload({
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`flex flex-col items-center justify-center w-40 h-40 border-2 border-dashed rounded-xl cursor-pointer transition ${
-          isDragging
+        className={`flex flex-col items-center justify-center w-40 h-40 border-2 border-dashed rounded-xl cursor-pointer transition ${isDragging
             ? "border-purple-500 bg-purple-100"
             : "border-purple-300 bg-purple-50 hover:bg-purple-100"
-        }`}
+          }`}
       >
         <input
           type="file"

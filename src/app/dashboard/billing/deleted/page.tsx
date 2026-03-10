@@ -51,7 +51,7 @@ export default function DeletedBillsPage() {
     setBills((prev) => prev.filter((b) => b.id !== billId));
 
     // ✅ AUTO REDIRECT TO BILL MANAGER
-    router.push("/billing");
+    router.push("/dashboard/billing");
   }
 
   return (

@@ -8,6 +8,7 @@ import RecentBills from "./components/recent-bills";
 import TopItems from "./components/top-items";
 import DateFilter from "./components/date-filter";
 import PaymentModeChart from "./components/payment-mode-chart";
+import { Sparkles, Tag } from "lucide-react";
 
 export const revalidate = 0;
 
@@ -27,17 +28,39 @@ export default async function DashboardPage({
   const startDate = new Date();
   startDate.setDate(endDate.getDate() - range);
 
-  const bills = await prisma.billManager.findMany({
-    where: {
-      clerkUserId: user.id,
-      isDeleted: false,
-      createdAt: {
-        gte: startDate,
-        lte: endDate,
+  const previousStart = new Date(startDate);
+  previousStart.setDate(previousStart.getDate() - range);
+
+  const [bills, previousBills, deletedBillsData, activeCombosCount, activeOffersCount] = await Promise.all([
+    prisma.billManager.findMany({
+      where: {
+        clerkUserId: user.id,
+        isDeleted: false,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.billManager.findMany({
+      where: {
+        clerkUserId: user.id,
+        isDeleted: false,
+        createdAt: {
+          gte: previousStart,
+          lt: startDate,
+        },
+      },
+    }),
+    prisma.billManager.findMany({
+      where: { clerkUserId: user.id, isDeleted: true },
+      orderBy: { deletedAt: "desc" },
+      take: 5,
+    }),
+    prisma.combo.count({ where: { clerkUserId: user.id, isActive: true } }),
+    prisma.offer.count({ where: { clerkUserId: user.id, isActive: true } })
+  ]);
 
   const totalRevenue = bills.reduce((sum, b) => sum + b.total, 0);
   const totalBills = bills.length;
@@ -49,21 +72,6 @@ export default async function DashboardPage({
     const mode = (bill.paymentMode || "").toLowerCase();
     if (mode.includes("cash")) cash += bill.total;
     if (mode.includes("upi")) upi += bill.total;
-  });
-
-  // Growth calculation
-  const previousStart = new Date(startDate);
-  previousStart.setDate(previousStart.getDate() - range);
-
-  const previousBills = await prisma.billManager.findMany({
-    where: {
-      clerkUserId: user.id,
-      isDeleted: false,
-      createdAt: {
-        gte: previousStart,
-        lt: startDate,
-      },
-    },
   });
 
   const previousRevenue = previousBills.reduce((sum, b) => sum + b.total, 0);
@@ -93,12 +101,6 @@ export default async function DashboardPage({
     total: bill.total,
     createdAt: bill.createdAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
   }));
-
-  const deletedBillsData = await prisma.billManager.findMany({
-    where: { clerkUserId: user.id, isDeleted: true },
-    orderBy: { deletedAt: "desc" },
-    take: 5,
-  });
 
   const deletedBills = deletedBillsData.map((bill) => ({
     billNumber: bill.billNumber,
@@ -207,6 +209,47 @@ export default async function DashboardPage({
 
       {/* ── Bills Row ── */}
       <RecentBills recentBills={recentBills} deletedBills={deletedBills} />
+
+      {/* ── Marketing Hub Section ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <a href="/dashboard/combos" className="group p-6 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-[32px] text-white shadow-xl shadow-indigo-200 block transition-all hover:scale-[1.02]">
+          <div className="flex justify-between items-start mb-6">
+            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+              <Sparkles size={24} className="text-white" />
+            </div>
+            <div className="bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-sm">
+              Live Preview Active
+            </div>
+          </div>
+          <h3 className="text-2xl font-black mb-1">Combo Deals</h3>
+          <p className="text-white/70 text-sm font-medium mb-4">Create & edit meal bundles with real-time customer view preview</p>
+          <div className="flex items-center gap-2">
+            <div className="px-4 py-2 bg-white text-indigo-700 rounded-xl text-xs font-black uppercase tracking-wider">
+              {activeCombosCount} Active Deals
+            </div>
+            <div className="text-white/40 font-black">→</div>
+          </div>
+        </a>
+
+        <a href="/dashboard/offers" className="group p-6 bg-gradient-to-br from-amber-500 to-orange-600 rounded-[32px] text-white shadow-xl shadow-amber-200 block transition-all hover:scale-[1.02]">
+          <div className="flex justify-between items-start mb-6">
+            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+              <Tag size={24} className="text-white" />
+            </div>
+            <div className="bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-sm">
+              Campaigns
+            </div>
+          </div>
+          <h3 className="text-2xl font-black mb-1">Offers & Coupons</h3>
+          <p className="text-white/70 text-sm font-medium mb-4">Manage discount codes and seasonal promotions logic</p>
+          <div className="flex items-center gap-2">
+            <div className="px-4 py-2 bg-white text-amber-700 rounded-xl text-xs font-black uppercase tracking-wider">
+              {activeOffersCount} Active Coupons
+            </div>
+            <div className="text-white/40 font-black">→</div>
+          </div>
+        </a>
+      </div>
 
       {/* ── Bottom Row: Top Items + Insight Card ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

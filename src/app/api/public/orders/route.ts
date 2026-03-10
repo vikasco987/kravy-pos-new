@@ -55,11 +55,25 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(updatedOrder);
         }
 
+        // Resolve table name to real table ID
+        let realTableId = null;
+        if (tableId) {
+            const tableRecord = await prisma.table.findFirst({
+                where: {
+                    name: tableId,
+                    clerkUserId: clerkUserId
+                }
+            });
+            if (tableRecord) {
+                realTableId = tableRecord.id;
+            }
+        }
+
         // Case 2 & 3: NEW ORDER (Separate / Round 2)
         const order = await prisma.order.create({
             data: {
                 clerkUserId,
-                tableId: tableId || null,
+                tableId: realTableId,
                 items, // JSON array
                 total: parseFloat(total),
                 customerName,
@@ -72,6 +86,36 @@ export async function POST(req: NextRequest) {
                 table: true,
             }
         });
+
+        // Award Loyalty Points (1 point per ₹10)
+        if (customerPhone) {
+            try {
+                const pointsToAward = Math.floor(parseFloat(total) / 10);
+
+                // Single point of truth: Find or Create the Party record for this business
+                await prisma.party.upsert({
+                    where: {
+                        phone_createdBy: {
+                            phone: customerPhone,
+                            createdBy: clerkUserId
+                        }
+                    },
+                    update: {
+                        loyaltyPoints: { increment: pointsToAward },
+                        name: customerName || undefined // only update name if provided
+                    },
+                    create: {
+                        phone: customerPhone,
+                        name: customerName || "Guest",
+                        createdBy: clerkUserId,
+                        loyaltyPoints: pointsToAward
+                    }
+                });
+            } catch (loyaltyError) {
+                // Log but don't fail the order placement
+                console.error("LOYALTY_AWARD_ERROR (Skipping loyalty update):", loyaltyError);
+            }
+        }
 
         return NextResponse.json(order);
     } catch (error) {

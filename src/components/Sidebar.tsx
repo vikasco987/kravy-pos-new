@@ -111,7 +111,8 @@ import {
   Square,
   Circle,
   Triangle,
-  Hexagon
+  Hexagon,
+  Camera
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -146,7 +147,8 @@ const navGroups = [
   {
     group: "MARKETING",
     items: [
-      { icon: <Sparkles size={18} />, label: "Marketing Hub", href: "/dashboard/combos", badge: "Live", badgeColor: "#8B5CF6", showHorizontalGroup: true }
+      { icon: <Sparkles size={18} />, label: "Marketing Hub", href: "/dashboard/combos", badge: "Live", badgeColor: "#8B5CF6", showHorizontalGroup: true },
+      { icon: <Camera size={18} />, label: "Gallery Manager", href: "/dashboard/gallery", badge: "Photos", badgeColor: "#7C3AED" },
     ]
   },
   {

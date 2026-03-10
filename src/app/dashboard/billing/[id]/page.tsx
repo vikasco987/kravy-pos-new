@@ -455,15 +455,12 @@ export default function ViewBillPage() {
   if (loading) return <p className="p-6">Loading bill...</p>;
   if (!bill) return <p className="p-6">Bill not found</p>;
   const billItems: BillItem[] = Array.isArray(bill.items)
-    ? (bill.items as BillItem[])
+    ? (bill.items as any[]).map((i: any) => ({
+      name: i.name || "Unknown Item",
+      qty: Number(i.qty ?? i.quantity ?? 0),
+      rate: Number(i.rate ?? i.price ?? 0),
+    }))
     : [];
-  <tbody>
-    {billItems.map((i, idx) => (
-      <tr key={idx}>
-        ...
-      </tr>
-    ))}
-  </tbody>
 
 
   return (
@@ -528,7 +525,7 @@ export default function ViewBillPage() {
           </button>
 
           <Link
-            href="/billing"
+            href="/dashboard/billing"
             className="border px-3 py-1 rounded"
           >
             Back
@@ -688,7 +685,7 @@ export default function ViewBillPage() {
         {/* SUBTOTAL */}
         <div className="flex justify-between text-[9px]">
           <span>Subtotal</span>
-          <span>₹{bill.subtotal.toFixed(2)}</span>
+          <span>₹{Number(bill.subtotal ?? 0).toFixed(2)}</span>
         </div>
 
         {/* GST */}
@@ -702,7 +699,7 @@ export default function ViewBillPage() {
         {/* GRAND TOTAL */}
         <div className="flex justify-between font-bold text-[11px]">
           <span>GRAND TOTAL</span>
-          <span>₹{bill.total.toFixed(2)}</span>
+          <span>₹{Number(bill.total ?? 0).toFixed(2)}</span>
         </div>
 
         <div className="border-t border-dashed my-1" />
