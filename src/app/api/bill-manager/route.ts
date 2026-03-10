@@ -93,35 +93,61 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
       Math.random() * 1000
     )}`;
 
+
     // ✅ DERIVE FINAL PAYMENT STATUS (SOURCE OF TRUTH)
-       let finalPaymentStatus: string;
-if (isHeld === true) {
-  finalPaymentStatus = "HELD";
-} else if (finalPaymentMode === "Cash" || finalPaymentMode === "Card") {
-  finalPaymentStatus = "Paid";
-} else {
-  finalPaymentStatus =
-    paymentStatus === "Paid" ? "Paid" : "Pending";
-}
+    let finalPaymentStatus: string;
+    if (isHeld === true) {
+      finalPaymentStatus = "HELD";
+    } else if (finalPaymentMode === "Cash" || finalPaymentMode === "Card") {
+      finalPaymentStatus = "Paid";
+    } else {
+      finalPaymentStatus = paymentStatus === "Paid" ? "Paid" : "Pending";
+    }
 
-
+    // ✅ AUTO-SAVE CUSTOMER IN CRM (Party)
+    let partyId = null;
+    if (customerPhone && customerName) {
+      try {
+        // Upsert customer into the Party table
+        const party = await prisma.party.upsert({
+          where: {
+            phone_createdBy: {
+              phone: customerPhone,
+              createdBy: clerkUserId,
+            },
+          },
+          update: {
+            name: customerName,
+          },
+          create: {
+            name: customerName,
+            phone: customerPhone,
+            createdBy: clerkUserId,
+          },
+        });
+        partyId = party.id;
+      } catch (err) {
+        console.error("Party upsert error in billing:", err);
+      }
+    }
 
     const bill = await prisma.billManager.create({
-  data: {
-    clerkUserId,
-    billNumber,
-    items,
-    subtotal,
-    tax: calculatedTax,
-    total,
-    paymentMode: finalPaymentMode,     // ✅ GUARANTEED
-    paymentStatus: finalPaymentStatus, // ✅ SOURCE OF TRUTH
-    isHeld: isHeld === true, // ✅ THIS LINE WAS MISSING
-    upiTxnRef: upiTxnRef || null,
-    customerName: customerName || null,
-    customerPhone: customerPhone || null,
-  },
-});
+      data: {
+        clerkUserId,
+        billNumber,
+        items,
+        subtotal,
+        tax: calculatedTax,
+        total,
+        paymentMode: finalPaymentMode,     // ✅ GUARANTEED
+        paymentStatus: finalPaymentStatus, // ✅ SOURCE OF TRUTH
+        isHeld: isHeld === true, // ✅ THIS LINE WAS MISSING
+        upiTxnRef: upiTxnRef || null,
+        customerName: customerName || null,
+        customerPhone: customerPhone || null,
+        partyId: partyId,
+      },
+    });
 
     return NextResponse.json({ bill });
   } catch (err) {

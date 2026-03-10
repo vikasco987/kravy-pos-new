@@ -16,21 +16,23 @@ import { INDIA_STATE_DISTRICT } from "@/lib/india-state-district";
 
 /* ---------------- SCHEMA ---------------- */
 const schema = z.object({
-  businessType: z.string().min(1),
-  businessName: z.string().min(2),
+  businessType: z.string().optional(),
+  businessName: z.string().min(1, "Required"),
   businessTagline: z.string().optional(),
 
-  contactName: z.string().min(2),
-  contactPhone: z.string().min(10),
-  contactEmail: z.string().email(),
+  contactName: z.string().optional(),
+  contactPhone: z.string().optional(),
+  contactEmail: z.string().email().or(z.literal('')).optional(),
 
   upi: z.string().optional(),
   gstNumber: z.string().optional(),
 
   businessAddress: z.string().optional(),
-  state: z.string().min(1),
-  district: z.string().min(1),
+  state: z.string().optional(),
+  district: z.string().optional(),
   pinCode: z.string().optional(),
+  
+  upiQrEnabled: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -46,6 +48,7 @@ export default function BusinessProfileForm({
     profileImageUrl?: string;
     logoUrl?: string;
     signatureUrl?: string;
+    upiQrEnabled?: boolean;
   };
   onCancel?: () => void;
   onSuccess?: () => void;
@@ -66,10 +69,12 @@ export default function BusinessProfileForm({
     defaultValues?.signatureUrl || null
   );
 
-  const { register, handleSubmit } = useForm<FormValues>({
+  const { register, handleSubmit, watch } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues,
   });
+
+  const watchedValues = watch();
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
@@ -111,6 +116,8 @@ export default function BusinessProfileForm({
         state: values.state,
         district: values.district,
         pinCode: values.pinCode ?? null,
+        
+        upiQrEnabled: values.upiQrEnabled,
       };
 
       const res = await fetch("/api/profile", {
@@ -149,10 +156,11 @@ export default function BusinessProfileForm({
 
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="max-w-6xl mx-auto p-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 transition-colors"
-    >
+    <div className="flex flex-col xl:flex-row gap-6 max-w-[1400px] mx-auto p-6 items-start">
+      <form
+        onSubmit={handleSubmit(onSubmit, (errors) => console.error("Validation Errors:", errors))}
+        className="flex-1 w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 transition-colors"
+      >
       {/* BUSINESS */}
       <Section title="Business Information">
         <Field label="Business Type">
@@ -178,7 +186,21 @@ export default function BusinessProfileForm({
         <Input {...register("contactName")} placeholder="Contact Person" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
         <Input {...register("contactPhone")} placeholder="Phone" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
         <Input {...register("contactEmail")} placeholder="Email" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
-        <Input {...register("upi")} placeholder="UPI ID" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
+        
+        <div className="flex flex-col gap-4">
+          <Input {...register("upi")} placeholder="UPI ID" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
+          <label className="flex items-center gap-3 cursor-pointer bg-[var(--kravy-bg-2)] p-4 rounded-xl border border-[var(--kravy-border)] hover:border-indigo-500/50 transition-colors">
+            <input 
+              type="checkbox" 
+              {...register("upiQrEnabled")} 
+              className="w-5 h-5 rounded min-w-[20px] accent-[var(--kravy-brand)]"
+            />
+            <div>
+              <p className="text-sm font-bold text-[var(--kravy-text-primary)]">Enable UPI QR on Bill</p>
+              <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Prints a scannable QR code along with the bill</p>
+            </div>
+          </label>
+        </div>
       </Section>
 
       {/* ADDRESS */}
@@ -232,6 +254,92 @@ export default function BusinessProfileForm({
         </Button>
       </div>
     </form>
+
+    {/* LIVE BILL PREVIEW */}
+    <div className="w-[380px] shrink-0 sticky top-24 hidden xl:block shadow-2xl rounded-[32px] overflow-hidden border border-[var(--kravy-border)] bg-[var(--kravy-surface)] animate-in fade-in slide-in-from-right-8 transition-all">
+      <div className="px-6 py-5 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/50">
+        <h3 className="text-base font-black text-[var(--kravy-text-primary)] tracking-tight">Live Receipt Preview</h3>
+        <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-wider mt-0.5">See how your printed bill looks</p>
+      </div>
+      <div className="p-8 bg-[#E5E5E5] dark:bg-[#1A1A1A] flex justify-center min-h-[500px]">
+        <div 
+          className="bg-white text-black p-4 shadow-xl origin-top mx-auto filter hover:brightness-[0.98] transition-all"
+          style={{ width: '58mm', minHeight: '100px', transform: 'scale(1.3)', marginBottom: '30px' }}
+        >
+          <div className="font-mono text-[10px] leading-tight">
+            {logoPreview && (
+              <div className="flex justify-center mb-1">
+                <img src={logoPreview} alt="Logo" className="max-h-[28mm] object-contain" />
+              </div>
+            )}
+            <div className="text-center font-bold text-[12px]">{watchedValues.businessName || "Your Business"}</div>
+            {(watchedValues.businessAddress || watchedValues.district || selectedState || watchedValues.pinCode) && (
+              <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">
+                {watchedValues.businessAddress}
+                {watchedValues.district && `, ${watchedValues.district}`}
+                {selectedState && `, ${selectedState}`}
+                {watchedValues.pinCode && ` - ${watchedValues.pinCode}`}
+              </div>
+            )}
+            {watchedValues.gstNumber && <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">GSTIN: {watchedValues.gstNumber}</div>}
+            
+            <div className="text-center text-[9px] mt-1.5 opacity-90 text-[10px]">
+              <div>Bill No: SV-SAMPLE</div>
+              <div>Date: {new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' })}</div>
+            </div>
+            
+            <div className="my-1.5 border-t border-dashed border-gray-400" />
+            
+            <div className="flex justify-between font-semibold text-[9px] opacity-90 text-[10px]">
+              <span className="flex-1 min-w-0 pr-1">Item</span>
+              <span className="w-[7mm] text-center shrink-0">Qty</span>
+              <span className="w-[10mm] text-right shrink-0">Rate</span>
+              <span className="w-[11mm] text-right shrink-0">Total</span>
+            </div>
+            
+            <div className="border-t border-dashed border-gray-400 my-1" />
+            
+            <div className="flex justify-between text-[9px] opacity-90 text-[10px] mb-0.5">
+              <span className="flex-1 min-w-0 truncate pr-1">Sample Item</span>
+              <span className="w-[7mm] text-center shrink-0">1</span>
+              <span className="w-[10mm] text-right shrink-0">99.00</span>
+              <span className="w-[11mm] text-right shrink-0">99.00</span>
+            </div>
+            
+            <div className="my-1 border-t border-dashed border-gray-400" />
+            
+            <div className="flex justify-between opacity-90 text-[10px]"><span>Subtotal</span><span>₹99.00</span></div>
+            <div className="flex justify-between opacity-90 text-[10px]"><span>GST (5%)</span><span>₹4.95</span></div>
+            
+            <div className="border-t border-dashed border-gray-400 my-1.5" />
+            
+            <div className="flex justify-between font-bold text-[11px] text-[12px]"><span>GRAND TOTAL</span><span>₹103.95</span></div>
+            
+            <div className="border-t border-dashed border-gray-400 my-1.5" />
+            
+            <div className="text-center text-[9px] opacity-90 text-[10px]">Payment: UPI</div>
+            
+            {(watchedValues.upi && watchedValues.upiQrEnabled !== false) && (
+              <div className="my-2 text-center">
+                <div className="inline-block border border-gray-300 p-1 rounded-md bg-white">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`upi://pay?pa=${watchedValues.upi}&pn=${watchedValues.businessName || "Store"}&am=103.95&cu=INR`)}`} 
+                    alt="UPI QR" 
+                    className="w-[30mm] h-[30mm] object-contain block mix-blend-multiply" 
+                  />
+                </div>
+                <div className="text-center text-[9px] mt-1.5 opacity-90 text-[10px]">UPI: {watchedValues.upi}</div>
+              </div>
+            )}
+            
+            {watchedValues.businessTagline && <div className="text-center text-[9px] mt-1.5 opacity-90 text-[10px] italic">{watchedValues.businessTagline}</div>}
+            <div className="text-center font-semibold mt-1 opacity-90 text-[10px]">Thank you 🙏</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
   );
 }
 

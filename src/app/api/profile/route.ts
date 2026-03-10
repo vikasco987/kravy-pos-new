@@ -74,6 +74,7 @@ export async function POST(request: Request) {
         pinCode: body.pinCode ?? null,
         taxEnabled: body.taxEnabled ?? true,
         taxRate: body.taxRate ?? 5.0,
+        upiQrEnabled: body.upiQrEnabled ?? true,
       },
 
       create: {
@@ -100,6 +101,7 @@ export async function POST(request: Request) {
         pinCode: body.pinCode ?? null,
         taxEnabled: body.taxEnabled ?? true,
         taxRate: body.taxRate ?? 5.0,
+        upiQrEnabled: body.upiQrEnabled ?? true,
       },
     });
 
