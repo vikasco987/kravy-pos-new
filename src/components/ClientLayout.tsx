@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { useSidebar } from "@/components/SidebarContext";
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs";
+import { OrderNotificationProvider } from "@/components/OrderNotificationProvider";
 
 export default function ClientLayout({
   children,
@@ -36,6 +37,9 @@ export default function ClientLayout({
       </SignedOut>
 
       <SignedIn>
+        {/* 🔔 Real-time order sound + popup notifications */}
+        <OrderNotificationProvider />
+
         <div
           className="h-screen flex flex-col overflow-hidden relative"
           style={{ background: "var(--kravy-bg)", transition: "background 0.4s ease" }}
