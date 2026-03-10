@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ interface BusinessProfile {
     businessTagLine?: string;
 }
 
-export default function QRMenuPage() {
+function QRMenuContent() {
     const searchParams = useSearchParams();
     const clerkId = searchParams.get('clerkId');
     const tableId = searchParams.get('tableId');
@@ -419,3 +419,19 @@ export default function QRMenuPage() {
         </div>
     );
 }
+
+export default function QRMenuPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Utensils className="h-12 w-12 text-orange-500 mx-auto mb-4 animate-pulse" />
+                    <p className="text-gray-600">Loading menu...</p>
+                </div>
+            </div>
+        }>
+            <QRMenuContent />
+        </Suspense>
+    );
+}
+

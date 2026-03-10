@@ -2,31 +2,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
+// NOTE: Combo model uses `selections` (Json field) NOT a relational `items`.
+// This route works with that Json-based structure.
+
 export async function GET(req: NextRequest) {
     try {
         const { userId: clerkId } = await auth();
         if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const { searchParams } = new URL(req.url);
-        const type = searchParams.get('type'); // 'combo' or 'offer'
+        const type = searchParams.get("type"); // 'combo' or 'offer'
 
-        if (type === 'combo') {
+        if (type === "combo") {
             const combos = await prisma.combo.findMany({
                 where: { clerkUserId: clerkId },
-                include: {
-                    items: {
-                        include: { item: true }
-                    }
-                },
-                orderBy: { createdAt: "desc" }
+                orderBy: { createdAt: "desc" },
             });
             return NextResponse.json(combos);
         }
 
-        if (type === 'offer') {
+        if (type === "offer") {
             const offers = await prisma.offer.findMany({
                 where: { clerkUserId: clerkId },
-                orderBy: { createdAt: "desc" }
+                orderBy: { createdAt: "desc" },
             });
             return NextResponse.json(offers);
         }
@@ -45,47 +43,39 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { type, ...data } = body;
 
-        if (type === 'combo') {
-            const { name, description, price, items, imageUrl, isActive } = data;
-            
+        if (type === "combo") {
+            const { name, description, price, selections, imageUrl, isActive } = data;
+
             const combo = await prisma.combo.create({
                 data: {
                     name,
                     description,
                     price: parseFloat(price),
-                    imageUrl,
+                    imageUrl: imageUrl || null,
                     isActive: isActive !== false,
-                    clerkUserId,
-                    items: {
-                        create: items.map((item: any) => ({
-                            itemId: item.itemId,
-                            quantity: item.quantity
-                        }))
-                    }
+                    clerkUserId: clerkId,
+                    selections: selections ?? [],
                 },
-                include: {
-                    items: { include: { item: true } }
-                }
             });
 
             return NextResponse.json(combo, { status: 201 });
         }
 
-        if (type === 'offer') {
-            const { title, description, discountType, discountValue, minOrderAmount, maxDiscount, isActive, validUntil } = data;
-            
+        if (type === "offer") {
+            const { title, description, discountType, discountValue, minOrderValue, maxDiscount, isActive, code } = data;
+
             const offer = await prisma.offer.create({
                 data: {
                     title,
                     description,
+                    code: code || null,
                     discountType,
                     discountValue: parseFloat(discountValue),
-                    minOrderAmount: minOrderAmount ? parseFloat(minOrderAmount) : null,
+                    minOrderValue: minOrderValue ? parseFloat(minOrderValue) : null,
                     maxDiscount: maxDiscount ? parseFloat(maxDiscount) : null,
                     isActive: isActive !== false,
-                    validUntil: validUntil ? new Date(validUntil) : null,
-                    clerkUserId
-                }
+                    clerkUserId: clerkId,
+                },
             });
 
             return NextResponse.json(offer, { status: 201 });
@@ -106,21 +96,20 @@ export async function PATCH(req: NextRequest) {
         const body = await req.json();
         const { type, id, ...updateData } = body;
 
-        if (type === 'combo') {
+        if (type === "combo") {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { items, ...safeUpdate } = updateData; // strip any stray `items` key
             const combo = await prisma.combo.update({
-                where: { id, clerkUserId },
-                data: updateData,
-                include: {
-                    items: { include: { item: true } }
-                }
+                where: { id, clerkUserId: clerkId },
+                data: safeUpdate,
             });
             return NextResponse.json(combo);
         }
 
-        if (type === 'offer') {
+        if (type === "offer") {
             const offer = await prisma.offer.update({
-                where: { id, clerkUserId },
-                data: updateData
+                where: { id, clerkUserId: clerkId },
+                data: updateData,
             });
             return NextResponse.json(offer);
         }
@@ -137,21 +126,17 @@ export async function DELETE(req: NextRequest) {
         if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const { searchParams } = new URL(req.url);
-        const type = searchParams.get('type');
-        const id = searchParams.get('id');
+        const type = searchParams.get("type");
+        const id = searchParams.get("id");
 
         if (!type || !id) {
             return NextResponse.json({ error: "Type and ID required" }, { status: 400 });
         }
 
-        if (type === 'combo') {
-            await prisma.combo.delete({
-                where: { id, clerkUserId }
-            });
-        } else if (type === 'offer') {
-            await prisma.offer.delete({
-                where: { id, clerkUserId }
-            });
+        if (type === "combo") {
+            await prisma.combo.delete({ where: { id, clerkUserId: clerkId } });
+        } else if (type === "offer") {
+            await prisma.offer.delete({ where: { id, clerkUserId: clerkId } });
         } else {
             return NextResponse.json({ error: "Invalid type" }, { status: 400 });
         }
