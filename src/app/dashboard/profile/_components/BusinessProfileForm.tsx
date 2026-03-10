@@ -16,23 +16,23 @@ import { INDIA_STATE_DISTRICT } from "@/lib/india-state-district";
 
 /* ---------------- SCHEMA ---------------- */
 const schema = z.object({
-  businessType: z.string().min(1),
-  businessName: z.string().min(2),
+  businessType: z.string().optional(),
+  businessName: z.string().min(1, "Required"),
   businessTagline: z.string().optional(),
 
-  contactName: z.string().min(2),
-  contactPhone: z.string().min(10),
-  contactEmail: z.string().email(),
+  contactName: z.string().optional(),
+  contactPhone: z.string().optional(),
+  contactEmail: z.string().email().or(z.literal('')).optional(),
 
   upi: z.string().optional(),
   gstNumber: z.string().optional(),
 
   businessAddress: z.string().optional(),
-  state: z.string().min(1),
-  district: z.string().min(1),
+  state: z.string().optional(),
+  district: z.string().optional(),
   pinCode: z.string().optional(),
   
-  upiQrEnabled: z.boolean(),
+  upiQrEnabled: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -158,7 +158,7 @@ export default function BusinessProfileForm({
   return (
     <div className="flex flex-col xl:flex-row gap-6 max-w-[1400px] mx-auto p-6 items-start">
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(onSubmit, (errors) => console.error("Validation Errors:", errors))}
         className="flex-1 w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 transition-colors"
       >
       {/* BUSINESS */}
