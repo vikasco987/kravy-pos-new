@@ -1107,6 +1107,7 @@ import {
   Save, PauseCircle, RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
+import { kravy } from "@/lib/sounds";
 
 /* ================= TYPES ================= */
 
@@ -1230,13 +1231,22 @@ export default function CheckoutClient() {
   function addToCart(item: MenuItem) {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);
-      if (existing) return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
+      if (existing) {
+        kravy.click(); // item already in cart — just increase qty
+        return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
+      }
+      kravy.add(); // new item added — bigger pop sound
       return [...prev, { id: item.id, name: item.name, qty: 1, rate: item.price }];
     });
   }
 
   function reduceFromCart(itemId: string) {
-    setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, qty: i.qty - 1 } : i).filter((i) => i.qty > 0));
+    setItems((prev) => {
+      const current = prev.find(i => i.id === itemId);
+      if (current && current.qty <= 1) kravy.trash(); // last one removed
+      else kravy.remove(); // qty decreased
+      return prev.map((i) => i.id === itemId ? { ...i, qty: i.qty - 1 } : i).filter((i) => i.qty > 0);
+    });
   }
 
   /* ================= CUSTOMER ================= */
@@ -1246,9 +1256,9 @@ export default function CheckoutClient() {
 
   /* ================= CART STATE ================= */
   const [items, setItems] = useState<BillItem[]>([]);
-  const inc = (id: string) => setItems((s) => s.map((i) => i.id === id ? { ...i, qty: i.qty + 1 } : i));
-  const dec = (id: string) => setItems((s) => s.map((i) => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter((i) => i.qty > 0));
-  const remove = (id: string) => setItems((s) => s.filter((i) => i.id !== id));
+  const inc = (id: string) => { kravy.click(); setItems((s) => s.map((i) => i.id === id ? { ...i, qty: i.qty + 1 } : i)); };
+  const dec = (id: string) => { kravy.remove(); setItems((s) => s.map((i) => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter((i) => i.qty > 0)); };
+  const remove = (id: string) => { kravy.trash(); setItems((s) => s.filter((i) => i.id !== id)); };
 
   /* ================= BUSINESS PROFILE ================= */
   const [business, setBusiness] = useState<{
@@ -1768,7 +1778,7 @@ export default function CheckoutClient() {
                 {(["Cash", "UPI", "Card"] as const).map((mode) => (
                   <button
                     key={mode}
-                    onClick={() => setPaymentMode(mode)}
+                    onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
                     className={`py-2.5 rounded-xl border font-black text-xs transition-all ${paymentMode === mode
                       ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md shadow-indigo-500/25"
                       : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)]"
@@ -1823,6 +1833,7 @@ export default function CheckoutClient() {
                 onClick={async () => {
                   const bill = await saveBill(true);
                   if (!bill) return;
+                  kravy.ping(); // Hold confirmation sound
                   setItems([]); setCustomerName(""); setCustomerPhone("");
                   fetchHeldBills();
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
@@ -1841,6 +1852,7 @@ export default function CheckoutClient() {
                 onClick={async () => {
                   const bill = await saveBill();
                   if (!bill) return;
+                  kravy.success(); // Save success sound
                   setItems([]); setCustomerName(""); setCustomerPhone("");
                   setUpiTxnRef(""); setPaymentMode("Cash"); setPaymentStatus("Paid");
                   setBillNumber(`SV-${Date.now()}`);
@@ -1862,6 +1874,7 @@ export default function CheckoutClient() {
                   if (!business) { alert("Business profile not loaded yet"); return; }
                   const bill = await saveBill();
                   if (!bill) return;
+                  kravy.payment(); // 💰 Cash register sound on print
                   printReceipt();
                 }}
                 disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
