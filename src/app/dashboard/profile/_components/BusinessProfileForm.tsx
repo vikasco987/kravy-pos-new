@@ -291,19 +291,19 @@ export default function BusinessProfileForm({
             <div className="my-1.5 border-t border-dashed border-gray-400" />
             
             <div className="flex justify-between font-semibold text-[9px] opacity-90 text-[10px]">
-              <span className="w-[26mm]">Item Name</span>
-              <span className="w-[8mm] text-right">Qty</span>
-              <span className="w-[10mm] text-right">Rate</span>
-              <span className="w-[10mm] text-right">Total</span>
+              <span className="flex-1 min-w-0 pr-1">Item</span>
+              <span className="w-[7mm] text-center shrink-0">Qty</span>
+              <span className="w-[10mm] text-right shrink-0">Rate</span>
+              <span className="w-[11mm] text-right shrink-0">Total</span>
             </div>
             
             <div className="border-t border-dashed border-gray-400 my-1" />
             
-            <div className="flex justify-between text-[9px] opacity-90 text-[10px]">
-              <span className="w-[26mm] truncate">Sample Item</span>
-              <span className="w-[8mm] text-right">1</span>
-              <span className="w-[10mm] text-right">99.00</span>
-              <span className="w-[10mm] text-right">99.00</span>
+            <div className="flex justify-between text-[9px] opacity-90 text-[10px] mb-0.5">
+              <span className="flex-1 min-w-0 truncate pr-1">Sample Item</span>
+              <span className="w-[7mm] text-center shrink-0">1</span>
+              <span className="w-[10mm] text-right shrink-0">99.00</span>
+              <span className="w-[11mm] text-right shrink-0">99.00</span>
             </div>
             
             <div className="my-1 border-t border-dashed border-gray-400" />
