@@ -66,10 +66,12 @@ export default function BusinessProfileForm({
     defaultValues?.signatureUrl || null
   );
 
-  const { register, handleSubmit } = useForm<FormValues>({
+  const { register, handleSubmit, watch } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues,
   });
+
+  const watchedValues = watch();
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
@@ -149,10 +151,11 @@ export default function BusinessProfileForm({
 
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="max-w-6xl mx-auto p-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 transition-colors"
-    >
+    <div className="flex flex-col xl:flex-row gap-6 max-w-[1400px] mx-auto p-6 items-start">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex-1 w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 transition-colors"
+      >
       {/* BUSINESS */}
       <Section title="Business Information">
         <Field label="Business Type">
@@ -232,6 +235,92 @@ export default function BusinessProfileForm({
         </Button>
       </div>
     </form>
+
+    {/* LIVE BILL PREVIEW */}
+    <div className="w-[380px] shrink-0 sticky top-24 hidden xl:block shadow-2xl rounded-[32px] overflow-hidden border border-[var(--kravy-border)] bg-[var(--kravy-surface)] animate-in fade-in slide-in-from-right-8 transition-all">
+      <div className="px-6 py-5 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/50">
+        <h3 className="text-base font-black text-[var(--kravy-text-primary)] tracking-tight">Live Receipt Preview</h3>
+        <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-wider mt-0.5">See how your printed bill looks</p>
+      </div>
+      <div className="p-8 bg-[#E5E5E5] dark:bg-[#1A1A1A] flex justify-center min-h-[500px]">
+        <div 
+          className="bg-white text-black p-4 shadow-xl origin-top mx-auto filter hover:brightness-[0.98] transition-all"
+          style={{ width: '58mm', minHeight: '100px', transform: 'scale(1.3)', marginBottom: '30px' }}
+        >
+          <div className="font-mono text-[10px] leading-tight">
+            {logoPreview && (
+              <div className="flex justify-center mb-1">
+                <img src={logoPreview} alt="Logo" className="max-h-[28mm] object-contain" />
+              </div>
+            )}
+            <div className="text-center font-bold text-[12px]">{watchedValues.businessName || "Your Business"}</div>
+            {(watchedValues.businessAddress || watchedValues.district || selectedState || watchedValues.pinCode) && (
+              <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">
+                {watchedValues.businessAddress}
+                {watchedValues.district && `, ${watchedValues.district}`}
+                {selectedState && `, ${selectedState}`}
+                {watchedValues.pinCode && ` - ${watchedValues.pinCode}`}
+              </div>
+            )}
+            {watchedValues.gstNumber && <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">GSTIN: {watchedValues.gstNumber}</div>}
+            
+            <div className="text-center text-[9px] mt-1.5 opacity-90 text-[10px]">
+              <div>Bill No: SV-SAMPLE</div>
+              <div>Date: {new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' })}</div>
+            </div>
+            
+            <div className="my-1.5 border-t border-dashed border-gray-400" />
+            
+            <div className="flex justify-between font-semibold text-[9px] opacity-90 text-[10px]">
+              <span className="w-[26mm]">Item Name</span>
+              <span className="w-[8mm] text-right">Qty</span>
+              <span className="w-[10mm] text-right">Rate</span>
+              <span className="w-[10mm] text-right">Total</span>
+            </div>
+            
+            <div className="border-t border-dashed border-gray-400 my-1" />
+            
+            <div className="flex justify-between text-[9px] opacity-90 text-[10px]">
+              <span className="w-[26mm] truncate">Sample Item</span>
+              <span className="w-[8mm] text-right">1</span>
+              <span className="w-[10mm] text-right">99.00</span>
+              <span className="w-[10mm] text-right">99.00</span>
+            </div>
+            
+            <div className="my-1 border-t border-dashed border-gray-400" />
+            
+            <div className="flex justify-between opacity-90 text-[10px]"><span>Subtotal</span><span>₹99.00</span></div>
+            <div className="flex justify-between opacity-90 text-[10px]"><span>GST (5%)</span><span>₹4.95</span></div>
+            
+            <div className="border-t border-dashed border-gray-400 my-1.5" />
+            
+            <div className="flex justify-between font-bold text-[11px] text-[12px]"><span>GRAND TOTAL</span><span>₹103.95</span></div>
+            
+            <div className="border-t border-dashed border-gray-400 my-1.5" />
+            
+            <div className="text-center text-[9px] opacity-90 text-[10px]">Payment: UPI</div>
+            
+            {watchedValues.upi && (
+              <>
+                <div className="flex justify-center my-2.5">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`upi://pay?pa=${watchedValues.upi}&pn=${watchedValues.businessName || "Store"}&am=103.95&cu=INR`)}`} 
+                    alt="UPI QR" 
+                    className="w-[30mm] shadow-sm mix-blend-multiply" 
+                  />
+                </div>
+                <div className="text-center text-[9px] opacity-90 text-[10px]">UPI: {watchedValues.upi}</div>
+              </>
+            )}
+            
+            {watchedValues.businessTagline && <div className="text-center text-[9px] mt-1.5 opacity-90 text-[10px] italic">{watchedValues.businessTagline}</div>}
+            <div className="text-center font-semibold mt-1 opacity-90 text-[10px]">Thank you 🙏</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
   );
 }
 
