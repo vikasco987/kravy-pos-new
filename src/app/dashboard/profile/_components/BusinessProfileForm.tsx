@@ -320,16 +320,16 @@ export default function BusinessProfileForm({
             <div className="text-center text-[9px] opacity-90 text-[10px]">Payment: UPI</div>
             
             {(watchedValues.upi && watchedValues.upiQrEnabled !== false) && (
-              <>
-                <div className="flex justify-center my-2.5">
+              <div className="my-2 text-center">
+                <div className="inline-block border border-gray-300 p-1 rounded-md bg-white">
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`upi://pay?pa=${watchedValues.upi}&pn=${watchedValues.businessName || "Store"}&am=103.95&cu=INR`)}`} 
                     alt="UPI QR" 
-                    className="w-[30mm] shadow-sm mix-blend-multiply" 
+                    className="w-[30mm] h-[30mm] object-contain block mix-blend-multiply" 
                   />
                 </div>
-                <div className="text-center text-[9px] opacity-90 text-[10px]">UPI: {watchedValues.upi}</div>
-              </>
+                <div className="text-center text-[9px] mt-1.5 opacity-90 text-[10px]">UPI: {watchedValues.upi}</div>
+              </div>
             )}
             
             {watchedValues.businessTagline && <div className="text-center text-[9px] mt-1.5 opacity-90 text-[10px] italic">{watchedValues.businessTagline}</div>}

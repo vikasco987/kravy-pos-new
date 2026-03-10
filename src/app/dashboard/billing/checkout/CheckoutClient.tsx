@@ -1837,11 +1837,8 @@ export default function CheckoutClient() {
             {/* UPI Details */}
             {paymentMode === "UPI" && (
               <div className="space-y-3 p-3.5 rounded-2xl bg-[var(--kravy-brand)]/5 border border-[var(--kravy-brand)]/15">
-                <div className="bg-white p-2 rounded-xl mx-auto w-fit shadow-lg">
-                  <img src={qrUrl} alt="UPI QR" className="w-28 h-28" />
-                </div>
-                <a href={upiLink} className="block text-center text-[var(--kravy-brand)] font-bold text-xs hover:underline">
-                  Click to open UPI App →
+                <a href={upiLink} className="block text-center text-[var(--kravy-brand)] font-black text-sm p-4 border border-dashed border-[var(--kravy-brand)]/30 rounded-xl bg-white hover:bg-emerald-50 transition-all">
+                  📱 Open UPI App →
                 </a>
                 <input
                   placeholder="Transaction Reference No."
