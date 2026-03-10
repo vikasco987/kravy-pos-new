@@ -1382,12 +1382,48 @@ export default function CheckoutClient() {
   /* ================= PRINT RECEIPT ================= */
   function printReceipt() {
     if (!receiptRef.current) { alert("Nothing to print"); return; }
-    const printContents = receiptRef.current.innerHTML;
-    const originalContents = document.body.innerHTML;
-    document.body.innerHTML = printContents;
+    
+    // Inject print-specific CSS
+    const printStyle = document.createElement("style");
+    printStyle.innerHTML = `
+      @media print {
+        body > *:not(#print-receipt-container) {
+          display: none !important;
+        }
+        @page {
+          margin: 0;
+          size: 58mm auto;
+        }
+      }
+    `;
+    document.head.appendChild(printStyle);
+    
+    // Create temporary print container
+    const printContainer = document.createElement("div");
+    printContainer.id = "print-receipt-container";
+    printContainer.style.display = "none";
+    printStyle.innerHTML += `
+      @media print {
+        #print-receipt-container {
+          display: block !important;
+          width: 58mm;
+          padding: 2mm;
+        }
+      }
+    `;
+    printContainer.className = "font-mono text-[10px] leading-tight";
+    printContainer.innerHTML = receiptRef.current.innerHTML;
+    
+    document.body.appendChild(printContainer);
+    
+    // Trigger the print dialog synchronously
     window.print();
-    document.body.innerHTML = originalContents;
-    window.location.reload();
+    
+    // Cleanup temporary elements after printing
+    setTimeout(() => {
+      if (document.head.contains(printStyle)) document.head.removeChild(printStyle);
+      if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
+    }, 2000);
   }
 
   /* ================= UI ================= */
@@ -1897,11 +1933,18 @@ export default function CheckoutClient() {
                 onClick={() => {
                   if (!business) { alert("Business profile not loaded yet"); return; }
                   
-                  // 🔥 FIRE & FORGET (So print dialog opens instantly with ZERO DELAY)
+                  // 🔥 FIRE & FORGET
                   saveBill().catch(console.error);
 
                   kravy.payment(); 
                   printReceipt();
+                  
+                  // Reset form manually (no page reload needed anymore)
+                  setItems([]); setCustomerName(""); setCustomerPhone("");
+                  setUpiTxnRef(""); setPaymentMode("Cash"); setPaymentStatus("Paid");
+                  setBillNumber(`SV-${Date.now()}`);
+                  setBillDate(new Date().toLocaleString());
+                  if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
                 disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
                 className="flex items-center justify-center gap-1.5 py-3 rounded-xl
@@ -2366,12 +2409,19 @@ export default function CheckoutClient() {
                 onClick={() => {
                   if (!business) { alert("Business profile not loaded yet"); return; }
                   
-                  // 🔥 FIRE & FORGET (So print dialog opens instantly with ZERO DELAY)
+                  // 🔥 FIRE & FORGET
                   saveBill().catch(console.error);
 
                   kravy.payment(); 
                   printReceipt();
                   setShowPreview(false);
+                  
+                  // Reset form manually
+                  setItems([]); setCustomerName(""); setCustomerPhone("");
+                  setUpiTxnRef(""); setPaymentMode("Cash"); setPaymentStatus("Paid");
+                  setBillNumber(`SV-${Date.now()}`);
+                  setBillDate(new Date().toLocaleString());
+                  if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
                 disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
                 className="flex-[2] py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
