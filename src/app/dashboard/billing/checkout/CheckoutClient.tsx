@@ -1275,6 +1275,7 @@ export default function CheckoutClient() {
     logoUrl?: string;
     taxEnabled?: boolean;
     taxRate?: number;
+    upiQrEnabled?: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -2020,11 +2021,22 @@ export default function CheckoutClient() {
           <div className="flex justify-between font-bold text-[11px]"><span>GRAND TOTAL</span><span>₹{finalTotal.toFixed(2)}</span></div>
           <div className="border-t border-dashed my-1" />
           <div className="text-center text-[9px]">Payment: {paymentMode}</div>
-          {paymentMode === "UPI" && (
-            <>
-              <div className="flex justify-center my-2"><img src={qrUrl} alt="UPI QR" className="w-[30mm]" /></div>
-              <div className="text-center text-[9px]">Txn Ref: {upiTxnRef || "Pending"}</div>
-            </>
+          
+          {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
+            <div className="mt-2 text-center text-[9px] font-bold border-t border-dashed pt-2">
+              {(business?.upi && business?.upiQrEnabled !== false) && (
+                <>
+                  <div>Scan & Pay</div>
+                  <div className="flex justify-center my-1.5 border border-[var(--kravy-border)] p-1 rounded-md bg-white w-fit mx-auto">
+                    <img src={qrUrl} alt="UPI QR" className="w-[32mm] h-[32mm] mix-blend-multiply" />
+                  </div>
+                  <div className="mb-2">UPI: {business.upi}</div>
+                </>
+              )}
+              {paymentMode === "UPI" && (
+                <div className="text-center text-[9px]">Txn Ref: {upiTxnRef || "Pending"}</div>
+              )}
+            </div>
           )}
           {business?.businessTagLine && <div className="text-center text-[9px] mt-1">{business.businessTagLine}</div>}
           <div className="text-center font-semibold mt-1">Thank you 🙏</div>
@@ -2385,11 +2397,22 @@ export default function CheckoutClient() {
                   <div className="flex justify-between font-bold text-[11px]"><span>GRAND TOTAL</span><span>₹{finalTotal.toFixed(2)}</span></div>
                   <div className="border-t border-dashed border-gray-400 my-1" />
                   <div className="text-center text-[9px]">Payment: {paymentMode}</div>
-                  {paymentMode === "UPI" && (
-                    <>
-                      <div className="flex justify-center my-2"><img src={qrUrl} alt="UPI QR" className="w-[30mm]" /></div>
-                      <div className="text-center text-[9px]">Txn Ref: {upiTxnRef || "Pending"}</div>
-                    </>
+                  
+                  {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
+                    <div className="mt-2 text-center text-[9px] font-bold border-t border-dashed border-gray-400 pt-2">
+                      {(business?.upi && business?.upiQrEnabled !== false) && (
+                        <>
+                          <div>Scan & Pay</div>
+                          <div className="flex justify-center my-1.5 border border-gray-300 p-1 rounded-md bg-white w-fit mx-auto">
+                            <img src={qrUrl} alt="UPI QR" className="w-[32mm] h-[32mm] mix-blend-multiply" />
+                          </div>
+                          <div className="mb-2">UPI: {business.upi}</div>
+                        </>
+                      )}
+                      {paymentMode === "UPI" && (
+                        <div className="text-center text-[9px]">Txn Ref: {upiTxnRef || "Pending"}</div>
+                      )}
+                    </div>
                   )}
                   {business?.businessTagLine && <div className="text-center text-[9px] mt-1">{business.businessTagLine}</div>}
                   <div className="text-center font-semibold mt-1">Thank you 🙏</div>

@@ -31,6 +31,8 @@ const schema = z.object({
   state: z.string().min(1),
   district: z.string().min(1),
   pinCode: z.string().optional(),
+  
+  upiQrEnabled: z.boolean(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -46,6 +48,7 @@ export default function BusinessProfileForm({
     profileImageUrl?: string;
     logoUrl?: string;
     signatureUrl?: string;
+    upiQrEnabled?: boolean;
   };
   onCancel?: () => void;
   onSuccess?: () => void;
@@ -113,6 +116,8 @@ export default function BusinessProfileForm({
         state: values.state,
         district: values.district,
         pinCode: values.pinCode ?? null,
+        
+        upiQrEnabled: values.upiQrEnabled,
       };
 
       const res = await fetch("/api/profile", {
@@ -181,7 +186,21 @@ export default function BusinessProfileForm({
         <Input {...register("contactName")} placeholder="Contact Person" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
         <Input {...register("contactPhone")} placeholder="Phone" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
         <Input {...register("contactEmail")} placeholder="Email" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
-        <Input {...register("upi")} placeholder="UPI ID" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
+        
+        <div className="flex flex-col gap-4">
+          <Input {...register("upi")} placeholder="UPI ID" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
+          <label className="flex items-center gap-3 cursor-pointer bg-[var(--kravy-bg-2)] p-4 rounded-xl border border-[var(--kravy-border)] hover:border-indigo-500/50 transition-colors">
+            <input 
+              type="checkbox" 
+              {...register("upiQrEnabled")} 
+              className="w-5 h-5 rounded min-w-[20px] accent-[var(--kravy-brand)]"
+            />
+            <div>
+              <p className="text-sm font-bold text-[var(--kravy-text-primary)]">Enable UPI QR on Bill</p>
+              <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Prints a scannable QR code along with the bill</p>
+            </div>
+          </label>
+        </div>
       </Section>
 
       {/* ADDRESS */}
@@ -300,7 +319,7 @@ export default function BusinessProfileForm({
             
             <div className="text-center text-[9px] opacity-90 text-[10px]">Payment: UPI</div>
             
-            {watchedValues.upi && (
+            {(watchedValues.upi && watchedValues.upiQrEnabled !== false) && (
               <>
                 <div className="flex justify-center my-2.5">
                   <img 

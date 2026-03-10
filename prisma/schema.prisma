@@ -274,6 +274,7 @@ model BusinessProfile {
   contactPersonEmail String?
 
   upi                String?
+  upiQrEnabled       Boolean  @default(true)
 
   profileImageUrl    String?
   logoUrl            String?
