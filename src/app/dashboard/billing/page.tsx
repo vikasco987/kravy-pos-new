@@ -416,13 +416,13 @@ function BillActions({ bill, refresh, clerkId }: { bill: BillManager; refresh: (
 
     const phone = formatWhatsAppNumber(bill.customerPhone);
     const message = encodeURIComponent(
-      `Thank you for shopping with us!\n\n` +
-      `Hello ${bill.customerName || "Customer"},\n\n` +
-      `Here is your invoice:\n` +
-      `Bill No: ${bill.billNumber}\n` +
-      `Amount Paid: Rs. ${bill.total}\n\n` +
-      `Download Invoice:\n${pdfUrl}\n\n` +
-      `We look forward to serving you again!`
+      `🙏 *Thank you for shopping with us!*\n\n` +
+      `Hello *${bill.customerName || "Customer"}*,\n\n` +
+      `Here is your invoice from *Kravy POS*:\n\n` +
+      `🧾 *Bill No:* ${bill.billNumber}\n` +
+      `💰 *Amount Paid:* Rs. ${bill.total}\n\n` +
+      `📄 *Download Invoice:*\n${pdfUrl}\n\n` +
+      `We look forward to serving you again! 😊`
     );
     window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
   };
