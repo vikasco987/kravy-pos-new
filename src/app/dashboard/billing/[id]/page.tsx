@@ -483,28 +483,19 @@ export default function ViewBillPage() {
       .join("\n");
 
     const phone = formatWhatsAppNumber(bill.customerPhone);
-    
-    // 4. Construct Premium Message
-    const restaurantName = business?.businessName || "Kravy POS";
-    const restaurantAddress = business?.businessAddress ? `\n📍 ${business.businessAddress}` : "";
+    const restaurantName = business?.businessName || "Kravy";
+    const restaurantAddress = business?.businessAddress ? `\n📍 *${business.businessAddress}*` : "";
     
     const message = encodeURIComponent(
       `🏪 *${restaurantName}*${restaurantAddress}\n\n` +
       `🙏 *Thank you for shopping with us!*\n\n` +
       `👤 *Customer:* ${bill.customerName || "Customer"}\n\n` +
-      `━━━━━━━━━━━━━━━\n` +
-      `🛍 *Order Summary*\n` +
-      `${itemsList}\n` +
-      `━━━━━━━━━━━━━━━\n\n` +
-      `🧾 *Bill Details*\n` +
-      `📄 *Bill No:* ${bill.billNumber}\n` +
-      `💰 *Amount Paid:* Rs. ${bill.total}\n` +
-      `💳 *Payment:* ${bill.paymentMode}\n\n` +
-      `📥 *Download Your Invoice*\n` +
-      `${pdfUrl}\n\n` +
-      `⭐ *Enjoyed our service?*\n` +
-      `Leave us a quick review ⭐⭐⭐⭐⭐\n\n` +
-      `🙏 *We look forward to serving you again!*`
+      `🧾 *Bill No:* ${bill.billNumber}\n` +
+      `💰 *Amount Paid:* Rs. ${bill.total}\n\n` +
+      `📥 *Download Invoice*\n` +
+      `🔗 ${pdfUrl}\n\n` +
+      `🙏 *We look forward to serving you again!*\n` +
+      `💚 *Team ${restaurantName}*`
     );
     window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
   };

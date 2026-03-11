@@ -166,23 +166,25 @@ export async function GET(
     if (tax > 0) {
       page.drawText("Subtotal:", { x: 130, y, size: 9, font });
       page.drawText(`${subtotal.toFixed(2)}`, { x: 200, y, size: 9, font });
-      y -= 12;
+      y -= 15;
       page.drawText(`GST (${business?.taxRate || 5}%):`, { x: 130, y, size: 9, font });
       page.drawText(`${tax.toFixed(2)}`, { x: 200, y, size: 9, font });
-      y -= 12;
+      y -= 15;
     }
+
+    y -= 5; // Extra gap before Grand Total
 
     // GRAND TOTAL WITH BLACK HIGHLIGHT
     page.drawRectangle({
       x: 15,
-      y: y - 5,
+      y: y - 8,
       width: 220,
-      height: 20,
+      height: 22,
       color: rgb(0, 0, 0),
     });
     page.drawText("GRAND TOTAL:", { x: 25, y: y, size: 10, font: fontBold, color: rgb(1, 1, 1) });
     page.drawText(`Rs. ${finalTotal.toFixed(2)}`, { x: 160, y: y, size: 11, font: fontBold, color: rgb(1, 1, 1) });
-    y -= 35;
+    y -= 40;
 
     line(`Payment: ${bill.paymentMode || "Cash"} | Status: ${bill.paymentStatus || "Paid"}`, 8, 'center');
     hr();
