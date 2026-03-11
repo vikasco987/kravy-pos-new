@@ -172,9 +172,17 @@ export async function GET(
       y -= 12;
     }
 
-    page.drawText("GRAND TOTAL:", { x: 100, y, size: 10, font: fontBold });
-    page.drawText(`Rs. ${finalTotal.toFixed(2)}`, { x: 180, y, size: 11, font: fontBold });
-    y -= 25;
+    // GRAND TOTAL WITH BLACK HIGHLIGHT
+    page.drawRectangle({
+      x: 15,
+      y: y - 5,
+      width: 220,
+      height: 20,
+      color: rgb(0, 0, 0),
+    });
+    page.drawText("GRAND TOTAL:", { x: 25, y: y, size: 10, font: fontBold, color: rgb(1, 1, 1) });
+    page.drawText(`Rs. ${finalTotal.toFixed(2)}`, { x: 160, y: y, size: 11, font: fontBold, color: rgb(1, 1, 1) });
+    y -= 35;
 
     line(`Payment: ${bill.paymentMode || "Cash"} | Status: ${bill.paymentStatus || "Paid"}`, 8, 'center');
     hr();
@@ -194,9 +202,24 @@ export async function GET(
           width: qrSize,
           height: qrSize,
         });
-        y -= qrSize + 5;
-        line("Scan to Pay", 8, 'center', true);
-        y -= 5;
+        y -= qrSize + 10;
+        
+        // Scan to Pay with Black Highlight
+        page.drawRectangle({
+          x: 60,
+          y: y - 2,
+          width: 130,
+          height: 15,
+          color: rgb(0, 0, 0),
+        });
+        page.drawText("SCAN TO PAY", { 
+          x: (250 - fontBold.widthOfTextAtSize("SCAN TO PAY", 8)) / 2, 
+          y: y + 2, 
+          size: 8, 
+          font: fontBold, 
+          color: rgb(1, 1, 1) 
+        });
+        y -= 20;
       } catch (qrErr) {
         console.error("[PDF API] QR Code generation failed:", qrErr);
       }

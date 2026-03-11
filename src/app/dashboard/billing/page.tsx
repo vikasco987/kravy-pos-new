@@ -23,15 +23,29 @@ type BillManager = {
   customerPhone?: string | null;
   isHeld?: boolean;
   pdfUrl?: string | null;
+  items?: any;
 };
 
 export default function BillingPage() {
   const [bills, setBills] = useState<BillManager[]>([]);
   const [clerkId, setClerkId] = useState<string | null>(null);
+  const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
   const { query } = useSearch();
+
+  async function fetchProfile() {
+    try {
+      const res = await fetch("/api/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setBusiness(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch profile:", e);
+    }
+  }
 
   async function fetchBills() {
     try {
@@ -49,7 +63,10 @@ export default function BillingPage() {
     }
   }
 
-  useEffect(() => { fetchBills(); }, []);
+  useEffect(() => { 
+    fetchBills(); 
+    fetchProfile();
+  }, []);
 
   const filteredBills = query
     ? bills.filter(b =>
@@ -264,7 +281,7 @@ export default function BillingPage() {
                   <td style={{ background: "rgba(139, 92, 246, 0.01)" }}><PaymentBadge mode={bill.paymentMode} /></td>
                   <td style={{ background: "rgba(139, 92, 246, 0.01)", borderRight: "1px solid var(--kravy-border)" }}><StatusBadge status={bill.paymentStatus} isHeld={bill.isHeld} /></td>
                   <td style={{ textAlign: "right" }}>
-                    <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} />
+                    <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} />
                   </td>
                 </motion.tr>
               ))}
@@ -294,7 +311,7 @@ export default function BillingPage() {
                     {bill.customerName || "Walk-in Customer"}
                   </div>
                 </div>
-                <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} />
+                <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 {[
@@ -388,7 +405,7 @@ function StatusBadge({ status, isHeld }: { status: string; isHeld?: boolean }) {
 }
 
 /* ─── Bill Actions ─── */
-function BillActions({ bill, refresh, clerkId }: { bill: BillManager; refresh: () => void; clerkId?: string | null }) {
+function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; refresh: () => void; clerkId?: string | null; business?: any }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
@@ -409,20 +426,35 @@ function BillActions({ bill, refresh, clerkId }: { bill: BillManager; refresh: (
       }
     }
 
-    // 2. FINAL FALLBACK: If still null, use the local API URL
-    if (!pdfUrl) {
-      pdfUrl = `${origin}/api/bill-manager/${bill.id}/pdf${clerkId ? `?clerkId=${clerkId}` : ""}`;
-    }
+    // 3. Prepare Items Summary
+    const billItems = Array.isArray(bill.items) ? bill.items : [];
+    const itemsList = billItems
+      .map((i: any) => `• ${i.name} ×${i.qty ?? i.quantity} – ₹${((i.qty ?? i.quantity) * (i.rate ?? i.price)).toFixed(2)}`)
+      .join("\n");
 
     const phone = formatWhatsAppNumber(bill.customerPhone);
+    
+    // 4. Construct Premium Message
+    const restaurantName = business?.businessName || "Kravy POS";
+    const restaurantAddress = business?.businessAddress ? `\n📍 ${business.businessAddress}` : "";
+
     const message = encodeURIComponent(
+      `🏪 *${restaurantName}*${restaurantAddress}\n\n` +
       `🙏 *Thank you for shopping with us!*\n\n` +
-      `Hello *${bill.customerName || "Customer"}*,\n\n` +
-      `Here is your invoice from *Kravy POS*:\n\n` +
-      `🧾 *Bill No:* ${bill.billNumber}\n` +
-      `💰 *Amount Paid:* Rs. ${bill.total}\n\n` +
-      `📄 *Download Invoice:*\n${pdfUrl}\n\n` +
-      `We look forward to serving you again! 😊`
+      `👤 *Customer:* ${bill.customerName || "Customer"}\n\n` +
+      `━━━━━━━━━━━━━━━\n` +
+      `🛍 *Order Summary*\n` +
+      `${itemsList}\n` +
+      `━━━━━━━━━━━━━━━\n\n` +
+      `🧾 *Bill Details*\n` +
+      `📄 *Bill No:* ${bill.billNumber}\n` +
+      `💰 *Amount Paid:* Rs. ${bill.total}\n` +
+      `💳 *Payment:* ${bill.paymentMode}\n\n` +
+      `📥 *Download Your Invoice*\n` +
+      `${pdfUrl}\n\n` +
+      `⭐ *Enjoyed our service?*\n` +
+      `Leave us a quick review ⭐⭐⭐⭐⭐\n\n` +
+      `🙏 *We look forward to serving you again!*`
     );
     window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
   };
