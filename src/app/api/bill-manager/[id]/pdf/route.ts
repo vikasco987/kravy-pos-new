@@ -131,10 +131,8 @@ export async function GET(
     hr();
 
     /* ================= BILL META ================= */
-    page.drawText(`Bill No: ${bill.billNumber}`, { x: 15, y, size: 9, font: fontBold });
-    page.drawText(`Date: ${new Date(bill.createdAt).toLocaleDateString('en-IN')}`, { x: 130, y, size: 8, font });
-    y -= 12;
-    line(`Customer: ${bill.customerName || "Cash Customer"}`, 8);
+    line(`Bill No: ${bill.billNumber}`, 9, 'left', true);
+    line(`Date: ${new Date(bill.createdAt).toLocaleDateString('en-IN')}`, 8, 'left');
     hr();
 
     /* ================= TABLE HEADER ================= */
