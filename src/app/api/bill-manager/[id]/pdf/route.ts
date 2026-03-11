@@ -42,26 +42,32 @@ export async function GET(
     /* ================= PDF SETUP ================= */
     const pdfDoc = await PDFDocument.create();
 
+    // DYNAMIC HEIGHT CALCULATION
+    const items = Array.isArray(bill.items) ? bill.items : [];
+    const baseHeight = 400; // Header, Footer, Meta
+    const itemHeight = items.length * 15;
+    const qrHeight = (bill.paymentMode === "UPI" && business?.upi) ? 120 : 0;
+    const finalHeight = baseHeight + itemHeight + qrHeight;
+
     // 80mm thermal width is approx 226 points. 
-    // We'll use 250 points for a bit more breathing room on digital screens.
-    // Height will be dynamic (we'll start with 600 and adjust if needed, but for now fixed 800 is safer)
-    const page = pdfDoc.addPage([250, 800]);
+    const page = pdfDoc.addPage([250, finalHeight]);
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    let y = 780;
+    let y = finalHeight - 20;
 
     const line = (text: string, size = 9, align: 'left' | 'center' | 'right' = 'left', isBold = false) => {
       if (!text) return;
       const currentFont = isBold ? fontBold : font;
-      const textWidth = currentFont.widthOfTextAtSize(text, size);
+      const cleanText = text.replace(/[^\x00-\x7F]/g, ""); // Remove non-ASCII to be safe
+      const textWidth = currentFont.widthOfTextAtSize(cleanText, size);
       
       let x = 15;
       if (align === 'center') x = (250 - textWidth) / 2;
       if (align === 'right') x = 250 - 15 - textWidth;
 
-      page.drawText(text, { x, y, size, font: currentFont });
+      page.drawText(cleanText, { x, y, size, font: currentFont });
       y -= size + 5;
     };
 
@@ -135,7 +141,6 @@ export async function GET(
     hr();
 
     /* ================= ITEMS ================= */
-    const items = Array.isArray(bill.items) ? bill.items : [];
     items.forEach((i: any) => {
       const name = i.name || "Item";
       const qty = Number(i.qty ?? i.quantity ?? 1);
@@ -178,7 +183,8 @@ export async function GET(
     if (bill.paymentMode === "UPI" && business?.upi && business?.upiQrEnabled) {
       try {
         const upiUrl = `upi://pay?pa=${business.upi}&pn=${business.businessName?.replace(/\s/g, '%20')}&am=${finalTotal.toFixed(2)}&cu=INR&tn=Bill%20${bill.billNumber}`;
-        const qrDataUrl = await QRCode.toDataURL(upiUrl, { margin: 1, width: 200 });
+        // Reduced width from 200 to 120 for smaller file size
+        const qrDataUrl = await QRCode.toDataURL(upiUrl, { margin: 1, width: 120 });
         const qrBuffer = Buffer.from(qrDataUrl.split(',')[1], 'base64');
         const qrImage = await pdfDoc.embedPng(qrBuffer);
         
