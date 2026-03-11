@@ -24,6 +24,7 @@ type BillManager = {
   isHeld?: boolean;
   pdfUrl?: string | null;
   items?: any;
+  clerkUserId?: string | null;
 };
 
 export default function BillingPage() {
@@ -434,6 +435,8 @@ function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; 
 
     const phone = formatWhatsAppNumber(bill.customerPhone);
     const restaurantName = business?.businessName || "Kravy POS";
+    // origin is already declared above at line 414
+    const menuUrl = `${origin}/menu/${clerkId || bill.clerkUserId}`;
     
     // Using string concatenation to ensure best emoji compatibility
     const message = encodeURIComponent(
@@ -444,6 +447,8 @@ function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; 
       "💰 *Amount Paid:* Rs. " + bill.total + "\n\n" +
       "📄 *Download Invoice:*\n" +
       pdfUrl + "\n\n" +
+      "🍴 *View Our Menu:*\n" +
+      menuUrl + "\n\n" +
       "We look forward to serving you again! 😊"
     );
     window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
