@@ -281,7 +281,7 @@ export default function BackupPage() {
               </thead>
               <tbody>
                 {backupHistory.map((backup) => (
-                  <tr key={backup.id} style={{ borderColor: "var(--kravy-border)" }}>
+                  <tr key={backup.id} style={{ borderBottom: "1px solid var(--kravy-border)" }}>
                     <td style={{ padding: "16px", color: "var(--kravy-text-primary)", fontWeight: 500 }}>{backup.date}</td>
                     <td style={{ padding: "16px", color: "var(--kravy-text-muted)" }}>{backup.size}</td>
                     <td style={{ padding: "16px" }}>
@@ -308,12 +308,7 @@ export default function BackupPage() {
                     </td>
                     <td style={{ padding: "16px" }}>
                       <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-                        <button style={{
-                          background: "rgba(59,130,246,0.1)", color: "#3B82F6",
-                          border: "none", borderRadius: "8px", padding: "6px", cursor: "pointer"
-                        }}>
-                          <Download size={16} />
-                        </button>
+                        <DownloadButton fileName={`kravy-backup-${backup.id}.gz`} />
                         <button style={{
                           background: "rgba(245,158,11,0.1)", color: "#F59E0B",
                           border: "none", borderRadius: "8px", padding: "6px", cursor: "pointer"
@@ -330,5 +325,48 @@ export default function BackupPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function DownloadButton({ fileName }: { fileName: string }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleDownload = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/admin/backups/download?file=${fileName}`);
+      const data = await res.json();
+      
+      if (data.url) {
+        window.open(data.url, "_blank");
+      } else {
+        alert("Failed to generate download link. Please check your AWS configuration.");
+      }
+    } catch (error) {
+      console.error("Download Error:", error);
+      alert("Error generating download link");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button 
+      onClick={handleDownload}
+      disabled={loading}
+      style={{
+        background: loading ? "var(--kravy-bg-2)" : "rgba(59,130,246,0.1)", 
+        color: loading ? "var(--kravy-text-muted)" : "#3B82F6",
+        border: "none", borderRadius: "8px", padding: "6px", cursor: loading ? "not-allowed" : "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px"
+      }}
+      title="Download Backup"
+    >
+      {loading ? (
+        <RefreshCw size={16} style={{ animation: "spin 1s linear infinite" }} />
+      ) : (
+        <Download size={16} />
+      )}
+    </button>
   );
 }
