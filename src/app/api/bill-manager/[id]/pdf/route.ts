@@ -213,8 +213,9 @@ export async function GET(
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: "kravy_bills",
-          public_id: `bill_${bill.billNumber.replace(/[^a-zA-Z0-9]/g, "_")}`,
-          resource_type: "raw",
+          public_id: `bill_${bill.billNumber.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`,
+          resource_type: "image",
+          format: "pdf",
           overwrite: true,
           access_mode: "public"
         },
