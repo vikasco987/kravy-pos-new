@@ -4,54 +4,63 @@ import prisma from "@/lib/prisma";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import cloudinary from "@/lib/cloudinary";
 import QRCode from "qrcode";
+import { ObjectId } from "bson"; // BSON is already in package.json
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
+  console.log(`[PDF API] STEP 1: API called for Bill ID: ${id}`);
+
   try {
     const { userId: authUserId } = await auth();
     const searchParams = req.nextUrl.searchParams;
     const clerkIdParam = searchParams.get("clerkId");
 
-    const { id } = await context.params;
+    // VALIDATE MONGODB ID
+    if (!ObjectId.isValid(id)) {
+      console.error(`[PDF API] ERROR: Invalid MongoDB ID provided: ${id}`);
+      return NextResponse.json({ error: "Invalid bill ID format" }, { status: 400 });
+    }
 
     /* ================= FETCH BILL ================= */
+    console.log("[PDF API] STEP 2: Fetching bill from database...");
     const bill = await prisma.billManager.findUnique({
       where: { id },
     });
 
     if (!bill) {
-      console.error("BILL NOT FOUND:", id);
+      console.error(`[PDF API] ERROR: Bill not found in DB: ${id}`);
       return NextResponse.json({ error: "Bill not found" }, { status: 404 });
     }
+    console.log(`[PDF API] STEP 3: Bill found: ${bill.billNumber}`);
 
     // Security: Must be authorized via session OR matching clerkId param
     const isAuthorized = authUserId === bill.clerkUserId || clerkIdParam === bill.clerkUserId;
 
     if (!isAuthorized) {
-      console.warn("UNAUTHORIZED ACCESS ATTEMPT:", { id, authUserId, clerkIdParam });
+      console.warn(`[PDF API] UNAUTHORIZED ACCESS ATTEMPT: Bill ${id} by User ${authUserId || clerkIdParam}`);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     /* ================= FETCH BUSINESS PROFILE ================= */
+    console.log("[PDF API] STEP 4: Fetching business profile...");
     const business = await prisma.businessProfile.findFirst({
       where: { userId: bill.clerkUserId },
     });
 
     /* ================= PDF SETUP ================= */
+    console.log("[PDF API] STEP 5: Starting PDF generation...");
     const pdfDoc = await PDFDocument.create();
 
-    // DYNAMIC HEIGHT CALCULATION
     const items = Array.isArray(bill.items) ? bill.items : [];
     const baseHeight = 400; // Header, Footer, Meta
     const itemHeight = items.length * 15;
     const qrHeight = (bill.paymentMode === "UPI" && business?.upi) ? 120 : 0;
     const finalHeight = baseHeight + itemHeight + qrHeight;
 
-    // 80mm thermal width is approx 226 points. 
     const page = pdfDoc.addPage([250, finalHeight]);
-
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
@@ -60,7 +69,7 @@ export async function GET(
     const line = (text: string, size = 9, align: 'left' | 'center' | 'right' = 'left', isBold = false) => {
       if (!text) return;
       const currentFont = isBold ? fontBold : font;
-      const cleanText = text.replace(/[^\x00-\x7F]/g, ""); // Remove non-ASCII to be safe
+      const cleanText = text.replace(/[^\x00-\x7F]/g, ""); 
       const textWidth = currentFont.widthOfTextAtSize(cleanText, size);
       
       let x = 15;
@@ -86,8 +95,6 @@ export async function GET(
       try {
         const logoRes = await fetch(business.logoUrl);
         const logoBytes = await logoRes.arrayBuffer();
-        // Check if it's png or jpg based on URL or content type ideally
-        // For now, embedPng is safer if we don't know, or try-catch
         let logoImage;
         if (business.logoUrl.toLowerCase().endsWith('.png')) {
             logoImage = await pdfDoc.embedPng(logoBytes);
@@ -96,7 +103,6 @@ export async function GET(
         }
         
         const dims = logoImage.scale(0.5);
-        // Center the logo
         const logoWidth = 40;
         const logoHeight = (dims.height / dims.width) * logoWidth;
         
@@ -108,7 +114,7 @@ export async function GET(
         });
         y -= logoHeight + 10;
       } catch (e) {
-        console.error("Logo embed failed:", e);
+        console.error("[PDF API] Logo embed failed:", e);
       }
     }
 
@@ -118,8 +124,6 @@ export async function GET(
       line(business.businessTagLine, 8, 'center');
     }
     y -= 5;
-
-    // Address & Info
     if (business?.businessAddress) line(business.businessAddress, 8, 'center');
     if (business?.contactPersonPhone) line(`Ph: ${business.contactPersonPhone}`, 8, 'center');
     if (business?.gstNumber) line(`GSTIN: ${business.gstNumber}`, 8, 'center');
@@ -147,7 +151,6 @@ export async function GET(
       const rate = Number(i.rate ?? i.price ?? 0);
       const total = qty * rate;
 
-      // Draw name (may wrap if too long, but for now simple)
       const displayName = name.length > 20 ? name.substring(0, 18) + ".." : name;
       page.drawText(displayName, { x: 15, y, size: 8, font });
       page.drawText(`${qty}`, { x: 130, y, size: 8, font });
@@ -175,7 +178,6 @@ export async function GET(
     page.drawText(`Rs. ${finalTotal.toFixed(2)}`, { x: 180, y, size: 11, font: fontBold });
     y -= 25;
 
-    /* ================= PAYMENT INFO ================= */
     line(`Payment: ${bill.paymentMode || "Cash"} | Status: ${bill.paymentStatus || "Paid"}`, 8, 'center');
     hr();
 
@@ -183,7 +185,6 @@ export async function GET(
     if (bill.paymentMode === "UPI" && business?.upi && business?.upiQrEnabled) {
       try {
         const upiUrl = `upi://pay?pa=${business.upi}&pn=${business.businessName?.replace(/\s/g, '%20')}&am=${finalTotal.toFixed(2)}&cu=INR&tn=Bill%20${bill.billNumber}`;
-        // Reduced width from 200 to 120 for smaller file size
         const qrDataUrl = await QRCode.toDataURL(upiUrl, { margin: 1, width: 120 });
         const qrBuffer = Buffer.from(qrDataUrl.split(',')[1], 'base64');
         const qrImage = await pdfDoc.embedPng(qrBuffer);
@@ -199,22 +200,22 @@ export async function GET(
         line("Scan to Pay", 8, 'center', true);
         y -= 5;
       } catch (qrErr) {
-        console.error("QR Code generation failed:", qrErr);
+        console.error("[PDF API] QR Code generation failed:", qrErr);
       }
     }
 
-    /* ================= FOOTER ================= */
-    y -= 10;
     line("Thank you for your visit!", 9, 'center', true);
     line("Please come again", 8, 'center');
     y -= 10;
     line(`Powered by Kravy POS`, 7, 'center');
 
     /* ================= RESPONSE & CLOUDINARY UPLOAD ================= */
+    console.log("[PDF API] STEP 6: Saving PDF bytes...");
     const pdfBytes = await pdfDoc.save();
     const pdfBuffer = Buffer.from(pdfBytes);
+    console.log(`[PDF API] STEP 7: PDF generated, size: ${(pdfBuffer.length / 1024).toFixed(2)} KB`);
 
-    // Upload to Cloudinary in background/concurrently
+    console.log("[PDF API] STEP 8: Uploading to Cloudinary...");
     const uploadResult: any = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -227,7 +228,7 @@ export async function GET(
         },
         (error, result) => {
           if (error) {
-            console.error("CLOUDINARY UPLOAD ERROR:", error);
+            console.error("[PDF API] CLOUDINARY UPLOAD ERROR:", error);
             reject(error);
           } else {
             resolve(result);
@@ -238,19 +239,19 @@ export async function GET(
     });
 
     if (uploadResult?.secure_url) {
-        // Update DB with the Cloudinary URL
+        console.log(`[PDF API] STEP 9: Cloudinary upload success: ${uploadResult.secure_url}`);
         await prisma.billManager.update({
             where: { id: bill.id },
             data: { pdfUrl: uploadResult.secure_url }
         });
     }
 
-    // If JSON requested, return the URL
     if (searchParams.get("json") === "true") {
+      console.log("[PDF API] STEP 10: Returning JSON response.");
       return NextResponse.json({ url: uploadResult?.secure_url });
     }
 
-    // Return the professional PDF buffer directly
+    console.log("[PDF API] STEP 10: Returning PDF direct response.");
     return new NextResponse(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
@@ -260,7 +261,7 @@ export async function GET(
     });
 
   } catch (err: any) {
-    console.error("PDF GENERATION/UPLOAD FATAL ERROR:", err);
+    console.error("[PDF API] FATAL ERROR:", err);
     return NextResponse.json(
       { error: "Failed to generate or share PDF", details: err?.message || "Unknown error" },
       { status: 500 }
