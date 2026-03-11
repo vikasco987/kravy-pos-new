@@ -33,6 +33,7 @@ const schema = z.object({
   pinCode: z.string().optional(),
   
   upiQrEnabled: z.boolean().optional(),
+  menuLinkEnabled: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -118,6 +119,7 @@ export default function BusinessProfileForm({
         pinCode: values.pinCode ?? null,
         
         upiQrEnabled: values.upiQrEnabled,
+        menuLinkEnabled: values.menuLinkEnabled,
       };
 
       const res = await fetch("/api/profile", {
@@ -198,6 +200,18 @@ export default function BusinessProfileForm({
             <div>
               <p className="text-sm font-bold text-[var(--kravy-text-primary)]">Enable UPI QR on Bill</p>
               <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Prints a scannable QR code along with the bill</p>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3 cursor-pointer bg-[var(--kravy-bg-2)] p-4 rounded-xl border border-[var(--kravy-border)] hover:border-indigo-500/50 transition-colors">
+            <input 
+              type="checkbox" 
+              {...register("menuLinkEnabled")} 
+              className="w-5 h-5 rounded min-w-[20px] accent-[var(--kravy-brand)]"
+            />
+            <div>
+              <p className="text-sm font-bold text-[var(--kravy-text-primary)]">Share Menu Link in WhatsApp</p>
+              <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Include your online menu link in the invoice message</p>
             </div>
           </label>
         </div>

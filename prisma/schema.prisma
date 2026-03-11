@@ -275,6 +275,7 @@ model BusinessProfile {
 
   upi                String?
   upiQrEnabled       Boolean  @default(true)
+  menuLinkEnabled    Boolean  @default(true)
 
   profileImageUrl    String?
   logoUrl            String?

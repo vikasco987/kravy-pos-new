@@ -75,6 +75,7 @@ export async function POST(request: Request) {
         taxEnabled: body.taxEnabled ?? true,
         taxRate: body.taxRate ?? 5.0,
         upiQrEnabled: body.upiQrEnabled ?? true,
+        menuLinkEnabled: body.menuLinkEnabled ?? true,
       },
 
       create: {
@@ -102,6 +103,7 @@ export async function POST(request: Request) {
         taxEnabled: body.taxEnabled ?? true,
         taxRate: body.taxRate ?? 5.0,
         upiQrEnabled: body.upiQrEnabled ?? true,
+        menuLinkEnabled: body.menuLinkEnabled ?? true,
       },
     });
 

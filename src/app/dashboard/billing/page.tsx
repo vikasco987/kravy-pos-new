@@ -433,10 +433,12 @@ function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; 
       .map((i: any) => `• ${i.name} ×${i.qty ?? i.quantity} – ₹${((i.qty ?? i.quantity) * (i.rate ?? i.price)).toFixed(2)}`)
       .join("\n");
 
-    const phone = formatWhatsAppNumber(bill.customerPhone);
+    // 4. Construct Premium Message
     const restaurantName = business?.businessName || "Kravy POS";
     // origin is already declared above at line 414
     const menuUrl = `${origin}/menu/${clerkId || bill.clerkUserId}`;
+    const phone = formatWhatsAppNumber(bill.customerPhone);
+    const showMenu = business?.menuLinkEnabled !== false;
     
     // Using string concatenation to ensure best emoji compatibility
     const message = encodeURIComponent(
@@ -447,8 +449,7 @@ function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; 
       "💰 *Amount Paid:* Rs. " + bill.total + "\n\n" +
       "📄 *Download Invoice:*\n" +
       pdfUrl + "\n\n" +
-      "🍴 *View Our Menu:*\n" +
-      menuUrl + "\n\n" +
+      (showMenu ? ("🍴 *View Our Menu:*\n" + menuUrl + "\n\n") : "") +
       "We look forward to serving you again! 😊"
     );
     window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
