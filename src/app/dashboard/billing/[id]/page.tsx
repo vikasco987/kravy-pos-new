@@ -389,6 +389,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { MessageCircle, Printer, Download, ArrowLeft } from "lucide-react";
+import { formatWhatsAppNumber } from "@/lib/whatsapp";
 import type {
   BillManager,
   BusinessProfile as PrismaBusinessProfile,
@@ -452,6 +454,18 @@ export default function ViewBillPage() {
     document.body.innerHTML = html;
   }
 
+  const handleWhatsApp = () => {
+    if (!bill) return;
+    const phone = formatWhatsAppNumber(bill.customerPhone);
+    const origin = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
+    // Use the Cloudinary URL if it exists, otherwise use the API URL
+    const pdfUrl = (bill as any).pdfUrl || `${origin}/api/bill-manager/${bill.id}/pdf${bill.clerkUserId ? `?clerkId=${bill.clerkUserId}` : ""}`;
+    const message = encodeURIComponent(
+      `🙏 Thank you for shopping with us!\n\nHello ${bill.customerName || "Customer"},\n\nHere is your invoice:\n🧾 Bill No: ${bill.billNumber}\n💰 Amount Paid: ₹${bill.total}\n\n📄 Download Invoice:\n${pdfUrl}\n\nWe look forward to serving you again 😊`
+    );
+    window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
+  };
+
   if (loading) return <p className="p-6">Loading bill...</p>;
   if (!bill) return <p className="p-6">Bill not found</p>;
   const billItems: BillItem[] = Array.isArray(bill.items)
@@ -510,24 +524,34 @@ export default function ViewBillPage() {
           <button
             onClick={printReceipt}
             disabled={bill.isHeld}
-            className="flex-1 md:flex-none border px-3 py-2 rounded-xl font-bold bg-[var(--kravy-surface)] text-[var(--kravy-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--kravy-border)] transition-colors"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 border px-4 py-2 rounded-xl font-bold bg-[var(--kravy-surface)] text-[var(--kravy-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--kravy-border)] transition-colors"
           >
+            <Printer size={18} />
             Print
           </button>
-          <button disabled={bill.isHeld} className="flex-1 md:flex-none border px-3 py-2 rounded-xl font-bold bg-[var(--kravy-surface)] text-[var(--kravy-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--kravy-border)] transition-colors"
+          <button
+            onClick={handleWhatsApp}
+            disabled={bill.isHeld}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 border px-4 py-2 rounded-xl font-bold bg-[#25D366] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#128C7E] transition-colors"
           >
-            Share
+            <MessageCircle size={18} />
+            WhatsApp
           </button>
 
-          <button disabled={bill.isHeld} className="border px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          <button
+            onClick={() => window.open((bill as any).pdfUrl || `/api/bill-manager/${bill.id}/pdf${bill.clerkUserId ? `?clerkId=${bill.clerkUserId}` : ""}`, "_blank")}
+            disabled={bill.isHeld}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 border px-4 py-2 rounded-xl font-bold bg-[var(--kravy-surface)] text-[var(--kravy-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--kravy-border)] transition-colors"
           >
-            Download PDF
+            <Download size={18} />
+            PDF
           </button>
 
           <Link
             href="/dashboard/billing"
-            className="border px-3 py-1 rounded"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 border px-4 py-2 rounded-xl font-bold bg-[var(--kravy-surface)] text-[var(--kravy-text-primary)] hover:bg-[var(--kravy-border)] transition-colors text-center"
           >
+            <ArrowLeft size={18} />
             Back
           </Link>
         </div>

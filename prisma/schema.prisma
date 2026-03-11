@@ -354,6 +354,7 @@ model BillManager {
   isDeleted       Boolean  @default(false)
   deletedAt       DateTime?
   deletedSnapshot Json?
+  pdfUrl          String?   // ✅ Added for direct sharing
 
   @@index([clerkUserId])
   @@index([isDeleted, createdAt])
