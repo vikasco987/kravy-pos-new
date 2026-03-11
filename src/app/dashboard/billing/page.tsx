@@ -392,13 +392,28 @@ function BillActions({ bill, refresh, clerkId }: { bill: BillManager; refresh: (
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  const handleWhatsApp = () => {
-    const phone = formatWhatsAppNumber(bill.customerPhone);
+  const handleWhatsApp = async () => {
+    let pdfUrl = bill.pdfUrl;
     const origin = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
-    // Use the Cloudinary URL if it exists, otherwise use the API URL
-    const pdfUrl = bill.pdfUrl || `${origin}/api/bill-manager/${bill.id}/pdf${clerkId ? `?clerkId=${clerkId}` : ""}`;
+
+    // If no Cloudinary URL yet, fetch it from the API
+    if (!pdfUrl) {
+      try {
+        const res = await fetch(`/api/bill-manager/${bill.id}/pdf${clerkId ? `?clerkId=${clerkId}` : ""}&json=true`);
+        const data = await res.json();
+        if (data.url) {
+          pdfUrl = data.url;
+        }
+      } catch (err) {
+        console.error("Failed to get PDF URL:", err);
+        // Fallback to API URL if JSON fetch fails
+        pdfUrl = `${origin}/api/bill-manager/${bill.id}/pdf${clerkId ? `?clerkId=${clerkId}` : ""}`;
+      }
+    }
+
+    const phone = formatWhatsAppNumber(bill.customerPhone);
     const message = encodeURIComponent(
-      `🙏 Thank you for shopping with us!\n\nHello ${bill.customerName || "Customer"},\n\nHere is your invoice:\n🧾 Bill No: ${bill.billNumber}\n💰 Amount Paid: ₹${bill.total}\n\n📄 Download Invoice:\n${pdfUrl}\n\nWe look forward to serving you again 😊`
+      `🙏 Thank you for shopping with us!\n\nHello ${bill.customerName || "Customer"},\n\nHere is your invoice:\n🧾 Bill No: ${bill.billNumber}\n💰 Amount Paid: Rs. ${bill.total}\n\n📄 Download Invoice:\n${pdfUrl}\n\nWe look forward to serving you again 😊`
     );
     window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
   };

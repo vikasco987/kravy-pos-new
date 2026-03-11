@@ -160,8 +160,19 @@ export async function GET(
       data: { pdfUrl: uploadResult.secure_url }
     });
 
-    // Redirect to the Cloudinary URL
-    return NextResponse.redirect(uploadResult.secure_url);
+    // If JSON requested, return the URL
+    if (searchParams.get("json") === "true") {
+      return NextResponse.json({ url: uploadResult.secure_url });
+    }
+
+    // For better mobile compatibility, return the PDF buffer directly instead of a redirect
+    // This avoids the "swallowed redirect" issue on Android Chrome
+    return new NextResponse(pdfBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${bill.billNumber}.pdf"`,
+      },
+    });
 
   } catch (err: any) {
     console.error("PDF GENERATION/UPLOAD FATAL ERROR:", err);
