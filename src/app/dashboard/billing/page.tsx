@@ -433,19 +433,18 @@ function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; 
       .join("\n");
 
     const phone = formatWhatsAppNumber(bill.customerPhone);
-    const restaurantName = business?.businessName || "Kravy";
-    const restaurantAddress = business?.businessAddress ? `\n📍 *${business.businessAddress}*` : "";
+    const restaurantName = business?.businessName || "Kravy POS";
     
+    // Using string concatenation to ensure best emoji compatibility
     const message = encodeURIComponent(
-      `🏪 *${restaurantName}*${restaurantAddress}\n\n` +
-      `🙏 *Thank you for shopping with us!*\n\n` +
-      `👤 *Customer:* ${bill.customerName || "Customer"}\n\n` +
-      `🧾 *Bill No:* ${bill.billNumber}\n` +
-      `💰 *Amount Paid:* Rs. ${bill.total}\n\n` +
-      `📥 *Download Invoice*\n` +
-      `🔗 ${pdfUrl}\n\n` +
-      `🙏 *We look forward to serving you again!*\n` +
-      `💚 *Team ${restaurantName}*`
+      "🙏 *Thank you for shopping with us!*\n\n" +
+      `Hello *${bill.customerName || "Customer"}*,\n\n` +
+      `Here is your invoice from *${restaurantName}*:\n\n` +
+      "🧾 *Bill No:* " + bill.billNumber + "\n" +
+      "💰 *Amount Paid:* Rs. " + bill.total + "\n\n" +
+      "📄 *Download Invoice:*\n" +
+      pdfUrl + "\n\n" +
+      "We look forward to serving you again! 😊"
     );
     window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
   };
