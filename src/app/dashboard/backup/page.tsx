@@ -49,37 +49,74 @@ export default function BackupPage() {
             Secure your business data with automatic and manual backups.
           </p>
         </div>
-        <button
-          onClick={handleCreateBackup}
-          disabled={isCreatingBackup}
-          style={{
-            background: isCreatingBackup ? "var(--kravy-border)" : "var(--kravy-brand)",
-            color: "white",
-            border: "none",
-            padding: "12px 24px",
-            borderRadius: "12px",
-            fontWeight: 800,
-            fontSize: "0.9rem",
-            cursor: isCreatingBackup ? "not-allowed" : "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            boxShadow: isCreatingBackup ? "none" : "0 8px 20px rgba(139,92,246,0.3)",
-            textTransform: "uppercase",
-            letterSpacing: "1px"
-          }}
-        >
-          {isCreatingBackup ? (
-            <>
-              <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} />
-              Creating...
-            </>
-          ) : (
-            <>
-              <Download size={18} /> Create Backup
-            </>
-          )}
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={async () => {
+              const res = await fetch("/api/bill-manager/export"); // Reusing bills export for now as primary data
+              if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `Kravy_Full_Data_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              } else {
+                alert("Export failed");
+              }
+            }}
+            style={{
+              background: "var(--kravy-surface)",
+              color: "#10B981",
+              border: "1px solid var(--kravy-border)",
+              padding: "12px 24px",
+              borderRadius: "12px",
+              fontWeight: 800,
+              fontSize: "0.9rem",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              boxShadow: "var(--kravy-card-shadow)",
+              textTransform: "uppercase",
+              letterSpacing: "1px"
+            }}
+          >
+            <FileText size={18} /> Export Excel
+          </button>
+          <button
+            onClick={handleCreateBackup}
+            disabled={isCreatingBackup}
+            style={{
+              background: isCreatingBackup ? "var(--kravy-border)" : "var(--kravy-brand)",
+              color: "white",
+              border: "none",
+              padding: "12px 24px",
+              borderRadius: "12px",
+              fontWeight: 800,
+              fontSize: "0.9rem",
+              cursor: isCreatingBackup ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              boxShadow: isCreatingBackup ? "none" : "0 8px 20px rgba(139,92,246,0.3)",
+              textTransform: "uppercase",
+              letterSpacing: "1px"
+            }}
+          >
+            {isCreatingBackup ? (
+              <>
+                <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Download size={18} /> Create Backup
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Backup Progress */}
