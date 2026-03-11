@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ bills });
+    return NextResponse.json({ bills, clerkUserId });
   } catch (err) {
     console.error("BILL MANAGER LIST ERROR:", err);
     return NextResponse.json(

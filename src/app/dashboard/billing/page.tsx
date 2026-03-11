@@ -22,10 +22,12 @@ type BillManager = {
   customerName?: string | null;
   customerPhone?: string | null;
   isHeld?: boolean;
+  pdfUrl?: string | null;
 };
 
 export default function BillingPage() {
   const [bills, setBills] = useState<BillManager[]>([]);
+  const [clerkId, setClerkId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -38,6 +40,7 @@ export default function BillingPage() {
       if (!res.ok) throw new Error("Failed to fetch bills");
       const data = await res.json();
       setBills(data.bills ?? []);
+      if (data.clerkUserId) setClerkId(data.clerkUserId);
     } catch (err) {
       console.error("FETCH BILLS ERROR:", err);
       setError("Failed to load bills");
@@ -261,7 +264,7 @@ export default function BillingPage() {
                   <td style={{ background: "rgba(139, 92, 246, 0.01)" }}><PaymentBadge mode={bill.paymentMode} /></td>
                   <td style={{ background: "rgba(139, 92, 246, 0.01)", borderRight: "1px solid var(--kravy-border)" }}><StatusBadge status={bill.paymentStatus} isHeld={bill.isHeld} /></td>
                   <td style={{ textAlign: "right" }}>
-                    <BillActions bill={bill} refresh={fetchBills} />
+                    <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} />
                   </td>
                 </motion.tr>
               ))}
@@ -291,7 +294,7 @@ export default function BillingPage() {
                     {bill.customerName || "Walk-in Customer"}
                   </div>
                 </div>
-                <BillActions bill={bill} refresh={fetchBills} />
+                <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 {[
@@ -385,9 +388,20 @@ function StatusBadge({ status, isHeld }: { status: string; isHeld?: boolean }) {
 }
 
 /* ─── Bill Actions ─── */
-function BillActions({ bill, refresh }: { bill: BillManager; refresh: () => void }) {
+function BillActions({ bill, refresh, clerkId }: { bill: BillManager; refresh: () => void; clerkId?: string | null }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+
+  const handleWhatsApp = () => {
+    const phone = formatWhatsAppNumber(bill.customerPhone);
+    const origin = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
+    // Use the Cloudinary URL if it exists, otherwise use the API URL
+    const pdfUrl = bill.pdfUrl || `${origin}/api/bill-manager/${bill.id}/pdf${clerkId ? `?clerkId=${clerkId}` : ""}`;
+    const message = encodeURIComponent(
+      `🙏 Thank you for shopping with us!\n\nHello ${bill.customerName || "Customer"},\n\nHere is your invoice:\n🧾 Bill No: ${bill.billNumber}\n💰 Amount Paid: ₹${bill.total}\n\n📄 Download Invoice:\n${pdfUrl}\n\nWe look forward to serving you again 😊`
+    );
+    window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
+  };
 
   const actions = [
     {
@@ -406,14 +420,7 @@ function BillActions({ bill, refresh }: { bill: BillManager; refresh: () => void
       label: "WhatsApp",
       icon: <MessageCircle size={14} />,
       color: "rgb(37 211 102)",
-      onClick: () => {
-        const phone = formatWhatsAppNumber(bill.customerPhone);
-        const pdfUrl = `${window.location.origin}/api/bill-manager/${bill.id}/pdf`;
-        const message = encodeURIComponent(
-          `🙏 Thank you for shopping with us!\n\nHello ${bill.customerName || "Customer"},\n\nHere is your invoice:\n🧾 Bill No: ${bill.billNumber}\n💰 Amount Paid: ₹${bill.total}\n\n📄 Download Invoice:\n${pdfUrl}\n\nWe look forward to serving you again 😊`
-        );
-        window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
-      }
+      onClick: handleWhatsApp
     },
     ...(bill.isHeld ? [{
       label: "Resume Order",
@@ -435,51 +442,68 @@ function BillActions({ bill, refresh }: { bill: BillManager; refresh: () => void
   ];
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={handleWhatsApp}
         style={{
           width: "34px", height: "34px", borderRadius: "9px",
-          background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)",
+          background: "rgba(37, 211, 102, 0.1)", border: "1px solid rgba(37, 211, 102, 0.2)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", color: "var(--kravy-text-muted)", transition: "all 0.2s"
+          cursor: "pointer", color: "rgb(37, 211, 102)", transition: "all 0.2s"
         }}
+        title="Share on WhatsApp"
+        onMouseEnter={(e) => e.currentTarget.style.background = "rgba(37, 211, 102, 0.2)"}
+        onMouseLeave={(e) => e.currentTarget.style.background = "rgba(37, 211, 102, 0.1)"}
       >
-        <MoreVertical size={16} />
+        <MessageCircle size={16} />
       </button>
 
-      {open && (
-        <>
-          <div style={{ position: "fixed", inset: 0, zIndex: 50 }} onClick={() => setOpen(false)} />
-          <div style={{
-            position: "absolute", right: 0, top: "calc(100% + 8px)",
-            minWidth: "180px", borderRadius: "14px", padding: "6px",
-            background: "var(--kravy-bg)",
-            border: "1px solid var(--kravy-border-strong)",
-            boxShadow: "var(--kravy-card-shadow)",
-            zIndex: 51
-          }}>
-            {actions.map((a, i) => (
-              <button
-                key={i}
-                onClick={() => { setOpen(false); a.onClick(); }}
-                style={{
-                  width: "100%", display: "flex", alignItems: "center", gap: "10px",
-                  padding: "9px 12px", borderRadius: "10px", border: "none",
-                  background: "transparent", color: a.color || "var(--kravy-text-secondary)",
-                  fontSize: "0.85rem", fontWeight: 500, cursor: "pointer",
-                  transition: "all 0.15s", textAlign: "left"
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "var(--kravy-surface)"}
-                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-              >
-                <span style={{ color: a.color }}>{a.icon}</span>
-                {a.label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+      <div style={{ position: "relative" }}>
+        <button
+          onClick={() => setOpen(o => !o)}
+          style={{
+            width: "34px", height: "34px", borderRadius: "9px",
+            background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", color: "var(--kravy-text-muted)", transition: "all 0.2s"
+          }}
+        >
+          <MoreVertical size={16} />
+        </button>
+
+        {open && (
+          <>
+            <div style={{ position: "fixed", inset: 0, zIndex: 50 }} onClick={() => setOpen(false)} />
+            <div style={{
+              position: "absolute", right: 0, top: "calc(100% + 8px)",
+              minWidth: "180px", borderRadius: "14px", padding: "6px",
+              background: "var(--kravy-bg)",
+              border: "1px solid var(--kravy-border-strong)",
+              boxShadow: "var(--kravy-card-shadow)",
+              zIndex: 51
+            }}>
+              {actions.map((a, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setOpen(false); a.onClick(); }}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", gap: "10px",
+                    padding: "9px 12px", borderRadius: "10px", border: "none",
+                    background: "transparent", color: a.color || "var(--kravy-text-secondary)",
+                    fontSize: "0.85rem", fontWeight: 500, cursor: "pointer",
+                    transition: "all 0.15s", textAlign: "left"
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--kravy-surface)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                >
+                  <span style={{ color: a.color }}>{a.icon}</span>
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
