@@ -486,6 +486,7 @@ export default function ViewBillPage() {
     const restaurantName = business?.businessName || "Kravy POS";
     // origin is already declared above at line 460
     const menuUrl = `${origin}/menu/${bill.clerkUserId}`;
+    const showMenu = business?.menuLinkEnabled !== false;
     
     // Using string concatenation to ensure best emoji compatibility
     const message = encodeURIComponent(
@@ -496,8 +497,7 @@ export default function ViewBillPage() {
       "💰 *Amount Paid:* Rs. " + bill.total + "\n\n" +
       "📄 *Download Invoice:*\n" +
       pdfUrl + "\n\n" +
-      "🍴 *View Our Menu:*\n" +
-      menuUrl + "\n\n" +
+      (showMenu ? ("🍴 *View Our Menu:*\n" + menuUrl + "\n\n") : "") +
       "We look forward to serving you again! 😊"
     );
     window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
