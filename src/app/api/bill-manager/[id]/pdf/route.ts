@@ -102,13 +102,13 @@ export async function GET(
         const qty = Number(i.qty ?? i.quantity ?? 1);
         const rate = Number(i.rate ?? i.price ?? 0);
         line(`${name}  (x${qty})`);
-        line(`      @ ₹${rate.toFixed(2)} = ₹${(qty * rate).toFixed(2)}`, 9);
+        line(`      @ Rs. ${rate.toFixed(2)} = Rs. ${(qty * rate).toFixed(2)}`, 9);
         y -= 2; // Extra spacing
       });
     }
 
     /* ================= TOTAL ================= */
-    line(`TOTAL: ₹${Number(bill.total || 0).toFixed(2)}`, 11);
+    line(`TOTAL: Rs. ${Number(bill.total || 0).toFixed(2)}`, 11);
     line(`Payment: ${bill.paymentMode || "Cash"}`);
     line(`Status: ${bill.paymentStatus || "Paid"}`);
 
@@ -122,7 +122,7 @@ export async function GET(
       line(business.businessTagLine, 9);
     }
 
-    line("Thank you 🙏", 10);
+    line("Thank you", 10);
 
     /* ================= RESPONSE & CLOUDINARY UPLOAD ================= */
     const pdfBytes = await pdfDoc.save();
