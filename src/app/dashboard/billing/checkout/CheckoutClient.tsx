@@ -1146,6 +1146,33 @@ export default function CheckoutClient() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(1);
 
+  /* ================= PARTIES (CUSTOMERS) STATE ================= */
+  const [parties, setParties] = useState<any[]>([]);
+  const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([]);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+        setCustomerSuggestions([]);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  async function fetchParties() {
+    try {
+      const res = await fetch("/api/parties");
+      if (res.ok) {
+        const data = await res.json();
+        setParties(data || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch parties:", e);
+    }
+  }
+
   async function fetchHeldBills() {
     try {
       setHeldBillsLoading(true);
@@ -1162,7 +1189,10 @@ export default function CheckoutClient() {
     }
   }
 
-  useEffect(() => { fetchHeldBills(); }, []);
+  useEffect(() => { 
+    fetchHeldBills();
+    fetchParties();
+  }, []);
 
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState("");
@@ -1255,6 +1285,37 @@ export default function CheckoutClient() {
   const [showCustomer, setShowCustomer] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+
+  const handleCustomerPhoneChange = (val: string) => {
+    setCustomerPhone(val);
+    if (val.length >= 3) {
+      const filtered = parties.filter(p => p.phone.includes(val) || p.name.toLowerCase().includes(val.toLowerCase()));
+      setCustomerSuggestions(filtered.slice(0, 5));
+    } else {
+      setCustomerSuggestions([]);
+    }
+  };
+
+  const handleCustomerNameChange = (val: string) => {
+    setCustomerName(val);
+    if (val.length >= 2) {
+      const filtered = parties.filter(p => p.name.toLowerCase().includes(val.toLowerCase()) || p.phone.includes(val));
+      setCustomerSuggestions(filtered.slice(0, 5));
+    } else {
+      setCustomerSuggestions([]);
+    }
+  };
+
+  const selectCustomer = (p: any) => {
+    setCustomerName(p.name);
+    setCustomerPhone(p.phone || "");
+    setCustomerSuggestions([]);
+    kravy.success();
+    toast.success(`Customer ${p.name} selected`, {
+      description: "Details auto-filled instantly",
+      duration: 2000
+    });
+  };
 
   /* ================= CART STATE ================= */
   const [items, setItems] = useState<BillItem[]>([]);
@@ -1355,6 +1416,8 @@ export default function CheckoutClient() {
       });
       if (!res.ok) { const err = await res.json(); alert(err.error || "Failed to save bill"); return null; }
       const data = await res.json();
+      // Refresh parties to include any new customer
+      fetchParties();
       return data.bill ?? data;
     } catch (err) {
       console.error("Save bill error", err);
@@ -1706,29 +1769,58 @@ export default function CheckoutClient() {
           </button>
 
           {showCustomer && (
-            <div className="px-4 md:px-5 py-3 space-y-3 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg)]/30 flex-shrink-0">
+            <div className="px-4 md:px-5 py-3 space-y-3 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg)]/30 flex-shrink-0 relative">
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Name</label>
                 <input
                   placeholder="Customer name"
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
+                  autoComplete="off"
+                  onChange={(e) => handleCustomerNameChange(e.target.value)}
                   className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
                     p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
                     focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-medium"
                 />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 relative">
                 <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Phone</label>
                 <input
                   placeholder="Phone number"
                   value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  autoComplete="off"
+                  onChange={(e) => handleCustomerPhoneChange(e.target.value)}
                   className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
                     p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
                     focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-mono"
                 />
               </div>
+
+              {/* Suggestions Dropdown */}
+              {customerSuggestions.length > 0 && (
+                <div 
+                  ref={suggestionsRef}
+                  className="absolute left-4 right-4 bg-[var(--kravy-surface)] border border-[var(--kravy-border-strong)] rounded-2xl shadow-2xl z-50 mt-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
+                >
+                  <div className="p-2 border-b border-[var(--kravy-border)] bg-indigo-50/30">
+                    <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Matching Customers</p>
+                  </div>
+                  {customerSuggestions.map((p, idx) => (
+                    <button
+                      key={p.id || idx}
+                      onClick={() => selectCustomer(p)}
+                      className="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-[var(--kravy-border)] last:border-0 transition-colors flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="font-black text-sm text-[var(--kravy-text-primary)]">{p.name}</p>
+                        <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-0.5">{p.phone}</p>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                        <User size={14} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

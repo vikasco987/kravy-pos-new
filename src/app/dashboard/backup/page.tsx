@@ -18,14 +18,28 @@ export default function BackupPage() {
     setIsCreatingBackup(true);
     setBackupProgress(0);
 
-    // Simulate backup progress
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      setBackupProgress(i);
-    }
+    try {
+      // Simulate progress waiting for server response
+      const interval = setInterval(() => {
+        setBackupProgress(p => (p >= 80 ? 80 : p + 15));
+      }, 500);
 
-    setIsCreatingBackup(false);
-    setBackupProgress(0);
+      const res = await fetch("/api/admin/backups/create", { method: "POST" });
+      clearInterval(interval);
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Backup failed");
+
+      setBackupProgress(100);
+      alert("Backup completed successfully! Saved as " + data.fileName);
+    } catch (err: any) {
+      alert("Backup failed: " + err.message);
+    } finally {
+      setTimeout(() => {
+        setIsCreatingBackup(false);
+        setBackupProgress(0);
+      }, 1000);
+    }
   };
 
   const getStatusIcon = (status: string) => {

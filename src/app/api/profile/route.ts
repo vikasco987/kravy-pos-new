@@ -53,29 +53,30 @@ export async function POST(request: Request) {
       where: { userId },
 
       update: {
-        businessType: body.businessType ?? null,
-        businessName: body.businessName ?? null,
-        businessTagLine: body.businessTagline ?? body.businessTagLine ?? null,
+        businessType: body.businessType !== undefined ? body.businessType : undefined,
+        businessName: body.businessName !== undefined ? body.businessName : undefined,
+        businessTagLine: body.businessTagline !== undefined ? body.businessTagline : (body.businessTagLine !== undefined ? body.businessTagLine : undefined),
 
-        contactPersonName: body.contactName ?? null,
-        contactPersonPhone: body.contactPhone ?? null,
-        contactPersonEmail: body.contactEmail ?? null,
+        contactPersonName: body.contactName !== undefined ? body.contactName : (body.contactPersonName !== undefined ? body.contactPersonName : undefined),
+        contactPersonPhone: body.contactPhone !== undefined ? body.contactPhone : (body.contactPersonPhone !== undefined ? body.contactPersonPhone : undefined),
+        contactPersonEmail: body.contactEmail !== undefined ? body.contactEmail : (body.contactPersonEmail !== undefined ? body.contactPersonEmail : undefined),
 
-        upi: body.upi ?? null,
+        upi: body.upi !== undefined ? body.upi : undefined,
 
-        profileImageUrl: body.profileImage ?? null,
-        logoUrl: body.logo ?? null,
-        signatureUrl: body.signature ?? null,
+        profileImageUrl: body.profileImage !== undefined ? body.profileImage : (body.profileImageUrl !== undefined ? body.profileImageUrl : undefined),
+        logoUrl: body.logo !== undefined ? body.logo : (body.logoUrl !== undefined ? body.logoUrl : undefined),
+        signatureUrl: body.signature !== undefined ? body.signature : (body.signatureUrl !== undefined ? body.signatureUrl : undefined),
 
-        gstNumber: body.gstNumber ?? null,
-        businessAddress: body.businessAddress ?? null,
-        state: body.state ?? null,
-        district: body.district ?? null,
-        pinCode: body.pinCode ?? null,
-        taxEnabled: body.taxEnabled ?? true,
-        taxRate: body.taxRate ?? 5.0,
-        upiQrEnabled: body.upiQrEnabled ?? true,
-        menuLinkEnabled: body.menuLinkEnabled ?? true,
+        gstNumber: body.gstNumber !== undefined ? body.gstNumber : undefined,
+        businessAddress: body.businessAddress !== undefined ? body.businessAddress : undefined,
+        state: body.state !== undefined ? body.state : undefined,
+        district: body.district !== undefined ? body.district : undefined,
+        pinCode: body.pinCode !== undefined ? body.pinCode : undefined,
+        
+        taxEnabled: body.taxEnabled !== undefined ? body.taxEnabled : undefined,
+        taxRate: body.taxRate !== undefined ? body.taxRate : undefined,
+        upiQrEnabled: body.upiQrEnabled !== undefined ? body.upiQrEnabled : undefined,
+        menuLinkEnabled: body.menuLinkEnabled !== undefined ? body.menuLinkEnabled : undefined,
       },
 
       create: {
@@ -85,15 +86,15 @@ export async function POST(request: Request) {
         businessName: body.businessName ?? null,
         businessTagLine: body.businessTagline ?? body.businessTagLine ?? null,
 
-        contactPersonName: body.contactName ?? null,
-        contactPersonPhone: body.contactPhone ?? null,
-        contactPersonEmail: body.contactEmail ?? null,
+        contactPersonName: body.contactName ?? body.contactPersonName ?? null,
+        contactPersonPhone: body.contactPhone ?? body.contactPersonPhone ?? null,
+        contactPersonEmail: body.contactEmail ?? body.contactPersonEmail ?? null,
 
         upi: body.upi ?? null,
 
-        profileImageUrl: body.profileImage ?? null,
-        logoUrl: body.logo ?? null,
-        signatureUrl: body.signature ?? null,
+        profileImageUrl: body.profileImage ?? body.profileImageUrl ?? null,
+        logoUrl: body.logo ?? body.logoUrl ?? null,
+        signatureUrl: body.signature ?? body.signatureUrl ?? null,
 
         gstNumber: body.gstNumber ?? null,
         businessAddress: body.businessAddress ?? null,
