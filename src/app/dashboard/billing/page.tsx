@@ -9,7 +9,7 @@ import { useSearch } from "@/components/SearchContext";
 import {
   Receipt, Plus, Trash2, Eye, Printer, MessageCircle,
   Play, MoreVertical, IndianRupee, Calendar, User, Phone,
-  CreditCard, Smartphone, Banknote, Clock
+  CreditCard, Smartphone, Banknote, Clock, FileText
 } from "lucide-react";
 
 type BillManager = {
@@ -119,6 +119,33 @@ export default function BillingPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={async () => {
+              const res = await fetch("/api/bill-manager/export");
+              if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `Kravy_Bills_${new Date().toISOString().split('T')[0]}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              } else {
+                alert("Export failed");
+              }
+            }}
+            style={{
+              display: "flex", alignItems: "center", gap: "8px",
+              padding: "10px 18px", borderRadius: "12px", border: "1px solid var(--kravy-border)",
+              background: "var(--kravy-surface)", color: "#10B981",
+              fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", transition: "all 0.2s"
+            }}
+          >
+            <FileText size={16} />
+            Export Excel
+          </button>
+
           <Link href="/dashboard/billing/deleted" style={{ textDecoration: "none" }}>
             <button style={{
               display: "flex", alignItems: "center", gap: "8px",

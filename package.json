@@ -34,6 +34,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tabler/icons-react": "^3.36.1",
     "@tanstack/react-table": "^8.21.3",
+    "aws-sdk": "^2.1693.0",
     "axios": "^1.12.2",
     "baseline-browser-mapping": "^2.9.16",
     "bson": "^6.10.4",

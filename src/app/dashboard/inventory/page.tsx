@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Package, Search, Plus, Filter, Download, Eye, Edit, Trash2 } from "lucide-react";
+import { Package, Search, Plus, Filter, Download, Eye, Edit, Trash2, FileText } from "lucide-react";
 
 export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,22 +41,57 @@ export default function InventoryPage() {
             Track and manage your restaurant inventory in real-time.
           </p>
         </div>
-        <button style={{
-          background: "var(--kravy-brand)",
-          color: "white",
-          border: "none",
-          padding: "12px 24px",
-          borderRadius: "14px",
-          fontWeight: 800,
-          fontSize: "0.9rem",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          boxShadow: "0 4px 20px rgba(79, 70, 229, 0.2)"
-        }}>
-          <Plus size={18} /> Add Item
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={async () => {
+              const res = await fetch("/api/inventory/export");
+              if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `Kravy_Inventory_${new Date().toISOString().split('T')[0]}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              } else {
+                alert("Export failed");
+              }
+            }}
+            style={{
+              background: "var(--kravy-surface)",
+              color: "#10B981",
+              border: "1px solid var(--kravy-border)",
+              padding: "12px 24px",
+              borderRadius: "14px",
+              fontWeight: 800,
+              fontSize: "0.9rem",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              boxShadow: "var(--kravy-card-shadow)"
+            }}
+          >
+            <FileText size={18} /> Export Excel
+          </button>
+          <button style={{
+            background: "var(--kravy-brand)",
+            color: "white",
+            border: "none",
+            padding: "12px 24px",
+            borderRadius: "14px",
+            fontWeight: 800,
+            fontSize: "0.9rem",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            boxShadow: "0 4px 20px rgba(79, 70, 229, 0.2)"
+          }}>
+            <Plus size={18} /> Add Item
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
