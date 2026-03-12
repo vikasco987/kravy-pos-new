@@ -32,7 +32,26 @@ const { userId } = await auth();
       );
     }
 
-    return NextResponse.json(user);
+    const permission = await prisma.rolePermission.findUnique({
+      where: { role: user.role }
+    });
+
+    let allowedPaths: string[] = [];
+    
+    // Default fallback rules if no dynamic config exists in DB yet
+    if (permission) {
+      allowedPaths = permission.allowedPaths;
+    } else {
+      if (user.role === "ADMIN") {
+        allowedPaths = ["*"];
+      } else if (user.role === "SELLER") {
+        allowedPaths = ["/dashboard/inventory", "/dashboard/settings", "/dashboard/billing/deleted", "/dashboard/menu/edit", "/dashboard/menu/upload", "/dashboard/store-item-upload"];
+      } else {
+        allowedPaths = [];
+      }
+    }
+
+    return NextResponse.json({ ...user, allowedPaths });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch user" },

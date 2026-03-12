@@ -26,6 +26,17 @@ enum FieldType {
 }
 
 //////////////////////////////////////////////////
+// SYSTEM SETTINGS & ROLES
+//////////////////////////////////////////////////
+
+model RolePermission {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  role         Role     @unique
+  allowedPaths String[] // List of paths or permissions this role is allowed to access
+  updatedAt    DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////
 // CATEGORY
 //////////////////////////////////////////////////
 

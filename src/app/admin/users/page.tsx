@@ -166,7 +166,14 @@ export default function AdminUsersPage() {
   </div>
 
   {/* ACTIONS */}
-  <div className="flex gap-4">
+  <div className="flex gap-3">
+    <Link
+      href="/admin/users/roles"
+      className="px-4 py-2 rounded-md border-2 border-indigo-600 bg-indigo-50 text-indigo-700 text-sm font-bold hover:bg-indigo-100 flex items-center gap-2"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20"/><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="m4 8 16-4"/><path d="m8 6 8-4"/><circle cx="12" cy="12" r="2"/></svg>
+      Role Visibility
+    </Link>
     <Link
       href="/admin/users/docs"
       className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 flex items-center gap-2"
