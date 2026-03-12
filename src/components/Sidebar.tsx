@@ -184,6 +184,7 @@ export default function Sidebar() {
   const [mounted, setMounted] = useState(false);
   const [userRole, setUserRole] = useState<string>("USER");
   const [allowedPaths, setAllowedPaths] = useState<string[]>([]);
+  const [loadingRole, setLoadingRole] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -195,8 +196,12 @@ export default function Sidebar() {
           if (data.role) setUserRole(data.role);
           if (data.allowedPaths) setAllowedPaths(data.allowedPaths);
         }
+        setLoadingRole(false);
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        setLoadingRole(false);
+      });
   }, []);
 
   if (!mounted) return null;
@@ -465,12 +470,16 @@ export default function Sidebar() {
             )}
             {group.items.map((item: any, index) => {
               // Admin gets access to everything
-              // Others only get access if path is in their allowedPaths OR *
-              const isAllowed = userRole === "ADMIN" 
-                 || allowedPaths.includes("*") 
-                 || allowedPaths.includes(item.href)
-                 // fallback just in case:
-                 || (item.roles && item.roles.includes(userRole));
+              let isAllowed = false;
+              if (userRole === "ADMIN" || allowedPaths.includes("*")) {
+                 isAllowed = true;
+              } else if (!loadingRole) {
+                 // STRICT MODE: use dynamic DB paths
+                 isAllowed = allowedPaths.includes(item.href) || !!(item.roles && item.roles.includes(userRole));
+              } else {
+                 // LOADING OR FALLBACK MODE: just rely on roles array if present
+                 isAllowed = !item.roles || item.roles.includes(userRole);
+              }
                  
               if (!isAllowed) return null;
 
