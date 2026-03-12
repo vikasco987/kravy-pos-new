@@ -14,7 +14,7 @@ export default function BusinessProfileFormClient({
     <BusinessProfileForm
       mode="edit"
       defaultValues={defaultValues}
-      onSuccess={() => router.push("/profile")}
+      onSuccess={() => router.push("/dashboard/profile")}
     />
   );
 }
