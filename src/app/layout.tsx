@@ -1,25 +1,51 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import type { ReactNode } from "react";
+import { Suspense } from "react";
 import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
+import Providers from "@/components/Providers";
+import TopProgressBar from "@/components/TopProgressBar";
+import { Inter } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+});
 
-export const metadata: Metadata = {
-  title: "Kravy POS - Next Gen Restaurant Dashboard",
-  description: "Modern POS system with analytics, inventory, billing and customer management",
+export const metadata = {
+  title: "KravyPOS — Smart Billing System",
+  description: "Modern point-of-sale and billing system for restaurants and retail",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",          // resolves apple-touch-icon 404
+    shortcut: "/favicon.ico",
+  },
+  applicationName: "KravyPOS",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "KravyPOS",
+  },
+};
+
+export const viewport = {
+  themeColor: "#FF6B35",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: ReactNode;
+}) {
   return (
-    <ClerkProvider>
-      <html suppressHydrationWarning lang="en">
-        <body className={inter.className}>{children}</body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className={inter.variable}>
+      <body style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}>
+        <Providers>
+          <Suspense fallback={null}>
+            <TopProgressBar />
+          </Suspense>
+          {children}
+        </Providers>
+      </body>
+    </html>
   );
 }

@@ -1,48 +1,454 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
-model BillManager {
-  id           String   @id @default(uuid())
-  clerkUserId  String
-  billNumber   String   @unique
-  customerName String?
-  total        Float    @default(0)
-  items        Json     @default("[]")
-  paymentMode  String?
-  createdAt    DateTime @default(now())
-  isDeleted    Boolean  @default(false)
-  deletedAt    DateTime?
-  
-  @@map("bill_manager")
+//////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////
+
+enum Role {
+  USER
+  ADMIN
+  SELLER
 }
+
+enum FieldType {
+  INPUT
+  SELECT
+  CHECKBOX
+  RADIO
+  FILE
+}
+
+//////////////////////////////////////////////////
+// SYSTEM SETTINGS & ROLES
+//////////////////////////////////////////////////
+
+model RolePermission {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  role         Role     @unique
+  allowedPaths String[] // List of paths or permissions this role is allowed to access
+  updatedAt    DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////
+// CATEGORY
+//////////////////////////////////////////////////
+
+model Category {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  name    String
+  clerkId String?
+
+  parentId String?    @db.ObjectId
+  parent   Category?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children Category[] @relation("Subcategories")
+
+  items     Item[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clerkId])
+}
+
+//////////////////////////////////////////////////
+// ITEM
+//////////////////////////////////////////////////
+
+model Item {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  description  String?
+  price        Float?
+  sellingPrice Float?
+  gst          Float?
+  unit         String?
+  barcode      String?
+  imageUrl     String?
+  image        String?   // ✅ THIS MUST EXIST
+
+  categoryId String?   @db.ObjectId
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  clerkId String
+  userId  String @db.ObjectId
+
+  isActive     Boolean  @default(true)
+
+  // QR Menu Enhancements
+  isVeg          Boolean  @default(true)
+  isBestseller   Boolean  @default(false)
+  isRecommended  Boolean  @default(false)
+  isNew          Boolean  @default(false)
+  spiciness      String?  // mild, medium, hot
+  rating         Float?   @default(4.5)
+  hiName         String?
+  mrName         String?
+  taName         String?
+  upsellText     String?
+
+  user    User   @relation(fields: [userId], references: [id])
+
+  reviews   Review[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clerkId])
+}
+
+//////////////////////////////////////////////////
+// PARTY (CUSTOMER)
+//////////////////////////////////////////////////
+
+model Party {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  phone     String
+  address   String?
+  dob       DateTime?
+  createdBy String
+  user      User?     @relation(fields: [createdBy], references: [clerkId])
+
+  @@unique([phone, createdBy])
+
+  loyaltyPoints Int   @default(0)
+
+  bills     BillManager[]
+
+  createdAt DateTime  @default(now())
+}
+
+
+//////////////////////////////////////////////////
+// PAYMENT
+//////////////////////////////////////////////////
+
+model Payment {
+  id     String       @id @default(auto()) @map("_id") @db.ObjectId
+  billId String       @db.ObjectId
+  bill   BillManager  @relation(fields: [billId], references: [id])
+
+  amount Float
+  mode   String
+  txnRef String?
+  paidAt DateTime @default(now())
+}
+
+
+//////////////////////////////////////////////////
+// USER
+//////////////////////////////////////////////////
+
+model User {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  name    String
+  email   String @unique
+  clerkId String @unique
+  role    Role   @default(USER)
+
+  items    Item[]
+  bills    BillManager[]
+  parties  Party[]
+  forms    Form[]
+  profiles BusinessProfile[]
+  uploads  Upload[]
+
+  isDisabled Boolean @default(false)
+
+  createdAt DateTime   @default(now())
+
+  activities ActivityLog[]
+  orders     Order[]
+  tables     Table[]
+  combos     Combo[]
+  offers     Offer[]
+  rewards    Reward[]
+}
+
+//////////////////////////////////////////////////
+// TABLE
+//////////////////////////////////////////////////
+
+model Table {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  qrUrl       String?  // persisted QR code image URL (150x150) for this table
+  clerkUserId String
+  user        User     @relation(fields: [clerkUserId], references: [clerkId])
+  orders      Order[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([clerkUserId])
+}
+
+//////////////////////////////////////////////////
+// ORDER (from QR Menu)
+//////////////////////////////////////////////////
+
+model Order {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkUserId   String
+  user          User     @relation(fields: [clerkUserId], references: [clerkId])
+  
+  tableId       String?  @db.ObjectId
+  table         Table?   @relation(fields: [tableId], references: [id])
+  
+  items         Json     // Array of { name, price, quantity, itemId, addedAt, addedInCase }
+  total         Float
+  
+  status        String   @default("PENDING") // PENDING, ACCEPTING, ACCEPTED, PREPARING, READY, SERVED, COMPLETED
+  
+  // For Case 1 (Merge)
+  parentOrderId String?  @db.ObjectId
+  caseType      String?  // "merge", "separate", "round2"
+  isMerged      Boolean  @default(false)
+  mergedAt      DateTime?
+  
+  // For Case 2 (Separate) - Track related orders
+  relatedOrders String[] @db.ObjectId  // Array of order IDs in same session
+  
+  customerName  String?
+  customerPhone String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([clerkUserId])
+  @@index([status])
+}
+
+//////////////////////////////////////////////////
+// REVIEW
+//////////////////////////////////////////////////
+
+model Review {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  itemId       String?  @db.ObjectId
+  item         Item?    @relation(fields: [itemId], references: [id])
+  clerkUserId  String
+  rating       Int
+  comment      String?
+  customerName String?
+  tableId      String?
+  imageUrl     String?
+  createdAt    DateTime @default(now())
+}
+
+//////////////////////////////////////////////////
+// FORM BUILDER
+//////////////////////////////////////////////////
+
+model Form {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  fields    Field[]
+  userId    String
+  user      User     @relation(fields: [userId], references: [clerkId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Field {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  formId    String    @db.ObjectId
+  form      Form      @relation(fields: [formId], references: [id])
+  label     String
+  type      FieldType
+  required  Boolean   @default(false)
+  options   String[]
+  value     String?
+  createdAt DateTime  @default(now())
+}
+
+//////////////////////////////////////////////////
+// BUSINESS PROFILE
+//////////////////////////////////////////////////
+
+model BusinessProfile {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [clerkId])
+
+  businessType       String?
+  businessName       String?
+  businessTagLine    String?
+
+  contactPersonName  String?
+  contactPersonPhone String?
+  contactPersonEmail String?
+
+  upi                String?
+  upiQrEnabled       Boolean  @default(true)
+  menuLinkEnabled    Boolean  @default(true)
+
+  profileImageUrl    String?
+  logoUrl            String?
+  signatureUrl       String?
+
+  gstNumber          String?
+  businessAddress    String?
+  state              String?
+  district           String?
+  pinCode            String?
+  taxEnabled         Boolean  @default(true)
+  taxRate            Float    @default(5.0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////
+// UPLOAD
+//////////////////////////////////////////////////
+
+model Upload {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  imageUrl  String
+  userId    String
+  user      User     @relation(fields: [userId], references: [clerkId])
+  createdAt DateTime @default(now())
+}
+
+//////////////////////////////////////////////////
+// ActivityLog
+//////////////////////////////////////////////////
+
+model ActivityLog {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  action    String
+  meta      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+
+//////////////////////////////////////////////////
+// BillManager
+//////////////////////////////////////////////////
+
+model BillManager {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  clerkUserId   String
+  user          User     @relation(fields: [clerkUserId], references: [clerkId])
+
+  billNumber    String   @unique
+  createdAt     DateTime @default(now())
+
+  items         Json
+
+  subtotal      Float
+  tax           Float?
+  total         Float
+
+  paymentMode   String
+  paymentStatus String
+  upiTxnRef     String?
+  isHeld        Boolean  @default(false)
+
+  customerName  String?
+  customerPhone String?
+
+  partyId       String?   @db.ObjectId
+  party         Party?    @relation(fields: [partyId], references: [id])
+
+  payments      Payment[]   // ✅ ADD THIS
+
+  isDeleted       Boolean  @default(false)
+  deletedAt       DateTime?
+  deletedSnapshot Json?
+  pdfUrl          String?   // ✅ Added for direct sharing
+
+  @@index([clerkUserId])
+  @@index([isDeleted, createdAt])
+}
+
+//////////////////////////////////////////////////
+// COMBO
+//////////////////////////////////////////////////
 
 model Combo {
-  id        String @id @default(uuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  price       Float
+  imageUrl    String?
   clerkUserId String
-  name      String
-  price     Float
-  isActive  Boolean @default(true)
-  createdAt DateTime @default(now())
+  user        User     @relation(fields: [clerkUserId], references: [clerkId])
+  isActive    Boolean  @default(true)
   
-  @@unique([clerkUserId, name])
+  // Array of selections
+  // e.g., [{ type: 'fixed', itemId: '...', qty: 1 }, { type: 'choice', categoryId: '...', label: 'Pick a Beverage' }]
+  selections  Json
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([clerkUserId])
 }
 
+//////////////////////////////////////////////////
+// OFFER / COUPON
+//////////////////////////////////////////////////
+
 model Offer {
-  id          String @id @default(uuid())
-  clerkUserId String
-  code        String @unique
-  discount    Float
-  isActive    Boolean @default(true)
-  createdAt   DateTime @default(now())
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  description   String?
+  code          String?  @unique
+  discountType  String   // "PERCENTAGE", "FLAT"
+  discountValue Float
+  minOrderValue Float?
+  maxDiscount   Float?
+  startDate     DateTime?
+  endDate       DateTime?
+  isActive      Boolean  @default(true)
+  clerkUserId   String
+  user          User     @relation(fields: [clerkUserId], references: [clerkId])
   
-  @@unique([clerkUserId, code])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([clerkUserId])
+}
+//////////////////////////////////////////////////
+// REWARD (Loyalty Redemption)
+//////////////////////////////////////////////////
+
+model Reward {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  title          String
+  description    String?
+  pointsRequired Int
+  isActive       Boolean  @default(true)
+  clerkUserId    String
+  user           User     @relation(fields: [clerkUserId], references: [clerkId])
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([clerkUserId])
+}
+
+model GalleryImage {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkUserId  String
+  imageUrl     String
+  category     String   @default("food")  // food | interior | promo | other
+  caption      String?
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@index([clerkUserId])
+  @@index([clerkUserId, category])
 }

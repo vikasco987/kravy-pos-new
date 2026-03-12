@@ -1,75 +1,1204 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 47.4% 11.2%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-    
-    /* Kravy custom */
-    --kravy-text-primary: 220 70% 10%;
-    --kravy-text-muted: 220 40% 40%;
-    --kravy-surface: 0 0% 98%;
-    --kravy-bg-2: 0 0% 95%;
-    --kravy-border: 220 20% 90%;
-    --kravy-card-shadow: 220 20% 80% / 0 1px 3px 0;
-  }
+@custom-variant dark (&:is(.dark *));
 
-  .dark {
-    --background: 222.2 47.4% 11.2%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 47.4% 11.2%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 47.4% 11.2%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
-    
-    /* Kravy dark */
-    --kravy-text-primary: 0 0% 95%;
-    --kravy-text-muted: 0 0% 70%;
-    --kravy-surface: 220 25% 12%;
-    --kravy-bg-2: 220 20% 15%;
-    --kravy-border: 220 30% 20%;
-    --kravy-card-shadow: 220 40% 10% / 0 2px 8px 0;
-  }
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.129 0.042 264.695);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.129 0.042 264.695);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.129 0.042 264.695);
+  --primary: oklch(0.208 0.042 265.755);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.208 0.042 265.755);
+  --muted: oklch(0.968 0.007 247.896);
+  --muted-foreground: oklch(0.554 0.046 257.417);
+  --accent: oklch(0.968 0.007 247.896);
+  --accent-foreground: oklch(0.208 0.042 265.755);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.929 0.013 255.508);
+  --input: oklch(0.929 0.013 255.508);
+  --ring: oklch(0.704 0.04 256.788);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.129 0.042 264.695);
+  --sidebar-primary: oklch(0.208 0.042 265.755);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
+  
+  --kravy-sidebar-width: 260px;
+  --kravy-sidebar-collapsed-width: 72px;
+}
+
+.dark {
+  --background: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: oklch(0.208 0.042 265.755);
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.929 0.013 255.508);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031);
+  --muted-foreground: oklch(0.704 0.04 256.788);
+  --accent: oklch(0.279 0.041 260.031);
+  --accent-foreground: oklch(0.984 0.003 247.858);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.551 0.027 264.364);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.208 0.042 265.755);
+  --sidebar-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.279 0.041 260.031);
+  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* =====================================================
+   KRAVY POS — PREMIUM DESIGN SYSTEM v3.0
+   Inter font + Glassmorphism + Micro-animations
+===================================================== */
+
+/* ── Google Inter Font via CSS ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+body,
+* {
+  font-family: 'Inter', var(--font-inter), system-ui, -apple-system, sans-serif !important;
+}
+
+/* ─────────────────────────────────────────
+   DARK MODE DESIGN TOKENS (Default)
+───────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --kravy-bg: #06080F;
+  --kravy-bg-2: #090C18;
+  --kravy-bg-card: rgba(255, 255, 255, 0.032);
+  --kravy-bg-card-hover: rgba(255, 255, 255, 0.06);
+  --kravy-bg-glass: rgba(255, 255, 255, 0.04);
+
+  /* Surfaces */
+  --kravy-surface: rgba(255, 255, 255, 0.035);
+  --kravy-surface-2: rgba(255, 255, 255, 0.06);
+  --kravy-surface-hover: rgba(255, 255, 255, 0.065);
+
+  /* Borders */
+  --kravy-border: rgba(255, 255, 255, 0.08);
+  --kravy-border-strong: rgba(255, 255, 255, 0.15);
+  --kravy-border-glow: rgba(139, 92, 246, 0.3);
+
+  /* Typography */
+  --kravy-text-primary: #F4F3F0;
+  --kravy-text-secondary: #A0AEC0;
+  --kravy-text-muted: #718096;
+  --kravy-text-faint: #4A5568;
+
+  /* Navbar / Sidebar */
+  --kravy-navbar-bg: rgba(6, 8, 15, 0.92);
+  --kravy-navbar-border: rgba(255, 255, 255, 0.07);
+
+  /* Shadows */
+  --kravy-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --kravy-shadow-md: 0 4px 20px rgba(0, 0, 0, 0.45);
+  --kravy-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.55);
+  --kravy-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 4px 20px rgba(0, 0, 0, 0.4);
+
+  /* Brand Colors */
+  --kravy-orange: #FF6B35;
+  --kravy-amber: #F59E0B;
+  --kravy-purple: #8B5CF6;
+  --kravy-blue: #3B82F6;
+  --kravy-green: #10B981;
+  --kravy-red: #EF4444;
+  --kravy-pink: #EC4899;
+  --kravy-cyan: #06B6D4;
+  --kravy-accent: #FF6B35;
+  --kravy-accent-purple: #8B5CF6;
+  --kravy-brand: #FF6B35;
+
+  /* Misc */
+  --kravy-radius: 16px;
+  --kravy-radius-sm: 10px;
+  --kravy-radius-lg: 24px;
+  --kravy-input-bg: rgba(255, 255, 255, 0.05);
+  --kravy-input-border: rgba(255, 255, 255, 0.1);
+  --kravy-table-header: rgba(255, 255, 255, 0.025);
+  --kravy-table-row-hover: rgba(255, 255, 255, 0.028);
+  --kravy-scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --kravy-skeleton: rgba(255, 255, 255, 0.06);
+  --kravy-badge-bg: rgba(255, 255, 255, 0.06);
+}
+
+/* ─────────────────────────────────────────
+   LIGHT MODE TOKENS
+───────────────────────────────────────── */
+html:not(.dark) {
+  --kravy-bg: #EEF0F8;
+  --kravy-bg-2: #E4E7F4;
+  --kravy-bg-card: rgba(255, 255, 255, 0.9);
+  --kravy-bg-card-hover: #ffffff;
+  --kravy-bg-glass: rgba(255, 255, 255, 0.7);
+
+  --kravy-surface: rgba(255, 255, 255, 0.85);
+  --kravy-surface-2: rgba(255, 255, 255, 0.95);
+  --kravy-surface-hover: #ffffff;
+
+  --kravy-border: rgba(0, 0, 0, 0.07);
+  --kravy-border-strong: rgba(0, 0, 0, 0.12);
+  --kravy-border-glow: rgba(139, 92, 246, 0.25);
+
+  --kravy-text-primary: #0F172A;
+  --kravy-text-secondary: #334155;
+  --kravy-text-muted: #64748B;
+  --kravy-text-faint: #94A3B8;
+
+  --kravy-navbar-bg: rgba(238, 240, 248, 0.94);
+  --kravy-navbar-border: rgba(0, 0, 0, 0.06);
+
+  --kravy-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --kravy-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --kravy-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.14);
+  --kravy-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 4px 16px rgba(0, 0, 0, 0.09);
+
+  --kravy-purple: #7C3AED;
+  --kravy-green: #059669;
+  --kravy-accent-purple: #7C3AED;
+  --kravy-brand: #7C3AED;
+
+  --kravy-input-bg: rgba(255, 255, 255, 0.95);
+  --kravy-input-border: rgba(0, 0, 0, 0.1);
+  --kravy-table-header: rgba(0, 0, 0, 0.03);
+  --kravy-table-row-hover: rgba(0, 0, 0, 0.02);
+  --kravy-scrollbar-thumb: rgba(0, 0, 0, 0.12);
+  --kravy-skeleton: rgba(0, 0, 0, 0.06);
+  --kravy-badge-bg: rgba(0, 0, 0, 0.04);
+}
+
+/* ─────────────────────────────────────────
+   GLOBAL RESETS
+───────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--kravy-bg) !important;
+  color: var(--kravy-text-primary) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+/* ─────────────────────────────────────────
+   SCROLLBAR
+───────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--kravy-scrollbar-thumb) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--kravy-scrollbar-thumb);
+  border-radius: 999px;
+}
+
+/* ─────────────────────────────────────────
+   PREMIUM KEYFRAME ANIMATIONS
+───────────────────────────────────────── */
+
+/* Page entry */
+@keyframes kravyFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes kravyFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes kravySlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Shimmer loading */
+@keyframes kravyShimmer {
+  0% {
+    background-position: -600px 0;
+  }
+
+  100% {
+    background-position: 600px 0;
+  }
+}
+
+/* Pulse glow */
+@keyframes kravyPulse {
+
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* Rotating border */
+@keyframes kravySpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Floating */
+@keyframes kravyFloat {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Number count up (visual trick via clip-path) */
+@keyframes kravyCountUp {
+  from {
+    clip-path: inset(100% 0 0 0);
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─────────────────────────────────────────
+   UTILITY ANIMATION CLASSES
+───────────────────────────────────────── */
+.kravy-page-fade {
+  animation: kravyFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.kravy-fade-in {
+  animation: kravyFadeIn 0.4s ease forwards;
+}
+
+.kravy-slide-right {
+  animation: kravySlideRight 0.4s ease forwards;
+}
+
+.kravy-float {
+  animation: kravyFloat 5s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────────
+   KRAVY CARD — Premium Glass Card
+───────────────────────────────────────── */
+.kravy-card {
+  background: var(--kravy-surface);
+  border: 1px solid var(--kravy-border);
+  border-radius: var(--kravy-radius-lg);
+  box-shadow: var(--kravy-card-shadow);
+  transition:
+    background 0.35s cubic-bezier(.4, 0, .2, 1),
+    border-color 0.35s,
+    box-shadow 0.35s,
+    transform 0.25s cubic-bezier(.4, 0, .2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.kravy-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      transparent 60%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.kravy-card:hover::before {
+  opacity: 1;
+}
+
+.kravy-card:hover {
+  box-shadow:
+    var(--kravy-card-shadow),
+    0 0 0 1px rgba(139, 92, 246, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Card with colored top-border accent */
+.kravy-card-accent-green {
+  border-top: 2px solid #10B981 !important;
+}
+
+.kravy-card-accent-orange {
+  border-top: 2px solid #FF6B35 !important;
+}
+
+.kravy-card-accent-purple {
+  border-top: 2px solid #8B5CF6 !important;
+}
+
+.kravy-card-accent-amber {
+  border-top: 2px solid #F59E0B !important;
+}
+
+/* ─────────────────────────────────────────
+   GLASS PANEL
+───────────────────────────────────────── */
+.kravy-glass {
+  background: var(--kravy-bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--kravy-border);
+}
+
+/* ─────────────────────────────────────────
+   KRAVY BUTTON SYSTEM
+───────────────────────────────────────── */
+.kravy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--kravy-radius-sm);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s cubic-bezier(.4, 0, .2, 1);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.kravy-btn-primary {
+  background: linear-gradient(135deg, #FF6B35, #F59E0B);
+  color: white;
+  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.38);
+}
+
+.kravy-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
+  filter: brightness(1.06);
+}
+
+.kravy-btn-primary:active {
+  transform: translateY(0);
+}
+
+.kravy-btn-secondary {
+  background: var(--kravy-surface);
+  color: var(--kravy-text-secondary);
+  border: 1px solid var(--kravy-border);
+}
+
+.kravy-btn-secondary:hover {
+  background: var(--kravy-surface-hover);
+  border-color: var(--kravy-border-strong);
+  color: var(--kravy-text-primary);
+}
+
+.kravy-btn-ghost {
+  background: transparent;
+  color: var(--kravy-text-muted);
+}
+
+.kravy-btn-ghost:hover {
+  background: var(--kravy-surface);
+  color: var(--kravy-text-primary);
+}
+
+/* ─────────────────────────────────────────
+   KRAVY INPUT SYSTEM
+───────────────────────────────────────── */
+.kravy-input {
+  background: var(--kravy-input-bg);
+  border: 1px solid var(--kravy-input-border);
+  color: var(--kravy-text-primary);
+  border-radius: var(--kravy-radius-sm);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
+  width: 100%;
+  font-family: inherit;
+}
+
+.kravy-input:focus {
+  border-color: var(--kravy-accent-purple);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.14);
+  background: var(--kravy-surface-2);
+}
+
+.kravy-input::placeholder {
+  color: var(--kravy-text-faint);
+}
+
+/* ─────────────────────────────────────────
+   KRAVY TABLE
+───────────────────────────────────────── */
+.kravy-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.kravy-table thead tr {
+  background: var(--kravy-table-header);
+}
+
+.kravy-table thead th {
+  color: var(--kravy-text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--kravy-border);
+  white-space: nowrap;
+}
+
+.kravy-table tbody tr {
+  border-bottom: 1px solid var(--kravy-border);
+  transition: background 0.15s;
+}
+
+.kravy-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.kravy-table tbody tr:hover {
+  background: var(--kravy-table-row-hover);
+}
+
+.kravy-table tbody td {
+  padding: 14px 18px;
+  color: var(--kravy-text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.kravy-table tbody td.muted {
+  color: var(--kravy-text-muted);
+  font-weight: 400;
+}
+
+/* ─────────────────────────────────────────
+   KRAVY BADGE
+───────────────────────────────────────── */
+.kravy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* ─────────────────────────────────────────
+   LOADING SKELETON
+───────────────────────────────────────── */
+.kravy-skeleton {
+  background: linear-gradient(90deg,
+      var(--kravy-skeleton) 0%,
+      rgba(255, 255, 255, 0.06) 50%,
+      var(--kravy-skeleton) 100%);
+  background-size: 600px 100%;
+  animation: kravyShimmer 1.6s ease-in-out infinite;
+  border-radius: 10px;
+}
+
+/* ─────────────────────────────────────────
+   STAT CARD — Interior glow orb
+───────────────────────────────────────── */
+.kravy-stat-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(45px);
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+/* ─────────────────────────────────────────
+   SECTION DIVIDER
+───────────────────────────────────────── */
+.kravy-divider {
+  height: 1px;
+  background: linear-gradient(90deg,
+      transparent,
+      var(--kravy-border-strong),
+      transparent);
+  margin: 4px 0;
+}
+
+/* ─────────────────────────────────────────
+   PAGE SECTION HEADER
+───────────────────────────────────────── */
+.kravy-page-title {
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: -1.2px;
+  color: var(--kravy-text-primary);
+  line-height: 1;
+}
+
+.kravy-page-subtitle {
+  font-size: 0.78rem;
+  color: var(--kravy-text-muted);
+  font-weight: 500;
+  letter-spacing: 0.1px;
+}
+
+/* ─────────────────────────────────────────
+   HIGHLIGHT GRADIENT TEXT
+───────────────────────────────────────── */
+.kravy-gradient-text {
+  background: linear-gradient(135deg, #FF6B35, #F59E0B, #8B5CF6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─────────────────────────────────────────
+   ICON BOX SIZES
+───────────────────────────────────────── */
+.kravy-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.kravy-icon-box-sm {
+  width: 34px;
+  height: 34px;
+}
+
+.kravy-icon-box-md {
+  width: 42px;
+  height: 42px;
+}
+
+.kravy-icon-box-lg {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+}
+
+/* ─────────────────────────────────────────
+   TOOLTIP
+───────────────────────────────────────── */
+.kravy-tooltip {
+  background: linear-gradient(135deg, #0D0F1C, #131525);
+  border: 1px solid var(--kravy-border-strong);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: var(--kravy-shadow-lg);
+  color: var(--kravy-text-primary);
+  font-size: 0.82rem;
+}
+
+/* ─────────────────────────────────────────
+   LIVE INDICATOR DOT
+───────────────────────────────────────── */
+.kravy-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22C55E;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+  animation: kravyLivePulse 2s ease-in-out infinite;
+}
+
+@keyframes kravyLivePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+  }
+
+  70% {
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+/* ─────────────────────────────────────────
+   PREMIUM STAT CARD
+───────────────────────────────────────── */
+.kravy-stat-card {
+  background: var(--kravy-surface);
+  border: 1px solid var(--kravy-border);
+  border-radius: 22px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--kravy-card-shadow);
+  transition:
+    transform 0.25s cubic-bezier(.4, 0, .2, 1),
+    box-shadow 0.25s,
+    background 0.3s,
+    border-color 0.3s;
+  cursor: default;
+}
+
+.kravy-stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.12) 50%,
+      transparent 100%);
+}
+
+.kravy-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    var(--kravy-shadow-lg),
+    0 0 0 1px rgba(139, 92, 246, 0.15);
+}
+
+/* ─────────────────────────────────────────
+   PROGRESS BAR
+───────────────────────────────────────── */
+.kravy-progress-track {
+  height: 5px;
+  background: var(--kravy-surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.kravy-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 1.2s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* ---- FIX: Mobile category bar spacing ---- */
+
+/* Space reserved under sticky filter bar */
+.mobile-category-wrapper {
+  margin-top: 68px;
+  /* height of filter bar + gap */
+}
+
+/* Make sure nothing overlaps on mobile */
+@media (max-width: 768px) {
+  .filter-sticky-bar {
+    position: sticky;
+    top: 64px;
+    /* header height */
+    z-index: 40;
+    background: var(--background);
+    padding-bottom: 6px;
+  }
+
+  .mobile-category-wrapper {
+    position: relative;
+    z-index: 39;
+    /* just under filter bar */
+  }
+}
+
+/* ===== Landing Background ===== */
+.landing-bg {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Smooth fade animation */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fadeUp 0.8s ease forwards;
+}
+
+/* Floating animation */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-18px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Glass Card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(18px);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 25px 70px rgba(37, 99, 235, 0.25);
+}
+
+/* Smooth Button */
+.primary-btn {
+  background: #2563eb;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.primary-btn:hover {
+  background: #1e40af;
+  transform: translateY(-2px);
+}
+
+.secondary-btn {
+  border: 1px solid #2563eb;
+  color: #2563eb;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.secondary-btn:hover {
+  background: #2563eb;
+  color: white;
+}
+
+
+
+/* ===============================
+   Dashboard Container
+================================= */
+.dashboard-container {
+  padding: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ===============================
+   Header Section
+================================= */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.header-left h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.brand {
+  color: #2563eb;
+  letter-spacing: 1px;
+}
+
+.header-left p {
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+/* ===============================
+   Header Buttons
+================================= */
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  background: #1e40af;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+
+.btn-secondary {
+  background: white;
+  border: 1px solid #2563eb;
+  color: #2563eb;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  background: #2563eb;
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* ===============================
+   Analytics Section
+================================= */
+section {
+  margin-bottom: 40px;
+}
+
+/* ===============================
+   Info Cards Section
+================================= */
+.info-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.info-card {
+  background: white;
+  padding: 25px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  border: 1px solid #f3f4f6;
+}
+
+.info-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #111827;
+}
+
+.info-card p {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.info-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(37, 99, 235, 0.15);
+}
+
+/* ===============================
+   Responsive
+================================= */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 20px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* ===============================
+   OUTER ANALYTICS CONTAINER
+================================= */
+.analytics-container {
+  margin-bottom: 35px;
+}
+
+/* ===============================
+   TOP BAR (Outer Layout)
+================================= */
+.analytics-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.analytics-topbar h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.subtext {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.topbar-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* ===============================
+   MAIN ANALYTICS CARD
+================================= */
+.analytics-main-card {
+  background: white;
+  border-radius: 18px;
+  padding: 25px;
+  border: 1px solid #f3f4f6;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+}
+
+/* ===============================
+   KPI ROW (Parallel)
+================================= */
+.kpi-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.kpi-box {
+  flex: 1;
+  min-width: 150px;
+  background: #f9fafb;
+  padding: 18px;
+  border-radius: 12px;
+  transition: 0.3s ease;
+}
+
+.kpi-box:hover {
+  background: #eff6ff;
+  transform: translateY(-3px);
+}
+
+.kpi-box span {
+  font-size: 12px;
+  color: #6b7280;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.kpi-box h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Growth color */
+.positive {
+  color: #16a34a;
+}
+
+.negative {
+  color: #dc2626;
+}
+
+/* ===============================
+   DATE FILTER + EXPORT
+================================= */
+.date-filter {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  font-size: 14px;
+}
+
+.export-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+.export-btn:hover {
+  background: #1e40af;
+  transform: translateY(-2px);
+}
+
+/* ===============================
+   RESPONSIVE
+================================= */
+@media (max-width: 768px) {
+  .kpi-row {
+    flex-direction: column;
+  }
+
+  .topbar-controls {
+    width: 100%;
+    justify-content: space-between;
   }
 }
