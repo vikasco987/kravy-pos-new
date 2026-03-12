@@ -165,13 +165,22 @@ export default function AdminUsersPage() {
     </p>
   </div>
 
-  {/* CREATE USER BUTTON */}
-  <Link
-    href="/admin/users/create"
-    className="px-4 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
-  >
-    + Create New User
-  </Link>
+  {/* ACTIONS */}
+  <div className="flex gap-4">
+    <Link
+      href="/admin/users/docs"
+      className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 flex items-center gap-2"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      Role Docs / Guide
+    </Link>
+    <Link
+      href="/admin/users/create"
+      className="px-4 py-2 rounded-md bg-black text-white text-sm hover:opacity-90 flex items-center"
+    >
+      + Create New User
+    </Link>
+  </div>
 </div>
 
 

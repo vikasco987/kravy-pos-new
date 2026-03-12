@@ -141,7 +141,7 @@ const navGroups = [
     group: "RESOURCES",
     items: [
       { icon: <Users size={18} />, label: "Customer Parties", href: "/dashboard/parties" },
-      { icon: <Package size={18} />, label: "Inventory Stock", href: "/dashboard/inventory" },
+      { icon: <Package size={18} />, label: "Inventory Stock", href: "/dashboard/inventory", roles: ["ADMIN", "SELLER"] },
       { icon: <QrCode size={18} />, label: "QR Order Terminal", href: "/dashboard/qr-orders", badge: "Scan", badgeColor: "#8B5CF6" },
     ]
   },
@@ -164,11 +164,12 @@ const navGroups = [
 
     group: "ADMINISTRATION",
     items: [
-      { icon: <UserCircle size={18} />, label: "Business Profile", href: "/dashboard/profile" },
-      { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings" },
-      { icon: <Percent size={18} />, label: "Tax Management", href: "/dashboard/settings/tax", badge: "GST", badgeColor: "#F59E0B" },
-      { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup" },
-      { icon: <Archive size={18} />, label: "Archive & Trash", href: "/dashboard/billing/deleted" },
+      { icon: <UserCircle size={18} />, label: "Business Profile", href: "/dashboard/profile", roles: ["ADMIN"] },
+      { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings", roles: ["ADMIN", "SELLER"] },
+      { icon: <Percent size={18} />, label: "Tax Management", href: "/dashboard/settings/tax", badge: "GST", badgeColor: "#F59E0B", roles: ["ADMIN"] },
+      { icon: <Lock size={18} />, label: "Access Control", href: "/admin/users", badge: "Roles", badgeColor: "#EF4444", roles: ["ADMIN"] },
+      { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup", roles: ["ADMIN"] },
+      { icon: <Archive size={18} />, label: "Archive & Trash", href: "/dashboard/billing/deleted", roles: ["ADMIN", "SELLER"] },
       { icon: <HelpCircle size={18} />, label: "Help & Support", href: "/dashboard/help" },
     ]
   }
@@ -181,9 +182,19 @@ export default function Sidebar() {
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
   const [mounted, setMounted] = useState(false);
+  const [userRole, setUserRole] = useState<string>("USER");
 
   useEffect(() => {
     setMounted(true);
+    // Fetch exact database role
+    fetch("/api/user/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.role) {
+          setUserRole(data.role);
+        }
+      })
+      .catch(console.error);
   }, []);
 
   if (!mounted) return null;
@@ -451,6 +462,9 @@ export default function Sidebar() {
               }}>{group.group}</div>
             )}
             {group.items.map((item: any, index) => {
+              // Hide item if role is restricted
+              if (item.roles && !item.roles.includes(userRole)) return null;
+
               const isActive = pathname === item.href;
               return (
                 <motion.div
