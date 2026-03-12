@@ -183,15 +183,17 @@ export default function Sidebar() {
   const isDark = resolvedTheme === "dark";
   const [mounted, setMounted] = useState(false);
   const [userRole, setUserRole] = useState<string>("USER");
+  const [allowedPaths, setAllowedPaths] = useState<string[]>([]);
 
   useEffect(() => {
     setMounted(true);
-    // Fetch exact database role
+    // Fetch exact database role and allowed paths
     fetch("/api/user/me")
       .then(res => res.json())
       .then(data => {
-        if (data && data.role) {
-          setUserRole(data.role);
+        if (data) {
+          if (data.role) setUserRole(data.role);
+          if (data.allowedPaths) setAllowedPaths(data.allowedPaths);
         }
       })
       .catch(console.error);
@@ -462,8 +464,15 @@ export default function Sidebar() {
               }}>{group.group}</div>
             )}
             {group.items.map((item: any, index) => {
-              // Hide item if role is restricted
-              if (item.roles && !item.roles.includes(userRole)) return null;
+              // Admin gets access to everything
+              // Others only get access if path is in their allowedPaths OR *
+              const isAllowed = userRole === "ADMIN" 
+                 || allowedPaths.includes("*") 
+                 || allowedPaths.includes(item.href)
+                 // fallback just in case:
+                 || (item.roles && item.roles.includes(userRole));
+                 
+              if (!isAllowed) return null;
 
               const isActive = pathname === item.href;
               return (
