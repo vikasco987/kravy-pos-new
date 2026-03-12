@@ -20,7 +20,7 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const permissions = await prisma.rolePermission.findMany();
+    const permissions = await (prisma as any).rolePermission.findMany();
     return NextResponse.json(permissions);
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch role permissions" }, { status: 500 });
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const result = await prisma.rolePermission.upsert({
+    const result = await (prisma as any).rolePermission.upsert({
        where: { role: role as Role },
        update: { allowedPaths },
        create: { role: role as Role, allowedPaths }

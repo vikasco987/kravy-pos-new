@@ -32,7 +32,7 @@ const { userId } = await auth();
       );
     }
 
-    const permission = await prisma.rolePermission.findUnique({
+    const permission = await (prisma as any).rolePermission.findUnique({
       where: { role: user.role }
     });
 
@@ -53,8 +53,9 @@ const { userId } = await auth();
 
     return NextResponse.json({ ...user, allowedPaths });
   } catch (error) {
+    console.error("USER/ME ERROR:", error);
     return NextResponse.json(
-      { error: "Failed to fetch user" },
+      { error: "Failed to fetch user: " + String(error) },
       { status: 500 }
     );
   }
