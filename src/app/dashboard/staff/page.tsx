@@ -66,7 +66,7 @@ export default function StaffManagementPage() {
     if (user) {
       fetch("/api/user/me")
         .then(res => res.json())
-        .then(data => setIsAdmin(data.role === "ADMIN"))
+        .then(data => setIsAdmin(data.role === "ADMIN" || data.role === "SELLER"))
         .catch(() => {});
     }
   }, [user]);
@@ -216,14 +216,26 @@ export default function StaffManagementPage() {
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Email Address</label>
-                <input
-                  required
-                  type="email"
-                  placeholder="rahul@kravypos.com"
-                  value={newStaff.email}
-                  onChange={e => setNewStaff({ ...newStaff, email: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                />
+                <div className="relative">
+                  <input
+                    required
+                    type="email"
+                    placeholder="rahul@kravypos.com"
+                    value={newStaff.email}
+                    onChange={e => setNewStaff({ ...newStaff, email: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      const random = Math.random().toString(36).slice(-5);
+                      setNewStaff({...newStaff, email: `staff.${random}@kravypos.com`});
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white px-2 py-1 rounded-lg border shadow-sm hover:bg-slate-50"
+                  >
+                    Auto-Generate
+                  </button>
+                </div>
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Generate Password</label>
@@ -238,7 +250,10 @@ export default function StaffManagementPage() {
                   />
                   <button 
                     type="button"
-                    onClick={() => setNewStaff({...newStaff, password: Math.random().toString(36).slice(-8)})}
+                    onClick={() => {
+                      const pass = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase() + "!";
+                      setNewStaff({...newStaff, password: pass});
+                    }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white px-2 py-1 rounded-lg border shadow-sm hover:bg-slate-50"
                   >
                     Auto-Generate

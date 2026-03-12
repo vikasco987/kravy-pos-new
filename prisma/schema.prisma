@@ -158,9 +158,11 @@ model User {
   profiles BusinessProfile[]
   uploads  Upload[]
 
-  isDisabled Boolean @default(false)
+  isDisabled   Boolean  @default(false)
+  ownerId      String?
+  allowedPaths String[]
 
-  createdAt DateTime   @default(now())
+  createdAt    DateTime @default(now())
 
   activities ActivityLog[]
   orders     Order[]

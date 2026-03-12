@@ -21,7 +21,7 @@ export async function GET() {
       select: { id: true }
     });
 
-    const userIds = businessUsers.map(u => u.id);
+    const userIds = businessUsers.map((u: any) => u.id);
 
     const logs = await prisma.activityLog.findMany({
       where: { userId: { in: userIds } },

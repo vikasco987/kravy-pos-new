@@ -20,17 +20,19 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const allUsers = await prisma.user.findMany();
-    const staff = allUsers.filter((u: any) => u.ownerId === effectiveId).map((u: any) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        role: u.role,
-        clerkId: u.clerkId,
-        allowedPaths: u.allowedPaths,
-        isDisabled: u.isDisabled,
-        createdAt: u.createdAt,
-    }));
+    const staff = await prisma.user.findMany({
+      where: { ownerId: effectiveId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        clerkId: true,
+        allowedPaths: true,
+        isDisabled: true,
+        createdAt: true,
+      }
+    });
 
     return NextResponse.json(staff);
   } catch (error) {
@@ -59,29 +61,53 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // Check if user already exists in DB
+    const existingInDb = await prisma.user.findUnique({ where: { email } });
+    if (existingInDb) {
+      return NextResponse.json({ error: "User with this email already exists in Database" }, { status: 400 });
+    }
+
     // 1. Create user in Clerk
     const client = await clerkClient();
-    const clerkUser = await client.users.createUser({
-      emailAddress: [email],
-      password,
-      firstName: name,
-      skipPasswordChecks: true,
-      publicMetadata: { role: "USER", ownerId: effectiveId }
-    });
+    
+    let clerkUser;
+    try {
+      clerkUser = await client.users.createUser({
+        emailAddress: [email],
+        password,
+        firstName: name,
+        skipPasswordChecks: true,
+        publicMetadata: { role: "USER", ownerId: effectiveId }
+      });
+    } catch (clerkErr: any) {
+      console.error("CLERK CREATE ERROR:", clerkErr);
+      const message = clerkErr.errors?.[0]?.longMessage || clerkErr.message || "Failed to create user in Clerk";
+      return NextResponse.json({ error: message }, { status: 422 });
+    }
 
-    // 2. Create user in Prisma using type bypass
-    const newUser = await (prisma.user as any).create({
-      data: {
-        clerkId: clerkUser.id,
-        email,
-        name,
-        role: "USER",
-        ownerId: effectiveId,
-        allowedPaths: ["/dashboard"], // default
+    // 2. Create user in Prisma
+    try {
+      const newUser = await prisma.user.create({
+        data: {
+          clerkId: clerkUser.id,
+          email,
+          name,
+          role: "USER",
+          ownerId: effectiveId,
+          allowedPaths: ["/dashboard"], // default
+        }
+      });
+      return NextResponse.json(newUser);
+    } catch (prismaErr: any) {
+      console.error("PRISMA CREATE ERROR:", prismaErr);
+      // If Prisma fails, we might want to delete the Clerk user to keep them in sync
+      try {
+        await client.users.deleteUser(clerkUser.id);
+      } catch (delErr) {
+        console.error("FAILED TO ROLLBACK CLERK USER:", delErr);
       }
-    });
-
-    return NextResponse.json(newUser);
+      return NextResponse.json({ error: "Failed to create user in Database: " + prismaErr.message }, { status: 500 });
+    }
   } catch (error: any) {
     console.error("CREATE STAFF ERROR:", error);
     return NextResponse.json({ error: error.message || "Failed to create staff" }, { status: 500 });
@@ -115,7 +141,7 @@ export async function PUT(req: Request) {
     }
 
     // 2. Update metadata in Prisma
-    const updated = await (prisma.user as any).update({
+    const updated = await prisma.user.update({
       where: { clerkId: staffClerkId },
       data: {
         allowedPaths: allowedPaths !== undefined ? allowedPaths : undefined,

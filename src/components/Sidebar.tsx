@@ -141,6 +141,7 @@ const navGroups = [
     group: "RESOURCES",
     items: [
       { icon: <Users size={18} />, label: "Customer Parties", href: "/dashboard/parties" },
+      { icon: <UserPlus size={18} />, label: "Staff Management", href: "/dashboard/staff", roles: ["ADMIN", "SELLER"] },
       { icon: <Package size={18} />, label: "Inventory Stock", href: "/dashboard/inventory", roles: ["ADMIN", "SELLER"] },
       { icon: <QrCode size={18} />, label: "QR Order Terminal", href: "/dashboard/qr-orders", badge: "Scan", badgeColor: "#8B5CF6" },
     ]
@@ -457,33 +458,32 @@ export default function Sidebar() {
 
       {/* NAV ITEMS */}
       <nav style={{ flex: 1, overflowY: "auto", padding: "8px 10px", scrollbarWidth: "none" }}>
-        {navGroups.map((group) => (
-          <div key={group.group} style={{ marginBottom: "12px" }}>
-            {!collapsed && (
-              <div style={{
-                fontSize: "0.58rem", fontWeight: 800,
-                color: isDark ? "rgba(255,255,255,0.25)" : "var(--kravy-text-muted)",
-                letterSpacing: "2px", padding: "12px 10px 6px",
-                textTransform: "uppercase",
-                opacity: isDark ? 1 : 0.7,
-              }}>{group.group}</div>
-            )}
-            {group.items.map((item: any, index) => {
-              // Admin gets access to everything
-              let isAllowed = false;
-              if (userRole === "ADMIN" || allowedPaths.includes("*")) {
-                 isAllowed = true;
-              } else if (!loadingRole) {
-                 // STRICT MODE: use dynamic DB paths
-                 isAllowed = allowedPaths.includes(item.href) || !!(item.roles && item.roles.includes(userRole));
-              } else {
-                 // LOADING OR FALLBACK MODE: just rely on roles array if present
-                 isAllowed = !item.roles || item.roles.includes(userRole);
-              }
-                 
-              if (!isAllowed) return null;
+        {navGroups.map((group) => {
+          // 1. Filter items based on access
+          const visibleItems = group.items.filter((item: any) => {
+            if (userRole === "ADMIN" || allowedPaths.includes("*")) return true;
+            if (!loadingRole) {
+              return allowedPaths.includes(item.href) || !!(item.roles && item.roles.includes(userRole));
+            }
+            return !item.roles || item.roles.includes(userRole);
+          });
 
-              const isActive = pathname === item.href;
+          // 2. If no items are allowed in this group, don't show the group at all
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={group.group} style={{ marginBottom: "12px" }}>
+              {!collapsed && (
+                <div style={{
+                  fontSize: "0.58rem", fontWeight: 800,
+                  color: isDark ? "rgba(255,255,255,0.25)" : "var(--kravy-text-muted)",
+                  letterSpacing: "2px", padding: "12px 10px 6px",
+                  textTransform: "uppercase",
+                  opacity: isDark ? 1 : 0.7,
+                }}>{group.group}</div>
+              )}
+              {visibleItems.map((item: any, index) => {
+                const isActive = pathname === item.href;
               return (
                 <motion.div
                   key={item.label}
@@ -625,8 +625,9 @@ export default function Sidebar() {
               );
             })}
           </div>
-        ))}
-      </nav>
+        );
+      })}
+    </nav>
 
       {/* USER SECTION AT BOTTOM */}
       <motion.div
