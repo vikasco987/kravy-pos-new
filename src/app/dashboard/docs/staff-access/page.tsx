@@ -17,7 +17,11 @@ import {
   Key,
   Eye,
   Activity,
-  UserCheck
+  UserCheck,
+  PlusCircle,
+  Settings,
+  Book,
+  HelpCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
@@ -34,7 +38,7 @@ export default function StaffAccessDocsPage() {
       fetch("/api/user/me")
         .then(res => res.json())
         .then(data => {
-          if (data.role === "ADMIN") {
+          if (data.role === "ADMIN" || data.role === "SELLER") {
             setIsAdmin(true);
           } else {
             router.push("/dashboard");
@@ -54,36 +58,36 @@ export default function StaffAccessDocsPage() {
 
   const sections = [
     {
-      title: "1. Core Architecture (Buniyad)",
-      icon: <Server className="text-indigo-500" size={24} />,
-      content: "Kravy POS ek 'Seller-Centric' data scoping model use karta hai. Sab kuch Seller (Owner) ke account ke gird ghoomta hai.",
-      hinglish: "Iska matlab hai ki data hamesha 'Owner' ke account se linked hota hai. Staff sirf wahi dekh sakta hai jo Owner allow karta hai.",
+      title: "1. Staff Create Karna (Simple & Fast)",
+      icon: <PlusCircle className="text-indigo-500" size={24} />,
+      content: "Naya staff member add karna ab bahut asaan hai. Aapko manually details bharne ki zaroorat nahi.",
+      hinglish: "Example: Agar aapne 'Rahul' ko add karna hai, to bas uska naam likhiye aur Email/Password ke liye 'Auto-Generate' par click kijiye. System apne aap ek unique email (rahul.x123@kravypos.com) bana dega.",
       points: [
-        "getEffectiveClerkId() function automatically detect karta hai user role.",
-        "Internal routing: Staff requests silently redirect hoti hain owner context mein.",
-        "Isolation Guarantee: Ek seller ka staff kabhi doosre seller ka data nahi dekh payega."
+        "Auto-Generate Email: Bin kisi mehnat ke unique email banayein.",
+        "Secure Password: Clerk security ke mutabik strong password automatically set ho jata hai.",
+        "One-Click Setup: Bas 'Add Staff' par click karein aur kaam khatam."
       ]
     },
     {
-      title: "2. Identity Mapping (Pehchaan)",
-      icon: <UserCheck className="text-orange-500" size={24} />,
-      content: "Staff members have their own logins but act on a shared business context.",
-      hinglish: "Staff member ki apni identity hoti hai for login, par jab wo order leta hai ya bill banata hai, database mein Owner ka context use hota hai.",
+      title: "2. Access Control (Kaun Kya Dekhega?)",
+      icon: <Lock className="text-orange-500" size={24} />,
+      content: "Aap decide kar sakte hain ki aapka staff dashboard par kya dekh sakta hai aur kya nahi.",
+      hinglish: "Example: Agar aapne kisi ko sirf Billing ke liye rakha hai, to unhe 'Store Catalog' ya 'Inventory' dikhane ki koi zaroorat nahi. Aap unhe tick/untick karke control kar sakte hain.",
       points: [
-        "Clerk ID usage: Login authentication ke liye Clerk ID use hota hai.",
-        "Owner ID mapping: Database mein hum `ownerId` field se tracking karte hain.",
-        "Role-Based Visibility: UI bits toggle hote hain backend permissions ke base pe."
+        "Dynamic Sidebar: Jis feature ka access nahi hoga, uska section (heading) bhi gayab ho jayegi.",
+        "Instant Update: Permission save karte hi staff ke dashboard par badlaw turant dikhenge.",
+        "Simplified View: Staff ko sirf wahi dikhta hai jo unke kaam ka hai, jisse wo confuse nahi hote."
       ]
     },
     {
-      title: "3. Access Control Terminal",
-      icon: <Zap className="text-emerald-500" size={24} />,
-      content: "Sellers have ultimate control over their staff's digital workspace.",
-      hinglish: "Seller dashboard se on-the-fly permissions badal sakta hai. Bina server restart ya code change ke permissions update ho jati hain.",
+      title: "3. Shared Data (Ek Team, Ek Data)",
+      icon: <Database className="text-emerald-500" size={24} />,
+      content: "Staff members apna kaam karte hain, par sara data Owner (Aapke) account mein save hota hai.",
+      hinglish: "Example: Rahul ne koi bill banaya ya table order liya, wo data aapke 'Store Dashboard' par real-time mein show hoga. Staff change hone par bhi aapka data hamesha safe rehta hai.",
       points: [
-        "Live Permission Toggles: Visibility settings instant apply hoti hain.",
-        "Password Resets: Staff password sync directly with Clerk API.",
-        "Allowed Paths System: Frontend sidebar dynamically filter hota hai user settings se."
+        "Seamless Sync: Staff ko wahi menu aur tables dikhte hain jo aapne set kiye hain.",
+        "Visibility Proxy: Staff login apni email se karta hai, par powers aapki use karta hai.",
+        "Data Safety: Staff member delete hone par bhi unka banaya hua data (Bills/Orders) delete nahi hota."
       ]
     }
   ];
@@ -99,49 +103,49 @@ export default function StaffAccessDocsPage() {
             animate={{ opacity: 1, x: 0 }}
             className="inline-flex items-center gap-2 bg-indigo-600 text-white px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-200"
           >
-            <ShieldCheck size={14} /> Master technical docs
+            <ShieldCheck size={14} /> Official Staff Guide
           </motion.div>
           <div className="space-y-2">
             <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-none">
-              Staff Access <span className="text-indigo-600">Deep-Dive</span>
+              Staff Access <span className="text-indigo-600">Guide</span>
             </h1>
             <p className="text-xl text-slate-500 font-medium max-w-3xl leading-relaxed italic">
-              A comprehensive technical guide to Kravy POS security, identity resolution, and data isolation strategies.
+              Kravy POS mein staff ko manage karna aur unhe permissions dena seekhein - Ek dum simple bhasha mein.
             </p>
           </div>
         </header>
 
-        {/* Deep Logic Section (The Code Part) */}
+        {/* Quick Summary Section */}
         <div className="grid lg:grid-cols-2 gap-10">
            <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl">
               <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
-                <Code size={120} />
+                <Users size={120} />
               </div>
               
               <h2 className="text-3xl font-black mb-6 flex items-center gap-4">
-                 <Lock className="text-indigo-400" />
-                 Logic: getEffectiveClerkId()
+                 <Zap className="text-indigo-400" />
+                 Smart Management
               </h2>
               
               <p className="text-slate-400 font-medium mb-8 leading-relaxed">
-                 Kravy POS ka sabse important backend security layer. Yeh function decide karta hai ki database query kiske account ke liye execute hogi.
+                 Kravy POS ka access control system itna smart hai ki staff member ko login ke baad sirf wahi button dikhte hain jinhe aapne allow kiya hai.
               </p>
 
               <div className="space-y-6">
                  <div className="bg-white/5 border border-white/10 p-6 rounded-3xl">
-                    <div className="text-xs font-black uppercase text-indigo-400 mb-2">Algorithm Flow</div>
+                    <div className="text-xs font-black uppercase text-indigo-400 mb-2">Step-by-Step Process</div>
                     <ol className="space-y-3 text-sm font-bold">
-                       <li className="flex gap-3"><span className="text-white/30">01</span> Pehle current login ID check karo.</li>
-                       <li className="flex gap-3"><span className="text-white/30">02</span> DB mein dekho is user ka koi 'Owner' hai?</li>
-                       <li className="flex gap-3"><span className="text-white/30">03</span> Agar Role = Staff, toh Owner ki ID return karo.</li>
-                       <li className="flex gap-3"><span className="text-white/30">04</span> Har database call mein yeh ID context ki tarah use hogi.</li>
+                       <li className="flex gap-3"><span className="text-white/30">01</span> Staff Management page par jaiye.</li>
+                       <li className="flex gap-3"><span className="text-white/30">02</span> Staff ka Name likhiye aur email/pass auto-generate karein.</li>
+                       <li className="flex gap-3"><span className="text-white/30">03</span> 'Manage Access' button par click karke permissions select karein.</li>
+                       <li className="flex gap-3"><span className="text-white/30">04</span> Save karte hi staff ko unka customized dashboard mil jayega.</li>
                     </ol>
                  </div>
                  
                  <div className="flex items-center gap-3 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
                     <ShieldAlert className="text-indigo-400 shrink-0" size={20} />
                     <p className="text-[10px] font-bold text-indigo-200">
-                      TECHNICAL SECURITY: Is logic se data leaks impossible hain kyunki staff member ke paas kabhi power hi nahi hoti owner ID override karne ki.
+                      SAFETY TIP: Kabhi bhi apna Owner login staff ko na dein. Unke liye hamesha alag staff account banayein taaki system safe rahe.
                     </p>
                  </div>
               </div>
@@ -153,24 +157,30 @@ export default function StaffAccessDocsPage() {
               </div>
               <h2 className="text-3xl font-black text-slate-800 mb-6 flex items-center gap-4">
                  <Eye className="text-orange-500" />
-                 Hinglish Overview
+                 Visibility Example
               </h2>
               <div className="space-y-6 text-slate-600">
                  <p className="font-bold text-lg leading-relaxed">
-                    Simple bhasha mein: Staff member login to abhi bhi apni email se hi karta hai, lekin billing aur menu management mein uski powers limited hoti hain.
+                    Sahi se access control karne se aapka dashboard clean aur easy ho jata hai.
                  </p>
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                       <div className="text-[10px] font-black uppercase text-slate-400 mb-1">Staff Access</div>
-                       <div className="text-sm font-black text-slate-900">Only Operations</div>
+                 <div className="space-y-4">
+                    <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                       <div>
+                          <div className="text-[10px] font-black uppercase text-emerald-500 mb-1">Scenario: Waiter Access</div>
+                          <div className="text-sm font-black text-slate-900">Sirf 'Table Status' aur 'Menu View' dikhao.</div>
+                       </div>
+                       <CheckCircle2 className="text-emerald-500" size={20} />
                     </div>
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                       <div className="text-[10px] font-black uppercase text-slate-400 mb-1">Owner Control</div>
-                       <div className="text-sm font-black text-slate-900">Full Visibility</div>
+                    <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 flex items-center justify-between">
+                       <div>
+                          <div className="text-[10px] font-black uppercase text-indigo-500 mb-1">Scenario: Biller Access</div>
+                          <div className="text-sm font-black text-slate-900">Sirf 'Billing' aur 'History' dikhao.</div>
+                       </div>
+                       <CheckCircle2 className="text-indigo-500" size={20} />
                     </div>
                  </div>
                  <p className="text-sm italic font-medium leading-relaxed">
-                    "Owner can control visibility of almost 20+ modules from the access control terminal. Instant sync ensures system security remains robust."
+                    "Jis section ka access nahi hota (jaise Marketing), uska name bhi sidebar se gayab ho jata hai - Isse confusion 100% khatam!"
                  </p>
               </div>
            </div>
@@ -190,52 +200,65 @@ export default function StaffAccessDocsPage() {
                  {section.icon}
               </div>
               <h3 className="text-2xl font-black text-slate-900 mb-4">{section.title}</h3>
-              <p className="text-sm text-slate-500 font-medium mb-4 leading-relaxed line-clamp-2">
+              <p className="text-sm text-slate-500 font-medium mb-4 leading-relaxed">
                 {section.content}
               </p>
               <div className="p-4 bg-indigo-50/50 rounded-2xl mb-8">
-                 <div className="text-[10px] font-black uppercase text-indigo-400 mb-2">Deep Note (Hinglish)</div>
+                 <div className="text-[10px] font-black uppercase text-indigo-400 mb-2">Example / Udaharan</div>
                  <p className="text-xs text-indigo-900 font-bold leading-relaxed">{section.hinglish}</p>
               </div>
               <ul className="space-y-4">
                  {section.points.map((pt, j) => (
-                   <li key={j} className="flex items-start gap-3 text-[11px] font-black text-slate-700 leading-tight">
-                      <CheckCircle2 className="text-emerald-500 shrink-0 mt-0.5" size={16} />
-                      {pt}
-                   </li>
+                    <li key={j} className="flex items-start gap-3 text-[11px] font-black text-slate-700 leading-tight">
+                       <CheckCircle2 className="text-emerald-500 shrink-0 mt-0.5" size={16} />
+                       {pt}
+                    </li>
                  ))}
               </ul>
             </motion.div>
           ))}
         </div>
 
-        {/* Audit & Logs */}
+        {/* Activity & Support */}
         <div className="bg-slate-50 rounded-[3rem] p-12 border border-slate-200 flex flex-col md:flex-row items-center gap-12">
            <div className="flex-1 space-y-6">
               <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
-                <Activity size={14} /> Audit Trail Monitoring
+                <Activity size={14} /> Tracking & Transparency
               </div>
-              <h2 className="text-4xl font-black text-slate-900 leading-tight">Activity Logging for <span className="text-indigo-600">Total Transparency.</span></h2>
+              <h2 className="text-4xl font-black text-slate-900 leading-tight">Kaun kya kar raha hai, <span className="text-indigo-600">Pure Control Mein.</span></h2>
               <p className="text-slate-600 font-medium text-lg leading-relaxed">
-                System har action (create/edit/delete) track karta hai. Log list mein exact user ID store hoti hai, par Owner in logs ko view kar sakta hai pure business context mein.
+                Staff member jo bhi bill banata hai ya edit karta hai, uska log hum save karte hain. Restaurant Owner kisi bhi waqt dekh sakta hai ki kis staff ne kya action liya.
               </p>
               <div className="flex gap-4">
                  <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Secure Logging</span>
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Activity Logs</span>
                  </div>
                  <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider">DB Persisted</span>
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Safe Management</span>
                  </div>
               </div>
            </div>
            <div className="w-full md:w-[400px] aspect-square bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden p-8 flex flex-col gap-4">
-              <div className="h-4 bg-slate-100 rounded-full w-3/4"></div>
-              <div className="h-4 bg-slate-50 rounded-full w-full"></div>
-              <div className="h-4 bg-slate-100 rounded-full w-1/2"></div>
-              <div className="flex-1 border-2 border-dashed border-slate-100 rounded-2xl flex items-center justify-center">
-                 <Activity className="text-slate-100" size={100} />
+              <div className="flex items-center justify-between mb-4">
+                 <div className="text-xs font-black text-slate-400">STAFF PERFORMANCE</div>
+                 <div className="text-xs font-black text-indigo-600 underline">VIEW ALL</div>
+              </div>
+              <div className="space-y-4">
+                 {[1,2,3].map(i => (
+                    <div key={i} className="flex items-center gap-3">
+                       <div className="w-10 h-10 rounded-full bg-slate-100"></div>
+                       <div className="flex-1 space-y-2">
+                          <div className="h-3 bg-slate-100 rounded-full w-3/4"></div>
+                          <div className="h-2 bg-slate-50 rounded-full w-1/2"></div>
+                       </div>
+                    </div>
+                 ))}
+              </div>
+              <div className="mt-auto pt-6 border-t border-slate-100 flex items-center justify-between">
+                 <div className="text-3xl font-black text-slate-900">100%</div>
+                 <div className="text-[10px] font-black text-slate-400 text-right">SYSTEM<br/>CONNECTED</div>
               </div>
            </div>
         </div>
@@ -246,16 +269,16 @@ export default function StaffAccessDocsPage() {
               <ShieldCheck size={32} />
            </div>
            <div className="space-y-2">
-              <h3 className="text-2xl font-black text-slate-900">End of Technical Overview</h3>
-              <p className="text-slate-500 font-medium">Have questions? Contact the terminal development team.</p>
+              <h3 className="text-2xl font-black text-slate-900">Samajhne mein koi dikat?</h3>
+              <p className="text-slate-500 font-medium">Agar aapko permissions manage karne mein koi help chahiye to hamare support se contact karein.</p>
            </div>
            <div className="flex gap-4">
-             <button className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-slate-200 group flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95">
-               <Share2 size={14} className="group-hover:rotate-12 transition-transform" /> Print Technical Spec
-             </button>
-             <button onClick={() => router.push("/dashboard/help")} className="px-8 py-4 bg-white border border-slate-200 text-slate-900 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-50 transition-all flex items-center gap-2">
-               <Book size={14} /> Back to Help Center
-             </button>
+              <button onClick={() => window.print()} className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-slate-200 group flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95">
+                <Share2 size={14} className="group-hover:rotate-12 transition-transform" /> Print Guide
+              </button>
+              <button onClick={() => router.push("/dashboard/help")} className="px-8 py-4 bg-white border border-slate-200 text-slate-900 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-50 transition-all flex items-center gap-2">
+                <HelpCircle size={14} /> Help Center
+              </button>
            </div>
         </footer>
 
