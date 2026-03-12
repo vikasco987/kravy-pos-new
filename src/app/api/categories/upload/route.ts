@@ -60,9 +60,10 @@
 
 
 import { NextRequest, NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server"; // ✅ import Clerk user
+import { prisma } from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 import cloudinary from "@/lib/cloudinary"; 
-import prisma from "@/lib/prisma";
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -74,9 +75,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    // ✅ Get current logged-in user
-    const user = await currentUser();
-    if (!user?.id) {
+    // ✅ Get effective clerk ID
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -102,12 +103,12 @@ export async function POST(req: NextRequest) {
     });
 
     // ✅ Save to DB with user relation
-   const saved = await prisma.upload.create({
-  data: {
-    imageUrl: uploadResponse.secure_url,
-    user: { connect: { clerkId: user.id } },
-  },
-});
+    const saved = await prisma.upload.create({
+      data: {
+        imageUrl: uploadResponse.secure_url,
+        user: { connect: { clerkId: effectiveId } },
+      },
+    });
 
     return NextResponse.json(saved, { status: 200 });
   } catch (err: any) {

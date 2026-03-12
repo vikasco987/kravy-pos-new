@@ -252,6 +252,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 import { request } from "http";
 
 /* --------------------------------
@@ -290,9 +291,9 @@ async function findOrCreateDBUser(clerkId: string) {
 --------------------------------- */
 export async function GET(req: Request) {
   try {
-    const { userId: clerkId } = await auth();
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!clerkId) {
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -301,7 +302,7 @@ export async function GET(req: Request) {
 
     if (id) {
       const item = await prisma.item.findFirst({
-        where: { id, clerkId },
+        where: { id, clerkId: effectiveId },
       });
 
       if (!item) {
@@ -312,7 +313,7 @@ export async function GET(req: Request) {
     }
 
     const items = await prisma.item.findMany({
-      where: { clerkId },
+      where: { clerkId: effectiveId },
       orderBy: { createdAt: "desc" },
     });
 
@@ -331,13 +332,13 @@ export async function GET(req: Request) {
 --------------------------------- */
 export async function POST(req: Request) {
   try {
-    const { userId: clerkId } = await auth();
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!clerkId) {
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const dbUser = await findOrCreateDBUser(clerkId);
+    const dbUser = await findOrCreateDBUser(effectiveId);
     const body = await req.json();
 
     if (!body?.name || body.price == null || !body.categoryId) {
@@ -358,7 +359,7 @@ export async function POST(req: Request) {
         unit: body.unit || null,
         imageUrl: body.imageUrl || null,
         description: body.description || null,
-        clerkId,
+        clerkId: effectiveId,
         category: { connect: { id: String(body.categoryId) } },
         user: { connect: { id: dbUser.id } },
         // Enhanced Fields
@@ -390,9 +391,9 @@ export async function POST(req: Request) {
 --------------------------------- */
 export async function PUT(req: Request) {
   try {
-    const { userId: clerkId } = await auth();
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!clerkId) {
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -407,7 +408,7 @@ export async function PUT(req: Request) {
     }
 
     const existing = await prisma.item.findFirst({
-      where: { id, clerkId },
+      where: { id, clerkId: effectiveId },
       select: { id: true },
     });
 
@@ -457,9 +458,9 @@ export async function PUT(req: Request) {
 --------------------------------- */
 export async function DELETE(req: Request) {
   try {
-    const { userId: clerkId } = await auth();
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!clerkId) {
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -481,7 +482,7 @@ export async function DELETE(req: Request) {
     }
 
     const existing = await prisma.item.findFirst({
-      where: { id, clerkId },
+      where: { id, clerkId: effectiveId },
       select: { id: true },
     });
 

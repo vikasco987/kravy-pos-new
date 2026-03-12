@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { userId } = await auth();
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const { id } = await params;
         const { id: _, clerkUserId: __, ...updateData } = await req.json();
@@ -16,7 +17,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         }
 
         const combo = await prisma.combo.update({
-            where: { id, clerkUserId: userId },
+            where: { id, clerkUserId: effectiveId },
             data: updateData,
         });
 
@@ -29,12 +30,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { userId } = await auth();
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const { id } = await params;
         await prisma.combo.delete({
-            where: { id, clerkUserId: userId },
+            where: { id, clerkUserId: effectiveId },
         });
 
         return NextResponse.json({ success: true });

@@ -181,19 +181,17 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const clerkUserId = searchParams.get("clerkUserId");
-    const range = Number(searchParams.get("range") || 30);
-
-    if (!clerkUserId) {
-      return NextResponse.json(
-        { error: "clerkUserId required" },
-        { status: 400 }
-      );
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { searchParams } = new URL(req.url);
+    const range = Number(searchParams.get("range") || 30);
 
     // Date range
     const endDate = new Date();
@@ -202,7 +200,7 @@ export async function GET(req: NextRequest) {
 
     const bills = await prisma.billManager.findMany({
       where: {
-        clerkUserId,
+        clerkUserId: effectiveId,
         isDeleted: false,
         createdAt: {
           gte: startDate,
@@ -324,7 +322,7 @@ export async function GET(req: NextRequest) {
 
     const deletedBillsData = await prisma.billManager.findMany({
       where: {
-        clerkUserId,
+        clerkUserId: effectiveId,
         isDeleted: true,
       },
       orderBy: { deletedAt: "desc" },

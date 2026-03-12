@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -16,7 +16,7 @@ export async function PATCH(
     const body = await req.json();
 
     const bill = await prisma.billManager.update({
-      where: { id },
+      where: { id, clerkUserId: effectiveId },
       data: {
         isHeld: body.isHeld === true,
         paymentStatus: body.isHeld ? "HELD" : "Pending",

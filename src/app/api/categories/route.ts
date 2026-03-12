@@ -66,11 +66,16 @@
 // app/api/categories/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/utils/prismaClient";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 // ✅ GET all categories
 export async function GET() {
   try {
+    const effectiveId = await getEffectiveClerkId();
     const categories = await prisma.category.findMany({
+      where: {
+        OR: [{ clerkId: effectiveId }, { clerkId: null }],
+      },
       select: { id: true, name: true },
       orderBy: { name: "asc" }, // optional: keep dropdown sorted
     });
@@ -94,6 +99,9 @@ export async function GET() {
 // ✅ POST new category
 export async function POST(req: Request) {
   try {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
     const { name } = await req.json();
 
     if (!name || !name.trim()) {
@@ -103,9 +111,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Avoid duplicates (case-insensitive)
+    // Avoid duplicates (case-insensitive) for this user
     const existing = await prisma.category.findFirst({
-      where: { name: { equals: name.trim(), mode: "insensitive" } },
+      where: { 
+        name: { equals: name.trim(), mode: "insensitive" },
+        clerkId: effectiveId
+      },
     });
 
     if (existing) {
@@ -122,7 +133,10 @@ export async function POST(req: Request) {
     }
 
     const category = await prisma.category.create({
-      data: { name: name.trim() },
+      data: { 
+        name: name.trim(),
+        clerkId: effectiveId
+      },
     });
 
     return NextResponse.json(

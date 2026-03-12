@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 import * as XLSX from "xlsx";
 
 export async function GET(req: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Fetch all items for the user
     const items = await prisma.item.findMany({
       where: {
-        clerkId: userId,
+        clerkId: effectiveId,
       },
       include: {
         category: true,

@@ -1,17 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import { HelpCircle, Search, MessageSquare, Mail, Phone, Book, Video, FileText, Download, Star, ChevronRight, Send } from "lucide-react";
+import { useEffect, useState } from "react";
+import { 
+  HelpCircle, 
+  Search, 
+  MessageSquare, 
+  Mail, 
+  Phone, 
+  Book, 
+  Video, 
+  FileText, 
+  ChevronRight, 
+  Send,
+  Lock
+} from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
 
 export default function HelpPage() {
+  const { user } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetch("/api/user/me")
+        .then(res => res.json())
+        .then(data => setIsAdmin(data.role === "ADMIN"))
+        .catch(() => {});
+    }
+  }, [user]);
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
 
   const helpCategories = [
     { id: 1, name: "Getting Started", icon: <Book size={24} />, description: "Learn the basics of Kravy POS", articles: 12 },
     { id: 2, name: "Billing & Payments", icon: <FileText size={24} />, description: "Master billing operations", articles: 8 },
     { id: 3, name: "Menu Management", icon: <MessageSquare size={24} />, description: "Manage your menu items", articles: 15 },
     { id: 4, name: "Video Tutorials", icon: <Video size={24} />, description: "Watch step-by-step guides", articles: 6 },
+    ...(isAdmin ? [{ 
+      id: 5, 
+      name: "Staff Access Docs", 
+      icon: <Lock size={24} />, 
+      description: "Deep technical guide for access control", 
+      articles: 1,
+      href: "/dashboard/docs/staff-access" 
+    }] : []),
   ];
 
   const faqItems = [
@@ -116,52 +149,53 @@ export default function HelpPage() {
           Browse Help Categories
         </h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
-          {helpCategories.map((category) => (
-            <div
-              key={category.id}
-              style={{
-                background: "var(--kravy-surface)",
-                border: "1px solid var(--kravy-border)",
-                borderRadius: "24px",
-                padding: "24px",
-                cursor: "pointer",
-                transition: "all 0.3s",
-                boxShadow: "var(--kravy-card-shadow)"
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255,107,53,0.05)";
-                e.currentTarget.style.borderColor = "rgba(255,107,53,0.2)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "var(--kravy-surface)";
-                e.currentTarget.style.borderColor = "var(--kravy-border)";
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
-                <div style={{
-                  width: "48px", height: "48px", borderRadius: "14px",
-                  background: "var(--kravy-brand)", color: "white",
-                  display: "flex", alignItems: "center", justifyContent: "center"
-                }}>
-                  {category.icon}
+          {helpCategories.map((category) => {
+            const content = (
+              <div
+                key={category.id}
+                style={{
+                  background: "var(--kravy-surface)",
+                  border: "1px solid var(--kravy-border)",
+                  borderRadius: "24px",
+                  padding: "24px",
+                  cursor: "pointer",
+                  transition: "all 0.3s",
+                  boxShadow: "var(--kravy-card-shadow)",
+                  height: "100%"
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
+                  <div style={{
+                    width: "48px", height: "48px", borderRadius: "14px",
+                    background: "var(--kravy-brand)", color: "white",
+                    display: "flex", alignItems: "center", justifyContent: "center"
+                  }}>
+                    {category.icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--kravy-text-primary)", marginBottom: "4px" }}>
+                      {category.name}
+                    </h3>
+                    <p style={{ fontSize: "0.8rem", color: "var(--kravy-text-muted)", lineHeight: "1.4" }}>
+                      {category.description}
+                    </p>
+                  </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--kravy-text-primary)", marginBottom: "4px" }}>
-                    {category.name}
-                  </h3>
-                  <p style={{ fontSize: "0.8rem", color: "var(--kravy-text-muted)", lineHeight: "1.4" }}>
-                    {category.description}
-                  </p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--kravy-text-muted)", fontStyle: "italic" }}>
+                    {category.articles} articles
+                  </span>
+                  <ChevronRight size={16} style={{ color: "var(--kravy-text-muted)" }} />
                 </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "0.75rem", color: "var(--kravy-text-muted)", fontStyle: "italic" }}>
-                  {category.articles} articles
-                </span>
-                <ChevronRight size={16} style={{ color: "var(--kravy-text-muted)" }} />
-              </div>
-            </div>
-          ))}
+            );
+
+            return (category as any).href ? (
+              <Link key={category.id} href={(category as any).href} style={{ textDecoration: "none" }}>
+                {content}
+              </Link>
+            ) : content;
+          })}
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function POST(req: NextRequest) {
     try {
@@ -58,9 +59,10 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
     try {
+        const effectiveId = await getEffectiveClerkId();
         const { searchParams } = new URL(req.url);
         const itemId = searchParams.get('itemId');
-        const clerkUserId = searchParams.get('clerkUserId');
+        const clerkUserId = searchParams.get('clerkUserId') || effectiveId;
 
         if (itemId) {
             // Get reviews for a specific item

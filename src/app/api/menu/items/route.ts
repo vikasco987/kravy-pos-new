@@ -1,16 +1,15 @@
-//src/app/api/menu/items/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
-    // 1️⃣ Get logged-in Clerk user
-    const { userId: clerkId } = await auth();
+    // 1️⃣ Get effective Clerk user
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!clerkId) {
+    if (!effectiveId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -20,7 +19,7 @@ export async function GET(req: NextRequest) {
     // 2️⃣ Fetch menu items for this clerk
     const items = await prisma.item.findMany({
       where: {
-        clerkId: clerkId,
+        clerkId: effectiveId,
       },
       orderBy: {
         updatedAt: "desc",

@@ -1,12 +1,12 @@
-// src/app/api/parties/[id]/route.ts
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function PUT(req: NextRequest, context: any) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     // `params` can be a Promise in this environment — await it
     const params = await context.params;
@@ -22,7 +22,7 @@ export async function PUT(req: NextRequest, context: any) {
 
     const existing = await prisma.party.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (existing.createdBy !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (existing.createdBy !== effectiveId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const updated = await prisma.party.update({
       where: { id },
@@ -38,8 +38,8 @@ export async function PUT(req: NextRequest, context: any) {
 
 export async function DELETE(req: NextRequest, context: any) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const params = await context.params;
     const id = params?.id;
@@ -47,7 +47,7 @@ export async function DELETE(req: NextRequest, context: any) {
 
     const existing = await prisma.party.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (existing.createdBy !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (existing.createdBy !== effectiveId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     await prisma.party.delete({ where: { id } });
     return NextResponse.json({ success: true }, { status: 200 });

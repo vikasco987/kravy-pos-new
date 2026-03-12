@@ -196,14 +196,15 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 import { Prisma } from "@prisma/client";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const { name, phone, address, dob } = body;
@@ -219,7 +220,7 @@ export async function POST(req: NextRequest) {
           phone,
           address,
           dob: dob ? new Date(dob) : null,
-          createdBy: userId,
+          createdBy: effectiveId,
         },
       });
       return NextResponse.json(party, { status: 201 });
@@ -242,11 +243,11 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const parties = await prisma.party.findMany({
-      where: { createdBy: userId },
+      where: { createdBy: effectiveId },
       orderBy: { name: "asc" },
     });
     return NextResponse.json(parties, { status: 200 });
@@ -259,8 +260,8 @@ export async function GET(req: NextRequest) {
 // Optional: DELETE by body if you had earlier fallback code
 export async function DELETE(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => ({} as any));
     const id = body?.id;
@@ -268,7 +269,7 @@ export async function DELETE(req: NextRequest) {
 
     const existing = await prisma.party.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (existing.createdBy !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (existing.createdBy !== effectiveId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     await prisma.party.delete({ where: { id } });
     return NextResponse.json({ success: true }, { status: 200 });

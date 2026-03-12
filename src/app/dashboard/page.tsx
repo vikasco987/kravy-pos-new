@@ -1,6 +1,6 @@
-import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 import StatsGrid from "./components/stats-grid";
 import RevenueChart from "./components/revenue-chart";
@@ -17,9 +17,9 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ range?: string }>;
 }) {
-  const user = await currentUser();
+  const effectiveId = await getEffectiveClerkId();
 
-  if (!user) redirect("/sign-in");
+  if (!effectiveId) redirect("/sign-in");
 
   const { range: rangeParam } = await searchParams;
   const range = Number(rangeParam || 30);
@@ -34,7 +34,7 @@ export default async function DashboardPage({
   const [bills, previousBills, deletedBillsData, activeCombosCount, activeOffersCount] = await Promise.all([
     prisma.billManager.findMany({
       where: {
-        clerkUserId: user.id,
+        clerkUserId: effectiveId,
         isDeleted: false,
         createdAt: {
           gte: startDate,
@@ -45,7 +45,7 @@ export default async function DashboardPage({
     }),
     prisma.billManager.findMany({
       where: {
-        clerkUserId: user.id,
+        clerkUserId: effectiveId,
         isDeleted: false,
         createdAt: {
           gte: previousStart,
@@ -54,12 +54,12 @@ export default async function DashboardPage({
       },
     }),
     prisma.billManager.findMany({
-      where: { clerkUserId: user.id, isDeleted: true },
+      where: { clerkUserId: effectiveId, isDeleted: true },
       orderBy: { deletedAt: "desc" },
       take: 5,
     }),
-    prisma.combo.count({ where: { clerkUserId: user.id, isActive: true } }),
-    prisma.offer.count({ where: { clerkUserId: user.id, isActive: true } })
+    prisma.combo.count({ where: { clerkUserId: effectiveId, isActive: true } }),
+    prisma.offer.count({ where: { clerkUserId: effectiveId, isActive: true } })
   ]);
 
   const totalRevenue = bills.reduce((sum, b) => sum + b.total, 0);

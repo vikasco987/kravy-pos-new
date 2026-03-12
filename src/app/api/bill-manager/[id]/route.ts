@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 /* ======================================================
    GET → View / Resume bill
@@ -10,8 +10,8 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -20,7 +20,7 @@ export async function GET(
     const bill = await prisma.billManager.findFirst({
       where: {
         id,
-        clerkUserId: userId,
+        clerkUserId: effectiveId,
         isDeleted: false,
       },
     });
@@ -30,7 +30,7 @@ export async function GET(
     }
 
     const business = await prisma.businessProfile.findFirst({
-      where: { userId },
+      where: { userId: effectiveId },
     });
 
     return NextResponse.json({ bill, business });
@@ -51,8 +51,8 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -134,8 +134,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -145,7 +145,7 @@ export async function DELETE(
     const bill = await prisma.billManager.findFirst({
       where: {
         id,
-        clerkUserId: userId,
+        clerkUserId: effectiveId,
       },
     });
 

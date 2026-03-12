@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {
     try {
-        const { userId } = await auth();
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const rewards = await prisma.reward.findMany({
-            where: { clerkUserId: userId },
+            where: { clerkUserId: effectiveId },
             orderBy: { createdAt: "desc" },
         });
 
@@ -21,8 +22,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const { userId } = await auth();
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const body = await req.json();
         const { title, description, pointsRequired, isActive } = body;
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
                 description,
                 pointsRequired: parseInt(pointsRequired),
                 isActive: isActive !== undefined ? isActive : true,
-                clerkUserId: userId,
+                clerkUserId: effectiveId,
             },
         });
 

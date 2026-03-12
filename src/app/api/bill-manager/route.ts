@@ -1,27 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 /**
  * GET → List bills
  */
 export async function GET(req: NextRequest) {
   try {
-    const { userId: clerkUserId } = await auth();
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!clerkUserId) {
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const bills = await prisma.billManager.findMany({
       where: {
-        clerkUserId,
+        clerkUserId: effectiveId,
         isDeleted: false,
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ bills, clerkUserId });
+    return NextResponse.json({ bills, clerkUserId: effectiveId });
   } catch (err) {
     console.error("BILL MANAGER LIST ERROR:", err);
     return NextResponse.json(
@@ -35,9 +36,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId: clerkUserId } = await auth();
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!clerkUserId) {
+    if (!effectiveId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -113,7 +114,7 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
           where: {
             phone_createdBy: {
               phone: customerPhone,
-              createdBy: clerkUserId,
+              createdBy: effectiveId,
             },
           },
           update: {
@@ -122,7 +123,7 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
           create: {
             name: customerName,
             phone: customerPhone,
-            createdBy: clerkUserId,
+            createdBy: effectiveId,
           },
         });
         partyId = party.id;
@@ -133,7 +134,7 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
 
     const bill = await prisma.billManager.create({
       data: {
-        clerkUserId,
+        clerkUserId: effectiveId,
         billNumber,
         items,
         subtotal,

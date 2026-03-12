@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -18,7 +18,7 @@ export async function POST(
     const bill = await prisma.billManager.findFirst({
       where: {
         id,
-        clerkUserId: userId,
+        clerkUserId: effectiveId,
         isDeleted: true,
       },
     });

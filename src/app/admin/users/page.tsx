@@ -165,13 +165,36 @@ export default function AdminUsersPage() {
     </p>
   </div>
 
-  {/* CREATE USER BUTTON */}
-  <Link
-    href="/admin/users/create"
-    className="px-4 py-2 rounded-md bg-black text-white text-sm hover:opacity-90"
-  >
-    + Create New User
-  </Link>
+  {/* ACTIONS */}
+  <div className="flex gap-3">
+    <Link
+      href="/admin/users/roles"
+      className="px-4 py-2 rounded-md border-2 border-indigo-600 bg-indigo-50 text-indigo-700 text-sm font-bold hover:bg-indigo-100 flex items-center gap-2"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20"/><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="m4 8 16-4"/><path d="m8 6 8-4"/><circle cx="12" cy="12" r="2"/></svg>
+      Role Visibility
+    </Link>
+    <Link
+      href="/admin/users/docs"
+      className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 flex items-center gap-2"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      Basic Docs
+    </Link>
+    <Link
+      href="/admin/docs/architecture"
+      className="px-4 py-2 rounded-md border-2 border-slate-900 bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 flex items-center gap-2"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+      Deep Docs (Architect)
+    </Link>
+    <Link
+      href="/admin/users/create"
+      className="px-4 py-2 rounded-md bg-black text-white text-sm hover:opacity-90 flex items-center"
+    >
+      + Create New User
+    </Link>
+  </div>
 </div>
 
 

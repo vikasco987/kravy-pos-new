@@ -1,14 +1,15 @@
 import { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
-    const { userId: clerkId } = await auth();
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!clerkId) {
+    if (!effectiveId) {
         return new Response("Unauthorized", { status: 401 });
     }
 
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
                     // ── New QR Orders ──────────────────────────────────────────────
                     const recentOrders = await prisma.order.findMany({
                         where: {
-                            clerkUserId: clerkId,
+                            clerkUserId: effectiveId,
                             createdAt: { gte: sessionStart },
                         },
                         select: {
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
                     // ── New Reviews ────────────────────────────────────────────────
                     const recentReviews = await prisma.review.findMany({
                         where: {
-                            clerkUserId: clerkId,
+                            clerkUserId: effectiveId,
                             createdAt: { gte: sessionStart },
                         },
                         select: {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import cloudinary from "@/lib/cloudinary";
 import QRCode from "qrcode";
@@ -14,7 +14,7 @@ export async function GET(
   console.log(`[PDF API] STEP 1: API called for Bill ID: ${id}`);
 
   try {
-    const { userId: authUserId } = await auth();
+    const effectiveId = await getEffectiveClerkId();
     const searchParams = req.nextUrl.searchParams;
     const clerkIdParam = searchParams.get("clerkId");
 
@@ -37,10 +37,11 @@ export async function GET(
     console.log(`[PDF API] STEP 3: Bill found: ${bill.billNumber}`);
 
     // Security: Must be authorized via session OR matching clerkId param
-    const isAuthorized = authUserId === bill.clerkUserId || clerkIdParam === bill.clerkUserId;
+    // For staff, effectiveId will be the seller's ID
+    const isAuthorized = effectiveId === bill.clerkUserId || clerkIdParam === bill.clerkUserId;
 
     if (!isAuthorized) {
-      console.warn(`[PDF API] UNAUTHORIZED ACCESS ATTEMPT: Bill ${id} by User ${authUserId || clerkIdParam}`);
+      console.warn(`[PDF API] UNAUTHORIZED ACCESS ATTEMPT: Bill ${id} by User ${effectiveId || clerkIdParam}`);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

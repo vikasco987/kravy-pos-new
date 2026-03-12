@@ -1,26 +1,35 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function GET() {
   try {
-    const { userId } = await auth(); // ✅ FIX HERE
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!userId) {
+    if (!effectiveId) {
       return NextResponse.json([], { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { id: true },
+    // Find all users belonging to this business (Seller + Staff)
+    const businessUsers = await (prisma.user as any).findMany({
+      where: {
+        OR: [
+          { clerkId: effectiveId },
+          { ownerId: effectiveId }
+        ]
+      },
+      select: { id: true }
     });
 
-    if (!user) {
-      return NextResponse.json([]);
-    }
+    const userIds = businessUsers.map((u: any) => u.id);
 
     const logs = await prisma.activityLog.findMany({
-      where: { userId: user.id },
+      where: { userId: { in: userIds } },
+      include: { 
+        user: { 
+          select: { name: true, role: true } 
+        } 
+      },
       orderBy: { createdAt: "desc" },
       take: 50,
     });

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 interface MergeItem {
   name: string;
@@ -19,8 +19,8 @@ export async function PUT(
   { params }: { params: { orderId: string } }
 ) {
   try {
-    const { userId: clerkId } = await auth();
-    if (!clerkId) {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -38,7 +38,7 @@ export async function PUT(
     const existingOrder = await prisma.order.findFirst({
       where: {
         id: orderId,
-        clerkUserId: clerkId,
+        clerkUserId: effectiveId,
       },
     });
 
@@ -103,7 +103,7 @@ export async function PUT(
     // Log activity
     try {
       const user = await prisma.user.findUnique({
-        where: { clerkId: clerkId },
+        where: { clerkId: effectiveId },
       });
 
       if (user) {

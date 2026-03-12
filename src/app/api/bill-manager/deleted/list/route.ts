@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const deletedBills = await prisma.billManager.findMany({
       where: {
-        clerkUserId: userId,
+        clerkUserId: effectiveId,
         isDeleted: true,
       },
       orderBy: {

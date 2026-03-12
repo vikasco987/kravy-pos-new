@@ -19,13 +19,16 @@ export const metadata = {
     apple: "/favicon.ico",          // resolves apple-touch-icon 404
     shortcut: "/favicon.ico",
   },
-  themeColor: "#FF6B35",
   applicationName: "KravyPOS",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "KravyPOS",
   },
+};
+
+export const viewport = {
+  themeColor: "#FF6B35",
 };
 
 export default function RootLayout({

@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function DELETE(req: NextRequest) {
   try {
-    // ✅ App Router auth (correct)
-    const session = await await auth();
-    const userId = session.userId;
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!userId) {
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -26,7 +24,7 @@ export async function DELETE(req: NextRequest) {
     const existing = await prisma.item.findFirst({
       where: {
         id,
-        clerkId: userId,
+        clerkId: effectiveId,
       },
     });
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import cloudinary from "cloudinary";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -8,6 +9,11 @@ cloudinary.v2.config({
 });
 
 export async function POST(req: Request) {
+  const effectiveId = await getEffectiveClerkId();
+  if (!effectiveId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const formData = await req.formData();
   const file = formData.get("file") as File;
 

@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function POST(req: Request) {
   try {
     /* =====================
        AUTH
     ===================== */
-    const { userId: clerkId } = await auth();
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!clerkId) {
+    if (!effectiveId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
        FETCH USER + ROLE
     ===================== */
     const user = await prisma.user.findUnique({
-      where: { clerkId },
+      where: { clerkId: effectiveId },
       select: { id: true, role: true },
     });
 
@@ -56,8 +56,8 @@ export async function POST(req: Request) {
         clerkId: isAdmin
           ? item.clerkId?.length
             ? item.clerkId
-            : clerkId
-          : clerkId,
+            : effectiveId
+          : effectiveId,
 
         /* OPTIONAL */
         description: item.description ?? null,

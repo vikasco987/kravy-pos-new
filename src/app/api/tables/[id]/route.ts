@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 // PUT - Update a specific table
 export async function PUT(
@@ -8,8 +8,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId: clerkId } = await auth();
-    if (!clerkId) {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -28,7 +28,7 @@ export async function PUT(
     const existingTable = await prisma.table.findFirst({
       where: {
         id,
-        clerkUserId: clerkId,
+        clerkUserId: effectiveId,
       },
     });
 
@@ -42,7 +42,7 @@ export async function PUT(
     // Check if another table with the same name exists (excluding current table)
     const duplicateTable = await prisma.table.findFirst({
       where: {
-        clerkUserId: clerkId,
+        clerkUserId: effectiveId,
         name: name.trim(),
         id: { not: id },
       },
@@ -78,8 +78,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId: clerkId } = await auth();
-    if (!clerkId) {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -89,7 +89,7 @@ export async function DELETE(
     const existingTable = await prisma.table.findFirst({
       where: {
         id,
-        clerkUserId: clerkId,
+        clerkUserId: effectiveId,
       },
     });
 

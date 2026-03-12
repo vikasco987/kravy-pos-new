@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 // NOTE: Combo model uses `selections` (Json field) NOT a relational `items`.
 // This route works with that Json-based structure.
 
 export async function GET(req: NextRequest) {
     try {
-        const { userId: clerkId } = await auth();
-        if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const { searchParams } = new URL(req.url);
         const type = searchParams.get("type"); // 'combo' or 'offer'
 
         if (type === "combo") {
             const combos = await prisma.combo.findMany({
-                where: { clerkUserId: clerkId },
+                where: { clerkUserId: effectiveId },
                 orderBy: { createdAt: "desc" },
             });
             return NextResponse.json(combos);
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
         if (type === "offer") {
             const offers = await prisma.offer.findMany({
-                where: { clerkUserId: clerkId },
+                where: { clerkUserId: effectiveId },
                 orderBy: { createdAt: "desc" },
             });
             return NextResponse.json(offers);
@@ -37,8 +37,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const { userId: clerkId } = await auth();
-        if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const body = await req.json();
         const { type, ...data } = body;
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
                     price: parseFloat(price),
                     imageUrl: imageUrl || null,
                     isActive: isActive !== false,
-                    clerkUserId: clerkId,
+                    clerkUserId: effectiveId,
                     selections: selections ?? [],
                 },
             });
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
                     minOrderValue: minOrderValue ? parseFloat(minOrderValue) : null,
                     maxDiscount: maxDiscount ? parseFloat(maxDiscount) : null,
                     isActive: isActive !== false,
-                    clerkUserId: clerkId,
+                    clerkUserId: effectiveId,
                 },
             });
 
@@ -90,8 +90,8 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
     try {
-        const { userId: clerkId } = await auth();
-        if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const body = await req.json();
         const { type, id, ...updateData } = body;
@@ -100,7 +100,7 @@ export async function PATCH(req: NextRequest) {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { items, ...safeUpdate } = updateData; // strip any stray `items` key
             const combo = await prisma.combo.update({
-                where: { id, clerkUserId: clerkId },
+                where: { id, clerkUserId: effectiveId },
                 data: safeUpdate,
             });
             return NextResponse.json(combo);
@@ -108,7 +108,7 @@ export async function PATCH(req: NextRequest) {
 
         if (type === "offer") {
             const offer = await prisma.offer.update({
-                where: { id, clerkUserId: clerkId },
+                where: { id, clerkUserId: effectiveId },
                 data: updateData,
             });
             return NextResponse.json(offer);
@@ -122,8 +122,8 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
     try {
-        const { userId: clerkId } = await auth();
-        if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const { searchParams } = new URL(req.url);
         const type = searchParams.get("type");
@@ -134,9 +134,9 @@ export async function DELETE(req: NextRequest) {
         }
 
         if (type === "combo") {
-            await prisma.combo.delete({ where: { id, clerkUserId: clerkId } });
+            await prisma.combo.delete({ where: { id, clerkUserId: effectiveId } });
         } else if (type === "offer") {
-            await prisma.offer.delete({ where: { id, clerkUserId: clerkId } });
+            await prisma.offer.delete({ where: { id, clerkUserId: effectiveId } });
         } else {
             return NextResponse.json({ error: "Invalid type" }, { status: 400 });
         }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,9 +11,9 @@ export const dynamic = "force-dynamic";
 ============================= */
 export async function GET(request: Request) {
   try {
-    const { userId } = await auth();
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!userId) {
+    if (!effectiveId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
     }
 
     const profile = await prisma.businessProfile.findFirst({
-      where: { userId },
+      where: { userId: effectiveId },
     });
 
     return NextResponse.json(profile, { status: 200 });
@@ -38,9 +39,9 @@ export async function GET(request: Request) {
 ============================= */
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth();
+    const effectiveId = await getEffectiveClerkId();
 
-    if (!userId) {
+    if (!effectiveId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const profile = await prisma.businessProfile.upsert({
-      where: { userId },
+      where: { userId: effectiveId },
 
       update: {
         businessType: body.businessType !== undefined ? body.businessType : undefined,
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
       },
 
       create: {
-        userId,
+        userId: effectiveId,
 
         businessType: body.businessType ?? null,
         businessName: body.businessName ?? null,

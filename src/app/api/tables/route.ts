@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {
     try {
-        const { userId: clerkId } = await auth();
-        if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const tables = await prisma.table.findMany({
-            where: { clerkUserId: clerkId },
+            where: { clerkUserId: effectiveId },
             orderBy: { name: "asc" },
             // qrUrl is included automatically
         });
@@ -20,8 +21,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const { userId: clerkId } = await auth();
-        if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const { name } = await req.json();
         if (!name) return NextResponse.json({ error: "Table name is required" }, { status: 400 });
@@ -30,13 +31,13 @@ export async function POST(req: NextRequest) {
         const table = await prisma.table.create({
             data: {
                 name,
-                clerkUserId: clerkId,
+                clerkUserId: effectiveId,
             },
         });
 
-        // compute menu link and qr url using the real id
+        // compute menu link and qr url using the Seller's ID (effectiveId)
         const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "";
-        const menuUrl = `${origin}/menu/${clerkId}?tableId=${encodeURIComponent(table.id)}&tableName=${encodeURIComponent(name)}`;
+        const menuUrl = `${origin}/menu/${effectiveId}?tableId=${encodeURIComponent(table.id)}&tableName=${encodeURIComponent(name)}`;
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(menuUrl)}`;
 
         const updated = await prisma.table.update({
@@ -52,15 +53,15 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
     try {
-        const { userId: clerkId } = await auth();
-        if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const { searchParams } = new URL(req.url);
         const id = searchParams.get("id");
         if (!id) return NextResponse.json({ error: "Table ID required" }, { status: 400 });
 
         await prisma.table.delete({
-            where: { id, clerkUserId: clerkId },
+            where: { id, clerkUserId: effectiveId },
         });
 
         return NextResponse.json({ success: true });

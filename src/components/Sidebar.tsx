@@ -141,7 +141,8 @@ const navGroups = [
     group: "RESOURCES",
     items: [
       { icon: <Users size={18} />, label: "Customer Parties", href: "/dashboard/parties" },
-      { icon: <Package size={18} />, label: "Inventory Stock", href: "/dashboard/inventory" },
+      { icon: <UserPlus size={18} />, label: "Staff Management", href: "/dashboard/staff", roles: ["ADMIN", "SELLER"] },
+      { icon: <Package size={18} />, label: "Inventory Stock", href: "/dashboard/inventory", roles: ["ADMIN", "SELLER"] },
       { icon: <QrCode size={18} />, label: "QR Order Terminal", href: "/dashboard/qr-orders", badge: "Scan", badgeColor: "#8B5CF6" },
     ]
   },
@@ -164,11 +165,12 @@ const navGroups = [
 
     group: "ADMINISTRATION",
     items: [
-      { icon: <UserCircle size={18} />, label: "Business Profile", href: "/dashboard/profile" },
-      { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings" },
-      { icon: <Percent size={18} />, label: "Tax Management", href: "/dashboard/settings/tax", badge: "GST", badgeColor: "#F59E0B" },
-      { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup" },
-      { icon: <Archive size={18} />, label: "Archive & Trash", href: "/dashboard/billing/deleted" },
+      { icon: <UserCircle size={18} />, label: "Business Profile", href: "/dashboard/profile", roles: ["ADMIN"] },
+      { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings", roles: ["ADMIN", "SELLER"] },
+      { icon: <Percent size={18} />, label: "Tax Management", href: "/dashboard/settings/tax", badge: "GST", badgeColor: "#F59E0B", roles: ["ADMIN"] },
+      { icon: <Lock size={18} />, label: "Access Control", href: "/admin/users", badge: "Roles", badgeColor: "#EF4444", roles: ["ADMIN"] },
+      { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup", roles: ["ADMIN"] },
+      { icon: <Archive size={18} />, label: "Archive & Trash", href: "/dashboard/billing/deleted", roles: ["ADMIN", "SELLER"] },
       { icon: <HelpCircle size={18} />, label: "Help & Support", href: "/dashboard/help" },
     ]
   }
@@ -181,9 +183,26 @@ export default function Sidebar() {
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
   const [mounted, setMounted] = useState(false);
+  const [userRole, setUserRole] = useState<string>("USER");
+  const [allowedPaths, setAllowedPaths] = useState<string[]>([]);
+  const [loadingRole, setLoadingRole] = useState(true);
 
   useEffect(() => {
     setMounted(true);
+    // Fetch exact database role and allowed paths
+    fetch("/api/user/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          if (data.role) setUserRole(data.role);
+          if (data.allowedPaths) setAllowedPaths(data.allowedPaths);
+        }
+        setLoadingRole(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoadingRole(false);
+      });
   }, []);
 
   if (!mounted) return null;
@@ -439,19 +458,32 @@ export default function Sidebar() {
 
       {/* NAV ITEMS */}
       <nav style={{ flex: 1, overflowY: "auto", padding: "8px 10px", scrollbarWidth: "none" }}>
-        {navGroups.map((group) => (
-          <div key={group.group} style={{ marginBottom: "12px" }}>
-            {!collapsed && (
-              <div style={{
-                fontSize: "0.58rem", fontWeight: 800,
-                color: isDark ? "rgba(255,255,255,0.25)" : "var(--kravy-text-muted)",
-                letterSpacing: "2px", padding: "12px 10px 6px",
-                textTransform: "uppercase",
-                opacity: isDark ? 1 : 0.7,
-              }}>{group.group}</div>
-            )}
-            {group.items.map((item: any, index) => {
-              const isActive = pathname === item.href;
+        {navGroups.map((group) => {
+          // 1. Filter items based on access
+          const visibleItems = group.items.filter((item: any) => {
+            if (userRole === "ADMIN" || allowedPaths.includes("*")) return true;
+            if (!loadingRole) {
+              return allowedPaths.includes(item.href) || !!(item.roles && item.roles.includes(userRole));
+            }
+            return !item.roles || item.roles.includes(userRole);
+          });
+
+          // 2. If no items are allowed in this group, don't show the group at all
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={group.group} style={{ marginBottom: "12px" }}>
+              {!collapsed && (
+                <div style={{
+                  fontSize: "0.58rem", fontWeight: 800,
+                  color: isDark ? "rgba(255,255,255,0.25)" : "var(--kravy-text-muted)",
+                  letterSpacing: "2px", padding: "12px 10px 6px",
+                  textTransform: "uppercase",
+                  opacity: isDark ? 1 : 0.7,
+                }}>{group.group}</div>
+              )}
+              {visibleItems.map((item: any, index) => {
+                const isActive = pathname === item.href;
               return (
                 <motion.div
                   key={item.label}
@@ -593,8 +625,9 @@ export default function Sidebar() {
               );
             })}
           </div>
-        ))}
-      </nav>
+        );
+      })}
+    </nav>
 
       {/* USER SECTION AT BOTTOM */}
       <motion.div

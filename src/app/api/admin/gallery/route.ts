@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 // GET — fetch all gallery images for the authenticated owner
 export async function GET(req: NextRequest) {
     try {
-        const { userId } = await auth();
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const images = await prisma.galleryImage.findMany({
-            where: { clerkUserId: userId },
+            where: { clerkUserId: effectiveId },
             orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
         });
 
@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
 // POST — add a new image to gallery
 export async function POST(req: NextRequest) {
     try {
-        const { userId } = await auth();
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const body = await req.json();
         const { imageUrl, category, caption } = body;
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
         const image = await prisma.galleryImage.create({
             data: {
-                clerkUserId: userId,
+                clerkUserId: effectiveId,
                 imageUrl,
                 category: category || "food",
                 caption: caption || null,
@@ -51,15 +51,15 @@ export async function POST(req: NextRequest) {
 // PATCH — update caption or category or toggle isActive
 export async function PATCH(req: NextRequest) {
     try {
-        const { userId } = await auth();
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const body = await req.json();
         const { id, caption, category, isActive } = body;
         if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
         const updated = await prisma.galleryImage.update({
-            where: { id },
+            where: { id, clerkUserId: effectiveId },
             data: {
                 ...(caption !== undefined && { caption }),
                 ...(category !== undefined && { category }),
@@ -77,14 +77,16 @@ export async function PATCH(req: NextRequest) {
 // DELETE — remove an image
 export async function DELETE(req: NextRequest) {
     try {
-        const { userId } = await auth();
-        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const { searchParams } = new URL(req.url);
         const id = searchParams.get("id");
         if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-        await prisma.galleryImage.delete({ where: { id } });
+        await prisma.galleryImage.delete({ 
+            where: { id, clerkUserId: effectiveId } 
+        });
 
         return NextResponse.json({ success: true });
     } catch (error) {

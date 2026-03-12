@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {
     try {
-        const { userId: clerkId } = await auth();
-        if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const orders = await prisma.order.findMany({
-            where: { clerkUserId: clerkId },
+            where: { clerkUserId: effectiveId },
             orderBy: { createdAt: "desc" },
             include: { table: true },
         });
@@ -21,13 +22,13 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
     try {
-        const { userId: clerkId } = await auth();
-        if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const { orderId, status } = await req.json();
 
         const order = await prisma.order.update({
-            where: { id: orderId, clerkUserId: clerkId },
+            where: { id: orderId, clerkUserId: effectiveId },
             data: { status },
         });
 

@@ -1,8 +1,24 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify admin role
+    const me = await prisma.user.findUnique({
+      where: { clerkId: effectiveId },
+      select: { role: true },
+    });
+
+    if (!me || me.role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const users = await prisma.user.findMany({
       // 🔴 IMPORTANT: NO take, NO skip
       select: {
