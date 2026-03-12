@@ -21,7 +21,7 @@ export default function Page() {
   return (
     <BusinessProfileForm
       mode="create"
-      onSuccess={() => router.push("/profile")}
+      onSuccess={() => router.push("/dashboard/profile")}
     />
   );
 }

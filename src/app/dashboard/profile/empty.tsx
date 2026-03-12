@@ -20,7 +20,7 @@ export default function ProfileEmpty() {
             Add your business details to start billing.
           </p>
 
-          <Link href="/profile/create" className="w-full">
+          <Link href="/dashboard/profile/create" className="w-full">
             <Button className="w-full gap-2">
               <PlusCircle size={18} />
               Create Business Profile
