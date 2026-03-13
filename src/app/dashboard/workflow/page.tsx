@@ -67,6 +67,9 @@ export default function KravyPOS() {
     const [dateStr, setDateStr] = useState("");
     const [business, setBusiness] = useState<any>(null);
     const [printMode, setPrintMode] = useState<"KOT" | "BILL" | null>(null);
+    const [showPreview, setShowPreview] = useState(false);
+    const [previewMode, setPreviewMode] = useState<"KOT" | "BILL">("BILL");
+    const [previewZoom, setPreviewZoom] = useState(1);
 
     const handlePrint = (mode: "KOT" | "BILL") => {
         setPrintMode(mode);
@@ -474,6 +477,13 @@ export default function KravyPOS() {
                                             </div>
                                             <div className="flex gap-3">
                                                 <button
+                                                    onClick={() => { setPreviewMode("KOT"); setShowPreview(true); }}
+                                                    className="kravy-secondary-btn px-4"
+                                                    title="Preview KOT"
+                                                >
+                                                    <Eye size={15} />
+                                                </button>
+                                                <button
                                                     onClick={() => handlePrint("KOT")}
                                                     className="kravy-secondary-btn flex-1"
                                                 >
@@ -716,6 +726,13 @@ export default function KravyPOS() {
 
                                         <div className="flex gap-3 mt-6">
                                             <button
+                                                onClick={() => { setPreviewMode("BILL"); setShowPreview(true); }}
+                                                className="kravy-secondary-btn px-4"
+                                                title="Preview Bill"
+                                            >
+                                                <Eye size={15} />
+                                            </button>
+                                            <button
                                                 onClick={() => handlePrint("BILL")}
                                                 className="kravy-secondary-btn flex-1"
                                             >
@@ -827,8 +844,8 @@ export default function KravyPOS() {
             {/* ═══ HIDDEN KOT Area for Printing ═══ */}
             <div id="kot-print-area" className={printMode === "KOT" ? "print-visible" : "print-hidden"}>
                  {selectedTable && activeOrderForSelected && (
-                    <div className="kravy-kot-print">
-                        <div className="kravy-kot-header text-center pb-2 mb-2 border-b border-dashed border-black">
+                    <div className="kravy-kot-print thermal-receipt">
+                        <div className="kravy-kot-header text-center pb-2 mb-4 border-b border-dashed border-black">
                             <h2 className="text-lg font-bold">KITCHEN TOKEN (KOT)</h2>
                             <p className="text-base font-bold">TABLE: {selectedTable.name}</p>
                             <p className="text-xs">#{activeOrderForSelected.id.slice(-6).toUpperCase()}</p>
@@ -853,6 +870,151 @@ export default function KravyPOS() {
                  )}
             </div>
 
+            {/* ═══ PREVIEW MODAL ═══ */}
+            <AnimatePresence>
+                {showPreview && selectedTable && activeOrderForSelected && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+                            onClick={() => setShowPreview(false)} 
+                        />
+                        
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative bg-[var(--surface)] w-full max-w-[500px] h-[90vh] flex flex-col rounded-3xl shadow-2xl border border-[var(--border)] overflow-hidden"
+                        >
+                            {/* Header */}
+                            <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--surface)] flex items-center justify-between shrink-0">
+                                <div>
+                                    <h3 className="text-sm font-black text-[var(--text-primary)]">{previewMode === "BILL" ? "Bill Preview" : "KOT Preview"}</h3>
+                                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mt-0.5">Check before printing</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => setPreviewZoom(z => Math.max(0.5, z - 0.1))} className="w-8 h-8 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)]"><Search size={14} /></button>
+                                    <span className="text-xs font-bold text-[var(--text-sec)] w-9 text-center">{(previewZoom * 100).toFixed(0)}%</span>
+                                    <button onClick={() => setPreviewZoom(z => Math.min(2, z + 0.1))} className="w-8 h-8 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)]"><Plus size={14} /></button>
+                                    <div className="w-px h-5 bg-[var(--border)] mx-1" />
+                                    <button onClick={() => setShowPreview(false)} className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all">
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Preview Area */}
+                            <div className="flex-1 overflow-auto bg-gray-100 dark:bg-zinc-900 p-6 flex flex-col items-center">
+                                <div 
+                                    className="bg-white text-black p-6 shadow-xl origin-top transition-transform"
+                                    style={{ 
+                                        width: '58mm', 
+                                        minHeight: '100mm',
+                                        transform: `scale(${previewZoom * 1.6})`,
+                                        marginBottom: `${previewZoom * 120}px`
+                                    }}
+                                >
+                                    {previewMode === "BILL" ? (
+                                        <div className="kravy-kot-print text-black">
+                                             <div className="text-center pb-2 mb-4 border-b border-dashed border-gray-300">
+                                                {business?.logoUrl && <img src={business.logoUrl} alt="Logo" className="w-10 h-10 object-contain mx-auto mb-2" />}
+                                                <h3 className="font-bold text-[14px] uppercase">{business?.businessName || "Kravy Restaurant"}</h3>
+                                                <p className="text-[9px]">Table {selectedTable.name} · #{activeOrderForSelected.id.slice(-6).toUpperCase()}</p>
+                                                {business?.businessAddress && <p className="text-[8px] opacity-70">{business.businessAddress}</p>}
+                                            </div>
+
+                                            <div className="space-y-1 py-1">
+                                                <div className="flex justify-between font-bold text-[10px] border-b border-gray-200 pb-1 mb-1">
+                                                    <span>Item</span>
+                                                    <span>Total</span>
+                                                </div>
+                                                {activeOrderForSelected.items.map((it, idx) => (
+                                                    <div key={idx} className="flex justify-between text-[10px]">
+                                                        <div className="flex-1">
+                                                            <p className="font-bold">{it.name}</p>
+                                                            <p className="text-[9px] opacity-70">{it.quantity} × ₹{it.price}</p>
+                                                        </div>
+                                                        <span className="font-bold">₹{it.price * it.quantity}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            <div className="mt-4 pt-2 border-t border-dashed border-gray-300">
+                                                <div className="flex justify-between text-[9px]">
+                                                    <span>Subtotal</span>
+                                                    <span>₹{(activeOrderForSelected.total / 1.05).toFixed(0)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-[9px]">
+                                                    <span>GST 5%</span>
+                                                    <span>₹{(activeOrderForSelected.total - activeOrderForSelected.total / 1.05).toFixed(0)}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-300">
+                                                    <span className="text-[10px] font-bold text-black uppercase">Total Amount</span>
+                                                    <span className="text-[18px] font-bold">₹{activeOrderForSelected.total}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-6 text-center">
+                                                {business?.businessTagLine && <p className="text-[8px] italic">{business.businessTagLine}</p>}
+                                                <p className="text-[10px] font-bold mt-2 font-mono">
+                                                    {business?.greetingMessage || "THANK YOU! VISIT AGAIN"}
+                                                </p>
+                                                <div className="text-[10px] border border-black p-2 mt-4 inline-block font-bold">
+                                                    PAYMENT: {payMethod.toUpperCase()}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="kravy-kot-print text-black">
+                                             <div className="text-center pb-2 mb-4 border-b border-dashed border-gray-300">
+                                                <h2 className="text-[14px] font-bold uppercase">KITCHEN TOKEN</h2>
+                                                <p className="text-[12px] font-bold">TABLE: {selectedTable.name}</p>
+                                                <p className="text-[9px]">ID: #{activeOrderForSelected.id.slice(-6).toUpperCase()}</p>
+                                            </div>
+                                            <div className="space-y-4">
+                                                {activeOrderForSelected.items.map((it, i) => (
+                                                    <div key={i} className="flex justify-between items-start border-b border-dotted border-gray-300 pb-1">
+                                                        <div className="flex-1 pr-2">
+                                                            <p className="text-[11px] font-bold leading-tight uppercase">{it.name}</p>
+                                                            {it.instruction && <p className="text-[9px] italic mt-1 font-bold">*** {it.instruction} ***</p>}
+                                                        </div>
+                                                        <div className="text-[14px] font-black">×{it.quantity}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="text-center mt-6 pt-2 border-t border-dashed border-gray-300">
+                                                <p className="text-[9px] font-bold opacity-70">Prepared with ❤️ by KRAVY</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="px-5 py-4 border-t border-[var(--border)] bg-[var(--surface)] flex gap-3 shrink-0">
+                                <button
+                                    onClick={() => setShowPreview(false)}
+                                    className="flex-1 py-3.5 rounded-2xl border border-[var(--border)] font-bold text-sm text-[var(--text-sec)] hover:bg-[var(--surface-2)] transition-all"
+                                >
+                                    Close
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowPreview(false);
+                                        handlePrint(previewMode);
+                                    }}
+                                    className="flex-[2] py-3.5 rounded-2xl bg-[var(--accent)] text-white font-black text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Printer size={16} /> Print Direct
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             {/* ═══ STYLES ═══ */}
             <style jsx global>{`
                 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,600&family=DM+Mono:wght@400;500&display=swap');
@@ -863,73 +1025,50 @@ export default function KravyPOS() {
                         size: 58mm auto;
                         margin: 0;
                     }
-                    body {
+                    
+                    /* Reset everything for print */
+                    * {
+                        visibility: hidden;
                         margin: 0;
                         padding: 0;
-                        width: 58mm;
+                        box-sizing: border-box;
+                    }
+
+                    body {
                         background: white !important;
                     }
-                    
-                    /* Hide everything by default in print */
-                    body > *:not(.kravy-root),
-                    .kravy-root > *:not(#kot-print-area):not(main),
-                    main > *:not(.kravy-billing-grid),
-                    header, nav, .kravy-page-title, .kravy-page-sub, .kravy-payment-panel, .kravy-panel, .kravy-order-header, .kravy-order-footer, .kravy-page-fade {
-                        display: none !important;
-                    }
 
-                    /* Specific Visibility for Print Modes */
-                    .print-mode-KOT #kot-print-area { 
-                        display: block !important; 
+                    /* Specific Visibility for Print Areas */
+                    .print-mode-KOT #kot-print-area,
+                    .print-mode-KOT #kot-print-area *,
+                    .print-mode-BILL #bill-print-area,
+                    .print-mode-BILL #bill-print-area * {
                         visibility: visible !important;
                     }
-                    .print-mode-KOT #bill-print-area, .print-mode-KOT main { 
-                        display: none !important; 
-                    }
 
-                    .print-mode-BILL #bill-print-area { 
-                        display: block !important; 
-                        visibility: visible !important;
-                        position: absolute !important;
-                        left: 0; top: 0;
-                    }
-                    .print-mode-BILL #kot-print-area { 
-                        display: none !important; 
-                    }
-                    .print-mode-BILL .kravy-billing-grid {
-                         display: block !important;
-                         padding: 0 !important;
-                         margin: 0 !important;
-                    }
-
-                    /* Receipt & KOT Common Styling */
-                    .kravy-receipt, .kravy-kot-print {
+                    #kot-print-area, #bill-print-area {
                         display: block !important;
-                        width: 48mm !important; /* Adjusted for better 58mm fit */
-                        padding: 2mm 0 !important;
-                        margin: 0 auto !important;
-                        border: none !important;
-                        box-shadow: none !important;
+                        position: absolute !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 58mm !important;
+                        padding: 2mm !important;
                         background: white !important;
                         color: black !important;
                     }
-                    
-                    .kravy-receipt *, .kravy-kot-print * {
+
+                    .thermal-receipt {
+                        width: 54mm !important; /* Safety margin for 58mm paper */
+                        margin: 0 auto !important;
+                        font-family: 'DM Mono', monospace !important;
+                    }
+
+                    .thermal-receipt * {
                         color: black !important;
                         border-color: black !important;
-                        background: transparent !important;
                     }
 
-                    .kravy-receipt-header, .kravy-kot-header { 
-                        border-bottom: 1px dashed black !important; 
-                        padding-bottom: 2mm !important; 
-                        margin-bottom: 4mm !important;
-                    }
-                    .kravy-receipt-totals { 
-                        border-top: 1px dashed black !important; 
-                        margin-top: 4mm !important;
-                        padding-top: 2mm !important;
-                    }
+                    .print:hidden { display: none !important; }
                 }
 
                 .print-hidden { display: none; }
