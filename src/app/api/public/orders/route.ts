@@ -60,7 +60,10 @@ export async function POST(req: NextRequest) {
         if (tableId) {
             const tableRecord = await prisma.table.findFirst({
                 where: {
-                    name: tableId,
+                    OR: [
+                        { id: tableId },
+                        { name: tableId }
+                    ],
                     clerkUserId: clerkUserId
                 }
             });

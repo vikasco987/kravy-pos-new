@@ -12,7 +12,8 @@ import {
   FileText, 
   ChevronRight, 
   Send,
-  Lock
+  Lock,
+  Zap
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
@@ -34,17 +35,28 @@ export default function HelpPage() {
 
   const helpCategories = [
     { id: 1, name: "Getting Started", icon: <Book size={24} />, description: "Learn the basics of Kravy POS", articles: 12 },
-    { id: 2, name: "Billing & Payments", icon: <FileText size={24} />, description: "Master billing operations", articles: 8 },
-    { id: 3, name: "Menu Management", icon: <MessageSquare size={24} />, description: "Manage your menu items", articles: 15 },
+    { id: 2, name: "Billing & Workflow", icon: <FileText size={24} />, description: "Master billing operations", articles: 8, href: "/dashboard/docs/workflow" },
+    { id: 3, name: "Menu Management", icon: <MessageSquare size={24} />, description: "Manage your menu items", articles: 15, href: "/dashboard/docs/menu-management" },
     { id: 4, name: "Video Tutorials", icon: <Video size={24} />, description: "Watch step-by-step guides", articles: 6 },
-    ...(isAdmin ? [{ 
-      id: 5, 
-      name: "Staff Access Docs", 
-      icon: <Lock size={24} />, 
-      description: "Deep technical guide for access control", 
-      articles: 1,
-      href: "/dashboard/docs/staff-access" 
-    }] : []),
+    ...(isAdmin ? [
+      { 
+        id: 5, 
+        name: "Staff Access Docs", 
+        icon: <Lock size={24} />, 
+        description: "Deep technical guide for access control", 
+        articles: 1,
+        href: "/dashboard/docs/staff-access" 
+      },
+      { 
+        id: 6, 
+        name: "Premium Visual Guide", 
+        icon: <Zap size={24} />, 
+        description: "Interactive animated guide for staff setup", 
+        articles: 1,
+        href: "/dashboard/docs/staff-access/interactive",
+        isPremium: true
+      }
+    ] : []),
   ];
 
   const faqItems = [
@@ -154,20 +166,39 @@ export default function HelpPage() {
               <div
                 key={category.id}
                 style={{
-                  background: "var(--kravy-surface)",
-                  border: "1px solid var(--kravy-border)",
+                  background: (category as any).isPremium ? "linear-gradient(135deg, white 0%, #FFF8F0 100%)" : "var(--kravy-surface)",
+                  border: (category as any).isPremium ? "2px solid #FF6B00" : "1px solid var(--kravy-border)",
                   borderRadius: "24px",
                   padding: "24px",
                   cursor: "pointer",
                   transition: "all 0.3s",
-                  boxShadow: "var(--kravy-card-shadow)",
-                  height: "100%"
+                  boxShadow: (category as any).isPremium ? "0 10px 30px rgba(255,107,0,0.1)" : "var(--kravy-card-shadow)",
+                  height: "100%",
+                  position: "relative",
+                  overflow: "hidden"
                 }}
               >
+                {(category as any).isPremium && (
+                  <div style={{
+                    position: "absolute",
+                    top: "12px",
+                    right: "-30px",
+                    background: "#FF6B00",
+                    color: "white",
+                    fontSize: "0.6rem",
+                    fontWeight: 900,
+                    padding: "4px 35px",
+                    transform: "rotate(45deg)",
+                    textTransform: "uppercase"
+                  }}>
+                    Premium
+                  </div>
+                )}
                 <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
                   <div style={{
                     width: "48px", height: "48px", borderRadius: "14px",
-                    background: "var(--kravy-brand)", color: "white",
+                    background: (category as any).isPremium ? "linear-gradient(135deg, #FF6B00, #FFB830)" : "var(--kravy-brand)", 
+                    color: "white",
                     display: "flex", alignItems: "center", justifyContent: "center"
                   }}>
                     {category.icon}
