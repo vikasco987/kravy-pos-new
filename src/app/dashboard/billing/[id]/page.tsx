@@ -447,11 +447,9 @@ export default function ViewBillPage() {
 
 
   function printReceipt() {
-    if (!receiptRef.current) return;
-    const html = document.body.innerHTML;
-    document.body.innerHTML = receiptRef.current.outerHTML;
+    // We already have @media print styles that handle visibility
+    // No need to swap body.innerHTML, which breaks React state.
     window.print();
-    document.body.innerHTML = html;
   }
 
   const handleWhatsApp = async () => {
@@ -657,10 +655,42 @@ export default function ViewBillPage() {
         </div>
       </div>
 
-      {/* PRINT RECEIPT */}
+      {/* PRINT RECEIPT (Optimized for 2-inch / 58mm Thermal Printers) */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: 58mm auto;
+            margin: 0;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            width: 58mm;
+            background: white;
+          }
+          /* Hide everything except the receipt */
+          body * {
+            visibility: hidden;
+          }
+          .thermal-receipt, .thermal-receipt * {
+            visibility: visible;
+          }
+          .thermal-receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 58mm;
+            padding: 2mm;
+            box-sizing: border-box;
+          }
+          /* Remove browser headers/footers */
+          header, footer { display: none !important; }
+        }
+      `}</style>
+
       <div
         ref={receiptRef}
-        className="hidden print:block w-[80mm] text-[12px]"
+        className="hidden print:block thermal-receipt w-[58mm] text-[10px] leading-tight font-sans text-black"
       >
         {/* LOGO */}
         {business?.logoUrl && (
@@ -714,43 +744,43 @@ export default function ViewBillPage() {
           </>
         )}
         {/* ITEM HEADER */}
-        <div className="flex justify-between font-semibold text-[9px] border-b border-dashed pb-1">
-          <span className="w-[28mm]">Item</span>
-          <span className="w-[8mm] text-right">Qty</span>
-          <span className="w-[10mm] text-right">Rate</span>
-          <span className="w-[12mm] text-right">Amt</span>
+        <div className="flex justify-between font-bold text-[11px] border-b border-dashed pb-1 mb-1">
+          <span className="w-[24mm]">Item</span>
+          <span className="w-[6mm] text-right">Qty</span>
+          <span className="w-[9mm] text-right">Rate</span>
+          <span className="w-[11mm] text-right">Amt</span>
         </div>
 
         {/* ITEMS */}
         {billItems.map((i, idx) => (
           <div
             key={idx}
-            className="flex justify-between text-[9px] mt-1"
+            className="flex justify-between text-[11px] mt-1 leading-tight font-medium"
           >
-            <span className="w-[28mm] truncate">
+            <span className="w-[24mm] break-words">
               {i.name}
             </span>
-            <span className="w-[8mm] text-right">
+            <span className="w-[6mm] text-right">
               {i.qty}
             </span>
-            <span className="w-[10mm] text-right">
-              {i.rate.toFixed(2)}
+            <span className="w-[9mm] text-right">
+              {i.rate.toFixed(0)}
             </span>
-            <span className="w-[12mm] text-right">
-              {(i.qty * i.rate).toFixed(2)}
+            <span className="w-[11mm] text-right">
+              {(i.qty * i.rate).toFixed(0)}
             </span>
           </div>
         ))}
         <div className="border-t border-dashed my-1" />
 
         {/* SUBTOTAL */}
-        <div className="flex justify-between text-[9px]">
+        <div className="flex justify-between text-[10px] font-medium">
           <span>Subtotal</span>
           <span>₹{Number(bill.subtotal ?? 0).toFixed(2)}</span>
         </div>
 
         {/* GST */}
-        <div className="flex justify-between text-[9px]">
+        <div className="flex justify-between text-[10px] font-medium">
           <span>GST</span>
           <span>₹{(bill.tax ?? 0).toFixed(2)}</span>
         </div>
@@ -758,16 +788,16 @@ export default function ViewBillPage() {
         <div className="border-t border-dashed my-1" />
 
         {/* GRAND TOTAL */}
-        <div className="flex justify-between font-bold text-[11px]">
-          <span>GRAND TOTAL</span>
+        <div className="flex justify-between font-bold text-[13px]">
+          <span>TOTAL</span>
           <span>₹{Number(bill.total ?? 0).toFixed(2)}</span>
         </div>
 
         <div className="border-t border-dashed my-1" />
 
         {/* PAYMENT MODE */}
-        <div className="text-center text-[9px]">
-          Payment: {bill.paymentMode}
+        <div className="text-center text-[10px] font-bold">
+          Payment Method: {bill.paymentMode}
         </div>
 
         {/* UPI QR INSIDE RECEIPT */}
@@ -775,18 +805,17 @@ export default function ViewBillPage() {
           <>
             <div className="flex justify-center my-2">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
                   `upi://pay?pa=${business.upi}&pn=${encodeURIComponent(
                     business.businessName ?? ""
                   )}&am=${bill.total}&cu=INR`
                 )}`}
                 alt="UPI QR"
-                className="w-[28mm]"
+                className="w-[24mm] h-[24mm]"
               />
-
             </div>
 
-            <div className="text-center text-[9px]">
+            <div className="text-center text-[10px] font-bold">
               Scan & Pay via UPI
             </div>
 
