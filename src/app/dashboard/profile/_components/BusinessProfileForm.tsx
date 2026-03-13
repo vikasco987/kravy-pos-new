@@ -34,6 +34,8 @@ const schema = z.object({
   
   upiQrEnabled: z.boolean().optional(),
   menuLinkEnabled: z.boolean().optional(),
+  greetingMessage: z.string().optional(),
+  businessNameSize: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -120,6 +122,8 @@ export default function BusinessProfileForm({
         
         upiQrEnabled: values.upiQrEnabled,
         menuLinkEnabled: values.menuLinkEnabled,
+        greetingMessage: values.greetingMessage,
+        businessNameSize: values.businessNameSize,
       };
 
       const res = await fetch("/api/profile", {
@@ -180,6 +184,21 @@ export default function BusinessProfileForm({
 
         <Field label="Tagline">
           <Input {...register("businessTagline")} />
+        </Field>
+
+        <Field label="Store Name Size">
+          <select {...register("businessNameSize")} className="w-full bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl h-11 px-4 outline-none font-bold">
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+            <option value="xlarge">Extra Large</option>
+          </select>
+        </Field>
+      </Section>
+
+      {/* FOOTER */}
+      <Section title="Receipt Customization">
+        <Field label="Greeting Message">
+          <Input {...register("greetingMessage")} placeholder="Thank You 🙏 Visit Again!" />
         </Field>
       </Section>
 
@@ -286,7 +305,15 @@ export default function BusinessProfileForm({
                 <img src={logoPreview} alt="Logo" className="max-h-[28mm] object-contain" />
               </div>
             )}
-            <div className="text-center font-bold text-[12px]">{watchedValues.businessName || "Your Business"}</div>
+            <div 
+              className="text-center font-bold"
+              style={{ 
+                fontSize: watchedValues.businessNameSize === 'medium' ? '12px' : 
+                          watchedValues.businessNameSize === 'xlarge' ? '18px' : '15px' 
+              }}
+            >
+              {watchedValues.businessName || "Your Business"}
+            </div>
             {(watchedValues.businessAddress || watchedValues.district || selectedState || watchedValues.pinCode) && (
               <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">
                 {watchedValues.businessAddress}
@@ -347,7 +374,10 @@ export default function BusinessProfileForm({
             )}
             
             {watchedValues.businessTagline && <div className="text-center text-[9px] mt-1.5 opacity-90 text-[10px] italic">{watchedValues.businessTagline}</div>}
-            <div className="text-center font-semibold mt-1 opacity-90 text-[10px]">Thank you 🙏</div>
+            <div className="text-center font-semibold mt-1 opacity-90 text-[10px] whitespace-pre-wrap">{watchedValues.greetingMessage || "Thank you 🙏"}</div>
+            
+            {/* Added simulated paper cut space */}
+            <div className="h-[10mm] border-t border-dashed border-gray-200 mt-2" />
           </div>
         </div>
       </div>

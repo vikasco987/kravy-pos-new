@@ -595,7 +595,15 @@ export default function KravyPOS() {
                                         <div className="kravy-receipt-header">
                                             {business?.logoUrl && <img src={business.logoUrl} alt="Logo" className="w-10 h-10 object-contain mx-auto mb-2 hidden print:block" />}
                                             <div className="kravy-receipt-logo print:hidden"><Printer size={22} /></div>
-                                            <h3 className="print:text-sm print:font-bold">{business?.businessName || "Kravy Receipt"}</h3>
+                                            <h3 
+                                                className="print:font-bold"
+                                                style={{ 
+                                                    fontSize: business?.businessNameSize === 'medium' ? '12px' : 
+                                                              business?.businessNameSize === 'xlarge' ? '20px' : '16px' 
+                                                }}
+                                            >
+                                                {business?.businessName || "Kravy Receipt"}
+                                            </h3>
                                             <p className="print:text-[9px]">Table {selectedTable.name} · #{activeOrderForSelected.id.slice(-6).toUpperCase()}</p>
                                             {business?.businessAddress && <p className="hidden print:block text-[8px] opacity-70">{business.businessAddress}</p>}
                                         </div>
@@ -631,7 +639,9 @@ export default function KravyPOS() {
                                         <div className="hidden print:block mt-2 text-center">
                                             <p className="text-[10px] font-bold">Payment: {payMethod.toUpperCase()}</p>
                                             {business?.businessTagLine && <p className="text-[9px] mt-1 italic">{business.businessTagLine}</p>}
-                                            <p className="text-[10px] font-bold mt-2">Thank You 🙏 Visit Again!</p>
+                                            <p className="text-[10px] font-bold mt-2 whitespace-pre-wrap">
+                                                {business?.greetingMessage || "Thank You 🙏 Visit Again!"}
+                                            </p>
                                             
                                             {/* Extra space for physical cutter */}
                                             <div className="h-[20mm]" />

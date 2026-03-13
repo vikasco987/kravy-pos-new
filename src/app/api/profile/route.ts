@@ -78,6 +78,8 @@ export async function POST(request: Request) {
         taxRate: body.taxRate !== undefined ? body.taxRate : undefined,
         upiQrEnabled: body.upiQrEnabled !== undefined ? body.upiQrEnabled : undefined,
         menuLinkEnabled: body.menuLinkEnabled !== undefined ? body.menuLinkEnabled : undefined,
+        greetingMessage: body.greetingMessage !== undefined ? body.greetingMessage : undefined,
+        businessNameSize: body.businessNameSize !== undefined ? body.businessNameSize : undefined,
       },
 
       create: {
@@ -106,6 +108,8 @@ export async function POST(request: Request) {
         taxRate: body.taxRate ?? 5.0,
         upiQrEnabled: body.upiQrEnabled ?? true,
         menuLinkEnabled: body.menuLinkEnabled ?? true,
+        greetingMessage: body.greetingMessage ?? "Thank You 🙏 Visit Again!",
+        businessNameSize: body.businessNameSize ?? "large",
       },
     });
 

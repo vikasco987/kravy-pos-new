@@ -175,6 +175,8 @@ export default function BusinessProfile({
           logoUrl: data.logoUrl,
           signatureUrl: data.signatureUrl,
           upiQrEnabled: data.upiQrEnabled,
+          greetingMessage: data.greetingMessage,
+          businessNameSize: data.businessNameSize,
         }}
         onCancel={() => setEditMode(false)}
         onSuccess={() => {

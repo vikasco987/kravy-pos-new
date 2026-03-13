@@ -704,7 +704,14 @@ export default function ViewBillPage() {
           </div>
         )}
 
-        <div className="text-center font-bold text-[13px]">
+        <div 
+          className="text-center font-bold"
+          style={{ 
+            fontSize: business?.businessNameSize === 'medium' ? '12px' : 
+                      business?.businessNameSize === 'xlarge' ? '22px' : '17px',
+            lineHeight: '1.2'
+          }}
+        >
           {business?.businessName}
         </div>
 
@@ -833,8 +840,8 @@ export default function ViewBillPage() {
           </div>
         )}
 
-        <div className="text-center font-semibold text-[10px] mt-1 mb-8">
-          Thank you 🙏
+        <div className="text-center font-semibold text-[10px] mt-1 mb-8 whitespace-pre-wrap">
+          {business?.greetingMessage || "Thank you 🙏"}
         </div>
         
         {/* Extra space for physical cutter */}
