@@ -73,7 +73,7 @@ export default function KravyPOS() {
         setTimeout(() => {
             window.print();
             setPrintMode(null);
-        }, 100);
+        }, 200);
     };
 
     const fetchData = async () => {
@@ -825,7 +825,7 @@ export default function KravyPOS() {
             </main>
 
             {/* ═══ HIDDEN KOT Area for Printing ═══ */}
-            <div id="kot-print-area" className="hidden">
+            <div id="kot-print-area" className={printMode === "KOT" ? "print-visible" : "print-hidden"}>
                  {selectedTable && activeOrderForSelected && (
                     <div className="kravy-kot-print">
                         <div className="kravy-kot-header text-center pb-2 mb-2 border-b border-dashed border-black">
@@ -869,49 +869,71 @@ export default function KravyPOS() {
                         width: 58mm;
                         background: white !important;
                     }
-                    /* Hide everything except the printable components */
-                    body > *:not(#kot-print-area):not(#bill-print-area),
-                    .kravy-root > *:not(main),
-                    main > *:not(.kravy-billing-grid):not(#kot-print-area),
-                    .kravy-billing-grid > *:not(.kravy-receipt),
-                    header, nav, .kravy-panel, .kravy-page-title, .kravy-page-sub, .kravy-payment-panel {
+                    
+                    /* Hide everything by default in print */
+                    body > *:not(.kravy-root),
+                    .kravy-root > *:not(#kot-print-area):not(main),
+                    main > *:not(.kravy-billing-grid),
+                    header, nav, .kravy-page-title, .kravy-page-sub, .kravy-payment-panel, .kravy-panel, .kravy-order-header, .kravy-order-footer, .kravy-page-fade {
                         display: none !important;
                     }
 
-                    /* Manual Overrides for Print Mode */
-                    .print-mode-KOT #bill-print-area { display: none !important; }
-                    .print-mode-BILL #kot-print-area { display: none !important; }
+                    /* Specific Visibility for Print Modes */
+                    .print-mode-KOT #kot-print-area { 
+                        display: block !important; 
+                        visibility: visible !important;
+                    }
+                    .print-mode-KOT #bill-print-area, .print-mode-KOT main { 
+                        display: none !important; 
+                    }
 
-                    /* Receipt (Bill) Styling */
+                    .print-mode-BILL #bill-print-area { 
+                        display: block !important; 
+                        visibility: visible !important;
+                        position: absolute !important;
+                        left: 0; top: 0;
+                    }
+                    .print-mode-BILL #kot-print-area { 
+                        display: none !important; 
+                    }
+                    .print-mode-BILL .kravy-billing-grid {
+                         display: block !important;
+                         padding: 0 !important;
+                         margin: 0 !important;
+                    }
+
+                    /* Receipt & KOT Common Styling */
                     .kravy-receipt, .kravy-kot-print {
                         display: block !important;
-                        position: relative !important;
-                        width: 58mm !important;
-                        height: auto !important;
-                        max-height: none !important;
-                        padding: 4mm 2mm !important;
-                        margin: 0 !important;
+                        width: 48mm !important; /* Adjusted for better 58mm fit */
+                        padding: 2mm 0 !important;
+                        margin: 0 auto !important;
                         border: none !important;
                         box-shadow: none !important;
-                        visibility: visible !important;
                         background: white !important;
-                        font-family: 'DM Mono', monospace !important;
                         color: black !important;
                     }
                     
                     .kravy-receipt *, .kravy-kot-print * {
-                        visibility: visible !important;
                         color: black !important;
                         border-color: black !important;
                         background: transparent !important;
                     }
 
-                    .kravy-scrollbar { overflow: visible !important; }
-                    .kravy-receipt-header, .kravy-kot-header { border-bottom: 0.5pt dashed black !important; padding-bottom: 2mm !important; }
-                    .kravy-receipt-totals { border-top: 0.5pt dashed black !important; }
-                    .kravy-total-final span:last-child { color: black !important; font-size: 16pt !important; font-weight: bold !important; }
-                    img { filter: grayscale(100%) contrast(200%); }
+                    .kravy-receipt-header, .kravy-kot-header { 
+                        border-bottom: 1px dashed black !important; 
+                        padding-bottom: 2mm !important; 
+                        margin-bottom: 4mm !important;
+                    }
+                    .kravy-receipt-totals { 
+                        border-top: 1px dashed black !important; 
+                        margin-top: 4mm !important;
+                        padding-top: 2mm !important;
+                    }
                 }
+
+                .print-hidden { display: none; }
+                @media print { .print-visible { display: block !important; } }
 
                 :root {
                     --accent:       #E8490F;
