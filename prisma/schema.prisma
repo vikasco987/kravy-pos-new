@@ -149,7 +149,7 @@ model User {
   name    String
   email   String @unique
   clerkId String @unique
-  role    Role   @default(USER)
+  role    Role   @default(SELLER)
 
   items    Item[]
   bills    BillManager[]
@@ -301,6 +301,9 @@ model BusinessProfile {
   pinCode            String?
   taxEnabled         Boolean  @default(true)
   taxRate            Float    @default(5.0)
+
+  greetingMessage    String?  @default("Thank You 🙏 Visit Again!")
+  businessNameSize   String?  @default("large") // medium, large, xlarge
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

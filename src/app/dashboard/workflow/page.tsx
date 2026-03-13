@@ -9,7 +9,7 @@ import {
     Printer, X, Filter, Search, User, ChevronRight,
     Edit3, LogOut, Table as TableIcon, History,
     RotateCcw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
-    Wifi, Battery, Signal
+    Wifi, Battery, Signal, Smartphone
 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 
@@ -66,6 +66,15 @@ export default function KravyPOS() {
     const [clock, setClock] = useState("");
     const [dateStr, setDateStr] = useState("");
     const [business, setBusiness] = useState<any>(null);
+    const [printMode, setPrintMode] = useState<"KOT" | "BILL" | null>(null);
+
+    const handlePrint = (mode: "KOT" | "BILL") => {
+        setPrintMode(mode);
+        setTimeout(() => {
+            window.print();
+            setPrintMode(null);
+        }, 100);
+    };
 
     const fetchData = async () => {
         try {
@@ -105,8 +114,9 @@ export default function KravyPOS() {
     useEffect(() => {
         fetchData();
         fetchBusiness();
-        const i = setInterval(fetchData, 8000);
-        return () => clearInterval(i);
+        // Set up auto-refresh every 5 seconds
+        const interval = setInterval(fetchData, 5000);
+        return () => clearInterval(interval);
     }, []);
     useEffect(() => {
         const tick = () => setClock(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }));
@@ -158,7 +168,7 @@ export default function KravyPOS() {
     };
 
     return (
-        <div className="kravy-root flex flex-col h-screen overflow-hidden">
+        <div className={`kravy-root flex flex-col h-screen overflow-hidden ${printMode ? `print-mode-${printMode}` : ""}`}>
             {/* ── HEADER ── */}
             <header className="kravy-header flex items-center justify-between px-8 h-[64px] shrink-0">
                 {/* Brand */}
@@ -358,6 +368,12 @@ export default function KravyPOS() {
                                                         <h2 className="kravy-order-title">
                                                             {activeOrderForSelected?.customerName || "Walk-in Customer"}
                                                         </h2>
+                                                        {activeOrderForSelected?.customerPhone && (
+                                                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 flex items-center gap-1">
+                                                                <Smartphone size={10} />
+                                                                {activeOrderForSelected.customerPhone}
+                                                            </span>
+                                                        )}
                                                         <span className="kravy-live-tag">● Live</span>
                                                     </div>
                                                     <div className="flex items-center gap-3 kravy-order-meta">
@@ -458,7 +474,7 @@ export default function KravyPOS() {
                                             </div>
                                             <div className="flex gap-3">
                                                 <button
-                                                    onClick={() => window.print()}
+                                                    onClick={() => handlePrint("KOT")}
                                                     className="kravy-secondary-btn flex-1"
                                                 >
                                                     <Printer size={15} /> KOT Token
@@ -541,6 +557,11 @@ export default function KravyPOS() {
                                                                 <div className={`kravy-kds-table badge-${col.color}`}>{o.table?.name}</div>
                                                                 <div>
                                                                     <p className="kravy-order-id">#{o.id.slice(-4).toUpperCase()}</p>
+                                                                    {o.customerPhone && (
+                                                                        <p className="text-[9px] font-bold text-gray-500 flex items-center gap-0.5">
+                                                                            <Smartphone size={8} /> {o.customerPhone}
+                                                                        </p>
+                                                                    )}
                                                                     <p className="kravy-time-ago">5m ago</p>
                                                                 </div>
                                                             </div>
@@ -591,11 +612,19 @@ export default function KravyPOS() {
                             {selectedTable && activeOrderForSelected ? (
                                 <div className="kravy-billing-grid">
                                     {/* Receipt */}
-                                    <div className="kravy-receipt thermal-receipt">
+                                    <div id="bill-print-area" className="kravy-receipt thermal-receipt">
                                         <div className="kravy-receipt-header">
                                             {business?.logoUrl && <img src={business.logoUrl} alt="Logo" className="w-10 h-10 object-contain mx-auto mb-2 hidden print:block" />}
                                             <div className="kravy-receipt-logo print:hidden"><Printer size={22} /></div>
-                                            <h3 className="print:text-sm print:font-bold">{business?.businessName || "Kravy Receipt"}</h3>
+                                            <h3 
+                                                className="print:font-bold"
+                                                style={{ 
+                                                    fontSize: business?.businessNameSize === 'medium' ? '12px' : 
+                                                              business?.businessNameSize === 'xlarge' ? '20px' : '16px' 
+                                                }}
+                                            >
+                                                {business?.businessName || "Kravy Receipt"}
+                                            </h3>
                                             <p className="print:text-[9px]">Table {selectedTable.name} · #{activeOrderForSelected.id.slice(-6).toUpperCase()}</p>
                                             {business?.businessAddress && <p className="hidden print:block text-[8px] opacity-70">{business.businessAddress}</p>}
                                         </div>
@@ -625,6 +654,18 @@ export default function KravyPOS() {
                                                 <span className="print:text-[11px] print:font-bold">Total</span>
                                                 <span className="print:text-[16px] print:font-bold">₹{activeOrderForSelected.total}</span>
                                             </div>
+                                        </div>
+
+                                        {/* FOOOTER INFO */}
+                                        <div className="hidden print:block mt-2 text-center">
+                                            <p className="text-[10px] font-bold">Payment: {payMethod.toUpperCase()}</p>
+                                            {business?.businessTagLine && <p className="text-[9px] mt-1 italic">{business.businessTagLine}</p>}
+                                            <p className="text-[10px] font-bold mt-2 whitespace-pre-wrap">
+                                                {business?.greetingMessage || "Thank You 🙏 Visit Again!"}
+                                            </p>
+                                            
+                                            {/* Extra space for physical cutter */}
+                                            <div className="h-[20mm]" />
                                         </div>
                                     </div>
 
@@ -675,7 +716,7 @@ export default function KravyPOS() {
 
                                         <div className="flex gap-3 mt-6">
                                             <button
-                                                onClick={() => window.print()}
+                                                onClick={() => handlePrint("BILL")}
                                                 className="kravy-secondary-btn flex-1"
                                             >
                                                 <Printer size={15} /> Print Bill
@@ -746,9 +787,17 @@ export default function KravyPOS() {
                                                 {o.table?.name}
                                             </div>
                                             <div className="flex-1">
-                                                <p className="font-semibold text-[var(--text-primary)] text-sm">
-                                                    {o.customerName || "Walk-in"} · #{o.id.slice(-4).toUpperCase()}
-                                                </p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-semibold text-[var(--text-primary)] text-sm">
+                                                        {o.customerName || "Walk-in"} · #{o.id.slice(-4).toUpperCase()}
+                                                    </p>
+                                                    {o.customerPhone && (
+                                                        <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                                            <Smartphone size={8} />
+                                                            {o.customerPhone}
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="flex items-center gap-2 mt-0.5">
                                                     <span className={`kravy-status-tag status-${o.status.toLowerCase()}`}>{o.status}</span>
                                                     <span className="text-xs text-[var(--text-muted)]">{o.items.length} items</span>
@@ -775,9 +824,39 @@ export default function KravyPOS() {
                 </AnimatePresence>
             </main>
 
+            {/* ═══ HIDDEN KOT Area for Printing ═══ */}
+            <div id="kot-print-area" className="hidden">
+                 {selectedTable && activeOrderForSelected && (
+                    <div className="kravy-kot-print">
+                        <div className="kravy-kot-header text-center pb-2 mb-2 border-b border-dashed border-black">
+                            <h2 className="text-lg font-bold">KITCHEN TOKEN (KOT)</h2>
+                            <p className="text-base font-bold">TABLE: {selectedTable.name}</p>
+                            <p className="text-xs">#{activeOrderForSelected.id.slice(-6).toUpperCase()}</p>
+                            <p className="text-xs">{new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})} · {activeOrderForSelected.customerName || "Walk-in"}</p>
+                            {activeOrderForSelected.customerPhone && <p className="text-xs">Phone: {activeOrderForSelected.customerPhone}</p>}
+                        </div>
+                        <div className="space-y-4">
+                            {activeOrderForSelected.items.map((it, i) => (
+                                <div key={i} className="flex justify-between items-start border-b border-dotted border-gray-400 pb-1">
+                                    <div className="flex-1 pr-2">
+                                        <p className="text-base font-bold leading-tight uppercase">{it.name}</p>
+                                        {it.instruction && <p className="text-[10pt] italic mt-1 font-bold">*** {it.instruction} ***</p>}
+                                    </div>
+                                    <div className="text-xl font-black">×{it.quantity}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="text-center mt-6 pt-2 border-t border-dashed border-black">
+                            <p className="text-xs font-bold text-black uppercase">Prepared with ❤️ by KRAVY</p>
+                        </div>
+                    </div>
+                 )}
+            </div>
+
             {/* ═══ STYLES ═══ */}
             <style jsx global>{`
                 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,600&family=DM+Mono:wght@400;500&display=swap');
+
 
                 @media print {
                     @page {
@@ -790,18 +869,23 @@ export default function KravyPOS() {
                         width: 58mm;
                         background: white !important;
                     }
-                    /* Hide everything except the receipt */
+                    /* Hide everything except the printable components */
+                    body > *:not(#kot-print-area):not(#bill-print-area),
                     .kravy-root > *:not(main),
-                    main > *:not(.kravy-billing-grid),
+                    main > *:not(.kravy-billing-grid):not(#kot-print-area),
                     .kravy-billing-grid > *:not(.kravy-receipt),
                     header, nav, .kravy-panel, .kravy-page-title, .kravy-page-sub, .kravy-payment-panel {
                         display: none !important;
                     }
-                    .kravy-receipt {
+
+                    /* Manual Overrides for Print Mode */
+                    .print-mode-KOT #bill-print-area { display: none !important; }
+                    .print-mode-BILL #kot-print-area { display: none !important; }
+
+                    /* Receipt (Bill) Styling */
+                    .kravy-receipt, .kravy-kot-print {
                         display: block !important;
-                        position: absolute;
-                        left: 0;
-                        top: 0;
+                        position: relative !important;
                         width: 58mm !important;
                         height: auto !important;
                         max-height: none !important;
@@ -814,16 +898,18 @@ export default function KravyPOS() {
                         font-family: 'DM Mono', monospace !important;
                         color: black !important;
                     }
-                    .kravy-receipt * {
+                    
+                    .kravy-receipt *, .kravy-kot-print * {
                         visibility: visible !important;
                         color: black !important;
                         border-color: black !important;
                         background: transparent !important;
                     }
+
                     .kravy-scrollbar { overflow: visible !important; }
-                    .kravy-receipt-header { border-bottom: 1px dashed black !important; padding-bottom: 2mm !important; }
-                    .kravy-receipt-totals { border-top: 1px dashed black !important; }
-                    .kravy-total-final span:last-child { color: black !important; font-size: 18px !important; font-weight: bold !important; }
+                    .kravy-receipt-header, .kravy-kot-header { border-bottom: 0.5pt dashed black !important; padding-bottom: 2mm !important; }
+                    .kravy-receipt-totals { border-top: 0.5pt dashed black !important; }
+                    .kravy-total-final span:last-child { color: black !important; font-size: 16pt !important; font-weight: bold !important; }
                     img { filter: grayscale(100%) contrast(200%); }
                 }
 
@@ -1362,7 +1448,7 @@ export default function KravyPOS() {
                 .kravy-receipt-item-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
                 .kravy-receipt-item-meta { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
                 .kravy-receipt-item-price { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; }
-                .kravy-receipt-totals { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 4px; space-y: 8px; }
+                .kravy-receipt-totals { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 4px; }
                 .kravy-total-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); padding: 4px 0; }
                 .kravy-total-final {
                     display: flex; justify-content: space-between; align-items: center;

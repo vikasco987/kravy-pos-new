@@ -214,10 +214,11 @@ export async function POST(req: NextRequest) {
     }
 
     try {
+      const cleanPhone = phone.replace(/[\s\-\(\)\+]/g, "").slice(-10);
       const party = await prisma.party.create({
         data: {
           name,
-          phone,
+          phone: cleanPhone,
           address,
           dob: dob ? new Date(dob) : null,
           createdBy: effectiveId,

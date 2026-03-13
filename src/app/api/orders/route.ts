@@ -1,21 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {
     try {
         const effectiveId = await getEffectiveClerkId();
-        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!effectiveId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { searchParams } = new URL(req.url);
+        const tableId = searchParams.get("tableId");
 
         const orders = await prisma.order.findMany({
-            where: { clerkUserId: effectiveId },
+            where: { 
+                clerkUserId: effectiveId,
+                ...(tableId ? { tableId } : {})
+            },
             orderBy: { createdAt: "desc" },
             include: { table: true },
         });
 
         return NextResponse.json(orders);
     } catch (error) {
+        console.error("GET_ORDERS_ERROR:", error);
         return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
     }
 }
@@ -23,17 +31,30 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
     try {
         const effectiveId = await getEffectiveClerkId();
-        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!effectiveId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
 
         const { orderId, status } = await req.json();
 
+        if (!orderId || !status) {
+            return NextResponse.json({ error: "Order ID and status required" }, { status: 400 });
+        }
+
         const order = await prisma.order.update({
-            where: { id: orderId, clerkUserId: effectiveId },
+            where: { 
+                id: orderId, 
+                clerkUserId: effectiveId 
+            },
             data: { status },
         });
 
         return NextResponse.json(order);
     } catch (error) {
-        return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
+        console.error("PATCH_ORDER_ERROR:", error);
+        return NextResponse.json({ 
+            error: "Failed to update order",
+            details: error instanceof Error ? error.message : "Unknown error" 
+        }, { status: 500 });
     }
 }

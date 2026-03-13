@@ -58,7 +58,7 @@ export async function POST() {
         clerkId,
         email,
         name,
-        role: "USER",        // ✅ default role
+        role: "SELLER",        // ✅ default role is now SELLER
         isDisabled: false,   // ✅ explicit
       },
     });

@@ -19,15 +19,13 @@ export async function POST(req: Request) {
     const rawRole =
       clerkUser.publicMetadata?.role ||
       clerkUser.privateMetadata?.role ||
-      "USER";
+      "SELLER";
 
-// 🔹 normalize role to Prisma enum
-const roleFromClerk =
-  String(rawRole).toUpperCase() === "ADMIN"
-    ? "ADMIN"
-    : String(rawRole).toUpperCase() === "SELLER"
-    ? "SELLER"
-    : "USER";
+    // 🔹 normalize role to Prisma enum
+    const roleFromClerk =
+      String(rawRole).toUpperCase() === "ADMIN"
+        ? "ADMIN"
+        : "SELLER";
 
     const body = await req.json();
     const { name, email } = body;

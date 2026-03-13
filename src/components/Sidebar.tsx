@@ -694,15 +694,23 @@ export default function Sidebar() {
             </motion.div>
             <motion.div
               style={{
-                fontSize: "0.62rem", color: "#4A5568", fontFamily: "monospace",
-                display: "flex", alignItems: "center", gap: "4px"
+                fontSize: "0.62rem", color: isDark ? "#A0AEC0" : "#4A5568", fontFamily: "monospace",
+                display: "flex", alignItems: "center", gap: "6px"
               }}
             >
               <div style={{
                 width: "6px", height: "6px", borderRadius: "50%",
-                background: "#10B981", boxShadow: isDark ? "0 0 6px #10B981" : "none",
+                background: userRole === "ADMIN" ? "#10B981" : "#F59E0B", 
+                boxShadow: `0 0 8px ${userRole === "ADMIN" ? "#10B981" : "#F59E0B"}`,
               }} />
-              {user?.primaryEmailAddress?.emailAddress ? "Authorized Access" : "Admin Panel"}
+              <span style={{ 
+                fontWeight: 800, 
+                color: userRole === "ADMIN" ? "#10B981" : "#F59E0B",
+                letterSpacing: "0.5px"
+              }}>
+                {userRole}
+              </span>
+              <span style={{ opacity: 0.5 }}>• Authorized</span>
             </motion.div>
           </motion.div>
         )}
