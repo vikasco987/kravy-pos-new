@@ -108,8 +108,8 @@ export default function OrderTrackingPage() {
     useEffect(() => {
         if (orderId) {
             fetchOrder();
-            // Set up auto-refresh every 30 seconds
-            const interval = setInterval(fetchOrder, 30000);
+            // Set up auto-refresh every 5 seconds
+            const interval = setInterval(fetchOrder, 5000);
             return () => clearInterval(interval);
         }
     }, [orderId]);
@@ -211,8 +211,9 @@ export default function OrderTrackingPage() {
                         </button>
                         <div>
                             <div className="text-[0.95rem] font-[900] leading-none">Order Tracking</div>
-                            <div className="text-[0.65rem] text-[#ABABAB] font-[800] uppercase tracking-wider mt-1">
-                                Table {order.table?.name || "Counter"} · #{order.id.slice(-6).toUpperCase()}
+                            <div className="text-[0.65rem] text-[#ABABAB] font-[800] uppercase tracking-wider mt-1 flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                Live Updates · Table {order.table?.name || "Counter"} · #{order.id.slice(-6).toUpperCase()}
                             </div>
                         </div>
                     </div>

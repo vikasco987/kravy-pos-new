@@ -97,22 +97,47 @@ export async function PUT(
       finalPaymentStatus = paymentStatus === "Paid" ? "Paid" : "Pending";
     }
 
+    // ✅ AUTO-SAVE CUSTOMER IN CRM (Party)
+    let partyId = null;
+    if (customerPhone && customerName && customerName !== "Walk-in Customer") {
+      try {
+        const cleanPhone = customerPhone.replace(/[\s\-\(\)\+]/g, "").slice(-10);
+        const party = await prisma.party.upsert({
+          where: {
+            phone_createdBy: {
+              phone: cleanPhone,
+              createdBy: effectiveId,
+            },
+          },
+          update: {
+            name: customerName,
+          },
+          create: {
+            name: customerName,
+            phone: cleanPhone,
+            createdBy: effectiveId,
+          },
+        });
+        partyId = party.id;
+      } catch (err) {
+        console.error("Party upsert error in billing update:", err);
+      }
+    }
+
     const bill = await prisma.billManager.update({
-      where: { id }, // ✅ ONLY UNIQUE FIELD
+      where: { id },
       data: {
         items,
         subtotal,
         tax,
         total,
-
         paymentMode: finalPaymentMode,
         paymentStatus: finalPaymentStatus,
-
-        isHeld: body.isHeld === true, // Respect isHeld from body
+        isHeld: body.isHeld === true,
         upiTxnRef: finalPaymentMode === "UPI" ? upiTxnRef : null,
-
         customerName: customerName || null,
         customerPhone: customerPhone || null,
+        partyId: partyId, // ✅ Update link to party
       },
     });
 
@@ -164,6 +189,63 @@ export async function DELETE(
     console.error("DELETE BILL ERROR:", err);
     return NextResponse.json(
       { error: "Failed to delete bill permanently" },
+      { status: 500 }
+    );
+  }
+}
+
+/* ======================================================
+   PATCH → Partial update (Change Status)
+====================================================== */
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await context.params;
+    const body = await req.json();
+
+    const allowedUpdates = [
+      "paymentStatus",
+      "paymentMode",
+      "upiTxnRef",
+      "isHeld",
+    ];
+
+    const data: any = {};
+    allowedUpdates.forEach((key) => {
+      if (body[key] !== undefined) {
+        data[key] = body[key];
+      }
+    });
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json(
+        { error: "No valid fields to update" },
+        { status: 400 }
+      );
+    }
+
+    // If marking as not held, update status accordingly if not provided
+    if (data.isHeld === false && !data.paymentStatus) {
+      data.paymentStatus = "Paid";
+    }
+
+    const bill = await prisma.billManager.update({
+      where: { id },
+      data,
+    });
+
+    return NextResponse.json({ bill });
+  } catch (err) {
+    console.error("BILL MANAGER PATCH ERROR:", err);
+    return NextResponse.json(
+      { error: "Failed to update status" },
       { status: 500 }
     );
   }

@@ -508,6 +508,26 @@ function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; 
       onClick: () => router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`)
     }] : []),
     {
+      label: bill.paymentStatus?.toLowerCase() === "paid" ? "Mark as Pending" : "Mark as Paid",
+      icon: <Clock size={14} />,
+      color: bill.paymentStatus?.toLowerCase() === "paid" ? "rgb(244 63 94)" : "rgb(16 185 129)",
+      onClick: async () => {
+        const newStatus = bill.paymentStatus?.toLowerCase() === "paid" ? "Pending" : "Paid";
+        try {
+          const res = await fetch(`/api/bill-manager/${bill.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentStatus: newStatus })
+          });
+          if (res.ok) refresh();
+          else alert("Failed to update status");
+        } catch (err) {
+          console.error("Status update error:", err);
+          alert("Something went wrong");
+        }
+      }
+    },
+    {
       label: "Delete",
       icon: <Trash2 size={14} />,
       color: "rgb(244 63 94)",

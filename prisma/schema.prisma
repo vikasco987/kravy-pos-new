@@ -149,7 +149,7 @@ model User {
   name    String
   email   String @unique
   clerkId String @unique
-  role    Role   @default(USER)
+  role    Role   @default(SELLER)
 
   items    Item[]
   bills    BillManager[]

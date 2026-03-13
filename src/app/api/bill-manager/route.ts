@@ -107,13 +107,16 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
 
     // ✅ AUTO-SAVE CUSTOMER IN CRM (Party)
     let partyId = null;
-    if (customerPhone && customerName) {
+    if (customerPhone && customerName && customerName !== "Walk-in Customer") {
       try {
+        // Clean phone number (remove spaces, etc.) for better matching
+        const cleanPhone = customerPhone.replace(/[\s\-\(\)\+]/g, "").slice(-10);
+
         // Upsert customer into the Party table
         const party = await prisma.party.upsert({
           where: {
             phone_createdBy: {
-              phone: customerPhone,
+              phone: cleanPhone,
               createdBy: effectiveId,
             },
           },
@@ -122,7 +125,7 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
           },
           create: {
             name: customerName,
-            phone: customerPhone,
+            phone: cleanPhone,
             createdBy: effectiveId,
           },
         });
