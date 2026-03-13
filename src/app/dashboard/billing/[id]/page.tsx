@@ -833,9 +833,12 @@ export default function ViewBillPage() {
           </div>
         )}
 
-        <div className="text-center font-semibold text-[10px] mt-1">
+        <div className="text-center font-semibold text-[10px] mt-1 mb-8">
           Thank you 🙏
         </div>
+        
+        {/* Extra space for physical cutter */}
+        <div className="h-[15mm] block print:block" />
 
       </div>
     </div>

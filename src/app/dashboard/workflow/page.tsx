@@ -626,6 +626,16 @@ export default function KravyPOS() {
                                                 <span className="print:text-[16px] print:font-bold">₹{activeOrderForSelected.total}</span>
                                             </div>
                                         </div>
+
+                                        {/* FOOOTER INFO */}
+                                        <div className="hidden print:block mt-2 text-center">
+                                            <p className="text-[10px] font-bold">Payment: {payMethod.toUpperCase()}</p>
+                                            {business?.businessTagLine && <p className="text-[9px] mt-1 italic">{business.businessTagLine}</p>}
+                                            <p className="text-[10px] font-bold mt-2">Thank You 🙏 Visit Again!</p>
+                                            
+                                            {/* Extra space for physical cutter */}
+                                            <div className="h-[20mm]" />
+                                        </div>
                                     </div>
 
                                     {/* Payment Panel */}
