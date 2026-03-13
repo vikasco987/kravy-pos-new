@@ -600,30 +600,30 @@ export default function KravyPOS() {
                                             {business?.businessAddress && <p className="hidden print:block text-[8px] opacity-70">{business.businessAddress}</p>}
                                         </div>
 
-                                        <div className="flex-1 overflow-y-auto kravy-scrollbar py-4 space-y-4">
+                                        <div className="flex-1 overflow-y-auto kravy-scrollbar py-4 space-y-3 print:overflow-visible print:py-2">
                                             {activeOrderForSelected.items.map((it, idx) => (
-                                                <div key={idx} className="kravy-receipt-item">
-                                                    <div>
-                                                        <p className="kravy-receipt-item-name">{it.name}</p>
-                                                        <p className="kravy-receipt-item-meta">{it.quantity} × ₹{it.price}</p>
+                                                <div key={idx} className="kravy-receipt-item print:flex print:justify-between print:text-[11px] print:mb-1">
+                                                    <div className="print:flex-1">
+                                                        <p className="kravy-receipt-item-name print:font-bold">{it.name}</p>
+                                                        <p className="kravy-receipt-item-meta print:text-[10px]">{it.quantity} × ₹{it.price}</p>
                                                     </div>
-                                                    <span className="kravy-receipt-item-price">₹{it.price * it.quantity}</span>
+                                                    <span className="kravy-receipt-item-price print:font-bold">₹{it.price * it.quantity}</span>
                                                 </div>
                                             ))}
                                         </div>
 
-                                        <div className="kravy-receipt-totals">
-                                            <div className="kravy-total-row">
+                                        <div className="kravy-receipt-totals print:mt-2 print:pt-2 print:border-t print:border-dashed print:border-black">
+                                            <div className="kravy-total-row print:flex print:justify-between print:text-[10px] print:mb-1">
                                                 <span>Subtotal</span>
                                                 <span>₹{(activeOrderForSelected.total / 1.05).toFixed(0)}</span>
                                             </div>
-                                            <div className="kravy-total-row">
+                                            <div className="kravy-total-row print:flex print:justify-between print:text-[10px] print:mb-1">
                                                 <span>GST 5%</span>
                                                 <span>₹{(activeOrderForSelected.total - activeOrderForSelected.total / 1.05).toFixed(0)}</span>
                                             </div>
-                                            <div className="kravy-total-final">
-                                                <span>Total</span>
-                                                <span>₹{activeOrderForSelected.total}</span>
+                                            <div className="kravy-total-final print:flex print:justify-between print:items-center print:mt-1 print:pt-1 print:border-t print:border-black">
+                                                <span className="print:text-[11px] print:font-bold">Total</span>
+                                                <span className="print:text-[16px] print:font-bold">₹{activeOrderForSelected.total}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -805,19 +805,26 @@ export default function KravyPOS() {
                         width: 58mm !important;
                         height: auto !important;
                         max-height: none !important;
-                        padding: 2mm !important;
+                        padding: 4mm 2mm !important;
                         margin: 0 !important;
                         border: none !important;
                         box-shadow: none !important;
                         visibility: visible !important;
+                        background: white !important;
+                        font-family: 'DM Mono', monospace !important;
+                        color: black !important;
                     }
                     .kravy-receipt * {
                         visibility: visible !important;
                         color: black !important;
+                        border-color: black !important;
+                        background: transparent !important;
                     }
                     .kravy-scrollbar { overflow: visible !important; }
+                    .kravy-receipt-header { border-bottom: 1px dashed black !important; padding-bottom: 2mm !important; }
                     .kravy-receipt-totals { border-top: 1px dashed black !important; }
-                    .kravy-total-final span:last-child { color: black !important; font-size: 20px !important; }
+                    .kravy-total-final span:last-child { color: black !important; font-size: 18px !important; font-weight: bold !important; }
+                    img { filter: grayscale(100%) contrast(200%); }
                 }
 
                 :root {
