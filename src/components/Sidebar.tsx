@@ -123,9 +123,9 @@ const navGroups = [
     items: [
       { icon: <Home size={18} />, label: "Store Dashboard", href: "/dashboard", badge: "Live", badgeColor: "#10B981" },
       { icon: <ShoppingCart size={18} />, label: "Quick POS Billing", href: "/dashboard/billing/checkout", badge: "Fast", badgeColor: "#FF6B35" },
+      { icon: <Activity size={18} />, label: "Kitchen Workflow", href: "/dashboard/workflow", badge: "Queue", badgeColor: "#EF4444" },
       { icon: <LayoutGrid size={18} />, label: "Table Status", href: "/dashboard/tables" },
       { icon: <Receipt size={18} />, label: "Past Bills / History", href: "/dashboard/billing" },
-      { icon: <Activity size={18} />, label: "Kitchen Workflow", href: "/dashboard/workflow", badge: "Queue", badgeColor: "#EF4444" },
     ]
   },
   {

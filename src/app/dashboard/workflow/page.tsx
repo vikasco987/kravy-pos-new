@@ -844,27 +844,26 @@ export default function KravyPOS() {
             {/* ═══ HIDDEN KOT Area for Printing ═══ */}
             <div id="kot-print-area" className={printMode === "KOT" ? "print-visible" : "print-hidden"}>
                  {selectedTable && activeOrderForSelected && (
-                    <div className="kravy-kot-print thermal-receipt">
-                        <div className="kravy-kot-header text-center pb-2 mb-4 border-b border-dashed border-black">
-                            <h2 className="text-lg font-bold">KITCHEN TOKEN (KOT)</h2>
-                            <p className="text-base font-bold">TABLE: {selectedTable.name}</p>
-                            <p className="text-xs">#{activeOrderForSelected.id.slice(-6).toUpperCase()}</p>
-                            <p className="text-xs">{new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})} · {activeOrderForSelected.customerName || "Walk-in"}</p>
-                            {activeOrderForSelected.customerPhone && <p className="text-xs">Phone: {activeOrderForSelected.customerPhone}</p>}
+                    <div className="kravy-kot-print thermal-receipt font-mono text-[10px] leading-tight text-black">
+                        <div className="kravy-kot-header text-center pb-2 mb-3 border-b border-dashed border-black">
+                            <h2 className="text-[12px] font-bold uppercase">KITCHEN TOKEN (KOT)</h2>
+                            <p className="text-[11px] font-bold">TABLE: {selectedTable.name}</p>
+                            <p className="text-[9px]">#{activeOrderForSelected.id.slice(-6).toUpperCase()}</p>
+                            <p className="text-[9px]">{new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})} · {activeOrderForSelected.customerName || "Walk-in"}</p>
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                             {activeOrderForSelected.items.map((it, i) => (
                                 <div key={i} className="flex justify-between items-start border-b border-dotted border-gray-400 pb-1">
                                     <div className="flex-1 pr-2">
-                                        <p className="text-base font-bold leading-tight uppercase">{it.name}</p>
-                                        {it.instruction && <p className="text-[10pt] italic mt-1 font-bold">*** {it.instruction} ***</p>}
+                                        <p className="text-[11px] font-bold leading-tight uppercase">{it.name}</p>
+                                        {it.instruction && <p className="text-[9px] italic mt-1 font-bold">*** {it.instruction} ***</p>}
                                     </div>
-                                    <div className="text-xl font-black">×{it.quantity}</div>
+                                    <div className="text-[12px] font-black">×{it.quantity}</div>
                                 </div>
                             ))}
                         </div>
-                        <div className="text-center mt-6 pt-2 border-t border-dashed border-black">
-                            <p className="text-xs font-bold text-black uppercase">Prepared with ❤️ by KRAVY</p>
+                        <div className="text-center mt-4 pt-2 border-t border-dashed border-black">
+                            <p className="text-[9px] font-bold uppercase">Prepared with ❤️ by KRAVY</p>
                         </div>
                     </div>
                  )}
@@ -908,17 +907,17 @@ export default function KravyPOS() {
                             {/* Preview Area */}
                             <div className="flex-1 overflow-auto bg-gray-100 dark:bg-zinc-900 p-6 flex flex-col items-center">
                                 <div 
-                                    className="bg-white text-black p-6 shadow-xl origin-top transition-transform"
+                                    className="bg-white text-black p-5 shadow-xl origin-top transition-transform"
                                     style={{ 
                                         width: '58mm', 
                                         minHeight: '100mm',
-                                        transform: `scale(${previewZoom * 1.6})`,
-                                        marginBottom: `${previewZoom * 120}px`
+                                        transform: `scale(${previewZoom * 1.1})`,
+                                        marginBottom: `${previewZoom * 50}px`
                                     }}
                                 >
                                     {previewMode === "BILL" ? (
-                                        <div className="kravy-kot-print text-black">
-                                             <div className="text-center pb-2 mb-4 border-b border-dashed border-gray-300">
+                                        <div className="font-mono text-[10px] leading-tight text-black">
+                                             <div className="text-center pb-2 mb-3 border-b border-dashed border-gray-300">
                                                 {business?.logoUrl && <img src={business.logoUrl} alt="Logo" className="w-10 h-10 object-contain mx-auto mb-2" />}
                                                 <h3 className="font-bold text-[14px] uppercase">{business?.businessName || "Kravy Restaurant"}</h3>
                                                 <p className="text-[9px]">Table {selectedTable.name} · #{activeOrderForSelected.id.slice(-6).toUpperCase()}</p>
@@ -1026,7 +1025,6 @@ export default function KravyPOS() {
                         margin: 0;
                     }
                     
-                    /* Reset everything for print */
                     * {
                         visibility: hidden;
                         margin: 0;
@@ -1036,9 +1034,9 @@ export default function KravyPOS() {
 
                     body {
                         background: white !important;
+                        font-size: 10px !important;
                     }
 
-                    /* Specific Visibility for Print Areas */
                     .print-mode-KOT #kot-print-area,
                     .print-mode-KOT #kot-print-area *,
                     .print-mode-BILL #bill-print-area,
@@ -1052,20 +1050,15 @@ export default function KravyPOS() {
                         left: 0 !important;
                         top: 0 !important;
                         width: 58mm !important;
-                        padding: 2mm !important;
+                        padding: 1mm !important;
                         background: white !important;
                         color: black !important;
-                    }
-
-                    .thermal-receipt {
-                        width: 54mm !important; /* Safety margin for 58mm paper */
-                        margin: 0 auto !important;
                         font-family: 'DM Mono', monospace !important;
                     }
 
-                    .thermal-receipt * {
-                        color: black !important;
-                        border-color: black !important;
+                    .thermal-receipt {
+                        width: 52mm !important;
+                        margin: 0 auto !important;
                     }
 
                     .print:hidden { display: none !important; }
