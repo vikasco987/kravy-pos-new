@@ -1104,7 +1104,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock, Trash2, Play, X, Search, ChevronDown, User, Printer,
-  Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut
+  Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus
 } from "lucide-react";
 import { toast } from "sonner";
 import { kravy } from "@/lib/sounds";
@@ -1117,6 +1117,7 @@ type MenuItem = {
   price: number;
   unit?: string | null;
   imageUrl?: string | null;
+  description?: string | null;
   category?: {
     id: string;
     name: string;
@@ -1130,10 +1131,101 @@ type BillItem = {
   rate: number;
 };
 
+/* ================= SUB-COMPONENTS ================= */
+
+const MenuItemCard = ({ m, items, addToCart, reduceFromCart }: { 
+  m: MenuItem, 
+  items: BillItem[], 
+  addToCart: (item: MenuItem) => void, 
+  reduceFromCart: (id: string) => void 
+}) => {
+  const inCart = items.find((i) => i.id === m.id);
+  return (
+    <div
+      onClick={() => addToCart(m)}
+      className={`group relative border rounded-2xl overflow-hidden cursor-pointer
+        transition-all duration-200 bg-[var(--kravy-surface)] flex flex-col
+        hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97]
+        ${inCart
+          ? "border-[var(--kravy-brand)] shadow-md shadow-indigo-500/10"
+          : "border-[var(--kravy-border)] hover:border-[var(--kravy-brand)]"
+        }`}
+    >
+      <div
+        className="relative w-full bg-[var(--kravy-bg)] overflow-hidden flex-shrink-0 border-b border-[var(--kravy-border)]/50"
+        style={{ height: "90px" }}
+      >
+        <img
+          src={m.imageUrl || "/no-image.png"}
+          alt={m.name}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+          onError={(e) => { e.currentTarget.src = "/no-image.png"; }}
+        />
+        {inCart && (
+          <div className="absolute top-2 left-2 bg-emerald-500 text-white
+            text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg shadow-emerald-500/40
+            border border-white/20 z-10">
+            ×{inCart.qty}
+          </div>
+        )}
+        {inCart && (
+          <button
+            onClick={(e) => { e.stopPropagation(); reduceFromCart(m.id); }}
+            className="absolute top-2 right-2 bg-rose-500 text-white
+              w-6 h-6 rounded-full flex items-center justify-center
+              text-sm font-black hover:bg-rose-600 shadow-lg shadow-rose-500/40
+              border border-white/20 transition-all hover:scale-110 z-10"
+          >
+            −
+          </button>
+        )}
+      </div>
+
+      <div className="p-2.5 md:p-3 flex flex-col gap-1.5 flex-shrink-0">
+        <p className={`text-[11px] md:text-xs font-bold leading-snug line-clamp-2 transition-colors
+          ${inCart ? "text-[var(--kravy-brand)]" : "text-[var(--kravy-text-primary)] group-hover:text-[var(--kravy-brand)]"}`}>
+          {m.name}
+        </p>
+        <div className="flex items-center justify-between gap-1">
+          <p className="text-xs md:text-sm font-black text-emerald-500 whitespace-nowrap">
+            ₹{m.price.toFixed(2)}
+          </p>
+          {m.unit && (
+            <p className="text-[9px] uppercase font-black text-[var(--kravy-text-muted)] tracking-wider truncate">
+              {m.unit}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const QuickAddCard = ({ cat, onClick }: { cat: { id: string, name: string }, onClick: () => void }) => {
+  return (
+    <div
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className="group relative border-2 border-dashed border-[var(--kravy-border)] rounded-2xl overflow-hidden cursor-pointer
+        transition-all duration-200 bg-[var(--kravy-bg-2)]/50 flex flex-col items-center justify-center gap-2
+        hover:border-[var(--kravy-brand)] hover:bg-[var(--kravy-brand)]/5 hover:shadow-lg active:scale-[0.97] h-full min-h-[140px]"
+    >
+       <div className="w-10 h-10 rounded-full bg-[var(--kravy-brand)]/10 flex items-center justify-center group-hover:bg-[var(--kravy-brand)] group-hover:text-white transition-all">
+          <span className="text-xl font-black">+</span>
+       </div>
+       <div className="text-center px-2">
+         <p className="text-[10px] font-black text-[var(--kravy-text-primary)] uppercase tracking-wider">Quick Add</p>
+         <p className="text-[9px] font-bold text-[var(--kravy-text-muted)] group-hover:text-[var(--kravy-brand)]">to {cat.name}</p>
+       </div>
+    </div>
+  );
+};
+
 /* ================= PAGE ================= */
 
 export default function CheckoutClient() {
   const receiptRef = useRef<HTMLDivElement | null>(null);
+  const kotRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const resumeBillId = searchParams.get("resumeBillId");
@@ -1145,6 +1237,9 @@ export default function CheckoutClient() {
   const [heldBillsLoading, setHeldBillsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(1);
+  const [quickAddCat, setQuickAddCat] = useState<{ id: string, name: string } | null>(null);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  console.log("Check terminal render - quickAddCat:", quickAddCat);
 
   /* ================= PARTIES (CUSTOMERS) STATE ================= */
   const [parties, setParties] = useState<any[]>([]);
@@ -1218,6 +1313,17 @@ export default function CheckoutClient() {
           return { ...it, price: finalPrice };
         });
         setMenuItems(mapped);
+
+        // Update categoriesList with any missing categories found in menu items
+        setCategoriesList(prev => {
+           const newList = [...prev];
+           mapped.forEach((it: any) => {
+             if (it.category && !newList.find(c => c.id === it.category.id)) {
+               newList.push({ id: it.category.id, name: it.category.name });
+             }
+           });
+           return newList;
+        });
       } catch (err) {
         console.error("Menu fetch failed", err);
       } finally {
@@ -1253,7 +1359,27 @@ export default function CheckoutClient() {
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [search, setSearch] = useState("");
 
-  const categories = Array.from(new Set(menuItems.map((i) => i.category?.name || "Others")));
+  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
+  
+  useEffect(() => {
+    async function fetchCats() {
+      try {
+        const res = await fetch("/api/categories");
+        if (res.ok) {
+          const data = await res.json();
+          setCategoriesList(data || []);
+        }
+      } catch (e) {
+        console.error("Failed to fetch categories:", e);
+      }
+    }
+    fetchCats();
+  }, []);
+
+  const categories = Array.from(new Set([
+    ...categoriesList.map(c => c.name),
+    ...menuItems.map((i) => i.category?.name || "Others")
+  ])).filter(Boolean);
 
   const filteredMenuItems = menuItems
     .filter((i) => activeCategory === "All" ? true : i.category?.name === activeCategory)
@@ -1404,6 +1530,7 @@ export default function CheckoutClient() {
       upiTxnRef: paymentMode === "UPI" ? upiTxnRef : null,
       isHeld, customerName: customerName || "Walk-in Customer",
       customerPhone: customerPhone || null,
+      tableName: "POS",
     };
     try {
       const url = resumeBillId ? `/api/bill-manager/${resumeBillId}` : "/api/bill-manager";
@@ -1490,6 +1617,145 @@ export default function CheckoutClient() {
     }, 2000);
   }
 
+  const printKOT = () => {
+    if (!kotRef.current) { alert("Nothing to print in KOT"); return; }
+    
+    // Create hidden print iframe if not already existing
+    const printStyle = document.createElement("style");
+    printStyle.innerHTML = `
+      @media print {
+        body > *:not(#print-kot-container) {
+          display: none !important;
+        }
+        @page {
+          margin: 0;
+          size: 58mm auto;
+        }
+      }
+    `;
+    document.head.appendChild(printStyle);
+    
+    const printContainer = document.createElement("div");
+    printContainer.id = "print-kot-container";
+    printContainer.style.display = "none";
+    printStyle.innerHTML += `
+      @media print {
+        #print-kot-container {
+          display: block !important;
+          width: 58mm;
+          padding: 2mm;
+        }
+      }
+    `;
+    printContainer.className = "font-mono text-[10px] leading-tight";
+    printContainer.innerHTML = kotRef.current.innerHTML;
+    
+    document.body.appendChild(printContainer);
+    window.print();
+    
+    setTimeout(() => {
+      if (document.head.contains(printStyle)) document.head.removeChild(printStyle);
+      if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
+    }, 2000);
+  }
+
+  /* ================= QUICK ADD ITEM ================= */
+  const handleQuickAdd = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!quickAddCat) return;
+
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const price = formData.get("price") as string;
+    const description = formData.get("description") as string;
+    const imageUrl = formData.get("imageUrl") as string;
+
+    if (!name || !price) {
+      toast.error("Name and price are required");
+      return;
+    }
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticItem: MenuItem = {
+      id: tempId,
+      name,
+      price: Number(price),
+      category: { id: quickAddCat.id, name: quickAddCat.name },
+      unit: "pcs",
+      description: description || null,
+      imageUrl: imageUrl || null
+    };
+
+    // 🚀 OPTIMISTIC UPDATE: Update UI immediately
+    setMenuItems(prev => [optimisticItem, ...prev]);
+    setQuickAddCat(null); // Close modal right away
+    kravy.success(); // Play sound immediately
+    toast.success(`"${name}" adding to ${quickAddCat.name}...`);
+
+    // Fire & Forget (Backend update in background)
+    (async () => {
+      try {
+        const res = await fetch("/api/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            price: Number(price),
+            categoryId: quickAddCat.id,
+            description: description || null,
+            imageUrl: imageUrl || null
+          }),
+        });
+
+        if (res.ok) {
+          const newItem = await res.json();
+          // Replace temp item with real item from DB
+          setMenuItems(prev => prev.map(it => it.id === tempId ? {
+            ...newItem,
+            price: Number(newItem.sellingPrice || newItem.price),
+            category: { id: quickAddCat.id, name: quickAddCat.name }
+          } : it));
+        } else {
+          // Revert on failure
+          setMenuItems(prev => prev.filter(it => it.id !== tempId));
+          toast.error(`Failed to save "${name}" formally. Removed from view.`);
+        }
+      } catch (err) {
+        console.error("Optimistic add error:", err);
+        setMenuItems(prev => prev.filter(it => it.id !== tempId));
+        toast.error(`Connection issue while saving "${name}".`);
+      }
+    })();
+  };
+
+  const handleQuickAddCategory = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    if (!name) return;
+
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (res.ok) {
+        const newCat = await res.json();
+        setCategoriesList(prev => [...prev, newCat]);
+        setShowAddCategory(false);
+        toast.success(`Category "${name}" Created`);
+        kravy.success();
+        setActiveCategory(name);
+      } else {
+        const err = await res.json();
+        toast.error(err.message || "Failed to create category");
+      }
+    } catch (err) {
+      toast.error("Failed to create category");
+    }
+  };
+
   /* ================= UI ================= */
   const totalItems = items.reduce((s, i) => s + i.qty, 0);
 
@@ -1506,8 +1772,8 @@ export default function CheckoutClient() {
         ══════════════════════════════ */}
         <div className="flex flex-col min-h-0 overflow-hidden border-r border-[var(--kravy-border)]">
 
-          {/* Left Header */}
-          <div className="bg-[var(--kravy-surface)] border-b border-[var(--kravy-border)] px-4 md:px-6 py-4 flex-shrink-0 space-y-3">
+          {/* Left Header — STICKY ON MOBILE/ALL */}
+          <div className="bg-[var(--kravy-surface)] border-b border-[var(--kravy-border)] px-4 md:px-6 py-4 flex-shrink-0 space-y-3 sticky top-0 z-20 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base md:text-lg font-black text-[var(--kravy-text-primary)] tracking-tight">
@@ -1583,6 +1849,14 @@ export default function CheckoutClient() {
                   {cat}
                 </button>
               ))}
+              
+              <button
+                onClick={() => setShowAddCategory(true)}
+                className="px-3 py-1.5 md:py-2 rounded-xl border-2 border-dashed border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)] hover:bg-[var(--kravy-brand)]/5 transition-all flex-shrink-0 flex items-center justify-center"
+                title="Add New Category"
+              >
+                <Plus size={14} strokeWidth={3} />
+              </button>
             </div>
           </div>
 
@@ -1607,80 +1881,60 @@ export default function CheckoutClient() {
           )}
 
           {!menuLoading && filteredMenuItems.length > 0 && (
-            /* ✅ FIX: min-h-0 + overflow-y-auto on a proper scroll container
-               grid items always render at their natural size — no squeezing */
             <div className="min-h-0 flex-1 overflow-y-auto px-4 md:px-5 py-4 scrollbar-hide">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-                {filteredMenuItems.map((m) => {
-                  const inCart = items.find((i) => i.id === m.id);
+              {activeCategory === "All" && !search ? (
+                categoriesList.map(cat => {
+                  const catItems = menuItems.filter(i => i.category?.id === cat.id);
+                  if (catItems.length === 0) return null;
                   return (
-                    <div
-                      key={m.id}
-                      onClick={() => addToCart(m)}
-                      className={`group relative border rounded-2xl overflow-hidden cursor-pointer
-                        transition-all duration-200 bg-[var(--kravy-surface)] flex flex-col
-                        hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97]
-                        ${inCart
-                          ? "border-[var(--kravy-brand)] shadow-md shadow-indigo-500/10"
-                          : "border-[var(--kravy-border)] hover:border-[var(--kravy-brand)]"
-                        }`}
-                    >
-                      {/* Image — fixed height, never compresses */}
-                      <div
-                        className="relative w-full bg-[var(--kravy-bg)] overflow-hidden flex-shrink-0 border-b border-[var(--kravy-border)]/50"
-                        style={{ height: "90px" }}
-                      >
-                        <img
-                          src={m.imageUrl || "/no-image.png"}
-                          alt={m.name}
-                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          loading="lazy"
-                          onError={(e) => { e.currentTarget.src = "/no-image.png"; }}
+                    <div key={cat.id} className="mb-8">
+                      <h3 className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest mb-4 flex items-center gap-3">
+                        <span className="w-8 h-[2px] bg-[var(--kravy-brand)]/20 rounded-full" /> 
+                        {cat.name} 
+                        <span className="ml-auto text-[9px] font-bold px-2 py-0.5 bg-[var(--kravy-bg-2)] rounded border border-[var(--kravy-border)]">
+                          {catItems.length} Items
+                        </span>
+                      </h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                        {catItems.map(m => (
+                          <MenuItemCard key={m.id} m={m} items={items} addToCart={addToCart} reduceFromCart={reduceFromCart} />
+                        ))}
+                        <QuickAddCard 
+                          cat={cat} 
+                          onClick={() => {
+                            setQuickAddCat(cat);
+                            toast.info(`Opening ${cat.name} Quick Add...`);
+                          }} 
                         />
-                        {/* Qty Badge */}
-                        {inCart && (
-                          <div className="absolute top-2 left-2 bg-emerald-500 text-white
-                            text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg shadow-emerald-500/40
-                            border border-white/20 z-10">
-                            ×{inCart.qty}
-                          </div>
-                        )}
-                        {/* Reduce Button */}
-                        {inCart && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); reduceFromCart(m.id); }}
-                            className="absolute top-2 right-2 bg-rose-500 text-white
-                              w-6 h-6 rounded-full flex items-center justify-center
-                              text-sm font-black hover:bg-rose-600 shadow-lg shadow-rose-500/40
-                              border border-white/20 transition-all hover:scale-110 z-10"
-                          >
-                            −
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Content — name + price always visible */}
-                      <div className="p-2.5 md:p-3 flex flex-col gap-1.5 flex-shrink-0">
-                        <p className={`text-[11px] md:text-xs font-bold leading-snug line-clamp-2 transition-colors
-                          ${inCart ? "text-[var(--kravy-brand)]" : "text-[var(--kravy-text-primary)] group-hover:text-[var(--kravy-brand)]"}`}>
-                          {m.name}
-                        </p>
-                        {/* ✅ Price always shown — NOT inside flex-1 / mt-auto */}
-                        <div className="flex items-center justify-between gap-1">
-                          <p className="text-xs md:text-sm font-black text-emerald-500 whitespace-nowrap">
-                            ₹{m.price.toFixed(2)}
-                          </p>
-                          {m.unit && (
-                            <p className="text-[9px] uppercase font-black text-[var(--kravy-text-muted)] tracking-wider truncate">
-                              {m.unit}
-                            </p>
-                          )}
-                        </div>
                       </div>
                     </div>
                   );
-                })}
-              </div>
+                })
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                  {filteredMenuItems.map((m) => (
+                    <MenuItemCard key={m.id} m={m} items={items} addToCart={addToCart} reduceFromCart={reduceFromCart} />
+                  ))}
+                  {!search && activeCategory !== "All" && (() => {
+                    const fallbackCat = categoriesList.find(c => c.name.toLowerCase() === activeCategory.toLowerCase()) || { id: "", name: activeCategory };
+                    return (
+                      <QuickAddCard 
+                        cat={fallbackCat} 
+                        onClick={() => {
+                          if (!fallbackCat.id) {
+                            // If we don't have an ID, we could maybe try to create the category or just warn
+                            toast.warning(`Category "${activeCategory}" metadata is loading. If it fails, please refresh.`);
+                            setQuickAddCat({ id: "others", name: activeCategory });
+                          } else {
+                            setQuickAddCat(fallbackCat);
+                          }
+                          toast.info(`Opening ${fallbackCat.name} Quick Add...`);
+                        }} 
+                      />
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -2015,9 +2269,25 @@ export default function CheckoutClient() {
                   border-indigo-500/30 text-indigo-500 font-black text-xs bg-indigo-500/5
                   hover:bg-indigo-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
-                <Eye size={14} /> Preview Bill
+                <Eye size={14} /> Preview
               </button>
 
+              {/* KOT */}
+              <button
+                onClick={() => {
+                  kravy.ping();
+                  printKOT();
+                }}
+                disabled={items.length === 0}
+                className="flex items-center justify-center gap-1.5 py-3 rounded-xl border-2
+                  border-orange-500/40 text-orange-500 font-black text-xs bg-orange-500/5
+                  hover:bg-orange-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                <Printer size={14} /> KOT Print
+              </button>
+            </div>
+
+            <div className="mt-2">
               {/* Print */}
               <button
                 onClick={() => {
@@ -2037,13 +2307,13 @@ export default function CheckoutClient() {
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
                 disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
-                className="flex items-center justify-center gap-1.5 py-3 rounded-xl
-                  bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-xs
+                className="w-full flex items-center justify-center gap-1.5 py-3.5 rounded-xl
+                  bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm
                   shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/30
                   hover:-translate-y-0.5 active:scale-95
                   disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 transition-all"
               >
-                <Printer size={14} /> Print Bill
+                <Printer size={16} /> Print Full Bill
               </button>
             </div>
 
@@ -2132,6 +2402,33 @@ export default function CheckoutClient() {
           {business?.businessTagLine && <div className="text-center text-[9px] mt-1">{business.businessTagLine}</div>}
           <div className="text-center font-semibold mt-1">Thank you 🙏</div>
         </div>
+
+        {/* ================= PRINT KOT (58mm) ================= */}
+        <div
+          ref={kotRef}
+          className="hidden print:block font-mono text-[10px] leading-tight"
+        >
+          <div className="text-center font-bold text-[14px] border-b border-black pb-1 mb-2">KOT</div>
+          <div className="flex justify-between text-[11px] font-bold mb-2">
+            <span>#{billNumber.split('-').pop()}</span>
+            <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+          <div className="border-t border-black my-1" />
+          <div className="flex justify-between font-bold text-[11px] mb-1">
+            <span>Item</span>
+            <span>Qty</span>
+          </div>
+          <div className="border-t border-black mb-1" />
+          {items.map((i, idx) => (
+            <div key={idx} className="flex justify-between text-[12px] font-bold py-1 border-b border-gray-100 italic">
+              <span className="flex-1 pr-2">{i.name}</span>
+              <span>x{i.qty}</span>
+            </div>
+          ))}
+          <div className="border-t border-black mt-2 pt-1 text-center text-[9px]">
+            {new Date().toLocaleDateString()}
+          </div>
+        </div>
       </div>
 
       {/* ════════════════════════════════════════════
@@ -2141,7 +2438,7 @@ export default function CheckoutClient() {
         <div className="fixed inset-0 z-50 flex justify-end">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/20"
             onClick={() => setShowHeldBills(false)}
           />
 
@@ -2282,7 +2579,7 @@ export default function CheckoutClient() {
       {deleteConfirmId && (
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/20"
             onClick={() => setDeleteConfirmId(null)}
           />
           <div className="relative w-full sm:max-w-sm bg-[var(--kravy-surface)] rounded-t-3xl sm:rounded-3xl
@@ -2355,7 +2652,7 @@ export default function CheckoutClient() {
       {resumeConfirmId && (
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/20"
             onClick={() => setResumeConfirmId(null)}
           />
           <div className="relative w-full sm:max-w-sm bg-[var(--kravy-surface)] rounded-t-3xl sm:rounded-3xl
@@ -2405,7 +2702,7 @@ export default function CheckoutClient() {
       ════════════════════════════════════════════ */}
       {showPreview && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPreview(false)} />
+          <div className="absolute inset-0 bg-black/20" onClick={() => setShowPreview(false)} />
           
           <div className="relative bg-[var(--kravy-bg)] w-full max-w-[500px] h-[90vh] flex flex-col rounded-3xl shadow-2xl border border-[var(--kravy-border)] overflow-hidden animate-in zoom-in-95 duration-200">
             
@@ -2523,6 +2820,16 @@ export default function CheckoutClient() {
               </button>
               <button
                 onClick={() => {
+                  kravy.ping();
+                  printKOT();
+                }}
+                disabled={items.length === 0}
+                className="flex-1 py-3.5 rounded-xl border-2 border-orange-500/40 text-orange-500 font-extrabold text-sm hover:bg-orange-500/5 transition-all flex items-center justify-center gap-2"
+              >
+                <Printer size={16} /> KOT
+              </button>
+              <button
+                onClick={() => {
                   if (!business) { alert("Business profile not loaded yet"); return; }
                   
                   // 🔥 FIRE & FORGET
@@ -2544,6 +2851,147 @@ export default function CheckoutClient() {
               >
                 <Printer size={16} /> Print Direct
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════
+          QUICK ADD ITEM MODAL
+      ════════════════════════════════════════════ */}
+      {quickAddCat && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/10" onClick={() => setQuickAddCat(null)} />
+          <div className="relative bg-[var(--kravy-surface)] w-full max-w-sm rounded-[2rem] shadow-2xl border border-[var(--kravy-border)] overflow-hidden scale-100 animate-in fade-in duration-200">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-5 pb-4 border-b border-[var(--kravy-border)]/50">
+                <div className="w-12 h-12 rounded-2xl bg-[var(--kravy-brand)]/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl font-black text-[var(--kravy-brand)]">+</span>
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-black text-[var(--kravy-text-primary)] leading-tight">Quick Add</h3>
+                  <p className="text-[10px] text-[var(--kravy-text-muted)] font-black uppercase tracking-widest mt-0.5 truncate">
+                    Adding to <span className="text-[var(--kravy-brand)]">{quickAddCat.name}</span>
+                  </p>
+                </div>
+              </div>
+              
+              <form onSubmit={handleQuickAdd} className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2 space-y-1">
+                    <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Name</label>
+                    <input
+                      name="name"
+                      autoFocus
+                      autoComplete="off"
+                      placeholder="Burger"
+                      required
+                      className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Price</label>
+                    <input
+                      name="price"
+                      type="number"
+                      step="0.01"
+                      placeholder="0"
+                      required
+                      className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-mono font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Description (Optional)</label>
+                  <input
+                    name="description"
+                    placeholder="Short description..."
+                    autoComplete="off"
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-medium"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Image URL (Optional)</label>
+                  <input
+                    name="imageUrl"
+                    type="url"
+                    autoComplete="off"
+                    placeholder="https://..."
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-[11px] outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-medium"
+                  />
+                </div>
+                
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuickAddCat(null)}
+                    className="flex-1 py-3 rounded-xl border border-[var(--kravy-border)] bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-xs hover:bg-[var(--kravy-surface-hover)] transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-[2] py-3 rounded-xl bg-[var(--kravy-brand)] text-white font-black text-xs shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 active:scale-[0.98] transition-all"
+                  >
+                    Save Item
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ════════════════════════════════════════════
+          QUICK ADD CATEGORY MODAL
+      ════════════════════════════════════════════ */}
+      {showAddCategory && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/10" onClick={() => setShowAddCategory(false)} />
+          <div className="relative bg-[var(--kravy-surface)] w-full max-w-sm rounded-[2rem] shadow-2xl border border-[var(--kravy-border)] overflow-hidden scale-100 animate-in fade-in duration-200">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-5 pb-4 border-b border-[var(--kravy-border)]/50">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                  <Plus size={24} className="text-amber-500" strokeWidth={3} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-[var(--kravy-text-primary)] leading-tight">New Category</h3>
+                  <p className="text-[10px] text-[var(--kravy-text-muted)] font-black uppercase tracking-widest mt-0.5">
+                    Add menu section
+                  </p>
+                </div>
+              </div>
+              
+              <form onSubmit={handleQuickAddCategory} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Category Name</label>
+                  <input
+                    name="name"
+                    autoFocus
+                    autoComplete="off"
+                    placeholder="e.g. Desserts"
+                    required
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-bold"
+                  />
+                </div>
+                
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCategory(false)}
+                    className="flex-1 py-3 rounded-xl border border-[var(--kravy-border)] bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-xs hover:bg-[var(--kravy-surface-hover)] transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-[2] py-3 rounded-xl bg-amber-500 text-white font-black text-xs shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    Create
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

@@ -1,7 +1,8 @@
 "use client";
 
-import { Receipt, History, User, Banknote, Smartphone } from "lucide-react";
+import { Receipt, History, User, Banknote, Smartphone, Maximize2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 interface Bill {
   billNumber: string;
@@ -14,12 +15,15 @@ interface Bill {
 interface Props {
   recentBills?: Bill[];
   deletedBills?: Bill[];
+  range?: number;
 }
 
 export default function RecentBills({
   recentBills = [],
   deletedBills = [],
+  range = 30,
 }: Props) {
+  const router = useRouter();
   const format = (num: number) =>
     new Intl.NumberFormat("en-IN").format(Math.round(num));
 
@@ -121,19 +125,33 @@ export default function RecentBills({
             </div>
           </div>
         </div>
-        {bills.length > 0 && (
-          <div style={{
-            fontSize: "0.65rem",
-            fontWeight: 700,
-            padding: "4px 10px",
-            borderRadius: "20px",
-            background: `${accentColor}12`,
-            color: accentColor,
-            border: `1px solid ${accentColor}25`
-          }}>
-            Latest 5
-          </div>
-        )}
+
+        <button 
+          onClick={() => router.push(`/dashboard/reports/payments?range=${range}&status=${deleted ? "Deleted" : "Active"}`)}
+          style={{
+            width: "32px",
+            height: "32px",
+            borderRadius: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "var(--kravy-bg-2)",
+            border: "1px solid var(--kravy-border)",
+            cursor: "pointer",
+            color: "var(--kravy-text-muted)",
+            transition: "all 0.2s"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = accentColor;
+            e.currentTarget.style.color = accentColor;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "var(--kravy-border)";
+            e.currentTarget.style.color = "var(--kravy-text-muted)";
+          }}
+        >
+          <Maximize2 size={16} />
+        </button>
       </div>
 
       {/* Bills List */}

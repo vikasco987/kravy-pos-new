@@ -9,7 +9,8 @@ import { useSearch } from "@/components/SearchContext";
 import {
   Receipt, Plus, Trash2, Eye, Printer, MessageCircle,
   Play, MoreVertical, IndianRupee, Calendar, User, Phone,
-  CreditCard, Smartphone, Banknote, Clock, FileText
+  CreditCard, Smartphone, Banknote, Clock, FileText, CheckCircle2, UtensilsCrossed, ChefHat, 
+  ChevronLeft, ChevronRight
 } from "lucide-react";
 
 type BillManager = {
@@ -25,6 +26,9 @@ type BillManager = {
   pdfUrl?: string | null;
   items?: any;
   clerkUserId?: string | null;
+  tableName?: string | null;
+  isOrder?: boolean;
+  orderStatus?: string;
 };
 
 export default function BillingPage() {
@@ -33,6 +37,8 @@ export default function BillingPage() {
   const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const router = useRouter();
   const { query } = useSearch();
 
@@ -51,14 +57,49 @@ export default function BillingPage() {
   async function fetchBills() {
     try {
       setLoading(true);
-      const res = await fetch("/api/bill-manager", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to fetch bills");
-      const data = await res.json();
-      setBills(data.bills ?? []);
-      if (data.clerkUserId) setClerkId(data.clerkUserId);
+      const [billsRes, ordersRes] = await Promise.all([
+        fetch("/api/bill-manager", { cache: "no-store" }),
+        fetch("/api/orders", { cache: "no-store" })
+      ]);
+
+      if (!billsRes.ok) throw new Error("Failed to fetch bills");
+      const billsData = await billsRes.json();
+      
+      let combinedData: BillManager[] = (billsData.bills ?? []).map((b: any) => ({
+        ...b,
+        isOrder: false
+      }));
+
+      if (ordersRes.ok) {
+        const ordersData = await ordersRes.json();
+        const activeOrders = ordersData
+          .filter((o: any) => o.status !== "COMPLETED") // Completed ones are already in bills
+          .map((o: any) => ({
+            id: o.id,
+            billNumber: `ORD-${o.id.slice(-4).toUpperCase()}`,
+            createdAt: o.createdAt,
+            total: o.total,
+            paymentMode: "Pending",
+            paymentStatus: "Pending",
+            customerName: o.customerName || "Walk-in",
+            customerPhone: o.customerPhone,
+            isHeld: false,
+            tableName: o.table?.name || "Counter",
+            isOrder: true,
+            orderStatus: o.status,
+            items: o.items
+          }));
+        combinedData = [...combinedData, ...activeOrders];
+      }
+
+      // Sort by date desc
+      combinedData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      setBills(combinedData);
+      if (billsData.clerkUserId) setClerkId(billsData.clerkUserId);
     } catch (err) {
       console.error("FETCH BILLS ERROR:", err);
-      setError("Failed to load bills");
+      setError("Failed to load records");
     } finally {
       setLoading(false);
     }
@@ -73,16 +114,22 @@ export default function BillingPage() {
     ? bills.filter(b =>
       b.billNumber?.toLowerCase().includes(query.toLowerCase()) ||
       b.customerName?.toLowerCase().includes(query.toLowerCase()) ||
-      b.customerPhone?.includes(query)
+      b.customerPhone?.includes(query) ||
+      b.tableName?.toLowerCase().includes(query.toLowerCase())
     )
     : bills;
+
+  const totalPages = Math.ceil(filteredBills.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedBills = filteredBills.slice(startIndex, startIndex + itemsPerPage);
 
   const format = (num: number) =>
     new Intl.NumberFormat("en-IN").format(Math.round(num));
 
-  const totalRevenue = bills.reduce((s, b) => s + b.total, 0);
-  const paidBills = bills.filter(b => b.paymentStatus?.toLowerCase() === "paid").length;
+  const totalRevenue = bills.filter(b => !b.isOrder && b.paymentStatus?.toLowerCase() === "paid").reduce((s, b) => s + b.total, 0);
+  const paidBills = bills.filter(b => !b.isOrder && b.paymentStatus?.toLowerCase() === "paid").length;
   const heldBills = bills.filter(b => b.isHeld).length;
+  const activeOrderCount = bills.filter(b => b.isOrder).length;
 
   if (error) return (
     <div style={{
@@ -180,6 +227,7 @@ export default function BillingPage() {
           { label: "Total Bills", value: bills.length.toString(), icon: <Receipt size={18} />, color: "rgb(99 102 241)" },
           { label: "Paid Bills", value: paidBills.toString(), icon: <CreditCard size={18} />, color: "rgb(139 92 246)" },
           { label: "On Hold", value: heldBills.toString(), icon: <Clock size={18} />, color: "rgb(245 158 11)" },
+          { label: "Active Orders", value: activeOrderCount.toString(), icon: <UtensilsCrossed size={18} />, color: "rgb(239 68 68)" },
         ].map((s, i) => (
           <motion.div
             key={i}
@@ -246,13 +294,17 @@ export default function BillingPage() {
 
       {/* ── Desktop Table ── */}
       {!loading && filteredBills.length > 0 && (
-        <div className="kravy-card hidden md:block" style={{ overflow: "hidden", padding: 0 }}>
-          <table className="kravy-table">
+        <div className="kravy-card hidden md:block" style={{ overflowX: "auto", padding: 0 }}>
+          <table className="kravy-table" style={{ minWidth: "1200px", borderCollapse: "separate", borderSpacing: 0 }}>
             <thead>
               <tr style={{ background: "rgba(0,0,0,0.02)" }}>
                 {/* Identification Group */}
                 <th style={{ textAlign: "left", background: "rgba(99, 102, 241, 0.05)", borderRight: "1px solid var(--kravy-border)" }}>Bill No</th>
                 
+                {/* Source Group - Indigo/Amber */}
+                <th style={{ textAlign: "left", background: "rgba(79, 70, 229, 0.05)" }}>Source</th>
+                <th style={{ textAlign: "left", background: "rgba(79, 70, 229, 0.05)", borderRight: "1px solid var(--kravy-border)" }}>Order Status</th>
+
                 {/* Customer Group - Blueish */}
                 <th style={{ textAlign: "left", background: "rgba(59, 130, 246, 0.03)" }}>Customer</th>
                 <th style={{ textAlign: "left", background: "rgba(59, 130, 246, 0.03)", borderRight: "1px solid var(--kravy-border)" }}>Phone</th>
@@ -269,7 +321,7 @@ export default function BillingPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredBills.map((bill, idx) => (
+              {paginatedBills.map((bill, idx) => (
                 <motion.tr
                   key={bill.id}
                   initial={{ opacity: 0 }}
@@ -282,6 +334,35 @@ export default function BillingPage() {
                       fontSize: "0.82rem", color: "var(--kravy-accent)"
                     }}>
                       #{bill.billNumber}
+                    </span>
+                  </td>
+                  <td style={{ background: "rgba(79, 70, 229, 0.02)", borderRight: "1px solid var(--kravy-border)" }}>
+                    <span style={{
+                      padding: "4px 8px", borderRadius: "8px",
+                      background: bill.tableName === "POS" ? "rgba(79, 70, 229, 0.1)" : "rgba(245, 158, 11, 0.1)",
+                      color: bill.tableName === "POS" ? "var(--kravy-brand)" : "#D97706",
+                      fontSize: "0.68rem", fontWeight: 900, textTransform: "uppercase",
+                      letterSpacing: "0.5px"
+                    }}>
+                      {bill.tableName || "POS"}
+                    </span>
+                  </td>
+                  <td style={{ background: "rgba(79, 70, 229, 0.02)", borderRight: "1px solid var(--kravy-border)" }}>
+                     <span style={{
+                      display: "inline-flex", alignItems: "center", gap: "5px",
+                      background: bill.isOrder ? (bill.orderStatus === "PENDING" ? "rgba(244, 63, 94, 0.1)" : "rgba(245, 158, 11, 0.1)") : "rgba(16, 185, 129, 0.1)",
+                      color: bill.isOrder ? (bill.orderStatus === "PENDING" ? "#E11D48" : "#D97706") : "#059669",
+                      padding: "4px 8px", borderRadius: "8px", fontSize: "0.68rem", fontWeight: 900
+                    }}>
+                      {bill.isOrder ? (
+                        <>
+                          <Clock size={12} /> {bill.orderStatus}
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 size={12} /> COMPLETED
+                        </>
+                      )}
                     </span>
                   </td>
                   <td style={{ background: "rgba(59, 130, 246, 0.01)" }}>
@@ -318,10 +399,56 @@ export default function BillingPage() {
         </div>
       )}
 
+      {/* ── Pagination Controls ── */}
+      {!loading && filteredBills.length > itemsPerPage && (
+        <div style={{
+          display: "flex", justifyContent: "flex-end", alignItems: "center",
+          gap: "8px", marginTop: "16px", padding: "0 4px"
+        }}>
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            style={{
+              width: "36px", height: "36px", borderRadius: "12px", 
+              border: "1px solid var(--kravy-border)",
+              background: "white", color: currentPage === 1 ? "#ccc" : "var(--kravy-brand)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: currentPage === 1 ? "not-allowed" : "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          <div style={{ 
+            height: "36px", padding: "0 16px", background: "rgba(0,0,0,0.03)", 
+            borderRadius: "12px", display: "flex", alignItems: "center",
+            fontSize: "0.75rem", fontWeight: 900, color: "var(--kravy-text-muted)", fontFamily: "monospace" 
+          }}>
+            {currentPage} / {totalPages}
+          </div>
+
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            style={{
+              width: "36px", height: "36px", borderRadius: "12px", 
+              border: "1px solid var(--kravy-border)",
+              background: "white", color: currentPage === totalPages ? "#ccc" : "var(--kravy-brand)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      )}
+
       {/* ── Mobile Cards ── */}
-      {!loading && filteredBills.length > 0 && (
+      {!loading && paginatedBills.length > 0 && (
         <div className="md:hidden" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {filteredBills.map((bill, idx) => (
+          {paginatedBills.map((bill, idx) => (
             <motion.div
               key={bill.id}
               initial={{ opacity: 0, y: 10 }}
@@ -344,29 +471,38 @@ export default function BillingPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 {[
                   { label: "Amount", value: `₹${format(bill.total)}`, bold: true },
-                  { label: "Payment", value: bill.paymentMode },
-                  { label: "Phone", value: bill.customerPhone || "—" },
-                  { label: "Status", badge: true, bill },
+                  { label: "Source", value: bill.tableName || "POS" },
+                  { label: "Status", value: bill.isOrder ? bill.orderStatus : "COMPLETED", isStatus: true },
+                  { label: "Payment", badge: true, bill },
                 ].map((row, i) => (
                   <div key={i} style={{
                     background: "var(--kravy-surface)",
                     border: "1px solid var(--kravy-border)",
-                    borderRadius: "10px", padding: "10px 12px"
+                    borderRadius: "10px", padding: "10px 12px",
+                    gridColumn: "span 1"
                   }}>
-                    <div style={{ fontSize: "0.62rem", color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px" }}>
+                    <div style={{ fontSize: "0.58rem", color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px" }}>
                       {row.label}
                     </div>
                     {row.badge
                       ? <StatusBadge status={bill.paymentStatus} isHeld={bill.isHeld} />
-                      : <div style={{ fontWeight: row.bold ? 800 : 500, color: "var(--kravy-text-primary)", fontSize: "0.88rem" }}>
-                        {row.value}
-                      </div>
+                      : row.isStatus 
+                        ? <span style={{
+                            fontSize: "0.75rem", fontWeight: 900,
+                            color: row.value === "COMPLETED" ? "#059669" : "#D97706"
+                          }}>{row.value}</span>
+                        : <div style={{ fontWeight: row.bold ? 800 : 500, color: "var(--kravy-text-primary)", fontSize: "0.85rem" }}>
+                            {row.value}
+                          </div>
                     }
                   </div>
                 ))}
               </div>
-              <div style={{ fontSize: "0.65rem", color: "var(--kravy-text-faint)", fontFamily: "monospace", marginTop: "10px" }}>
-                {new Date(bill.createdAt).toLocaleString()}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px", paddingTop: "8px", borderTop: "1px dashed var(--kravy-border)" }}>
+                <span style={{ fontSize: "0.65rem", color: "var(--kravy-text-faint)", fontFamily: "monospace" }}>
+                  {new Date(bill.createdAt).toLocaleString()}
+                </span>
+                <PaymentBadge mode={bill.paymentMode} />
               </div>
             </motion.div>
           ))}
@@ -482,7 +618,20 @@ function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; 
     window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
   };
 
-  const actions = [
+  const actions = bill.isOrder ? [
+    {
+      label: "Go to Kitchen",
+      icon: <ChefHat size={14} />,
+      color: "rgb(99 102 241)",
+      onClick: () => router.push(`/dashboard/workflow`)
+    },
+    {
+      label: "View Items",
+      icon: <Eye size={14} />,
+      color: "var(--kravy-text-muted)",
+      onClick: () => alert(`Items:\n${bill.items?.map((i: any) => `${i.name} x${i.quantity}`).join('\n')}`)
+    }
+  ] : [
     {
       label: "View Details",
       icon: <Eye size={14} />,

@@ -35,18 +35,23 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { orderId, status } = await req.json();
+        const { orderId, status, isKotPrinted, isBillPrinted } = await req.json();
 
-        if (!orderId || !status) {
-            return NextResponse.json({ error: "Order ID and status required" }, { status: 400 });
+        if (!orderId) {
+            return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
         }
+
+        const data: any = {};
+        if (status) data.status = status;
+        if (typeof isKotPrinted === "boolean") data.isKotPrinted = isKotPrinted;
+        if (typeof isBillPrinted === "boolean") data.isBillPrinted = isBillPrinted;
 
         const order = await prisma.order.update({
             where: { 
                 id: orderId, 
                 clerkUserId: effectiveId 
             },
-            data: { status },
+            data,
         });
 
         return NextResponse.json(order);

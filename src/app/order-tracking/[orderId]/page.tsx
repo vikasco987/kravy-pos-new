@@ -248,29 +248,52 @@ export default function OrderTrackingPage() {
                             {currentStatusConfig.description}
                         </p>
 
-                        {/* Status Progress Bar */}
-                        <div className="mt-8 flex items-center justify-between w-full px-2">
-                            {Object.entries(statusConfig).map(([status, config]: [string, any], index: number) => {
-                                const isActive = index <= currentStep;
-                                const isCurrent = status === order.status;
-                                return (
-                                    <div key={status} className="flex-1 flex flex-col items-center relative">
-                                        <div className={`w-3 h-3 rounded-full z-10 border-2 transition-all duration-700 ${isActive ? "bg-[#E23744] border-[#E23744] scale-125" : "bg-white border-[#EBEBEB]"
-                                            }`} />
-                                        {isCurrent && (
-                                            <div className="absolute -top-1 w-5 h-5 bg-[#E23744]/20 rounded-full animate-ping" />
-                                        )}
-                                        {index < 6 && (
-                                            <div className={`absolute left-1/2 top-1.5 w-full h-[2px] transition-all duration-1000 ${index < currentStep ? "bg-[#E23744]" : "bg-[#EBEBEB]"
-                                                }`} />
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <div className="flex justify-between mt-3 px-2">
-                            <span className="text-[0.6rem] font-[900] text-[#E23744] uppercase tracking-tighter">Placed</span>
-                            <span className="text-[0.6rem] font-[900] text-[#696969] uppercase tracking-tighter">Served</span>
+                        {/* Status Progress Bar with Labels */}
+                        <div className="mt-8 px-1">
+                            <div className="flex items-center justify-between w-full relative mb-12">
+                                {/* Connecting Line Background */}
+                                <div className="absolute top-[14px] left-0 w-full h-[3px] bg-slate-100" />
+                                
+                                {Object.entries(statusConfig).map(([status, config]: [string, any], index: number) => {
+                                    const statusOrder = ['PENDING', 'ACCEPTING', 'ACCEPTED', 'PREPARING', 'READY', 'SERVED', 'COMPLETED'];
+                                    const stepIndex = statusOrder.indexOf(status);
+                                    const isActive = stepIndex <= currentStep;
+                                    const isCurrent = status === order.status;
+                                    const Icon = config.icon;
+
+                                    return (
+                                        <div key={status} className="flex-1 flex flex-col items-center relative z-10">
+                                            {/* Progress line overlay */}
+                                            {index > 0 && index <= currentStep && (
+                                                <div className="absolute top-[14px] right-1/2 w-full h-[3px] bg-[#E23744]" />
+                                            )}
+                                            
+                                            {/* Dot / Icon container */}
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 transition-all duration-500 shadow-sm ${
+                                                isCurrent ? "bg-[#E23744] border-white scale-125 z-20 shadow-lg" : 
+                                                isActive ? "bg-[#E23744] border-white" : "bg-white border-slate-100"
+                                            }`}>
+                                                <Icon size={12} className={isActive ? "text-white" : "text-slate-300"} />
+                                            </div>
+                                            
+                                            {/* Label */}
+                                            <div className="absolute top-10 flex flex-col items-center w-20">
+                                                <span className={`text-[0.52rem] font-black uppercase tracking-tighter text-center leading-tight transition-all duration-500 ${
+                                                    isCurrent ? "text-[#E23744] scale-105" : isActive ? "text-[#1C1C1C]" : "text-slate-300"
+                                                }`}>
+                                                    {config.label.split(' ')[0]}
+                                                    <br />
+                                                    {config.label.split(' ').slice(1).join(' ')}
+                                                </span>
+                                            </div>
+
+                                            {isCurrent && (
+                                                <div className="absolute -top-1 w-10 h-10 bg-[#E23744]/15 rounded-full animate-ping" />
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </motion.div>
 

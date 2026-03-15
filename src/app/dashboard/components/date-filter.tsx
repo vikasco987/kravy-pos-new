@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DayPicker, DateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,6 +9,8 @@ import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 
 export default function DateFilter() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -21,8 +23,24 @@ export default function DateFilter() {
     const checkScreen = () => setIsMobile(window.innerWidth < 640);
     checkScreen();
     window.addEventListener("resize", checkScreen);
+
+    // Initial sync from URL
+    const rangeVal = searchParams.get("range");
+    if (rangeVal) {
+      const r = Number(rangeVal);
+      const items = [
+        { label: "Today", value: 1 },
+        { label: "Yesterday", value: 2 },
+        { label: "Last 7 Days", value: 7 },
+        { label: "Last 30 Days", value: 30 },
+      ];
+      const match = items.find(i => i.value === r);
+      if (match) setLabel(match.label);
+      else if (r > 30) setLabel(`Last ${r} Days`);
+    }
+
     return () => window.removeEventListener("resize", checkScreen);
-  }, []);
+  }, [searchParams]);
 
   const formatDate = (date: Date) =>
     date.toLocaleDateString("en-IN", {
@@ -31,16 +49,23 @@ export default function DateFilter() {
       year: "numeric",
     });
 
+  const updateURL = (days: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("range", days.toString());
+    // Keep category if it exists (for reports)
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
   const applyQuick = (text: string, days: number) => {
     setLabel(text);
-    router.push(`/dashboard?range=${days}`);
+    updateURL(days);
     setOpen(false);
   };
 
   const applySingle = () => {
     if (!selectedDate) return;
     setLabel(formatDate(selectedDate));
-    router.push(`/dashboard?range=1`);
+    updateURL(1);
     setOpen(false);
   };
 
@@ -48,7 +73,7 @@ export default function DateFilter() {
     if (!range?.from || !range?.to) return;
     const diff = (range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24) + 1;
     setLabel(`${formatDate(range.from)} - ${formatDate(range.to)}`);
-    router.push(`/dashboard?range=${Math.floor(diff)}`);
+    updateURL(Math.floor(diff));
     setOpen(false);
   };
 

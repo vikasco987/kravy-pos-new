@@ -1,5 +1,5 @@
 /**
- * 🔊 KravySound — Centralized Sound Engine v3 (Mobile-Safe)
+ * 🔊 KravySound — Centralized Sound Engine v3.1 (Mobile-Safe)
  * - Web Audio API synthesis (no MP3 files)
  * - iOS Safari + Android Chrome compatible
  * - AudioContext created on first user gesture (required by all mobile browsers)
@@ -11,8 +11,9 @@ let _ctx: AudioContext | null = null;
 let _unlocked = false;
 
 /** Create AudioContext lazily — must be called inside a user gesture on mobile */
+/** Create AudioContext lazily — must be called inside a user gesture on mobile */
 function getCtx(): AudioContext {
-    if (!_ctx) {
+    if (!_ctx || _ctx.state === "closed") {
         _ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     return _ctx;
@@ -24,37 +25,37 @@ function getCtx(): AudioContext {
  */
 async function resumedCtx(): Promise<AudioContext | null> {
     if (typeof window === "undefined") return null;
-    const c = getCtx();
-    if (c.state !== "running") {
+    let c = getCtx();
+    
+    if (c.state === "suspended") {
         try {
+            console.log("KravySound: Resuming suspended context...");
             await c.resume();
-        } catch {
-            // ignore — will try again next call
+        } catch (e) {
+            console.warn("KravySound: Context resume failed, recreating...", e);
+            // If resume fails, try creating a fresh one
+            _ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            c = _ctx;
         }
     }
     return c;
 }
 
 // ── Mobile Unlock: pre-warm AudioContext on very first touch/click ─────────────
-// iOS Safari requires the AudioContext to be interacted with inside a user gesture.
-// We attach a one-time listener that silently resumes it so all subsequent calls work.
 if (typeof window !== "undefined") {
     const unlock = async () => {
         if (_unlocked) return;
-        _unlocked = true;
         try {
             const c = getCtx();
-            // Resume context
             await c.resume();
-            // Play a 1-sample silent buffer — required by iOS to fully unlock
-            const buf = c.createBuffer(1, 1, 22050);
-            const src = c.createBufferSource();
-            src.buffer = buf;
-            src.connect(c.destination);
-            src.start(0);
-        } catch { /* ignore */ }
+            
+            _unlocked = true;
+            console.log("KravySound: Audio Unlocked via user gesture 🔊 Status:", c.state);
+        } catch (e) {
+            console.error("KravySound: Unlock failed", e);
+        }
     };
-    // Listen on touchstart + click + keydown to cover iOS, Android, and desktop
+    window.addEventListener("mousedown",  unlock, { once: true, passive: true });
     window.addEventListener("touchstart", unlock, { once: true, passive: true });
     window.addEventListener("click",      unlock, { once: true, passive: true });
     window.addEventListener("keydown",    unlock, { once: true, passive: true });
@@ -69,38 +70,91 @@ function tone(
     volume: number = 0.3,
     type: OscillatorType = "sine"
 ) {
-    const osc  = c.createOscillator();
-    const gain = c.createGain();
-    osc.connect(gain);
-    gain.connect(c.destination);
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, startAt);
-    gain.gain.setValueAtTime(0, startAt);
-    gain.gain.linearRampToValueAtTime(volume, startAt + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
-    osc.start(startAt);
-    osc.stop(startAt + duration + 0.05);
+    try {
+        const osc  = c.createOscillator();
+        const gain = c.createGain();
+        
+        osc.connect(gain);
+        gain.connect(c.destination);
+        
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, startAt);
+        
+        gain.gain.setValueAtTime(0, startAt);
+        gain.gain.linearRampToValueAtTime(volume, startAt + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+        
+        osc.start(startAt);
+        osc.stop(startAt + duration + 0.1);
+
+        osc.onended = () => {
+            osc.disconnect();
+            gain.disconnect();
+        };
+    } catch (e) {
+        console.error("KravySound: Play tone error", e);
+    }
 }
 
 function noise(c: AudioContext, startAt: number, duration: number, volume = 0.04) {
-    const buf  = c.createBuffer(1, c.sampleRate * duration, c.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-    const src  = c.createBufferSource();
-    src.buffer = buf;
-    const gain = c.createGain();
-    gain.gain.setValueAtTime(volume, startAt);
-    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
-    src.connect(gain);
-    gain.connect(c.destination);
-    src.start(startAt);
+    try {
+        const buf  = c.createBuffer(1, c.sampleRate * duration, c.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+        
+        const src  = c.createBufferSource();
+        src.buffer = buf;
+        const gain = c.createGain();
+        
+        gain.gain.setValueAtTime(volume, startAt);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+        
+        src.connect(gain);
+        gain.connect(c.destination);
+        
+        src.start(startAt);
+        src.onended = () => {
+            src.disconnect();
+            gain.disconnect();
+        };
+    } catch (e) {
+        console.error("KravySound: Play noise error", e);
+    }
 }
 
 /** Wraps every sound function — resumes ctx first, then plays */
 async function play(fn: (c: AudioContext) => void) {
-    const c = await resumedCtx();
-    if (!c) return;
-    fn(c);
+    if (typeof window === "undefined") return;
+    
+    let c = getCtx();
+    const currentState = c.state;
+    console.log(`[KravySound] Pre-Play Check — Context State: ${currentState}, Unlocked: ${_unlocked}`);
+
+    // If context is NOT running, try to fix it
+    if ((c.state as any) !== "running") {
+        try {
+            await c.resume();
+            if ((c.state as any) !== "running") {
+                console.warn("[KravySound] Resume failed. Attempting fresh engine...");
+                _ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                c = _ctx;
+                await c.resume().catch(e => console.error("[KravySound] Fresh engine resume failed:", e));
+            }
+        } catch (e) {
+            console.error("[KravySound] Resume attempt failed:", e);
+        }
+    }
+
+    // Final check before executing sound logic
+    if ((c.state as any) === "running") {
+        try {
+            fn(c);
+        } catch (e) {
+            console.error("[KravySound] Runtime Playback Error:", e);
+        }
+    } else {
+        console.warn(`[KravySound] BLOCKED: Browser state is still '${c.state}'. Direct user interaction needed.`);
+    }
 }
 
 // ── Sound Library ──────────────────────────────────────────────────────────────
@@ -283,6 +337,25 @@ export const kravy = {
             const t = c.currentTime;
             noise(c, t, 0.08, 0.05);
             for (let i = 0; i < 3; i++) noise(c, t + 0.1 + i * 0.12, 0.1, 0.04);
+        });
+    },
+    /** 🚨 Continuous alert — like Zomato/Swiggy order alert */
+    alertLoop() {
+        play(c => {
+            const t = c.currentTime;
+            // 🎶 Premium Triad Alert (Rich Arpeggio)
+            // Tone 1: Root (G5)
+            tone(c, 784, t,        0.2, 0.25, "sine");
+            tone(c, 784, t,        0.2, 0.1,  "triangle");
+
+            // Tone 2: Mid (C5)
+            tone(c, 523, t + 0.1,  0.2, 0.2,  "sine");
+            
+            // Tone 3: High (B5) - Creates a bright, urgent feel
+            tone(c, 987, t + 0.2,  0.3, 0.2,  "sine");
+            
+            // Subtle high-pitch "sparkle"
+            tone(c, 1568, t + 0.05, 0.05, 0.05, "sine");
         });
     },
 };

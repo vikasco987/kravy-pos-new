@@ -8,6 +8,7 @@ import RecentBills from "./components/recent-bills";
 import TopItems from "./components/top-items";
 import DateFilter from "./components/date-filter";
 import PaymentModeChart from "./components/payment-mode-chart";
+import DashboardSoundAlerts from "./components/dashboard-sound-alerts";
 import { Sparkles, Tag } from "lucide-react";
 
 export const revalidate = 0;
@@ -26,20 +27,29 @@ export default async function DashboardPage({
 
   const endDate = new Date();
   const startDate = new Date();
-  startDate.setDate(endDate.getDate() - range);
+  
+  if (range === 1) {
+    // Today: From 00:00 AM to Now
+    startDate.setHours(0, 0, 0, 0);
+  } else if (range === 2) {
+    // Yesterday: From 00:00 AM yesterday to 11:59 PM yesterday
+    startDate.setDate(startDate.getDate() - 1);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setDate(endDate.getDate() - 1);
+    endDate.setHours(23, 59, 59, 999);
+  } else {
+    // Last X days
+    startDate.setDate(endDate.getDate() - range);
+  }
 
   const previousStart = new Date(startDate);
   previousStart.setDate(previousStart.getDate() - range);
 
-  const [bills, previousBills, deletedBillsData, activeCombosCount, activeOffersCount] = await Promise.all([
+  const [allBills, previousBills, deletedBillsData, activeCombosCount, activeOffersCount] = await Promise.all([
     prisma.billManager.findMany({
       where: {
         clerkUserId: effectiveId,
         isDeleted: false,
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -62,24 +72,29 @@ export default async function DashboardPage({
     prisma.offer.count({ where: { clerkUserId: effectiveId, isActive: true } })
   ]);
 
-  const totalRevenue = bills.reduce((sum, b) => sum + b.total, 0);
+  // ── Filter bills for the selected RANGE (for charts/revenue/recent) ──
+  const bills = allBills.filter(b => 
+    new Date(b.createdAt) >= startDate && new Date(b.createdAt) <= endDate
+  );
+
+  const totalRevenue = bills.reduce((sum: number, b: any) => sum + b.total, 0);
   const totalBills = bills.length;
 
   let cash = 0;
   let upi = 0;
 
-  bills.forEach((bill) => {
+  bills.forEach((bill: any) => {
     const mode = (bill.paymentMode || "").toLowerCase();
     if (mode.includes("cash")) cash += bill.total;
     if (mode.includes("upi")) upi += bill.total;
   });
 
-  const previousRevenue = previousBills.reduce((sum, b) => sum + b.total, 0);
+  const previousRevenue = previousBills.reduce((sum: number, b: any) => sum + b.total, 0);
   const growth = previousRevenue === 0 ? 100 : ((totalRevenue - previousRevenue) / previousRevenue) * 100;
 
   // Chart Mapping
   const chartMap: Record<string, { revenue: number; bills: number }> = {};
-  bills.forEach((bill) => {
+  bills.forEach((bill: any) => {
     const date = bill.createdAt.toISOString().split("T")[0];
     if (!chartMap[date]) chartMap[date] = { revenue: 0, bills: 0 };
     chartMap[date].revenue += bill.total;
@@ -94,7 +109,7 @@ export default async function DashboardPage({
       bills: chartMap[date].bills,
     }));
 
-  const recentBills = bills.slice(0, 5).map((bill) => ({
+  const recentBills = bills.slice(0, 5).map((bill: any) => ({
     billNumber: bill.billNumber,
     customerName: bill.customerName ?? undefined,
     paymentMode: bill.paymentMode,
@@ -102,7 +117,7 @@ export default async function DashboardPage({
     createdAt: bill.createdAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
   }));
 
-  const deletedBills = deletedBillsData.map((bill) => ({
+  const deletedBills = deletedBillsData.map((bill: any) => ({
     billNumber: bill.billNumber,
     customerName: bill.customerName,
     paymentMode: bill.paymentMode,
@@ -111,7 +126,7 @@ export default async function DashboardPage({
   }));
 
   const itemMap: Record<string, { totalSold: number; totalRevenue: number }> = {};
-  bills.forEach((bill) => {
+  bills.forEach((bill: any) => {
     let items: any = bill.items;
     if (typeof items === "string") {
       try { items = JSON.parse(items); } catch { items = []; }
@@ -122,7 +137,16 @@ export default async function DashboardPage({
       items.forEach((item: any) => {
         const name = item?.name || "Unknown";
         const quantity = Number(item?.quantity ?? item?.qty ?? 0);
-        const price = Number(item?.sellingPrice ?? item?.price ?? 0);
+        
+        // Robust price detection to match Quick POS logic
+        const sPrice = Number(item?.sellingPrice);
+        const bPrice = Number(item?.price);
+        const rPrice = Number(item?.rate);
+        
+        const price = !isNaN(sPrice) && item.sellingPrice !== null ? sPrice 
+                   : !isNaN(rPrice) && item.rate !== null ? rPrice
+                   : !isNaN(bPrice) ? bPrice : 0;
+
         if (!itemMap[name]) itemMap[name] = { totalSold: 0, totalRevenue: 0 };
         itemMap[name].totalSold += quantity;
         itemMap[name].totalRevenue += (quantity * price);
@@ -137,14 +161,104 @@ export default async function DashboardPage({
       totalRevenue: itemMap[name].totalRevenue,
     }))
     .sort((a, b) => b.totalRevenue - a.totalRevenue)
-    .slice(0, 5);
+    .slice(0, 8);
 
   const isGrowthPositive = growth > 0;
   const avgOrderValue = totalBills > 0 ? totalRevenue / totalBills : 0;
   const format = (num: number) => new Intl.NumberFormat("en-IN").format(Math.round(num));
 
+  // ── Calculate Day, Week, and Month Sales ──
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const daySale = allBills
+    .filter((b: any) => new Date(b.createdAt) >= startOfDay)
+    .reduce((s: number, b: any) => s + b.total, 0);
+
+  const weekSale = allBills
+    .filter((b: any) => new Date(b.createdAt) >= startOfWeek)
+    .reduce((s: number, b: any) => s + b.total, 0);
+
+  const monthSale = allBills
+    .filter((b: any) => new Date(b.createdAt) >= startOfMonth)
+    .reduce((s: number, b: any) => s + b.total, 0);
+
+  // ── Calculate Dynamic Customer Stats (New vs Repeat for the selected RANGE) ──
+  const currentRangeBills = bills;
+  const preRangeBills = allBills.filter(b => new Date(b.createdAt) < startDate);
+
+  const preRangePhones = new Set(preRangeBills.map(b => b.customerPhone).filter(Boolean));
+  const currentRangeIdentifiableBills = currentRangeBills.filter(b => b.customerPhone);
+  const currentRangeUniquePhones = new Set(currentRangeIdentifiableBills.map(b => b.customerPhone));
+  const currentRangeAnonymousCount = currentRangeBills.filter(b => !b.customerPhone).length;
+
+  let rangeRepeatCount = 0;
+  let rangeNewCount = 0;
+
+  currentRangeUniquePhones.forEach(phone => {
+    if (preRangePhones.has(phone)) {
+      rangeRepeatCount++;
+    } else {
+      rangeNewCount++;
+    }
+  });
+
+  const totalRangeCustomers = currentRangeUniquePhones.size + currentRangeAnonymousCount;
+
+  // ── Calculate Peak Hour Today (Keep this for Today specifically or for the Range) ──
+  // User asked for "today" specifically in previous step, but let's make it for the range if needed? 
+  // Usually Peak Hour is most useful for 'Today'. I'll keep it for the selected 'bills'.
+  const hourMap: Record<number, number> = {};
+  currentRangeBills.forEach(b => {
+    const hour = new Date(b.createdAt).getHours();
+    hourMap[hour] = (hourMap[hour] || 0) + 1;
+  });
+  
+  let peakHour = -1;
+  let maxOrders = 0;
+  Object.entries(hourMap).forEach(([hour, count]) => {
+    if (count > maxOrders) {
+      maxOrders = count;
+      peakHour = Number(hour);
+    }
+  });
+
+  const peakHourStr = peakHour === -1 
+    ? "No data" 
+    : `${peakHour % 12 || 12} ${peakHour >= 12 ? 'PM' : 'AM'}`;
+
+  // ── Calculate Peak Day Matrix (Weekly Distribution) ──
+  const dayNameMap: Record<string, number> = { 
+    'Sunday': 0, 'Monday': 0, 'Tuesday': 0, 'Wednesday': 0, 'Thursday': 0, 'Friday': 0, 'Saturday': 0 
+  };
+  
+  // Use last 30 days for a better matrix
+  const last30DaysBills = allBills.filter(b => new Date(b.createdAt) >= startDate);
+  last30DaysBills.forEach(b => {
+    const dayName = new Date(b.createdAt).toLocaleDateString('en-IN', { weekday: 'long' });
+    dayNameMap[dayName] = (dayNameMap[dayName] || 0) + b.total;
+  });
+
+  const peakDayEntry = Object.entries(dayNameMap).sort((a,b) => b[1] - a[1])[0];
+  const peakDayName = peakDayEntry[1] > 0 ? peakDayEntry[0] : "No data";
+
+  // ── Fetch Live Orders (QR Orders) ──
+  const liveOrders = await prisma.order.findMany({
+    where: { clerkUserId: effectiveId, status: { not: "COMPLETED" } }
+  });
+
+  const activeOrderCount = liveOrders.length;
+  const completedTodayCount = allBills.filter(b => b.createdAt >= startOfDay).length;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+      <DashboardSoundAlerts activeOrders={activeOrderCount} />
 
       {/* ── Header Row ── */}
       <div style={{
@@ -154,6 +268,7 @@ export default async function DashboardPage({
         flexWrap: "wrap",
         gap: "16px"
       }}>
+        {/* ... existing header code ... */}
         <div>
           <div style={{
             display: "flex",
@@ -196,7 +311,20 @@ export default async function DashboardPage({
           totalBills: totalBills,
           growth: growth,
           paymentSplit: { Cash: cash, UPI: upi },
+          daySale,
+          weekSale,
+          monthSale,
+          todayCustomers: totalRangeCustomers,
+          newCustomers: rangeNewCount,
+          repeatCustomers: rangeRepeatCount,
+          walkInCustomers: currentRangeAnonymousCount,
+          peakHour: peakHourStr,
+          peakDay: peakDayName,
+          activeOrders: activeOrderCount,
+          completedOrders: completedTodayCount,
+          avgOrderValue: avgOrderValue
         }}
+        range={range}
       />
 
       {/* ── Charts Row ── */}
@@ -204,11 +332,18 @@ export default async function DashboardPage({
         <div className="lg:col-span-2">
           <RevenueChart data={chartData} />
         </div>
-        <PaymentModeChart paymentSplit={{ Cash: cash, UPI: upi }} />
+        <PaymentModeChart 
+          paymentSplit={{ Cash: cash, UPI: upi }} 
+          range={range}
+        />
       </div>
 
       {/* ── Bills Row ── */}
-      <RecentBills recentBills={recentBills} deletedBills={deletedBills} />
+      <RecentBills 
+        recentBills={recentBills} 
+        deletedBills={deletedBills} 
+        range={range}
+      />
 
       {/* ── Marketing Hub Section ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -254,7 +389,7 @@ export default async function DashboardPage({
       {/* ── Bottom Row: Top Items + Insight Card ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-1">
-          <TopItems items={topItems} allBills={bills} />
+          <TopItems items={topItems} range={range} />
         </div>
 
         {/* Business Insight Card */}

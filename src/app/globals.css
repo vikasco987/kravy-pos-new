@@ -581,9 +581,8 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-  padding: 13px 18px;
-  border-bottom: 1px solid var(--kravy-border);
   white-space: nowrap;
+  padding: 8px 18px;
 }
 
 .kravy-table tbody tr {
@@ -600,9 +599,9 @@ body {
 }
 
 .kravy-table tbody td {
-  padding: 14px 18px;
+  padding: 8px 18px;
   color: var(--kravy-text-primary);
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 500;
 }
 

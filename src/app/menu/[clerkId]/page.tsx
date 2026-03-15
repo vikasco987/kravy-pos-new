@@ -1,4 +1,5 @@
 "use client";
+// Force re-compilation to fix vendor-chunks error
 
 import { useEffect, useState, useMemo, useRef, Suspense } from "react";
 import Image from "next/image";
@@ -48,6 +49,7 @@ type MenuItem = {
     price?: number | null;
     sellingPrice?: number | null;
     imageUrl?: string | null;
+    image?: string | null;
     unit?: string | null;
     categoryId?: string | null;
     category?: { id: string; name: string };
@@ -67,6 +69,7 @@ type MenuItem = {
 type BusinessProfile = {
     businessName: string;
     logoUrl?: string;
+    profileImageUrl?: string;
     businessAddress?: string;
     businessTagLine?: string;
     taxEnabled?: boolean;
@@ -618,9 +621,16 @@ function PublicMenu() {
                     <button className="w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center">
                         <ChevronLeft size={18} />
                     </button>
-                    <div className="flex-1">
-                        <div className="text-[0.95rem] font-[900]">{profile?.businessName || "Masala House"}</div>
-                        <div className="text-[0.67rem] text-[#ABABAB] font-[600] uppercase tracking-wider">North Indian · Table {tableName}</div>
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                        {profile?.logoUrl && (
+                            <div className="w-[34px] h-[34px] rounded-lg overflow-hidden border border-[#EBEBEB] shrink-0 bg-white">
+                                <img src={profile.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                            </div>
+                        )}
+                        <div className="flex-1 truncate">
+                            <div className="text-[0.95rem] font-[900] truncate">{profile?.businessName || "Masala House"}</div>
+                            <div className="text-[0.67rem] text-[#ABABAB] font-[600] uppercase tracking-wider truncate">North Indian · Table {tableName}</div>
+                        </div>
                     </div>
                     <div className="flex gap-1.5">
                         <button className="w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center" onClick={() => { kravy.ping(); searchInputRef.current?.focus(); }}>
@@ -679,7 +689,7 @@ function PublicMenu() {
                             {/* RESTAURANT HERO */}
                             <div className="bg-white mb-2">
                                 <div className="relative overflow-hidden h-[180px]">
-                                    <Image src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80" alt="Restaurant" fill className="object-cover" />
+                                    <Image src={profile?.profileImageUrl || "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80"} alt="Restaurant" fill className="object-cover" />
                                     <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-black/45" />
                                     <div className="absolute bottom-3 left-3.5 z-10 bg-black/65 backdrop-blur-md rounded-md px-2.5 py-1.5 flex items-center gap-1.5 border border-white/10">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#4CD964] animate-pulse" />
@@ -921,8 +931,8 @@ function PublicMenu() {
                                         </div>
                                         <div className="flex flex-col items-center flex-shrink-0">
                                             <div className="w-[108px] h-[92px] rounded-xl overflow-hidden relative border border-[#EBEBEB]">
-                                                {item.imageUrl ? (
-                                                    <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                                                {item.imageUrl || item.image ? (
+                                                    <Image src={(item.imageUrl || item.image) as string} alt={item.name} fill className="object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full bg-gradient-to-br from-[#FFF0F1] to-[#FFF8EC] flex items-center justify-center text-4xl">{item.ico || "🥘"}</div>
                                                 )}

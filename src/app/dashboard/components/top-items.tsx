@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Flame, Trophy } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface Item {
   name: string;
@@ -11,12 +12,20 @@ interface Item {
 
 interface Props {
   items?: Item[];
-  allBills?: any[];
+  range?: number;
 }
 
 export default function TopItems({
   items = [],
+  range = 30,
 }: Props) {
+  const router = useRouter();
+  const getHeaderTitle = () => {
+    if (range === 1) return "Today's Sellers";
+    if (range === 2) return "Yesterday's Sellers";
+    if (range === 7) return "Weekly Top Sellers";
+    return "Top Sellers";
+  };
   const format = (num: number) =>
     new Intl.NumberFormat("en-IN").format(Math.round(num));
 
@@ -75,7 +84,7 @@ export default function TopItems({
             <Flame size={20} color="white" />
           </div>
           <div>
-            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>Top Sellers</h3>
+            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>{getHeaderTitle()}</h3>
             <p style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", fontFamily: "monospace" }}>
               Best performing dishes
             </p>
@@ -206,6 +215,41 @@ export default function TopItems({
           })
         )}
       </div>
+      
+      {/* View Full Report Button */}
+      {items.length > 0 && (
+        <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px dashed var(--kravy-border)" }}>
+          <button 
+            onClick={() => router.push(`/dashboard/reports/items?range=${range}`)}
+            style={{
+              width: "100%",
+              padding: "12px",
+              background: "var(--kravy-bg-2)",
+              border: "1px solid var(--kravy-border)",
+              borderRadius: "14px",
+              color: "var(--kravy-text-primary)",
+              fontSize: "0.85rem",
+              fontWeight: 700,
+              cursor: "pointer",
+              transition: "all 0.2s",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--kravy-surface-hover)";
+              e.currentTarget.style.borderColor = "var(--kravy-brand)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--kravy-bg-2)";
+              e.currentTarget.style.borderColor = "var(--kravy-border)";
+            }}
+          >
+            View Full Report
+          </button>
+        </div>
+      )}
     </div>
   );
 }
