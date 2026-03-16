@@ -1842,138 +1842,109 @@ function PublicMenu() {
                 )}
             </AnimatePresence>
 
-            {/* FULL SCREEN ITEM VIEW (ZOMATO STYLE) */}
+            {/* ITEM DETAIL POPUP (ZOMATO MODAL STYLE) */}
             <AnimatePresence>
                 {selectedMenuItem && (
                     <motion.div
-                        initial={{ y: "100%" }}
-                        animate={{ y: 0 }}
-                        exit={{ y: "100%" }}
-                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        className="fixed inset-0 z-[200] bg-white flex flex-col md:max-w-[480px] md:mx-auto shadow-2xl overflow-y-auto"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 md:p-6"
+                        onClick={() => setSelectedMenuItem(null)}
                     >
-                        {/* Header Image Area */}
-                        <div className="relative h-[45vh] bg-gray-100 flex-shrink-0">
-                            {selectedMenuItem.imageUrl || selectedMenuItem.image ? (
-                                <Image 
-                                    src={(selectedMenuItem.imageUrl || selectedMenuItem.image) as string} 
-                                    alt={selectedMenuItem.name} 
-                                    fill 
-                                    className="object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-[#FFF0F1] to-[#FFF8EC] flex items-center justify-center text-8xl">
-                                    {selectedMenuItem.ico || "🥘"}
-                                </div>
-                            )}
-                            
-                            {/* Back Button */}
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full max-w-[420px] bg-white rounded-[24px] overflow-hidden flex flex-col shadow-2xl relative"
+                        >
+                            {/* Close Button Above Modal */}
                             <button 
                                 onClick={() => setSelectedMenuItem(null)}
-                                className="absolute top-5 left-5 w-11 h-11 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-all z-20"
+                                className="absolute -top-12 left-1/2 -translate-x-1/2 w-10 h-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 active:scale-90 transition-all z-[210]"
                             >
-                                <ChevronLeft size={24} />
+                                <X size={20} />
                             </button>
 
-                            {/* Gradient Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-                            
-                            <div className="absolute bottom-8 left-6 right-6">
-                                <div className={`w-5 h-5 border-[2px] rounded-sm flex items-center justify-center mb-3 bg-white ${selectedMenuItem.isVeg ? "border-[#22C55E]" : "border-[#E23744]"}`}>
-                                    <div className={`w-2.5 h-2.5 rounded-full ${selectedMenuItem.isVeg ? "bg-[#22C55E]" : "bg-[#E23744]"}`} />
+                            <div className="overflow-y-auto max-h-[80vh] flex flex-col">
+                                {/* Padded Image Area */}
+                                <div className="p-4 flex-shrink-0">
+                                    <div className="relative h-[240px] w-full rounded-[20px] overflow-hidden bg-gray-50 border border-gray-100">
+                                        {selectedMenuItem.imageUrl || selectedMenuItem.image ? (
+                                            <Image 
+                                                src={(selectedMenuItem.imageUrl || selectedMenuItem.image) as string} 
+                                                alt={selectedMenuItem.name} 
+                                                fill 
+                                                className="object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full bg-gradient-to-br from-[#FFF0F1] to-[#FFF8EC] flex items-center justify-center text-6xl">
+                                                {selectedMenuItem.ico || "🥘"}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <h1 className="text-white text-3xl font-black leading-tight drop-shadow-lg mb-1">
-                                    {activeLang === "hi" && selectedMenuItem.hiName ? selectedMenuItem.hiName : selectedMenuItem.name}
-                                </h1>
-                                <div className="text-white/70 text-sm font-bold uppercase tracking-widest">{selectedMenuItem.category?.name || "Popular Choice"}</div>
-                            </div>
-                        </div>
 
-                        {/* Content Area */}
-                        <div className="p-7 flex-1 bg-white rounded-t-[32px] mt-[-32px] relative z-10">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-3xl font-black">₹{selectedMenuItem.sellingPrice || selectedMenuItem.price}</span>
-                                    {selectedMenuItem.sellingPrice && selectedMenuItem.price && selectedMenuItem.price > selectedMenuItem.sellingPrice && (
-                                        <span className="text-gray-400 line-through text-base font-bold">₹{selectedMenuItem.price}</span>
-                                    )}
-                                </div>
-                                {selectedMenuItem.rating && (
-                                    <div className="text-right">
-                                        <div className="flex items-center gap-1.5 bg-[#F0FDF4] px-3.5 py-1.5 rounded-xl border border-emerald-100 shadow-sm">
-                                            <span className="text-[#22C55E] font-black text-base">★ {selectedMenuItem.rating}</span>
+                                {/* Item Info */}
+                                <div className="px-6 pb-6">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className={`w-4 h-4 border-[1.5px] rounded-sm flex items-center justify-center ${selectedMenuItem.isVeg ? "border-green-600" : "border-red-600"}`}>
+                                            <div className={`w-1.5 h-1.5 rounded-full ${selectedMenuItem.isVeg ? "bg-green-600" : "bg-red-600"}`} />
                                         </div>
-                                        <div className="text-[10px] font-black text-gray-400 mt-1 uppercase tracking-tighter">100+ scans today</div>
                                     </div>
-                                )}
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 mb-8">
-                                {selectedMenuItem.isBestseller && (
-                                    <span className="bg-orange-50 text-orange-600 text-[10px] font-black px-3.5 py-2 rounded-xl border border-orange-100 uppercase tracking-widest flex items-center gap-1.5 shadow-sm">
-                                        <Flame size={12} className="fill-orange-500" /> Bestseller
-                                    </span>
-                                )}
-                                {selectedMenuItem.isRecommended && (
-                                    <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black px-3.5 py-2 rounded-xl border border-emerald-100 uppercase tracking-widest shadow-sm">Chef Pick</span>
-                                )}
-                                <span className="bg-blue-50 text-blue-600 text-[10px] font-black px-3.5 py-2 rounded-xl border border-blue-100 uppercase tracking-widest shadow-sm">Freshly Made</span>
-                            </div>
-
-                            <div className="mb-10">
-                                <h3 className="text-gray-900 text-[13px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-[#E23744] rounded-full" /> Dish Details
-                                </h3>
-                                <p className="text-gray-600 text-lg font-[600] leading-relaxed">
-                                    {selectedMenuItem.description || "Indulge in our masterfully crafted dish, made with the finest seasonal ingredients and slow-cooked to perfection using heritage recipes."}
-                                </p>
-                            </div>
-
-                            <div className="space-y-5 border-t border-gray-100 pt-8 pb-10">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 shadow-inner"><Clock size={18} /></div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Prep Time</span>
-                                        <span className="text-base font-black text-gray-700">15-20 minutes</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 shadow-inner"><Users size={18} /></div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Serves</span>
-                                        <span className="text-base font-black text-gray-700">{selectedMenuItem.unit || "1-2 People"}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Sticky Action Bar */}
-                        <div className="sticky bottom-0 bg-white/95 backdrop-blur-2xl border-t border-gray-100 p-5 pb-10 flex items-center gap-5 shadow-[0_-20px_40px_rgba(0,0,0,0.03)] z-30">
-                            <div className="flex-1">
-                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] leading-none mb-1.5">Cart Value</div>
-                                <div className="text-2xl font-black text-gray-900">₹{(cart[selectedMenuItem.id] || 0) * (selectedMenuItem.sellingPrice || selectedMenuItem.price || 0)}</div>
-                            </div>
-                            <div className="w-48 flex-shrink-0">
-                                {cart[selectedMenuItem.id] ? (
-                                    <div className="bg-[#E23744] text-white rounded-[24px] flex items-center justify-between w-full h-[60px] px-2 shadow-2xl shadow-red-200">
-                                        <button onClick={() => updateQty(selectedMenuItem.id, -1)} className="w-12 h-full flex items-center justify-center text-3xl font-black active:scale-90 transition-all">−</button>
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-xl font-black leading-none">{cart[selectedMenuItem.id]}</span>
-                                            <span className="text-[8px] font-black uppercase tracking-tighter opacity-70">Quantity</span>
+                                    
+                                    <div className="flex items-start justify-between gap-4 mb-2">
+                                        <h2 className="text-[1.25rem] font-black text-gray-900 leading-tight">
+                                            {activeLang === "hi" && selectedMenuItem.hiName ? selectedMenuItem.hiName : selectedMenuItem.name}
+                                        </h2>
+                                        <div className="flex gap-2">
+                                            <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400"><Tag size={14} /></button>
+                                            <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400">↗</button>
                                         </div>
-                                        <button onClick={() => updateQty(selectedMenuItem.id, 1)} className="w-12 h-full flex items-center justify-center text-3xl font-black active:scale-90 transition-all">+</button>
                                     </div>
-                                ) : (
-                                    <button
-                                        onClick={() => addToCart(selectedMenuItem.id)}
-                                        className="bg-[#1C1C1C] text-white rounded-[24px] w-full h-[60px] text-[0.95rem] font-black shadow-2xl active:scale-95 transition-all group overflow-hidden relative"
+
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="h-1.5 w-16 bg-green-100 rounded-full overflow-hidden">
+                                            <div className="h-full bg-green-500 w-3/4 rounded-full" />
+                                        </div>
+                                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Highly reordered</span>
+                                    </div>
+
+                                    <p className="text-[14px] text-gray-500 font-medium leading-[1.6]">
+                                        {selectedMenuItem.description || "Freshly prepared with authentic ingredients. A perfect blend of flavors that will leave you wanting more."}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Footer (Sticky) */}
+                            <div className="p-4 border-t border-gray-50 flex items-center gap-3 bg-white">
+                                <div className="flex items-center justify-between bg-emerald-50/50 border border-emerald-100 rounded-xl h-[52px] px-2 min-w-[120px]">
+                                    <button 
+                                        onClick={() => updateQty(selectedMenuItem.id, -1)}
+                                        className="w-8 h-8 flex items-center justify-center text-emerald-600 text-2xl font-black active:scale-75 transition-all"
                                     >
-                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                                        ADD ITEM TO CART
+                                        −
                                     </button>
-                                )}
+                                    <span className="text-lg font-black text-emerald-900">{cart[selectedMenuItem.id] || 1}</span>
+                                    <button 
+                                        onClick={() => addToCart(selectedMenuItem.id)}
+                                        className="w-8 h-8 flex items-center justify-center text-emerald-600 text-2xl font-black active:scale-75 transition-all"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        if (!cart[selectedMenuItem.id]) addToCart(selectedMenuItem.id);
+                                        setSelectedMenuItem(null);
+                                    }}
+                                    className="flex-1 bg-[#10854d] text-white rounded-xl h-[52px] font-black text-[1rem] shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                                >
+                                    Add item ₹{(selectedMenuItem.sellingPrice || selectedMenuItem.price || 0) * (cart[selectedMenuItem.id] || 1)}
+                                </button>
                             </div>
-                        </div>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
