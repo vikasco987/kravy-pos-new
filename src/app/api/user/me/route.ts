@@ -61,7 +61,11 @@ export async function GET() {
         "/dashboard/profile",
         "/dashboard/settings", 
         "/dashboard/settings/tax",
-        "/dashboard/billing/deleted"
+        "/dashboard/billing/deleted",
+        "/dashboard/reports/sales/daily",
+        "/dashboard/reports/products",
+        "/dashboard/reports/bills",
+        "/dashboard/reports/expenses"
       ];
       else finalAllowed = [
         "/dashboard", 
@@ -82,7 +86,11 @@ export async function GET() {
         "/dashboard/profile",
         "/dashboard/settings", 
         "/dashboard/settings/tax",
-        "/dashboard/billing/deleted"
+        "/dashboard/billing/deleted",
+        "/dashboard/reports/sales/daily",
+        "/dashboard/reports/products",
+        "/dashboard/reports/bills",
+        "/dashboard/reports/expenses"
       ]; 
     }
 

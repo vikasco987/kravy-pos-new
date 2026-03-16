@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Copy, Trash2, RefreshCw } from "lucide-react";
+import { Copy, Trash2, RefreshCw, ArrowRight, FileSpreadsheet, Settings2, X, Check } from "lucide-react";
 import { kravy } from "@/lib/sounds";
+import { AnimatePresence, motion } from "framer-motion";
 
 /* =============================
    TYPES
@@ -21,6 +22,7 @@ type ClerkOption = {
 type StoreItem = {
   id?: string;
   name: string;
+  description?: string;
   price: number | null;
   categoryId: string | null;
   clerkId: string | null;
@@ -53,13 +55,31 @@ export default function StoreItemPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  // Mapping State
+  const [mappingOpen, setMappingOpen] = useState(false);
+  const [fileHeaders, setFileHeaders] = useState<string[]>([]);
+  const [uploadedRows, setUploadedRows] = useState<any[]>([]);
+  const [columnMapping, setColumnMapping] = useState({
+    name: "",
+    price: "",
+    category: "",
+    description: ""
+  });
+
 
   /* =============================
      LOAD MASTER DATA
   ============================= */
   useEffect(() => {
-    fetch("/api/categories").then(r => r.json()).then(setCategories);
-    fetch("/api/clerks").then(r => r.json()).then(setClerks);
+    fetch("/api/categories")
+      .then(r => r.json())
+      .then(data => Array.isArray(data) ? setCategories(data) : setCategories([]))
+      .catch(() => setCategories([]));
+
+    fetch("/api/clerks")
+      .then(r => r.json())
+      .then(data => Array.isArray(data) ? setClerks(data) : setClerks([]))
+      .catch(() => setClerks([]));
   }, []);
 
   /* =============================
@@ -102,6 +122,7 @@ export default function StoreItemPage() {
         data.map((i: any) => ({
           id: i.id,
           name: i.name,
+          description: i.description || "",
           price: i.price,
           categoryId: i.categoryId ?? null,
           clerkId: i.clerkId ?? null,
@@ -155,21 +176,50 @@ export default function StoreItemPage() {
 
         Papa.parse(file, {
           header: true,
+          skipEmptyLines: true,
           complete: async (result) => {
             clearInterval(progressTimer);
-            await processRows(result.data as any[]);
+            if (result.data && Array.isArray(result.data)) {
+              const headers = Object.keys(result.data[0] || {});
+              setFileHeaders(headers);
+              setUploadedRows(result.data);
+              
+              // Try to auto-map
+              setColumnMapping({
+                name: headers.find(h => /name/i.test(h)) || "",
+                price: headers.find(h => /price|selling|mrp/i.test(h)) || "",
+                category: headers.find(h => /category/i.test(h)) || "",
+                description: headers.find(h => /desc|info|detail|composition/i.test(h)) || ""
+              });
+              setMappingOpen(true);
+            }
             setUploadProgress(100);
           },
+          error: (err) => {
+            clearInterval(progressTimer);
+            throw err;
+          }
         });
       } else {
         const XLSX = await import("xlsx");
         const buffer = await file.arrayBuffer();
-        const wb = XLSX.read(buffer);
+        const wb = XLSX.read(buffer, { type: 'array' });
         const sheet = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json<any>(sheet);
 
         clearInterval(progressTimer);
-        await processRows(rows);
+        const headers = Object.keys(rows[0] || {});
+        setFileHeaders(headers);
+        setUploadedRows(rows);
+
+        // Try to auto-map
+        setColumnMapping({
+          name: headers.find(h => /name/i.test(h)) || "",
+          price: headers.find(h => /price|selling|mrp/i.test(h)) || "",
+          category: headers.find(h => /category/i.test(h)) || "",
+          description: headers.find(h => /desc|info|detail|composition/i.test(h)) || ""
+        });
+        setMappingOpen(true);
         setUploadProgress(100);
       }
 
@@ -186,39 +236,79 @@ export default function StoreItemPage() {
   };
 
 
-  const processRows = async (rows: any[]) => {
-    const newItems: StoreItem[] = [];
+  const processRows = async (rows: any[], overrideMapping?: any) => {
+    const mapping = overrideMapping || { name: "name", price: "price", category: "category" };
     const total = rows.length;
+    
+    setUploading(true);
+    setUploadProgress(5);
+    
+    // 1. Extract and Deduplicate Categories
+    const uniqueCatNames = Array.from(new Set(
+      rows.map(r => String(r[mapping.category] || "").trim()).filter(Boolean)
+    ));
 
+    // 2. Ensure Categories in Parallel
+    const catMap: Record<string, string> = {};
+    const existingCats = categories;
+
+    const ensuredCats = await Promise.all(
+      uniqueCatNames.map(async (name) => {
+        const existing = existingCats.find(c => c.name.toLowerCase() === name.toLowerCase());
+        if (existing) return existing;
+        return await ensureCategory(name);
+      })
+    );
+
+    ensuredCats.forEach(c => {
+      catMap[c.name.toLowerCase()] = c.id;
+    });
+
+    setUploadProgress(20);
+
+    // 3. Process Items
+    const newItems: StoreItem[] = [];
     for (let i = 0; i < total; i++) {
       const row = rows[i];
-
-      const name = String(row.name || row.Name || "").trim();
+      const name = String(row[mapping.name] || "").trim();
       if (!name) continue;
 
-      let categoryId: string | null = null;
-      if (row.category || row.Category) {
-        const cat = await ensureCategory(row.category || row.Category);
-        categoryId = cat.id;
-      }
+      const catName = String(row[mapping.category] || "").trim();
+      const categoryId = catName ? (catMap[catName.toLowerCase()] || null) : null;
 
       newItems.push({
         name,
-        price: Number(row.price || row.Price || 0),
+        description: String(row[mapping.description] || "").trim(),
+        price: Number(row[mapping.price] || 0),
         categoryId,
         clerkId: userId ?? null,
         imageUrl: null,
         isActive: true,
       });
 
-      // real progress based on rows
-      setUploadProgress(Math.min(95, Math.round(((i + 1) / total) * 100)));
+      if (i % Math.max(1, Math.floor(total / 20)) === 0) {
+        setUploadProgress(Math.min(98, 20 + Math.round((i / total) * 78)));
+      }
     }
 
     setItems(newItems);
     setMode("create");
-    kravy.success();
-    toast.success(`Loaded ${newItems.length} items`);
+    setMappingOpen(false);
+    
+    setTimeout(() => {
+      setUploading(false);
+      setUploadProgress(100);
+      kravy.success();
+      toast.success(`Lightning Fast Load: ${newItems.length} items`);
+    }, 600);
+  };
+
+  const handleConfirmMapping = () => {
+    if (!columnMapping.name || !columnMapping.price) {
+      toast.error("Please map Name and Price columns");
+      return;
+    }
+    processRows(uploadedRows, columnMapping);
   };
 
   /* =============================
@@ -252,6 +342,7 @@ export default function StoreItemPage() {
       ...prev,
       {
         name: "",
+        description: "",
         price: null,
         categoryId: null,
         clerkId: userId ?? null,
@@ -350,7 +441,7 @@ export default function StoreItemPage() {
       }
 
       if (success) {
-        router.push("/menu/view");
+        router.push("/dashboard/menu/view");
       }
     } finally {
       setSaving(false);
@@ -429,368 +520,480 @@ export default function StoreItemPage() {
         </div>
       </div>
 
-      {/* SUMMARY */}
-      <div className="grid grid-cols-4 gap-4">
+      {/* SUMMARY STATS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: "Total Rows", value: items.length, icon: "📋" },
-          { label: "Duplicates", value: duplicateNames.length, icon: "⚠️", color: duplicateNames.length > 0 ? "text-rose-500" : "" },
-          { label: "Operation Mode", value: mode.toUpperCase(), icon: "⚡" },
-          { label: "Ready to Save", value: hasErrors ? "No" : "Yes", icon: "✅", color: hasErrors ? "text-rose-500" : "text-emerald-500" }
+          { label: "Total Rows", value: items.length, icon: "📋", color: "text-indigo-600", bg: "bg-indigo-50" },
+          { label: "Duplicates", value: duplicateNames.length, icon: "⚠️", color: duplicateNames.length > 0 ? "text-rose-600" : "text-emerald-600", bg: duplicateNames.length > 0 ? "bg-rose-50" : "bg-emerald-50" },
+          { label: "Mode", value: mode.toUpperCase(), icon: "⚡", color: "text-amber-600", bg: "bg-amber-50" },
+          { label: "Status", value: hasErrors ? "Invalid" : "Ready", icon: "💎", color: hasErrors ? "text-rose-600" : "text-emerald-600", bg: hasErrors ? "bg-rose-50" : "bg-emerald-50" }
         ].map((stat) => (
-          <div key={stat.label} className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl p-4 shadow-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">{stat.label}</span>
-              <span className="text-base">{stat.icon}</span>
+          <div key={stat.label} className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center text-xl shadow-inner`}>
+              {stat.icon}
             </div>
-            <div className={`text-xl font-black mt-1 ${stat.color || "text-[var(--kravy-text-primary)]"}`}>{stat.value}</div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 mb-0.5">{stat.label}</div>
+              <div className={`text-xl font-black ${stat.color}`}>{stat.value}</div>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* ACTIONS */}
-      <div className="flex flex-wrap gap-4 items-center bg-[var(--kravy-surface)] p-5 rounded-2xl border border-[var(--kravy-border)]">
-        <div className="flex-1 min-w-[300px] relative">
+      {/* MAIN ACTIONS BAR */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch bg-white p-6 rounded-[32px] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.02)]">
+        <div className="lg:col-span-5 relative group">
           <input
             type="file"
             id="file-upload"
             accept=".xlsx,.xls,.csv"
             disabled={uploading}
-            onChange={(e) =>
-              e.target.files && handleFileUpload(e.target.files[0])
-            }
+            onChange={(e) => e.target.files && handleFileUpload(e.target.files[0])}
             className="hidden"
           />
           <label
             htmlFor="file-upload"
-            className="flex items-center justify-center gap-3 w-full border-2 border-dashed border-[var(--kravy-border)] rounded-xl py-4 hover:border-[var(--kravy-brand)] hover:bg-[var(--kravy-brand)]/5 transition-all cursor-pointer text-[var(--kravy-text-primary)] font-bold group"
+            className="flex flex-col items-center justify-center gap-1 w-full border-2 border-dashed border-gray-100 rounded-[24px] py-6 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all cursor-pointer group/label"
           >
-            <span className="text-xl group-hover:scale-110 transition-transform">📂</span>
-            {uploading ? "Uploading Spreadsheet..." : "Click to Upload CSV / Excel"}
+            <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center mb-1 group-hover/label:scale-110 transition-all duration-500">
+              <span className="text-2xl">📤</span>
+            </div>
+            <span className="text-sm font-black text-gray-800 tracking-tight">
+              {uploading ? "Analyzing Spreadsheet..." : "Upload CSV / Excel Sheet"}
+            </span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Drag & Drop or Click</span>
           </label>
         </div>
 
-        <div className="flex-1 min-w-[250px] relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🔍</span>
-          <input
-            className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] font-semibold h-14 pl-12 pr-4 w-full rounded-xl outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all"
-            placeholder="Filter spreadsheet rows..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+        <div className="lg:col-span-4 flex flex-col justify-center">
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl opacity-40">🔍</span>
+            <input
+              className="bg-gray-50/50 border border-gray-100 text-gray-900 font-[600] h-[68px] pl-12 pr-4 w-full rounded-[24px] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all shadow-inner"
+              placeholder="Search in spreadsheet..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={addManualItem}
-          className="h-14 px-8 bg-[var(--kravy-brand)] text-white rounded-xl font-black uppercase tracking-widest text-xs hover:shadow-lg hover:shadow-[var(--kravy-brand)]/30 active:scale-95 transition-all"
-        >
-          + Add Manual Row
-        </button>
+        <div className="lg:col-span-3 flex flex-col justify-center">
+          <button
+            type="button"
+            onClick={addManualItem}
+            className="h-[68px] w-full bg-black text-white rounded-[24px] font-black uppercase tracking-[0.2em] text-[11px] hover:bg-indigo-600 hover:shadow-2xl hover:shadow-indigo-200 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+          >
+            <span className="text-xl">✨</span> 
+            Add New Row
+          </button>
+        </div>
       </div>
 
-      {/* TABLE */}
-      <div className="overflow-x-auto bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl shadow-xl">
-        <table className="min-w-[1100px] w-full text-sm border-collapse">
-          <thead className="bg-[var(--kravy-bg-2)]/50">
-            <tr>
-              <th className="py-4 px-6 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] text-left">Item Image</th>
-              <th className="py-4 px-6 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] text-left">Product Name</th>
-              <th className="py-4 px-6 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] text-left">Sell Price</th>
-              <th className="py-4 px-6 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] text-left">Category</th>
-
-              {/* CLERK HEADER DROPDOWN */}
-              <th className="py-4 px-6 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] text-left relative">
-                Clerk Assignment
-                <input
-                  className="mt-2 w-full bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-lg px-3 py-2 text-xs font-semibold text-[var(--kravy-text-primary)] outline-none focus:ring-1 focus:ring-[var(--kravy-brand)]"
-                  placeholder="Assign to..."
-                  value={clerkSearch}
-                  onFocus={() => setShowClerkDropdown(true)}
-                  onChange={(e) => setClerkSearch(e.target.value)}
-                />
-
-                {showClerkDropdown && (
-                  <div className="absolute z-20 mt-1 w-full max-h-48 overflow-auto bg-[var(--kravy-surface-2)] border border-[var(--kravy-border-strong)] rounded-xl shadow-2xl backdrop-blur-xl">
-                    {filteredClerks.map((c) => (
-                      <div
-                        key={c.clerkId}
-                        className="px-4 py-2.5 text-xs font-bold text-[var(--kravy-text-primary)] cursor-pointer hover:bg-[var(--kravy-brand)]/10 hover:text-[var(--kravy-brand)] transition-colors border-b border-[var(--kravy-border)] last:border-0"
-                        onClick={() => {
-                          setBulkClerkId(c.clerkId);
-                          setItems((prev) =>
-                            prev.map((it) => ({
-                              ...it,
-                              clerkId: c.clerkId,
-                            }))
-                          );
-                          setShowClerkDropdown(false);
-                          setClerkSearch(c.label);
-                        }}
-                      >
+      {/* DATA TABLE */}
+      <div className="bg-white border border-gray-100 rounded-[40px] shadow-[0_30px_100px_rgba(0,0,0,0.04)] overflow-hidden mb-12">
+        <div className="overflow-x-auto">
+          <table className="min-w-[1100px] w-full text-sm border-collapse">
+            <thead className="bg-gray-50/50">
+              <tr>
+                <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Dish Image</th>
+                <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Dish Context</th>
+                <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Composition</th>
+                <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Selling Price</th>
+                <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Category</th>
+                <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left relative">
+                  Global Clerk
+                  <div className="mt-2 relative">
+                    <input
+                      className="w-full bg-white border border-gray-100 rounded-2xl px-4 py-3 text-xs font-bold text-gray-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-gray-300 shadow-sm"
+                      placeholder="Assign to all..."
+                      value={clerkSearch}
+                      onFocus={() => setShowClerkDropdown(true)}
+                      onChange={(e) => setClerkSearch(e.target.value)}
+                    />
+                    {showClerkDropdown && (
+                      <div className="absolute z-50 mt-2 w-full max-h-72 overflow-auto bg-white border border-gray-100 rounded-3xl shadow-2xl p-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {filteredClerks.map((c) => (
+                          <div
+                            key={c.clerkId}
+                            className="px-5 py-4 text-xs font-bold text-gray-700 cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 rounded-2xl transition-all mb-1 last:mb-0 group/clerk"
+                            onClick={() => {
+                              setBulkClerkId(c.clerkId);
+                              setItems((prev) =>
+                                prev.map((it) => ({
+                                  ...it,
+                                  clerkId: c.clerkId,
+                                }))
+                              );
+                              setShowClerkDropdown(false);
+                              setClerkSearch(c.label);
+                            }}
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-[13px] font-black">{c.label}</span>
+                              <span className="text-[10px] opacity-40 font-medium tracking-tight group-hover/clerk:opacity-100">{c.email}</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </th>
-              <th className="py-4 px-6 text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] text-center">Status</th>
-              <th className="py-4 px-6 text-xs font-black uppercase tracking-widest text-rose-500 text-center">Delete</th>
-            </tr>
-          </thead>
+                </th>
+                <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-center">Active</th>
+                <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-rose-400 text-center">Trash</th>
+              </tr>
+            </thead>
 
-          <tbody>
-            {displayedItems.map((item, i) => (
-              <tr
-                key={item.id ?? i}
-                className="border-t border-[var(--kravy-border)] hover:bg-[var(--kravy-table-row-hover)] transition-colors group"
-              >
-
-                {/* IMAGE */}
-                {/* IMAGE */}
-                <td className="py-4 px-6">
-                  <div
-                    onDragOver={e => e.preventDefault()}
-                    onDragEnter={() => setDragIndex(i)}
-                    onDragLeave={() => setDragIndex(null)}
-                    onDrop={e => handleDrop(e, i)}
-                    className={`w-14 h-14 rounded-xl shrink-0 overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center border transition-all ${dragIndex === i ? "border-[var(--kravy-brand)] bg-[var(--kravy-brand)]/10" : "border-[var(--kravy-border)]"
-                      }`}
-                  >
-                    <label className="w-full h-full flex items-center justify-center cursor-pointer">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <span className="text-[10px] font-black uppercase tracking-tighter text-[var(--kravy-text-muted)] text-center px-1">
-                          {item.imageUrl ? "Update" : "Drop Img"}
-                        </span>
-                      )}
+            <tbody className="divide-y divide-gray-50/80">
+              {displayedItems.map((item, i) => (
+                <tr
+                  key={item.id ?? i}
+                  className="hover:bg-gray-50/30 transition-colors group/row"
+                >
+                  {/* IMAGE & URL INPUT */}
+                  <td className="py-8 px-8">
+                    <div className="flex flex-col gap-3">
+                      <div
+                        onDragOver={e => e.preventDefault()}
+                        onDragEnter={() => setDragIndex(i)}
+                        onDragLeave={() => setDragIndex(null)}
+                        onDrop={e => handleDrop(e, i)}
+                        className={`w-20 h-20 rounded-3xl shrink-0 overflow-hidden bg-gray-50/50 flex items-center justify-center border-2 transition-all duration-500 relative group/img ${
+                          dragIndex === i ? "border-indigo-400 bg-indigo-50 shadow-2xl scale-105" : "border-gray-100"
+                        }`}
+                      >
+                        <label className="w-full h-full flex items-center justify-center cursor-pointer">
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} className="object-cover w-full h-full transform transition-transform group-hover/img:scale-110" alt="Item" />
+                          ) : (
+                            <div className="flex flex-col items-center gap-1.5 opacity-30 group-hover/img:opacity-100 transition-all">
+                              <span className="text-2xl">📸</span>
+                              <span className="text-[9px] font-black uppercase tracking-tighter">Upload</span>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            hidden
+                            accept="image/*"
+                            onChange={e => e.target.files && handleImageFile(e.target.files[0], i)}
+                          />
+                        </label>
+                      </div>
                       <input
-                        type="file"
-                        hidden
-                        accept="image/*"
-                        onChange={e =>
-                          e.target.files &&
-                          handleImageFile(e.target.files[0], i)
+                        type="text"
+                        placeholder="Image URL..."
+                        className="w-full max-w-[120px] text-[9px] bg-gray-50 border border-transparent rounded-lg px-2 py-1.5 text-gray-400 font-bold outline-none focus:border-indigo-200 focus:bg-white focus:text-gray-700 transition-all opacity-0 group-hover/row:opacity-100"
+                        value={item.imageUrl ?? ""}
+                        onChange={(e) =>
+                          setItems(prev =>
+                            prev.map((it, idx) =>
+                              idx === i ? { ...it, imageUrl: e.target.value } : it
+                            )
+                          )
                         }
                       />
-                    </label>
-                  </div>
+                    </div>
+                  </td>
 
-                  {/* 🔹 IMAGE URL PASTE (NEW) */}
-                  <input
-                    type="text"
-                    placeholder="Paste URL..."
-                    className="mt-2 w-28 text-[10px] bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-md px-2 py-1 text-[var(--kravy-text-primary)] outline-none focus:border-[var(--kravy-brand)]"
-                    value={item.imageUrl ?? ""}
-                    onChange={(e) =>
-                      setItems(prev =>
-                        prev.map((it, idx) =>
-                          idx === i
-                            ? { ...it, imageUrl: e.target.value }
-                            : it
-                        )
-                      )
-                    }
-                  />
-                </td>
+                  {/* NAME INPUT */}
+                  <td className="py-8 px-8 align-top min-w-[300px]">
+                    <div className="flex flex-col gap-2">
+                       <div className="flex items-center gap-2">
+                          <input
+                            className={`bg-gray-50/50 border-2 ${!item.name.trim() && mode === "update" ? "border-rose-100" : "border-gray-50"} rounded-2xl px-5 py-4 w-full text-base font-black text-gray-800 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white transition-all shadow-sm placeholder:text-gray-300`}
+                            placeholder="e.g. Butter Chicken Large"
+                            value={item.name}
+                            onChange={e =>
+                              setItems(prev =>
+                                prev.map((it, idx) =>
+                                  idx === i ? { ...it, name: e.target.value } : it
+                                )
+                              )
+                            }
+                          />
+                          <button
+                            type="button"
+                            className="p-4 text-gray-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all active:scale-95 group/copy"
+                            onClick={() => {
+                              navigator.clipboard.writeText(item.name);
+                              toast.success("Name copied!");
+                            }}
+                          >
+                            <Copy size={20} className="group-hover/copy:scale-110 transition-transform" />
+                          </button>
+                       </div>
+                       <div className="flex items-center gap-2 px-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                          <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Visible in digital menu</span>
+                       </div>
+                    </div>
+                  </td>
 
-                {/* NAME */}
-                {/* NAME */}
-                <td className="py-4 px-6">
-                  <div className="flex items-center gap-2">
-                    <input
-                      className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-lg px-3 py-2 w-full text-sm font-bold text-[var(--kravy-text-primary)] outline-none focus:ring-1 focus:ring-[var(--kravy-brand)]"
-                      value={item.name}
-                      onChange={e =>
-                        setItems(prev =>
-                          prev.map((it, idx) =>
-                            idx === i
-                              ? { ...it, name: e.target.value }
-                              : it
+                  {/* DESCRIPTION INPUT */}
+                  <td className="py-8 px-8 align-top min-w-[300px]">
+                    <div className="flex flex-col gap-2">
+                      <textarea
+                        className="bg-gray-50/50 border-2 border-gray-50 rounded-2xl px-5 py-4 w-full text-sm font-bold text-gray-600 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white transition-all shadow-sm placeholder:text-gray-300 resize-none h-[100px]"
+                        placeholder="Describe the dish, ingredients, or story..."
+                        value={item.description || ""}
+                        onChange={e =>
+                          setItems(prev =>
+                            prev.map((it, idx) =>
+                              idx === i ? { ...it, description: e.target.value } : it
+                            )
                           )
-                        )
-                      }
-                    />
+                        }
+                      />
+                    </div>
+                  </td>
 
-                    {/* 🔹 COPY NAME */}
+                  {/* PRICE INPUT */}
+                  <td className="py-8 px-8 align-top">
+                    <div className="relative group/price">
+                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 font-black text-lg group-focus-within/price:text-emerald-500 transition-colors">₹</span>
+                      <input
+                        type="number"
+                        className={`bg-gray-50/50 border-2 ${(!item.price || item.price <= 0) && mode === "update" ? "border-rose-100" : "border-gray-50"} rounded-2xl pl-11 pr-5 py-4 w-36 text-base font-black text-emerald-600 outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white transition-all shadow-sm`}
+                        placeholder="0"
+                        value={item.price ?? ""}
+                        onChange={e =>
+                          setItems(prev =>
+                            prev.map((it, idx) =>
+                              idx === i ? { ...it, price: Number(e.target.value) } : it
+                            )
+                          )
+                        }
+                      />
+                    </div>
+                  </td>
+
+                  {/* CATEGORY SELECT */}
+                  <td className="py-8 px-8 align-top">
+                    <div className="relative">
+                      <select
+                        className="bg-gray-50/50 border-2 border-gray-50 rounded-2xl px-5 py-4 w-full text-xs font-black text-gray-700 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white transition-all appearance-none cursor-pointer shadow-sm"
+                        value={item.categoryId ?? ""}
+                        onChange={e =>
+                          setItems(prev =>
+                            prev.map((it, idx) =>
+                              idx === i ? { ...it, categoryId: e.target.value } : it
+                            )
+                          )
+                        }
+                      >
+                        <option value="">Ungrouped</option>
+                        {categories.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                        <option value="__new__" className="text-indigo-600 font-black">+ Create New</option>
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <span className="text-[10px]">▼</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* CLERK SELECT */}
+                  <td className="py-8 px-8 align-top">
+                    <div className="relative">
+                      <select
+                        className="bg-gray-50/50 border-2 border-gray-50 rounded-2xl px-5 py-4 w-full text-xs font-black text-gray-700 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white transition-all appearance-none cursor-pointer shadow-sm"
+                        value={item.clerkId || ""}
+                        onChange={(e) =>
+                          setItems((prev) =>
+                            prev.map((it, idx) =>
+                              idx === i ? { ...it, clerkId: e.target.value } : it
+                            )
+                          )
+                        }
+                      >
+                        <option value="">No Assignment</option>
+                        {clerks.map((c) => (
+                          <option key={c.clerkId} value={c.clerkId}>{c.label}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <span className="text-[10px]">▼</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* ACTIVE STATUS */}
+                  <td className="py-8 px-8 text-center align-top">
+                    <div className="flex items-center justify-center pt-2">
+                      <label className="relative inline-flex items-center cursor-pointer group/toggle">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={item.isActive}
+                          onChange={e =>
+                            setItems(prev =>
+                              prev.map((it, idx) =>
+                                idx === i ? { ...it, isActive: e.target.checked } : it
+                              )
+                            )
+                          }
+                        />
+                        <div className="w-14 h-7 bg-gray-100 peer-focus:outline-none peer-focus:ring-8 peer-focus:ring-indigo-500/5 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:shadow-md after:rounded-full after:h-5 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
+                      </label>
+                    </div>
+                  </td>
+
+                  {/* DELETE BUTTON */}
+                  <td className="py-8 px-8 text-center align-top">
                     <button
-                      type="button"
-                      className="p-2 text-xs bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-lg hover:text-[var(--kravy-brand)] hover:border-[var(--kravy-brand)]/50 transition-colors"
+                      className="w-12 h-12 flex items-center justify-center bg-rose-50 text-rose-400 rounded-2xl shadow-sm hover:bg-rose-500 hover:text-white hover:shadow-rose-500/20 transition-all duration-300 active:scale-90"
                       onClick={() => {
-                        navigator.clipboard.writeText(item.name);
-                        kravy.success();
-                        toast.success("Copied!");
+                        setItems(prev => prev.filter((_, idx) => idx !== i));
+                        kravy.error();
                       }}
-                      title="Copy"
                     >
-                      <Copy size={14} />
+                      <Trash2 size={24} />
                     </button>
-                  </div>
-                </td>
-
-                {/* PRICE */}
-                <td className="py-4 px-6">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)] font-bold text-xs">₹</span>
-                    <input
-                      type="number"
-                      className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-lg pl-6 pr-3 py-2 w-full text-sm font-black text-emerald-500 outline-none focus:ring-1 focus:ring-emerald-500"
-                      value={item.price ?? ""}
-                      onChange={e =>
-                        setItems(prev =>
-                          prev.map((it, idx) =>
-                            idx === i
-                              ? {
-                                ...it,
-                                price: Number(e.target.value),
-                              }
-                              : it
-                          )
-                        )
-                      }
-                    />
-                  </div>
-                </td>
-
-                {/* CATEGORY */}
-                <td className="py-4 px-6">
-                  <select
-                    className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-lg px-3 py-2 w-full text-xs font-bold text-[var(--kravy-text-primary)] outline-none focus:ring-1 focus:ring-[var(--kravy-brand)]"
-                    value={item.categoryId ?? ""}
-                    onChange={e =>
-                      setItems(prev =>
-                        prev.map((it, idx) =>
-                          idx === i
-                            ? { ...it, categoryId: e.target.value }
-                            : it
-                        )
-                      )
-                    }
-                  >
-                    <option value="">Select</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                    <option value="__new__">+ Add new category</option>
-                  </select>
-                </td>
-
-                {/* CLERK (ROW) */}
-                <td className="py-4 px-6">
-                  <select
-                    className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-lg px-3 py-2 w-full text-xs font-bold text-[var(--kravy-text-primary)] outline-none focus:ring-1 focus:ring-[var(--kravy-brand)]"
-                    value={item.clerkId || ""}
-                    onChange={(e) =>
-                      setItems((prev) =>
-                        prev.map((it, idx) =>
-                          idx === i ? { ...it, clerkId: e.target.value } : it
-                        )
-                      )
-                    }
-                  >
-                    <option value="">Select clerk</option>
-                    {clerks.map((c) => (
-                      <option key={c.clerkId} value={c.clerkId}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-
-                <td className="py-4 px-6 text-center">
-                  <div className="flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      className="w-5 h-5 rounded-md border-[var(--kravy-border)] text-[var(--kravy-brand)] focus:ring-[var(--kravy-brand)]/20 cursor-pointer"
-                      checked={item.isActive}
-                      onChange={e =>
-                        setItems(prev =>
-                          prev.map((it, idx) =>
-                            idx === i
-                              ? { ...it, isActive: e.target.checked }
-                              : it
-                          )
-                        )
-                      }
-                    />
-                  </div>
-                </td>
-
-                <td className="py-4 px-6 text-center">
-                  <button
-                    className="w-8 h-8 flex items-center justify-center bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all mx-auto"
-                    onClick={() =>
-                      setItems(prev =>
-                        prev.filter((_, idx) => idx !== i)
-                      )
-                    }
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {
-        hasErrors && (
-          <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-center gap-3">
-            <span className="text-xl">🛑</span>
-            <p className="text-rose-500 text-sm font-bold uppercase tracking-widest">
-              Critical Error: Fix highlighed rows (Name/Price missing) before proceeding.
-            </p>
-          </div>
-        )
-      }
-
-      <button
-        onClick={handleSave}
-        disabled={hasErrors || saving}
-        className={`w-full max-w-sm mx-auto flex items-center justify-center gap-3 px-8 py-5 rounded-2xl font-black uppercase tracking-widest text-sm shadow-2xl transition-all active:scale-95 ${hasErrors || saving
-          ? "bg-[var(--kravy-border)] text-[var(--kravy-text-muted)] cursor-not-allowed"
-          : "bg-[var(--kravy-brand)] text-white hover:shadow-[var(--kravy-brand)]/40 hover:-translate-y-1"
-          }`}
-      >
-        {saving && (
-          <RefreshCw size={20} className="animate-spin" />
-        )}
-
-        {mode === "create"
-          ? saving
-            ? "Saving Menu Data..."
-            : "Save to Digital Menu"
-          : saving
-            ? "Syncing Updates..."
-            : "Sync Menu Updates"}
-      </button>
-      {
-        uploading && (
-          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-6 w-[320px] text-center space-y-4">
-              <p className="font-medium">Uploading items…</p>
-
-              <div className="w-full h-2 bg-gray-200 rounded">
-                <div
-                  className="h-2 bg-blue-600 rounded transition-all"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-
-              <p className="text-sm text-gray-500">
-                {uploadProgress}% completed
+      <div className="flex flex-col items-center gap-10 mt-10">
+        {hasErrors && (
+          <div className="w-full max-w-3xl bg-rose-50 border-2 border-rose-100 rounded-[32px] p-8 flex items-center gap-6 animate-in slide-in-from-bottom-10 duration-700">
+            <div className="w-16 h-16 rounded-[24px] bg-rose-500 text-white flex items-center justify-center text-3xl shadow-xl shadow-rose-200">
+               ⚠️
+            </div>
+            <div>
+              <h4 className="text-rose-900 font-black text-lg">Incomplete Information</h4>
+              <p className="text-rose-600/70 text-sm font-bold uppercase tracking-widest mt-0.5">
+                Check highlighted rows for missing dish names or invalid pricing.
               </p>
             </div>
           </div>
-        )
-      }
+        )}
 
+        <button
+          onClick={handleSave}
+          disabled={hasErrors || saving}
+          className={`group relative overflow-hidden w-full max-w-[560px] h-[96px] rounded-[40px] font-black uppercase tracking-[0.4em] text-[15px] shadow-[0_30px_60px_rgba(79,70,229,0.15)] transition-all duration-700 active:scale-[0.97] ${
+            hasErrors || saving
+              ? "bg-gray-100 text-gray-300 cursor-not-allowed border border-gray-100 shadow-none"
+              : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-500/40 hover:-translate-y-2"
+          }`}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+          <div className="relative flex items-center justify-center gap-5">
+            {saving ? (
+              <>
+                <RefreshCw size={32} className="animate-spin text-white/50" />
+                <span>{mode === "create" ? "Building Menu..." : "Syncing Cloud..."}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-4xl group-hover:scale-125 transition-transform duration-500">✨</span>
+                <span>{mode === "create" ? "Launch Digital Menu" : "Push Updates Live"}</span>
+              </>
+            )}
+          </div>
+        </button>
+      </div>
 
+      {/* COLUMN MAPPING OVERLAY */}
+      <AnimatePresence>
+        {mappingOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white rounded-[40px] w-full max-w-2xl p-10 shadow-[0_50px_100px_rgba(0,0,0,0.5)] border border-gray-100"
+            >
+              <div className="flex justify-between items-start mb-10">
+                <div>
+                  <h2 className="text-3xl font-black text-gray-900 tracking-tight">Map Your Columns</h2>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-2">Aligning Spreadsheet Data with Store Schema</p>
+                </div>
+                <button 
+                  onClick={() => setMappingOpen(false)}
+                  className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-all"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-8">
+                {[
+                  { key: "name", label: "Dish Name", icon: "🍱", required: true },
+                  { key: "description", label: "Description", icon: "📝", required: false },
+                  { key: "price", label: "Selling Price", icon: "💰", required: true },
+                  { key: "category", label: "Category", icon: "🏷️", required: false },
+                ].map((field) => (
+                  <div key={field.key} className="flex items-center gap-6 p-4 rounded-3xl bg-gray-50/50 border border-gray-100/50">
+                    <div className="w-14 h-14 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-2xl shadow-sm">
+                      {field.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-1">
+                        Map to: {field.label} {field.required && <span className="text-rose-500">*</span>}
+                      </div>
+                      <select
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-bold text-gray-800 outline-none focus:border-indigo-500 transition-all shadow-sm"
+                        value={columnMapping[field.key as keyof typeof columnMapping]}
+                        onChange={(e) => setColumnMapping(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      >
+                        <option value="">Select Column from Excel...</option>
+                        {fileHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-12 flex gap-4">
+                <button
+                  onClick={() => setMappingOpen(false)}
+                  className="flex-1 h-16 rounded-3xl border-2 border-gray-100 font-black text-gray-400 uppercase tracking-widest text-[11px] hover:bg-gray-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmMapping}
+                  className="flex-[2] h-16 rounded-3xl bg-black text-white font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3 hover:bg-indigo-600 shadow-2xl shadow-indigo-100 transition-all"
+                >
+                  Process Import <ArrowRight size={18} />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {uploading && (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-xl flex items-center justify-center p-8">
+          <div className="bg-white rounded-[48px] p-12 w-full max-w-md text-center shadow-[0_50px_100px_rgba(0,0,0,0.3)] animate-in zoom-in-90 duration-500 border border-gray-100">
+            <div className="w-24 h-24 bg-indigo-50 rounded-[32px] flex items-center justify-center mx-auto mb-8 shadow-inner relative overflow-hidden">
+               <RefreshCw size={48} className="text-indigo-600 animate-spin" />
+            </div>
+            <h2 className="text-3xl font-black text-gray-900 mb-2">Importing Items</h2>
+            <p className="text-gray-400 font-black text-[10px] mb-10 uppercase tracking-[0.3em]">Optimizing your Digital Ecosystem</p>
+
+            <div className="relative h-5 bg-gray-100 rounded-full overflow-hidden border-4 border-gray-50 shadow-inner">
+              <div
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 transition-all duration-1000 ease-out"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+            <div className="mt-6 flex justify-between items-end">
+               <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">{uploadProgress < 100 ? "Processing..." : "Verified"}</span>
+               <span className="text-3xl font-black text-indigo-600">{uploadProgress}%</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

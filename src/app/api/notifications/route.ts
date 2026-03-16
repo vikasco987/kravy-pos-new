@@ -13,6 +13,8 @@ export async function GET(req: NextRequest) {
         return new Response("Unauthorized", { status: 401 });
     }
 
+    const clerkId: string = effectiveId;
+
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
@@ -27,12 +29,17 @@ export async function GET(req: NextRequest) {
             // Session start — only alert for orders created AFTER this point
             const sessionStart = new Date();
 
-            const pollInterval = setInterval(async () => {
+            let isAborted = false;
+            let pollTimeout: NodeJS.Timeout;
+
+            async function poll() {
+                if (isAborted) return;
+
                 try {
                     // ── New QR Orders ──────────────────────────────────────────────
                     const recentOrders = await prisma.order.findMany({
                         where: {
-                            clerkUserId: effectiveId,
+                            clerkUserId: clerkId,
                             createdAt: { gte: sessionStart },
                         },
                         select: {
@@ -46,6 +53,8 @@ export async function GET(req: NextRequest) {
                         orderBy: { createdAt: "desc" },
                         take: 10,
                     });
+
+                    if (isAborted) return;
 
                     const newOrders = recentOrders.filter(o => !sentOrderIds.has(o.id));
 
@@ -61,7 +70,7 @@ export async function GET(req: NextRequest) {
                     // ── New Reviews ────────────────────────────────────────────────
                     const recentReviews = await prisma.review.findMany({
                         where: {
-                            clerkUserId: effectiveId,
+                            clerkUserId: clerkId,
                             createdAt: { gte: sessionStart },
                         },
                         select: {
@@ -75,6 +84,8 @@ export async function GET(req: NextRequest) {
                         take: 5,
                     });
 
+                    if (isAborted) return;
+
                     const newReviews = recentReviews.filter(r => !sentReviewIds.has(r.id));
 
                     if (newReviews.length > 0) {
@@ -86,20 +97,41 @@ export async function GET(req: NextRequest) {
                         );
                     }
                 } catch (error) {
-                    console.error("SSE poll error:", error);
+                    // Check if it's a connection reset error and log it specifically
+                    const errMsg = error instanceof Error ? error.message : String(error);
+                    if (errMsg.includes("Connection reset by peer")) {
+                        console.warn("Prisma: Connection reset by peer in SSE. Retrying in 10s...");
+                        // Wait a bit longer before retrying on network errors
+                        pollTimeout = setTimeout(poll, 10000);
+                        return;
+                    } else {
+                        console.error("SSE poll error:", error);
+                    }
                 }
-            }, 5000); // poll every 5 seconds
 
-            // Send heartbeat every 25s to prevent proxy timeout
-            const heartbeat = setInterval(() => {
+                // Schedule next poll
+                pollTimeout = setTimeout(poll, 5000);
+            }
+
+            // Start polling
+            poll();
+
+            // Heartbeat Logic
+            const heartbeatInterval = setInterval(() => {
+                if (isAborted) return;
                 try {
                     controller.enqueue(encoder.encode(`: heartbeat\n\n`));
-                } catch { clearInterval(heartbeat); }
+                } catch { 
+                    isAborted = true;
+                    clearInterval(heartbeatInterval); 
+                    clearTimeout(pollTimeout);
+                }
             }, 25000);
 
             req.signal.addEventListener("abort", () => {
-                clearInterval(pollInterval);
-                clearInterval(heartbeat);
+                isAborted = true;
+                clearTimeout(pollTimeout);
+                clearInterval(heartbeatInterval);
                 try { controller.close(); } catch { }
             });
         },

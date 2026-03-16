@@ -147,6 +147,7 @@ function PublicMenu() {
     const [vegOnly, setVegOnly] = useState(false);
     const [activeLang, setActiveLang] = useState<"en" | "hi" | "mr" | "ta">("en");
     const [activeCategory, setActiveCategory] = useState("all");
+    const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
     const [showCartSheet, setShowCartSheet] = useState(false);
     const [loyaltyOn, setLoyaltyOn] = useState(false);
 
@@ -911,7 +912,11 @@ function PublicMenu() {
                             {/* MENU CONTENT LIST */}
                             <div className="bg-white">
                                 {filteredItems.map(item => (
-                                    <div key={item.id} className="flex gap-2.5 p-3.5 border-b border-[#F7F7F7] last:border-0 items-start">
+                                    <div 
+                                        key={item.id} 
+                                        className="flex gap-2.5 p-3.5 border-b border-[#F7F7F7] last:border-0 items-start cursor-pointer active:bg-gray-50/50 transition-colors"
+                                        onClick={() => { kravy.open(); setSelectedMenuItem(item); }}
+                                    >
                                         <div className="flex-1 min-w-0">
                                             <div className={`w-4 h-4 border-[1.5px] rounded-sm flex items-center justify-center mb-1.5 ${item.isVeg ? "border-[#22C55E]" : "border-[#E23744]"}`}>
                                                 <div className={`w-2 h-2 rounded-full ${item.isVeg ? "bg-[#22C55E]" : "bg-[#E23744]"}`} />
@@ -929,7 +934,7 @@ function PublicMenu() {
                                             <p className="text-[0.73rem] text-[#696969] leading-relaxed line-clamp-2 mb-2">{item.description}</p>
                                             <div className="text-[0.95rem] font-[900]">₹{item.sellingPrice || item.price}</div>
                                         </div>
-                                        <div className="flex flex-col items-center flex-shrink-0">
+                                        <div className="flex flex-col items-center flex-shrink-0" onClick={e => e.stopPropagation()}>
                                             <div className="w-[108px] h-[92px] rounded-xl overflow-hidden relative border border-[#EBEBEB]">
                                                 {item.imageUrl || item.image ? (
                                                     <Image src={(item.imageUrl || item.image) as string} alt={item.name} fill className="object-cover" />
@@ -940,13 +945,13 @@ function PublicMenu() {
                                             <div className="mt-[-13px] relative z-10 w-full flex justify-center px-2">
                                                 {cart[item.id] ? (
                                                     <div className="bg-[#E23744] text-white rounded-lg flex items-center justify-between w-full h-[32px] px-1 shadow-lg shadow-red-100">
-                                                        <button onClick={() => updateQty(item.id, -1)} className="w-7 h-full flex items-center justify-center text-lg font-bold">−</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); updateQty(item.id, -1); }} className="w-7 h-full flex items-center justify-center text-lg font-bold">−</button>
                                                         <span className="text-[0.88rem] font-black">{cart[item.id]}</span>
-                                                        <button onClick={() => updateQty(item.id, 1)} className="w-7 h-full flex items-center justify-center text-lg font-bold">+</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); updateQty(item.id, 1); }} className="w-7 h-full flex items-center justify-center text-lg font-bold">+</button>
                                                     </div>
                                                 ) : (
                                                     <button
-                                                        onClick={() => addToCart(item.id)}
+                                                        onClick={(e) => { e.stopPropagation(); addToCart(item.id); }}
                                                         className="bg-white border-[1.5px] border-[#E23744] text-[#E23744] rounded-lg px-4 py-1.5 text-[0.82rem] font-[900] shadow-md active:scale-95 transition-all w-full"
                                                     >
                                                         ADD
@@ -1834,6 +1839,125 @@ function PublicMenu() {
                             </div>
                         </motion.div>
                     </>
+                )}
+            </AnimatePresence>
+
+            {/* ITEM DETAIL POPUP (ZOMATO PRECISED) */}
+            <AnimatePresence>
+                {selectedMenuItem && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+                        onClick={() => setSelectedMenuItem(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 50, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.9, y: 50, opacity: 0 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full max-w-[420px] bg-white rounded-[32px] overflow-hidden flex flex-col shadow-[0_40px_100px_rgba(0,0,0,0.5)] relative"
+                        >
+                            {/* Close Button Inside/Above */}
+                            <button 
+                                onClick={() => setSelectedMenuItem(null)}
+                                className="absolute top-4 right-4 w-10 h-10 bg-black/20 hover:bg-black/40 backdrop-blur-xl rounded-full flex items-center justify-center text-white z-[210] transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+
+                            <div className="overflow-y-auto max-h-[85vh] no-scrollbar">
+                                {/* Large Image Area */}
+                                <div className="relative h-[280px] w-full overflow-hidden bg-gray-50">
+                                    {selectedMenuItem.imageUrl || selectedMenuItem.image ? (
+                                        <Image 
+                                            src={(selectedMenuItem.imageUrl || selectedMenuItem.image) as string} 
+                                            alt={selectedMenuItem.name} 
+                                            fill 
+                                            className="object-cover"
+                                            priority
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-gradient-to-br from-[#FFF0F1] to-[#FFF8EC] flex items-center justify-center text-6xl">
+                                            {selectedMenuItem.ico || "🥘"}
+                                        </div>
+                                    )}
+                                    {/* Bottom Image Fade */}
+                                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/20 to-transparent" />
+                                </div>
+
+                                {/* Content Details */}
+                                <div className="p-6">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className={`w-4 h-4 border-[1.5px] rounded-sm flex items-center justify-center ${selectedMenuItem.isVeg ? "border-green-600" : "border-red-600"}`}>
+                                            <div className={`w-1.5 h-1.5 rounded-full ${selectedMenuItem.isVeg ? "bg-green-600" : "bg-red-600"}`} />
+                                        </div>
+                                        {selectedMenuItem.isBestseller && (
+                                            <span className="text-[10px] font-black uppercase text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                                <Star size={10} fill="currentColor" /> Bestseller
+                                            </span>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="flex items-start justify-between gap-4 mb-4">
+                                        <h2 className="text-[1.5rem] font-black text-gray-900 leading-[1.1]">
+                                            {activeLang === "hi" && selectedMenuItem.hiName ? selectedMenuItem.hiName : selectedMenuItem.name}
+                                        </h2>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="flex items-center gap-0.5">
+                                            {[1,2,3,4,5].map(s => <Star key={s} size={14} className={s <= (selectedMenuItem.rating || 5) ? "text-amber-400" : "text-gray-200"} fill={s <= (selectedMenuItem.rating || 5) ? "currentColor" : "none"} />)}
+                                        </div>
+                                        <div className="w-[1px] h-3 bg-gray-200" />
+                                        <div className="h-2 w-20 bg-green-100 rounded-full overflow-hidden">
+                                            <div className="h-full bg-green-500 w-[85%] rounded-full" />
+                                        </div>
+                                        <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">Highly Popular</span>
+                                    </div>
+
+                                    {selectedMenuItem.description && (
+                                        <div className="space-y-4">
+                                            <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Chef's Description</div>
+                                            <p className="text-[15px] text-gray-600 font-medium leading-[1.6]">
+                                                {selectedMenuItem.description}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Sticky Action Footer */}
+                            <div className="p-5 bg-white border-t border-gray-100/50 flex items-center gap-3 shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
+                                <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-2xl h-[60px] px-2 min-w-[130px]">
+                                    <button 
+                                        onClick={() => updateQty(selectedMenuItem.id, -1)}
+                                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors text-2xl font-black active:scale-75"
+                                    >
+                                        −
+                                    </button>
+                                    <span className="text-xl font-black text-gray-800">{cart[selectedMenuItem.id] || 1}</span>
+                                    <button 
+                                        onClick={() => addToCart(selectedMenuItem.id)}
+                                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-green-500 transition-colors text-2xl font-black active:scale-75"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        if (!cart[selectedMenuItem.id]) addToCart(selectedMenuItem.id);
+                                        setSelectedMenuItem(null);
+                                    }}
+                                    className="flex-1 bg-[#10854d] text-white rounded-2xl h-[60px] font-black text-[1.1rem] shadow-xl shadow-green-100/50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                                >
+                                    Add item · ₹{(selectedMenuItem.sellingPrice || selectedMenuItem.price || 0) * (cart[selectedMenuItem.id] || 1)}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 

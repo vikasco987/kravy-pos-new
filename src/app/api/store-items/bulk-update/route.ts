@@ -209,6 +209,7 @@ export async function PUT(req: Request) {
       --------------------- */
       const data: any = {
         name: String(item.name || "").trim(),
+        description: item.description ?? null,
         price:
           item.price != null ? Number(item.price) : null,
         imageUrl: item.imageUrl ?? null,

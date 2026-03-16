@@ -154,6 +154,15 @@ const navGroups = [
     ]
   },
   {
+    group: "REPORTS & ANALYTICS",
+    items: [
+      { icon: <TrendingUp size={18} />, label: "Daily Sales Report", href: "/dashboard/reports/sales/daily", badge: "Live", badgeColor: "#10B981" },
+      { icon: <PieChart size={18} />, label: "Product Performance", href: "/dashboard/reports/products" },
+      { icon: <FileText size={18} />, label: "Detailed Bill Logs", href: "/dashboard/reports/bills" },
+      { icon: <TrendingDown size={18} />, label: "Expense Tracking", href: "/dashboard/reports/expenses" },
+    ]
+  },
+  {
     group: "INSIGHTS",
     items: [
       { icon: <BarChart3 size={18} />, label: "Revenue Analysis", href: "#", badge: "Soon", badgeColor: "#64748B" },

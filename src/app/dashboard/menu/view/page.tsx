@@ -398,7 +398,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Plus, Search, ChevronDown } from "lucide-react";
+import { Plus, Search, ChevronDown, Trash2 } from "lucide-react";
 
 /* types */
 type MenuItem = {
@@ -455,6 +455,7 @@ export default function ViewMenuPage() {
 
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [deletingItem, setDeletingItem] = useState<MenuItem | null>(null);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -677,6 +678,22 @@ export default function ViewMenuPage() {
     } catch (err: any) {
       console.error(err);
       setToast(err?.message ?? "Delete failed");
+    }
+  }
+
+  async function deleteAllMenu() {
+    try {
+      const res = await fetch("/api/items?all=true", {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error(await res.text().catch(() => `Failed (${res.status})`));
+      setMenus([]);
+      setShowDeleteAllConfirm(false);
+      setToast("Entire menu deleted successfully");
+    } catch (err: any) {
+      console.error(err);
+      setToast(err?.message ?? "Bulk delete failed");
     }
   }
 
@@ -1149,6 +1166,14 @@ export default function ViewMenuPage() {
 
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => setShowDeleteAllConfirm(true)}
+                  className="px-6 py-2.5 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 font-extrabold text-[10px] uppercase tracking-widest flex-shrink-0 hover:bg-rose-600 hover:text-white transition-all flex items-center gap-2 group"
+                  title="Clear Entire Menu"
+                >
+                   <Trash2 size={14} className="group-hover:animate-bounce" /> Clear All
+                </button>
+                <div className="w-[1px] h-8 bg-gray-100 mx-1" />
+                <button
                   onClick={() => setQuickAddCat({ id: menus[0]?.id || "", name: menus[0]?.name || "General" })}
                   className="px-6 py-2.5 rounded-2xl bg-emerald-600 text-white font-black text-xs uppercase tracking-widest flex-shrink-0 hover:bg-emerald-700 transition-all flex items-center gap-2.5 shadow-lg shadow-emerald-600/20 active:scale-95"
                   title="Quick Add Item"
@@ -1370,6 +1395,30 @@ export default function ViewMenuPage() {
 
       {editingItem && <EditModal item={editingItem} onClose={() => setEditingItem(null)} onSave={async (u) => await saveEdit(u)} />}
       {deletingItem && <ConfirmDelete item={deletingItem} onClose={() => setDeletingItem(null)} onConfirm={() => confirmDelete(deletingItem!)} />}
+      
+      {showDeleteAllConfirm && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowDeleteAllConfirm(false)} />
+          <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] shadow-2xl w-full max-w-sm p-8 z-[10001] text-center">
+            <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-600">
+               <Trash2 size={32} />
+            </div>
+            <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] mb-3 tracking-tight">Delete Entire Menu?</h3>
+            <p className="text-[var(--kravy-text-muted)] font-medium mb-8 leading-relaxed">
+              This will <span className="text-rose-600 font-black underline">permanently delete all categories and items</span> from your menu. This action cannot be undone.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => setShowDeleteAllConfirm(false)} className="px-6 py-4 font-black text-[var(--kravy-text-muted)] rounded-2xl hover:bg-[var(--kravy-surface-hover)] transition-all">Cancel</button>
+              <button 
+                onClick={deleteAllMenu} 
+                className="px-6 py-4 font-black rounded-2xl bg-rose-600 hover:bg-rose-700 transition-all shadow-xl shadow-rose-500/20 text-white active:scale-95"
+              >
+                Yes, Delete All
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* 🚀 QUICK ADD ITEM MODAL */}
       {quickAddCat && (
