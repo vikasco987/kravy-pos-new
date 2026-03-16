@@ -465,7 +465,15 @@ export async function DELETE(req: Request) {
     }
 
     const url = new URL(req.url);
+    const deleteAll = url.searchParams.get("all") === "true";
     let id = url.searchParams.get("id");
+
+    if (deleteAll) {
+      const result = await prisma.item.deleteMany({
+        where: { clerkId: effectiveId }
+      });
+      return NextResponse.json({ success: true, count: result.count });
+    }
 
     if (!id) {
       try {

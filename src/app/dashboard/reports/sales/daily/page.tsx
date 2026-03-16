@@ -218,25 +218,25 @@ export default async function DailySalesReportPage() {
       </div>
 
       {/* ── Transaction Table Section ── */}
-      <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "40px", overflow: "hidden", boxShadow: "0 20px 50px rgba(0,0,0,0.04)" }}>
+      <div style={{ background: "rgba(255, 107, 53, 0.012)", border: "1px solid var(--kravy-border)", borderRadius: "40px", overflow: "hidden", boxShadow: "0 20px 50px rgba(0,0,0,0.04)" }}>
         <div style={{ padding: "32px 40px", borderBottom: "1px solid var(--kravy-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
              <h2 style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1px" }}>Transaction Ledger</h2>
              <p style={{ fontSize: "0.8rem", color: "var(--kravy-text-muted)", marginTop: "4px" }}>Detailed breakdown of all invoices generated today</p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "var(--kravy-bg-2)", padding: "10px 20px", borderRadius: "16px", border: "1px solid var(--kravy-border)" }}>
-             <Info size={16} style={{ color: "var(--kravy-brand)" }} />
-             <span style={{ fontSize: "0.8rem", fontWeight: 800 }}>{todayBills.length} RECORDS SYNCED</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "rgba(255, 107, 53, 0.05)", padding: "10px 20px", borderRadius: "16px", border: "1px solid rgba(255, 107, 53, 0.1)" }}>
+             <Info size={16} style={{ color: "#FF6B35" }} />
+             <span style={{ fontSize: "0.80rem", fontWeight: 900, color: "#FF6B35" }}>{todayBills.length} RECORDS SYNCED</span>
           </div>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
             <thead>
-              <tr style={{ background: "rgba(0,0,0,0.01)" }}>
-                <th style={{ padding: "20px 40px", textAlign: "left", fontSize: "0.75rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1px" }}>Identification</th>
-                <th style={{ padding: "20px 40px", textAlign: "left", fontSize: "0.75rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1px" }}>Guest Details</th>
-                <th style={{ padding: "20px 40px", textAlign: "center", fontSize: "0.75rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1px" }}>Settlement</th>
-                <th style={{ padding: "20px 40px", textAlign: "right", fontSize: "0.75rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1px" }}>Net Collection</th>
+              <tr style={{ background: "rgba(255, 107, 53, 0.04)" }}>
+                <th style={{ padding: "20px 40px", textAlign: "left", fontSize: "0.75rem", fontWeight: 950, color: "rgba(255, 107, 53, 0.6)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Identification</th>
+                <th style={{ padding: "20px 40px", textAlign: "left", fontSize: "0.75rem", fontWeight: 950, color: "rgba(255, 107, 53, 0.6)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Guest Details</th>
+                <th style={{ padding: "20px 40px", textAlign: "center", fontSize: "0.75rem", fontWeight: 950, color: "rgba(255, 107, 53, 0.6)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Settlement</th>
+                <th style={{ padding: "20px 40px", textAlign: "right", fontSize: "0.75rem", fontWeight: 950, color: "rgba(255, 107, 53, 0.6)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Net Collection</th>
               </tr>
             </thead>
             <tbody>
@@ -248,10 +248,14 @@ export default async function DailySalesReportPage() {
                 const isPaid = (b.paymentStatus || "Paid") === "Paid";
 
                 return (
-                  <tr key={b.id} className="table-row" style={{ borderTop: "1px solid var(--kravy-border)", transition: "background 0.2s" }}>
+                  <tr key={b.id} className="table-row" style={{ 
+                    borderTop: "1px solid var(--kravy-border)", 
+                    transition: "background 0.2s",
+                    background: todayBills.indexOf(b) % 2 === 0 ? "transparent" : "rgba(255, 107, 53, 0.005)"
+                  }}>
                     <td style={{ padding: "24px 40px" }}>
                        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                          <div style={{ width: "44px", height: "44px", borderRadius: "12px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--kravy-text-primary)" }}>
+                          <div style={{ width: "44px", height: "44px", borderRadius: "12px", background: "rgba(255, 107, 53, 0.08)", border: "1px solid rgba(255, 107, 53, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#FF6B35" }}>
                              <FileText size={20} />
                           </div>
                           <div>

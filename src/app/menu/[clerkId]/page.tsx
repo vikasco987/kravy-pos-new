@@ -1842,94 +1842,106 @@ function PublicMenu() {
                 )}
             </AnimatePresence>
 
-            {/* ITEM DETAIL POPUP (ZOMATO MODAL STYLE) */}
+            {/* ITEM DETAIL POPUP (ZOMATO PRECISED) */}
             <AnimatePresence>
                 {selectedMenuItem && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 md:p-6"
+                        className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
                         onClick={() => setSelectedMenuItem(null)}
                     >
                         <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
+                            initial={{ scale: 0.9, y: 50, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.9, y: 50, opacity: 0 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full max-w-[420px] bg-white rounded-[24px] overflow-hidden flex flex-col shadow-2xl relative"
+                            className="w-full max-w-[420px] bg-white rounded-[32px] overflow-hidden flex flex-col shadow-[0_40px_100px_rgba(0,0,0,0.5)] relative"
                         >
-                            {/* Close Button Above Modal */}
+                            {/* Close Button Inside/Above */}
                             <button 
                                 onClick={() => setSelectedMenuItem(null)}
-                                className="absolute -top-12 left-1/2 -translate-x-1/2 w-10 h-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 active:scale-90 transition-all z-[210]"
+                                className="absolute top-4 right-4 w-10 h-10 bg-black/20 hover:bg-black/40 backdrop-blur-xl rounded-full flex items-center justify-center text-white z-[210] transition-colors"
                             >
                                 <X size={20} />
                             </button>
 
-                            <div className="overflow-y-auto max-h-[80vh] flex flex-col">
-                                {/* Padded Image Area */}
-                                <div className="p-4 flex-shrink-0">
-                                    <div className="relative h-[240px] w-full rounded-[20px] overflow-hidden bg-gray-50 border border-gray-100">
-                                        {selectedMenuItem.imageUrl || selectedMenuItem.image ? (
-                                            <Image 
-                                                src={(selectedMenuItem.imageUrl || selectedMenuItem.image) as string} 
-                                                alt={selectedMenuItem.name} 
-                                                fill 
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full bg-gradient-to-br from-[#FFF0F1] to-[#FFF8EC] flex items-center justify-center text-6xl">
-                                                {selectedMenuItem.ico || "🥘"}
-                                            </div>
-                                        )}
-                                    </div>
+                            <div className="overflow-y-auto max-h-[85vh] no-scrollbar">
+                                {/* Large Image Area */}
+                                <div className="relative h-[280px] w-full overflow-hidden bg-gray-50">
+                                    {selectedMenuItem.imageUrl || selectedMenuItem.image ? (
+                                        <Image 
+                                            src={(selectedMenuItem.imageUrl || selectedMenuItem.image) as string} 
+                                            alt={selectedMenuItem.name} 
+                                            fill 
+                                            className="object-cover"
+                                            priority
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-gradient-to-br from-[#FFF0F1] to-[#FFF8EC] flex items-center justify-center text-6xl">
+                                            {selectedMenuItem.ico || "🥘"}
+                                        </div>
+                                    )}
+                                    {/* Bottom Image Fade */}
+                                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/20 to-transparent" />
                                 </div>
 
-                                {/* Item Info */}
-                                <div className="px-6 pb-6">
-                                    <div className="flex items-center gap-2 mb-2">
+                                {/* Content Details */}
+                                <div className="p-6">
+                                    <div className="flex items-center gap-2 mb-3">
                                         <div className={`w-4 h-4 border-[1.5px] rounded-sm flex items-center justify-center ${selectedMenuItem.isVeg ? "border-green-600" : "border-red-600"}`}>
                                             <div className={`w-1.5 h-1.5 rounded-full ${selectedMenuItem.isVeg ? "bg-green-600" : "bg-red-600"}`} />
                                         </div>
+                                        {selectedMenuItem.isBestseller && (
+                                            <span className="text-[10px] font-black uppercase text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                                <Star size={10} fill="currentColor" /> Bestseller
+                                            </span>
+                                        )}
                                     </div>
                                     
-                                    <div className="flex items-start justify-between gap-4 mb-2">
-                                        <h2 className="text-[1.25rem] font-black text-gray-900 leading-tight">
+                                    <div className="flex items-start justify-between gap-4 mb-4">
+                                        <h2 className="text-[1.5rem] font-black text-gray-900 leading-[1.1]">
                                             {activeLang === "hi" && selectedMenuItem.hiName ? selectedMenuItem.hiName : selectedMenuItem.name}
                                         </h2>
-                                        <div className="flex gap-2">
-                                            <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400"><Tag size={14} /></button>
-                                            <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400">↗</button>
-                                        </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <div className="h-1.5 w-16 bg-green-100 rounded-full overflow-hidden">
-                                            <div className="h-full bg-green-500 w-3/4 rounded-full" />
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="flex items-center gap-0.5">
+                                            {[1,2,3,4,5].map(s => <Star key={s} size={14} className={s <= (selectedMenuItem.rating || 5) ? "text-amber-400" : "text-gray-200"} fill={s <= (selectedMenuItem.rating || 5) ? "currentColor" : "none"} />)}
                                         </div>
-                                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Highly reordered</span>
+                                        <div className="w-[1px] h-3 bg-gray-200" />
+                                        <div className="h-2 w-20 bg-green-100 rounded-full overflow-hidden">
+                                            <div className="h-full bg-green-500 w-[85%] rounded-full" />
+                                        </div>
+                                        <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">Highly Popular</span>
                                     </div>
 
-                                    <p className="text-[14px] text-gray-500 font-medium leading-[1.6]">
-                                        {selectedMenuItem.description || "Freshly prepared with authentic ingredients. A perfect blend of flavors that will leave you wanting more."}
-                                    </p>
+                                    {selectedMenuItem.description && (
+                                        <div className="space-y-4">
+                                            <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Chef's Description</div>
+                                            <p className="text-[15px] text-gray-600 font-medium leading-[1.6]">
+                                                {selectedMenuItem.description}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Footer (Sticky) */}
-                            <div className="p-4 border-t border-gray-50 flex items-center gap-3 bg-white">
-                                <div className="flex items-center justify-between bg-emerald-50/50 border border-emerald-100 rounded-xl h-[52px] px-2 min-w-[120px]">
+                            {/* Sticky Action Footer */}
+                            <div className="p-5 bg-white border-t border-gray-100/50 flex items-center gap-3 shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
+                                <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-2xl h-[60px] px-2 min-w-[130px]">
                                     <button 
                                         onClick={() => updateQty(selectedMenuItem.id, -1)}
-                                        className="w-8 h-8 flex items-center justify-center text-emerald-600 text-2xl font-black active:scale-75 transition-all"
+                                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors text-2xl font-black active:scale-75"
                                     >
                                         −
                                     </button>
-                                    <span className="text-lg font-black text-emerald-900">{cart[selectedMenuItem.id] || 1}</span>
+                                    <span className="text-xl font-black text-gray-800">{cart[selectedMenuItem.id] || 1}</span>
                                     <button 
                                         onClick={() => addToCart(selectedMenuItem.id)}
-                                        className="w-8 h-8 flex items-center justify-center text-emerald-600 text-2xl font-black active:scale-75 transition-all"
+                                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-green-500 transition-colors text-2xl font-black active:scale-75"
                                     >
                                         +
                                     </button>
@@ -1939,9 +1951,9 @@ function PublicMenu() {
                                         if (!cart[selectedMenuItem.id]) addToCart(selectedMenuItem.id);
                                         setSelectedMenuItem(null);
                                     }}
-                                    className="flex-1 bg-[#10854d] text-white rounded-xl h-[52px] font-black text-[1rem] shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                                    className="flex-1 bg-[#10854d] text-white rounded-2xl h-[60px] font-black text-[1.1rem] shadow-xl shadow-green-100/50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                                 >
-                                    Add item ₹{(selectedMenuItem.sellingPrice || selectedMenuItem.price || 0) * (cart[selectedMenuItem.id] || 1)}
+                                    Add item · ₹{(selectedMenuItem.sellingPrice || selectedMenuItem.price || 0) * (cart[selectedMenuItem.id] || 1)}
                                 </button>
                             </div>
                         </motion.div>
