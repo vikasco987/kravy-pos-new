@@ -63,7 +63,27 @@ export async function GET() {
         "/dashboard/settings/tax",
         "/dashboard/billing/deleted"
       ];
-      else finalAllowed = ["/dashboard"]; // Base staff dash
+      else finalAllowed = [
+        "/dashboard", 
+        "/dashboard/billing/checkout", 
+        "/dashboard/tables", 
+        "/dashboard/billing", 
+        "/dashboard/workflow",
+        "/dashboard/menu/view", 
+        "/dashboard/menu/upload", 
+        "/dashboard/store-item-upload", 
+        "/dashboard/menu/edit", 
+        "/dashboard/parties",
+        "/dashboard/staff",
+        "/dashboard/inventory", 
+        "/dashboard/qr-orders",
+        "/dashboard/combos",
+        "/dashboard/gallery",
+        "/dashboard/profile",
+        "/dashboard/settings", 
+        "/dashboard/settings/tax",
+        "/dashboard/billing/deleted"
+      ]; 
     }
 
     const safeUser = {
