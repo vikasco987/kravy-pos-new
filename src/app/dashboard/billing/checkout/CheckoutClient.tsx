@@ -1104,7 +1104,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock, Trash2, Play, X, Search, ChevronDown, User, Printer,
-  Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus
+  Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus,
+  LayoutGrid, Columns
 } from "lucide-react";
 import { toast } from "sonner";
 import { kravy } from "@/lib/sounds";
@@ -1358,6 +1359,20 @@ export default function CheckoutClient() {
   /* ================= CATEGORY + SEARCH ================= */
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [search, setSearch] = useState("");
+  const [categoryLayout, setCategoryLayout] = useState<'horizontal' | 'vertical'>('horizontal');
+
+  // Load layout preference
+  useEffect(() => {
+    const saved = localStorage.getItem('pos_category_layout');
+    if (saved === 'vertical' || saved === 'horizontal') {
+      setCategoryLayout(saved);
+    }
+  }, []);
+
+  // Save layout preference
+  useEffect(() => {
+    localStorage.setItem('pos_category_layout', categoryLayout);
+  }, [categoryLayout]);
 
   const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
   
@@ -1765,102 +1780,151 @@ export default function CheckoutClient() {
       {/* ════════════════════════════════════════════
           MAIN LAYOUT
       ════════════════════════════════════════════ */}
-      <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px] gap-0 flex-1 min-h-0">
+      <div className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_360px] lg:grid-cols-[minmax(0,1fr)_400px] gap-0 flex-1 min-h-0">
 
         {/* ══════════════════════════════
             LEFT — MENU CATALOG
         ══════════════════════════════ */}
         <div className="flex flex-col min-h-0 overflow-hidden border-r border-[var(--kravy-border)]">
 
-          {/* Left Header — STICKY ON MOBILE/ALL */}
-          <div className="bg-[var(--kravy-surface)] border-b border-[var(--kravy-border)] px-4 md:px-6 py-4 flex-shrink-0 space-y-3 sticky top-0 z-20 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base md:text-lg font-black text-[var(--kravy-text-primary)] tracking-tight">
-                  Menu Catalog
+          {/* Left Header — STICKY & SOLID */}
+          <div className="bg-[var(--kravy-surface)] border-b border-[var(--kravy-border)] px-4 md:px-6 py-3 flex-shrink-0 sticky top-0 z-20 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <h2 className="text-sm md:text-base font-black text-[var(--kravy-text-primary)] tracking-tight whitespace-nowrap">
+                  Browse Products
                 </h2>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-xs text-[var(--kravy-text-muted)] font-medium">
-                    {filteredMenuItems.length} items available
-                  </p>
-                  <button
-                    onClick={() => {
-                      // Hard refetch with cache bust
-                      fetch(`/api/menu/items?t=${Date.now()}`)
-                        .then(r => r.json())
-                        .then(data => {
-                          const mapped = (data || []).map((it: any) => {
-                            const sPrice = Number(it.sellingPrice);
-                            const bPrice = Number(it.price);
-                            const finalPrice = (!isNaN(sPrice) && it.sellingPrice !== null) ? sPrice : (!isNaN(bPrice) ? bPrice : 0);
-                            return { ...it, price: finalPrice };
-                          });
-                          setMenuItems(mapped);
-                          toast.success("Menu Synchronized");
-                        });
-                    }}
-                    className="p-1.5 rounded-lg border border-[var(--kravy-border)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)] transition-all bg-[var(--kravy-bg)]"
-                    title="Sync Menu"
-                  >
-                    <RefreshCw size={12} className={menuLoading ? "animate-spin" : ""} />
-                  </button>
+                <button
+                  onClick={() => { kravy.toggle(); setCategoryLayout(prev => prev === 'horizontal' ? 'vertical' : 'horizontal'); }}
+                  className="p-1 px-2 rounded-lg border border-[var(--kravy-border)] hover:bg-slate-100 transition-all flex items-center gap-1.5 text-[9px] font-black text-[var(--kravy-text-secondary)] shrink-0 bg-white shadow-sm"
+                  title="Switch Layout"
+                >
+                  {categoryLayout === 'horizontal' ? <Columns size={10} /> : <LayoutGrid size={10} />}
+                  <span className="hidden sm:inline tracking-widest">{categoryLayout === 'horizontal' ? 'SIDEBAR' : 'CHIPS'}</span>
+                </button>
+              </div>
+
+              {/* Combined Search & New Category — COMPACT */}
+              <div className="flex items-center gap-1.5 flex-1 max-w-[400px]">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--kravy-text-faint)]" size={12} />
+                  <input
+                    type="text"
+                    placeholder="Search menu…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)]
+                      h-8 pl-8 pr-3 rounded-lg text-xs outline-none
+                      focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500
+                      transition-all placeholder:text-[var(--kravy-text-muted)] font-bold"
+                  />
                 </div>
+                <button
+                  onClick={() => setQuickAddCat(categoriesList[0] || { id: "others", name: "Others" })}
+                  className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-all flex items-center justify-center shrink-0"
+                  title="Quick Add Item"
+                >
+                  <Plus size={14} strokeWidth={3} />
+                </button>
+                <button
+                  onClick={() => {
+                    fetch(`/api/menu/items?t=${Date.now()}`)
+                      .then(r => r.json())
+                      .then(data => {
+                        const mapped = (data || []).map((it: any) => {
+                          const sPrice = Number(it.sellingPrice);
+                          const bPrice = Number(it.price);
+                          const finalPrice = (!isNaN(sPrice) && it.sellingPrice !== null) ? sPrice : (!isNaN(bPrice) ? bPrice : 0);
+                          return { ...it, price: finalPrice };
+                        });
+                        setMenuItems(mapped);
+                        toast.success("Catalog Updated");
+                      });
+                  }}
+                  className="h-8 w-8 rounded-lg border border-[var(--kravy-border)] hover:bg-indigo-50 hover:text-indigo-600 transition-all bg-[var(--kravy-bg)] flex items-center justify-center shrink-0"
+                  title="Refresh Menu"
+                >
+                  <RefreshCw size={12} className={menuLoading ? "animate-spin" : ""} />
+                </button>
               </div>
             </div>
 
-            {/* Search */}
-            <div className="relative">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)]"
-                size={15}
-              />
-              <input
-                type="text"
-                placeholder="Search menu items…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)]
-                  h-10 pl-9 pr-4 rounded-xl text-sm outline-none
-                  focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)]
-                  transition-all placeholder:text-[var(--kravy-text-muted)] font-medium"
-              />
-            </div>
-
-            {/* Category Tabs */}
-            <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
-              <button
-                onClick={() => setActiveCategory("All")}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition-all whitespace-nowrap flex-shrink-0 ${activeCategory === "All"
-                  ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md shadow-indigo-500/25"
-                  : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)]"
-                  }`}
-              >
-                All
-              </button>
-              {categories.map((cat) => (
+            {/* Horizontal Categories — ONLY IF layout is horizontal */}
+            {categoryLayout === 'horizontal' && (
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-3 pb-2">
                 <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-wider border transition-all whitespace-nowrap flex-shrink-0 ${activeCategory === cat
-                    ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md shadow-indigo-500/25"
-                    : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)]"
+                  onClick={() => { kravy.click(); setActiveCategory("All"); }}
+                  className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all whitespace-nowrap ${activeCategory === "All"
+                    ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                    : "bg-[var(--kravy-surface)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-indigo-500/50"
                     }`}
                 >
-                  {cat}
+                  All
                 </button>
-              ))}
-              
-              <button
-                onClick={() => setShowAddCategory(true)}
-                className="px-3 py-1.5 md:py-2 rounded-xl border-2 border-dashed border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)] hover:bg-[var(--kravy-brand)]/5 transition-all flex-shrink-0 flex items-center justify-center"
-                title="Add New Category"
-              >
-                <Plus size={14} strokeWidth={3} />
-              </button>
-            </div>
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => { kravy.click(); setActiveCategory(cat); }}
+                    className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all whitespace-nowrap ${activeCategory === cat
+                      ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                      : "bg-[var(--kravy-surface)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-indigo-500/50"
+                      }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setShowAddCategory(true)}
+                  className="px-2 py-1 rounded-full bg-white border border-[var(--kravy-border)] text-indigo-600 hover:border-indigo-500 transition-all shadow-sm shrink-0"
+                  title="Add Category"
+                >
+                  <Plus size={12} strokeWidth={3} />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Menu Grid */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* 🚀 CATEGORY SLIDER (Vertical Rail) — Fixed on Side — ONLY IF layout is vertical */}
+            {categoryLayout === 'vertical' && (
+              <div className="w-[120px] md:w-[150px] flex-shrink-0 bg-[var(--kravy-bg-2)] border-r border-[var(--kravy-border)] overflow-y-auto no-scrollbar py-3 px-2 space-y-2">
+                <button
+                  onClick={() => { kravy.click(); setActiveCategory("All"); }}
+                  className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all text-center flex flex-col items-center gap-1 ${activeCategory === "All"
+                    ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                    : "bg-[var(--kravy-surface)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-indigo-500/50"
+                    }`}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full ${activeCategory === "All" ? "bg-white" : "bg-indigo-500/20"}`} />
+                  All
+                </button>
+                
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => { kravy.click(); setActiveCategory(cat); }}
+                    className={`w-full py-3 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all text-center flex flex-col items-center gap-1 ${activeCategory === cat
+                      ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                      : "bg-[var(--kravy-surface)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-indigo-500/50"
+                      }`}
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full ${activeCategory === cat ? "bg-white" : "bg-indigo-500/20"}`} />
+                    <span className="truncate w-full">{cat}</span>
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => setShowAddCategory(true)}
+                  className="w-full py-3 rounded-xl border-2 border-dashed border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:text-indigo-500 hover:border-indigo-400/50 transition-all flex flex-col items-center justify-center gap-1"
+                >
+                  <Plus size={14} strokeWidth={3} />
+                  <span className="text-[9px] font-black uppercase tracking-tighter">New Section</span>
+                </button>
+              </div>
+            )}
+
+            {/* Menu Grid: Scrollable Container */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden md:scrollbar-default scrollbar-hide">
           {menuLoading && (
             <div className="flex-1 flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">
@@ -1883,73 +1947,57 @@ export default function CheckoutClient() {
           {!menuLoading && filteredMenuItems.length > 0 && (
             <div className="min-h-0 flex-1 overflow-y-auto px-4 md:px-5 py-4 scrollbar-hide">
               {activeCategory === "All" && !search ? (
-                categoriesList.map(cat => {
-                  const catItems = menuItems.filter(i => i.category?.id === cat.id);
+                categories.map(catName => {
+                  const catItems = menuItems.filter(i => (i.category?.name || "Others") === catName);
                   if (catItems.length === 0) return null;
+                  const catObj = categoriesList.find(c => c.name === catName) || { id: "others", name: catName };
+
                   return (
-                    <div key={cat.id} className="mb-8">
+                    <div key={catName} className="mb-8">
                       <h3 className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest mb-4 flex items-center gap-3">
-                        <span className="w-8 h-[2px] bg-[var(--kravy-brand)]/20 rounded-full" /> 
-                        {cat.name} 
+                        <span className="w-8 h-[2px] bg-indigo-500/20 rounded-full" /> 
+                        {catName} 
                         <span className="ml-auto text-[9px] font-bold px-2 py-0.5 bg-[var(--kravy-bg-2)] rounded border border-[var(--kravy-border)]">
                           {catItems.length} Items
                         </span>
                       </h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                         {catItems.map(m => (
                           <MenuItemCard key={m.id} m={m} items={items} addToCart={addToCart} reduceFromCart={reduceFromCart} />
                         ))}
-                        <QuickAddCard 
-                          cat={cat} 
-                          onClick={() => {
-                            setQuickAddCat(cat);
-                            toast.info(`Opening ${cat.name} Quick Add...`);
-                          }} 
-                        />
+                        <QuickAddCard cat={catObj} onClick={() => { setQuickAddCat(catObj); toast.info(`Quick add to ${catName}`); }} />
                       </div>
                     </div>
                   );
                 })
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {filteredMenuItems.map((m) => (
                     <MenuItemCard key={m.id} m={m} items={items} addToCart={addToCart} reduceFromCart={reduceFromCart} />
                   ))}
                   {!search && activeCategory !== "All" && (() => {
                     const fallbackCat = categoriesList.find(c => c.name.toLowerCase() === activeCategory.toLowerCase()) || { id: "", name: activeCategory };
-                    return (
-                      <QuickAddCard 
-                        cat={fallbackCat} 
-                        onClick={() => {
-                          if (!fallbackCat.id) {
-                            // If we don't have an ID, we could maybe try to create the category or just warn
-                            toast.warning(`Category "${activeCategory}" metadata is loading. If it fails, please refresh.`);
-                            setQuickAddCat({ id: "others", name: activeCategory });
-                          } else {
-                            setQuickAddCat(fallbackCat);
-                          }
-                          toast.info(`Opening ${fallbackCat.name} Quick Add...`);
-                        }} 
-                      />
-                    );
+                    return <QuickAddCard cat={fallbackCat} onClick={() => setQuickAddCat(fallbackCat)} />;
                   })()}
                 </div>
               )}
             </div>
           )}
         </div>
+      </div>
+    </div>
 
         {/* ══════════════════════════════
             RIGHT — CART / BILLING
         ══════════════════════════════ */}
         <div className="bg-[var(--kravy-surface)] flex flex-col border-l border-[var(--kravy-border)] overflow-hidden min-h-0
-          fixed bottom-0 left-0 right-0 lg:static
-          rounded-t-3xl lg:rounded-none
-          shadow-2xl lg:shadow-none
-          border-t-2 lg:border-t-0
+          fixed bottom-0 left-0 right-0 md:static
+          rounded-t-3xl md:rounded-none
+          shadow-2xl md:shadow-none
+          border-t-2 md:border-t-0
           transition-transform duration-300
-          z-30 lg:z-auto
-          max-h-[82vh] lg:max-h-none"
+          z-30 md:z-auto
+          max-h-[82vh] md:max-h-none"
           style={{ transform: 'translateY(0)' }}
         >
 
@@ -1971,7 +2019,7 @@ export default function CheckoutClient() {
           <div className="border-b border-[var(--kravy-border)] px-4 md:px-5 py-3.5 bg-[var(--kravy-bg)]/40 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-[var(--kravy-text-primary)] hidden lg:block">Billing Invoice</p>
+                <p className="text-sm font-black text-[var(--kravy-text-primary)] hidden md:block">Billing Invoice</p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-[10px] font-black px-2.5 py-1 bg-[var(--kravy-brand)]/10 text-[var(--kravy-brand)] rounded-lg uppercase tracking-wider">
                     {billNumber}
@@ -2139,42 +2187,37 @@ export default function CheckoutClient() {
           </div>
 
           {/* Checkout Footer */}
-          <div className="border-t border-[var(--kravy-border)] px-4 md:px-5 py-4 bg-[var(--kravy-bg)]/30 space-y-3 flex-shrink-0">
+          <div className="border-t border-[var(--kravy-border)] px-4 md:px-5 py-2.5 bg-[var(--kravy-bg)]/30 space-y-2 flex-shrink-0">
 
-            {/* Totals */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs text-[var(--kravy-text-muted)] font-semibold">
-                <span>Subtotal</span>
-                <span className="text-[var(--kravy-text-primary)] font-bold">₹{subtotal.toFixed(2)}</span>
+            {/* Totals - Compact */}
+            <div className="flex justify-between items-center border-b border-dashed border-[var(--kravy-border)] pb-2">
+              <div className="flex flex-col">
+                <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter">Subtotal: ₹{subtotal.toFixed(2)}</p>
+                {taxActive && <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter">Tax: ₹{gstAmount.toFixed(2)}</p>}
               </div>
-              {taxActive && (
-                <div className="flex justify-between text-xs text-[var(--kravy-text-muted)] font-semibold">
-                  <span>GST ({currentTaxRate}%)</span>
-                  <span className="text-[var(--kravy-text-primary)] font-bold">₹{gstAmount.toFixed(2)}</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center pt-2 border-t border-dashed border-[var(--kravy-border)]">
-                <span className="font-black text-[var(--kravy-text-primary)] text-xs uppercase tracking-widest">Total</span>
-                <span className="text-2xl font-black text-[var(--kravy-brand)]">₹{finalTotal.toFixed(2)}</span>
+              <div className="text-right">
+                <p className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest leading-none">Total Amount</p>
+                <p className="text-2xl font-black text-[var(--kravy-brand)]">₹{finalTotal.toFixed(2)}</p>
               </div>
             </div>
 
-            {/* Payment Method */}
-            <div className="space-y-2">
-              <p className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest">
-                Payment Method
+            {/* Payment Method - More Compact */}
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest shrink-0">
+                Payment
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="flex-1 grid grid-cols-3 gap-1.5">
                 {(["Cash", "UPI", "Card"] as const).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
-                    className={`py-2.5 rounded-xl border font-black text-xs transition-all ${paymentMode === mode
-                      ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md shadow-indigo-500/25"
-                      : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)] hover:text-[var(--kravy-brand)]"
+                    className={`py-1.5 rounded-lg border font-black text-[10px] transition-all flex items-center justify-center gap-1 ${paymentMode === mode
+                      ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-sm"
+                      : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)]"
                       }`}
                   >
-                    {mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : "💳"} {mode}
+                    <span className="text-[11px]">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : "💳"}</span>
+                    {mode}
                   </button>
                 ))}
               </div>
@@ -2213,9 +2256,8 @@ export default function CheckoutClient() {
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2">
-              {/* Hold */}
+            {/* Combined Action Grid - 2x2 or 4-cols */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <button
                 onClick={async () => {
                   const bill = await saveBill(true);
@@ -2226,14 +2268,11 @@ export default function CheckoutClient() {
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
                 disabled={items.length === 0}
-                className="flex items-center justify-center gap-1.5 py-3 rounded-xl border-2
-                  border-amber-500/40 text-amber-500 font-black text-xs
-                  hover:bg-amber-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-amber-500/40 text-amber-500 font-black text-[10px] hover:bg-amber-500/10 disabled:opacity-40 transition-all uppercase"
               >
                 <PauseCircle size={14} /> Hold
               </button>
 
-              {/* Save */}
               <button
                 type="button"
                 onClick={async () => {
@@ -2247,59 +2286,36 @@ export default function CheckoutClient() {
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
                 disabled={items.length === 0}
-                className="flex items-center justify-center gap-1.5 py-3 rounded-xl border
-                  border-[var(--kravy-border)] bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)]
-                  font-black text-xs hover:bg-[var(--kravy-surface-hover)]
-                  disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-[var(--kravy-border)] bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-[10px] hover:bg-[var(--kravy-surface-hover)] disabled:opacity-40 transition-all uppercase"
               >
                 <Save size={14} /> Save
               </button>
-            </div>
 
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              {/* Preview */}
               <button
-                onClick={() => {
-                  kravy.open();
-                  setPreviewZoom(1);
-                  setShowPreview(true);
-                }}
+                onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
                 disabled={items.length === 0}
-                className="flex items-center justify-center gap-1.5 py-3 rounded-xl border-2
-                  border-indigo-500/30 text-indigo-500 font-black text-xs bg-indigo-500/5
-                  hover:bg-indigo-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-indigo-500/30 text-indigo-500 font-black text-[10px] bg-indigo-500/5 hover:bg-indigo-500/10 disabled:opacity-40 transition-all uppercase"
               >
                 <Eye size={14} /> Preview
               </button>
 
-              {/* KOT */}
               <button
-                onClick={() => {
-                  kravy.ping();
-                  printKOT();
-                }}
+                onClick={() => { kravy.ping(); printKOT(); }}
                 disabled={items.length === 0}
-                className="flex items-center justify-center gap-1.5 py-3 rounded-xl border-2
-                  border-orange-500/40 text-orange-500 font-black text-xs bg-orange-500/5
-                  hover:bg-orange-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-orange-500/40 text-orange-500 font-black text-[10px] bg-orange-500/5 hover:bg-orange-500/10 disabled:opacity-40 transition-all uppercase"
               >
-                <Printer size={14} /> KOT Print
+                <Printer size={14} /> KOT
               </button>
             </div>
 
-            <div className="mt-2">
+            <div className="mt-1">
               {/* Print */}
               <button
                 onClick={() => {
                   if (!business) { alert("Business profile not loaded yet"); return; }
-                  
-                  // 🔥 FIRE & FORGET
                   saveBill().catch(console.error);
-
                   kravy.payment(); 
                   printReceipt();
-                  
-                  // Reset form manually (no page reload needed anymore)
                   setItems([]); setCustomerName(""); setCustomerPhone("");
                   setUpiTxnRef(""); setPaymentMode("Cash"); setPaymentStatus("Paid");
                   setBillNumber(`SV-${Date.now()}`);
@@ -2307,13 +2323,12 @@ export default function CheckoutClient() {
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
                 disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
-                className="w-full flex items-center justify-center gap-1.5 py-3.5 rounded-xl
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
                   bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm
-                  shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/30
-                  hover:-translate-y-0.5 active:scale-95
-                  disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 transition-all"
+                  shadow-md hover:shadow-lg active:scale-95 transition-all
+                  disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Printer size={16} /> Print Full Bill
+                <Printer size={18} /> Print Full Bill
               </button>
             </div>
 
@@ -2877,6 +2892,21 @@ export default function CheckoutClient() {
               </div>
               
               <form onSubmit={handleQuickAdd} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Category</label>
+                  <select
+                    value={quickAddCat.id}
+                    onChange={(e) => {
+                      const selected = categoriesList.find(c => c.id === e.target.value) || { id: e.target.value, name: "General" };
+                      setQuickAddCat(selected);
+                    }}
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-2.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-bold"
+                  >
+                    {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {!categoriesList.some(c => c.id === quickAddCat.id) && <option value={quickAddCat.id}>{quickAddCat.name}</option>}
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-2 space-y-1">
                     <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Name</label>

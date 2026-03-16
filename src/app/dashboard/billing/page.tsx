@@ -10,13 +10,15 @@ import {
   Receipt, Plus, Trash2, Eye, Printer, MessageCircle,
   Play, MoreVertical, IndianRupee, Calendar, User, Phone,
   CreditCard, Smartphone, Banknote, Clock, FileText, CheckCircle2, UtensilsCrossed, ChefHat, 
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, Settings2, Check, LayoutGrid, Filter, Search
 } from "lucide-react";
 
 type BillManager = {
   id: string;
   billNumber: string;
   createdAt: string;
+  subtotal: number;
+  tax: number;
   total: number;
   paymentMode: string;
   paymentStatus: string;
@@ -41,6 +43,44 @@ export default function BillingPage() {
   const itemsPerPage = 10;
   const router = useRouter();
   const { query } = useSearch();
+  const [showColPicker, setShowColPicker] = useState(false);
+  const [visibleCols, setVisibleCols] = useState({
+    sno: true,
+    billInfo: true,
+    source: true,
+    customer: true,
+    customerPhone: true,
+    subtotal: true,
+    gst: true,
+    discount: true,
+    total: true,
+    timeline: true,
+    payment: true
+  });
+
+  const [colFilters, setColFilters] = useState({
+    billNumber: "",
+    tableName: "",
+    customerName: "",
+    customerPhone: "",
+    paymentStatus: "",
+    paymentMode: "",
+  });
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+
+  // Load preferences
+  useEffect(() => {
+    const saved = localStorage.getItem("billing_table_cols");
+    if (saved) {
+      try { setVisibleCols(JSON.parse(saved)); } catch (e) {}
+    }
+  }, []);
+
+  const toggleCol = (key: keyof typeof visibleCols) => {
+    const next = { ...visibleCols, [key]: !visibleCols[key] };
+    setVisibleCols(next);
+    localStorage.setItem("billing_table_cols", JSON.stringify(next));
+  };
 
   async function fetchProfile() {
     try {
@@ -105,19 +145,43 @@ export default function BillingPage() {
     }
   }
 
+  const isFilterActive = !!(query || colFilters.billNumber || colFilters.tableName || colFilters.customerName || colFilters.customerPhone || colFilters.paymentStatus || colFilters.paymentMode);
+
+  const clearFilters = () => {
+    setColFilters({
+      billNumber: "",
+      tableName: "",
+      customerName: "",
+      customerPhone: "",
+      paymentStatus: "",
+      paymentMode: "",
+    });
+    // Global search is handled by the SearchContext, usually cleared there
+  };
+
   useEffect(() => { 
     fetchBills(); 
     fetchProfile();
   }, []);
 
-  const filteredBills = query
-    ? bills.filter(b =>
-      b.billNumber?.toLowerCase().includes(query.toLowerCase()) ||
-      b.customerName?.toLowerCase().includes(query.toLowerCase()) ||
-      b.customerPhone?.includes(query) ||
-      b.tableName?.toLowerCase().includes(query.toLowerCase())
-    )
-    : bills;
+  const filteredBills = bills.filter(b => {
+    const matchesGlobal = !query || (
+      (b.billNumber?.toLowerCase() || "").includes(query.toLowerCase()) ||
+      (b.customerName?.toLowerCase() || "").includes(query.toLowerCase()) ||
+      (b.customerPhone || "").includes(query) ||
+      (b.tableName?.toLowerCase() || "").includes(query.toLowerCase())
+    );
+
+    const matchesColFilters = 
+      (b.billNumber?.toLowerCase() || "").includes(colFilters.billNumber.toLowerCase()) &&
+      (b.tableName?.toLowerCase() || "").includes(colFilters.tableName.toLowerCase()) &&
+      (b.customerName?.toLowerCase() || "").includes(colFilters.customerName.toLowerCase()) &&
+      (b.customerPhone || "").includes(colFilters.customerPhone) &&
+      (b.paymentStatus?.toLowerCase() || "").includes(colFilters.paymentStatus.toLowerCase()) &&
+      (b.paymentMode?.toLowerCase() || "").includes(colFilters.paymentMode.toLowerCase());
+
+    return !!(matchesGlobal && matchesColFilters);
+  });
 
   const totalPages = Math.ceil(filteredBills.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -162,10 +226,81 @@ export default function BillingPage() {
             </h1>
           </div>
           <p style={{ fontSize: "0.78rem", color: "var(--kravy-text-muted)", marginLeft: "16px", fontFamily: "monospace" }}>
-            All transactions · {bills.length} total records
+            {isFilterActive 
+              ? `Showing ${filteredBills.length} of ${bills.length} records`
+              : `All transactions · ${bills.length} total records`
+            }
           </p>
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {isFilterActive && (
+            <button
+              onClick={clearFilters}
+              style={{
+                fontSize: "0.75rem", fontWeight: 800, color: "#f43f5e",
+                background: "rgba(244, 63, 94, 0.05)", border: "1px solid rgba(244, 63, 94, 0.1)",
+                padding: "8px 14px", borderRadius: "10px", cursor: "pointer"
+              }}
+            >
+              Clear Filters
+            </button>
+          )}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setShowColPicker(!showColPicker)}
+              style={{
+                display: "flex", alignItems: "center", gap: "8px",
+                padding: "10px 18px", borderRadius: "12px", border: "1px solid var(--kravy-border)",
+                background: "var(--kravy-surface)", color: "var(--kravy-text-secondary)",
+                fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", transition: "all 0.2s"
+              }}
+            >
+              <Settings2 size={16} />
+              Columns
+            </button>
+            {showColPicker && (
+              <>
+                <div style={{ position: "fixed", inset: 0, zIndex: 100 }} onClick={() => setShowColPicker(false)} />
+                <div style={{
+                  position: "absolute", right: 0, top: "calc(100% + 8px)",
+                  width: "220px", background: "var(--kravy-bg)", borderRadius: "16px",
+                  border: "1px solid var(--kravy-border-strong)", boxShadow: "var(--kravy-card-shadow)",
+                  padding: "8px", zIndex: 101, display: "flex", flexDirection: "column", gap: "2px"
+                }}>
+                  <div style={{ padding: "8px 12px", fontSize: "0.65rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1px" }}>Manage Table Columns</div>
+                  {[
+                    { key: "sno", label: "S.No" },
+                    { key: "billInfo", label: "Bill Info" },
+                    { key: "source", label: "Source" },
+                    { key: "customer", label: "Customer Name" },
+                    { key: "customerPhone", label: "Phone Number" },
+                    { key: "subtotal", label: "Subtotal" },
+                    { key: "gst", label: "GST (5%)" },
+                    { key: "discount", label: "Discount" },
+                    { key: "total", label: "Net Total" },
+                    { key: "timeline", label: "Timeline" },
+                    { key: "payment", label: "Payment & Status" },
+                  ].map(col => (
+                    <button
+                      key={col.key}
+                      onClick={() => toggleCol(col.key as any)}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "10px 12px", borderRadius: "10px", border: "none",
+                        background: (visibleCols as any)[col.key] ? "rgba(99, 102, 241, 0.05)" : "transparent",
+                        color: (visibleCols as any)[col.key] ? "var(--kravy-brand)" : "var(--kravy-text-muted)",
+                        fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", transition: "all 0.15s"
+                      }}
+                    >
+                      {col.label}
+                      {(visibleCols as any)[col.key] && <Check size={14} strokeWidth={3} />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
           <button
             onClick={async () => {
               const res = await fetch("/api/bill-manager/export");
@@ -298,26 +433,155 @@ export default function BillingPage() {
           <table className="kravy-table" style={{ minWidth: "1200px", borderCollapse: "separate", borderSpacing: 0 }}>
             <thead>
               <tr style={{ background: "rgba(0,0,0,0.02)" }}>
-                {/* Identification Group */}
-                <th style={{ textAlign: "left", background: "rgba(99, 102, 241, 0.05)", borderRight: "1px solid var(--kravy-border)" }}>Bill No</th>
-                
-                {/* Source Group - Indigo/Amber */}
-                <th style={{ textAlign: "left", background: "rgba(79, 70, 229, 0.05)" }}>Source</th>
-                <th style={{ textAlign: "left", background: "rgba(79, 70, 229, 0.05)", borderRight: "1px solid var(--kravy-border)" }}>Order Status</th>
+                {/* S.No */}
+                {visibleCols.sno && <th style={{ textAlign: "left", padding: "16px 20px", width: "60px" }}>S.No</th>}
 
-                {/* Customer Group - Blueish */}
-                <th style={{ textAlign: "left", background: "rgba(59, 130, 246, 0.03)" }}>Customer</th>
-                <th style={{ textAlign: "left", background: "rgba(59, 130, 246, 0.03)", borderRight: "1px solid var(--kravy-border)" }}>Phone</th>
+                {/* Identification */}
+                {visibleCols.billInfo && (
+                  <th style={{ textAlign: "left", padding: "16px 20px", position: "relative" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span>Bill Info</span>
+                      <button 
+                        onClick={() => setActiveFilter(activeFilter === 'bill' ? null : 'bill')}
+                        style={{ background: "none", border: "none", color: colFilters.billNumber ? "var(--kravy-brand)" : "var(--kravy-text-muted)", cursor: "pointer", padding: "2px" }}
+                      >
+                        <Filter size={12} strokeWidth={colFilters.billNumber ? 3 : 2} />
+                      </button>
+                    </div>
+                    {activeFilter === 'bill' && (
+                      <div style={{ position: "absolute", top: "100%", left: "16px", zIndex: 10, background: "white", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "180px" }}>
+                        <input 
+                          autoFocus
+                          placeholder="Filter bill no..."
+                          value={colFilters.billNumber}
+                          onChange={e => setColFilters(f => ({ ...f, billNumber: e.target.value }))}
+                          style={{ width: "100%", padding: "6px 10px", fontSize: "0.75rem", borderRadius: "6px", border: "1px solid var(--kravy-border)", outline: "none" }}
+                          onBlur={() => setTimeout(() => setActiveFilter(null), 200)}
+                        />
+                      </div>
+                    )}
+                  </th>
+                )}
                 
-                {/* Timeline & Money - Greenish */}
-                <th style={{ textAlign: "left", background: "rgba(16, 185, 129, 0.03)" }}>Date & Time</th>
-                <th style={{ textAlign: "left", background: "rgba(16, 185, 129, 0.03)", borderRight: "1px solid var(--kravy-border)" }}>Amount</th>
+                {/* Source */}
+                {visibleCols.source && (
+                  <th style={{ textAlign: "left", position: "relative" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span>Source</span>
+                      <button 
+                        onClick={() => setActiveFilter(activeFilter === 'source' ? null : 'source')}
+                        style={{ background: "none", border: "none", color: colFilters.tableName ? "var(--kravy-brand)" : "var(--kravy-text-muted)", cursor: "pointer", padding: "2px" }}
+                      >
+                        <Filter size={12} strokeWidth={colFilters.tableName ? 3 : 2} />
+                      </button>
+                    </div>
+                    {activeFilter === 'source' && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "white", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "120px" }}>
+                        <input 
+                          autoFocus
+                          placeholder="POS/Table..."
+                          value={colFilters.tableName}
+                          onChange={e => setColFilters(f => ({ ...f, tableName: e.target.value }))}
+                          style={{ width: "100%", padding: "6px 10px", fontSize: "0.75rem", borderRadius: "6px", border: "1px solid var(--kravy-border)", outline: "none" }}
+                          onBlur={() => setTimeout(() => setActiveFilter(null), 200)}
+                        />
+                      </div>
+                    )}
+                  </th>
+                )}
+
+                {/* Customer */}
+                {visibleCols.customer && (
+                  <th style={{ textAlign: "left", position: "relative" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span>Customer</span>
+                      <button 
+                        onClick={() => setActiveFilter(activeFilter === 'customer' ? null : 'customer')}
+                        style={{ background: "none", border: "none", color: colFilters.customerName ? "var(--kravy-brand)" : "var(--kravy-text-muted)", cursor: "pointer", padding: "2px" }}
+                      >
+                        <Filter size={12} strokeWidth={colFilters.customerName ? 3 : 2} />
+                      </button>
+                    </div>
+                    {activeFilter === 'customer' && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "white", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "180px" }}>
+                        <input 
+                          autoFocus
+                          placeholder="Filter name..."
+                          value={colFilters.customerName}
+                          onChange={e => setColFilters(f => ({ ...f, customerName: e.target.value }))}
+                          style={{ width: "100%", padding: "6px 10px", fontSize: "0.75rem", borderRadius: "6px", border: "1px solid var(--kravy-border)", outline: "none" }}
+                          onBlur={() => setTimeout(() => setActiveFilter(null), 200)}
+                        />
+                      </div>
+                    )}
+                  </th>
+                )}
+
+                {/* Phone */}
+                {visibleCols.customerPhone && (
+                  <th style={{ textAlign: "left", position: "relative" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span>Phone</span>
+                      <button 
+                        onClick={() => setActiveFilter(activeFilter === 'phone' ? null : 'phone')}
+                        style={{ background: "none", border: "none", color: colFilters.customerPhone ? "var(--kravy-brand)" : "var(--kravy-text-muted)", cursor: "pointer", padding: "2px" }}
+                      >
+                        <Filter size={12} strokeWidth={colFilters.customerPhone ? 3 : 2} />
+                      </button>
+                    </div>
+                    {activeFilter === 'phone' && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "white", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "160px" }}>
+                        <input 
+                          autoFocus
+                          placeholder="Filter phone..."
+                          value={colFilters.customerPhone}
+                          onChange={e => setColFilters(f => ({ ...f, customerPhone: e.target.value }))}
+                          style={{ width: "100%", padding: "6px 10px", fontSize: "0.75rem", borderRadius: "6px", border: "1px solid var(--kravy-border)", outline: "none" }}
+                          onBlur={() => setTimeout(() => setActiveFilter(null), 200)}
+                        />
+                      </div>
+                    )}
+                  </th>
+                )}
                 
-                {/* Status Group - Amber/Purple */}
-                <th style={{ textAlign: "left", background: "rgba(139, 92, 246, 0.03)" }}>Payment</th>
-                <th style={{ textAlign: "left", background: "rgba(139, 92, 246, 0.03)", borderRight: "1px solid var(--kravy-border)" }}>Status</th>
+                {/* Financial Breakdown - Modern Visual Grouping */}
+                {visibleCols.subtotal && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "var(--kravy-text-muted)" }}>Subtotal</th>}
+                {visibleCols.gst && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "#f59e0b" }}>GST (5%)</th>}
+                {visibleCols.discount && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "#ef4444" }}>Disc.</th>}
+                {visibleCols.total && <th style={{ textAlign: "right", background: "rgba(16, 185, 129, 0.05)", borderRight: "1px solid var(--kravy-border)" }}>Net Total</th>}
                 
-                <th style={{ textAlign: "right" }}>Actions</th>
+                {/* Status & Timing */}
+                {visibleCols.timeline && <th style={{ textAlign: "left", paddingLeft: "15px" }}>Timeline</th>}
+                {visibleCols.payment && (
+                  <th style={{ textAlign: "left", position: "relative" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span>Payment</span>
+                      <button 
+                        onClick={() => setActiveFilter(activeFilter === 'payment' ? null : 'payment')}
+                        style={{ background: "none", border: "none", color: colFilters.paymentStatus ? "var(--kravy-brand)" : "var(--kravy-text-muted)", cursor: "pointer", padding: "2px" }}
+                      >
+                        <Filter size={12} strokeWidth={colFilters.paymentStatus ? 3 : 2} />
+                      </button>
+                    </div>
+                    {activeFilter === 'payment' && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "white", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "150px" }}>
+                        <select
+                          autoFocus
+                          value={colFilters.paymentStatus}
+                          onChange={e => setColFilters(f => ({ ...f, paymentStatus: e.target.value }))}
+                          style={{ width: "100%", padding: "6px 4px", fontSize: "0.75rem", borderRadius: "6px", border: "1px solid var(--kravy-border)", background: "white", outline: "none" }}
+                          onBlur={() => setTimeout(() => setActiveFilter(null), 200)}
+                        >
+                          <option value="">All Status</option>
+                          <option value="paid">Paid</option>
+                          <option value="pending">Pending</option>
+                          <option value="held">Held</option>
+                        </select>
+                      </div>
+                    )}
+                  </th>
+                )}
+                <th style={{ textAlign: "right", paddingRight: "20px" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -328,68 +592,112 @@ export default function BillingPage() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: idx * 0.03 }}
                 >
-                  <td style={{ background: "rgba(99, 102, 241, 0.02)", borderRight: "1px solid var(--kravy-border)" }}>
-                    <span style={{
-                      fontFamily: "monospace", fontWeight: 800,
-                      fontSize: "0.82rem", color: "var(--kravy-accent)"
-                    }}>
-                      #{bill.billNumber}
-                    </span>
-                  </td>
-                  <td style={{ background: "rgba(79, 70, 229, 0.02)", borderRight: "1px solid var(--kravy-border)" }}>
-                    <span style={{
-                      padding: "4px 8px", borderRadius: "8px",
-                      background: bill.tableName === "POS" ? "rgba(79, 70, 229, 0.1)" : "rgba(245, 158, 11, 0.1)",
-                      color: bill.tableName === "POS" ? "var(--kravy-brand)" : "#D97706",
-                      fontSize: "0.68rem", fontWeight: 900, textTransform: "uppercase",
-                      letterSpacing: "0.5px"
-                    }}>
-                      {bill.tableName || "POS"}
-                    </span>
-                  </td>
-                  <td style={{ background: "rgba(79, 70, 229, 0.02)", borderRight: "1px solid var(--kravy-border)" }}>
-                     <span style={{
-                      display: "inline-flex", alignItems: "center", gap: "5px",
-                      background: bill.isOrder ? (bill.orderStatus === "PENDING" ? "rgba(244, 63, 94, 0.1)" : "rgba(245, 158, 11, 0.1)") : "rgba(16, 185, 129, 0.1)",
-                      color: bill.isOrder ? (bill.orderStatus === "PENDING" ? "#E11D48" : "#D97706") : "#059669",
-                      padding: "4px 8px", borderRadius: "8px", fontSize: "0.68rem", fontWeight: 900
-                    }}>
-                      {bill.isOrder ? (
-                        <>
-                          <Clock size={12} /> {bill.orderStatus}
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 size={12} /> COMPLETED
-                        </>
-                      )}
-                    </span>
-                  </td>
-                  <td style={{ background: "rgba(59, 130, 246, 0.01)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <div style={{
-                        width: "30px", height: "30px", borderRadius: "8px",
-                        background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        color: "var(--kravy-text-muted)", fontSize: "0.7rem", fontWeight: 800
-                      }}>
-                        {(bill.customerName?.[0] || "W").toUpperCase()}
+                  {/* S.No */}
+                  {visibleCols.sno && (
+                    <td style={{ padding: "16px 20px", fontSize: "0.75rem", fontWeight: 700, color: "var(--kravy-text-faint)", fontFamily: "monospace" }}>
+                      {startIndex + idx + 1}
+                    </td>
+                  )}
+
+                  {/* Bill Info */}
+                  {visibleCols.billInfo && (
+                    <td style={{ padding: "16px 20px" }}>
+                      <div className="flex flex-col">
+                        <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "0.85rem", color: "var(--kravy-brand)" }}>
+                          #{bill.billNumber}
+                        </span>
+                        <span style={{ 
+                          display: "inline-flex", alignItems: "center", gap: "4px",
+                          fontSize: "0.6rem", fontWeight: 800, marginTop: "4px",
+                          color: bill.isOrder ? "#D97706" : "#059669"
+                        }}>
+                          {bill.isOrder ? <Clock size={10} /> : <CheckCircle2 size={10} />}
+                          {bill.isOrder ? bill.orderStatus : "SETTLED"}
+                        </span>
                       </div>
-                      <span style={{ fontWeight: 600 }}>{bill.customerName || "Walk-in"}</span>
-                    </div>
-                  </td>
-                  <td className="muted" style={{ background: "rgba(59, 130, 246, 0.01)", borderRight: "1px solid var(--kravy-border)" }}>{bill.customerPhone || "—"}</td>
-                  <td className="muted" style={{ fontSize: "0.78rem", fontFamily: "monospace", background: "rgba(16, 185, 129, 0.01)" }}>
-                    {new Date(bill.createdAt).toLocaleString('en-IN', {
-                      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
-                    })}
-                  </td>
-                  <td style={{ fontWeight: 800, color: "var(--kravy-text-primary)", background: "rgba(16, 185, 129, 0.01)", borderRight: "1px solid var(--kravy-border)" }}>
-                    ₹{format(bill.total)}
-                  </td>
-                  <td style={{ background: "rgba(139, 92, 246, 0.01)" }}><PaymentBadge mode={bill.paymentMode} /></td>
-                  <td style={{ background: "rgba(139, 92, 246, 0.01)", borderRight: "1px solid var(--kravy-border)" }}><StatusBadge status={bill.paymentStatus} isHeld={bill.isHeld} /></td>
-                  <td style={{ textAlign: "right" }}>
+                    </td>
+                  )}
+
+                  {/* Source */}
+                  {visibleCols.source && (
+                    <td>
+                      <span style={{
+                        padding: "4px 8px", borderRadius: "8px",
+                        background: bill.tableName === "POS" ? "rgba(79, 70, 229, 0.1)" : "rgba(245, 158, 11, 0.1)",
+                        color: bill.tableName === "POS" ? "var(--kravy-brand)" : "#D97706",
+                        fontSize: "0.65rem", fontWeight: 900, textTransform: "uppercase",
+                        letterSpacing: "0.5px"
+                      }}>
+                        {bill.tableName || "POS"}
+                      </span>
+                    </td>
+                  )}
+
+                  {/* Customer */}
+                  {visibleCols.customer && (
+                    <td>
+                      <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "var(--kravy-text-primary)" }}>{bill.customerName || "Walk-in"}</span>
+                    </td>
+                  )}
+
+                  {/* Customer Phone */}
+                  {visibleCols.customerPhone && (
+                    <td>
+                      <span style={{ fontSize: "0.75rem", color: "var(--kravy-text-muted)", fontFamily: "monospace", fontWeight: 600 }}>{bill.customerPhone || "—"}</span>
+                    </td>
+                  )}
+
+                  {/* Financial Group */}
+                  {visibleCols.subtotal && (
+                    <td style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.02)", fontWeight: 600, fontSize: "0.85rem" }}>
+                      ₹{format(bill.subtotal || (bill.total - (bill.tax || 0)))}
+                    </td>
+                  )}
+                  {visibleCols.gst && (
+                    <td style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.02)", color: "#d97706", fontWeight: 700, fontSize: "0.85rem" }}>
+                      ₹{format(bill.tax || 0)}
+                    </td>
+                  )}
+                  {visibleCols.discount && (
+                    <td style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.02)", color: "#dc2626", fontWeight: 700, fontSize: "0.85rem" }}>
+                      ₹0
+                    </td>
+                  )}
+                  {visibleCols.total && (
+                    <td style={{ 
+                      textAlign: "right", background: "rgba(16, 185, 129, 0.04)", 
+                      fontWeight: 900, color: "var(--kravy-text-primary)", fontSize: "1rem",
+                      borderRight: "1px solid var(--kravy-border)"
+                    }}>
+                      ₹{format(bill.total)}
+                    </td>
+                  )}
+
+                  {/* Timeline */}
+                  {visibleCols.timeline && (
+                    <td style={{ paddingLeft: "15px" }}>
+                      <div className="flex flex-col">
+                        <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--kravy-text-secondary)" }}>
+                          {new Date(bill.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                        </span>
+                        <span style={{ fontSize: "0.65rem", color: "var(--kravy-text-faint)", fontFamily: "monospace" }}>
+                          {new Date(bill.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </td>
+                  )}
+
+                  {/* Payment */}
+                  {visibleCols.payment && (
+                    <td>
+                      <div className="flex flex-col gap-1.5 items-start">
+                        <PaymentBadge mode={bill.paymentMode} />
+                        <StatusBadge status={bill.paymentStatus} isHeld={bill.isHeld} />
+                      </div>
+                    </td>
+                  )}
+
+                  <td style={{ textAlign: "right", paddingRight: "20px" }}>
                     <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} />
                   </td>
                 </motion.tr>
@@ -468,20 +776,22 @@ export default function BillingPage() {
                 </div>
                 <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
                 {[
-                  { label: "Amount", value: `₹${format(bill.total)}`, bold: true },
+                  { label: "Subtotal", value: `₹${format(bill.subtotal || (bill.total - (bill.tax || 0)))}` },
+                  { label: "Tax (GST)", value: `₹${format(bill.tax || 0)}` },
+                  { label: "Net Amount", value: `₹${format(bill.total)}`, bold: true, color: "var(--kravy-brand)" },
                   { label: "Source", value: bill.tableName || "POS" },
-                  { label: "Status", value: bill.isOrder ? bill.orderStatus : "COMPLETED", isStatus: true },
+                  { label: "Status", value: bill.isOrder ? bill.orderStatus : "SETTLED", isStatus: true },
                   { label: "Payment", badge: true, bill },
                 ].map((row, i) => (
                   <div key={i} style={{
-                    background: "var(--kravy-surface)",
-                    border: "1px solid var(--kravy-border)",
-                    borderRadius: "10px", padding: "10px 12px",
-                    gridColumn: "span 1"
+                    background: row.bold ? "rgba(99, 102, 241, 0.03)" : "var(--kravy-surface)",
+                    border: row.bold ? "1px solid rgba(99, 102, 241, 0.1)" : "1px solid var(--kravy-border)",
+                    borderRadius: "12px", padding: "10px 12px",
                   }}>
-                    <div style={{ fontSize: "0.58rem", color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px" }}>
+                    <div style={{ fontSize: "0.55rem", color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "3px" }}>
                       {row.label}
                     </div>
                     {row.badge
@@ -489,18 +799,24 @@ export default function BillingPage() {
                       : row.isStatus 
                         ? <span style={{
                             fontSize: "0.75rem", fontWeight: 900,
-                            color: row.value === "COMPLETED" ? "#059669" : "#D97706"
+                            color: row.value === "SETTLED" ? "#059669" : "#D97706"
                           }}>{row.value}</span>
-                        : <div style={{ fontWeight: row.bold ? 800 : 500, color: "var(--kravy-text-primary)", fontSize: "0.85rem" }}>
+                        : <div style={{ 
+                            fontWeight: row.bold ? 900 : 700, 
+                            color: row.color || "var(--kravy-text-primary)", 
+                            fontSize: row.bold ? "1rem" : "0.85rem",
+                            fontFamily: "monospace"
+                          }}>
                             {row.value}
                           </div>
                     }
                   </div>
                 ))}
               </div>
+
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px", paddingTop: "8px", borderTop: "1px dashed var(--kravy-border)" }}>
                 <span style={{ fontSize: "0.65rem", color: "var(--kravy-text-faint)", fontFamily: "monospace" }}>
-                  {new Date(bill.createdAt).toLocaleString()}
+                  {new Date(bill.createdAt).toLocaleString('en-IN')}
                 </span>
                 <PaymentBadge mode={bill.paymentMode} />
               </div>
