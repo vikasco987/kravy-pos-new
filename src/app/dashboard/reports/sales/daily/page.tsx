@@ -281,7 +281,6 @@ export default async function DailySalesReportPage() {
                     </td>
                     <td style={{ padding: "24px 40px", textAlign: "right" }}>
                        <div style={{ fontSize: "1.25rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1px" }}>₹{format(b.total)}</div>
-                       {b.discount > 0 && <div style={{ fontSize: "0.7rem", color: "#EF4444", fontWeight: 800, marginTop: "4px" }}>- ₹{format(b.discount)} DISCOUNT</div>}
                     </td>
                   </tr>
                 );
