@@ -47,6 +47,12 @@ export default function POSWorkflowDocs() {
       desc: "Khana khatam hote hi checkout karein. UPI, Cash ya Card se payment accept karein.",
       icon: <CreditCard className="text-emerald-600" size={24} />,
       color: "emerald"
+    },
+    {
+      title: "KOT Tracking",
+      desc: "Print status track karein. Badge se pata chalega kitchen ticket print hui ya nahi.",
+      icon: <Printer className="text-indigo-500" size={24} />,
+      color: "indigo"
     }
   ];
 
@@ -284,6 +290,58 @@ export default function POSWorkflowDocs() {
                  </div>
               </div>
            </div>
+
+           {/* Section 4: KOT Tracking */}
+           <div className="grid lg:grid-cols-2 gap-20 items-center">
+              <div className="space-y-8">
+                 <div className="w-12 h-12 rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg font-black italic">4</div>
+                 <h2 className="text-5xl font-black text-slate-900 leading-tight">Smart <span className="text-indigo-600 underline decoration-indigo-200 underline-offset-8">KOT Tracking</span></h2>
+                 <p className="text-lg text-slate-600 font-medium leading-relaxed">
+                   Ab baar-baar kitchen se puchne ki zaroorat nahi. System automatic track karta hai ki KOT print hua ya nahi.
+                 </p>
+                 <div className="space-y-4">
+                    {[
+                      { l: "Indigo Badge", d: "Kitchen cards aur table list mein status icon." },
+                      { l: "Auto-Sync", d: "Print hote hi 'KOT PRINTED' ka mark lag jayega." },
+                      { l: "Conflict Free", d: "Ek hi order dubara print hone se bachata hai." }
+                    ].map((feature, i) => (
+                      <div key={i} className="flex gap-4 p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                         <div className="w-2 h-2 rounded-full bg-indigo-600 mt-2 shrink-0" />
+                         <div>
+                            <p className="font-black text-slate-800 text-sm">{feature.l}</p>
+                            <p className="text-xs text-slate-400 font-medium">{feature.d}</p>
+                         </div>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+              <div className="relative group">
+                 <div className="absolute -inset-4 bg-gradient-to-tr from-indigo-400 to-rose-400 rounded-[3rem] blur-2xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+                 <div className="relative bg-white rounded-[3rem] p-8 shadow-2xl border border-slate-100 overflow-hidden">
+                    <div className="flex items-center gap-3 mb-6">
+                        <Printer size={20} className="text-indigo-500" />
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">KOT Tracking System</span>
+                    </div>
+                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-black text-slate-900">Order #T2-4A2B</span>
+                            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-500 rounded-md text-[9px] font-black border border-indigo-100 flex items-center gap-1">
+                                <Printer size={10} /> KOT PRINTED
+                            </span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                           <motion.div 
+                             initial={{ width: 0 }}
+                             whileInView={{ width: "100%" }}
+                             transition={{ duration: 1 }}
+                             className="h-full bg-indigo-500"
+                           />
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-bold italic text-center">Ticket has been dispatched to kitchen.</p>
+                    </div>
+                 </div>
+              </div>
+           </div>
         </div>
 
         {/* ── FAQ ── */}
@@ -296,8 +354,9 @@ export default function POSWorkflowDocs() {
               {[
                 { q: "Naya table kaise add karein?", a: "Tables page par ja kar 'Add Table' button dabayein, naya table turant dashboard par dikhne lagega." },
                 { q: "Table Status automatically update hota hai?", a: "Haan, jaise hi aap ya customer order place karte hain, table status grey se transition hoke status ke hisaab se color badal leta hai." },
-                { q: "KOT print karna zaroori hai?", a: "Zaroori nahi but recommended hai. Aap tabhi 'Print KOT' click kar sakte hain jab Chef ko paper ticket chahiye ho." },
-                { q: "Bill split kar sakte hain?", a: "Billing screen par option aane wala hai, tab tak aap multi-order session se different billing manage kar sakte hain." }
+                { q: "KOT print karna zaroori hai?", a: "Haan, Chef ko physical ticket dene ke liye print karein. System automatic track karega ki print ho gaya hai." },
+                { q: "KOT status kahan dikhega?", a: "Main Dashboard, Kitchen cards aur Tracking table mein indigo color ka printer icon nazar aayega." },
+                { q: "Kya bill split kar sakte hain?", a: "Billing screen par option aane wala hai, tab tak aap multi-order session se different billing manage kar sakte hain." }
               ].map((faq, i) => (
                 <div key={i} className="p-10 bg-slate-50/50 border border-slate-100 rounded-[3rem] hover:bg-white hover:shadow-xl transition-all group">
                    <h4 className="font-black text-slate-800 text-lg mb-4 flex items-start gap-4">

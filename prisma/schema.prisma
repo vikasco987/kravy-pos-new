@@ -218,6 +218,9 @@ model Order {
   customerName  String?
   customerPhone String?
   
+  isKotPrinted  Boolean  @default(false)
+  isBillPrinted Boolean  @default(false)
+  
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -372,6 +375,7 @@ model BillManager {
   deletedAt       DateTime?
   deletedSnapshot Json?
   pdfUrl          String?   // ✅ Added for direct sharing
+  tableName       String?   // ✅ Added to track source (Table Name or "POS")
 
   @@index([clerkUserId])
   @@index([isDeleted, createdAt])

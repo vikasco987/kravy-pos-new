@@ -26,11 +26,23 @@ const nextConfig = {
         protocol: "https",
         hostname: "th.bing.com",
       },
+      {
+        protocol: "https",
+        hostname: "d2u1z1lopyfwlx.cloudfront.net",
+      },
+      {
+        protocol: "https",
+        hostname: "st.perplexity.ai",
+      },
     ],
   },
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    outputFileTracingRoot: process.cwd(),
+  },
+  transpilePackages: ["framer-motion"],
 };
 
 export default nextConfig;

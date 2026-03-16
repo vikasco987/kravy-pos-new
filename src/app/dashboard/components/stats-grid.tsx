@@ -1,7 +1,9 @@
 "use client";
 
-import { TrendingUp, TrendingDown, IndianRupee, FileText, Banknote, Smartphone } from "lucide-react";
+import { TrendingUp, TrendingDown, IndianRupee, FileText, Banknote, Smartphone, Maximize2, Users, UserPlus, UserCheck, Clock, BarChart3, History, Activity } from "lucide-react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { kravy } from "@/lib/sounds";
 
 interface Props {
   data: {
@@ -9,18 +11,39 @@ interface Props {
     totalBills?: number;
     growth?: number;
     paymentSplit?: { Cash?: number; UPI?: number };
+    daySale?: number;
+    weekSale?: number;
+    monthSale?: number;
+    todayCustomers?: number;
+    newCustomers?: number;
+    repeatCustomers?: number;
+    walkInCustomers?: number;
+    avgOrderValue?: number;
+    peakHour?: string;
+    peakDay?: string;
+    activeOrders?: number;
+    completedOrders?: number;
   };
+  range?: number;
 }
 
-export default function StatsGrid({ data }: Props) {
+export default function StatsGrid({ data, range = 30 }: Props) {
+  const router = useRouter();
   const totalRevenue = data.monthlyRevenue?.reduce((s, m) => s + (m.revenue || 0), 0) || 0;
-  const totalBills = data.totalBills || 0;
   const growth = data.growth || 0;
   const isPositive = growth >= 0;
+  
+  const daySale = data.daySale || 0;
+  const weekSale = data.weekSale || 0;
+  const monthSale = data.monthSale || 0;
+  const totalBills = data.totalBills || 0;
   const cash = data.paymentSplit?.Cash || 0;
   const upi = data.paymentSplit?.UPI || 0;
 
   const fmt = (n: number) => new Intl.NumberFormat("en-IN").format(Math.round(n));
+
+  const rangeShort = range === 1 ? "Today" : range === 2 ? "Yesterday" : `${range} Days`;
+  const rangeSub = range === 1 ? "today" : range === 2 ? "yesterday" : `in last ${range} days`;
 
   const stats = [
     {
@@ -29,19 +52,57 @@ export default function StatsGrid({ data }: Props) {
       sub: `${isPositive ? "+" : ""}${growth.toFixed(1)}% vs last period`,
       icon: <IndianRupee size={20} strokeWidth={2.5} />,
       accent: "#10B981",
+      path: `/dashboard/reports/sales/revenue?range=${range}`,
       gradient: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
       glow: "rgba(16,185,129,0.35)",
       trend: isPositive,
       showTrend: true,
     },
     {
-      label: "Total Bills",
-      value: fmt(totalBills),
-      sub: "All transactions",
-      icon: <FileText size={20} strokeWidth={2.5} />,
+      label: "Today's Sale",
+      value: `₹${fmt(daySale)}`,
+      sub: "Sales since midnight",
+      icon: <Banknote size={20} strokeWidth={2.5} />,
       accent: "#FF6B35",
+      path: `/dashboard/reports/sales/daily`,
       gradient: "linear-gradient(135deg, #FF6B35 0%, #F59E0B 100%)",
       glow: "rgba(255,107,53,0.3)",
+      trend: true,
+      showTrend: false,
+    },
+    {
+      label: "This Week",
+      value: `₹${fmt(weekSale)}`,
+      sub: "Sales since Sunday",
+      icon: <FileText size={20} strokeWidth={2.5} />,
+      accent: "#8B5CF6",
+      path: `/dashboard/reports/sales/weekly`,
+      gradient: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+      glow: "rgba(139, 92, 246, 0.3)",
+      trend: true,
+      showTrend: false,
+    },
+    {
+      label: "This Month",
+      value: `₹${fmt(monthSale)}`,
+      sub: `Sales in ${new Date().toLocaleString('default', { month: 'long' })}`,
+      icon: <Smartphone size={20} strokeWidth={2.5} />,
+      accent: "#0EA5E9",
+      path: `/dashboard/reports/sales/monthly`,
+      gradient: "linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)",
+      glow: "rgba(14, 165, 233, 0.3)",
+      trend: true,
+      showTrend: false,
+    },
+    {
+      label: "Total Bills",
+      value: fmt(totalBills),
+      sub: `Orders processed ${rangeSub}`,
+      icon: <FileText size={20} strokeWidth={2.5} />,
+      accent: "#64748B",
+      path: `/dashboard/reports/bills`,
+      gradient: "linear-gradient(135deg, #64748B 0%, #475569 100%)",
+      glow: "rgba(100, 116, 139, 0.3)",
       trend: true,
       showTrend: false,
     },
@@ -51,6 +112,7 @@ export default function StatsGrid({ data }: Props) {
       sub: "Physical payments",
       icon: <Banknote size={20} strokeWidth={2.5} />,
       accent: "#F59E0B",
+      path: `/dashboard/reports/payments/cash`,
       gradient: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
       glow: "rgba(245,158,11,0.3)",
       trend: true,
@@ -61,9 +123,118 @@ export default function StatsGrid({ data }: Props) {
       value: `₹${fmt(upi)}`,
       sub: "Digital transactions",
       icon: <Smartphone size={20} strokeWidth={2.5} />,
-      accent: "var(--kravy-brand)",
-      gradient: "var(--kravy-brand)",
-      glow: "var(--kravy-brand)",
+      accent: "#EC4899",
+      path: `/dashboard/reports/payments/upi`,
+      gradient: "linear-gradient(135deg, #EC4899 0%, #DB2777 100%)",
+      glow: "rgba(236, 72, 153, 0.3)",
+      trend: true,
+      showTrend: false,
+    },
+    {
+      label: `${rangeShort} Customers`,
+      value: fmt(data.todayCustomers || 0),
+      sub: `Unique visitors ${rangeSub}`,
+      icon: <Users size={20} strokeWidth={2.5} />,
+      accent: "#06B6D4",
+      path: "/dashboard/reports/customers",
+      gradient: "linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)",
+      glow: "rgba(6, 182, 212, 0.3)",
+      trend: true,
+      showTrend: false,
+    },
+    {
+      label: "New Customers",
+      value: fmt(data.newCustomers || 0),
+      sub: `First-time visits ${rangeSub}`,
+      icon: <UserPlus size={20} strokeWidth={2.5} />,
+      accent: "#10B981",
+      path: "/dashboard/reports/customers?filter=New",
+      gradient: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+      glow: "rgba(16, 185, 129, 0.3)",
+      trend: true,
+      showTrend: false,
+    },
+    {
+      label: "Repeat Customers",
+      value: fmt(data.repeatCustomers || 0),
+      sub: `Returning business ${rangeSub}`,
+      icon: <UserCheck size={20} strokeWidth={2.5} />,
+      accent: "#F59E0B",
+      path: "/dashboard/reports/customers?filter=Repeat",
+      gradient: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
+      glow: "rgba(245, 158, 11, 0.3)",
+      trend: true,
+      showTrend: false,
+    },
+    {
+      label: "Walk-in Guests",
+      value: fmt(data.walkInCustomers || 0),
+      sub: `Anonymous footfall ${rangeSub}`,
+      icon: <Users size={20} strokeWidth={2.5} />,
+      accent: "#64748B",
+      path: "/dashboard/reports/customers?filter=WalkIn",
+      gradient: "linear-gradient(135deg, #64748B 0%, #475569 100%)",
+      glow: "rgba(100, 116, 139, 0.3)",
+      trend: true,
+      showTrend: false,
+    },
+    {
+      label: "Avg Bill Value",
+      value: `₹${fmt(data.avgOrderValue || 0)}`,
+      sub: `Average per order ${rangeSub}`,
+      icon: <BarChart3 size={20} strokeWidth={2.5} />,
+      accent: "#8B5CF6",
+      path: "/dashboard/reports/analytics",
+      gradient: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+      glow: "rgba(139, 92, 246, 0.3)",
+      trend: true,
+      showTrend: false,
+    },
+    {
+      label: `${rangeShort} Peak`,
+      value: data.peakHour || "N/A",
+      sub: `Busiest hour ${rangeSub}`,
+      icon: <Clock size={20} strokeWidth={2.5} />,
+      accent: "#F59E0B",
+      path: "/dashboard/reports/analytics",
+      gradient: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
+      glow: "rgba(245, 158, 11, 0.3)",
+      trend: true,
+      showTrend: false,
+    },
+    {
+      label: "Performance Pulse",
+      value: "View Ledger",
+      sub: "Historical comparisons",
+      icon: <History size={20} strokeWidth={2.5} />,
+      accent: "#EC4899",
+      path: "/dashboard/reports/performance",
+      gradient: "linear-gradient(135deg, #EC4899 0%, #DB2777 100%)",
+      glow: "rgba(236, 72, 153, 0.3)",
+      trend: true,
+      showTrend: false,
+    },
+    {
+      label: "Peak Performance Day",
+      value: data.peakDay || "No data",
+      sub: `Highest volume on ${data.peakDay || "..."}`,
+      icon: <TrendingUp size={20} strokeWidth={2.5} />,
+      accent: "#10B981",
+      path: "/dashboard/reports/analytics",
+      gradient: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+      glow: "rgba(16, 185, 129, 0.3)",
+      trend: true,
+      showTrend: false,
+    },
+    {
+      label: "Live Status",
+      value: `${data.activeOrders || 0} Active`,
+      sub: `${data.completedOrders || 0} Completed today`,
+      icon: <Activity size={20} strokeWidth={2.5} />,
+      accent: "#F59E0B",
+      path: "/dashboard/reports/analytics",
+      gradient: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
+      glow: "rgba(245, 158, 11, 0.3)",
       trend: true,
       showTrend: false,
     },
@@ -84,10 +255,12 @@ export default function StatsGrid({ data }: Props) {
       initial="hidden"
       animate="show"
       style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+        display: "flex",
         gap: "18px",
+        overflowX: "auto",
+        paddingBottom: "12px",
       }}
+      className="no-scrollbar"
     >
       {stats.map((s, i) => (
         <motion.div
@@ -95,6 +268,7 @@ export default function StatsGrid({ data }: Props) {
           variants={card}
           whileHover={{ y: -5, transition: { duration: 0.2 } }}
           className="kravy-stat-card"
+          style={{ minWidth: "260px", flex: "0 0 auto" }}
         >
           {/* Colored accent top bar */}
           <div style={{
@@ -137,31 +311,65 @@ export default function StatsGrid({ data }: Props) {
               {s.icon}
             </div>
 
-            {/* Trend / rank badge */}
-            {s.showTrend ? (
-              <div style={{
-                display: "flex", alignItems: "center", gap: "4px",
-                padding: "5px 10px",
-                borderRadius: "999px",
-                background: s.trend ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
-                border: `1px solid ${s.trend ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
-                fontSize: "0.68rem", fontWeight: 700,
-                color: s.trend ? "#10B981" : "#EF4444",
-              }}>
-                {s.trend ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                {growth.toFixed(1)}%
-              </div>
-            ) : (
-              <div style={{
-                fontSize: "0.62rem", fontWeight: 700,
-                padding: "4px 10px", borderRadius: "999px",
-                background: `${s.accent}14`,
-                color: s.accent,
-                border: `1px solid ${s.accent}30`,
-              }}>
-                {i === 1 ? "📋" : i === 2 ? "💵" : "📱"} {i === 1 ? "Bills" : i === 2 ? "Cash" : "UPI"}
-              </div>
-            )}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {/* Expand Icon */}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  kravy.click();
+                  router.push(s.path);
+                }}
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "var(--kravy-bg-2)",
+                  border: "1px solid var(--kravy-border)",
+                  cursor: "pointer",
+                  color: "var(--kravy-text-muted)",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = s.accent;
+                  e.currentTarget.style.color = s.accent;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--kravy-border)";
+                  e.currentTarget.style.color = "var(--kravy-text-muted)";
+                }}
+              >
+                <Maximize2 size={14} />
+              </button>
+
+              {/* Trend / rank badge */}
+              {s.showTrend ? (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "4px",
+                  padding: "5px 10px",
+                  borderRadius: "999px",
+                  background: s.trend ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
+                  border: `1px solid ${s.trend ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
+                  fontSize: "0.68rem", fontWeight: 700,
+                  color: s.trend ? "#10B981" : "#EF4444",
+                }}>
+                  {s.trend ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                  {growth.toFixed(1)}%
+                </div>
+              ) : (
+                <div style={{
+                  fontSize: "0.62rem", fontWeight: 700,
+                  padding: "4px 10px", borderRadius: "999px",
+                  background: `${s.accent}14`,
+                  color: s.accent,
+                  border: `1px solid ${s.accent}30`,
+                }}>
+                  {i === 1 ? "📋" : i === 2 ? "💵" : i === 3 ? "📅" : i === 4 ? "📊" : i === 5 ? "💳" : i === 6 ? "📱" : "👤"} {s.label.split(' ')[0]}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Value */}

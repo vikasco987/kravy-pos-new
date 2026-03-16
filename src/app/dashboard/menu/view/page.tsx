@@ -398,6 +398,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { Plus, Search, ChevronDown } from "lucide-react";
 
 /* types */
 type MenuItem = {
@@ -457,6 +458,10 @@ export default function ViewMenuPage() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Quick Add states
+  const [quickAddCat, setQuickAddCat] = useState<{ id: string; name: string } | null>(null);
+  const [showAddCategory, setShowAddCategory] = useState(false);
 
   useEffect(() => {
     if (!toast) return;
@@ -699,6 +704,126 @@ export default function ViewMenuPage() {
       setIsCreatingCategory(false);
     }
   }
+
+  /* ================= QUICK ADD HANDLERS ================= */
+  const handleQuickAdd = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!quickAddCat) return;
+
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const price = formData.get("price") as string;
+    const description = formData.get("description") as string;
+    const imageUrl = formData.get("imageUrl") as string;
+
+    if (!name || !price) {
+      setToast("Name and price are required");
+      return;
+    }
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticItem: MenuItem = {
+      id: tempId,
+      name,
+      price: Number(price),
+      categoryId: quickAddCat.id,
+      isVeg: true,
+      isBestseller: false,
+      isRecommended: false,
+      isNew: true,
+      description: description || null,
+      imageUrl: imageUrl || null
+    };
+
+    // 🚀 OPTIMISTIC UPDATE: Update UI immediately
+    setMenus(prev => prev.map(cat => 
+      cat.id === quickAddCat.id 
+        ? { ...cat, items: [optimisticItem, ...cat.items] }
+        : cat
+    ));
+    setQuickAddCat(null); 
+    setToast(`"${name}" added to ${quickAddCat.name}`);
+
+    // Backend update in background
+    try {
+      const res = await fetch("/api/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          price: Number(price),
+          categoryId: quickAddCat.id,
+          description: description || null,
+          imageUrl: imageUrl || null
+        }),
+      });
+
+      if (res.ok) {
+        const newItem = await res.json();
+        setMenus(prev => prev.map(cat => 
+          cat.id === quickAddCat.id 
+            ? { ...cat, items: cat.items.map(it => it.id === tempId ? {
+                ...newItem,
+                id: String(newItem.id),
+                price: Number(newItem.sellingPrice || newItem.price),
+                categoryId: quickAddCat.id
+              } : it) }
+            : cat
+        ));
+      } else {
+        setMenus(prev => prev.map(cat => 
+          cat.id === quickAddCat.id 
+            ? { ...cat, items: cat.items.filter(it => it.id !== tempId) }
+            : cat
+        ));
+        setToast(`Failed to save "${name}" formally.`);
+      }
+    } catch (err) {
+      console.error("Optimistic add error:", err);
+      setMenus(prev => prev.map(cat => 
+        cat.id === quickAddCat.id 
+          ? { ...cat, items: cat.items.filter(it => it.id !== tempId) }
+          : cat
+      ));
+    }
+  };
+
+  const handleQuickAddCategory = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    if (!name) return;
+
+    const tempId = `temp-cat-${Date.now()}`;
+    const optimisticCat: MenuCategory = {
+      id: tempId,
+      name,
+      items: []
+    };
+
+    setMenus(prev => [optimisticCat, ...prev]);
+    setShowAddCategory(false);
+    setToast(`Category "${name}" created`);
+
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setMenus(prev => prev.map(c => c.id === tempId ? { ...c, id: data.id } : c));
+      } else {
+        setMenus(prev => prev.filter(c => c.id !== tempId));
+        setToast("Failed to formally sync category.");
+      }
+    } catch (err) {
+      console.error(err);
+      setMenus(prev => prev.filter(c => c.id !== tempId));
+    }
+  };
 
   function EditModal({ item, onClose, onSave }: { item: MenuItem; onClose: () => void; onSave: (u: MenuItem) => void }) {
     const [local, setLocal] = useState<MenuItem>(item);
@@ -983,91 +1108,174 @@ export default function ViewMenuPage() {
   if (error) return <p className="p-6 text-center text-red-600">Error: {error}</p>;
 
   return (
-    // prevent horizontal overflow site-wide
-    <div className="min-h-screen bg-[var(--kravy-bg)] pb-28 overflow-x-hidden transition-colors duration-300">
-      {/* sticky search/filter bar below header
-          - top value should match header height (header is 64px -> top-16)
-          - horizontal scroll: overflow-x-auto with flex-nowrap so controls can scroll left-right */}
-      <div className="filter-sticky-bar sticky top-[72px] z-40 bg-[var(--kravy-navbar-bg)] backdrop-blur-md border-b border-[var(--kravy-border)] transition-colors">
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-3">
-            {/* horizontally scrollable container */}
-            <div className="flex gap-2 items-center overflow-x-auto no-scrollbar py-1 w-full min-w-0 mask-fade-right">
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search items or category..."
-                className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl w-64 min-w-[180px] flex-shrink-0 outline-none focus:ring-2 focus:ring-indigo-500/20"
-              />
+    <div className="h-[calc(100vh-72px)] bg-[var(--kravy-bg)] flex flex-col -m-4 sm:-m-6 lg:-m-8 overflow-hidden transition-colors duration-300">
+      {/* 🚀 FIXED TOP HEADER */}
+      <div className="flex-shrink-0 z-40 bg-[var(--kravy-navbar-bg)] backdrop-blur-md border-b border-[var(--kravy-border)] transition-all">
+        <div className="w-full">
+          {/* Top Bar: Search & Filters */}
+          <div className="px-6 py-4 border-b border-[var(--kravy-border)]/30">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-1 gap-3 items-center overflow-x-auto no-scrollbar py-1 min-w-0">
+                <div className="relative group">
+                  <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--kravy-text-faint)] group-focus-within:text-indigo-500 transition-colors" />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search menu items..."
+                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] pl-10 pr-4 py-2.5 rounded-2xl w-72 min-w-[220px] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-bold transition-all shadow-sm"
+                  />
+                </div>
 
-              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as any)} className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl flex-shrink-0 outline-none">
-                {allCategories.map((c) => <option key={c.id} value={c.id as any} className="bg-[var(--kravy-bg)]">{c.name}</option>)}
-              </select>
+                <div className="h-8 w-[1px] bg-[var(--kravy-border)] mx-1 opacity-50 flex-shrink-0" />
 
-              <select value={filterHasImage} onChange={(e) => setFilterHasImage(e.target.value as any)} className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl flex-shrink-0 outline-none">
-                <option value="any" className="bg-[var(--kravy-bg)]">Any image</option>
-                <option value="only" className="bg-[var(--kravy-bg)]">Has image</option>
-                <option value="no" className="bg-[var(--kravy-bg)]">No image</option>
-              </select>
+                <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as any)} className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-4 py-2 my-0.5 rounded-xl flex-shrink-0 outline-none font-black text-xs uppercase tracking-wider hover:border-indigo-500/50 transition-all cursor-pointer">
+                  {allCategories.map((c) => <option key={c.id} value={c.id as any}>{c.name}</option>)}
+                </select>
 
-              <select value={sortMode} onChange={(e) => setSortMode(e.target.value as any)} className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl flex-shrink-0 outline-none">
-                <option value="alpha_asc" className="bg-[var(--kravy-bg)]">A → Z</option>
-                <option value="alpha_desc" className="bg-[var(--kravy-bg)]">Z → A</option>
-                <option value="price_asc" className="bg-[var(--kravy-bg)]">Price low → high</option>
-                <option value="price_desc" className="bg-[var(--kravy-bg)]">Price high → low</option>
-              </select>
+                <select value={sortMode} onChange={(e) => setSortMode(e.target.value as any)} className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-4 py-2 my-0.5 rounded-xl flex-shrink-0 outline-none font-black text-xs uppercase tracking-wider hover:border-indigo-500/50 transition-all cursor-pointer">
+                  <option value="alpha_asc">Sort: A → Z</option>
+                  <option value="alpha_desc">Sort: Z → A</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                </select>
 
-              <input placeholder="Min" type="number" value={priceMin === "" ? "" : String(priceMin)} onChange={(e) => setPriceMin(e.target.value === "" ? "" : Number(e.target.value))} className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl w-20 flex-shrink-0 outline-none" />
-              <input placeholder="Max" type="number" value={priceMax === "" ? "" : String(priceMax)} onChange={(e) => setPriceMax(e.target.value === "" ? "" : Number(e.target.value))} className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl w-20 flex-shrink-0 outline-none" />
+                <div className="flex items-center gap-2 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] px-3 py-2 rounded-xl flex-shrink-0">
+                  <span className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase mr-1">Price:</span>
+                  <input placeholder="Min" type="number" value={priceMin === "" ? "" : String(priceMin)} onChange={(e) => setPriceMin(e.target.value === "" ? "" : Number(e.target.value))} className="bg-transparent text-[var(--kravy-text-primary)] w-12 outline-none text-xs text-center font-bold" />
+                  <span className="text-[var(--kravy-text-muted)] opacity-30">-</span>
+                  <input placeholder="Max" type="number" value={priceMax === "" ? "" : String(priceMax)} onChange={(e) => setPriceMax(e.target.value === "" ? "" : Number(e.target.value))} className="bg-transparent text-[var(--kravy-text-primary)] w-12 outline-none text-xs text-center font-bold" />
+                </div>
+              </div>
 
-              <input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="New category" className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-3 py-2 rounded-xl flex-shrink-0 w-40 outline-none" />
-              <button onClick={createCategory} disabled={isCreatingCategory} className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold flex-shrink-0 hover:bg-indigo-700 transition-colors">{isCreatingCategory ? "Adding..." : "Add Category"}</button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setQuickAddCat({ id: menus[0]?.id || "", name: menus[0]?.name || "General" })}
+                  className="px-6 py-2.5 rounded-2xl bg-emerald-600 text-white font-black text-xs uppercase tracking-widest flex-shrink-0 hover:bg-emerald-700 transition-all flex items-center gap-2.5 shadow-lg shadow-emerald-600/20 active:scale-95"
+                  title="Quick Add Item"
+                >
+                  <Plus size={16} strokeWidth={3} /> New Item
+                </button>
+                <button
+                  onClick={() => setShowAddCategory(true)}
+                  className="px-6 py-2.5 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest flex-shrink-0 hover:bg-indigo-700 transition-all flex items-center gap-2.5 shadow-lg shadow-indigo-600/20 active:scale-95"
+                >
+                  <Plus size={16} strokeWidth={3} /> New Category
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Category Slider (Only on mobile, stays fixed under top bar) */}
+          <div className="md:hidden py-3 px-6 bg-[var(--kravy-bg)]/40 border-b border-[var(--kravy-border)]/50">
+            <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1">
+              <button 
+                onClick={() => { setFilterCategory("all"); setActiveCategory(null); }} 
+                className={`whitespace-nowrap px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all ${filterCategory === "all" ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30" : "bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-indigo-500/50"}`}
+              >
+                All
+              </button>
+              {menus.map((m) => (
+                <button 
+                  key={m.id} 
+                  onClick={() => { setFilterCategory(m.id); setActiveCategory(m.id); const el = document.getElementById(`cat-${m.id}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }} 
+                  className={`whitespace-nowrap px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all ${filterCategory === m.id ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30" : "bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-indigo-500/50"}`}
+                >
+                  {m.name}
+                </button>
+              ))}
+              <button
+                onClick={() => setShowAddCategory(true)}
+                className="whitespace-nowrap w-8 h-8 rounded-full bg-white border border-[var(--kravy-border)] flex items-center justify-center flex-shrink-0 text-[var(--kravy-brand)] shadow-sm"
+              >
+                <Plus size={14} strokeWidth={3} />
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6 mt-4">
-        <aside className="hidden md:block bg-[var(--kravy-surface)] p-5 rounded-2xl border border-[var(--kravy-border)] shadow-sm h-fit sticky top-[95px] min-w-0">
-          <h3 className="font-bold text-[var(--kravy-text-primary)] mb-4 flex items-center gap-2">
-            <div className="w-1.5 h-4 bg-indigo-500 rounded-full" />
-            Categories
-          </h3>
-          <div className="flex flex-col gap-1.5 min-w-0">
-            <button onClick={() => { setFilterCategory("all"); setActiveCategory(null); }} className={`text-left px-4 py-2.5 rounded-xl font-medium transition-all ${filterCategory === "all" ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20" : "text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-surface-hover)]"}`}>All Categories</button>
+      {/* 🚀 MAIN CONTENT AREA: FIXED SIDEBAR + SCROLLABLE PRODUCTS */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar: Navigation Rail (The "Slider" requested by user) */}
+        <aside className="hidden md:flex flex-col w-[260px] flex-shrink-0 bg-[var(--kravy-surface)] border-r border-[var(--kravy-border)] shadow-xl z-30">
+          <div className="p-6 pb-2">
+            <h3 className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em] mb-6 flex items-center justify-between">
+              MENU CATEGORIES
+              <span className="bg-indigo-500/10 text-indigo-600 p-1.5 rounded-lg">
+                <ChevronDown size={14} />
+              </span>
+            </h3>
+          </div>
+
+          <div className="flex-1 overflow-y-auto no-scrollbar px-3 pb-8 space-y-1">
+            <button 
+              onClick={() => { setFilterCategory("all"); setActiveCategory(null); }} 
+              className={`w-full text-left px-5 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-3 ${filterCategory === "all" ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 translate-x-1" : "text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-bg)] hover:text-indigo-500"}`}
+            >
+              <div className={`w-1.5 h-1.5 rounded-full ${filterCategory === "all" ? "bg-white animate-pulse" : "bg-indigo-500/40"}`} />
+              All Items
+            </button>
+
             {menus.map((m) => (
-              <button key={m.id} onClick={() => { setFilterCategory(m.id); setActiveCategory(m.id); const el = document.getElementById(`cat-${m.id}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={`text-left px-4 py-2.5 rounded-xl font-medium transition-all ${filterCategory === m.id ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20" : "text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-surface-hover)]"}`}>
-                <div className="flex justify-between items-center min-w-0">
-                  <span className="truncate">{m.name}</span>
-                  <span className={`text-xs ${filterCategory === m.id ? "text-indigo-100" : "text-[var(--kravy-text-muted)]"} ml-2`}>({m.items.length})</span>
-                </div>
+              <button 
+                key={m.id} 
+                onClick={() => { 
+                  setFilterCategory(m.id); 
+                  setActiveCategory(m.id); 
+                  const el = document.getElementById(`cat-${m.id}`); 
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); 
+                }} 
+                className={`w-full text-left px-5 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-3 ${filterCategory === m.id ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 translate-x-1" : "text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-bg)] hover:text-indigo-500"}`}
+              >
+                <div className={`w-1.5 h-1.5 rounded-full ${filterCategory === m.id ? "bg-white animate-pulse" : "bg-indigo-500/40"}`} />
+                <span className="truncate flex-1">{m.name}</span>
+                <span className={`text-[10px] font-bold ${filterCategory === m.id ? "text-indigo-200" : "text-[var(--kravy-text-faint)]"}`}>{m.items.length}</span>
               </button>
             ))}
+
+            <div className="pt-4 px-2">
+              <button
+                onClick={() => setShowAddCategory(true)}
+                className="w-full py-3.5 rounded-2xl bg-indigo-50/50 border-2 border-dashed border-indigo-200 text-indigo-500 font-black text-[10px] uppercase tracking-[0.15em] hover:bg-indigo-50 hover:border-indigo-400 transition-all flex items-center justify-center gap-2"
+              >
+                <Plus size={14} /> New Section
+              </button>
+            </div>
           </div>
         </aside>
 
-        <div className="md:hidden mobile-category-wrapper sticky top-36 z-30 py-2 bg-[var(--kravy-bg)]/80 backdrop-blur-sm">
-          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            <button onClick={() => { setFilterCategory("all"); setActiveCategory(null); }} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-bold transition-all ${filterCategory === "all" ? "bg-indigo-600 text-white" : "bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-secondary)]"}`}>All</button>
-            {menus.map((m) => (
-              <button key={m.id} onClick={() => { setFilterCategory(m.id); setActiveCategory(m.id); const el = document.getElementById(`cat-${m.id}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-bold transition-all ${filterCategory === m.id ? "bg-indigo-600 text-white" : "bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-secondary)]"}`}>
-                {m.name}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Product Grid Area: ONLY THIS SCROLLS */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth no-scrollbar md:scrollbar-default bg-[var(--kravy-bg)]/30">
+          <div className="max-w-6xl mx-auto p-6 lg:p-10">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-black text-[var(--kravy-text-primary)] tracking-tight">
+                  Restaurant Menu
+                </h2>
+                <p className="text-[var(--kravy-text-muted)] text-sm font-medium mt-1">
+                  Manage your products, prices and categories
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-2 text-xs font-black text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100">
+                <div className="w-2 h-2 rounded-full bg-indigo-600 animate-ping" />
+                {totalItems} Items Total
+              </div>
+            </div>
 
-        <main className="min-w-0">
-          <h2 className="text-2xl font-black text-[var(--kravy-text-primary)] mb-6 flex items-center gap-3">
-            Products
-            <span className="text-xs font-bold text-[var(--kravy-text-muted)] bg-[var(--kravy-badge-bg)] px-2 py-0.5 rounded-full">Explore Menu</span>
-          </h2>
+            {groupedForUI.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="w-20 h-20 bg-[var(--kravy-surface)] rounded-full flex items-center justify-center border border-[var(--kravy-border)] mb-4 text-indigo-500/30">
+                   <Search size={32} />
+                </div>
+                <h3 className="text-lg font-black text-[var(--kravy-text-primary)]">No products found</h3>
+                <p className="text-sm text-[var(--kravy-text-muted)] mt-1">Try adjusting your filters or search query.</p>
+              </div>
+            )}
 
-          {groupedForUI.length === 0 && <p className="text-sm text-[var(--kravy-text-muted)] font-medium opacity-60 mt-10 text-center">No items match your filters.</p>}
-
-          <div className="space-y-10 mt-6">
-            {groupedForUI.map((cat) => (
-              <section key={cat.id} id={`cat-${cat.id}`} className="min-w-0">
+            <div className="space-y-16">
+              {groupedForUI.map((cat) => (
+                <section key={cat.id} id={`cat-${cat.id}`} className="scroll-mt-6">
                 <h3 className="font-black text-[var(--kravy-text-primary)] text-xl mb-6 flex items-center gap-4">
                   {cat.name}
                   <div className="flex-1 h-[2px] bg-gradient-to-r from-[var(--kravy-border-strong)] to-transparent opacity-30" />
@@ -1106,10 +1314,26 @@ export default function ViewMenuPage() {
                         </motion.div>
                       );
                     })}
+
+                    {/* Quick Add Item Card */}
+                    <motion.div
+                      whileHover={{ scale: 1.03, y: -4 }}
+                      onClick={() => setQuickAddCat({ id: cat.id, name: cat.name })}
+                      className="bg-indigo-50/50 border-2 border-dashed border-indigo-200 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-indigo-100/50 hover:border-indigo-300 transition-all min-h-[220px]"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-indigo-500 shadow-sm">
+                        <Plus size={24} strokeWidth={3} />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-black text-indigo-600 uppercase tracking-widest">Quick Add</p>
+                        <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-tight mt-1">Add to {cat.name}</p>
+                      </div>
+                    </motion.div>
                   </div>
                 )}
               </section>
             ))}
+            </div>
           </div>
         </main>
       </div>
@@ -1147,10 +1371,157 @@ export default function ViewMenuPage() {
       {editingItem && <EditModal item={editingItem} onClose={() => setEditingItem(null)} onSave={async (u) => await saveEdit(u)} />}
       {deletingItem && <ConfirmDelete item={deletingItem} onClose={() => setDeletingItem(null)} onConfirm={() => confirmDelete(deletingItem!)} />}
 
+      {/* 🚀 QUICK ADD ITEM MODAL */}
+      {quickAddCat && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setQuickAddCat(null)} />
+          <div className="relative bg-[var(--kravy-surface)] w-full max-w-sm rounded-[2rem] shadow-2xl border border-[var(--kravy-border)] overflow-hidden scale-100 animate-in fade-in duration-200">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-5 pb-4 border-b border-[var(--kravy-border)]/50">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl font-black text-indigo-600">+</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-black text-[var(--kravy-text-primary)] leading-tight">Quick Add Item</h3>
+                  <select 
+                    value={quickAddCat.id}
+                    onChange={(e) => {
+                      const cat = menus.find(m => m.id === e.target.value);
+                      if (cat) setQuickAddCat({ id: cat.id, name: cat.name });
+                    }}
+                    className="mt-1 bg-transparent text-[10px] text-indigo-600 font-extrabold uppercase tracking-widest outline-none border-b border-indigo-200"
+                  >
+                    {menus.map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <form onSubmit={handleQuickAdd} className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2 space-y-1">
+                    <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Name</label>
+                    <input
+                      name="name"
+                      autoFocus
+                      autoComplete="off"
+                      placeholder="Burger"
+                      required
+                      className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Price</label>
+                    <input
+                      name="price"
+                      type="number"
+                      step="0.01"
+                      placeholder="0"
+                      required
+                      className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Description (Optional)</label>
+                  <input
+                    name="description"
+                    placeholder="Short description..."
+                    autoComplete="off"
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Image URL (Optional)</label>
+                  <input
+                    name="imageUrl"
+                    type="url"
+                    autoComplete="off"
+                    placeholder="https://..."
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-[11px] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+                  />
+                </div>
+                
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuickAddCat(null)}
+                    className="flex-1 py-3 rounded-xl border border-[var(--kravy-border)] bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-xs hover:bg-[var(--kravy-surface-hover)] transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-[2] py-3 rounded-xl bg-indigo-600 text-white font-black text-xs shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 active:scale-[0.98] transition-all"
+                  >
+                    Save Item
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🚀 QUICK ADD CATEGORY MODAL */}
+      {showAddCategory && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAddCategory(false)} />
+          <div className="relative bg-[var(--kravy-surface)] w-full max-w-sm rounded-[2rem] shadow-2xl border border-[var(--kravy-border)] overflow-hidden scale-100 animate-in fade-in duration-200">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-5 pb-4 border-b border-[var(--kravy-border)]/50">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                  <Plus size={24} className="text-amber-500" strokeWidth={3} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-[var(--kravy-text-primary)] leading-tight">New Category</h3>
+                  <p className="text-[10px] text-[var(--kravy-text-muted)] font-black uppercase tracking-widest mt-0.5">
+                    Add menu section
+                  </p>
+                </div>
+              </div>
+              
+              <form onSubmit={handleQuickAddCategory} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Category Name</label>
+                  <input
+                    name="name"
+                    autoFocus
+                    autoComplete="off"
+                    placeholder="e.g. Desserts"
+                    required
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-bold"
+                  />
+                </div>
+                
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCategory(false)}
+                    className="flex-1 py-3 rounded-xl border border-[var(--kravy-border)] bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-xs hover:bg-[var(--kravy-surface-hover)] transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-[2] py-3 rounded-xl bg-amber-500 text-white font-black text-xs shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    Create
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
-        <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed right-8 bottom-32 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] z-[100] font-bold flex items-center gap-3 ring-1 ring-white/10">
-          <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">✓</div>
-          {toast}
+        <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed right-8 bottom-32 bg-[var(--kravy-surface)] border border-indigo-500 shadow-[0_20px_50px_rgba(0,0,0,0.3)] z-[100] font-bold flex items-center gap-3 px-6 py-4 rounded-2xl ring-1 ring-white/10">
+          <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 text-sm">✓</div>
+          <span className="text-[var(--kravy-text-primary)]">{toast}</span>
         </motion.div>
       )}
     </div>

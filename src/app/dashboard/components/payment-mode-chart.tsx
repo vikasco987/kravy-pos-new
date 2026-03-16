@@ -1,13 +1,16 @@
 "use client";
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { Wallet } from "lucide-react";
+import { Wallet, Maximize2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface Props {
   paymentSplit?: {
     Cash?: number;
     UPI?: number;
+    Card?: number;
   };
+  range?: number;
 }
 
 const CustomTooltip = ({ active, payload }: any) => {
@@ -31,15 +34,21 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-export default function PaymentModeChart({ paymentSplit }: Props) {
+export default function PaymentModeChart({ paymentSplit, range = 30 }: Props) {
+  const router = useRouter();
   const cash = paymentSplit?.Cash || 0;
   const upi = paymentSplit?.UPI || 0;
-  const total = cash + upi;
+  const card = paymentSplit?.Card || 0;
+  const total = cash + upi + card;
 
   const data = [
     { name: "Cash", value: cash, color: "#10B981" },
     { name: "UPI", value: upi, color: "#8B5CF6" },
   ];
+
+  if (card > 0) {
+    data.push({ name: "Card", value: card, color: "#F59E0B" });
+  }
 
   const format = (num: number) =>
     new Intl.NumberFormat("en-IN").format(Math.round(num));
@@ -71,23 +80,53 @@ export default function PaymentModeChart({ paymentSplit }: Props) {
       }} />
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-        <div style={{
-          width: "36px",
-          height: "36px",
-          borderRadius: "10px",
-          background: "linear-gradient(135deg, #10B981, #059669)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 4px 16px rgba(16,185,129,0.4)"
-        }}>
-          <Wallet size={18} color="white" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{
+            width: "36px",
+            height: "36px",
+            borderRadius: "10px",
+            background: "linear-gradient(135deg, #10B981, #059669)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(16,185,129,0.4)"
+          }}>
+            <Wallet size={18} color="white" />
+          </div>
+          <div>
+            <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>Payment Split</h3>
+            <p style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", fontFamily: "monospace" }}>Cash vs UPI breakdown</p>
+          </div>
         </div>
-        <div>
-          <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>Payment Split</h3>
-          <p style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", fontFamily: "monospace" }}>Cash vs UPI breakdown</p>
-        </div>
+
+        {/* Expand Icon */}
+        <button 
+          onClick={() => router.push(`/dashboard/reports/payments?range=${range}`)}
+          style={{
+            width: "32px",
+            height: "32px",
+            borderRadius: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "var(--kravy-bg-2)",
+            border: "1px solid var(--kravy-border)",
+            cursor: "pointer",
+            color: "var(--kravy-text-muted)",
+            transition: "all 0.2s"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "var(--kravy-brand)";
+            e.currentTarget.style.color = "var(--kravy-brand)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "var(--kravy-border)";
+            e.currentTarget.style.color = "var(--kravy-text-muted)";
+          }}
+        >
+          <Maximize2 size={16} />
+        </button>
       </div>
 
       {/* Chart */}

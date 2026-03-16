@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   UserCircle, Activity, Users, BarChart3,
-  ChevronRight, Shield, Bell, Palette, HelpCircle, Database, Percent
+  ChevronRight, Shield, Bell, Palette, HelpCircle, Database, Percent, Book
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -83,6 +83,13 @@ export default function SettingsPage() {
           color: "#06B6D4",
           label: "Help & Support",
           desc: "Get assistance and read documentation"
+        },
+        {
+          href: "/dashboard/docs/workflow",
+          icon: <Book size={20} />,
+          color: "#10B981",
+          label: "Workflow Guide",
+          desc: "Step-by-step instructions for POS operations"
         },
       ]
     },

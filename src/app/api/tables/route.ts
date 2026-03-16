@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
         });
 
         // compute menu link and qr url using the Seller's ID (effectiveId)
-        const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "";
-        const menuUrl = `${origin}/menu/${effectiveId}?tableId=${encodeURIComponent(table.id)}&tableName=${encodeURIComponent(name)}`;
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin") || "https://billing.kravy.in";
+        const menuUrl = `${baseUrl}/menu/${effectiveId}?tableId=${encodeURIComponent(table.id)}&tableName=${encodeURIComponent(name)}`;
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(menuUrl)}`;
 
         const updated = await prisma.table.update({
@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(updated, { status: 201 });
     } catch (error) {
+        console.error("CREATE_TABLE_ERROR:", error);
         return NextResponse.json({ error: "Failed to create table" }, { status: 500 });
     }
 }

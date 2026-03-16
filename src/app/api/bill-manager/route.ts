@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
   upiTxnRef,
   customerName,
   customerPhone,
+  tableName,
 } = body;
 
 // ✅ HARD DEFAULTS (CRITICAL)
@@ -150,6 +151,7 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
         customerName: customerName || null,
         customerPhone: customerPhone || null,
         partyId: partyId,
+        tableName: tableName || "POS",
       },
     });
 
