@@ -58,8 +58,15 @@ export default function StoreItemPage() {
      LOAD MASTER DATA
   ============================= */
   useEffect(() => {
-    fetch("/api/categories").then(r => r.json()).then(setCategories);
-    fetch("/api/clerks").then(r => r.json()).then(setClerks);
+    fetch("/api/categories")
+      .then(r => r.json())
+      .then(data => Array.isArray(data) ? setCategories(data) : setCategories([]))
+      .catch(() => setCategories([]));
+
+    fetch("/api/clerks")
+      .then(r => r.json())
+      .then(data => Array.isArray(data) ? setClerks(data) : setClerks([]))
+      .catch(() => setClerks([]));
   }, []);
 
   /* =============================
@@ -155,16 +162,23 @@ export default function StoreItemPage() {
 
         Papa.parse(file, {
           header: true,
+          skipEmptyLines: true,
           complete: async (result) => {
             clearInterval(progressTimer);
-            await processRows(result.data as any[]);
+            if (result.data && Array.isArray(result.data)) {
+              await processRows(result.data);
+            }
             setUploadProgress(100);
           },
+          error: (err) => {
+            clearInterval(progressTimer);
+            throw err;
+          }
         });
       } else {
         const XLSX = await import("xlsx");
         const buffer = await file.arrayBuffer();
-        const wb = XLSX.read(buffer);
+        const wb = XLSX.read(buffer, { type: 'array' });
         const sheet = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json<any>(sheet);
 
@@ -350,7 +364,7 @@ export default function StoreItemPage() {
       }
 
       if (success) {
-        router.push("/menu/view");
+        router.push("/dashboard/menu/view");
       }
     } finally {
       setSaving(false);
@@ -527,6 +541,10 @@ export default function StoreItemPage() {
                           setClerkSearch(c.label);
                         }}
                       >
+                        <div className="flex flex-col">
+                           <span className="text-[11px] font-black">{c.label}</span>
+                           <span className="text-[9px] opacity-60 font-medium">{c.email}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
