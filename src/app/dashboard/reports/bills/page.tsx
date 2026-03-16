@@ -33,7 +33,6 @@ export default async function BillsReportPage({
   });
 
   const totalAmount = bills.reduce((s, b) => s + b.total, 0);
-  const totalDiscount = bills.reduce((s, b) => s + b.discount, 0);
   const format = (n: number) => new Intl.NumberFormat("en-IN").format(Math.round(n));
 
   return (
@@ -184,11 +183,6 @@ export default async function BillsReportPage({
                           {isDeletedView && b.deletedAt && (
                              <div style={{ fontSize: "0.7rem", color: "#EF4444", fontWeight: 900, marginTop: "6px", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "6px" }}>
                                 <BadgeCheck size={12} /> AUDIT TIMESTAMP: {new Date(b.deletedAt).toLocaleDateString()}
-                             </div>
-                          )}
-                          {!isDeletedView && totalDiscount > 0 && b.discount > 0 && (
-                             <div style={{ fontSize: "0.75rem", color: "#F59E0B", fontWeight: 900, marginTop: "6px" }}>
-                                ₹{format(b.discount)} DISCOUNT GIVEN
                              </div>
                           )}
                        </td>
