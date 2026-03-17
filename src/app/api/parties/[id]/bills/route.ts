@@ -5,13 +5,13 @@ import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const effectiveId = await getEffectiveClerkId();
     if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { id: partyId } = params;
+    const { id: partyId } = await params;
 
     // Verify party ownership
     const party = await prisma.party.findUnique({

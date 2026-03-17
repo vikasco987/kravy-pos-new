@@ -94,6 +94,15 @@ export default function PartiesPage() {
     fetchUserPrefs();
   }, []);
 
+  useEffect(() => {
+    if (modalOpen || historyOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [modalOpen, historyOpen]);
+
   async function fetchUserPrefs() {
     try {
       const res = await fetch('/api/user/me');
@@ -662,9 +671,9 @@ function CustomerCard({ p, onEdit, onDelete, onViewHistory }: { p: Party, onEdit
 
 function SideDrawer({ title, children, onClose }: { title: string, children: any, onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[9999] flex justify-end">
+    <div className="fixed inset-0 z-[9999] flex justify-end overflow-hidden">
       <div className="absolute inset-0 bg-black/50 animate-in fade-in duration-300" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[var(--kravy-surface)] border-l border-[var(--kravy-border)] shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col h-full ring-1 ring-white/10">
+      <div className="relative w-full max-w-md bg-[var(--kravy-surface)] border-l border-[var(--kravy-border)] shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col h-[100dvh] ring-1 ring-white/10">
         <div className="p-6 pb-4 flex items-center justify-between border-b border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/50">
           <h3 className="text-xl font-black text-[var(--kravy-text-primary)] tracking-tight uppercase tracking-widest text-xs flex items-center gap-2">
             <HistoryIcon size={18} className="text-[var(--kravy-brand)]" /> {title}
