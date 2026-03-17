@@ -246,20 +246,18 @@ export default function PartiesPage() {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pt-24 space-y-8 animate-in fade-in duration-700">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pt-16 space-y-4 animate-in fade-in duration-700">
         
         {/* Header Section */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-[var(--kravy-brand)] rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                <User className="text-white" size={20} />
-              </div>
-              <h1 className="text-3xl font-black text-[var(--kravy-text-primary)] tracking-tight lg:text-4xl">
-                Customer CRM
-              </h1>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[var(--kravy-brand)] rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0">
+              <User className="text-white" size={20} />
             </div>
-            <p className="text-[var(--kravy-text-muted)] font-medium max-w-md">Manage relationships, track loyalty, and view purchase history for your most valued customers.</p>
+            <div>
+              <h1 className="text-2xl font-black text-[var(--kravy-text-primary)] tracking-tight">Customer CRM</h1>
+              <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-widest">Database & Loyalty Management</p>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -281,15 +279,15 @@ export default function PartiesPage() {
             </div>
             <button 
               onClick={exportCSV}
-              className="flex items-center gap-2 px-5 py-3 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-[var(--kravy-bg-2)] transition-all transform hover:-translate-y-0.5 active:scale-95 shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-[var(--kravy-bg-2)] transition-all shadow-sm"
             >
-              <Download size={18} /> Export
+              <Download size={14} /> Export
             </button>
             <button 
               onClick={() => { setEditing({ id: "new", name: "", phone: "", address: "", loyaltyPoints: 0 }); setModalOpen(true); }}
-              className="flex items-center gap-2 px-6 py-3 bg-[var(--kravy-brand)] text-white rounded-2xl font-black text-sm uppercase tracking-wider hover:shadow-xl hover:shadow-indigo-500/20 transition-all transform hover:-translate-y-0.5 active:scale-95"
+              className="flex items-center gap-2 px-5 py-2.5 bg-[var(--kravy-brand)] text-white rounded-xl font-black text-[10px] uppercase tracking-wider hover:shadow-xl hover:shadow-indigo-500/20 transition-all active:scale-95"
             >
-              <Plus size={18} /> Add Party
+              <Plus size={16} /> Add Party
             </button>
           </div>
         </div>
@@ -315,7 +313,7 @@ export default function PartiesPage() {
             sub="Last 7 days"
           />
           <StatCard 
-            icon={<MapPin className="text-rose-500" size={24} />} 
+            icon={<MapPin className="text-rose-500" size={20} />} 
             label="Local Network" 
             value={new Set(parties.map(p => p.address?.split(',')[0])).size} 
             sub="Locations covered"
@@ -323,24 +321,24 @@ export default function PartiesPage() {
         </div>
 
         {/* Search & Filters */}
-        <div className="sticky top-20 z-10 bg-[rgba(var(--kravy-bg-rgb),0.8)] backdrop-blur-xl p-4 border border-[var(--kravy-border)] rounded-3xl shadow-lg flex flex-col md:flex-row items-center gap-4 transition-all hover:shadow-xl">
+        <div className="sticky top-16 z-10 bg-[rgba(var(--kravy-bg-rgb),0.9)] backdrop-blur-xl p-3 border border-[var(--kravy-border)] rounded-2xl shadow-lg flex flex-col md:flex-row items-center gap-3 transition-all">
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)]" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)]" size={18} />
             <input 
               type="text"
               placeholder="Search by name, phone or location..."
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none focus:border-[var(--kravy-brand)] font-medium transition-all"
+              className="w-full pl-10 pr-4 py-3 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl outline-none focus:border-[var(--kravy-brand)] font-medium transition-all text-sm"
             />
           </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="flex bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-2xl p-1">
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="flex bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl p-1">
               {(["name", "phone", "dob"] as const).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setSortBy(mode)}
-                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${sortBy === mode ? 'bg-[var(--kravy-brand)] text-white shadow-lg' : 'text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg-2)]'}`}
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${sortBy === mode ? 'bg-[var(--kravy-brand)] text-white shadow-md' : 'text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg-2)]'}`}
                 >
                   {mode}
                 </button>
@@ -348,9 +346,9 @@ export default function PartiesPage() {
             </div>
             <button 
               onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
-              className="p-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl hover:bg-[var(--kravy-bg-2)] transition-all"
+              className="p-3 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl hover:bg-[var(--kravy-bg-2)] transition-all"
             >
-              <Filter size={20} className={sortDir === 'desc' ? 'rotate-180 transition-transform' : 'transition-transform'} />
+              <Filter size={16} className={sortDir === 'desc' ? 'rotate-180 transition-transform' : 'transition-transform'} />
             </button>
           </div>
         </div>
@@ -358,11 +356,11 @@ export default function PartiesPage() {
         {/* Customers List / Table View */}
         {visible.length === 0 ? (
           <div className="py-20 text-center space-y-4">
-            <div className="w-20 h-20 bg-[var(--kravy-bg-2)] rounded-full flex items-center justify-center mx-auto mb-6">
-              <User className="text-[var(--kravy-text-muted)]" size={40} />
+            <div className="w-16 h-16 bg-[var(--kravy-bg-2)] rounded-full flex items-center justify-center mx-auto mb-4">
+              <User className="text-[var(--kravy-text-muted)]" size={32} />
             </div>
-            <h3 className="text-2xl font-black text-[var(--kravy-text-primary)]">No customers found</h3>
-            <p className="text-[var(--kravy-text-muted)] max-w-xs mx-auto">Try adjusting your search filters or add a new party member.</p>
+            <h3 className="text-xl font-black text-[var(--kravy-text-primary)]">No customers found</h3>
+            <p className="text-[var(--kravy-text-muted)] text-xs max-w-xs mx-auto">Try adjusting your search filters or add a new party member.</p>
           </div>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -377,17 +375,17 @@ export default function PartiesPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] overflow-hidden shadow-xl">
+          <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-[var(--kravy-bg-2)]/50">
-                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] w-12 text-center">#</th>
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Customer</th>
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Contact</th>
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Location</th>
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Status</th>
-                    <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Actions</th>
+                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] w-10 text-center">#</th>
+                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Customer</th>
+                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Contact</th>
+                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Location</th>
+                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Status</th>
+                    <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--kravy-border)]">
@@ -395,10 +393,10 @@ export default function PartiesPage() {
                     const actualIdx = (currentPage - 1) * pageSize + idx + 1;
                     return (
                       <tr key={p.id} className="hover:bg-[var(--kravy-bg-2)]/30 transition-colors group">
-                        <td className="px-6 py-5 text-center">
-                          <span className="text-xs font-black text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] w-6 h-6 rounded-md flex items-center justify-center mx-auto">{actualIdx}</span>
+                        <td className="px-6 py-3 text-center">
+                          <span className="text-[10px] font-black text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] w-5 h-5 rounded flex items-center justify-center mx-auto">{actualIdx}</span>
                         </td>
-                        <td className="px-8 py-5">
+                        <td className="px-6 py-3">
                           <div className="flex items-center gap-4">
                             <div 
                               onClick={() => fetchBillHistory(p)}
@@ -407,35 +405,35 @@ export default function PartiesPage() {
                               {p.name.charAt(0)}
                             </div>
                             <div>
-                              <div className="font-black text-[var(--kravy-text-primary)]">{p.name}</div>
-                              <div className="text-[10px] font-bold text-[var(--kravy-text-muted)]">Joined {new Date(p.createdAt).toLocaleDateString()}</div>
+                              <div className="font-black text-[var(--kravy-text-primary)] text-sm">{p.name}</div>
+                              <div className="text-[9px] font-bold text-[var(--kravy-text-muted)]">Joined {new Date(p.createdAt).toLocaleDateString()}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-8 py-5">
-                          <div className="text-sm font-black text-[var(--kravy-brand)] font-mono">{p.phone}</div>
-                          <div className="text-[10px] font-medium text-[var(--kravy-text-muted)]">Birthday: {formatDate(p.dob)}</div>
+                        <td className="px-6 py-3">
+                          <div className="text-xs font-black text-[var(--kravy-brand)] font-mono">{p.phone}</div>
+                          <div className="text-[9px] font-medium text-[var(--kravy-text-muted)] uppercase tracking-tight">DOB: {formatDate(p.dob)}</div>
                         </td>
-                        <td className="px-8 py-5">
-                          <div className="text-sm text-[var(--kravy-text-muted)] font-medium max-w-[200px] truncate">{p.address || "—"}</div>
+                        <td className="px-6 py-3">
+                          <div className="text-xs text-[var(--kravy-text-muted)] font-medium max-w-[150px] truncate">{p.address || "—"}</div>
                         </td>
-                        <td className="px-8 py-5">
+                        <td className="px-6 py-3">
                           {(p.loyaltyPoints || 0) > 500 ? (
-                            <span className="px-3 py-1 bg-amber-500/10 text-amber-600 rounded-full text-[9px] font-black tracking-widest">GOLD</span>
+                            <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 rounded-md text-[8px] font-black tracking-widest">GOLD</span>
                           ) : (
-                            <span className="px-3 py-1 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-muted)] rounded-full text-[10px] font-black tracking-widest uppercase tracking-tight">SILVER</span>
+                            <span className="px-2 py-0.5 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-muted)] rounded-md text-[8px] font-black tracking-widest uppercase tracking-tight">SILVER</span>
                           )}
                         </td>
-                        <td className="px-8 py-5 text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => fetchBillHistory(p)} className="p-2.5 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-xl hover:bg-[var(--kravy-brand)] hover:text-white transition-all shadow-sm">
-                              <HistoryIcon size={16} />
+                        <td className="px-6 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => fetchBillHistory(p)} className="p-2 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-lg hover:bg-[var(--kravy-brand)] hover:text-white transition-all shadow-sm">
+                              <HistoryIcon size={14} />
                             </button>
-                            <button onClick={() => { setEditing(p); setModalOpen(true); }} className="p-2.5 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hover:text-indigo-500 hover:border-indigo-500 transition-all">
-                              <Edit2 size={16} />
+                            <button onClick={() => { setEditing(p); setModalOpen(true); }} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-lg hover:text-indigo-500 hover:border-indigo-500 transition-all">
+                              <Edit2 size={14} />
                             </button>
-                            <button onClick={() => handleDelete(p.id)} className="p-2.5 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hover:text-rose-500 hover:border-rose-500 transition-all">
-                              <Trash2 size={16} />
+                            <button onClick={() => handleDelete(p.id)} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-lg hover:text-rose-500 hover:border-rose-500 transition-all">
+                              <Trash2 size={14} />
                             </button>
                           </div>
                         </td>
@@ -480,7 +478,7 @@ export default function PartiesPage() {
         )}
       </div>
 
-      {/* Modals & Drawers */}
+      {/* Modals & Drawers - Positioned clearly outside and after the main content */}
       {historyOpen && selectedParty && (
           <SideDrawer 
             title={`${selectedParty.name}'s History`} 
@@ -594,14 +592,14 @@ export default function PartiesPage() {
 
 function StatCard({ icon, label, value, sub }: { icon: any, label: string, value: number | string, subText?: string, sub?: string }) {
   return (
-    <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] p-6 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
-      <div className="absolute -right-2 -top-2 w-20 h-20 bg-[var(--kravy-bg-2)] rounded-full opacity-50 group-hover:scale-110 transition-transform" />
+    <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+      <div className="absolute -right-2 -top-2 w-16 h-16 bg-[var(--kravy-bg-2)] rounded-full opacity-50 group-hover:scale-110 transition-transform" />
       <div className="relative z-[1]">
-        <div className="w-12 h-12 bg-[var(--kravy-bg-2)] rounded-2xl flex items-center justify-center mb-4">{icon}</div>
-        <div className="text-3xl font-black text-[var(--kravy-text-primary)] mb-1">{value}</div>
-        <div className="text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">{label}</div>
-        {sub && <div className="mt-4 text-[10px] font-bold text-[var(--kravy-text-muted)] flex items-center gap-1">
-          <ChevronRight size={10} className="text-[var(--kravy-brand)]" /> {sub}
+        <div className="w-10 h-10 bg-[var(--kravy-bg-2)] rounded-xl flex items-center justify-center mb-3">{icon}</div>
+        <div className="text-2xl font-black text-[var(--kravy-text-primary)] mb-0.5">{value}</div>
+        <div className="text-[9px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">{label}</div>
+        {sub && <div className="mt-3 text-[9px] font-bold text-[var(--kravy-text-muted)] flex items-center gap-1">
+          <ChevronRight size={8} className="text-[var(--kravy-brand)]" /> {sub}
         </div>}
       </div>
     </div>
@@ -610,51 +608,51 @@ function StatCard({ icon, label, value, sub }: { icon: any, label: string, value
 
 function CustomerCard({ p, onEdit, onDelete, onViewHistory }: { p: Party, onEdit: () => void, onDelete: () => void, onViewHistory: () => void }) {
   return (
-    <div className="group bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] p-8 shadow-sm hover:shadow-2xl hover:border-[var(--kravy-brand)] transition-all flex flex-col items-center text-center relative overflow-hidden">
+    <div className="group bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl p-5 shadow-sm hover:shadow-2xl hover:border-[var(--kravy-brand)] transition-all flex flex-col items-center text-center relative overflow-hidden">
       
       {/* Loyalty Badge */}
       {p.loyaltyPoints !== undefined && p.loyaltyPoints > 100 && (
-        <div className="absolute top-4 right-4 px-3 py-1 bg-[var(--kravy-brand)]/10 text-[var(--kravy-brand)] rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 animate-pulse">
-          <Award size={12} /> {p.loyaltyPoints} PTS
+        <div className="absolute top-3 right-3 px-2 py-0.5 bg-[var(--kravy-brand)]/10 text-[var(--kravy-brand)] rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1 animate-pulse">
+          <Award size={10} /> {p.loyaltyPoints} PTS
         </div>
       )}
 
       {/* Avatar */}
       <div 
         onClick={onViewHistory}
-        className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-[28px] flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-indigo-500/20 mb-6 group-hover:scale-110 transition-transform cursor-pointer"
+        className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl flex items-center justify-center text-white text-xl font-black shadow-lg shadow-indigo-500/10 mb-4 group-hover:scale-105 transition-transform cursor-pointer"
       >
         {p.name.charAt(0)}
       </div>
 
-      <h3 className="text-xl font-black text-[var(--kravy-text-primary)] mb-2 group-hover:text-[var(--kravy-brand)] transition-colors line-clamp-1">{p.name}</h3>
-      <div className="flex items-center gap-2 text-[var(--kravy-brand)] font-black text-sm font-mono mb-4">
-        <Phone size={14} /> {p.phone}
+      <h3 className="text-base font-black text-[var(--kravy-text-primary)] mb-1 group-hover:text-[var(--kravy-brand)] transition-colors line-clamp-1">{p.name}</h3>
+      <div className="flex items-center gap-1.5 text-[var(--kravy-brand)] font-black text-xs font-mono mb-3">
+        <Phone size={12} /> {p.phone}
       </div>
 
-      <div className="w-full flex flex-col gap-2 mb-6">
-        <div className="flex items-center justify-center gap-2 text-xs text-[var(--kravy-text-muted)] font-medium italic line-clamp-1">
-           <MapPin size={12} /> {p.address || "Address hidden"}
+      <div className="w-full flex flex-col gap-1.5 mb-4">
+        <div className="flex items-center justify-center gap-1.5 text-[10px] text-[var(--kravy-text-muted)] font-medium italic line-clamp-1">
+           <MapPin size={10} /> {p.address || "Address hidden"}
         </div>
-        <div className="flex items-center justify-center gap-2 text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider">
-           <Calendar size={12} /> DOB: {formatDate(p.dob)}
+        <div className="flex items-center justify-center gap-1.5 text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider">
+           <Calendar size={10} /> {formatDate(p.dob)}
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-center gap-4 w-full pt-6 border-t border-[var(--kravy-border)]">
+      <div className="flex items-center justify-center gap-3 w-full pt-4 border-t border-[var(--kravy-border)]">
         <button 
           onClick={onViewHistory}
-          className="flex-1 flex items-center justify-center gap-2 py-3 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[var(--kravy-brand)] hover:text-white transition-all"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[var(--kravy-brand)] hover:text-white transition-all shadow-sm"
         >
-          <HistoryIcon size={14} /> History
+          <HistoryIcon size={12} /> History
         </button>
-        <div className="flex gap-2">
-          <button onClick={onEdit} className="p-3 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-2xl hover:text-indigo-500 hover:border-indigo-500 transition-all">
-            <Edit2 size={16} />
+        <div className="flex gap-1.5">
+          <button onClick={onEdit} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hover:text-indigo-500 hover:border-indigo-500 transition-all">
+            <Edit2 size={14} />
           </button>
-          <button onClick={onDelete} className="p-3 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-2xl hover:text-rose-500 hover:border-rose-500 transition-all">
-            <Trash2 size={16} />
+          <button onClick={onDelete} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hover:text-rose-500 hover:border-rose-500 transition-all">
+            <Trash2 size={14} />
           </button>
         </div>
       </div>
@@ -665,13 +663,17 @@ function CustomerCard({ p, onEdit, onDelete, onViewHistory }: { p: Party, onEdit
 function SideDrawer({ title, children, onClose }: { title: string, children: any, onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[100] flex justify-end">
-      <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-500" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[rgba(var(--kravy-surface-rgb),0.95)] border-l border-[var(--kravy-border)] shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col h-full">
-        <div className="p-8 pb-4 flex items-center justify-between">
-          <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] tracking-tight">{title}</h3>
-          <button onClick={onClose} className="p-2 bg-[var(--kravy-bg-2)] rounded-xl text-[var(--kravy-text-muted)] hover:text-rose-500 transition-all"><X size={20} /></button>
+      <div className="absolute inset-0 bg-black/50 animate-in fade-in duration-300" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-[var(--kravy-surface)] border-l border-[var(--kravy-border)] shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col h-full ring-1 ring-white/10">
+        <div className="p-6 pb-4 flex items-center justify-between border-b border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/50">
+          <h3 className="text-xl font-black text-[var(--kravy-text-primary)] tracking-tight uppercase tracking-widest text-xs flex items-center gap-2">
+            <HistoryIcon size={18} className="text-[var(--kravy-brand)]" /> {title}
+          </h3>
+          <button onClick={onClose} className="p-2 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-lg text-[var(--kravy-text-muted)] hover:text-rose-500 transition-all shadow-sm">
+            <X size={18} />
+          </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-8 pt-2 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
           {children}
         </div>
       </div>
