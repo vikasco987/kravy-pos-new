@@ -246,7 +246,7 @@ export default function PartiesPage() {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pt-16 space-y-4 animate-in fade-in duration-700">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 pt-12 space-y-3 animate-in fade-in duration-700">
         
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -662,7 +662,7 @@ function CustomerCard({ p, onEdit, onDelete, onViewHistory }: { p: Party, onEdit
 
 function SideDrawer({ title, children, onClose }: { title: string, children: any, onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[100] flex justify-end">
+    <div className="fixed inset-0 z-[9999] flex justify-end">
       <div className="absolute inset-0 bg-black/50 animate-in fade-in duration-300" onClick={onClose} />
       <div className="relative w-full max-w-md bg-[var(--kravy-surface)] border-l border-[var(--kravy-border)] shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col h-full ring-1 ring-white/10">
         <div className="p-6 pb-4 flex items-center justify-between border-b border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/50">
@@ -683,7 +683,7 @@ function SideDrawer({ title, children, onClose }: { title: string, children: any
 
 function Modal({ title, children, onClose }: { title: string, children: any, onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-300" onClick={onClose} />
       <div className="relative w-full max-w-xl bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[40px] shadow-2xl p-10 animate-in zoom-in-95 duration-300">
         <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] tracking-tight mb-8 flex items-center gap-3">
