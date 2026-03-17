@@ -18,6 +18,8 @@ type InventoryItem = {
   price: number;
   sellingPrice: number;
   barcode?: string;
+  taxStatus?: string;
+  gst?: number;
 };
 
 export default function InventoryPage() {
@@ -44,6 +46,8 @@ export default function InventoryPage() {
     price: 0,
     sellingPrice: 0,
     barcode: "",
+    taxStatus: "Without Tax",
+    gst: 0,
   });
 
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
@@ -99,6 +103,8 @@ export default function InventoryPage() {
       price: item.price || 0,
       sellingPrice: item.sellingPrice || 0,
       barcode: item.barcode || "",
+      taxStatus: item.taxStatus || "Without Tax",
+      gst: item.gst || 0,
     });
     setIsModalOpen(true);
   };
@@ -202,7 +208,7 @@ export default function InventoryPage() {
             onClick={() => {
               setEditingItem(null);
               setFormData({
-                name: "", categoryId: "", currentStock: 0, reorderLevel: 0, openingStock: 0, unit: "pcs", price: 0, sellingPrice: 0, barcode: ""
+                name: "", categoryId: "", currentStock: 0, reorderLevel: 0, openingStock: 0, unit: "pcs", price: 0, sellingPrice: 0, barcode: "", taxStatus: "Without Tax", gst: 0
               });
               setIsModalOpen(true);
             }}
@@ -547,13 +553,50 @@ export default function InventoryPage() {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest px-1">Selling Value</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--kravy-text-faint)]">\u20B9</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--kravy-text-faint)]">₹</span>
                       <input
                         type="number"
                         className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl pl-8 pr-4 py-3 text-sm font-bold text-[var(--kravy-text-primary)] focus:border-[var(--kravy-brand)] outline-none transition-all shadow-inner shadow-black/5"
                         value={formData.sellingPrice}
                         onChange={(e) => setFormData({...formData, sellingPrice: Number(e.target.value)})}
                       />
+                    </div>
+                  </div>
+
+                  {/* Tax Options */}
+                  <div className="col-span-2 space-y-3 pt-2">
+                    <div className="flex gap-2 p-1 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl">
+                      {["Without Tax", "With Tax"].map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, taxStatus: status })}
+                          className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                            formData.taxStatus === status
+                              ? "bg-[var(--kravy-brand)] text-white shadow-lg shadow-[var(--kravy-brand)]/20"
+                              : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]/50"
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {[0, 5, 12, 18, 28].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, gst: val })}
+                          className={`px-4 py-2.5 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+                            formData.gst === val
+                              ? "bg-[var(--kravy-brand)] text-white border-[var(--kravy-brand)]"
+                              : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-[var(--kravy-brand)]/50"
+                          }`}
+                        >
+                          GST @ {val}%
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>

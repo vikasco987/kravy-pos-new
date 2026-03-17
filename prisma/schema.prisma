@@ -69,6 +69,7 @@ model Item {
   gst          Float?
   unit         String?
   barcode      String?
+  taxStatus    String?   // "With Tax" or "Without Tax"
   imageUrl     String?
   image        String?   // ✅ THIS MUST EXIST
 

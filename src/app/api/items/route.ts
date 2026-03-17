@@ -373,6 +373,11 @@ export async function POST(req: Request) {
         mrName: body.mrName || null,
         taName: body.taName || null,
         upsellText: body.upsellText || null,
+        taxStatus: body.taxStatus || "Without Tax",
+        gst: body.gst != null ? Number(body.gst) : 0,
+        openingStock: body.openingStock != null ? Number(body.openingStock) : 0,
+        currentStock: body.currentStock != null ? Number(body.currentStock) : 0,
+        reorderLevel: body.reorderLevel != null ? Number(body.reorderLevel) : 0,
       },
     });
 
@@ -440,6 +445,11 @@ export async function PUT(req: Request) {
         mrName: body.mrName !== undefined ? body.mrName : undefined,
         taName: body.taName !== undefined ? body.taName : undefined,
         upsellText: body.upsellText !== undefined ? body.upsellText : undefined,
+        taxStatus: body.taxStatus !== undefined ? body.taxStatus : undefined,
+        gst: body.gst !== undefined ? Number(body.gst) : undefined,
+        openingStock: body.openingStock !== undefined ? Number(body.openingStock) : undefined,
+        currentStock: body.currentStock !== undefined ? Number(body.currentStock) : undefined,
+        reorderLevel: body.reorderLevel !== undefined ? Number(body.reorderLevel) : undefined,
       },
     });
 

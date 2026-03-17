@@ -420,6 +420,8 @@ type MenuItem = {
   mrName?: string | null;
   taName?: string | null;
   upsellText?: string | null;
+  taxStatus?: string | null;
+  gst?: number | null;
 };
 
 type MenuCategory = {
@@ -462,6 +464,8 @@ export default function ViewMenuPage() {
 
   // Quick Add states
   const [quickAddCat, setQuickAddCat] = useState<{ id: string; name: string } | null>(null);
+  const [quickAddTaxStatus, setQuickAddTaxStatus] = useState("Without Tax");
+  const [quickAddGst, setQuickAddGst] = useState(0);
   const [showAddCategory, setShowAddCategory] = useState(false);
 
   useEffect(() => {
@@ -649,6 +653,8 @@ export default function ViewMenuPage() {
           unit: updated.unit,
           categoryId: updated.categoryId,
           imageUrl: updated.imageUrl,
+          taxStatus: updated.taxStatus,
+          gst: updated.gst,
         }),
       });
 
@@ -749,7 +755,9 @@ export default function ViewMenuPage() {
       isRecommended: false,
       isNew: true,
       description: description || null,
-      imageUrl: imageUrl || null
+      imageUrl: imageUrl || null,
+      taxStatus: quickAddTaxStatus,
+      gst: Number(quickAddGst)
     };
 
     // 🚀 OPTIMISTIC UPDATE: Update UI immediately
@@ -759,6 +767,8 @@ export default function ViewMenuPage() {
         : cat
     ));
     setQuickAddCat(null); 
+    setQuickAddTaxStatus("Without Tax");
+    setQuickAddGst(0);
     setToast(`"${name}" added to ${quickAddCat.name}`);
 
     // Backend update in background
@@ -771,7 +781,9 @@ export default function ViewMenuPage() {
           price: Number(price),
           categoryId: quickAddCat.id,
           description: description || null,
-          imageUrl: imageUrl || null
+          imageUrl: imageUrl || null,
+          taxStatus: quickAddTaxStatus,
+          gst: Number(quickAddGst)
         }),
       });
 
@@ -946,6 +958,44 @@ export default function ViewMenuPage() {
                     value={local.imageUrl ?? ""}
                     onChange={(e) => setLocal({ ...local, imageUrl: e.target.value })}
                   />
+                </div>
+
+                {/* Tax Options */}
+                <div className="space-y-3 pt-2">
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Tax Status</label>
+                  <div className="flex gap-2 p-1 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl">
+                    {["Without Tax", "With Tax"].map((status) => (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => setLocal({ ...local, taxStatus: status })}
+                        className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                          local.taxStatus === status
+                            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                            : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]/50"
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {[0, 5, 12, 18, 28].map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setLocal({ ...local, gst: val })}
+                        className={`px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
+                          local.gst === val
+                            ? "bg-indigo-600 text-white border-indigo-600"
+                            : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-indigo-600/50"
+                        }`}
+                      >
+                        GST @ {val}%
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -1492,6 +1542,43 @@ export default function ViewMenuPage() {
                     placeholder="https://..."
                     className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-[11px] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
                   />
+                </div>
+
+                {/* Tax Options */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex gap-2 p-1 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl">
+                    {["Without Tax", "With Tax"].map((status) => (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => setQuickAddTaxStatus(status)}
+                        className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                          quickAddTaxStatus === status
+                            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                            : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]/50"
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {[0, 5, 12, 18, 28].map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setQuickAddGst(val)}
+                        className={`px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
+                          quickAddGst === val
+                            ? "bg-indigo-600 text-white border-indigo-600"
+                            : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-indigo-600/50"
+                        }`}
+                      >
+                        GST @ {val}%
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 
                 <div className="flex gap-2 pt-2">
