@@ -181,7 +181,7 @@ export default function InventoryPage() {
     { label: "Total Assets", val: items.length, icon: Package, color: "text-blue-500", bg: "bg-blue-500/10", mode: "all" },
     { label: "Critical Stock", val: items.filter(i => i.currentStock <= i.reorderLevel).length, icon: AlertTriangle, color: "text-rose-500", bg: "bg-rose-500/10", mode: "critical" },
     { label: "Categories", val: categories.length, icon: Layers, color: "text-amber-500", bg: "bg-amber-500/10", mode: "all" },
-    { label: "Live Value", val: `\u20B9${Math.round(items.reduce((acc, i) => acc + (i.currentStock * i.price), 0))}`, icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10", mode: "all" },
+    { label: "Live Value", val: `₹${Math.round(items.reduce((acc, i) => acc + (i.currentStock * i.price), 0))}`, icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10", mode: "all" },
   ];
 
   return (
@@ -363,7 +363,7 @@ export default function InventoryPage() {
                           </div>
                           <div>
                             <div className="text-sm font-bold text-[var(--kravy-text-primary)] leading-tight">{item.name}</div>
-                            <div className="text-[10px] font-bold text-[var(--kravy-text-faint)] mt-0.5">ID: {item.id.slice(-8).toUpperCase()} \u00B7 {item.unit}</div>
+                            <div className="text-[10px] font-bold text-[var(--kravy-text-faint)] mt-0.5">ID: {item.id.slice(-8).toUpperCase()} · {item.unit}</div>
                           </div>
                         </div>
                       </td>
@@ -374,7 +374,7 @@ export default function InventoryPage() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="text-sm font-black text-[var(--kravy-text-primary)]">{item.currentStock}</div>
+                          <div className="text-sm font-black text-[var(--kravy-text-primary)]">{item.currentStock ?? 0}</div>
                           <div className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter ${
                             status === 'out-of-stock' ? 'bg-rose-500/10 text-rose-600' : 
                             status === 'low-stock' ? 'bg-amber-500/10 text-amber-600' : 
@@ -394,8 +394,8 @@ export default function InventoryPage() {
                       </td>
                       <td className="px-5 py-4">
                         <div>
-                          <div className="text-sm font-black text-[var(--kravy-text-primary)]">\u20B9{item.sellingPrice}</div>
-                          <div className="text-[10px] font-bold text-[var(--kravy-text-faint)]">Cost: \u20B9{item.price}</div>
+                          <div className="text-sm font-black text-[var(--kravy-text-primary)]">₹{item.sellingPrice}</div>
+                          <div className="text-[10px] font-bold text-[var(--kravy-text-faint)]">Cost: ₹{item.price}</div>
                         </div>
                       </td>
                       <td className="px-5 py-4">

@@ -168,7 +168,7 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
             }}>
               <MapPin size={10} strokeWidth={2.5} />
               {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              <span style={{ color: "var(--kravy-border-strong)" }}>\u00B7</span>
+              <span style={{ color: "var(--kravy-border-strong)" }}>·</span>
               <span style={{ color: "var(--kravy-text-faint)" }}>Main Branch</span>
             </div>
           )}
@@ -282,7 +282,7 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
                               >
                                 <div style={{ display: "flex", flexDirection: "column" }}>
                                   <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--kravy-text-primary)" }}>{item.name}</span>
-                                  <span style={{ fontSize: "9px", color: "var(--kravy-text-muted)" }}>Stock: {item.currentStock} \u00B7 \u20B9{item.price}</span>
+                                  <span style={{ fontSize: "9px", color: "var(--kravy-text-muted)" }}>Stock: {item.currentStock ?? 0} · ₹{item.price}</span>
                                 </div>
                                 <ArrowRight size={12} style={{ color: "var(--kravy-text-faint)" }} className="group-hover:translate-x-1 group-hover:text-[var(--kravy-brand)] transition-all" />
                               </button>
@@ -312,7 +312,7 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
                               >
                                 <div>
                                   <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--kravy-text-primary)" }}>{bill.billNumber}</div>
-                                  <div style={{ fontSize: "9px", color: "var(--kravy-text-muted)" }}>Total: \u20B9{bill.total} \u00B7 {new Date(bill.createdAt).toLocaleDateString()}</div>
+                                  <div style={{ fontSize: "9px", color: "var(--kravy-text-muted)" }}>Total: ₹{bill.total} · {new Date(bill.createdAt).toLocaleDateString()}</div>
                                 </div>
                                 <ArrowRight size={12} style={{ color: "var(--kravy-text-faint)" }} className="group-hover:translate-x-1 transition-all" />
                               </Link>
