@@ -176,7 +176,7 @@ export default function PricingSettingsPage() {
                     </button>
                     <div>
                         <h1 className="text-2xl font-black text-[var(--kravy-text-primary)] tracking-tight">Pricing & Tax</h1>
-                        <p className="text-xs font-mono text-[var(--kravy-text-muted)]">Control GST, discount offers · visible on QR Menu</p>
+                        <p className="text-xs font-mono text-[var(--kravy-text-muted)]">Control GST, discount offers · affects catalog & billing</p>
                     </div>
                 </div>
             </div>
@@ -198,7 +198,7 @@ export default function PricingSettingsPage() {
                                 <ShieldCheck size={20} />
                             </div>
                             <div>
-                                <div className="font-black text-[0.9rem] text-[var(--kravy-text-primary)]">Enable GST on QR Orders</div>
+                                <div className="font-black text-[0.9rem] text-[var(--kravy-text-primary)]">Enable Global GST System</div>
                                 <div className="text-xs text-[var(--kravy-text-muted)] font-medium">
                                     {taxEnabled ? `${taxRate}% GST will be added to every order` : "No tax will be charged to customers"}
                                 </div>

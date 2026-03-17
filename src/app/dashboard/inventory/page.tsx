@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Search, Plus, Filter, Download, Eye, Edit, Trash2, FileText, X, AlertTriangle, Save, Sparkles, TrendingUp, Layers, ArrowUpDown, CheckCircle2, XCircle } from "lucide-react";
+import { Package, Search, Plus, Filter, Download, Eye, Edit, Trash2, FileText, X, AlertTriangle, Save, Sparkles, TrendingUp, Layers, ArrowUpDown, CheckCircle2, XCircle, BadgePercent } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSearch } from "@/components/SearchContext";
 
@@ -50,11 +50,13 @@ export default function InventoryPage() {
     gst: 0,
   });
 
+  const [taxEnabled, setTaxEnabled] = useState(true);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     fetchInventory();
     fetchCategories();
+    fetchProfile();
 
     const handleKravySearch = (e: any) => {
       setSearchTerm(e.detail || "");
@@ -62,6 +64,18 @@ export default function InventoryPage() {
     window.addEventListener("kravy-search", handleKravySearch);
     return () => window.removeEventListener("kravy-search", handleKravySearch);
   }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch("/api/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setTaxEnabled(data?.taxEnabled ?? true);
+      }
+    } catch (err) {
+      console.error("Profile fetch error", err);
+    }
+  };
 
   const fetchInventory = async () => {
     try {
@@ -563,17 +577,25 @@ export default function InventoryPage() {
                     </div>
                   </div>
 
-                  {/* Tax Options */}
-                  <div className="col-span-2 space-y-3 pt-2">
+                </div>
+
+                {/* Tax & GST Settings - Only if enabled globally */}
+                {taxEnabled && (
+                  <div className="space-y-4 pt-4 border-t border-[var(--kravy-border)]">
+                    <div className="flex items-center gap-2 mb-2">
+                       <BadgePercent size={14} className="text-indigo-600" />
+                       <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Tax Settings</h4>
+                    </div>
+                    
                     <div className="flex gap-2 p-1 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl">
                       {["Without Tax", "With Tax"].map((status) => (
                         <button
                           key={status}
                           type="button"
                           onClick={() => setFormData({ ...formData, taxStatus: status })}
-                          className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                          className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
                             formData.taxStatus === status
-                              ? "bg-[var(--kravy-brand)] text-white shadow-lg shadow-[var(--kravy-brand)]/20"
+                              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
                               : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]/50"
                           }`}
                         >
@@ -588,10 +610,10 @@ export default function InventoryPage() {
                           key={val}
                           type="button"
                           onClick={() => setFormData({ ...formData, gst: val })}
-                          className={`px-4 py-2.5 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+                          className={`px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
                             formData.gst === val
-                              ? "bg-[var(--kravy-brand)] text-white border-[var(--kravy-brand)]"
-                              : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-[var(--kravy-brand)]/50"
+                              ? "bg-indigo-600 text-white border-indigo-600"
+                              : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-indigo-600/50"
                           }`}
                         >
                           GST @ {val}%
@@ -599,7 +621,7 @@ export default function InventoryPage() {
                       ))}
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div className="mt-8 flex gap-3">
                   <button

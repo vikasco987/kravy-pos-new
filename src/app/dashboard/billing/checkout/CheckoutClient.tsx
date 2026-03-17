@@ -2960,41 +2960,43 @@ export default function CheckoutClient() {
                 </div>
 
                 {/* Tax Options */}
-                <div className="space-y-3 pt-2">
-                  <div className="flex gap-2 p-1 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl">
-                    {["Without Tax", "With Tax"].map((status) => (
-                      <button
-                        key={status}
-                        type="button"
-                        onClick={() => setQuickAddTaxStatus(status)}
-                        className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
-                          quickAddTaxStatus === status
-                            ? "bg-[var(--kravy-brand)] text-white shadow-lg shadow-[var(--kravy-brand)]/20"
-                            : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]/50"
-                        }`}
-                      >
-                        {status}
-                      </button>
-                    ))}
-                  </div>
+                {taxActive && (
+                  <div className="space-y-3 pt-2">
+                    <div className="flex gap-2 p-1 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl">
+                      {["Without Tax", "With Tax"].map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => setQuickAddTaxStatus(status)}
+                          className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                            quickAddTaxStatus === status
+                              ? "bg-[var(--kravy-brand)] text-white shadow-lg shadow-[var(--kravy-brand)]/20"
+                              : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]/50"
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {[0, 5, 12, 18, 28].map((val) => (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => setQuickAddGst(val)}
-                        className={`px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
-                          quickAddGst === val
-                            ? "bg-[var(--kravy-brand)] text-white border-[var(--kravy-brand)]"
-                            : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-[var(--kravy-brand)]/50"
-                        }`}
-                      >
-                        GST @ {val}%
-                      </button>
-                    ))}
+                    <div className="flex flex-wrap gap-2">
+                      {[0, 5, 12, 18, 28].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setQuickAddGst(val)}
+                          className={`px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
+                            quickAddGst === val
+                              ? "bg-[var(--kravy-brand)] text-white border-[var(--kravy-brand)]"
+                              : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-[var(--kravy-brand)]/50"
+                          }`}
+                        >
+                          GST @ {val}%
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 <div className="flex gap-2 pt-2">
                   <button
