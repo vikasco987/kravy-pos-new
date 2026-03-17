@@ -88,12 +88,38 @@ export async function GET() {
     // Always ensure /dashboard and /dashboard/help are available for UI shell stability
     const finalPaths = [...new Set(["/dashboard", "/dashboard/help", ...finalAllowed])];
 
-    return NextResponse.json({ ...safeUser, allowedPaths: finalPaths });
+    return NextResponse.json({ 
+        ...safeUser, 
+        allowedPaths: finalPaths,
+        uiPreferences: (user as any).uiPreferences || {}
+    });
   } catch (error) {
     console.error("USER/ME ERROR:", error);
     return NextResponse.json(
       { error: "Failed to fetch user: " + String(error) },
       { status: 500 }
     );
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const body = await req.json();
+    const { uiPreferences } = body;
+
+    const user = await (prisma.user as any).update({
+      where: { clerkId: userId },
+      data: {
+        uiPreferences: uiPreferences ?? {}
+      }
+    });
+
+    return NextResponse.json({ success: true, uiPreferences: (user as any).uiPreferences });
+  } catch (error) {
+    console.error("USER/ME PATCH ERROR:", error);
+    return NextResponse.json({ error: "Failed to update preferences" }, { status: 500 });
   }
 }

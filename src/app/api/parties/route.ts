@@ -242,6 +242,40 @@ export async function POST(req: NextRequest) {
 
 // Keep or add GET/DELETE as you need them (your previous handlers can remain)
 
+export async function PUT(req: NextRequest) {
+  try {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const body = await req.json();
+    const { id, name, phone, address, dob, loyaltyPoints } = body;
+
+    if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
+
+    const existing = await prisma.party.findUnique({ where: { id } });
+    if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (existing.createdBy !== effectiveId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+    const cleanPhone = phone ? phone.replace(/[\s\-\(\)\+]/g, "").slice(-10) : existing.phone;
+
+    const updated = await prisma.party.update({
+      where: { id },
+      data: {
+        name: name ?? existing.name,
+        phone: cleanPhone,
+        address: address !== undefined ? address : existing.address,
+        dob: dob ? new Date(dob) : existing.dob,
+        loyaltyPoints: loyaltyPoints !== undefined ? loyaltyPoints : existing.loyaltyPoints,
+      },
+    });
+
+    return NextResponse.json(updated, { status: 200 });
+  } catch (err) {
+    console.error("❌ Error updating party:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     const effectiveId = await getEffectiveClerkId();

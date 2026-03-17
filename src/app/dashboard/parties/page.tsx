@@ -1,8 +1,29 @@
-// src/app/parties/page.tsx
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { 
+  User, 
+  Phone, 
+  MapPin, 
+  Calendar, 
+  Search, 
+  Plus, 
+  Download, 
+  Edit2, 
+  Trash2, 
+  History as HistoryIcon, 
+  ChevronRight, 
+  CreditCard, 
+  Award, 
+  ArrowRight, 
+  Filter, 
+  X,
+  FileText,
+  LayoutGrid,
+  List
+} from "lucide-react";
 
 type Party = {
   id: string;
@@ -10,13 +31,27 @@ type Party = {
   phone: string;
   address?: string;
   dob?: string | null;
+  loyaltyPoints?: number;
   [k: string]: any;
+};
+
+type Bill = {
+  id: string;
+  billNumber: string;
+  total: number;
+  paymentStatus: string;
+  paymentMode: string;
+  createdAt: string;
 };
 
 function formatDate(d?: string | null) {
   if (!d) return "—";
   try {
-    return new Date(d).toLocaleDateString();
+    return new Date(d).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
   } catch {
     return d;
   }
@@ -38,80 +73,99 @@ export default function PartiesPage() {
   const [editing, setEditing] = useState<Party | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // helper to get base origin (safe in SSR)
+  // Bill History State
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [selectedParty, setSelectedParty] = useState<Party | null>(null);
+  const [partyBills, setPartyBills] = useState<Bill[]>([]);
+  const [loadingBills, setLoadingBills] = useState(false);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 9; // 3x3 grid or 9 rows
+
+  // View Mode Preference
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [userPrefs, setUserPrefs] = useState<any>({});
+
   const getBase = () => (typeof window !== "undefined" ? window.location.origin : "");
 
   useEffect(() => {
-    let mounted = true;
-    async function fetchParties() {
-      setLoading(true);
-      setError(null);
-      try {
-        const base = getBase();
-        const res = await fetch(`${base}/api/parties`, { credentials: "include" });
-        if (!res.ok) {
-          const txt = await safeText(res).catch(() => "");
-          throw new Error(txt || `Fetch failed (${res.status})`);
-        }
-        const raw = await safeJson(res).catch(() => null);
-        console.debug("Raw /api/parties response:", raw);
-
-        let arr: any[] = [];
-        if (Array.isArray(raw)) arr = raw;
-        else if (raw == null) arr = [];
-        else if (Array.isArray((raw as any).parties)) arr = (raw as any).parties;
-        else if (Array.isArray((raw as any).data)) arr = (raw as any).data;
-        else if (Array.isArray((raw as any).rows)) arr = (raw as any).rows;
-        else if (Array.isArray((raw as any).items)) arr = (raw as any).items;
-        else {
-          const keys = Object.keys(raw || {});
-          const firstArrayKey = keys.find((k) => Array.isArray((raw as any)[k]));
-          if (firstArrayKey) arr = (raw as any)[firstArrayKey];
-        }
-        if (!Array.isArray(arr)) arr = [];
-
-        const normalized: Party[] = arr.map((p: any, idx: number) => ({
-          id: String(p.id ?? p._id ?? p.partyId ?? `no-id-${idx}`),
-          name: p.name ?? p.fullName ?? p.party_name ?? "Unnamed",
-          phone: p.phone ?? p.contact ?? p.mobile ?? "—",
-          address: p.address ?? p.addr ?? p.location ?? "",
-          dob: p.dob ?? p.dateOfBirth ?? null,
-          ...p,
-        }));
-
-        if (mounted) setParties(normalized);
-      } catch (err: any) {
-        console.error("Error fetching parties:", err);
-        if (mounted) {
-          setError(err?.message ?? "Failed to load parties");
-          setParties([]);
-        }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-
     fetchParties();
-    return () => {
-      mounted = false;
-    };
+    fetchUserPrefs();
   }, []);
 
-  // derived filtered + sorted
+  async function fetchUserPrefs() {
+    try {
+      const res = await fetch('/api/user/me');
+      if (res.ok) {
+        const data = await res.json();
+        const prefs = data.uiPreferences || {};
+        setUserPrefs(prefs);
+        if (prefs.partiesView) {
+          setViewMode(prefs.partiesView);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch user prefs:", err);
+    }
+  }
+
+  async function saveViewPreference(mode: "grid" | "table") {
+    try {
+      const newPrefs = { ...userPrefs, partiesView: mode };
+      setUserPrefs(newPrefs);
+      setViewMode(mode);
+
+      await fetch('/api/user/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uiPreferences: newPrefs })
+      });
+    } catch (err) {
+      console.error("Failed to save preference:", err);
+    }
+  }
+
+  async function fetchParties() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/parties`, { credentials: "include" });
+      if (!res.ok) throw new Error(`Failed to fetch parties`);
+      const data = await res.json();
+      
+      const normalized = (Array.isArray(data) ? data : data.parties || []).map((p: any) => ({
+        id: p.id || p._id,
+        name: p.name || "Unnamed",
+        phone: p.phone || "—",
+        address: p.address || "",
+        dob: p.dob || null,
+        loyaltyPoints: p.loyaltyPoints || 0,
+        ...p
+      }));
+
+      setParties(normalized);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const visible = useMemo(() => {
     const lower = q.trim().toLowerCase();
     let arr = parties.filter((p) => {
       if (!lower) return true;
       return (
-        (p.name ?? "").toString().toLowerCase().includes(lower) ||
-        (p.phone ?? "").toString().toLowerCase().includes(lower) ||
-        (p.address ?? "").toString().toLowerCase().includes(lower)
+        p.name.toLowerCase().includes(lower) ||
+        p.phone.toLowerCase().includes(lower) ||
+        (p.address || "").toLowerCase().includes(lower)
       );
     });
 
-    arr = arr.sort((a, b) => {
-      const A = (a[sortBy] ?? "").toString().toLowerCase();
-      const B = (b[sortBy] ?? "").toString().toLowerCase();
+    arr.sort((a: any, b: any) => {
+      const A = (a[sortBy] || "").toString().toLowerCase();
+      const B = (b[sortBy] || "").toString().toLowerCase();
       if (A < B) return sortDir === "asc" ? -1 : 1;
       if (A > B) return sortDir === "asc" ? 1 : -1;
       return 0;
@@ -120,535 +174,588 @@ export default function PartiesPage() {
     return arr;
   }, [parties, q, sortBy, sortDir]);
 
-  // small toast helper
+  // Reset to page 1 when search or sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, sortBy, sortDir]);
+
+  const totalPages = Math.ceil(visible.length / pageSize);
+  const paginatedParties = useMemo(() => {
+    return visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [visible, currentPage]);
+
   function pushToast(type: "success" | "error", text: string) {
     setToast({ type, text });
-    setTimeout(() => setToast(null), 3500);
+    setTimeout(() => setToast(null), 3000);
   }
 
-  // CSV export
-  function exportCSV() {
-    const header = ["Name", "Phone", "Address", "DOB"];
-    const rows = visible.map((p) => [p.name ?? "", p.phone ?? "", p.address ?? "", p.dob ?? ""]);
-    const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const b = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(b);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `parties_${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    pushToast("success", "CSV downloaded");
-  }
-
-  // safe helpers to read body (try json then text)
-  async function safeJson(res: Response) {
+  const fetchBillHistory = async (party: Party) => {
+    setSelectedParty(party);
+    setHistoryOpen(true);
+    setLoadingBills(true);
     try {
-      return await res.json();
-    } catch {
-      return null;
-    }
-  }
-  async function safeText(res: Response) {
-    try {
-      return await res.text();
-    } catch {
-      return "";
-    }
-  }
-
-  // try multiple endpoints (primary list) until we find ok
-  async function tryEndpoints(endpoints: { url: string; options?: RequestInit; desc?: string }[]) {
-    let lastErr: string | null = null;
-
-    for (const ep of endpoints) {
-      try {
-        const url = ep.url.startsWith("http") ? ep.url : getBase() + ep.url;
-        const opts: RequestInit = { ...(ep.options || {}), credentials: "include" };
-
-        console.debug(`[parties] trying: ${ep.desc ?? "-"} -> ${url}`, opts);
-        const res = await fetch(url, opts);
-        const bodyText = await safeText(res).catch(() => "");
-        let bodyJson: any = null;
-        try {
-          bodyJson = bodyText ? JSON.parse(bodyText) : null;
-        } catch { /* ignore parse error */ }
-
-        console.debug(`[parties] result for ${url}: status=${res.status}`, { desc: ep.desc, bodyText, bodyJson });
-
-        if (res.ok) {
-          return { res, bodyText, bodyJson };
-        }
-
-        lastErr = bodyJson?.error ?? bodyJson?.message ?? bodyText ?? `HTTP ${res.status}`;
-      } catch (err: any) {
-        console.warn(`[parties] network error for ${ep.url}`, err);
-        lastErr = err?.message ?? String(err);
+      const res = await fetch(`/api/parties/${party.id}/bills`);
+      if (res.ok) {
+        const data = await res.json();
+        setPartyBills(data.bills || []);
       }
-    }
-
-    throw new Error(`All endpoints failed${lastErr ? ` — last error: ${lastErr}` : ""}`);
-  }
-
-  // handle delete with many fallbacks
-  async function handleDelete(id: string) {
-    const ok = confirm("Delete this party? This cannot be undone.");
-    if (!ok) return;
-
-    try {
-      const base = getBase();
-      const endpoints = [
-        { url: `${base}/api/parties/${encodeURIComponent(id)}`, options: { method: "DELETE" }, desc: "DELETE /api/parties/:id" },
-        { url: `${base}/api/parties`, options: { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }, desc: "DELETE /api/parties (body)" },
-        { url: `${base}/api/parties/delete`, options: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }, desc: "POST /api/parties/delete" },
-        { url: `${base}/api/parties/remove`, options: { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }, desc: "POST /api/parties/remove" },
-      ];
-
-      const { res, bodyText, bodyJson } = await tryEndpoints(endpoints);
-      if (!res.ok) {
-        const msg = bodyJson?.error ?? bodyJson?.message ?? bodyText ?? `Delete failed (${res.status})`;
-        throw new Error(msg);
-      }
-
-      setParties((p) => p.filter((x) => x.id !== id));
-      pushToast("success", "Deleted");
-    } catch (err: any) {
-      console.error("Delete failed:", err);
-      pushToast("error", err?.message ?? "Delete failed");
-    }
-  }
-
-  // open add modal
-  function openAdd() {
-    setEditing({ id: "new", name: "", phone: "", address: "", dob: "" });
-    setModalOpen(true);
-  }
-
-  // open edit modal (use clone to avoid accidental mutation)
-  function openEdit(p: Party) {
-    setEditing(JSON.parse(JSON.stringify(p)));
-    setModalOpen(true);
-  }
-
-  // save (create or update) with many fallbacks
-  async function handleSave(payload: Party) {
-    setSaving(true);
-    try {
-      const cleanPayload = {
-        id: payload.id,
-        name: payload.name ?? "",
-        phone: payload.phone ?? "",
-        address: payload.address ?? "",
-        dob: payload.dob ?? null,
-      };
-
-      const base = getBase();
-
-      // CREATE
-      if (payload.id === "new") {
-        const res = await fetch(`${base}/api/parties`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(cleanPayload),
-          credentials: "include",
-        });
-        const bodyText = await safeText(res);
-        const bodyJson = await safeJson(res);
-        console.debug("POST /api/parties ->", res.status, { bodyText, bodyJson });
-
-        if (!res.ok) {
-          const msg = bodyJson?.error ?? bodyJson?.message ?? bodyText ?? `Save failed (${res.status})`;
-          throw new Error(msg);
-        }
-
-        let created: any = null;
-        if (bodyJson && typeof bodyJson === "object") {
-          created = (bodyJson as any).party ?? (bodyJson as any).data ?? bodyJson;
-        } else if (bodyText) {
-          try {
-            const parsed = JSON.parse(bodyText);
-            created = (parsed as any).party ?? (parsed as any).data ?? parsed;
-          } catch {
-            created = null;
-          }
-        }
-
-        if (!created) created = { ...cleanPayload };
-        if (!created.id) created.id = String(created._id ?? created.id ?? `p-${Date.now()}`);
-        setParties((p) => [created, ...p]);
-        pushToast("success", "Added");
-        setModalOpen(false);
-        setEditing(null);
-        return;
-      }
-
-      // UPDATE: try common endpoints
-      // 1) PUT /api/parties/:id
-      try {
-        const url = `${base}/api/parties/${encodeURIComponent(payload.id)}`;
-        const res = await fetch(url, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(cleanPayload),
-          credentials: "include",
-        });
-        const bodyText = await safeText(res);
-        const bodyJson = await safeJson(res);
-        console.debug("PUT /api/parties/:id ->", res.status, { bodyText, bodyJson });
-        if (res.ok) {
-          const updated = (bodyJson && typeof bodyJson === "object") ? (bodyJson.party ?? bodyJson.data ?? bodyJson.updated ?? bodyJson) : (bodyText ? JSON.parse(bodyText || "{}") : null);
-          if (updated && updated.id) setParties((p) => p.map((x) => (x.id === payload.id ? updated : x)));
-          else setParties((p) => p.map((x) => (x.id === payload.id ? { ...x, ...cleanPayload } : x)));
-          pushToast("success", "Updated");
-          setModalOpen(false);
-          setEditing(null);
-          return;
-        }
-        console.debug("PUT /api/parties/:id not ok, continuing", { status: res.status });
-      } catch (err) {
-        console.warn("PUT /api/parties/:id failed:", err);
-      }
-
-      // 2) PUT /api/parties (body)
-      try {
-        const url = `${base}/api/parties`;
-        const res = await fetch(url, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(cleanPayload),
-          credentials: "include",
-        });
-        const bodyText = await safeText(res);
-        const bodyJson = await safeJson(res);
-        console.debug("PUT /api/parties (body) ->", res.status, { bodyText, bodyJson });
-        if (res.ok) {
-          const updated = (bodyJson && typeof bodyJson === "object") ? (bodyJson.party ?? bodyJson.data ?? bodyJson.updated ?? bodyJson) : (bodyText ? JSON.parse(bodyText || "{}") : null);
-          if (updated && updated.id) setParties((p) => p.map((x) => (x.id === payload.id ? updated : x)));
-          else setParties((p) => p.map((x) => (x.id === payload.id ? { ...x, ...cleanPayload } : x)));
-          pushToast("success", "Updated");
-          setModalOpen(false);
-          setEditing(null);
-          return;
-        }
-        console.debug("PUT /api/parties (body) not ok, continuing", { status: res.status });
-      } catch (err) {
-        console.warn("PUT /api/parties (body) failed:", err);
-      }
-
-      // 3) POST /api/parties/update
-      try {
-        const url = `${base}/api/parties/update`;
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(cleanPayload),
-          credentials: "include",
-        });
-        const bodyText = await safeText(res);
-        const bodyJson = await safeJson(res);
-        console.debug("POST /api/parties/update ->", res.status, { bodyText, bodyJson });
-        if (res.ok) {
-          const updated = (bodyJson && typeof bodyJson === "object") ? (bodyJson.party ?? bodyJson.data ?? bodyJson.updated ?? bodyJson) : (bodyText ? JSON.parse(bodyText || "{}") : null);
-          if (updated && updated.id) setParties((p) => p.map((x) => (x.id === payload.id ? updated : x)));
-          else setParties((p) => p.map((x) => (x.id === payload.id ? { ...x, ...cleanPayload } : x)));
-          pushToast("success", "Updated");
-          setModalOpen(false);
-          setEditing(null);
-          return;
-        }
-        console.debug("POST /api/parties/update not ok, continuing", { status: res.status });
-      } catch (err) {
-        console.warn("POST /api/parties/update failed:", err);
-      }
-
-      // 4) final fallback: POST /api/parties with id in body (upsert-style)
-      try {
-        const url = `${base}/api/parties`;
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...cleanPayload, id: payload.id }),
-          credentials: "include",
-        });
-        const bodyText = await safeText(res);
-        const bodyJson = await safeJson(res);
-        console.debug("Fallback POST /api/parties (with id) ->", res.status, { bodyText, bodyJson });
-        if (res.ok) {
-          const updated = (bodyJson && typeof bodyJson === "object") ? (bodyJson.party ?? bodyJson.data ?? bodyJson.updated ?? bodyJson) : (bodyText ? JSON.parse(bodyText || "{}") : null);
-          if (updated && updated.id) setParties((p) => p.map((x) => (x.id === payload.id ? updated : x)));
-          else setParties((p) => p.map((x) => (x.id === payload.id ? { ...x, ...cleanPayload } : x)));
-          pushToast("success", "Updated (fallback)");
-          setModalOpen(false);
-          setEditing(null);
-          return;
-        }
-        const lastBody = bodyJson ?? bodyText ?? `HTTP ${res.status}`;
-        throw new Error(`All update attempts failed — last response: ${JSON.stringify(lastBody)}`);
-      } catch (err: any) {
-        console.error("All update attempts failed:", err);
-        throw err;
-      }
-    } catch (err: any) {
-      console.error("Save failed:", err);
-      pushToast("error", err?.message ?? "Save failed");
+    } catch (error) {
+      console.error("Error fetching history:", error);
     } finally {
-      setSaving(false);
+      setLoadingBills(false);
     }
-  }
+  };
 
-  // UI: loading / error
-  if (loading)
-    return (
-      <div className="p-6 flex justify-center items-center h-[50vh]">
-        <div className="text-[var(--kravy-text-muted)] animate-pulse">Loading party records…</div>
-      </div>
-    );
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this customer?")) return;
+    try {
+      const res = await fetch(`/api/parties`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+      });
+      if (res.ok) {
+        setParties(p => p.filter(x => x.id !== id));
+        pushToast("success", "Customer deleted");
+      }
+    } catch (err) {
+      pushToast("error", "Delete failed");
+    }
+  };
 
-  if (error)
-    return (
-      <div className="p-6">
-        <div className="text-red-600 font-medium mb-4">Error: {error}</div>
-        <p className="text-sm text-slate-600">Check console for response details from /api/parties.</p>
-      </div>
-    );
+  const exportCSV = () => {
+    const header = ["Name", "Phone", "Address", "DOB", "Loyalty Points"];
+    const rows = visible.map(p => [p.name, p.phone, p.address || "", p.dob || "", p.loyaltyPoints || 0]);
+    const csvContent = [header, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `customers_${new Date().toLocaleDateString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <div className="w-12 h-12 border-4 border-[var(--kravy-brand)] border-t-transparent rounded-full animate-spin" />
+      <p className="text-[var(--kravy-text-muted)] font-bold animate-pulse">Loading Customer Directory...</p>
+    </div>
+  );
 
   return (
-    <div className="px-4 py-6 max-w-6xl mx-auto pt-24 transition-colors">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
-        <h1 className="text-3xl font-black text-[var(--kravy-text-primary)] tracking-tight">🧾 Customers & Parties</h1>
+    <>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pt-24 space-y-8 animate-in fade-in duration-700">
+        
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-[var(--kravy-brand)] rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <User className="text-white" size={20} />
+              </div>
+              <h1 className="text-3xl font-black text-[var(--kravy-text-primary)] tracking-tight lg:text-4xl">
+                Customer CRM
+              </h1>
+            </div>
+            <p className="text-[var(--kravy-text-muted)] font-medium max-w-md">Manage relationships, track loyalty, and view purchase history for your most valued customers.</p>
+          </div>
 
-        <div className="flex flex-wrap gap-2 items-center">
-          <div className="flex items-center gap-2">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search customers…"
-              className="px-4 py-2 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl w-64 outline-none focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm"
-            />
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="px-4 py-2 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl outline-none focus:ring-1 focus:ring-[var(--kravy-brand)] font-black uppercase tracking-widest text-[10px]">
-              <option value="name">Sort: Name</option>
-              <option value="phone">Sort: Phone</option>
-              <option value="dob">Sort: Birthday</option>
-            </select>
-            <button
-              onClick={() => setSortDir((s) => (s === "asc" ? "desc" : "asc"))}
-              className="px-4 py-2 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] rounded-xl hover:bg-[var(--kravy-surface-hover)] transition-colors"
-              title="Toggle sort direction"
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex bg-[var(--kravy-surface)] border border-[var(--kravy-border)] p-1 rounded-2xl shadow-sm mr-2">
+              <button 
+                onClick={() => saveViewPreference("grid")}
+                className={`p-2 rounded-xl transition-all ${viewMode === "grid" ? "bg-[var(--kravy-brand)] text-white shadow-md" : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg-2)]"}`}
+                title="Grid View"
+              >
+                <LayoutGrid size={20} />
+              </button>
+              <button 
+                onClick={() => saveViewPreference("table")}
+                className={`p-2 rounded-xl transition-all ${viewMode === "table" ? "bg-[var(--kravy-brand)] text-white shadow-md" : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg-2)]"}`}
+                title="Table View"
+              >
+                <List size={20} />
+              </button>
+            </div>
+            <button 
+              onClick={exportCSV}
+              className="flex items-center gap-2 px-5 py-3 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-[var(--kravy-bg-2)] transition-all transform hover:-translate-y-0.5 active:scale-95 shadow-sm"
             >
-              {sortDir === "asc" ? "↑ Asc" : "↓ Desc"}
+              <Download size={18} /> Export
+            </button>
+            <button 
+              onClick={() => { setEditing({ id: "new", name: "", phone: "", address: "", loyaltyPoints: 0 }); setModalOpen(true); }}
+              className="flex items-center gap-2 px-6 py-3 bg-[var(--kravy-brand)] text-white rounded-2xl font-black text-sm uppercase tracking-wider hover:shadow-xl hover:shadow-indigo-500/20 transition-all transform hover:-translate-y-0.5 active:scale-95"
+            >
+              <Plus size={18} /> Add Party
             </button>
           </div>
+        </div>
 
-          <div className="flex gap-2">
-            <button onClick={openAdd} className="px-5 py-2.5 bg-[var(--kravy-brand)] text-white font-black rounded-xl shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all">➕ Add Party</button>
-            <button onClick={exportCSV} className="px-5 py-2.5 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] font-black rounded-xl hover:bg-[var(--kravy-surface-hover)] transition-all">Export CSV</button>
-            <Link href="/parties/add" className="px-4 py-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hidden md:inline-flex items-center text-[10px] font-black uppercase tracking-widest">Add Page</Link>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard 
+            icon={<User className="text-blue-500" size={24} />} 
+            label="Total Customers" 
+            value={parties.length} 
+            sub="Loyal active base"
+          />
+          <StatCard 
+            icon={<Award className="text-amber-500" size={24} />} 
+            label="Top Tier" 
+            value={parties.filter(p => (p.loyaltyPoints || 0) > 500).length} 
+            sub="Above 500 points"
+          />
+          <StatCard 
+            icon={<CreditCard className="text-emerald-500" size={24} />} 
+            label="Recent Activity" 
+            value={parties.filter(p => new Date(p.createdAt) > new Date(Date.now() - 7*24*60*60*1000)).length} 
+            sub="Last 7 days"
+          />
+          <StatCard 
+            icon={<MapPin className="text-rose-500" size={24} />} 
+            label="Local Network" 
+            value={new Set(parties.map(p => p.address?.split(',')[0])).size} 
+            sub="Locations covered"
+          />
+        </div>
+
+        {/* Search & Filters */}
+        <div className="sticky top-20 z-10 bg-[rgba(var(--kravy-bg-rgb),0.8)] backdrop-blur-xl p-4 border border-[var(--kravy-border)] rounded-3xl shadow-lg flex flex-col md:flex-row items-center gap-4 transition-all hover:shadow-xl">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)]" size={20} />
+            <input 
+              type="text"
+              placeholder="Search by name, phone or location..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none focus:border-[var(--kravy-brand)] font-medium transition-all"
+            />
+          </div>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="flex bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-2xl p-1">
+              {(["name", "phone", "dob"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setSortBy(mode)}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${sortBy === mode ? 'bg-[var(--kravy-brand)] text-white shadow-lg' : 'text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg-2)]'}`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+            <button 
+              onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+              className="p-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl hover:bg-[var(--kravy-bg-2)] transition-all"
+            >
+              <Filter size={20} className={sortDir === 'desc' ? 'rotate-180 transition-transform' : 'transition-transform'} />
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile: card list */}
-      <div className="md:hidden space-y-3">
-        {visible.length === 0 && (
-          <div className="p-8 text-center bg-[var(--kravy-bg-2)]/50 border border-dashed border-[var(--kravy-border)] rounded-2xl text-[var(--kravy-text-muted)]">
-            No party records found match your search.
+        {/* Customers List / Table View */}
+        {visible.length === 0 ? (
+          <div className="py-20 text-center space-y-4">
+            <div className="w-20 h-20 bg-[var(--kravy-bg-2)] rounded-full flex items-center justify-center mx-auto mb-6">
+              <User className="text-[var(--kravy-text-muted)]" size={40} />
+            </div>
+            <h3 className="text-2xl font-black text-[var(--kravy-text-primary)]">No customers found</h3>
+            <p className="text-[var(--kravy-text-muted)] max-w-xs mx-auto">Try adjusting your search filters or add a new party member.</p>
           </div>
-        )}
-        {visible.map((p) => (
-          <div key={p.id} className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl p-5 shadow-sm">
-            <div className="flex justify-between items-start gap-3">
-              <div>
-                <div className="font-black text-[var(--kravy-text-primary)] text-lg">{p.name}</div>
-                <div className="text-xs font-black text-[var(--kravy-brand)] mt-0.5 font-mono">{p.phone}</div>
-                {p.address && <div className="text-sm text-[var(--kravy-text-muted)] mt-3 leading-relaxed">{p.address}</div>}
-              </div>
-
-              <div className="flex flex-col gap-3 items-end">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] px-2 py-1 rounded">{formatDate(p.dob)}</div>
-                <div className="flex gap-2">
-                  <button onClick={() => openEdit(p)} className="px-4 py-1.5 border border-[var(--kravy-border)] rounded-xl text-xs font-bold text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg-2)]">Edit</button>
-                  <button onClick={() => handleDelete(p.id)} className="px-4 py-1.5 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-bold hover:bg-rose-500 hover:text-white transition-all">Delete</button>
-                </div>
-              </div>
+        ) : viewMode === "grid" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paginatedParties.map((p) => (
+              <CustomerCard 
+                key={p.id} 
+                p={p} 
+                onEdit={() => { setEditing(p); setModalOpen(true); }}
+                onDelete={() => handleDelete(p.id)}
+                onViewHistory={() => fetchBillHistory(p)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-[var(--kravy-bg-2)]/50">
+                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] w-12 text-center">#</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Customer</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Contact</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Location</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Status</th>
+                    <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--kravy-border)]">
+                  {paginatedParties.map((p, idx) => {
+                    const actualIdx = (currentPage - 1) * pageSize + idx + 1;
+                    return (
+                      <tr key={p.id} className="hover:bg-[var(--kravy-bg-2)]/30 transition-colors group">
+                        <td className="px-6 py-5 text-center">
+                          <span className="text-xs font-black text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] w-6 h-6 rounded-md flex items-center justify-center mx-auto">{actualIdx}</span>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-4">
+                            <div 
+                              onClick={() => fetchBillHistory(p)}
+                              className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-indigo-500/10 group-hover:scale-110 transition-transform cursor-pointer"
+                            >
+                              {p.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="font-black text-[var(--kravy-text-primary)]">{p.name}</div>
+                              <div className="text-[10px] font-bold text-[var(--kravy-text-muted)]">Joined {new Date(p.createdAt).toLocaleDateString()}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="text-sm font-black text-[var(--kravy-brand)] font-mono">{p.phone}</div>
+                          <div className="text-[10px] font-medium text-[var(--kravy-text-muted)]">Birthday: {formatDate(p.dob)}</div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="text-sm text-[var(--kravy-text-muted)] font-medium max-w-[200px] truncate">{p.address || "—"}</div>
+                        </td>
+                        <td className="px-8 py-5">
+                          {(p.loyaltyPoints || 0) > 500 ? (
+                            <span className="px-3 py-1 bg-amber-500/10 text-amber-600 rounded-full text-[9px] font-black tracking-widest">GOLD</span>
+                          ) : (
+                            <span className="px-3 py-1 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-muted)] rounded-full text-[10px] font-black tracking-widest uppercase tracking-tight">SILVER</span>
+                          )}
+                        </td>
+                        <td className="px-8 py-5 text-right">
+                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => fetchBillHistory(p)} className="p-2.5 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-xl hover:bg-[var(--kravy-brand)] hover:text-white transition-all shadow-sm">
+                              <HistoryIcon size={16} />
+                            </button>
+                            <button onClick={() => { setEditing(p); setModalOpen(true); }} className="p-2.5 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hover:text-indigo-500 hover:border-indigo-500 transition-all">
+                              <Edit2 size={16} />
+                            </button>
+                            <button onClick={() => handleDelete(p.id)} className="p-2.5 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hover:text-rose-500 hover:border-rose-500 transition-all">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
-        ))}
+        )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 pt-6">
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(c => Math.max(1, c - 1))}
+              className="px-4 py-2 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] rounded-xl font-black text-xs uppercase disabled:opacity-30 hover:bg-[var(--kravy-bg-2)] transition-all"
+            >
+              Prev
+            </button>
+            <div className="flex items-center gap-1">
+              {[...Array(totalPages)].map((_, i) => (
+                <button 
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${currentPage === i + 1 ? 'bg-[var(--kravy-brand)] text-white shadow-lg shadow-indigo-500/20' : 'bg-[var(--kravy-surface)] text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg-2)]'}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+            <button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(c => Math.min(totalPages, c + 1))}
+              className="px-4 py-2 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] rounded-xl font-black text-xs uppercase disabled:opacity-30 hover:bg-[var(--kravy-bg-2)] transition-all"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Desktop / tablet: table */}
-      <div className="hidden md:block bg-[var(--kravy-surface)] rounded-2xl border border-[var(--kravy-border)] overflow-hidden shadow-xl">
-        <table className="min-w-full">
-          <thead className="bg-[var(--kravy-bg-2)]/50">
-            <tr>
-              <th className="py-4 px-6 text-left text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Customer Name</th>
-              <th className="py-4 px-6 text-left text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Phone</th>
-              <th className="py-4 px-6 text-left text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Address / Location</th>
-              <th className="py-4 px-6 text-left text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Birthday</th>
-              <th className="py-4 px-6 text-right text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visible.length === 0 && (
-              <tr>
-                <td colSpan={5} className="p-8 text-center text-sm text-[var(--kravy-text-muted)] italic">No records found.</td>
-              </tr>
-            )}
-            {visible.map((p) => (
-              <tr key={p.id} className="border-t border-[var(--kravy-border)] hover:bg-[var(--kravy-bg-2)]/30 transition-colors">
-                <td className="py-4 px-6 align-middle font-black text-[var(--kravy-text-primary)]">{p.name}</td>
-                <td className="py-4 px-6 align-middle font-black text-[var(--kravy-brand)] font-mono text-sm">{p.phone}</td>
-                <td className="py-4 px-6 align-middle text-sm text-[var(--kravy-text-muted)] line-clamp-1 font-medium italic">{p.address || "—"}</td>
-                <td className="py-4 px-6 align-middle text-sm text-[var(--kravy-text-primary)] font-black font-mono">{formatDate(p.dob)}</td>
-                <td className="py-4 px-6 align-middle text-right">
-                  <div className="inline-flex gap-2">
-                    <button onClick={() => openEdit(p)} className="px-4 py-1.5 border border-[var(--kravy-border)] rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-surface-hover)] transition-colors">Edit</button>
-                    <button onClick={() => handleDelete(p.id)} className="px-4 py-1.5 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">Delete</button>
+      {/* Modals & Drawers */}
+      {historyOpen && selectedParty && (
+          <SideDrawer 
+            title={`${selectedParty.name}'s History`} 
+            onClose={() => { setHistoryOpen(false); setSelectedParty(null); }}
+          >
+            <div className="space-y-6">
+              <div className="bg-[var(--kravy-bg-2)] p-6 rounded-[28px] border border-[var(--kravy-border)]">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">CRM Stats</span>
+                  <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 rounded-full text-[10px] font-black tracking-widest">
+                     <Award size={12} /> GOLD MEMBER
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-2xl font-black text-[var(--kravy-text-primary)]">{partyBills.length}</div>
+                    <div className="text-[10px] font-black uppercase text-[var(--kravy-text-muted)]">Total Bills</div>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  <div>
+                    <div className="text-2xl font-black text-emerald-500">₹{partyBills.reduce((s, b) => s + b.total, 0).toFixed(0)}</div>
+                    <div className="text-[10px] font-black uppercase text-[var(--kravy-text-muted)]">Lifetime Value</div>
+                  </div>
+                </div>
+              </div>
 
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`fixed right-8 bottom-8 px-6 py-4 rounded-2xl shadow-2xl z-[100] font-bold text-sm animate-in slide-in-from-bottom-5 ${toast.type === "success" ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"
-            }`}
-        >
-          {toast.text}
-        </div>
+              <div className="space-y-3">
+                <h4 className="text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] pl-2">Recent Bills</h4>
+                {loadingBills ? (
+                  <div className="py-20 text-center animate-pulse text-[var(--kravy-text-muted)] font-black text-sm tracking-widest">Fetching Orders...</div>
+                ) : partyBills.length === 0 ? (
+                  <div className="py-12 text-center text-[var(--kravy-text-muted)] font-bold italic">No bills found for this customer</div>
+                ) : (
+                  partyBills.map(bill => (
+                    <div key={bill.id} className="group p-4 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl hover:border-[var(--kravy-brand)] transition-all hover:shadow-md cursor-pointer">
+                      <div className="flex justify-between items-start mb-2">
+                         <div>
+                           <div className="text-sm font-black text-[var(--kravy-text-primary)]">{bill.billNumber}</div>
+                           <div className="text-[10px] font-bold text-[var(--kravy-text-muted)]">{formatDate(bill.createdAt)}</div>
+                         </div>
+                         <div className="text-right">
+                           <div className="text-sm font-black text-indigo-500">₹{bill.total.toFixed(2)}</div>
+                           <div className={`text-[10px] font-black uppercase ${bill.paymentStatus === 'Paid' ? 'text-emerald-500' : 'text-amber-500'}`}>{bill.paymentStatus}</div>
+                         </div>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-[var(--kravy-border)]">
+                         <span className="text-[10px] font-black text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] px-2 py-0.5 rounded-lg">{bill.paymentMode}</span>
+                         <Link 
+                          href={`/dashboard/reports/sales?search=${bill.billNumber}`}
+                          className="text-[10px] font-black text-[var(--kravy-brand)] flex items-center gap-1 hover:underline"
+                         >
+                           DETAILS <ArrowRight size={10} />
+                         </Link>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </SideDrawer>
       )}
 
-      {/* Modal (simple) */}
       {modalOpen && editing && (
-        <Modal onClose={() => { setModalOpen(false); setEditing(null); }}>
+        <Modal 
+          title={editing.id === "new" ? "New Customer" : "Edit Customer"} 
+          onClose={() => { setModalOpen(false); setEditing(null); }}
+        >
           <PartyForm
             initial={editing}
             onCancel={() => { setModalOpen(false); setEditing(null); }}
-            onSave={handleSave}
             saving={saving}
+            onSave={async (payload) => {
+              setSaving(true);
+              try {
+                const method = payload.id === "new" ? "POST" : "PUT";
+                const res = await fetch(`/api/parties`, {
+                  method,
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  if (payload.id === "new") setParties(p => [data, ...p]);
+                  else setParties(p => p.map(x => x.id === payload.id ? data : x));
+                  pushToast("success", payload.id === "new" ? "Added successfully" : "Updated successfully");
+                  setModalOpen(false);
+                } else {
+                  const errJson = await res.json();
+                  pushToast("error", errJson.error || "Save failed");
+                }
+              } catch (e) {
+                pushToast("error", "Error saving");
+              } finally {
+                setSaving(false);
+              }
+            }}
           />
         </Modal>
       )}
+
+      {toast && (
+        <div className={`fixed bottom-10 right-10 z-[100] px-6 py-4 rounded-2xl shadow-2xl font-black text-sm flex items-center gap-3 animate-in slide-in-from-right-10 duration-500 ${toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+           {toast.type === 'success' ? <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">✓</div> : "!"}
+           {toast.text}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ---------------- Sub-Components ---------------- */
+
+function StatCard({ icon, label, value, sub }: { icon: any, label: string, value: number | string, subText?: string, sub?: string }) {
+  return (
+    <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] p-6 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+      <div className="absolute -right-2 -top-2 w-20 h-20 bg-[var(--kravy-bg-2)] rounded-full opacity-50 group-hover:scale-110 transition-transform" />
+      <div className="relative z-[1]">
+        <div className="w-12 h-12 bg-[var(--kravy-bg-2)] rounded-2xl flex items-center justify-center mb-4">{icon}</div>
+        <div className="text-3xl font-black text-[var(--kravy-text-primary)] mb-1">{value}</div>
+        <div className="text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">{label}</div>
+        {sub && <div className="mt-4 text-[10px] font-bold text-[var(--kravy-text-muted)] flex items-center gap-1">
+          <ChevronRight size={10} className="text-[var(--kravy-brand)]" /> {sub}
+        </div>}
+      </div>
     </div>
   );
 }
 
-/* ----- Modal + PartyForm components (local) ----- */
-
-function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  // changed alignment so modal content starts below any fixed header (items-start + top padding)
+function CustomerCard({ p, onEdit, onDelete, onViewHistory }: { p: Party, onEdit: () => void, onDelete: () => void, onViewHistory: () => void }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-[70] w-full max-w-md bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] shadow-2xl p-8 overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="group bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] p-8 shadow-sm hover:shadow-2xl hover:border-[var(--kravy-brand)] transition-all flex flex-col items-center text-center relative overflow-hidden">
+      
+      {/* Loyalty Badge */}
+      {p.loyaltyPoints !== undefined && p.loyaltyPoints > 100 && (
+        <div className="absolute top-4 right-4 px-3 py-1 bg-[var(--kravy-brand)]/10 text-[var(--kravy-brand)] rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 animate-pulse">
+          <Award size={12} /> {p.loyaltyPoints} PTS
+        </div>
+      )}
+
+      {/* Avatar */}
+      <div 
+        onClick={onViewHistory}
+        className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-[28px] flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-indigo-500/20 mb-6 group-hover:scale-110 transition-transform cursor-pointer"
+      >
+        {p.name.charAt(0)}
+      </div>
+
+      <h3 className="text-xl font-black text-[var(--kravy-text-primary)] mb-2 group-hover:text-[var(--kravy-brand)] transition-colors line-clamp-1">{p.name}</h3>
+      <div className="flex items-center gap-2 text-[var(--kravy-brand)] font-black text-sm font-mono mb-4">
+        <Phone size={14} /> {p.phone}
+      </div>
+
+      <div className="w-full flex flex-col gap-2 mb-6">
+        <div className="flex items-center justify-center gap-2 text-xs text-[var(--kravy-text-muted)] font-medium italic line-clamp-1">
+           <MapPin size={12} /> {p.address || "Address hidden"}
+        </div>
+        <div className="flex items-center justify-center gap-2 text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider">
+           <Calendar size={12} /> DOB: {formatDate(p.dob)}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-center gap-4 w-full pt-6 border-t border-[var(--kravy-border)]">
+        <button 
+          onClick={onViewHistory}
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[var(--kravy-brand)] hover:text-white transition-all"
+        >
+          <HistoryIcon size={14} /> History
+        </button>
+        <div className="flex gap-2">
+          <button onClick={onEdit} className="p-3 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-2xl hover:text-indigo-500 hover:border-indigo-500 transition-all">
+            <Edit2 size={16} />
+          </button>
+          <button onClick={onDelete} className="p-3 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-2xl hover:text-rose-500 hover:border-rose-500 transition-all">
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SideDrawer({ title, children, onClose }: { title: string, children: any, onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[100] flex justify-end">
+      <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-500" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-[rgba(var(--kravy-surface-rgb),0.95)] border-l border-[var(--kravy-border)] shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col h-full">
+        <div className="p-8 pb-4 flex items-center justify-between">
+          <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] tracking-tight">{title}</h3>
+          <button onClick={onClose} className="p-2 bg-[var(--kravy-bg-2)] rounded-xl text-[var(--kravy-text-muted)] hover:text-rose-500 transition-all"><X size={20} /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-8 pt-2 custom-scrollbar">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Modal({ title, children, onClose }: { title: string, children: any, onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-300" onClick={onClose} />
+      <div className="relative w-full max-w-xl bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[40px] shadow-2xl p-10 animate-in zoom-in-95 duration-300">
+        <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] tracking-tight mb-8 flex items-center gap-3">
+          <Plus size={24} className="text-[var(--kravy-brand)]" /> {title}
+        </h3>
         {children}
       </div>
     </div>
   );
 }
+
 function PartyForm({ initial, onCancel, onSave, saving }: {
   initial: Party;
   onCancel: () => void;
   onSave: (p: Party) => Promise<void>;
   saving: boolean;
 }) {
-  // sanitize helper: force empty string for null/undefined
-  const clean = (v: any) => (v === null || v === undefined ? "" : v);
-
-  // initial form state always uses strings for inputs
-  const [form, setForm] = useState<Party>({
-    id: initial.id,
-    name: clean(initial.name),
-    phone: clean(initial.phone),
-    address: clean(initial.address),
-    dob: clean(initial.dob),
-  });
-
-  // keep form in sync when initial changes (deep clone)
-  useEffect(() => {
-    setForm({
-      id: initial.id,
-      name: clean(initial.name),
-      phone: clean(initial.phone),
-      address: clean(initial.address),
-      dob: clean(initial.dob),
-    });
-  }, [initial]);
-
-  // Reset clears fields (user asked reset = wipe)
-  function handleReset() {
-    setForm({ id: initial.id === "new" ? "new" : initial.id, name: "", phone: "", address: "", dob: "" });
-  }
+  const [form, setForm] = useState<Party>({ ...initial });
 
   return (
-    <form
-      onSubmit={async (e) => {
-        e.preventDefault();
-        await onSave(form);
-      }}
-      className="space-y-6"
-    >
-      <div>
-        <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] tracking-tight">{initial.id === "new" ? "New Customer" : "Edit Customer"}</h3>
-        <p className="text-sm text-[var(--kravy-text-muted)] mt-1">Fill in the details below to manage party.</p>
-      </div>
-
-      <div className="space-y-4">
-        <div className="grid gap-2">
-          <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1">Full Name</label>
-          <input
+    <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] ml-2">Display Name *</label>
+          <input 
+            required
             value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-            placeholder="e.g. John Doe"
-            className="w-full px-4 py-3 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
+            onChange={e => setForm({...form, name: e.target.value})}
+            className="w-full px-5 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none focus:border-[var(--kravy-brand)] font-medium"
           />
         </div>
-
-        <div className="grid gap-2">
-          <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1">Phone Number</label>
-          <input
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] ml-2">Phone Number *</label>
+          <input 
+            required
             value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            required
-            placeholder="e.g. +91 9876543210"
-            className="w-full px-4 py-3 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 font-medium font-mono"
+            onChange={e => setForm({...form, phone: e.target.value})}
+            className="w-full px-5 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none focus:border-[var(--kravy-brand)] font-mono"
           />
         </div>
-
-        <div className="grid gap-2">
-          <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1">Complete Address</label>
-          <textarea
-            value={form.address}
-            onChange={(e: any) => setForm({ ...form, address: e.target.value })}
-            rows={2}
-            placeholder="Street, City, Building..."
-            className="w-full px-4 py-3 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 font-medium resize-none"
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] ml-2">Date of Birth</label>
+          <input 
+            type="date"
+            value={form.dob ? new Date(form.dob).toISOString().split('T')[0] : ""}
+            onChange={e => setForm({...form, dob: e.target.value})}
+            className="w-full px-5 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none focus:border-[var(--kravy-brand)]"
           />
         </div>
-
-        <div className="grid gap-2">
-          <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1">Birthday (YYYY-MM-DD)</label>
-          <input
-            value={form.dob ?? ""}
-            onChange={(e) => setForm({ ...form, dob: e.target.value })}
-            placeholder="1995-12-25"
-            className="w-full px-4 py-3 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] ml-2">Loyalty Points</label>
+          <input 
+            type="number"
+            value={form.loyaltyPoints}
+            onChange={e => setForm({...form, loyaltyPoints: parseInt(e.target.value) || 0})}
+            className="w-full px-5 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none focus:border-[var(--kravy-brand)]"
           />
         </div>
       </div>
-
-      <div className="flex gap-3 justify-end pt-4">
-        <button type="button" onClick={onCancel} className="flex-1 py-3 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-[var(--kravy-bg-2)] transition-all">Cancel</button>
-        <button type="submit" disabled={saving} className="flex-[2] py-3 bg-[var(--kravy-brand)] text-white font-black rounded-2xl shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all text-xs uppercase tracking-widest">
-          {saving ? "Saving Record..." : "Confirm & Save"}
+      <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] ml-2">Delivery Address</label>
+          <textarea 
+            rows={2}
+            value={form.address}
+            onChange={e => setForm({...form, address: e.target.value})}
+            className="w-full px-5 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none focus:border-[var(--kravy-brand)] resize-none"
+          />
+      </div>
+      <div className="flex gap-4 pt-4">
+        <button onClick={onCancel} type="button" className="flex-1 py-4 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[var(--kravy-border)] transition-all">Cancel</button>
+        <button disabled={saving} type="submit" className="flex-[2] py-4 bg-[var(--kravy-brand)] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all">
+          {saving ? "Processing..." : "Confirm & Save Customer"}
         </button>
       </div>
     </form>
-  );
+  )
 }

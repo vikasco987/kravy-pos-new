@@ -162,6 +162,8 @@ model User {
   ownerId      String?
   allowedPaths String[]
 
+  uiPreferences Json?    @default("{}")
+
   createdAt    DateTime @default(now())
 
   activities ActivityLog[]
