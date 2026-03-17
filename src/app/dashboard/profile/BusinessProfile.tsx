@@ -177,6 +177,8 @@ export default function BusinessProfile({
           upiQrEnabled: data.upiQrEnabled,
           greetingMessage: data.greetingMessage,
           businessNameSize: data.businessNameSize,
+          fssaiNumber: data.fssaiNumber,
+          fssaiEnabled: data.fssaiEnabled,
         }}
         onCancel={() => setEditMode(false)}
         onSuccess={() => {
@@ -314,6 +316,15 @@ export default function BusinessProfile({
               <Info label="State" value={data.state} />
               <Info label="District" value={data.district} />
               <Info label="PIN Code" value={data.pinCode} />
+              <Info label="FSSAI Number" value={data.fssaiNumber} fallback="Not Added" />
+              {data.fssaiNumber && (
+                <div className="flex justify-between gap-4 text-xs py-1">
+                  <span className="text-[var(--kravy-text-muted)] font-medium italic">Print FSSAI on Bill</span>
+                  <span className={`font-bold ${data.fssaiEnabled ? "text-green-500" : "text-red-500"}`}>
+                    {data.fssaiEnabled ? "ENABLED" : "DISABLED"}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

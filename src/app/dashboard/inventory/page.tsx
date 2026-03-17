@@ -20,6 +20,7 @@ type InventoryItem = {
   barcode?: string;
   taxStatus?: string;
   gst?: number;
+  hsnCode?: string;
 };
 
 export default function InventoryPage() {
@@ -48,6 +49,7 @@ export default function InventoryPage() {
     barcode: "",
     taxStatus: "Without Tax",
     gst: 0,
+    hsnCode: "",
   });
 
   const [taxEnabled, setTaxEnabled] = useState(true);
@@ -119,6 +121,7 @@ export default function InventoryPage() {
       barcode: item.barcode || "",
       taxStatus: item.taxStatus || "Without Tax",
       gst: item.gst || 0,
+      hsnCode: item.hsnCode || "",
     });
     setIsModalOpen(true);
   };
@@ -222,7 +225,7 @@ export default function InventoryPage() {
             onClick={() => {
               setEditingItem(null);
               setFormData({
-                name: "", categoryId: "", currentStock: 0, reorderLevel: 0, openingStock: 0, unit: "pcs", price: 0, sellingPrice: 0, barcode: "", taxStatus: "Without Tax", gst: 0
+                name: "", categoryId: "", currentStock: 0, reorderLevel: 0, openingStock: 0, unit: "pcs", price: 0, sellingPrice: 0, barcode: "", taxStatus: "Without Tax", gst: 0, hsnCode: ""
               });
               setIsModalOpen(true);
             }}
@@ -619,6 +622,17 @@ export default function InventoryPage() {
                           GST @ {val}%
                         </button>
                       ))}
+                    </div>
+
+                    <div className="space-y-1.5 pt-2">
+                      <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest px-1">HSN/SAC Code</label>
+                      <input
+                        type="text"
+                        className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl px-4 py-3 text-sm font-bold text-[var(--kravy-text-primary)] outline-none focus:border-[var(--kravy-brand)] transition-all shadow-inner shadow-black/5"
+                        placeholder="e.g. 9963"
+                        value={formData.hsnCode}
+                        onChange={(e) => setFormData({...formData, hsnCode: e.target.value})}
+                      />
                     </div>
                   </div>
                 )}

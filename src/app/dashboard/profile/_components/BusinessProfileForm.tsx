@@ -36,6 +36,9 @@ const schema = z.object({
   menuLinkEnabled: z.boolean().optional(),
   greetingMessage: z.string().optional(),
   businessNameSize: z.string().optional(),
+  fssaiNumber: z.string().optional(),
+  fssaiEnabled: z.boolean().optional(),
+  hsnEnabled: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -124,6 +127,9 @@ export default function BusinessProfileForm({
         menuLinkEnabled: values.menuLinkEnabled,
         greetingMessage: values.greetingMessage,
         businessNameSize: values.businessNameSize,
+        fssaiNumber: values.fssaiNumber ?? null,
+        fssaiEnabled: values.fssaiEnabled ?? false,
+        hsnEnabled: values.hsnEnabled ?? false,
       };
 
       const res = await fetch("/api/profile", {
@@ -266,6 +272,33 @@ export default function BusinessProfileForm({
 
         <Input {...register("pinCode")} placeholder="PIN Code" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
         <Input {...register("gstNumber")} placeholder="GST Number" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
+        
+        <div className="flex flex-col gap-4">
+          <Input {...register("fssaiNumber")} placeholder="FSSAI Number" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
+          <label className="flex items-center gap-3 cursor-pointer bg-[var(--kravy-bg-2)] p-4 rounded-xl border border-[var(--kravy-border)] hover:border-indigo-500/50 transition-colors">
+            <input 
+              type="checkbox" 
+              {...register("fssaiEnabled")} 
+              className="w-5 h-5 rounded min-w-[20px] accent-[var(--kravy-brand)]"
+            />
+            <div>
+              <p className="text-sm font-bold text-[var(--kravy-text-primary)]">Enable FSSAI on Bill</p>
+              <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Prints your FSSAI license number on receipts</p>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3 cursor-pointer bg-[var(--kravy-bg-2)] p-4 rounded-xl border border-[var(--kravy-border)] hover:border-indigo-500/50 transition-colors">
+            <input 
+              type="checkbox" 
+              {...register("hsnEnabled")} 
+              className="w-5 h-5 rounded min-w-[20px] accent-[var(--kravy-brand)]"
+            />
+            <div>
+              <p className="text-sm font-bold text-[var(--kravy-text-primary)]">Enable HSN on Bill</p>
+              <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Prints HSN codes for products on receipts</p>
+            </div>
+          </label>
+        </div>
       </Section>
 
       {/* MEDIA */}
@@ -323,6 +356,9 @@ export default function BusinessProfileForm({
               </div>
             )}
             {watchedValues.gstNumber && <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">GSTIN: {watchedValues.gstNumber}</div>}
+            {(watchedValues.fssaiNumber && watchedValues.fssaiEnabled) && (
+              <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">FSSAI: {watchedValues.fssaiNumber}</div>
+            )}
             
             <div className="text-center text-[9px] mt-1.5 opacity-90 text-[10px]">
               <div>Bill No: SV-SAMPLE</div>

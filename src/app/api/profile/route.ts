@@ -80,6 +80,9 @@ export async function POST(request: Request) {
         menuLinkEnabled: body.menuLinkEnabled !== undefined ? body.menuLinkEnabled : undefined,
         greetingMessage: body.greetingMessage !== undefined ? body.greetingMessage : undefined,
         businessNameSize: body.businessNameSize !== undefined ? body.businessNameSize : undefined,
+        fssaiNumber: body.fssaiNumber !== undefined ? body.fssaiNumber : undefined,
+        fssaiEnabled: body.fssaiEnabled !== undefined ? body.fssaiEnabled : undefined,
+        hsnEnabled: body.hsnEnabled !== undefined ? body.hsnEnabled : undefined,
       },
 
       create: {
@@ -110,6 +113,9 @@ export async function POST(request: Request) {
         menuLinkEnabled: body.menuLinkEnabled ?? true,
         greetingMessage: body.greetingMessage ?? "Thank You 🙏 Visit Again!",
         businessNameSize: body.businessNameSize ?? "large",
+        fssaiNumber: body.fssaiNumber ?? null,
+        fssaiEnabled: body.fssaiEnabled ?? false,
+        hsnEnabled: body.hsnEnabled ?? false,
       },
     });
 

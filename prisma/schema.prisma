@@ -97,6 +97,7 @@ model Item {
   mrName         String?
   taName         String?
   upsellText     String?
+  hsnCode        String?
 
   user    User   @relation(fields: [userId], references: [id])
 
@@ -315,6 +316,10 @@ model BusinessProfile {
 
   greetingMessage    String?  @default("Thank You 🙏 Visit Again!")
   businessNameSize   String?  @default("large") // medium, large, xlarge
+
+  fssaiNumber        String?
+  fssaiEnabled       Boolean  @default(false)
+  hsnEnabled         Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

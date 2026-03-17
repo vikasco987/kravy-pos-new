@@ -197,6 +197,8 @@
 //           name: item.name,
 //           qty: 1,
 //           rate: item.price,
+//           gst: item.gst || 0,
+//           hsnCode: item.hsnCode || "",
 //         },
 //       ];
 //     });
@@ -1123,6 +1125,9 @@ type MenuItem = {
     id: string;
     name: string;
   } | null;
+  gst?: number;
+  hsnCode?: string;
+  taxStatus?: string;
 };
 
 type BillItem = {
@@ -1130,6 +1135,33 @@ type BillItem = {
   name: string;
   qty: number;
   rate: number;
+  gst?: number;
+  hsnCode?: string;
+  taxStatus?: string;
+};
+
+const numberToWords = (num: number): string => {
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  
+  const convert = (n: number): string => {
+    if (n < 20) return ones[n];
+    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' and ' + convert(n % 100) : '');
+    if (n < 100000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000) : '');
+    if (n < 10000000) return convert(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 !== 0 ? ' ' + convert(n % 100000) : '');
+    return convert(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 !== 0 ? ' ' + convert(n % 10000000) : '');
+  };
+
+  if (num === 0) return 'Zero Only';
+  const integerPart = Math.floor(Math.abs(num));
+  const decimalPart = Math.round((Math.abs(num) - integerPart) * 100);
+  
+  let result = convert(integerPart) + ' Rupees';
+  if (decimalPart > 0) {
+    result += ' and ' + convert(decimalPart) + ' Paise';
+  }
+  return result + ' Only';
 };
 
 /* ================= SUB-COMPONENTS ================= */
@@ -1313,7 +1345,7 @@ export default function CheckoutClient() {
           const sPrice = Number(it.sellingPrice);
           const bPrice = Number(it.price);
           const finalPrice = (!isNaN(sPrice) && it.sellingPrice !== null) ? sPrice : (!isNaN(bPrice) ? bPrice : 0);
-          return { ...it, price: finalPrice };
+          return { ...it, price: finalPrice, gst: it.gst, hsnCode: it.hsnCode, taxStatus: it.taxStatus };
         });
         setMenuItems(mapped);
 
@@ -1411,7 +1443,15 @@ export default function CheckoutClient() {
         return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
       }
       kravy.add(); // new item added — bigger pop sound
-      return [...prev, { id: item.id, name: item.name, qty: 1, rate: item.price }];
+      return [...prev, { 
+        id: item.id, 
+        name: item.name, 
+        qty: 1, 
+        rate: item.price,
+        gst: item.gst || 0,
+        hsnCode: item.hsnCode || "",
+        taxStatus: item.taxStatus || "Without Tax"
+      }];
     });
   }
 
@@ -1480,6 +1520,9 @@ export default function CheckoutClient() {
     taxEnabled?: boolean;
     taxRate?: number;
     upiQrEnabled?: boolean;
+    fssaiNumber?: string;
+    fssaiEnabled?: boolean;
+    hsnEnabled?: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -1501,6 +1544,8 @@ export default function CheckoutClient() {
             logoUrl: data.logoUrl,
             taxEnabled: data.taxEnabled ?? true,
             taxRate: data.taxRate ?? 5.0,
+            fssaiNumber: data.fssaiNumber,
+            fssaiEnabled: data.fssaiEnabled ?? false,
           });
         }
       } catch (err) {
@@ -1512,12 +1557,48 @@ export default function CheckoutClient() {
 
   /* ================= TOTALS ================= */
   const taxActive = business?.taxEnabled ?? true;
-  const currentTaxRate = business?.taxRate ?? 5.0;
+  
+  const taxGroups = items.reduce((acc: any, item) => {
+    const rate = item.gst || 0;
+    const gross = item.qty * item.rate;
+    let taxable = gross;
+    let gst = 0;
+
+    if (item.taxStatus === "With Tax") {
+      taxable = gross / (1 + rate / 100);
+      gst = gross - taxable;
+    } else {
+      taxable = gross;
+      gst = (gross * rate) / 100;
+    }
+
+    if (!acc[rate]) acc[rate] = { rate, taxable: 0, cgst: 0, sgst: 0, totalTax: 0 };
+    acc[rate].taxable += taxable;
+    acc[rate].cgst += gst / 2;
+    acc[rate].sgst += gst / 2;
+    acc[rate].totalTax += gst;
+    return acc;
+  }, {});
+
+  const taxBreakup = Object.values(taxGroups).map((g: any) => ({
+    rate: g.rate,
+    taxable: Number(g.taxable.toFixed(2)),
+    cgst: Number(g.cgst.toFixed(2)),
+    sgst: Number(g.sgst.toFixed(2)),
+    totalTax: Number(g.totalTax.toFixed(2))
+  }));
+
+  const totalTaxable = Number(taxBreakup.reduce((a, b) => a + b.taxable, 0).toFixed(2));
+  const totalGst = Number(taxBreakup.reduce((a, b) => a + b.totalTax, 0).toFixed(2));
   const subtotal = Number(items.reduce((a, i) => a + i.qty * i.rate, 0).toFixed(2));
-  const gstAmount = taxActive ? Number(((subtotal * currentTaxRate) / 100).toFixed(2)) : 0;
-  const cgst = Number((gstAmount / 2).toFixed(2));
-  const sgst = Number((gstAmount / 2).toFixed(2));
-  const finalTotal = Number((subtotal + gstAmount).toFixed(2));
+  
+  // If items are "With Tax", subtotal already includes tax.
+  // If items are "Without Tax", finalTotal = subtotal + tax.
+  // Correct approach: Grand Total is sum of (Taxable + Tax) for all items.
+  const finalTotal = Number((totalTaxable + totalGst).toFixed(2));
+  const gstAmount = totalGst;
+  const cgst = Number((totalGst / 2).toFixed(2));
+  const sgst = Number((totalGst / 2).toFixed(2));
 
   /* ================= PAYMENT STATE ================= */
   const [paymentMode, setPaymentMode] = useState<"Cash" | "UPI" | "Card">("Cash");
@@ -2367,6 +2448,7 @@ export default function CheckoutClient() {
             </div>
           )}
           {business?.gstNumber && <div className="text-center text-[9px]">GSTIN: {business.gstNumber}</div>}
+          {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[9px]">FSSAI: {business.fssaiNumber}</div>}
           <div className="text-center text-[9px] mt-1">
             <div>Bill No: {billNumber}</div>
             <div>Date: {billDate}</div>
@@ -2379,28 +2461,71 @@ export default function CheckoutClient() {
             </div>
           )}
           <div className="my-1 border-t border-dashed" />
-          <div className="flex justify-between font-semibold text-[9px]">
-            <span className="flex-1 min-w-0 pr-1">Item</span>
-            <span className="w-[7mm] text-center shrink-0">Qty</span>
-            <span className="w-[10mm] text-right shrink-0">Rate</span>
-            <span className="w-[11mm] text-right shrink-0">Total</span>
-          </div>
-          <div className="border-t border-dashed my-1" />
+          <div className="my-1 border-t border-dashed" />
           {items.map((i) => (
-            <div key={i.id} className="flex justify-between text-[9px] mb-0.5">
-              <span className="flex-1 min-w-0 truncate pr-1">{i.name}</span>
-              <span className="w-[7mm] text-center shrink-0">{i.qty}</span>
-              <span className="w-[10mm] text-right shrink-0">{i.rate.toFixed(2)}</span>
-              <span className="w-[11mm] text-right shrink-0">{(i.qty * i.rate).toFixed(2)}</span>
+            <div key={i.id} className="mb-1.5">
+              <div className="flex justify-between text-[9px] font-bold">
+                <span className="flex-1 min-w-0 pr-1 truncate">{i.name}</span>
+                <span className="w-[11mm] text-right shrink-0">{(i.qty * i.rate).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-[8px] text-gray-600">
+                <span>{i.qty} x {i.rate.toFixed(2)}</span>
+                <span>{((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} {taxActive ? `| GST: ${i.gst || 0}%` : ""}</span>
+              </div>
             </div>
           ))}
           <div className="my-1 border-t border-dashed" />
-          <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
-          {taxActive && <div className="flex justify-between"><span>GST ({currentTaxRate}%)</span><span>₹{gstAmount.toFixed(2)}</span></div>}
-          <div className="border-t border-dashed my-1" />
-          <div className="flex justify-between font-bold text-[11px]"><span>GRAND TOTAL</span><span>₹{finalTotal.toFixed(2)}</span></div>
-          <div className="border-t border-dashed my-1" />
-          <div className="text-center text-[9px]">Payment: {paymentMode}</div>
+          
+          <div className="space-y-0.5">
+            <div className="flex justify-between text-[9px]"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
+            {taxActive && (
+              <>
+                <div className="flex justify-between text-[9px]"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>
+                <div className="flex justify-between text-[9px]"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
+              </>
+            )}
+            <div className="border-t border-dashed my-1" />
+            <div className="flex justify-between font-bold text-[11px] bg-black text-white px-1 py-0.5">
+              <span>GRAND TOTAL</span>
+              <span>₹{finalTotal.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {taxActive && taxBreakup.length > 0 && (
+            <div className="mt-3">
+              <div className="text-[8px] font-bold border-b border-dashed mb-1 pb-0.5">GST TAX BREAKUP</div>
+              <table className="w-full text-[8px] border-collapse">
+                <thead>
+                  <tr className="border-b border-dashed">
+                    <th className="text-left font-bold">Rate</th>
+                    <th className="text-right font-bold">Taxable</th>
+                    <th className="text-right font-bold">CGST</th>
+                    <th className="text-right font-bold">SGST</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {taxBreakup.map((g, idx) => (
+                    <tr key={idx}>
+                      <td className="text-left">{g.rate}%</td>
+                      <td className="text-right">{g.taxable.toFixed(2)}</td>
+                      <td className="text-right">{g.cgst.toFixed(2)}</td>
+                      <td className="text-right">{g.sgst.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="border-t border-dashed mt-1" />
+            </div>
+          )}
+
+          <div className="mt-2 text-[8px] italic font-medium">
+            Amount in Words: {numberToWords(finalTotal)}
+          </div>
+
+          <div className="mt-3 border-t border-dashed pt-1 flex justify-between text-[8px]">
+            <span>Payment: {paymentMode}</span>
+            <span>Status: {paymentStatus}</span>
+          </div>
           
           {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
             <div className="mt-2 text-center text-[9px] font-bold border-t border-dashed pt-2">
@@ -2420,8 +2545,8 @@ export default function CheckoutClient() {
               )}
             </div>
           )}
-          {business?.businessTagLine && <div className="text-center text-[9px] mt-1">{business.businessTagLine}</div>}
-          <div className="text-center font-semibold mt-1">Thank you 🙏</div>
+          {business?.businessTagLine && <div className="text-center text-[9px] mt-1 italic opacity-80">{business.businessTagLine}</div>}
+          <div className="text-center font-bold text-[11px] mt-2">THANK YOU 🙏 VISIT AGAIN</div>
         </div>
 
         {/* ================= PRINT KOT (58mm) ================= */}
@@ -2772,6 +2897,7 @@ export default function CheckoutClient() {
                     </div>
                   )}
                   {business?.gstNumber && <div className="text-center text-[9px]">GSTIN: {business.gstNumber}</div>}
+                  {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[9px]">FSSAI: {business.fssaiNumber}</div>}
                   <div className="text-center text-[9px] mt-1">
                     <div>Bill No: {billNumber}</div>
                     <div>Date: {billDate}</div>
@@ -2784,28 +2910,71 @@ export default function CheckoutClient() {
                     </div>
                   )}
                   <div className="my-1 border-t border-dashed border-gray-400" />
-                  <div className="flex justify-between font-semibold text-[9px]">
-                    <span className="flex-1 min-w-0 pr-1">Item</span>
-                    <span className="w-[7mm] text-center shrink-0">Qty</span>
-                    <span className="w-[10mm] text-right shrink-0">Rate</span>
-                    <span className="w-[11mm] text-right shrink-0">Total</span>
-                  </div>
-                  <div className="border-t border-dashed border-gray-400 my-1" />
+                  <div className="my-1 border-t border-dashed border-gray-400" />
                   {items.map((i) => (
-                    <div key={i.id} className="flex justify-between text-[9px] mb-0.5">
-                      <span className="flex-1 min-w-0 truncate pr-1">{i.name}</span>
-                      <span className="w-[7mm] text-center shrink-0">{i.qty}</span>
-                      <span className="w-[10mm] text-right shrink-0">{i.rate.toFixed(2)}</span>
-                      <span className="w-[11mm] text-right shrink-0">{(i.qty * i.rate).toFixed(2)}</span>
+                    <div key={i.id} className="mb-1.5">
+                      <div className="flex justify-between text-[9px] font-bold">
+                        <span className="flex-1 min-w-0 pr-1 truncate">{i.name}</span>
+                        <span className="w-[11mm] text-right shrink-0">{(i.qty * i.rate).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-[8px] text-gray-600">
+                        <span>{i.qty} x {i.rate.toFixed(2)}</span>
+                        <span>{((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} {taxActive ? `| GST: ${i.gst || 0}%` : ""}</span>
+                      </div>
                     </div>
                   ))}
                   <div className="my-1 border-t border-dashed border-gray-400" />
-                  <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
-                  {taxActive && <div className="flex justify-between"><span>GST ({currentTaxRate}%)</span><span>₹{gstAmount.toFixed(2)}</span></div>}
-                  <div className="border-t border-dashed border-gray-400 my-1" />
-                  <div className="flex justify-between font-bold text-[11px]"><span>GRAND TOTAL</span><span>₹{finalTotal.toFixed(2)}</span></div>
-                  <div className="border-t border-dashed border-gray-400 my-1" />
-                  <div className="text-center text-[9px]">Payment: {paymentMode}</div>
+                  
+                  <div className="space-y-0.5">
+                    <div className="flex justify-between text-[9px]"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
+                    {taxActive && (
+                      <>
+                        <div className="flex justify-between text-[9px]"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-[9px]"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
+                      </>
+                    )}
+                    <div className="border-t border-dashed border-gray-400 my-1" />
+                    <div className="flex justify-between font-bold text-[11px] bg-black text-white px-1 py-0.5">
+                      <span>GRAND TOTAL</span>
+                      <span>₹{finalTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {taxActive && taxBreakup.length > 0 && (
+                    <div className="mt-3">
+                      <div className="text-[8px] font-bold border-b border-dashed border-gray-400 mb-1 pb-0.5">GST TAX BREAKUP</div>
+                      <table className="w-full text-[8px] border-collapse">
+                        <thead>
+                          <tr className="border-b border-dashed border-gray-400">
+                            <th className="text-left font-bold">Rate</th>
+                            <th className="text-right font-bold">Taxable</th>
+                            <th className="text-right font-bold">CGST</th>
+                            <th className="text-right font-bold">SGST</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {taxBreakup.map((g, idx) => (
+                            <tr key={idx}>
+                              <td className="text-left">{g.rate}%</td>
+                              <td className="text-right">{g.taxable.toFixed(2)}</td>
+                              <td className="text-right">{g.cgst.toFixed(2)}</td>
+                              <td className="text-right">{g.sgst.toFixed(2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <div className="border-t border-dashed border-gray-400 mt-1" />
+                    </div>
+                  )}
+
+                  <div className="mt-2 text-[8px] italic font-medium">
+                    Amount in Words: {numberToWords(finalTotal)}
+                  </div>
+
+                  <div className="mt-3 border-t border-dashed border-gray-400 pt-1 flex justify-between text-[8px]">
+                    <span>Payment: {paymentMode}</span>
+                    <span>Status: {paymentStatus}</span>
+                  </div>
                   
                   {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
                     <div className="mt-2 text-center text-[9px] font-bold border-t border-dashed border-gray-400 pt-2">
@@ -2825,8 +2994,8 @@ export default function CheckoutClient() {
                       )}
                     </div>
                   )}
-                  {business?.businessTagLine && <div className="text-center text-[9px] mt-1">{business.businessTagLine}</div>}
-                  <div className="text-center font-semibold mt-1">Thank you 🙏</div>
+                  {business?.businessTagLine && <div className="text-center text-[9px] mt-1 italic opacity-80">{business.businessTagLine}</div>}
+                  <div className="text-center font-bold text-[11px] mt-2">THANK YOU 🙏 VISIT AGAIN</div>
                 </div>
               </div>
             </div>

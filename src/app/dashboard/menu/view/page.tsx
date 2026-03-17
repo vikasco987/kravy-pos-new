@@ -422,6 +422,7 @@ type MenuItem = {
   upsellText?: string | null;
   taxStatus?: string | null;
   gst?: number | null;
+  hsnCode?: string | null;
 };
 
 type MenuCategory = {
@@ -1004,6 +1005,16 @@ export default function ViewMenuPage() {
                           GST @ {val}%
                         </button>
                       ))}
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">HSN/SAC Code</label>
+                      <input
+                        className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+                        placeholder="e.g. 9963"
+                        value={local.hsnCode ?? ""}
+                        onChange={(e) => setLocal({ ...local, hsnCode: e.target.value })}
+                      />
                     </div>
                   </div>
                 )}
