@@ -4,7 +4,7 @@ import { getEffectiveClerkId } from "@/lib/auth-utils";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import cloudinary from "@/lib/cloudinary";
 import QRCode from "qrcode";
-import { ObjectId } from "bson"; // BSON is already in package.json
+import { ObjectId } from "mongodb";
 
 export async function GET(
   req: NextRequest,
