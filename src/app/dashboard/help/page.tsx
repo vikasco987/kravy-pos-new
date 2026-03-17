@@ -13,7 +13,8 @@ import {
   ChevronRight, 
   Send,
   Lock,
-  Zap
+  Zap,
+  Percent
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
@@ -37,6 +38,7 @@ export default function HelpPage() {
     { id: 1, name: "Getting Started", icon: <Book size={24} />, description: "Learn the basics of Kravy POS", articles: 12 },
     { id: 2, name: "Billing & Workflow", icon: <FileText size={24} />, description: "Master billing operations", articles: 8, href: "/dashboard/docs/workflow" },
     { id: 3, name: "Menu Management", icon: <MessageSquare size={24} />, description: "Manage your menu items", articles: 15, href: "/dashboard/docs/menu-management" },
+    { id: 7, name: "GST & HSN Billing", icon: <Percent size={24} />, description: "Setup professional GST bills", articles: 1, href: "/dashboard/docs/gst-billing" },
     { id: 4, name: "Video Tutorials", icon: <Video size={24} />, description: "Watch step-by-step guides", articles: 6 },
     ...(isAdmin ? [
       { 
@@ -79,6 +81,16 @@ export default function HelpPage() {
       question: "Is my data secure?",
       answer: "Absolutely! We use industry-standard encryption and regular backups to ensure your data is always safe and secure.",
       category: "Security"
+    },
+    {
+      question: "Bill par GST aur HSN kaise dikhayein?",
+      answer: "Profile section mein jaiye aur 'Enable Tax' aur 'Enable HSN on Bill' options ko tik karein. Isse aapke bills par automatic tax calculation aur HSN codes dikhna shuru ho jayenge.",
+      category: "Billing"
+    },
+    {
+      question: "Amount in words bill par kaise ata hai?",
+      answer: "Ye system automatic hai. Jab bhi aap koi bill print karte hain, system grand total ko Indian Rupees words mein convert karke bill ke neeche print kar deta hai.",
+      category: "Billing"
     },
   ];
 
