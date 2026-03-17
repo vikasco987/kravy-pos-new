@@ -79,6 +79,11 @@ model Item {
   userId  String @db.ObjectId
 
   isActive     Boolean  @default(true)
+  
+  // Inventory Details
+  openingStock  Float?   @default(0)
+  currentStock  Float?   @default(0)
+  reorderLevel  Float?   @default(0)
 
   // QR Menu Enhancements
   isVeg          Boolean  @default(true)
