@@ -10,9 +10,9 @@ type Role = "ADMIN" | "SELLER" | "USER";
 const ALL_PATHS = [
   { group: "Operations", name: "Store Dashboard", path: "/dashboard" },
   { group: "Operations", name: "Quick POS Billing", path: "/dashboard/billing/checkout" },
-  { group: "Operations", name: "Table Status", path: "/dashboard/tables" },
-  { group: "Operations", name: "Past Bills", path: "/dashboard/billing" },
   { group: "Operations", name: "Kitchen Workflow", path: "/dashboard/workflow" },
+  { group: "Operations", name: "Table Status", path: "/dashboard/tables" },
+  { group: "Operations", name: "Bill History", path: "/dashboard/billing" },
   
   { group: "Store Catalog", name: "Browse Products", path: "/dashboard/menu/view" },
   { group: "Store Catalog", name: "Add Single Item", path: "/dashboard/menu/upload" },
@@ -20,14 +20,19 @@ const ALL_PATHS = [
   { group: "Store Catalog", name: "Category Editor", path: "/dashboard/menu/edit" },
 
   { group: "Resources & Marketing", name: "Parties (Customers)", path: "/dashboard/parties" },
+  { group: "Resources & Marketing", name: "Staff Management", path: "/dashboard/staff" },
   { group: "Resources & Marketing", name: "Inventory Stock", path: "/dashboard/inventory" },
   { group: "Resources & Marketing", name: "QR Terminal", path: "/dashboard/qr-orders" },
-  { group: "Resources & Marketing", name: "Combos & Loyalty", path: "/dashboard/combos" },
+  { group: "Resources & Marketing", name: "Marketing & Combos", path: "/dashboard/combos" },
   { group: "Resources & Marketing", name: "Gallery", path: "/dashboard/gallery" },
+
+  { group: "Reports & Insights", name: "Daily Sales Report", path: "/dashboard/reports/sales/daily" },
 
   { group: "Administration", name: "Business Profile", path: "/dashboard/profile" },
   { group: "Administration", name: "POS Settings", path: "/dashboard/settings" },
   { group: "Administration", name: "Tax Settings", path: "/dashboard/settings/tax" },
+  { group: "Administration", name: "Role & Access Control", path: "/admin/users" },
+  { group: "Administration", name: "Security & Backup", path: "/dashboard/backup" },
   { group: "Administration", name: "Trash & Archive", path: "/dashboard/billing/deleted" },
   { group: "Administration", name: "Help & Support", path: "/dashboard/help" },
 ];

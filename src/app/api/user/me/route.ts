@@ -62,10 +62,7 @@ export async function GET() {
         "/dashboard/settings", 
         "/dashboard/settings/tax",
         "/dashboard/billing/deleted",
-        "/dashboard/reports/sales/daily",
-        "/dashboard/reports/products",
-        "/dashboard/reports/bills",
-        "/dashboard/reports/expenses"
+        "/dashboard/reports/sales/daily"
       ];
       else finalAllowed = [
         "/dashboard", 
@@ -74,23 +71,8 @@ export async function GET() {
         "/dashboard/billing", 
         "/dashboard/workflow",
         "/dashboard/menu/view", 
-        "/dashboard/menu/upload", 
-        "/dashboard/store-item-upload", 
-        "/dashboard/menu/edit", 
-        "/dashboard/parties",
-        "/dashboard/staff",
-        "/dashboard/inventory", 
         "/dashboard/qr-orders",
-        "/dashboard/combos",
-        "/dashboard/gallery",
-        "/dashboard/profile",
-        "/dashboard/settings", 
-        "/dashboard/settings/tax",
-        "/dashboard/billing/deleted",
-        "/dashboard/reports/sales/daily",
-        "/dashboard/reports/products",
-        "/dashboard/reports/bills",
-        "/dashboard/reports/expenses"
+        "/dashboard/help"
       ]; 
     }
 

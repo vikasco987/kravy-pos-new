@@ -467,9 +467,17 @@ export default function Sidebar() {
         {navGroups.map((group) => {
           // 1. Filter items based on access
           const visibleItems = group.items.filter((item: any) => {
-            // 🚥 DEMO/TESTING BYPASS: Show all items to allow full platform exploration.
-            // This ensures potential customers and testers can see all available modules.
-            return true;
+            // Priority 1: Admins see everything
+            if (userRole === "ADMIN") return true;
+            
+            // Priority 2: Check allowedPaths from Database (Access Control settings)
+            if (allowedPaths.includes("*")) return true;
+            if (allowedPaths.includes(item.href)) return true;
+
+            // Fallback: If item has specific roles defined, check them
+            if (item.roles && item.roles.includes(userRole)) return true;
+
+            return false;
           });
 
           // 2. If no items are allowed in this group, don't show the group at all
