@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { 
   User, 
@@ -78,6 +79,7 @@ export default function PartiesPage() {
   const [selectedParty, setSelectedParty] = useState<Party | null>(null);
   const [partyBills, setPartyBills] = useState<Bill[]>([]);
   const [loadingBills, setLoadingBills] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,6 +92,7 @@ export default function PartiesPage() {
   const getBase = () => (typeof window !== "undefined" ? window.location.origin : "");
 
   useEffect(() => {
+    setMounted(true);
     fetchParties();
     fetchUserPrefs();
   }, []);
@@ -487,111 +490,116 @@ export default function PartiesPage() {
         )}
       </div>
 
-      {/* Modals & Drawers - Positioned clearly outside and after the main content */}
-      {historyOpen && selectedParty && (
-          <SideDrawer 
-            title={`${selectedParty.name}'s History`} 
-            onClose={() => { setHistoryOpen(false); setSelectedParty(null); }}
-          >
-            <div className="space-y-6">
-              <div className="bg-[var(--kravy-bg-2)] p-6 rounded-[28px] border border-[var(--kravy-border)]">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">CRM Stats</span>
-                  <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 rounded-full text-[10px] font-black tracking-widest">
-                     <Award size={12} /> GOLD MEMBER
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-2xl font-black text-[var(--kravy-text-primary)]">{partyBills.length}</div>
-                    <div className="text-[10px] font-black uppercase text-[var(--kravy-text-muted)]">Total Bills</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black text-emerald-500">₹{partyBills.reduce((s, b) => s + b.total, 0).toFixed(0)}</div>
-                    <div className="text-[10px] font-black uppercase text-[var(--kravy-text-muted)]">Lifetime Value</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] pl-2">Recent Bills</h4>
-                {loadingBills ? (
-                  <div className="py-20 text-center animate-pulse text-[var(--kravy-text-muted)] font-black text-sm tracking-widest">Fetching Orders...</div>
-                ) : partyBills.length === 0 ? (
-                  <div className="py-12 text-center text-[var(--kravy-text-muted)] font-bold italic">No bills found for this customer</div>
-                ) : (
-                  partyBills.map(bill => (
-                    <div key={bill.id} className="group p-4 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl hover:border-[var(--kravy-brand)] transition-all hover:shadow-md cursor-pointer">
-                      <div className="flex justify-between items-start mb-2">
-                         <div>
-                           <div className="text-sm font-black text-[var(--kravy-text-primary)]">{bill.billNumber}</div>
-                           <div className="text-[10px] font-bold text-[var(--kravy-text-muted)]">{formatDate(bill.createdAt)}</div>
-                         </div>
-                         <div className="text-right">
-                           <div className="text-sm font-black text-indigo-500">₹{bill.total.toFixed(2)}</div>
-                           <div className={`text-[10px] font-black uppercase ${bill.paymentStatus === 'Paid' ? 'text-emerald-500' : 'text-amber-500'}`}>{bill.paymentStatus}</div>
-                         </div>
+      {/* Modals & Drawers - Using Portals for absolute positioning fix */}
+      {mounted && typeof document !== 'undefined' && createPortal(
+        <>
+          {historyOpen && selectedParty && (
+              <SideDrawer 
+                title={`${selectedParty.name}'s History`} 
+                onClose={() => { setHistoryOpen(false); setSelectedParty(null); }}
+              >
+                <div className="space-y-6">
+                  <div className="bg-[var(--kravy-bg-2)] p-6 rounded-[28px] border border-[var(--kravy-border)] shadow-sm">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">CRM Stats</span>
+                      <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 rounded-full text-[10px] font-black tracking-widest">
+                         <Award size={12} /> GOLD MEMBER
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-2xl font-black text-[var(--kravy-text-primary)]">{partyBills.length}</div>
+                        <div className="text-[10px] font-black uppercase text-[var(--kravy-text-muted)]">Total Bills</div>
                       </div>
-                      <div className="flex justify-between items-center pt-2 border-t border-[var(--kravy-border)]">
-                         <span className="text-[10px] font-black text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] px-2 py-0.5 rounded-lg">{bill.paymentMode}</span>
-                         <Link 
-                          href={`/dashboard/reports/sales?search=${bill.billNumber}`}
-                          className="text-[10px] font-black text-[var(--kravy-brand)] flex items-center gap-1 hover:underline"
-                         >
-                           DETAILS <ArrowRight size={10} />
-                         </Link>
+                      <div>
+                        <div className="text-2xl font-black text-emerald-500">₹{partyBills.reduce((s, b) => s + b.total, 0).toFixed(0)}</div>
+                        <div className="text-[10px] font-black uppercase text-[var(--kravy-text-muted)]">Lifetime Value</div>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] pl-2">Recent Bills</h4>
+                    {loadingBills ? (
+                      <div className="py-20 text-center animate-pulse text-[var(--kravy-text-muted)] font-black text-sm tracking-widest">Fetching Orders...</div>
+                    ) : partyBills.length === 0 ? (
+                      <div className="py-12 text-center text-[var(--kravy-text-muted)] font-bold italic">No bills found for this customer</div>
+                    ) : (
+                      partyBills.map(bill => (
+                        <div key={bill.id} className="group p-4 bg-white dark:bg-[#0D111C] border border-[var(--kravy-border)] rounded-2xl hover:border-[var(--kravy-brand)] transition-all hover:shadow-md cursor-pointer">
+                          <div className="flex justify-between items-start mb-2">
+                             <div>
+                               <div className="text-sm font-black text-[var(--kravy-text-primary)]">{bill.billNumber}</div>
+                               <div className="text-[10px] font-bold text-[var(--kravy-text-muted)]">{formatDate(bill.createdAt)}</div>
+                             </div>
+                             <div className="text-right">
+                               <div className="text-sm font-black text-indigo-500">₹{bill.total.toFixed(2)}</div>
+                               <div className={`text-[10px] font-black uppercase ${bill.paymentStatus === 'Paid' ? 'text-emerald-500' : 'text-amber-500'}`}>{bill.paymentStatus}</div>
+                             </div>
+                          </div>
+                          <div className="flex justify-between items-center pt-2 border-t border-[var(--kravy-border)]">
+                             <span className="text-[10px] font-black text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] px-2 py-0.5 rounded-lg">{bill.paymentMode}</span>
+                             <Link 
+                              href={`/dashboard/reports/sales?search=${bill.billNumber}`}
+                              className="text-[10px] font-black text-[var(--kravy-brand)] flex items-center gap-1 hover:underline"
+                             >
+                               DETAILS <ArrowRight size={10} />
+                             </Link>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </SideDrawer>
+          )}
+
+          {modalOpen && editing && (
+            <Modal 
+              title={editing.id === "new" ? "New Customer" : "Edit Customer"} 
+              onClose={() => { setModalOpen(false); setEditing(null); }}
+            >
+              <PartyForm
+                initial={editing}
+                onCancel={() => { setModalOpen(false); setEditing(null); }}
+                saving={saving}
+                onSave={async (payload) => {
+                  setSaving(true);
+                  try {
+                    const method = payload.id === "new" ? "POST" : "PUT";
+                    const res = await fetch(`/api/parties`, {
+                      method,
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      if (payload.id === "new") setParties(p => [data, ...p]);
+                      else setParties(p => p.map(x => x.id === payload.id ? data : x));
+                      pushToast("success", payload.id === "new" ? "Added successfully" : "Updated successfully");
+                      setModalOpen(false);
+                    } else {
+                      const errJson = await res.json();
+                      pushToast("error", errJson.error || "Save failed");
+                    }
+                  } catch (e) {
+                    pushToast("error", "Error saving");
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+              />
+            </Modal>
+          )}
+
+          {toast && (
+            <div className={`fixed bottom-10 right-10 z-[100000] px-6 py-4 rounded-2xl shadow-2xl font-black text-sm flex items-center gap-3 animate-in slide-in-from-right-10 duration-500 ${toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+               {toast.type === 'success' ? <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">✓</div> : "!"}
+               {toast.text}
             </div>
-          </SideDrawer>
-      )}
-
-      {modalOpen && editing && (
-        <Modal 
-          title={editing.id === "new" ? "New Customer" : "Edit Customer"} 
-          onClose={() => { setModalOpen(false); setEditing(null); }}
-        >
-          <PartyForm
-            initial={editing}
-            onCancel={() => { setModalOpen(false); setEditing(null); }}
-            saving={saving}
-            onSave={async (payload) => {
-              setSaving(true);
-              try {
-                const method = payload.id === "new" ? "POST" : "PUT";
-                const res = await fetch(`/api/parties`, {
-                  method,
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(payload)
-                });
-                if (res.ok) {
-                  const data = await res.json();
-                  if (payload.id === "new") setParties(p => [data, ...p]);
-                  else setParties(p => p.map(x => x.id === payload.id ? data : x));
-                  pushToast("success", payload.id === "new" ? "Added successfully" : "Updated successfully");
-                  setModalOpen(false);
-                } else {
-                  const errJson = await res.json();
-                  pushToast("error", errJson.error || "Save failed");
-                }
-              } catch (e) {
-                pushToast("error", "Error saving");
-              } finally {
-                setSaving(false);
-              }
-            }}
-          />
-        </Modal>
-      )}
-
-      {toast && (
-        <div className={`fixed bottom-10 right-10 z-[100] px-6 py-4 rounded-2xl shadow-2xl font-black text-sm flex items-center gap-3 animate-in slide-in-from-right-10 duration-500 ${toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
-           {toast.type === 'success' ? <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">✓</div> : "!"}
-           {toast.text}
-        </div>
+          )}
+        </>,
+        document.body
       )}
     </>
   );
@@ -671,9 +679,9 @@ function CustomerCard({ p, onEdit, onDelete, onViewHistory }: { p: Party, onEdit
 
 function SideDrawer({ title, children, onClose }: { title: string, children: any, onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[9999] flex justify-end overflow-hidden">
-      <div className="absolute inset-0 bg-black/50 animate-in fade-in duration-300" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[var(--kravy-surface)] border-l border-[var(--kravy-border)] shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col h-[100dvh] ring-1 ring-white/10">
+    <div className="fixed inset-0 z-[999999] flex justify-end overflow-hidden">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-white dark:bg-[#06080F] border-l border-[var(--kravy-border)] shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col h-[100dvh] ring-1 ring-white/10">
         <div className="p-6 pb-4 flex items-center justify-between border-b border-[var(--kravy-border)] bg-[var(--kravy-bg-2)]/50">
           <h3 className="text-xl font-black text-[var(--kravy-text-primary)] tracking-tight uppercase tracking-widest text-xs flex items-center gap-2">
             <HistoryIcon size={18} className="text-[var(--kravy-brand)]" /> {title}
@@ -692,9 +700,9 @@ function SideDrawer({ title, children, onClose }: { title: string, children: any
 
 function Modal({ title, children, onClose }: { title: string, children: any, onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-300" onClick={onClose} />
-      <div className="relative w-full max-w-xl bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[40px] shadow-2xl p-10 animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose} />
+      <div className="relative w-full max-w-xl bg-white dark:bg-[#06080F] border border-[var(--kravy-border)] rounded-[40px] shadow-2xl p-10 animate-in zoom-in-95 duration-300">
         <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] tracking-tight mb-8 flex items-center gap-3">
           <Plus size={24} className="text-[var(--kravy-brand)]" /> {title}
         </h3>
