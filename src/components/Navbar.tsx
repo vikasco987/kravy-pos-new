@@ -11,8 +11,11 @@ import {
 } from "@clerk/nextjs";
 import { useSearch } from "@/components/SearchContext";
 import { useTheme } from "@/components/ThemeProvider";
-import { Search, Bell, MapPin, Menu, X, Sun, Moon, Monitor, Volume2 } from "lucide-react";
+import { Search, Bell, MapPin, Menu, X, Sun, Moon, Monitor, Volume2, Package, Receipt, Users, ArrowRight, Loader2, XCircle } from "lucide-react";
 import { kravy } from "@/lib/sounds";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface NavbarProps {
   isMobile?: boolean;
@@ -27,6 +30,9 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
   const { resolvedTheme, theme, setTheme } = useTheme();
   const [greeting, setGreeting] = useState("Good Day");
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<{ items: any[], bills: any[], parties: any[] } | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -34,6 +40,30 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
     else if (hour < 17) setGreeting("Good Afternoon");
     else setGreeting("Good Evening");
   }, []);
+
+  useEffect(() => {
+    if (query.trim().length < 2) {
+      setSearchResults(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data);
+        }
+      } catch (err) {
+        console.error("SEARCH ERROR:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,7 +168,7 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
             }}>
               <MapPin size={10} strokeWidth={2.5} />
               {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              <span style={{ color: "var(--kravy-border-strong)" }}>·</span>
+              <span style={{ color: "var(--kravy-border-strong)" }}>\u00B7</span>
               <span style={{ color: "var(--kravy-text-faint)" }}>Main Branch</span>
             </div>
           )}
@@ -149,29 +179,190 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
 
           {/* Search Bar - Hidden on mobile */}
           {!isMobile && (
-            <form onSubmit={handleSearch} style={{ position: "relative" }}>
-              <Search style={{
-                position: "absolute",
-                left: "12px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--kravy-text-faint)",
-                width: "15px",
-                height: "15px"
-              }} />
-              <input
-                type="text"
-                placeholder="Search bills, items..."
-                className="kravy-input"
-                style={{
-                  paddingLeft: "38px",
-                  width: "260px",
-                  height: "40px"
-                }}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </form>
+            <div style={{ position: "relative" }}>
+              <form onSubmit={handleSearch} style={{ position: "relative" }}>
+                {isSearching ? (
+                  <Loader2 style={{
+                    position: "absolute",
+                    left: "12px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "var(--kravy-brand)",
+                    width: "14px",
+                    height: "14px"
+                  }} className="animate-spin" />
+                ) : (
+                  <Search style={{
+                    position: "absolute",
+                    left: "12px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "var(--kravy-text-faint)",
+                    width: "15px",
+                    height: "15px"
+                  }} />
+                )}
+                <input
+                  type="text"
+                  placeholder="Universal Search..."
+                  className="kravy-input"
+                  style={{
+                    paddingLeft: "38px",
+                    width: "320px",
+                    height: "40px",
+                    border: searchResults ? "1px solid var(--kravy-brand)" : "1px solid var(--kravy-border)",
+                    transition: "all 0.3s ease"
+                  }}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </form>
+
+              {/* Universal Search Results Dropdown */}
+              <AnimatePresence>
+                {searchResults && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 5, scale: 0.98 }}
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 12px)",
+                      right: 0,
+                      width: "420px",
+                      background: isDark ? "#0A0C14" : "#ffffff",
+                      border: "1px solid var(--kravy-border)",
+                      borderRadius: "20px",
+                      boxShadow: isDark ? "0 24px 60px rgba(0,0,0,0.6)" : "0 12px 40px rgba(0,0,0,0.1)",
+                      overflow: "hidden",
+                      zIndex: 1000,
+                      backdropFilter: "blur(20px)"
+                    }}
+                  >
+                    <div style={{ padding: "16px", maxHeight: "80vh", overflowY: "auto" }} className="custom-scrollbar">
+                      {/* Results Header */}
+                      <div style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "12px",
+                        paddingBottom: "8px",
+                        borderBottom: "1px solid var(--kravy-border)"
+                      }}>
+                        <span style={{ fontSize: "10px", fontWeight: 900, textTransform: "uppercase", color: "var(--kravy-text-muted)", letterSpacing: "2px" }}>
+                          Universal Matches
+                        </span>
+                        <button onClick={() => setSearchResults(null)} style={{ color: "var(--kravy-text-muted)", background: "none", border: "none", cursor: "pointer" }}>
+                          <X size={14} />
+                        </button>
+                      </div>
+
+                      {/* Items Section */}
+                      {searchResults.items.length > 0 && (
+                        <div style={{ marginBottom: "16px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "9px", fontWeight: 800, color: "var(--kravy-brand)", marginBottom: "8px", textTransform: "uppercase" }}>
+                            <Package size={10} /> Inventory Assets
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            {searchResults.items.map(item => (
+                              <button
+                                key={item.id}
+                                onClick={() => {
+                                  router.push("/dashboard/inventory");
+                                  window.dispatchEvent(new CustomEvent("kravy-search", { detail: item.name }));
+                                  setSearchResults(null);
+                                  setQuery("");
+                                }}
+                                style={{
+                                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                                  padding: "8px 12px", borderRadius: "12px", background: "var(--kravy-bg-2)",
+                                  border: "none", width: "100%", cursor: "pointer", textAlign: "left"
+                                }}
+                                className="hover:bg-[var(--kravy-brand)]/[0.05] transition-colors group"
+                              >
+                                <div style={{ display: "flex", flexDirection: "column" }}>
+                                  <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--kravy-text-primary)" }}>{item.name}</span>
+                                  <span style={{ fontSize: "9px", color: "var(--kravy-text-muted)" }}>Stock: {item.currentStock} \u00B7 \u20B9{item.price}</span>
+                                </div>
+                                <ArrowRight size={12} style={{ color: "var(--kravy-text-faint)" }} className="group-hover:translate-x-1 group-hover:text-[var(--kravy-brand)] transition-all" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Bills Section */}
+                      {searchResults.bills.length > 0 && (
+                        <div style={{ marginBottom: "16px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "9px", fontWeight: 800, color: "var(--kravy-brand)", marginBottom: "8px", textTransform: "uppercase" }}>
+                            <Receipt size={10} /> Transactions
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            {searchResults.bills.map(bill => (
+                              <Link
+                                key={bill.id}
+                                href={`/dashboard/reports/sales/daily`}
+                                onClick={() => setSearchResults(null)}
+                                style={{
+                                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                                  padding: "8px 12px", borderRadius: "12px", background: "var(--kravy-bg-2)",
+                                  textDecoration: "none", color: "inherit"
+                                }}
+                                className="hover:bg-[var(--kravy-brand)]/[0.05] transition-colors group"
+                              >
+                                <div>
+                                  <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--kravy-text-primary)" }}>{bill.billNumber}</div>
+                                  <div style={{ fontSize: "9px", color: "var(--kravy-text-muted)" }}>Total: \u20B9{bill.total} \u00B7 {new Date(bill.createdAt).toLocaleDateString()}</div>
+                                </div>
+                                <ArrowRight size={12} style={{ color: "var(--kravy-text-faint)" }} className="group-hover:translate-x-1 transition-all" />
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Parties Section */}
+                      {searchResults.parties.length > 0 && (
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "9px", fontWeight: 800, color: "var(--kravy-brand)", marginBottom: "8px", textTransform: "uppercase" }}>
+                            <Users size={10} /> High-Value Clients
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            {searchResults.parties.map(party => (
+                              <Link
+                                key={party.id}
+                                href={`/dashboard/parties`}
+                                onClick={() => setSearchResults(null)}
+                                style={{
+                                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                                  padding: "8px 12px", borderRadius: "12px", background: "var(--kravy-bg-2)",
+                                  textDecoration: "none", color: "inherit"
+                                }}
+                                className="hover:bg-[var(--kravy-brand)]/[0.05] transition-colors group"
+                              >
+                                <div>
+                                  <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--kravy-text-primary)" }}>{party.name}</div>
+                                  <div style={{ fontSize: "9px", color: "var(--kravy-text-muted)" }}>Tel: {party.phone}</div>
+                                </div>
+                                <ArrowRight size={12} style={{ color: "var(--kravy-text-faint)" }} className="group-hover:translate-x-1 transition-all" />
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {searchResults.items.length === 0 && searchResults.bills.length === 0 && searchResults.parties.length === 0 && (
+                        <div style={{ padding: "32px 16px", textAlign: "center", opacity: 0.5 }}>
+                          <XCircle size={32} style={{ margin: "0 auto 12px", display: "block" }} />
+                          <div style={{ fontSize: "12px", fontWeight: 800 }}>No Global Matches Found</div>
+                          <div style={{ fontSize: "9px", fontWeight: 500 }}>Try generic terms like "Item" or "Bill"</div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
 
           {/* ── Theme Toggle ── */}
@@ -266,7 +457,7 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
                       {opt.icon}
                       {opt.label}
                       {theme === opt.key && (
-                        <span style={{ marginLeft: "auto", fontSize: "0.7rem" }}>✓</span>
+                        <span style={{ marginLeft: "auto", fontSize: "0.7rem" }}>\u2713</span>
                       )}
                     </button>
                   ))}
@@ -304,10 +495,10 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
             }} />
           </div>
 
-          {/* 🔊 Sound Test Button — Click to test audio */}
+          {/* \uD83D\uDD0A Sound Test Button — Click to test audio */}
           <button
             onClick={() => kravy.orderBell()}
-            title="Test Sound 🔊"
+            title="Test Sound \uD83D\uDD0A"
             style={{
               width: isMobile ? "38px" : "40px",
               height: isMobile ? "38px" : "40px",
