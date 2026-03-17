@@ -461,3 +461,13 @@ model GalleryImage {
   @@index([clerkUserId])
   @@index([clerkUserId, category])
 }
+
+model Backup {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  filename  String
+  fileSize  Int      // in bytes
+  s3Url     String?
+  status    String   // SUCCESS, FAILED
+  error     String?
+  createdAt DateTime @default(now())
+}

@@ -1,12 +1,15 @@
-import { S3 } from "aws-sdk";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 import prisma from "@/lib/prisma";
 
-const s3 = new S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || 'ap-south-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  }
 });
 
 export async function GET(req: Request) {
@@ -33,10 +36,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "File name is required" }, { status: 400 });
     }
 
-    const url = s3.getSignedUrl("getObject", {
+    const command = new GetObjectCommand({
       Bucket: process.env.AWS_S3_BACKUP_BUCKET!,
-      Key: fileName,
-      Expires: Number(process.env.PRE_SIGNED_URL_EXPIRY || 600), // default 10 min
+      Key: `backups/${fileName}`,
+    });
+
+    const url = await getSignedUrl(s3Client, command, { 
+      expiresIn: Number(process.env.PRE_SIGNED_URL_EXPIRY || 600) 
     });
 
     return NextResponse.json({ url });

@@ -1,18 +1,42 @@
 "use client";
 
-import { useState } from "react";
-import { Database, Download, Upload, RefreshCw, Shield, Clock, CheckCircle, AlertCircle, HardDrive, Cloud, FileText, Calendar } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Database, Download, Upload, RefreshCw, Shield, Clock, CheckCircle, AlertCircle, HardDrive, Cloud, FileText, Calendar, Search, FileCode, ChevronRight } from "lucide-react";
+
+type BackupRecord = {
+  id: string;
+  filename: string;
+  fileSize: number;
+  status: string;
+  s3Url?: string;
+  error?: string;
+  createdAt: string;
+}
 
 export default function BackupPage() {
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [backupProgress, setBackupProgress] = useState(0);
+  const [backupHistory, setBackupHistory] = useState<BackupRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedBackup, setSelectedBackup] = useState<string | null>(null);
 
-  const backupHistory = [
-    { id: 1, date: "2024-01-15 14:30", size: "2.4 MB", type: "Automatic", status: "completed" },
-    { id: 2, date: "2024-01-14 09:15", size: "2.3 MB", type: "Manual", status: "completed" },
-    { id: 3, date: "2024-01-13 18:45", size: "2.4 MB", type: "Automatic", status: "completed" },
-    { id: 4, date: "2024-01-12 12:00", size: "2.2 MB", type: "Manual", status: "completed" },
-  ];
+  const fetchBackups = async () => {
+    try {
+      const res = await fetch("/api/admin/backups");
+      if (res.ok) {
+        const data = await res.json();
+        setBackupHistory(data);
+      }
+    } catch (err) {
+      console.error("Fetch backups failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBackups();
+  }, []);
 
   const handleCreateBackup = async () => {
     setIsCreatingBackup(true);
@@ -64,6 +88,26 @@ export default function BackupPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
+          {selectedBackup && (
+            <button
+               onClick={() => setSelectedBackup(null)}
+               style={{
+                 background: "rgba(239, 68, 68, 0.1)",
+                 color: "#EF4444",
+                 border: "1px solid rgba(239, 68, 68, 0.2)",
+                 padding: "12px 24px",
+                 borderRadius: "12px",
+                 fontWeight: 800,
+                 fontSize: "0.9rem",
+                 cursor: "pointer",
+                 display: "flex",
+                 alignItems: "center",
+                 gap: "8px"
+               }}
+            >
+              <RefreshCw size={18} /> Reset to Live
+            </button>
+          )}
           <button
             onClick={async () => {
               const res = await fetch("/api/bill-manager/export"); // Reusing bills export for now as primary data
@@ -194,7 +238,7 @@ export default function BackupPage() {
               <Database size={24} />
             </div>
             <div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>4</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>{backupHistory.length}</div>
               <div style={{ fontSize: "0.75rem", color: "var(--kravy-text-muted)" }}>Total Backups</div>
             </div>
           </div>
@@ -216,7 +260,9 @@ export default function BackupPage() {
               <HardDrive size={24} />
             </div>
             <div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--kravy-text-primary)", letterSpacing: "-0.5px" }}>9.3</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--kravy-text-primary)", letterSpacing: "-0.5px" }}>
+                {(backupHistory.reduce((acc, b) => acc + (b.fileSize || 0), 0) / (1024 * 1024)).toFixed(1)}
+              </div>
               <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1px" }}>Total Size (MB)</div>
             </div>
           </div>
@@ -307,6 +353,9 @@ export default function BackupPage() {
         </div>
       </div>
 
+      {/* Database Explorer */}
+      <CollectionExplorer source={selectedBackup} onReset={() => setSelectedBackup(null)} />
+
       {/* Backup History */}
       <div>
         <h2 style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--kravy-text-primary)", marginBottom: "20px" }}>
@@ -325,7 +374,6 @@ export default function BackupPage() {
                 <tr style={{ background: "var(--kravy-bg-2)" }}>
                   <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-muted)" }}>Date & Time</th>
                   <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-muted)" }}>Size</th>
-                  <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-muted)" }}>Type</th>
                   <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-muted)" }}>Status</th>
                   <th style={{ padding: "16px", textAlign: "center", fontSize: "0.85rem", fontWeight: 700, color: "var(--kravy-text-muted)" }}>Actions</th>
                 </tr>
@@ -333,39 +381,34 @@ export default function BackupPage() {
               <tbody>
                 {backupHistory.map((backup) => (
                   <tr key={backup.id} style={{ borderBottom: "1px solid var(--kravy-border)" }}>
-                    <td style={{ padding: "16px", color: "var(--kravy-text-primary)", fontWeight: 500 }}>{backup.date}</td>
-                    <td style={{ padding: "16px", color: "var(--kravy-text-muted)" }}>{backup.size}</td>
-                    <td style={{ padding: "16px" }}>
-                      <span style={{
-                        padding: "4px 12px",
-                        borderRadius: "20px",
-                        fontSize: "0.75rem",
-                        fontWeight: 900,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.5px",
-                        background: backup.type === "Automatic" ? "rgba(16,185,129,0.1)" : "rgba(139, 92, 246, 0.15)",
-                        color: backup.type === "Automatic" ? "#10B981" : "var(--kravy-brand)"
-                      }}>
-                        {backup.type}
-                      </span>
+                    <td style={{ padding: "16px", color: "var(--kravy-text-primary)", fontWeight: 500 }}>
+                      {new Date(backup.createdAt).toLocaleString()}
+                    </td>
+                    <td style={{ padding: "16px", color: "var(--kravy-text-muted)" }}>
+                      {(backup.fileSize / 1024 / 1024).toFixed(2)} MB
                     </td>
                     <td style={{ padding: "16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        {getStatusIcon(backup.status)}
+                        {getStatusIcon(backup.status.toLowerCase())}
                         <span style={{ fontSize: "0.85rem", color: "var(--kravy-text-muted)", fontWeight: 500 }}>
-                          {backup.status === "completed" ? "Completed" : backup.status}
+                          {backup.status}
                         </span>
                       </div>
                     </td>
                     <td style={{ padding: "16px" }}>
-                      <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-                        <DownloadButton fileName={`kravy-backup-${backup.id}.gz`} />
-                        <button style={{
-                          background: "rgba(245,158,11,0.1)", color: "#F59E0B",
-                          border: "none", borderRadius: "8px", padding: "6px", cursor: "pointer"
-                        }}>
-                          <Upload size={16} />
+                      <div style={{ display: "flex", gap: "8px", justifyContent: "center", alignItems: "center" }}>
+                        <button 
+                          onClick={() => setSelectedBackup(backup.filename)}
+                          style={{
+                               background: selectedBackup === backup.filename ? "var(--kravy-brand)" : "rgba(139, 92, 246, 0.1)",
+                               color: selectedBackup === backup.filename ? "white" : "var(--kravy-brand)",
+                               border: "none", borderRadius: "10px", padding: "6px 12px", cursor: "pointer",
+                               fontSize: "0.75rem", fontWeight: 800, display: "flex", alignItems: "center", gap: "6px"
+                          }}
+                        >
+                          <Search size={14} /> Inspect
                         </button>
+                        <DownloadButton fileName={backup.filename} />
                       </div>
                     </td>
                   </tr>
@@ -419,5 +462,186 @@ function DownloadButton({ fileName }: { fileName: string }) {
         <Download size={16} />
       )}
     </button>
+  );
+}
+function CollectionExplorer({ source, onReset }: { source: string | null, onReset: () => void }) {
+  const [collections, setCollections] = useState<{name: string, count: number}[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCollections = async () => {
+      setLoading(true);
+      try {
+        const url = source 
+          ? `/api/admin/backups/inspect?file=${source}` 
+          : "/api/admin/backups/collections";
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (source) {
+           // Response from inspect is { fileName, collections }
+           setCollections(data.collections || []);
+        } else {
+           // Response from collections is direct array
+           setCollections(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Explorer Error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCollections();
+  }, [source]);
+
+  const handleExport = (format: 'excel' | 'json', model: string) => {
+    let url = `/api/admin/backups/export?format=${format}&model=${model}`;
+    if (source) url += `&file=${source}`;
+    window.open(url, "_blank");
+  };
+
+  const filtered = collections.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div style={{
+      background: "var(--kravy-surface)",
+      border: "1px solid var(--kravy-border)",
+      borderRadius: "24px",
+      padding: "24px",
+      boxShadow: "var(--kravy-card-shadow)",
+      borderLeft: source ? "8px solid var(--kravy-brand)" : "1px solid var(--kravy-border)"
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", gap: "20px", flexWrap: "wrap" }}>
+        <div>
+          <h2 style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--kravy-text-primary)", marginBottom: "4px", display: "flex", alignItems: "center", gap: "10px" }}>
+            {source ? <><Shield size={20} style={{ color: "var(--kravy-brand)" }} /> Backup Explorer</> : "Live Data Explorer"}
+          </h2>
+          <p style={{ fontSize: "0.8rem", color: "var(--kravy-text-muted)" }}>
+            {source ? `Inspecting file: ${source}` : "Inspect and export individual tables directly from MongoDB"}
+          </p>
+        </div>
+        
+        <div style={{ display: "flex", gap: "12px", flex: "1", maxWidth: "450px" }}>
+            <div style={{ position: "relative", flex: "1" }}>
+              <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--kravy-text-muted)" }} />
+              <input 
+                placeholder="Search collections..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px 10px 10px 40px",
+                  background: "var(--kravy-bg-2)",
+                  border: "1px solid var(--kravy-border)",
+                  borderRadius: "12px",
+                  fontSize: "0.9rem",
+                  color: "var(--kravy-text-primary)",
+                  outline: "none"
+                }}
+              />
+            </div>
+            {source && (
+                 <button 
+                   onClick={onReset}
+                   style={{
+                     padding: "0 16px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)",
+                     borderRadius: "12px", fontSize: "0.85rem", fontWeight: 800, cursor: "pointer"
+                   }}
+                 >
+                   Exit
+                 </button>
+            )}
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "40px" }}>
+          <RefreshCw size={24} style={{ animation: "spin 1s linear infinite", color: "var(--kravy-brand)" }} />
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
+          {filtered.map(col => (
+            <div key={col.name} style={{
+              padding: "16px",
+              background: source ? "rgba(139, 92, 246, 0.02)" : "var(--kravy-surface)",
+              border: source ? "1px solid rgba(139, 92, 246, 0.1)" : "1px solid var(--kravy-border)",
+              borderRadius: "18px",
+              transition: "all 0.2s ease",
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <div style={{ 
+                    width: "32px", height: "32px", borderRadius: "8px", 
+                    background: source ? "rgba(139, 92, 246, 0.1)" : "rgba(16, 185, 129, 0.1)", 
+                    color: source ? "var(--kravy-brand)" : "#10B981", 
+                    display: "flex", alignItems: "center", justifyContent: "center" 
+                  }}>
+                    <Database size={16} />
+                  </div>
+                  <div>
+                    <p style={{ fontWeight: 800, fontSize: "0.95rem", color: "var(--kravy-text-primary)" }}>{col.name}</p>
+                    <p style={{ fontSize: "0.75rem", color: "var(--kravy-text-muted)", fontWeight: 800 }}>{col.count} Records</p>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button 
+                  onClick={() => handleExport('excel', col.name)}
+                  style={{
+                    flex: 1,
+                    background: "rgba(16, 185, 129, 0.1)",
+                    color: "#10B981",
+                    border: "none",
+                    padding: "8px",
+                    borderRadius: "10px",
+                    fontSize: "0.75rem",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px"
+                  }}
+                >
+                  <FileText size={14} /> Excel
+                </button>
+                <button 
+                  onClick={() => handleExport('json', col.name)}
+                  style={{
+                    flex: 1,
+                    background: "rgba(245, 158, 11, 0.1)",
+                    color: "#F59E0B",
+                    border: "none",
+                    padding: "8px",
+                    borderRadius: "10px",
+                    fontSize: "0.75rem",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px"
+                  }}
+                >
+                  <FileCode size={14} /> JSON
+                </button>
+              </div>
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "40px", color: "var(--kravy-text-muted)" }}>
+              No collections found matching "{search}"
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

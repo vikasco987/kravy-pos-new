@@ -1,11 +1,9 @@
+
 import { NextResponse } from "next/server";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 import prisma from "@/lib/prisma";
-import { runMongoBackup } from "@/lib/backup/mongodb-backup";
 
-export const maxDuration = 60;
-
-export async function POST() {
+export async function GET() {
   try {
     const effectiveId = await getEffectiveClerkId();
     if (!effectiveId) {
@@ -22,16 +20,18 @@ export async function POST() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { filename, size } = await runMongoBackup();
+    const backupModel = (prisma as any).backup || (prisma as any).Backup;
+    if (!backupModel) {
+      return NextResponse.json([]); // Return empty list instead of crashing if model isn't ready
+    }
 
-    return NextResponse.json({ 
-      success: true, 
-      fileName: filename, 
-      size: (size / (1024 * 1024)).toFixed(2) + " MB",
-      message: "Backup created successfully"
+    const backups = await backupModel.findMany({
+      orderBy: { createdAt: 'desc' }
     });
-  } catch (err: any) {
-    console.error("Manual Backup failed:", err);
-    return NextResponse.json({ error: err.message || "Backup process failed" }, { status: 500 });
+
+    return NextResponse.json(backups);
+  } catch (err) {
+    console.error("List Backups Error:", err);
+    return NextResponse.json({ error: "Failed to list backups" }, { status: 500 });
   }
 }
