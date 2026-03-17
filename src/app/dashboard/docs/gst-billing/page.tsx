@@ -18,7 +18,8 @@ import {
   Hash,
   HelpCircle,
   Eye,
-  Check
+  Check,
+  BarChart3
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -58,6 +59,18 @@ export default function GSTBillingDocsPage() {
         "Tax Breakup Table: Detailed calculation jo customer aur CA dono ke liye easy ho.",
         "Amount in Words: Auto-generated words (e.g. Five Hundred Rupees Only).",
         "Multi-Tax Support: Ek hi bill mein alag-alag GST rate wale items support hote hain."
+      ]
+    },
+    {
+      title: "4. Powerful GST Reports (CA Ready)",
+      icon: <BarChart3 className="text-violet-500" size={24} />,
+      content: "Month end par ab reports ke liye pareshaan hone ki zaroorat nahi. Saari reports 1-click mein ready hain.",
+      hinglish: "Reports > GST Reports section mein jaiye. Wahan aapko GSTR-1, GSTR-3B Summary, aur HSN Summary mil jayegi. Aap use Excel mein download karke seedhe apne CA ko bhej sakte hain.",
+      points: [
+        "GSTR-1: Invoice-wise details filing ke liye.",
+        "GSTR-3B: Monthly tax summary matching ke liye.",
+        "HSN Summary: HSN code ke mutabik kitna maal bika.",
+        "Daily Tax: Rozana kitna tax jama ho raha hai."
       ]
     }
   ];
@@ -161,7 +174,7 @@ export default function GSTBillingDocsPage() {
         </div>
 
         {/* Detailed Sections Cards */}
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {sections.map((section, i) => (
             <motion.div 
               key={i}

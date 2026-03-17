@@ -157,6 +157,7 @@ const navGroups = [
     group: "REPORTS & ANALYTICS",
     items: [
       { icon: <TrendingUp size={18} />, label: "Daily Sales Report", href: "/dashboard/reports/sales/daily", badge: "Live", badgeColor: "#10B981" },
+      { icon: <PieChart size={18} />, label: "GST Reports", href: "/dashboard/reports/gst", badge: "GST", badgeColor: "#F59E0B" },
     ]
   },
   {
@@ -192,6 +193,7 @@ export default function Sidebar() {
   const [userRole, setUserRole] = useState<string>("USER");
   const [allowedPaths, setAllowedPaths] = useState<string[]>([]);
   const [loadingRole, setLoadingRole] = useState(true);
+  const [taxEnabled, setTaxEnabled] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -209,6 +211,16 @@ export default function Sidebar() {
         console.error(err);
         setLoadingRole(false);
       });
+
+    // Fetch profile to check tax status
+    fetch("/api/profile")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.taxEnabled) {
+          setTaxEnabled(true);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   if (!mounted) return null;
@@ -467,6 +479,9 @@ export default function Sidebar() {
         {navGroups.map((group) => {
           // 1. Filter items based on access
           const visibleItems = group.items.filter((item: any) => {
+            // ABSOLUTE PRIORITY: GST Report visibility 
+            if (item.label === "GST Reports" && !taxEnabled) return false;
+
             // Priority 1: Admins see everything
             if (userRole === "ADMIN") return true;
             
@@ -476,6 +491,9 @@ export default function Sidebar() {
 
             // Fallback: If item has specific roles defined, check them
             if (item.roles && item.roles.includes(userRole)) return true;
+
+            // Priority 4: If no roles are specified, technically everyone can see it unless filtered above
+            if (!item.roles) return true;
 
             return false;
           });
