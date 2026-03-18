@@ -63,6 +63,8 @@ type MenuItem = {
     mrName?: string;
     taName?: string;
     upsellText?: string;
+    gst?: number;
+    taxStatus?: string;
     ico?: string;
 };
 
@@ -74,6 +76,7 @@ type BusinessProfile = {
     businessTagLine?: string;
     taxEnabled?: boolean;
     taxRate?: number;
+    perProductTaxEnabled?: boolean;
 };
 
 type ComboSelection = {
@@ -357,10 +360,31 @@ function PublicMenu() {
     }, 0);
     const comboSubtotal = combosCart.reduce((sum, c) => sum + c.price, 0);
     const subtotal = itemSubtotal + comboSubtotal;
-    // Dynamic tax from business profile
+    // 🥇 PRIORITY LOGIC: Product GST > Default GST
     const taxEnabled = profile?.taxEnabled ?? true;
-    const taxRate = profile?.taxRate ?? 5;
-    const tax = taxEnabled ? Math.round(subtotal * taxRate / 100) : 0;
+    const perProductEnabled = profile?.perProductTaxEnabled ?? false;
+    const globalRate = profile?.taxRate ?? 5;
+
+    const itemTax = Object.entries(cart).reduce((sum, [id, qty]) => {
+        const item = items.find(i => i.id === id);
+        if (!item || !taxEnabled) return sum;
+
+        let rate = globalRate;
+        if (perProductEnabled && item.gst !== undefined && item.gst !== null && item.gst > 0) {
+            rate = item.gst;
+        }
+
+        const price = (item.sellingPrice || item.price || 0);
+        return sum + Math.round((price * qty) * rate / 100);
+    }, 0);
+
+    // Also handle combos (usually combos use global tax or are tax-inclusive, but here we fallback to global)
+    const comboTax = combosCart.reduce((sum, c) => {
+        if (!taxEnabled) return sum;
+        return sum + Math.round(c.price * globalRate / 100);
+    }, 0);
+
+    const tax = itemTax + comboTax;
     const loyaltyDisc = loyaltyOn ? 32 : 0;
     const total = subtotal + tax - loyaltyDisc;
 
@@ -1534,7 +1558,7 @@ function PublicMenu() {
                                     <div className="flex justify-between text-[0.8rem] text-[#696969] font-bold"><span>Subtotal</span><span>₹{subtotal}</span></div>
                                     {taxEnabled && tax > 0 && (
                                         <div className="flex justify-between text-[0.8rem] text-[#696969] font-bold">
-                                            <span>GST ({taxRate}%)</span><span>₹{tax}</span>
+                                            <span>GST ({globalRate}%)</span><span>₹{tax}</span>
                                         </div>
                                     )}
                                     {loyaltyDisc > 0 && <div className="flex justify-between text-[0.8rem] text-[#D4A353] font-bold"><span>👑 Loyalty Discount</span><span>−₹{loyaltyDisc}</span></div>}

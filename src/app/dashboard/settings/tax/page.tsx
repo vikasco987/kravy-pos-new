@@ -30,6 +30,7 @@ export default function PricingSettingsPage() {
 
     // Tax settings
     const [taxEnabled, setTaxEnabled] = useState(true);
+    const [perProductTaxEnabled, setPerProductTaxEnabled] = useState(false);
     const [taxRate, setTaxRate] = useState(5.0);
     const [businessProfile, setBusinessProfile] = useState<any>(null);
 
@@ -59,6 +60,7 @@ export default function PricingSettingsPage() {
                 const offerData = await offerRes.json();
                 setBusinessProfile(profileData);
                 setTaxEnabled(profileData?.taxEnabled ?? true);
+                setPerProductTaxEnabled(profileData?.perProductTaxEnabled ?? false);
                 setTaxRate(profileData?.taxRate ?? 5.0);
                 setOffers(Array.isArray(offerData) ? offerData : []);
             } catch {
@@ -75,7 +77,7 @@ export default function PricingSettingsPage() {
     async function handleSaveTax() {
         setSaving(true);
         try {
-            const payload = { ...businessProfile, taxEnabled, taxRate: Number(taxRate) };
+            const payload = { ...businessProfile, taxEnabled, perProductTaxEnabled, taxRate: Number(taxRate) };
             const res = await fetch("/api/profile", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -207,6 +209,27 @@ export default function PricingSettingsPage() {
                         <button onClick={() => setTaxEnabled(!taxEnabled)} className="shrink-0">
                             {taxEnabled
                                 ? <ToggleRight size={36} className="text-green-500" />
+                                : <ToggleLeft size={36} className="text-gray-300" />
+                            }
+                        </button>
+                    </div>
+
+                    {/* Per-Product Toggle Row */}
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--kravy-border)]">
+                        <div className="flex items-center gap-3.5">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${perProductTaxEnabled ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-400'}`}>
+                                <Settings2 size={20} />
+                            </div>
+                            <div>
+                                <div className="font-black text-[0.9rem] text-[var(--kravy-text-primary)]">Per-Product GST</div>
+                                <div className="text-xs text-[var(--kravy-text-muted)] font-medium">
+                                    {perProductTaxEnabled ? "Priority: Product GST > Default GST" : "Always use Default GST for all products"}
+                                </div>
+                            </div>
+                        </div>
+                        <button onClick={() => setPerProductTaxEnabled(!perProductTaxEnabled)} className="shrink-0">
+                            {perProductTaxEnabled
+                                ? <ToggleRight size={36} className="text-amber-500" />
                                 : <ToggleLeft size={36} className="text-gray-300" />
                             }
                         </button>

@@ -1523,6 +1523,7 @@ export default function CheckoutClient() {
     fssaiNumber?: string;
     fssaiEnabled?: boolean;
     hsnEnabled?: boolean;
+    perProductTaxEnabled?: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -1546,6 +1547,7 @@ export default function CheckoutClient() {
             taxRate: data.taxRate ?? 5.0,
             fssaiNumber: data.fssaiNumber,
             fssaiEnabled: data.fssaiEnabled ?? false,
+            perProductTaxEnabled: data.perProductTaxEnabled ?? false,
           });
         }
       } catch (err) {
@@ -1557,9 +1559,19 @@ export default function CheckoutClient() {
 
   /* ================= TOTALS ================= */
   const taxActive = business?.taxEnabled ?? true;
+  const perProductEnabled = business?.perProductTaxEnabled ?? false;
+  const globalRate = business?.taxRate ?? 5.0;
   
   const taxGroups = items.reduce((acc: any, item) => {
-    const rate = item.gst || 0;
+    // 🥇 PRIORITY LOGIC: Product GST > Default GST
+    let rate = globalRate;
+    if (perProductEnabled && item.gst !== undefined && item.gst !== null && item.gst > 0) {
+      rate = item.gst;
+    }
+    
+    // If tax system is globally disabled, rate is 0
+    if (!taxActive) rate = 0;
+    
     const gross = item.qty * item.rate;
     let taxable = gross;
     let gst = 0;

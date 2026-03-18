@@ -83,6 +83,8 @@ export async function POST(request: Request) {
         fssaiNumber: body.fssaiNumber !== undefined ? body.fssaiNumber : undefined,
         fssaiEnabled: body.fssaiEnabled !== undefined ? body.fssaiEnabled : undefined,
         hsnEnabled: body.hsnEnabled !== undefined ? body.hsnEnabled : undefined,
+        gstType: body.gstType !== undefined ? body.gstType : undefined,
+        perProductTaxEnabled: body.perProductTaxEnabled !== undefined ? body.perProductTaxEnabled : undefined,
       },
 
       create: {
@@ -116,6 +118,8 @@ export async function POST(request: Request) {
         fssaiNumber: body.fssaiNumber ?? null,
         fssaiEnabled: body.fssaiEnabled ?? false,
         hsnEnabled: body.hsnEnabled ?? false,
+        gstType: body.gstType ?? "PRODUCT",
+        perProductTaxEnabled: body.perProductTaxEnabled ?? false,
       },
     });
 

@@ -313,6 +313,9 @@ model BusinessProfile {
   pinCode            String?
   taxEnabled         Boolean  @default(true)
   taxRate            Float    @default(5.0)
+  gstType            String?  @default("PRODUCT") // "PRODUCT" or "UNIVERSAL"
+  perProductTaxEnabled Boolean  @default(false)
+
 
   greetingMessage    String?  @default("Thank You 🙏 Visit Again!")
   businessNameSize   String?  @default("large") // medium, large, xlarge

@@ -398,7 +398,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Plus, Search, ChevronDown, Trash2 } from "lucide-react";
+import { Plus, Search, ChevronDown, Trash2, Pencil } from "lucide-react";
 
 /* types */
 type MenuItem = {
@@ -469,6 +469,8 @@ export default function ViewMenuPage() {
   const [quickAddGst, setQuickAddGst] = useState(0);
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<MenuCategory | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -734,6 +736,63 @@ export default function ViewMenuPage() {
       setToast(err?.message ?? "Create failed");
     } finally {
       setIsCreatingCategory(false);
+    }
+  }
+
+  async function handleRenameCategory(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editingCategory) return;
+    const formData = new FormData(e.currentTarget);
+    const newName = (formData.get("name") as string).trim();
+    if (!newName) return;
+
+    try {
+      const res = await fetch("/api/categories", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editingCategory.id, name: newName }),
+      });
+      if (res.ok) {
+        setMenus(prev => prev.map(cat => cat.id === editingCategory.id ? { ...cat, name: newName } : cat));
+        setEditingCategory(null);
+        setToast("Category renamed");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function handleDeleteCategory() {
+    if (!deletingCategory) return;
+    try {
+      const res = await fetch("/api/categories", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: deletingCategory.id }),
+      });
+      if (res.ok) {
+        // Items will automatically be moved to null/uncategorised on backend.
+        // On frontend, let's refresh or move them manually.
+        const uncategorisedId = "__uncategorised__";
+        setMenus(prev => {
+          const removed = prev.find(c => c.id === deletingCategory.id);
+          const filtered = prev.filter(c => c.id !== deletingCategory.id);
+          if (removed && removed.items.length > 0) {
+            // Check if uncategorised exists
+            const uncIdx = filtered.findIndex(c => c.id === uncategorisedId);
+            if (uncIdx >= 0) {
+              filtered[uncIdx].items = [...filtered[uncIdx].items, ...removed.items.map(it => ({ ...it, categoryId: null }))];
+            } else {
+              filtered.push({ id: uncategorisedId, name: "Uncategorised", items: removed.items.map(it => ({ ...it, categoryId: null })) });
+            }
+          }
+          return filtered;
+        });
+        setDeletingCategory(null);
+        setToast("Category deleted, items moved to Uncategorised.");
+      }
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -1313,20 +1372,40 @@ export default function ViewMenuPage() {
             </button>
 
             {menus.map((m) => (
-              <button 
-                key={m.id} 
-                onClick={() => { 
-                  setFilterCategory(m.id); 
-                  setActiveCategory(m.id); 
-                  const el = document.getElementById(`cat-${m.id}`); 
-                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); 
-                }} 
-                className={`w-full text-left px-5 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-3 ${filterCategory === m.id ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 translate-x-1" : "text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-bg)] hover:text-indigo-500"}`}
-              >
-                <div className={`w-1.5 h-1.5 rounded-full ${filterCategory === m.id ? "bg-white animate-pulse" : "bg-indigo-500/40"}`} />
-                <span className="truncate flex-1">{m.name}</span>
-                <span className={`text-[10px] font-bold ${filterCategory === m.id ? "text-indigo-200" : "text-[var(--kravy-text-faint)]"}`}>{m.items.length}</span>
-              </button>
+              <div key={m.id} className="group relative">
+                <button 
+                  onClick={() => { 
+                    setFilterCategory(m.id); 
+                    setActiveCategory(m.id); 
+                    const el = document.getElementById(`cat-${m.id}`); 
+                    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); 
+                  }} 
+                  className={`w-full text-left px-5 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-3 ${filterCategory === m.id ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 translate-x-1" : "text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-bg)] hover:text-indigo-500"}`}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full ${filterCategory === m.id ? "bg-white animate-pulse" : "bg-indigo-500/40"}`} />
+                  <span className="truncate flex-1">{m.name}</span>
+                  <span className={`text-[10px] font-bold ${filterCategory === m.id ? "text-indigo-200" : "text-[var(--kravy-text-faint)]"}`}>{m.items.length}</span>
+                </button>
+                
+                {/* Category Actions: Edit & Delete */}
+                <div className="absolute right-12 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setEditingCategory({ id: m.id, name: m.name }); }}
+                    className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center hover:bg-indigo-500 hover:text-white transition-all shadow-sm"
+                    title="Rename Category"
+                  >
+                    <Pencil size={12} />
+                    <span className="sr-only">Edit</span>
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setDeletingCategory(m); }}
+                    className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                    title="Delete Category"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              </div>
             ))}
 
             <div className="pt-4 px-2">
@@ -1682,6 +1761,65 @@ export default function ViewMenuPage() {
           <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 text-sm">✓</div>
           <span className="text-[var(--kravy-text-primary)]">{toast}</span>
         </motion.div>
+      )}
+
+      {/* 🚀 RENAME CATEGORY MODAL */}
+      {editingCategory && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEditingCategory(null)} />
+          <div className="relative bg-[var(--kravy-surface)] w-full max-w-sm rounded-[2rem] shadow-2xl border border-[var(--kravy-border)] overflow-hidden scale-100 animate-in fade-in duration-200">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-5 pb-4 border-b border-[var(--kravy-border)]/50">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-1.5 h-6 bg-indigo-500 rounded-full rotate-12" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-[var(--kravy-text-primary)] leading-tight">Rename Category</h3>
+                  <p className="text-[10px] text-[var(--kravy-text-muted)] font-black uppercase tracking-widest mt-0.5">Change section name</p>
+                </div>
+              </div>
+              <form onSubmit={handleRenameCategory} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">New Name</label>
+                  <input
+                    name="name"
+                    defaultValue={editingCategory.name}
+                    autoFocus
+                    autoComplete="off"
+                    required
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button type="button" onClick={() => setEditingCategory(null)} className="flex-1 py-3 rounded-xl border border-[var(--kravy-border)] bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-xs hover:bg-[var(--kravy-surface-hover)] transition-all">Cancel</button>
+                  <button type="submit" className="flex-[2] py-3 rounded-xl bg-indigo-600 text-white font-black text-xs shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all">Update</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🚀 DELETE CATEGORY CONFIRMATION */}
+      {deletingCategory && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeletingCategory(null)} />
+          <div className="relative bg-[var(--kravy-surface)] w-full max-w-sm rounded-[2rem] shadow-2xl border border-[var(--kravy-border)] overflow-hidden scale-100 animate-in fade-in duration-200">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-6">
+                <Trash2 size={32} className="text-rose-500" />
+              </div>
+              <h3 className="text-xl font-[900] text-[var(--kravy-text-primary)] mb-2">Delete {deletingCategory.name}?</h3>
+              <p className="text-sm text-[var(--kravy-text-muted)] font-bold mb-8">
+                All {deletingCategory.items.length} products will be moved to <span className="text-indigo-600 font-black">"Uncategorised"</span> section.
+              </p>
+              <div className="flex flex-col gap-2">
+                <button onClick={handleDeleteCategory} className="w-full py-4 rounded-2xl bg-rose-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 transition-all active:scale-95">Yes, Delete Section</button>
+                <button onClick={() => setDeletingCategory(null)} className="w-full py-4 rounded-2xl bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-xs uppercase tracking-widest hover:bg-[var(--kravy-border)] transition-all">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

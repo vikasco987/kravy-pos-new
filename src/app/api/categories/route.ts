@@ -151,3 +151,60 @@ export async function POST(req: Request) {
     );
   }
 }
+
+// ✅ PUT update category name
+export async function PUT(req: Request) {
+  try {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+    const { id, name } = await req.json();
+
+    if (!id || !name || !name.trim()) {
+      return NextResponse.json(
+        { message: "ID and name are required" },
+        { status: 400 }
+      );
+    }
+
+    const updated = await prisma.category.update({
+      where: { id, clerkId: effectiveId },
+      data: { name: name.trim() },
+    });
+
+    return NextResponse.json(updated, { status: 200 });
+  } catch (error) {
+    console.error("❌ Failed to rename category:", error);
+    return NextResponse.json({ message: "Failed to rename" }, { status: 500 });
+  }
+}
+
+// ✅ DELETE category (move products to Uncategorized)
+export async function DELETE(req: Request) {
+  try {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+    const { id } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ message: "ID is required" }, { status: 400 });
+    }
+
+    // 1. Reassign products to None (Uncategorized)
+    await prisma.item.updateMany({
+      where: { categoryId: id, clerkId: effectiveId },
+      data: { categoryId: null },
+    });
+
+    // 2. Delete the category
+    await prisma.category.delete({
+      where: { id, clerkId: effectiveId },
+    });
+
+    return NextResponse.json({ message: "Category deleted and products moved." }, { status: 200 });
+  } catch (error) {
+    console.error("❌ Failed to delete category:", error);
+    return NextResponse.json({ message: "Failed to delete" }, { status: 500 });
+  }
+}
