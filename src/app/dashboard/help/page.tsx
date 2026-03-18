@@ -39,6 +39,7 @@ export default function HelpPage() {
     { id: 2, name: "Billing & Workflow", icon: <FileText size={24} />, description: "Master billing operations", articles: 8, href: "/dashboard/docs/workflow" },
     { id: 3, name: "Menu Management", icon: <MessageSquare size={24} />, description: "Manage your menu items", articles: 15, href: "/dashboard/docs/menu-management" },
     { id: 7, name: "GST & HSN Billing", icon: <Percent size={24} />, description: "Setup professional GST bills", articles: 1, href: "/dashboard/docs/gst-billing" },
+    { id: 8, name: "Advanced GST & Categories", icon: <Zap size={24} />, description: "Product-wise GST & Category Pro guide", articles: 1, href: "/dashboard/docs/gst-category-pro" },
     { id: 4, name: "Video Tutorials", icon: <Video size={24} />, description: "Watch step-by-step guides", articles: 6 },
     ...(isAdmin ? [
       { 
