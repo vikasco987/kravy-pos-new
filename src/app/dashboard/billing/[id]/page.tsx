@@ -750,6 +750,18 @@ export default function ViewBillPage() {
           Date: {new Date(bill.createdAt).toLocaleString()}
         </div>
 
+        {/* ✅ ADD BUYER GSTIN & POS */}
+        {(bill as any).buyerGSTIN && (
+          <div className="text-center text-[10px] font-bold mt-1">
+            Buyer GSTIN: {(bill as any).buyerGSTIN}
+          </div>
+        )}
+        {(bill as any).placeOfSupply && (
+          <div className="text-center text-[9px]">
+            POS: {(bill as any).placeOfSupply}
+          </div>
+        )}
+
         <hr />
 
         <hr />
@@ -769,25 +781,30 @@ export default function ViewBillPage() {
         </div>
 
         {/* ITEMS */}
-        {billItems.map((i, idx) => (
-          <div
-            key={idx}
-            className="flex justify-between text-[11px] mt-1 leading-tight font-medium"
-          >
-            <span className="w-[24mm] break-words">
-              {i.name}
-            </span>
-            <span className="w-[6mm] text-right">
-              {i.qty}
-            </span>
-            <span className="w-[9mm] text-right">
-              {i.rate.toFixed(0)}
-            </span>
-            <span className="w-[11mm] text-right">
-              {(i.qty * i.rate).toFixed(0)}
-            </span>
-          </div>
-        ))}
+        {billItems.map((i, idx) => {
+          const itemData = (bill.items as any[])?.[idx] || {};
+          const hsnCode = itemData.hsnCode ? ` (${itemData.hsnCode})` : "";
+          
+          return (
+            <div
+              key={idx}
+              className="flex justify-between text-[11px] mt-1 leading-tight font-medium"
+            >
+              <span className="w-[24mm] break-words">
+                {i.name}{hsnCode}
+              </span>
+              <span className="w-[6mm] text-right">
+                {i.qty}
+              </span>
+              <span className="w-[9mm] text-right">
+                {i.rate.toFixed(0)}
+              </span>
+              <span className="w-[11mm] text-right">
+                {(i.qty * i.rate).toFixed(0)}
+              </span>
+            </div>
+          );
+        })}
         <div className="border-t border-dashed my-1" />
 
         {/* SUBTOTAL */}

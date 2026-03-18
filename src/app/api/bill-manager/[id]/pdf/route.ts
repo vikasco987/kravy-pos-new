@@ -56,7 +56,7 @@ export async function GET(
     const pdfDoc = await PDFDocument.create();
 
     const items = Array.isArray(bill.items) ? bill.items : [];
-    const baseHeight = 400; // Header, Footer, Meta
+    const baseHeight = 450; // Header, Footer, Meta, Tax Breakdown (increased for more info)
     const itemHeight = items.length * 15;
     const qrHeight = (bill.paymentMode === "UPI" && business?.upi) ? 120 : 0;
     const finalHeight = baseHeight + itemHeight + qrHeight;
@@ -134,46 +134,99 @@ export async function GET(
     /* ================= BILL META ================= */
     line(`Bill No: ${bill.billNumber}`, 9, 'left', true);
     line(`Date: ${new Date(bill.createdAt).toLocaleDateString('en-IN')}`, 8, 'left');
+    
+    if (bill.customerName) line(`Customer: ${bill.customerName}`, 8, 'left');
+    if (bill.customerPhone) line(`Phone: ${bill.customerPhone}`, 8, 'left');
+    // ✅ ADD BUYER GSTIN
+    if ((bill as any).buyerGSTIN) line(`Buyer GSTIN: ${(bill as any).buyerGSTIN}`, 8, 'left', true);
+    if ((bill as any).placeOfSupply) line(`Place of Supply: ${(bill as any).placeOfSupply}`, 8, 'left');
+
     hr();
 
     /* ================= TABLE HEADER ================= */
-    page.drawText("Item", { x: 15, y, size: 8, font: fontBold });
+    page.drawText("Item / HSN", { x: 15, y, size: 8, font: fontBold });
     page.drawText("Qty", { x: 130, y, size: 8, font: fontBold });
     page.drawText("Total", { x: 200, y, size: 8, font: fontBold });
     y -= 12;
     hr();
 
     /* ================= ITEMS ================= */
+    const businessState = (business?.state || "").trim().toLowerCase();
+    const billState = ((bill as any).placeOfSupply || businessState).trim().toLowerCase();
+    const isInterState = businessState !== "" && billState !== "" && businessState !== billState;
+    
+    // Track totals for breakdown if not already provided in bill object top-level
+    const taxGroups: Record<number, any> = {};
+
     items.forEach((i: any) => {
       const name = i.name || "Item";
+      const hsn = i.hsnCode ? `(${i.hsnCode})` : "";
       const qty = Number(i.qty ?? i.quantity ?? 1);
       const rate = Number(i.rate ?? i.price ?? 0);
-      const total = qty * rate;
+      const itemGstRate = i.gst != null ? Number(i.gst) : (business?.taxRate || 0);
+      const taxStatus = i.taxStatus || "Without Tax";
+      const gross = qty * rate;
+
+      let taxable = gross;
+      let gstAmount = 0;
+      if (taxStatus === "With Tax") {
+        taxable = gross / (1 + itemGstRate / 100);
+        gstAmount = gross - taxable;
+      } else {
+        gstAmount = (gross * itemGstRate) / 100;
+      }
+
+      if (itemGstRate > 0) {
+        if (!taxGroups[itemGstRate]) taxGroups[itemGstRate] = { rate: itemGstRate, cgst: 0, sgst: 0, igst: 0 };
+        if (isInterState) {
+          taxGroups[itemGstRate].igst += gstAmount;
+        } else {
+          taxGroups[itemGstRate].cgst += gstAmount / 2;
+          taxGroups[itemGstRate].sgst += gstAmount / 2;
+        }
+      }
 
       const displayName = name.length > 20 ? name.substring(0, 18) + ".." : name;
-      page.drawText(displayName, { x: 15, y, size: 8, font });
+      page.drawText(`${displayName} ${hsn}`, { x: 15, y, size: 7, font });
       page.drawText(`${qty}`, { x: 130, y, size: 8, font });
-      page.drawText(`${total.toFixed(2)}`, { x: 200, y, size: 8, font });
+      page.drawText(`${gross.toFixed(2)}`, { x: 200, y, size: 8, font });
       y -= 12;
     });
 
     hr();
 
     /* ================= TOTALS ================= */
-    const subtotal = Number(bill.subtotal || bill.total || 0);
+    const subtotal = Number(bill.subtotal || 0);
     const tax = Number(bill.tax || 0);
     const finalTotal = Number(bill.total || 0);
 
-    if (tax > 0) {
-      page.drawText("Subtotal:", { x: 130, y, size: 9, font });
-      page.drawText(`${subtotal.toFixed(2)}`, { x: 200, y, size: 9, font });
-      y -= 15;
-      page.drawText(`GST (${business?.taxRate || 5}%):`, { x: 130, y, size: 9, font });
-      page.drawText(`${tax.toFixed(2)}`, { x: 200, y, size: 9, font });
-      y -= 15;
+    page.drawText("Subtotal:", { x: 130, y, size: 8, font });
+    page.drawText(`${subtotal.toFixed(2)}`, { x: 200, y, size: 8, font });
+    y -= 12;
+
+    // ✅ DETAILED GST BREAKDOWN
+    Object.values(taxGroups).forEach((g: any) => {
+      if (isInterState) {
+        page.drawText(`IGST (${g.rate}%):`, { x: 130, y, size: 7, font });
+        page.drawText(`${g.igst.toFixed(2)}`, { x: 200, y, size: 7, font });
+        y -= 10;
+      } else {
+        page.drawText(`CGST (${g.rate/2}%):`, { x: 130, y, size: 7, font });
+        page.drawText(`${g.cgst.toFixed(2)}`, { x: 200, y, size: 7, font });
+        y -= 9;
+        page.drawText(`SGST (${g.rate/2}%):`, { x: 130, y, size: 7, font });
+        page.drawText(`${g.sgst.toFixed(2)}`, { x: 200, y, size: 7, font });
+        y -= 10;
+      }
+    });
+
+    if (Object.keys(taxGroups).length === 0 && tax > 0) {
+      page.drawText("GST:", { x: 130, y, size: 8, font });
+      page.drawText(`${tax.toFixed(2)}`, { x: 200, y, size: 8, font });
+      y -= 12;
     }
 
-    y -= 5; // Extra gap before Grand Total
+    y -= 5; 
 
     // GRAND TOTAL WITH BLACK HIGHLIGHT
     page.drawRectangle({
@@ -191,7 +244,7 @@ export async function GET(
     hr();
 
     /* ================= UPI QR CODE ================= */
-    if (bill.paymentMode === "UPI" && business?.upi && business?.upiQrEnabled) {
+    if (bill.paymentMode === "UPI" && business?.upi && (business as any).upiQrEnabled !== false) {
       try {
         const upiUrl = `upi://pay?pa=${business.upi}&pn=${business.businessName?.replace(/\s/g, '%20')}&am=${finalTotal.toFixed(2)}&cu=INR&tn=Bill%20${bill.billNumber}`;
         const qrDataUrl = await QRCode.toDataURL(upiUrl, { margin: 1, width: 120 });

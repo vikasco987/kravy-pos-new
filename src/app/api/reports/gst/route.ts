@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function GET(req: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) return new NextResponse("Unauthorized", { status: 401 });
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) return new NextResponse("Unauthorized", { status: 401 });
 
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get("startDate");
@@ -15,19 +16,22 @@ export async function GET(req: Request) {
       return new NextResponse("Missing date range", { status: 400 });
     }
 
-    // 1. Fetch Business Profile to check if GST is enabled
+    // 1. Fetch Business Profile
     const profile = await prisma.businessProfile.findUnique({
-      where: { userId },
+      where: { userId: effectiveId },
     });
 
     if (!profile?.taxEnabled) {
       return NextResponse.json({ error: "GST is not enabled" }, { status: 403 });
     }
 
+    const globalGstRate = profile?.taxRate || 0;
+    const businessState = profile?.state?.trim().toLowerCase() || "";
+
     // 2. Fetch all bills for the user in the date range
     const bills = await prisma.billManager.findMany({
       where: {
-        clerkUserId: userId,
+        clerkUserId: effectiveId,
         isDeleted: false,
         isHeld: false,
         createdAt: {
@@ -49,12 +53,10 @@ export async function GET(req: Request) {
     let totalIgstAll = 0;
     let totalGstAll = 0;
 
-    const businessState = profile?.state?.trim().toLowerCase() || "";
-
     bills.forEach((bill) => {
       const dateStr = bill.createdAt.toISOString().split("T")[0];
-      const billItems = bill.items as any[];
-      const billPlaceOfSupply = bill.placeOfSupply?.trim().toLowerCase() || businessState;
+      const billItems = (bill.items as any[]) || [];
+      const billPlaceOfSupply = (bill.placeOfSupply || profile?.state || "").trim().toLowerCase();
       const isInterState = billPlaceOfSupply !== "" && businessState !== "" && billPlaceOfSupply !== businessState;
 
       let billTaxable = 0;
@@ -64,8 +66,12 @@ export async function GET(req: Request) {
       let billGst = 0;
 
       billItems.forEach((item) => {
-        const rate = Number(item.gst) || 0;
-        const gross = (Number(item.qty) || 0) * (Number(item.rate) || 0);
+        // Fallback to global GST rate if item.gst is missing or 0 (for historical records)
+        const rate = (item.gst !== undefined && item.gst !== null) ? Number(item.gst) : globalGstRate;
+        const qty = Number(item.qty || item.quantity) || 0;
+        const price = Number(item.rate || item.price) || 0;
+        const gross = qty * price;
+        
         let taxable = 0;
         let gst = 0;
 
@@ -105,7 +111,7 @@ export async function GET(req: Request) {
         hsnData.sgst += sgst;
         hsnData.igst += igst;
         hsnData.totalGst += gst;
-        hsnData.qty += Number(item.qty) || 0;
+        hsnData.qty += qty;
       });
 
       // GSTR-1 Entry
