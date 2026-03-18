@@ -87,7 +87,10 @@ export async function PUT(
     const profile = await prisma.businessProfile.findFirst({
       where: { userId: effectiveId },
     });
-    const globalGstRate = profile?.taxRate || 0;
+    
+    const isTaxEnabled = profile?.taxEnabled ?? true;
+    const globalGstRate = isTaxEnabled ? (profile?.taxRate ?? 0) : 0;
+    const perProductEnabled = profile?.perProductTaxEnabled ?? false;
 
     // ✅ RECALCULATE EVERYTHING ON SERVER (SECURITY)
     let calcSubtotal = 0;
@@ -96,7 +99,7 @@ export async function PUT(
     items.forEach((item: any) => {
       const qty = Number(item.qty || item.quantity) || 0;
       const rate = Number(item.rate || item.price) || 0;
-      const itemGstRate = item.gst != null ? Number(item.gst) : globalGstRate;
+      const itemGstRate = (perProductEnabled && item.gst > 0) ? Number(item.gst) : globalGstRate;
       const taxStatus = item.taxStatus || "Without Tax";
       
       const gross = qty * rate;

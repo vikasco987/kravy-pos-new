@@ -65,9 +65,11 @@ export async function GET(req: Request) {
       let billIgst = 0;
       let billGst = 0;
 
+      const perProductEnabled = profile?.perProductTaxEnabled ?? false;
+
       billItems.forEach((item) => {
-        // Fallback to global GST rate if item.gst is missing or 0 (for historical records)
-        const rate = (item.gst !== undefined && item.gst !== null) ? Number(item.gst) : globalGstRate;
+        // Fallback to global GST rate if per-product is disabled OR item.gst is 0/null
+        const rate = (perProductEnabled && item.gst > 0) ? Number(item.gst) : globalGstRate;
         const qty = Number(item.qty || item.quantity) || 0;
         const price = Number(item.rate || item.price) || 0;
         const gross = qty * price;

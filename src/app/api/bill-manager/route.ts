@@ -71,7 +71,10 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
     const profile = await prisma.businessProfile.findUnique({
       where: { userId: effectiveId },
     });
-    const globalGstRate = profile?.taxRate || 0;
+    
+    const isTaxEnabled = profile?.taxEnabled ?? true;
+    const globalGstRate = isTaxEnabled ? (profile?.taxRate ?? 0) : 0;
+    const perProductEnabled = profile?.perProductTaxEnabled ?? false;
 
     // ✅ RECALCULATE EVERYTHING ON SERVER (SECURITY)
     let calcSubtotal = 0;
@@ -80,7 +83,8 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
     items.forEach((item: any) => {
       const qty = Number(item.qty || item.quantity) || 0;
       const rate = Number(item.rate || item.price) || 0;
-      const itemGstRate = item.gst != null ? Number(item.gst) : globalGstRate;
+      const perProductEnabled = profile?.perProductTaxEnabled ?? false;
+      const itemGstRate = (perProductEnabled && item.gst > 0) ? Number(item.gst) : globalGstRate;
       const taxStatus = item.taxStatus || "Without Tax";
       
       const gross = qty * rate;
