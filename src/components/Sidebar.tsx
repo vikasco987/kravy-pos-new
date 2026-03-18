@@ -216,7 +216,8 @@ export default function Sidebar() {
     fetch("/api/profile")
       .then(res => res.json())
       .then(data => {
-        if (data && data.taxEnabled) {
+        // Feature is enabled if either Global tax is on OR per-product tax is on
+        if (data && (data.taxEnabled || data.perProductTaxEnabled)) {
           setTaxEnabled(true);
         }
       })

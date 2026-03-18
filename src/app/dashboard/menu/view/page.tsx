@@ -481,7 +481,10 @@ export default function ViewMenuPage() {
   useEffect(() => {
     fetch("/api/profile")
       .then(res => res.json())
-      .then(data => setTaxEnabled(data?.taxEnabled ?? true))
+      .then(data => {
+        // Enable GST UI features if either Global or Per-Product GST is enabled
+        setTaxEnabled(data?.taxEnabled || data?.perProductTaxEnabled || false);
+      })
       .catch(() => {});
   }, []);
 

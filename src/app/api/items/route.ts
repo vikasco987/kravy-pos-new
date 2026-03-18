@@ -360,8 +360,8 @@ export async function POST(req: Request) {
         imageUrl: body.imageUrl || null,
         description: body.description || null,
         clerkId: effectiveId,
-        category: { connect: { id: String(body.categoryId) } },
-        user: { connect: { id: dbUser.id } },
+        categoryId: (body.categoryId === "uncategorised" || body.categoryId === "__uncategorised__") ? null : String(body.categoryId),
+        userId: dbUser.id,
         // Enhanced Fields
         isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : true,
         isBestseller: Boolean(body.isBestseller),
@@ -435,7 +435,7 @@ export async function PUT(req: Request) {
         imageUrl: imageUrl ?? undefined,
         description: description ?? undefined,
         categoryId:
-          categoryId === "uncategorised" ? null : categoryId ?? undefined,
+          (categoryId === "uncategorised" || categoryId === "__uncategorised__") ? null : categoryId ?? undefined,
         isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : undefined,
         isBestseller: body.isBestseller !== undefined ? Boolean(body.isBestseller) : undefined,
         isRecommended: body.isRecommended !== undefined ? Boolean(body.isRecommended) : undefined,
