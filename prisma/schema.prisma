@@ -179,6 +179,7 @@ model User {
   combos     Combo[]
   offers     Offer[]
   rewards    Reward[]
+  attendances Attendance[]
 }
 
 //////////////////////////////////////////////////
@@ -483,4 +484,33 @@ model Backup {
   status    String   // SUCCESS, FAILED
   error     String?
   createdAt DateTime @default(now())
+}
+
+//////////////////////////////////////////////////
+// ATTENDANCE
+//////////////////////////////////////////////////
+
+model Attendance {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  staffId     String   @db.ObjectId
+  staff       User     @relation(fields: [staffId], references: [id])
+  ownerId     String   // ClerkId of the owner
+  
+  date        String   // "YYYY-MM-DD" formatted local date
+  checkIn     DateTime
+  checkOut    DateTime?
+  
+  lateByMins  Int      @default(0)
+  reason      String?
+  status      String   @default("On Time") // "On Time", "Late", "Unverified"
+  
+  workingMins Int      @default(0)
+  overtimeMins Int     @default(0)
+  remarks     String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([staffId, date])
+  @@index([ownerId, date])
 }
