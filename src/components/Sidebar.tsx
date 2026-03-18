@@ -142,7 +142,6 @@ const navGroups = [
     items: [
       { icon: <Users size={18} />, label: "Customer Parties", href: "/dashboard/parties" },
       { icon: <UserPlus size={18} />, label: "Staff Management", href: "/dashboard/staff", roles: ["ADMIN", "SELLER"] },
-      { icon: <Clock size={18} />, label: "Staff Attendance", href: "/dashboard/staff/attendance", badge: "New", badgeColor: "#10B981", roles: ["ADMIN", "SELLER"] },
       { icon: <Package size={18} />, label: "Inventory Stock", href: "/dashboard/inventory", roles: ["ADMIN", "SELLER"] },
       { icon: <QrCode size={18} />, label: "QR Order Terminal", href: "/dashboard/qr-orders", badge: "Scan", badgeColor: "#8B5CF6" },
     ]

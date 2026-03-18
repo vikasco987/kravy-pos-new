@@ -1436,19 +1436,6 @@ export default function CheckoutClient() {
 
   /* ================= CART ================= */
   function addToCart(item: MenuItem) {
-    let finalGst = 0;
-    
-    if (item.gst !== null && item.gst !== undefined) {
-      finalGst = item.gst;
-    } else {
-      if (business?.taxEnabled && business?.taxRate) {
-        finalGst = business.taxRate;
-        toast.warning(`GST missing for ${item.name}. Auto-applied default ${finalGst}%`);
-      } else {
-        finalGst = 0;
-      }
-    }
-
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
@@ -1461,7 +1448,7 @@ export default function CheckoutClient() {
         name: item.name, 
         qty: 1, 
         rate: item.price,
-        gst: finalGst,
+        gst: item.gst || 0,
         hsnCode: item.hsnCode || "",
         taxStatus: item.taxStatus || "Without Tax"
       }];

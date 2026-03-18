@@ -41,7 +41,6 @@ const ALL_PATHS = [
   { path: "/dashboard/parties", label: "Customer Parties", icon: <Users size={16} /> },
   { path: "/dashboard/inventory", label: "Inventory Stock", icon: <Package size={16} /> },
   { path: "/dashboard/qr-orders", label: "QR Order Terminal", icon: <QrCode size={16} /> },
-  { path: "/dashboard/staff/attendance", label: "Staff Attendance", icon: <Users size={16} /> },
   { path: "/dashboard/settings", label: "Store Settings", icon: <Settings size={16} /> },
 ];
 
