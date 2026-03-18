@@ -83,9 +83,39 @@ export async function PUT(
         ? paymentMode
         : "Cash";
 
-    /* ---------- TAX (SERVER SOURCE OF TRUTH) ---------- */
-    const GST_PERCENT = 5;
-    const tax = Number(((subtotal * GST_PERCENT) / 100).toFixed(2));
+    // ✅ FETCH PROFILE FOR GLOBAL GST FALLBACK
+    const profile = await prisma.businessProfile.findFirst({
+      where: { userId: effectiveId },
+    });
+    const globalGstRate = profile?.taxRate || 0;
+
+    // ✅ RECALCULATE EVERYTHING ON SERVER (SECURITY)
+    let calcSubtotal = 0;
+    let totalTax = 0;
+
+    items.forEach((item: any) => {
+      const qty = Number(item.qty || item.quantity) || 0;
+      const rate = Number(item.rate || item.price) || 0;
+      const itemGstRate = item.gst != null ? Number(item.gst) : globalGstRate;
+      const taxStatus = item.taxStatus || "Without Tax";
+      
+      const gross = qty * rate;
+
+      if (taxStatus === "With Tax") {
+        const base = gross / (1 + itemGstRate / 100);
+        const gst = gross - base;
+        calcSubtotal += base;
+        totalTax += gst;
+      } else {
+        const gst = (gross * itemGstRate) / 100;
+        calcSubtotal += gross;
+        totalTax += gst;
+      }
+    });
+
+    const finalSubtotal = Number(calcSubtotal.toFixed(2));
+    const tax = Number(totalTax.toFixed(2));
+    const finalTotal = Number((finalSubtotal + tax).toFixed(2));
 
     /* ---------- PAYMENT STATUS ---------- */
     let finalPaymentStatus: string;
@@ -128,16 +158,17 @@ export async function PUT(
       where: { id },
       data: {
         items,
-        subtotal,
+        subtotal: finalSubtotal,
         tax,
-        total,
+        total: finalTotal,
         paymentMode: finalPaymentMode,
         paymentStatus: finalPaymentStatus,
         isHeld: body.isHeld === true,
         upiTxnRef: finalPaymentMode === "UPI" ? upiTxnRef : null,
         customerName: customerName || null,
         customerPhone: customerPhone || null,
-        partyId: partyId, // ✅ Update link to party
+        partyId: partyId,
+        auditNote: body.auditNote || null,
       },
     });
 

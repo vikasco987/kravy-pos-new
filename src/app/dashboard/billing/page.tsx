@@ -275,7 +275,7 @@ export default function BillingPage() {
                     { key: "customer", label: "Customer Name" },
                     { key: "customerPhone", label: "Phone Number" },
                     { key: "subtotal", label: "Subtotal" },
-                    { key: "gst", label: "GST (5%)" },
+                    { key: "gst", label: `GST (${business?.taxRate || 0}%)` },
                     { key: "discount", label: "Discount" },
                     { key: "total", label: "Net Total" },
                     { key: "timeline", label: "Timeline" },
@@ -546,7 +546,7 @@ export default function BillingPage() {
                 
                 {/* Financial Breakdown - Modern Visual Grouping */}
                 {visibleCols.subtotal && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "var(--kravy-text-muted)" }}>Subtotal</th>}
-                {visibleCols.gst && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "#f59e0b" }}>GST (5%)</th>}
+                {visibleCols.gst && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "#f59e0b" }}>GST ({business?.taxRate || 0}%)</th>}
                 {visibleCols.discount && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "#ef4444" }}>Disc.</th>}
                 {visibleCols.total && <th style={{ textAlign: "right", background: "rgba(16, 185, 129, 0.05)", borderRight: "1px solid var(--kravy-border)" }}>Net Total</th>}
                 

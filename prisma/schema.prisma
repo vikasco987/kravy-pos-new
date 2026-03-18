@@ -394,6 +394,7 @@ model BillManager {
   deletedSnapshot Json?
   pdfUrl          String?   // ✅ Added for direct sharing
   tableName       String?   // ✅ Added to track source (Table Name or "POS")
+  auditNote       String?   // SaaS Feature: Audit trail for tax corrections
 
   @@index([clerkUserId])
   @@index([isDeleted, createdAt])

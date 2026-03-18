@@ -363,7 +363,7 @@ function PublicMenu() {
     // 🥇 PRIORITY LOGIC: Product GST > Default GST
     const taxEnabled = profile?.taxEnabled ?? true;
     const perProductEnabled = profile?.perProductTaxEnabled ?? false;
-    const globalRate = profile?.taxRate ?? 5;
+    const globalRate = profile?.taxRate ?? 0;
 
     const itemTax = Object.entries(cart).reduce((sum, [id, qty]) => {
         const item = items.find(i => i.id === id);

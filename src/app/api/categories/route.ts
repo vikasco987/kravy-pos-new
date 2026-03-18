@@ -1,71 +1,5 @@
-// // src/app/api/categories/route.ts
-// import { NextRequest, NextResponse } from "next/server";
-// import { prisma } from "@/lib/prisma";
-
-
-// // GET all categories
-// export async function GET() {
-//   const categories = await prisma.category.findMany({
-//     include: { children: true },
-//   });
-//   return NextResponse.json(categories);
-// }
-
-// // POST create category
-// export async function POST(req: NextRequest) {
-//   const body = await req.json();
-//   const category = await prisma.category.create({
-//     data: {
-//       name: body.name,
-//       parentId: body.parentId || null,
-//     },
-//   });
-//   return NextResponse.json(category);
-// }
-
-
-
-
-
-
-
-
-
-
-// // app/api/categories/route.ts
-// import { NextResponse } from "next/server";
-// import prisma from "@/utils/prismaClient";
-
-// export async function GET() {
-//   try {
-//     const categories = await prisma.category.findMany({
-//       select: { id: true, name: true },
-//     });
-
-//     // ✅ Ensure ObjectId is sent as string
-//     const safeCategories = categories.map((cat) => ({
-//       id: cat.id.toString(),
-//       name: cat.name,
-//     }));
-
-//     return NextResponse.json(safeCategories);
-//   } catch (error) {
-//     console.error("❌ Error fetching categories:", error);
-//     return NextResponse.json(
-//       { error: "Failed to load categories" },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-
-
-
-
-
-// app/api/categories/route.ts
 import { NextResponse } from "next/server";
-import prisma from "@/utils/prismaClient";
+import { prisma } from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 // ✅ GET all categories
@@ -77,10 +11,9 @@ export async function GET() {
         OR: [{ clerkId: effectiveId }, { clerkId: null }],
       },
       select: { id: true, name: true },
-      orderBy: { name: "asc" }, // optional: keep dropdown sorted
+      orderBy: { name: "asc" },
     });
 
-    // Ensure IDs are strings (avoids React key warning)
     const safeCategories = categories.map((cat) => ({
       id: String(cat.id),
       name: cat.name,
@@ -111,7 +44,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Avoid duplicates (case-insensitive) for this user
     const existing = await prisma.category.findFirst({
       where: { 
         name: { equals: name.trim(), mode: "insensitive" },
@@ -167,12 +99,25 @@ export async function PUT(req: Request) {
       );
     }
 
-    const updated = await prisma.category.update({
-      where: { id, clerkId: effectiveId },
-      data: { name: name.trim() },
-    });
-
-    return NextResponse.json(updated, { status: 200 });
+    // Attempt to update with ownership check
+    try {
+      const updated = await prisma.category.update({
+        where: { id, clerkId: effectiveId },
+        data: { name: name.trim() },
+      });
+      return NextResponse.json(updated, { status: 200 });
+    } catch (err) {
+      // Legacy fallback: If it belongs to no one, current user claims it
+      const legacy = await prisma.category.findUnique({ where: { id } });
+      if (legacy && !legacy.clerkId) {
+        const updated = await prisma.category.update({
+          where: { id },
+          data: { name: name.trim(), clerkId: effectiveId },
+        });
+        return NextResponse.json(updated, { status: 200 });
+      }
+      throw err;
+    }
   } catch (error) {
     console.error("❌ Failed to rename category:", error);
     return NextResponse.json({ message: "Failed to rename" }, { status: 500 });
@@ -191,16 +136,26 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ message: "ID is required" }, { status: 400 });
     }
 
-    // 1. Reassign products to None (Uncategorized)
+    // Ownership check for products
     await prisma.item.updateMany({
       where: { categoryId: id, clerkId: effectiveId },
       data: { categoryId: null },
     });
 
-    // 2. Delete the category
-    await prisma.category.delete({
-      where: { id, clerkId: effectiveId },
-    });
+    // Delete category
+    try {
+      await prisma.category.delete({
+        where: { id, clerkId: effectiveId },
+      });
+    } catch (err) {
+      // Fallback for legacy categories
+      const legacy = await prisma.category.findUnique({ where: { id } });
+      if (legacy && !legacy.clerkId) {
+        await prisma.category.delete({ where: { id } });
+      } else {
+        throw err;
+      }
+    }
 
     return NextResponse.json({ message: "Category deleted and products moved." }, { status: 200 });
   } catch (error) {

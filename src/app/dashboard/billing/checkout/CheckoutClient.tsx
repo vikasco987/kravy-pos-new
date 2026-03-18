@@ -1588,10 +1588,19 @@ export default function CheckoutClient() {
       gst = (gross * rate) / 100;
     }
 
-    if (!acc[rate]) acc[rate] = { rate, taxable: 0, cgst: 0, sgst: 0, totalTax: 0 };
+    // 🥇 INTER-STATE vs INTRA-STATE LOGIC
+    const isInterState = placeOfSupply && business?.state && 
+      placeOfSupply.trim().toLowerCase() !== business.state.trim().toLowerCase();
+
+    if (!acc[rate]) acc[rate] = { rate, taxable: 0, cgst: 0, sgst: 0, igst: 0, totalTax: 0 };
     acc[rate].taxable += taxable;
-    acc[rate].cgst += gst / 2;
-    acc[rate].sgst += gst / 2;
+    
+    if (isInterState) {
+      acc[rate].igst += gst;
+    } else {
+      acc[rate].cgst += gst / 2;
+      acc[rate].sgst += gst / 2;
+    }
     acc[rate].totalTax += gst;
     return acc;
   }, {});
@@ -1601,6 +1610,7 @@ export default function CheckoutClient() {
     taxable: Number(g.taxable.toFixed(2)),
     cgst: Number(g.cgst.toFixed(2)),
     sgst: Number(g.sgst.toFixed(2)),
+    igst: Number((g.igst || 0).toFixed(2)),
     totalTax: Number(g.totalTax.toFixed(2))
   }));
 
@@ -1612,9 +1622,11 @@ export default function CheckoutClient() {
   // If items are "Without Tax", finalTotal = subtotal + tax.
   // Correct approach: Grand Total is sum of (Taxable + Tax) for all items.
   const finalTotal = Number((totalTaxable + totalGst).toFixed(2));
-  const gstAmount = totalGst;
-  const cgst = Number((totalGst / 2).toFixed(2));
-  const sgst = Number((totalGst / 2).toFixed(2));
+  const gstAmount = Number(totalGst.toFixed(2));
+  
+  // 🛡️ SMART AUDIT LOG: Detect if default was used
+  const hasAuditNotes = items.some(i => perProductEnabled && (i.gst === undefined || i.gst === null || i.gst === 0));
+  const auditNote = hasAuditNotes ? "Some items used global default tax rate." : null;
 
   /* ================= PAYMENT STATE ================= */
   const [paymentMode, setPaymentMode] = useState<"Cash" | "UPI" | "Card">("Cash");
@@ -1638,8 +1650,31 @@ export default function CheckoutClient() {
   /* ================= SAVE BILL ================= */
   async function saveBill(isHeld: boolean = false) {
     if (items.length === 0) { alert("No items to save"); return null; }
+
+    // 🛡️ GST VALIDATION SYSTEM
+    if (buyerGSTIN) {
+      const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+      if (!gstinRegex.test(buyerGSTIN)) {
+        alert("Invalid Buyer GSTIN Format (Expected 15 chars, e.g. 07AAAAA0000A1Z5)");
+        return null;
+      }
+    }
+
+    // Recalculation Check (Compare UI result with calculated result)
+    let reCalcGst = items.reduce((sum, item) => {
+      const rate = item.gst || (business?.taxRate ?? 0);
+      const gross = item.qty * item.rate;
+      if (item.taxStatus === "With Tax") return sum + (gross - (gross / (1 + rate / 100)));
+      return sum + ((gross * rate) / 100);
+    }, 0);
+
+    if (taxActive && Math.abs(reCalcGst - gstAmount) > 0.5) {
+      alert(`Safety Check: GST Calculation Mismatch! System: ₹${gstAmount.toFixed(2)}, Calculated: ₹${reCalcGst.toFixed(2)}`);
+      return null;
+    }
+
     const payload = {
-      items, subtotal, tax: gstAmount, total: finalTotal,
+      items, subtotal: Number(totalTaxable.toFixed(2)), tax: gstAmount, total: finalTotal,
       paymentMode, paymentStatus: isHeld ? "HELD" : paymentStatus,
       upiTxnRef: paymentMode === "UPI" ? upiTxnRef : null,
       isHeld, customerName: customerName || "Walk-in Customer",
@@ -1647,6 +1682,7 @@ export default function CheckoutClient() {
       tableName: "POS",
       buyerGSTIN: buyerGSTIN || null,
       placeOfSupply: placeOfSupply || null,
+      auditNote, // ✅ SaaS Feature: Audit Log
     };
     try {
       const url = resumeBillId ? `/api/bill-manager/${resumeBillId}` : "/api/bill-manager";
@@ -2276,9 +2312,16 @@ export default function CheckoutClient() {
                 >
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-[var(--kravy-text-primary)] truncate text-sm">{i.name}</p>
-                    <p className="text-xs font-black text-emerald-600 mt-1">
-                      {i.qty} × ₹{i.rate.toFixed(2)}
-                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs font-black text-emerald-600">
+                        {i.qty} × ₹{i.rate.toFixed(2)}
+                      </p>
+                      {perProductEnabled && (i.gst === undefined || i.gst === null || i.gst === 0) && (
+                        <span className="text-[8px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">
+                          ⚠️ Using Default {globalRate}%
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Qty Controls */}
@@ -2544,8 +2587,14 @@ export default function CheckoutClient() {
                   <tr className="border-b border-dashed">
                     <th className="text-left font-bold">Rate</th>
                     <th className="text-right font-bold">Taxable</th>
-                    <th className="text-right font-bold">CGST</th>
-                    <th className="text-right font-bold">SGST</th>
+                    {taxBreakup.some(g => g.igst > 0) ? (
+                      <th className="text-right font-bold">IGST</th>
+                    ) : (
+                      <>
+                        <th className="text-right font-bold">CGST</th>
+                        <th className="text-right font-bold">SGST</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -2553,8 +2602,14 @@ export default function CheckoutClient() {
                     <tr key={idx}>
                       <td className="text-left">{g.rate}%</td>
                       <td className="text-right">{g.taxable.toFixed(2)}</td>
-                      <td className="text-right">{g.cgst.toFixed(2)}</td>
-                      <td className="text-right">{g.sgst.toFixed(2)}</td>
+                      {g.igst > 0 ? (
+                        <td className="text-right">{g.igst.toFixed(2)}</td>
+                      ) : (
+                        <>
+                          <td className="text-right">{g.cgst.toFixed(2)}</td>
+                          <td className="text-right">{g.sgst.toFixed(2)}</td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>

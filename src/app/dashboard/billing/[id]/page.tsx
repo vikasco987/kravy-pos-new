@@ -595,11 +595,21 @@ export default function ViewBillPage() {
       {/* BILL DETAILS */}
       <div className="bg-white border rounded-xl p-6 space-y-4">
         {/* CUSTOMER */}
-        <div>
-          <p className="text-sm text-gray-500">Customer</p>
-          <p className="font-medium">
-            {bill.customerName ?? "Walk-in Customer"}
-          </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-sm text-gray-500">Customer</p>
+            <p className="font-medium">
+              {bill.customerName ?? "Walk-in Customer"}
+            </p>
+          </div>
+          {(bill as any).buyerGSTIN && (
+            <div className="text-right">
+              <p className="text-sm text-gray-500">GSTIN</p>
+              <p className="font-medium text-indigo-600">
+                {(bill as any).buyerGSTIN}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* ITEMS */}
@@ -786,11 +796,78 @@ export default function ViewBillPage() {
           <span>₹{Number(bill.subtotal ?? 0).toFixed(2)}</span>
         </div>
 
-        {/* GST */}
-        <div className="flex justify-between text-[10px] font-medium">
-          <span>GST</span>
-          <span>₹{(bill.tax ?? 0).toFixed(2)}</span>
-        </div>
+        {/* GST BREAKUP */}
+        {(() => {
+          const items = Array.isArray(bill.items) ? bill.items : [];
+          const placeOfSupply = (bill as any).placeOfSupply;
+          const isInterState = placeOfSupply && business?.state && 
+            placeOfSupply.trim().toLowerCase() !== business.state.trim().toLowerCase();
+          
+          const taxGroups: Record<number, any> = {};
+          items.forEach((item: any) => {
+            const qty = Number(item.qty ?? item.quantity ?? 0);
+            const rate = Number(item.rate ?? item.price ?? 0);
+            const gstRate = Number(item.gst || (business?.taxRate ?? 0));
+            const taxStatus = item.taxStatus || "Without Tax";
+            const gross = qty * rate;
+            
+            let taxable = gross;
+            let gst = 0;
+            if (taxStatus === "With Tax") {
+              taxable = gross / (1 + gstRate / 100);
+              gst = gross - taxable;
+            } else {
+              gst = (gross * gstRate) / 100;
+            }
+
+            if (!taxGroups[gstRate]) taxGroups[gstRate] = { rate: gstRate, taxable: 0, cgst: 0, sgst: 0, igst: 0 };
+            taxGroups[gstRate].taxable += taxable;
+            if (isInterState) {
+              taxGroups[gstRate].igst += gst;
+            } else {
+              taxGroups[gstRate].cgst += gst / 2;
+              taxGroups[gstRate].sgst += gst / 2;
+            }
+          });
+
+          const groups = Object.values(taxGroups).filter(g => g.rate > 0);
+          if (groups.length === 0) return (
+            <div className="flex justify-between text-[10px] font-medium">
+              <span>GST</span>
+              <span>₹{(bill.tax ?? 0).toFixed(2)}</span>
+            </div>
+          );
+
+          return (
+            <div className="mt-1">
+              {Object.values(taxGroups).filter((g:any) => g.rate > 0).map((g: any, idx) => (
+                <div key={idx} className="space-y-0.5">
+                  {g.igst > 0 ? (
+                    <div className="flex justify-between text-[9px] text-gray-600">
+                      <span>IGST ({g.rate}%)</span>
+                      <span>₹{g.igst.toFixed(2)}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-[9px] text-gray-600">
+                        <span>CGST ({g.rate/2}%)</span>
+                        <span>₹{g.cgst.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-[9px] text-gray-600">
+                        <span>SGST ({g.rate/2}%)</span>
+                        <span>₹{g.sgst.toFixed(2)}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+              <div className="flex justify-between text-[10px] font-bold mt-0.5 pt-0.5 border-t border-dashed">
+                <span>Total GST</span>
+                <span>₹{(bill.tax ?? 0).toFixed(2)}</span>
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="border-t border-dashed my-1" />
 

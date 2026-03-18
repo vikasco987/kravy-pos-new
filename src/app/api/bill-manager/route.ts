@@ -67,12 +67,39 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
     ? paymentMode
     : "Cash";
 
-    // ✅ ALWAYS CALCULATE TAX ON SERVER
-    const GST_PERCENT = 5;
+    // ✅ FETCH PROFILE FOR GLOBAL GST FALLBACK
+    const profile = await prisma.businessProfile.findUnique({
+      where: { userId: effectiveId },
+    });
+    const globalGstRate = profile?.taxRate || 0;
 
-    const calculatedTax = Number(
-      ((subtotal * GST_PERCENT) / 100).toFixed(2)
-    );
+    // ✅ RECALCULATE EVERYTHING ON SERVER (SECURITY)
+    let calcSubtotal = 0;
+    let totalTax = 0;
+
+    items.forEach((item: any) => {
+      const qty = Number(item.qty || item.quantity) || 0;
+      const rate = Number(item.rate || item.price) || 0;
+      const itemGstRate = item.gst != null ? Number(item.gst) : globalGstRate;
+      const taxStatus = item.taxStatus || "Without Tax";
+      
+      const gross = qty * rate;
+
+      if (taxStatus === "With Tax") {
+        const base = gross / (1 + itemGstRate / 100);
+        const gst = gross - base;
+        calcSubtotal += base;
+        totalTax += gst;
+      } else {
+        const gst = (gross * itemGstRate) / 100;
+        calcSubtotal += gross;
+        totalTax += gst;
+      }
+    });
+
+    const finalSubtotal = Number(calcSubtotal.toFixed(2));
+    const calculatedTax = Number(totalTax.toFixed(2));
+    const finalTotal = Number((finalSubtotal + calculatedTax).toFixed(2));
 
 
     // Basic validation
@@ -141,9 +168,9 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
         clerkUserId: effectiveId,
         billNumber,
         items,
-        subtotal,
+        subtotal: finalSubtotal,
         tax: calculatedTax,
-        total,
+        total: finalTotal,
         paymentMode: finalPaymentMode,     // ✅ GUARANTEED
         paymentStatus: finalPaymentStatus, // ✅ SOURCE OF TRUTH
         isHeld: isHeld === true, // ✅ THIS LINE WAS MISSING
@@ -152,6 +179,7 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
         customerPhone: customerPhone || null,
         partyId: partyId,
         tableName: tableName || "POS",
+        auditNote: body.auditNote || null,
       },
     });
 
