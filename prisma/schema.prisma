@@ -381,6 +381,8 @@ model BillManager {
 
   customerName  String?
   customerPhone String?
+  buyerGSTIN    String?
+  placeOfSupply String?
 
   partyId       String?   @db.ObjectId
   party         Party?    @relation(fields: [partyId], references: [id])

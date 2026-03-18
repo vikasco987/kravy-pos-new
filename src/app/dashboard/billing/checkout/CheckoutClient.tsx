@@ -1383,6 +1383,8 @@ export default function CheckoutClient() {
         setPaymentMode(bill.paymentMode);
         setPaymentStatus(bill.paymentStatus);
         setUpiTxnRef(bill.upiTxnRef || "");
+        setBuyerGSTIN(bill.buyerGSTIN || "");
+        setPlaceOfSupply(bill.placeOfSupply || "");
       } catch (err) {
         console.error("RESUME BILL ERROR:", err);
       }
@@ -1468,6 +1470,8 @@ export default function CheckoutClient() {
   const [showCustomer, setShowCustomer] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [buyerGSTIN, setBuyerGSTIN] = useState("");
+  const [placeOfSupply, setPlaceOfSupply] = useState("");
 
   const handleCustomerPhoneChange = (val: string) => {
     setCustomerPhone(val);
@@ -1641,6 +1645,8 @@ export default function CheckoutClient() {
       isHeld, customerName: customerName || "Walk-in Customer",
       customerPhone: customerPhone || null,
       tableName: "POS",
+      buyerGSTIN: buyerGSTIN || null,
+      placeOfSupply: placeOfSupply || null,
     };
     try {
       const url = resumeBillId ? `/api/bill-manager/${resumeBillId}` : "/api/bill-manager";
@@ -2194,6 +2200,33 @@ export default function CheckoutClient() {
                     p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
                     focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-mono"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Buyer GSTIN</label>
+                  <input
+                    placeholder="Customer GSTIN"
+                    value={buyerGSTIN}
+                    autoComplete="off"
+                    onChange={(e) => setBuyerGSTIN(e.target.value.toUpperCase())}
+                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
+                      p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                      focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] uppercase"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Place of Supply</label>
+                  <input
+                    placeholder="e.g. Haryana"
+                    value={placeOfSupply}
+                    autoComplete="off"
+                    onChange={(e) => setPlaceOfSupply(e.target.value)}
+                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
+                      p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                      focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] mt-0"
+                  />
+                </div>
               </div>
 
               {/* Suggestions Dropdown */}

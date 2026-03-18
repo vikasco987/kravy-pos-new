@@ -15,7 +15,9 @@ import {
   TrendingUp,
   Receipt,
   PieChart,
-  Grid
+  Grid,
+  Check,
+  Settings
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
@@ -40,6 +42,31 @@ export default function GSTReportPage() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<GSTReportData | null>(null);
   const [gstEnabled, setGstEnabled] = useState<boolean | null>(null);
+  const [showColumnToggle, setShowColumnToggle] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([
+    "billNumber", "date", "customerName", "buyerGSTIN", "placeOfSupply", 
+    "taxable", "cgst", "sgst", "igst", "grandTotal", "type"
+  ]);
+
+  const allColumns = [
+    { key: "billNumber", label: "Invoice No" },
+    { key: "date", label: "Date" },
+    { key: "customerName", label: "Buyer Name" },
+    { key: "buyerGSTIN", label: "Buyer GSTIN" },
+    { key: "placeOfSupply", label: "Place of Supply" },
+    { key: "taxable", label: "Taxable (₹)" },
+    { key: "cgst", label: "CGST (₹)" },
+    { key: "sgst", label: "SGST (₹)" },
+    { key: "igst", label: "IGST (₹)" },
+    { key: "grandTotal", label: "Total (₹)" },
+    { key: "type", label: "Type" },
+  ];
+
+  const toggleColumn = (key: string) => {
+    setVisibleColumns(prev => 
+      prev.includes(key) ? prev.filter(c => c !== key) : [...prev, key]
+    );
+  };
 
   const fetchReport = async () => {
     try {
@@ -148,6 +175,48 @@ export default function GSTReportPage() {
           >
             <Download size={16} /> Export
           </button>
+
+          {activeTab === "GSTR-1" && (
+            <div className="relative">
+              <button 
+                onClick={() => setShowColumnToggle(!showColumnToggle)}
+                className="flex items-center gap-2 px-4 py-3 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:border-indigo-500 transition-all text-[var(--kravy-text-secondary)] shadow-sm"
+              >
+                <Settings size={14} className={showColumnToggle ? "animate-spin-slow rotate-45" : ""} />
+                Columns
+              </button>
+              
+              <AnimatePresence>
+                {showColumnToggle && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-2 w-56 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-3xl shadow-2xl z-[60] p-4 overflow-hidden"
+                  >
+                    <div className="text-[9px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] mb-3 px-2 flex justify-between items-center">
+                      Toggle Columns
+                      <button onClick={() => setVisibleColumns(allColumns.map(c => c.key))} className="text-indigo-500 hover:underline">All</button>
+                    </div>
+                    <div className="space-y-1 max-h-[300px] overflow-y-auto no-scrollbar">
+                      {allColumns.map(col => (
+                        <button
+                          key={col.key}
+                          onClick={() => toggleColumn(col.key)}
+                          className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all group"
+                        >
+                          <span className={`text-[11px] font-bold ${visibleColumns.includes(col.key) ? "text-indigo-500" : "text-[var(--kravy-text-muted)] group-hover:text-[var(--kravy-text-secondary)]"}`}>
+                            {col.label}
+                          </span>
+                          {visibleColumns.includes(col.key) && <Check size={12} className="text-indigo-500" />}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
       </div>
 
@@ -192,32 +261,36 @@ export default function GSTReportPage() {
           >
             <div className="overflow-x-auto">
               {activeTab === "GSTR-1" && (
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse min-w-[1200px]">
                   <thead>
                     <tr className="bg-[var(--kravy-bg)] text-[10px] font-black uppercase tracking-[0.2em] text-[var(--kravy-text-muted)] border-b border-[var(--kravy-border)]">
-                      <th className="px-6 py-5">Bill No</th>
-                      <th className="px-6 py-5">Date</th>
-                      <th className="px-6 py-5">Customer</th>
-                      <th className="px-6 py-5 text-right">Taxable</th>
-                      <th className="px-6 py-5 text-right">GST</th>
-                      <th className="px-6 py-5 text-right font-bold text-indigo-600">Total</th>
-                      <th className="px-6 py-5 text-center">Payment</th>
+                      {allColumns.map(col => visibleColumns.includes(col.key) && (
+                        <th key={col.key} className={`px-6 py-5 ${["taxable", "cgst", "sgst", "igst", "grandTotal"].includes(col.key) ? "text-right" : ""}`}>
+                          {col.label}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--kravy-border)]">
                     {data?.gstr1.map((bill, idx) => (
-                      <tr key={idx} className="hover:bg-indigo-50/10 transition-all group">
-                        <td className="px-6 py-4 text-xs font-black text-[var(--kravy-text-primary)]">{bill.billNumber}</td>
-                        <td className="px-6 py-4 text-[11px] font-bold text-[var(--kravy-text-muted)]">{format(new Date(bill.date), "dd MMM yyyy")}</td>
-                        <td className="px-6 py-4 text-xs font-bold text-[var(--kravy-text-secondary)]">{bill.customerName}</td>
-                        <td className="px-6 py-4 text-xs font-bold text-right">₹{bill.taxable.toFixed(2)}</td>
-                        <td className="px-6 py-4 text-xs font-bold text-right text-emerald-500">₹{bill.totalGst.toFixed(2)}</td>
-                        <td className="px-6 py-4 text-sm font-black text-right text-[var(--kravy-text-primary)]">₹{bill.grandTotal.toFixed(2)}</td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="px-3 py-1 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-lg text-[9px] font-bold uppercase">
-                            {bill.paymentMode}
-                          </span>
-                        </td>
+                      <tr key={idx} className="hover:bg-indigo-50/10 transition-all group border-b border-[var(--kravy-border)]/20 last:border-0">
+                        {visibleColumns.includes("billNumber") && <td className="px-6 py-4 text-xs font-black text-[var(--kravy-text-primary)]">{bill.billNumber}</td>}
+                        {visibleColumns.includes("date") && <td className="px-6 py-4 text-[11px] font-bold text-[var(--kravy-text-muted)] whitespace-nowrap">{format(new Date(bill.date), "dd/MM/yyyy")}</td>}
+                        {visibleColumns.includes("customerName") && <td className="px-6 py-4 text-xs font-bold text-[var(--kravy-text-secondary)]">{bill.customerName}</td>}
+                        {visibleColumns.includes("buyerGSTIN") && <td className="px-6 py-4 text-xs font-mono font-bold text-indigo-500">{bill.buyerGSTIN}</td>}
+                        {visibleColumns.includes("placeOfSupply") && <td className="px-6 py-4 text-xs font-bold text-[var(--kravy-text-muted)] whitespace-nowrap">{bill.placeOfSupply}</td>}
+                        {visibleColumns.includes("taxable") && <td className="px-6 py-4 text-xs font-bold text-right">₹{bill.taxable.toFixed(2)}</td>}
+                        {visibleColumns.includes("cgst") && <td className="px-6 py-4 text-xs font-bold text-right text-indigo-600/70">₹{bill.cgst.toFixed(2)}</td>}
+                        {visibleColumns.includes("sgst") && <td className="px-6 py-4 text-xs font-bold text-right text-emerald-600/70">₹{bill.sgst.toFixed(2)}</td>}
+                        {visibleColumns.includes("igst") && <td className="px-6 py-4 text-xs font-bold text-right text-rose-600/70">₹{bill.igst.toFixed(2)}</td>}
+                        {visibleColumns.includes("grandTotal") && <td className="px-6 py-4 text-sm font-black text-right text-[var(--kravy-text-primary)]">₹{bill.grandTotal.toFixed(2)}</td>}
+                        {visibleColumns.includes("type") && (
+                          <td className="px-6 py-4 text-center">
+                            <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${bill.type === "B2B" ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-100 dark:bg-white/10 text-[var(--kravy-text-muted)]"}`}>
+                              {bill.type}
+                            </span>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
