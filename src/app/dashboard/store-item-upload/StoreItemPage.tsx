@@ -772,13 +772,31 @@ export default function StoreItemPage() {
                       <select
                         className="bg-gray-50/50 border-2 border-gray-50 rounded-2xl px-5 py-4 w-full text-xs font-black text-gray-700 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white transition-all appearance-none cursor-pointer shadow-sm"
                         value={item.categoryId ?? ""}
-                        onChange={e =>
-                          setItems(prev =>
-                            prev.map((it, idx) =>
-                              idx === i ? { ...it, categoryId: e.target.value } : it
-                            )
-                          )
-                        }
+                        onChange={async (e) => {
+                          const val = e.target.value;
+                          if (val === "__new__") {
+                            const newName = prompt("Enter new category name:");
+                            if (newName && newName.trim()) {
+                              try {
+                                const cat = await ensureCategory(newName.trim());
+                                setItems(prev =>
+                                  prev.map((it, idx) =>
+                                    idx === i ? { ...it, categoryId: cat.id } : it
+                                  )
+                                );
+                                toast.success(`Created & assigned category: ${cat.name}`);
+                              } catch {
+                                toast.error("Failed to create category");
+                              }
+                            }
+                          } else {
+                            setItems(prev =>
+                              prev.map((it, idx) =>
+                                idx === i ? { ...it, categoryId: val } : it
+                              )
+                            );
+                          }
+                        }}
                       >
                         <option value="">Ungrouped</option>
                         {categories.map(c => (

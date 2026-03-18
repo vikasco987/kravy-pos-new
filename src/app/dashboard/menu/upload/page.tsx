@@ -40,6 +40,7 @@ export default function Page() {
     reorderLevel: "",
     displayCategory: "",
     displayColor: "",
+    hsnCode: "",
   });
 
   // Load categories from API
@@ -48,7 +49,7 @@ export default function Page() {
       try {
         const res = await fetch("/api/categories");
         const data = await res.json();
-        if (res.ok) setCategories(data);
+        if (res.ok && Array.isArray(data)) setCategories(data);
       } catch (err) {
         console.error("❌ Failed to load categories:", err);
       }
@@ -108,6 +109,7 @@ export default function Page() {
       displayCategory: formData.displayCategory || null,
       displayColor: formData.displayColor || null,
       imageUrl: image,
+      hsnCode: formData.hsnCode || null,
     };
 
     try {
@@ -140,6 +142,7 @@ export default function Page() {
         reorderLevel: "",
         displayCategory: "",
         displayColor: "",
+        hsnCode: "",
       });
       setImage(null);
       setOpenSection(null);
@@ -160,7 +163,7 @@ export default function Page() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        <h1 className="text-3xl font-bold bg-blue-600 mb-6 text-center">
+        <h1 className="text-3xl font-bold text-blue-600 mb-6 text-center">
           ➕ New Item
         </h1>
 

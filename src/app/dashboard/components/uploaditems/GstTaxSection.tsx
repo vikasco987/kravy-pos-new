@@ -12,6 +12,7 @@ interface GstTaxSectionProps {
   formData: {
     gst: string;
     otherTax: string;
+    hsnCode: string;
   };
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -42,6 +43,14 @@ export default function GstTaxSection({
         name="otherTax"
         placeholder="Other Tax %"
         value={formData.otherTax}
+        onChange={handleChange}
+        className="w-full border rounded-lg px-4 py-2 text-gray-800 placeholder-gray-500"
+      />
+      <input
+        type="text"
+        name="hsnCode"
+        placeholder="HSN Code"
+        value={formData.hsnCode}
         onChange={handleChange}
         className="w-full border rounded-lg px-4 py-2 text-gray-800 placeholder-gray-500"
       />

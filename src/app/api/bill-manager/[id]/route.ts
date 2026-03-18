@@ -99,7 +99,9 @@ export async function PUT(
     items.forEach((item: any) => {
       const qty = Number(item.qty || item.quantity) || 0;
       const rate = Number(item.rate || item.price) || 0;
-      const itemGstRate = (perProductEnabled && item.gst > 0) ? Number(item.gst) : globalGstRate;
+      const itemGstRate = (perProductEnabled && item.gst !== undefined && item.gst !== null) 
+        ? Number(item.gst) 
+        : globalGstRate;
       const taxStatus = item.taxStatus || "Without Tax";
       
       const gross = qty * rate;

@@ -11,7 +11,12 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, name, price, categoryId } = body;
+    const { 
+      id, name, price, sellingPrice, categoryId, 
+      gst, taxStatus, hsnCode, description, unit, barcode,
+      isVeg, isBestseller, isRecommended, isNew,
+      openingStock, currentStock, reorderLevel
+    } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -39,9 +44,23 @@ export async function PUT(req: NextRequest) {
     const updated = await prisma.item.update({
       where: { id },
       data: {
-        name: name ?? existing.name,
-        price: price ?? existing.price,
-        categoryId: categoryId ?? existing.categoryId,
+        name: name !== undefined ? name : existing.name,
+        price: price !== undefined ? Number(price) : existing.price,
+        sellingPrice: sellingPrice !== undefined ? Number(sellingPrice) : (price !== undefined ? Number(price) : existing.sellingPrice),
+        categoryId: categoryId !== undefined ? categoryId : existing.categoryId,
+        gst: gst !== undefined ? Number(gst) : existing.gst,
+        taxStatus: taxStatus !== undefined ? taxStatus : existing.taxStatus,
+        hsnCode: hsnCode !== undefined ? hsnCode : existing.hsnCode,
+        description: description !== undefined ? description : existing.description,
+        unit: unit !== undefined ? unit : existing.unit,
+        barcode: barcode !== undefined ? barcode : existing.barcode,
+        isVeg: isVeg !== undefined ? Boolean(isVeg) : existing.isVeg,
+        isBestseller: isBestseller !== undefined ? Boolean(isBestseller) : existing.isBestseller,
+        isRecommended: isRecommended !== undefined ? Boolean(isRecommended) : existing.isRecommended,
+        isNew: isNew !== undefined ? Boolean(isNew) : existing.isNew,
+        openingStock: openingStock !== undefined ? Number(openingStock) : existing.openingStock,
+        currentStock: currentStock !== undefined ? Number(currentStock) : existing.currentStock,
+        reorderLevel: reorderLevel !== undefined ? Number(reorderLevel) : existing.reorderLevel,
       },
     });
 

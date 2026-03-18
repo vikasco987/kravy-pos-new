@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Copy, Plus, Edit2, Trash2, Image as ImageIcon, UtensilsCrossed, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { kravy } from "@/lib/sounds";
+import CategorySelect from "@/app/dashboard/components/uploaditems/CategorySelect";
 
 type Category = {
     id: string;
@@ -21,6 +22,9 @@ type MenuItem = {
     imageUrl: string | null;
     categoryId: string | null;
     category?: { name: string };
+    hsnCode: string | null;
+    gst: number | null;
+    taxStatus: string | null;
 };
 
 export default function MenuEditPage() {
@@ -40,6 +44,9 @@ export default function MenuEditPage() {
         description: "",
         imageUrl: "",
         categoryId: "uncategorised",
+        hsnCode: "",
+        gst: "",
+        taxStatus: "Without Tax",
     });
 
     const [isSaving, setIsSaving] = useState(false);
@@ -75,6 +82,9 @@ export default function MenuEditPage() {
             description: item.description || "",
             imageUrl: item.imageUrl || "",
             categoryId: item.categoryId || "uncategorised",
+            hsnCode: item.hsnCode || "",
+            gst: item.gst ? String(item.gst) : "",
+            taxStatus: item.taxStatus || "Without Tax",
         });
         setIsFormOpen(true);
     };
@@ -87,6 +97,9 @@ export default function MenuEditPage() {
             description: "",
             imageUrl: "",
             categoryId: categories.length > 0 ? categories[0].id : "uncategorised",
+            hsnCode: "",
+            gst: "",
+            taxStatus: "Without Tax",
         });
         setIsFormOpen(true);
     };
@@ -103,6 +116,9 @@ export default function MenuEditPage() {
                 description: formData.description,
                 imageUrl: formData.imageUrl,
                 categoryId: formData.categoryId === "uncategorised" ? null : formData.categoryId,
+                hsnCode: formData.hsnCode || null,
+                gst: formData.gst ? parseFloat(formData.gst) : 0,
+                taxStatus: formData.taxStatus,
                 ...(editingItem ? { id: editingItem.id } : {})
             };
 
@@ -288,18 +304,48 @@ export default function MenuEditPage() {
                                             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                                         />
                                     </div>
+                                    <CategorySelect
+                                        categories={categories}
+                                        setCategories={setCategories}
+                                        selectedCategory={formData.categoryId}
+                                        setSelectedCategory={(id: string) => setFormData({ ...formData, categoryId: id })}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] mb-1.5 uppercase tracking-widest">Category</label>
+                                        <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] mb-1.5 uppercase tracking-widest">HSN Code</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl px-4 py-3 text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all outline-none font-bold text-sm"
+                                            placeholder="e.g. 1901"
+                                            value={formData.hsnCode}
+                                            onChange={(e) => setFormData({ ...formData, hsnCode: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] mb-1.5 uppercase tracking-widest">Tax Status</label>
                                         <select
                                             className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl px-4 py-3 text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all outline-none font-bold text-sm"
-                                            value={formData.categoryId}
-                                            onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                                            value={formData.taxStatus}
+                                            onChange={(e) => setFormData({ ...formData, taxStatus: e.target.value })}
                                         >
-                                            <option value="uncategorised">Uncategorised</option>
-                                            {categories.map(c => (
-                                                <option key={c.id} value={c.id}>{c.name}</option>
-                                            ))}
+                                            <option value="Without Tax">Without Tax</option>
+                                            <option value="With Tax">With Tax</option>
                                         </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] mb-1.5 uppercase tracking-widest">GST (%)</label>
+                                        <input
+                                            type="number"
+                                            className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl px-4 py-3 text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all outline-none font-bold text-sm"
+                                            placeholder="e.g. 5"
+                                            value={formData.gst}
+                                            onChange={(e) => setFormData({ ...formData, gst: e.target.value })}
+                                        />
                                     </div>
                                 </div>
 

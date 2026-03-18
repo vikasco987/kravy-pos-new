@@ -5,6 +5,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Upload, ChevronDown, ChevronUp } from "lucide-react";
+import CategorySelect from "./components/uploaditems/CategorySelect";
 
 export default function UploadItemPage() {
   const [image, setImage] = useState<File | null>(null);
@@ -22,9 +23,10 @@ export default function UploadItemPage() {
     const fetchCategories = async () => {
       try {
         const res = await fetch("/api/categories");
-        if (!res.ok) throw new Error("Failed to fetch categories");
-        const data = await res.json();
-        setCategories(data);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) setCategories(data);
+        }
       } catch (error) {
         console.error("Error loading categories:", error);
       }
@@ -239,21 +241,26 @@ export default function UploadItemPage() {
             </select>
           </div>
 
-          {/* Category Dropdown */}
           <div className="mb-4">
-            <select
-              name="itemCategory"
-              required
-              className="w-full border rounded-lg px-4 py-3 text-gray-800 focus:ring-2 focus:ring-purple-400 outline-none bg-gray-50"
-            >
-              <option value="">Select Category *</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+            <CategorySelect
+              categories={categories}
+              setCategories={setCategories}
+              selectedCategory={""}
+              setSelectedCategory={(id) => {
+                const select = document.getElementsByName("itemCategory")[0] as HTMLSelectElement;
+                if (select) {
+                  select.value = id;
+                  select.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+              }}
+            />
           </div>
+          <select name="itemCategory" required className="hidden">
+            <option value="">Select Category *</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
 
           {/* MRP + Purchase Price */}
           <div className="grid grid-cols-2 gap-4 mb-6">

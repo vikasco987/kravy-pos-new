@@ -275,7 +275,7 @@ export default function BillingPage() {
                     { key: "customer", label: "Customer Name" },
                     { key: "customerPhone", label: "Phone Number" },
                     { key: "subtotal", label: "Subtotal" },
-                    { key: "gst", label: `GST (${business?.taxRate || 0}%)` },
+                    { key: "gst", label: "GST" },
                     { key: "discount", label: "Discount" },
                     { key: "total", label: "Net Total" },
                     { key: "timeline", label: "Timeline" },
@@ -546,7 +546,7 @@ export default function BillingPage() {
                 
                 {/* Financial Breakdown - Modern Visual Grouping */}
                 {visibleCols.subtotal && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "var(--kravy-text-muted)" }}>Subtotal</th>}
-                {visibleCols.gst && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "#f59e0b" }}>GST ({business?.taxRate || 0}%)</th>}
+                {visibleCols.gst && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "#f59e0b" }}>GST</th>}
                 {visibleCols.discount && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "#ef4444" }}>Disc.</th>}
                 {visibleCols.total && <th style={{ textAlign: "right", background: "rgba(16, 185, 129, 0.05)", borderRight: "1px solid var(--kravy-border)" }}>Net Total</th>}
                 
@@ -780,7 +780,7 @@ export default function BillingPage() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
                 {[
                   { label: "Subtotal", value: `₹${format(bill.subtotal || (bill.total - (bill.tax || 0)))}` },
-                  { label: "Tax (GST)", value: `₹${format(bill.tax || 0)}` },
+                  { label: "GST", value: `₹${format(bill.tax || 0)}` },
                   { label: "Net Amount", value: `₹${format(bill.total)}`, bold: true, color: "var(--kravy-brand)" },
                   { label: "Source", value: bill.tableName || "POS" },
                   { label: "Status", value: bill.isOrder ? bill.orderStatus : "SETTLED", isStatus: true },

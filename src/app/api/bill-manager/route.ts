@@ -83,8 +83,9 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
     items.forEach((item: any) => {
       const qty = Number(item.qty || item.quantity) || 0;
       const rate = Number(item.rate || item.price) || 0;
-      const perProductEnabled = profile?.perProductTaxEnabled ?? false;
-      const itemGstRate = (perProductEnabled && item.gst > 0) ? Number(item.gst) : globalGstRate;
+      const itemGstRate = (perProductEnabled && item.gst !== undefined && item.gst !== null) 
+        ? Number(item.gst) 
+        : globalGstRate;
       const taxStatus = item.taxStatus || "Without Tax";
       
       const gross = qty * rate;
@@ -121,10 +122,21 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
       );
     }
 
-    // ✅ Generate unique bill number on server
-    const billNumber = `SV-${Date.now()}-${Math.floor(
-      Math.random() * 1000
-    )}`;
+    // ✅ Generate unique sequential bill number (SV/YYMM/XXXX)
+    const nowLocal = new Date();
+    const yy = String(nowLocal.getFullYear()).slice(-2);
+    const mm = String(nowLocal.getMonth() + 1).padStart(2, '0');
+    
+    const monthStart = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), 1);
+    const count = await prisma.billManager.count({
+      where: {
+        clerkUserId: effectiveId,
+        createdAt: { gte: monthStart }
+      }
+    });
+    
+    const serial = String(count + 1).padStart(4, '0');
+    const billNumber = `SV/${yy}${mm}/${serial}`;
 
 
     // ✅ DERIVE FINAL PAYMENT STATUS (SOURCE OF TRUTH)

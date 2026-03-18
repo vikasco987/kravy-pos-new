@@ -44,8 +44,7 @@ export default function GSTReportPage() {
   const [gstEnabled, setGstEnabled] = useState<boolean | null>(null);
   const [showColumnToggle, setShowColumnToggle] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
-    "billNumber", "date", "customerName", "buyerGSTIN", "placeOfSupply", 
-    "taxable", "cgst", "sgst", "igst", "grandTotal", "type"
+    "billNumber", "date", "customerName", "buyerGSTIN", "rates", "hsns", "taxable", "cgst", "sgst", "igst", "grandTotal", "type"
   ]);
 
   const allColumns = [
@@ -54,6 +53,8 @@ export default function GSTReportPage() {
     { key: "customerName", label: "Buyer Name" },
     { key: "buyerGSTIN", label: "Buyer GSTIN" },
     { key: "placeOfSupply", label: "Place of Supply" },
+    { key: "rates", label: "Rate %" },
+    { key: "hsns", label: "HSN Code" },
     { key: "taxable", label: "Taxable (₹)" },
     { key: "cgst", label: "CGST (₹)" },
     { key: "sgst", label: "SGST (₹)" },
@@ -274,23 +275,73 @@ export default function GSTReportPage() {
                   <tbody className="divide-y divide-[var(--kravy-border)]">
                     {data?.gstr1.map((bill, idx) => (
                       <tr key={idx} className="hover:bg-indigo-50/10 transition-all group border-b border-[var(--kravy-border)]/20 last:border-0">
-                        {visibleColumns.includes("billNumber") && <td className="px-6 py-4 text-xs font-black text-[var(--kravy-text-primary)]">{bill.billNumber}</td>}
-                        {visibleColumns.includes("date") && <td className="px-6 py-4 text-[11px] font-bold text-[var(--kravy-text-muted)] whitespace-nowrap">{format(new Date(bill.date), "dd/MM/yyyy")}</td>}
-                        {visibleColumns.includes("customerName") && <td className="px-6 py-4 text-xs font-bold text-[var(--kravy-text-secondary)]">{bill.customerName}</td>}
-                        {visibleColumns.includes("buyerGSTIN") && <td className="px-6 py-4 text-xs font-mono font-bold text-indigo-500">{bill.buyerGSTIN}</td>}
-                        {visibleColumns.includes("placeOfSupply") && <td className="px-6 py-4 text-xs font-bold text-[var(--kravy-text-muted)] whitespace-nowrap">{bill.placeOfSupply}</td>}
-                        {visibleColumns.includes("taxable") && <td className="px-6 py-4 text-xs font-bold text-right">₹{bill.taxable.toFixed(2)}</td>}
-                        {visibleColumns.includes("cgst") && <td className="px-6 py-4 text-xs font-bold text-right text-indigo-600/70">₹{bill.cgst.toFixed(2)}</td>}
-                        {visibleColumns.includes("sgst") && <td className="px-6 py-4 text-xs font-bold text-right text-emerald-600/70">₹{bill.sgst.toFixed(2)}</td>}
-                        {visibleColumns.includes("igst") && <td className="px-6 py-4 text-xs font-bold text-right text-rose-600/70">₹{bill.igst.toFixed(2)}</td>}
-                        {visibleColumns.includes("grandTotal") && <td className="px-6 py-4 text-sm font-black text-right text-[var(--kravy-text-primary)]">₹{bill.grandTotal.toFixed(2)}</td>}
-                        {visibleColumns.includes("type") && (
-                          <td className="px-6 py-4 text-center">
-                            <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${bill.type === "B2B" ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-100 dark:bg-white/10 text-[var(--kravy-text-muted)]"}`}>
-                              {bill.type}
-                            </span>
-                          </td>
-                        )}
+                        {allColumns.map(col => {
+                          if (!visibleColumns.includes(col.key)) return null;
+
+                          let content: React.ReactNode = "";
+                          let className = "px-6 py-4 text-xs font-bold";
+
+                          switch (col.key) {
+                            case "billNumber":
+                              content = bill.billNumber;
+                              className += " font-black text-[var(--kravy-text-primary)]";
+                              break;
+                            case "date":
+                              content = format(new Date(bill.date), "dd/MM/yyyy");
+                              className += " text-[var(--kravy-text-muted)] whitespace-nowrap";
+                              break;
+                            case "customerName":
+                              content = bill.customerName;
+                              className += " text-[var(--kravy-text-secondary)]";
+                              break;
+                            case "buyerGSTIN":
+                              content = bill.buyerGSTIN;
+                              className += " font-mono text-indigo-500";
+                              break;
+                            case "placeOfSupply":
+                              content = bill.placeOfSupply;
+                              className += " text-[var(--kravy-text-muted)] whitespace-nowrap";
+                              break;
+                            case "rates":
+                              content = bill.rates;
+                              className += " text-indigo-500";
+                              break;
+                            case "hsns":
+                              content = bill.hsns;
+                              className += " font-mono";
+                              break;
+                            case "taxable":
+                              content = `₹${bill.taxable.toFixed(2)}`;
+                              className += " text-right";
+                              break;
+                            case "cgst":
+                              content = `₹${bill.cgst.toFixed(2)}`;
+                              className += " text-right text-indigo-600/70";
+                              break;
+                            case "sgst":
+                              content = `₹${bill.sgst.toFixed(2)}`;
+                              className += " text-right text-emerald-600/70";
+                              break;
+                            case "igst":
+                              content = `₹${bill.igst.toFixed(2)}`;
+                              className += " text-right text-rose-600/70";
+                              break;
+                            case "grandTotal":
+                              content = `₹${bill.grandTotal.toFixed(2)}`;
+                              className += " text-sm font-black text-right text-[var(--kravy-text-primary)]";
+                              break;
+                            case "type":
+                              content = (
+                                <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${bill.type === "B2B" ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-100 dark:bg-white/10 text-[var(--kravy-text-muted)]"}`}>
+                                  {bill.type}
+                                </span>
+                              );
+                              className += " text-center";
+                              break;
+                          }
+
+                          return <td key={col.key} className={className}>{content}</td>;
+                        })}
                       </tr>
                     ))}
                   </tbody>

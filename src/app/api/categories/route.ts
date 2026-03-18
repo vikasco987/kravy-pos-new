@@ -8,7 +8,11 @@ export async function GET() {
     const effectiveId = await getEffectiveClerkId();
     const categories = await prisma.category.findMany({
       where: {
-        OR: [{ clerkId: effectiveId }, { clerkId: null }],
+        OR: [
+          { clerkId: effectiveId },
+          { clerkId: null },
+          { items: { some: { clerkId: effectiveId } } }
+        ],
       },
       select: { id: true, name: true },
       orderBy: { name: "asc" },

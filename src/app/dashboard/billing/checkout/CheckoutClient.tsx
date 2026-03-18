@@ -1135,7 +1135,7 @@ type BillItem = {
   name: string;
   qty: number;
   rate: number;
-  gst?: number;
+  gst?: number | null;
   hsnCode?: string;
   taxStatus?: string;
 };
@@ -1450,7 +1450,7 @@ export default function CheckoutClient() {
         name: item.name, 
         qty: 1, 
         rate: item.price,
-        gst: item.gst || 0,
+        gst: item.gst ?? null,
         hsnCode: item.hsnCode || "",
         taxStatus: item.taxStatus || "Without Tax"
       }];
@@ -1568,13 +1568,16 @@ export default function CheckoutClient() {
   
   const taxGroups = items.reduce((acc: any, item) => {
     // 🥇 PRIORITY LOGIC: Product GST > Default GST
-    let rate = globalRate;
-    if (perProductEnabled && item.gst !== undefined && item.gst !== null && item.gst > 0) {
-      rate = item.gst;
-    }
+    let rate = 0;
     
-    // If tax system is globally disabled, rate is 0
-    if (!taxActive) rate = 0;
+    // 1. If per-product is enabled, check if item has a specific GST rate set
+    if (perProductEnabled && item.gst !== undefined && item.gst !== null) {
+      rate = item.gst;
+    } 
+    // 2. Otherwise use global rate if global tax is enabled
+    else if (taxActive) {
+      rate = globalRate;
+    }
     
     const gross = item.qty * item.rate;
     let taxable = gross;
@@ -1662,13 +1665,19 @@ export default function CheckoutClient() {
 
     // Recalculation Check (Compare UI result with calculated result)
     let reCalcGst = items.reduce((sum, item) => {
-      const rate = item.gst || (business?.taxRate ?? 0);
+      let rate = 0;
+      if (perProductEnabled && item.gst !== undefined && item.gst !== null) {
+        rate = item.gst;
+      } else if (taxActive) {
+        rate = business?.taxRate ?? 0;
+      }
+
       const gross = item.qty * item.rate;
       if (item.taxStatus === "With Tax") return sum + (gross - (gross / (1 + rate / 100)));
       return sum + ((gross * rate) / 100);
     }, 0);
 
-    if (taxActive && Math.abs(reCalcGst - gstAmount) > 0.5) {
+    if ((taxActive || perProductEnabled) && Math.abs(reCalcGst - gstAmount) > 0.5) {
       alert(`Safety Check: GST Calculation Mismatch! System: ₹${gstAmount.toFixed(2)}, Calculated: ₹${reCalcGst.toFixed(2)}`);
       return null;
     }
@@ -2316,9 +2325,9 @@ export default function CheckoutClient() {
                       <p className="text-xs font-black text-emerald-600">
                         {i.qty} × ₹{i.rate.toFixed(2)}
                       </p>
-                      {perProductEnabled && (i.gst === undefined || i.gst === null || i.gst === 0) && (
-                        <span className="text-[8px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">
-                          ⚠️ Using Default {globalRate}%
+                      {perProductEnabled && (i.gst === undefined || i.gst === null) && (
+                        <span className="text-[8px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter border border-amber-200/50 shadow-sm animate-pulse-slow">
+                          Profile Default GST Applied ({globalRate}%)
                         </span>
                       )}
                     </div>
@@ -2368,7 +2377,7 @@ export default function CheckoutClient() {
             <div className="flex justify-between items-center border-b border-dashed border-[var(--kravy-border)] pb-2">
               <div className="flex flex-col">
                 <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter">Subtotal: ₹{subtotal.toFixed(2)}</p>
-                {taxActive && <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter">Tax: ₹{gstAmount.toFixed(2)}</p>}
+                {(taxActive || perProductEnabled) && <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter">Tax: ₹{gstAmount.toFixed(2)}</p>}
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest leading-none">Total Amount</p>
@@ -2558,7 +2567,7 @@ export default function CheckoutClient() {
               </div>
               <div className="flex justify-between text-[8px] text-gray-600">
                 <span>{i.qty} x {i.rate.toFixed(2)}</span>
-                <span>{((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} {taxActive ? `| GST: ${i.gst || 0}%` : ""}</span>
+                <span>{((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} {(taxActive || perProductEnabled) ? `| GST: ${i.gst || 0}%` : ""}</span>
               </div>
             </div>
           ))}
@@ -2566,7 +2575,7 @@ export default function CheckoutClient() {
           
           <div className="space-y-0.5">
             <div className="flex justify-between text-[9px]"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
-            {taxActive && (
+            {(taxActive || perProductEnabled) && (
               <>
                 <div className="flex justify-between text-[9px]"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>
                 <div className="flex justify-between text-[9px]"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
@@ -2579,7 +2588,7 @@ export default function CheckoutClient() {
             </div>
           </div>
 
-          {taxActive && taxBreakup.length > 0 && (
+          {(taxActive || perProductEnabled) && taxBreakup.length > 0 && (
             <div className="mt-3">
               <div className="text-[8px] font-bold border-b border-dashed mb-1 pb-0.5">GST TAX BREAKUP</div>
               <table className="w-full text-[8px] border-collapse">
@@ -3019,7 +3028,7 @@ export default function CheckoutClient() {
                       </div>
                       <div className="flex justify-between text-[8px] text-gray-600">
                         <span>{i.qty} x {i.rate.toFixed(2)}</span>
-                        <span>{((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} {taxActive ? `| GST: ${i.gst || 0}%` : ""}</span>
+                        <span>{((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} {(taxActive || perProductEnabled) ? `| GST: ${i.gst || 0}%` : ""}</span>
                       </div>
                     </div>
                   ))}
@@ -3027,7 +3036,7 @@ export default function CheckoutClient() {
                   
                   <div className="space-y-0.5">
                     <div className="flex justify-between text-[9px]"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
-                    {taxActive && (
+                    {(taxActive || perProductEnabled) && (
                       <>
                         <div className="flex justify-between text-[9px]"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>
                         <div className="flex justify-between text-[9px]"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
@@ -3040,7 +3049,7 @@ export default function CheckoutClient() {
                     </div>
                   </div>
 
-                  {taxActive && taxBreakup.length > 0 && (
+                  {(taxActive || perProductEnabled) && taxBreakup.length > 0 && (
                     <div className="mt-3">
                       <div className="text-[8px] font-bold border-b border-dashed border-gray-400 mb-1 pb-0.5">GST TAX BREAKUP</div>
                       <table className="w-full text-[8px] border-collapse">

@@ -21,11 +21,11 @@ export async function GET(req: Request) {
       where: { userId: effectiveId },
     });
 
-    if (!profile?.taxEnabled) {
+    if (!profile?.taxEnabled && !profile?.perProductTaxEnabled) {
       return NextResponse.json({ error: "GST is not enabled" }, { status: 403 });
     }
 
-    const globalGstRate = profile?.taxRate || 0;
+    const globalGstRate = profile?.taxEnabled ? (profile?.taxRate || 0) : 0;
     const businessState = profile?.state?.trim().toLowerCase() || "";
 
     // 2. Fetch all bills for the user in the date range
@@ -64,12 +64,16 @@ export async function GET(req: Request) {
       let billSgst = 0;
       let billIgst = 0;
       let billGst = 0;
+      const rates = new Set<number>();
+      const hsns = new Set<string>();
 
       const perProductEnabled = profile?.perProductTaxEnabled ?? false;
 
       billItems.forEach((item) => {
-        // Fallback to global GST rate if per-product is disabled OR item.gst is 0/null
-        const rate = (perProductEnabled && item.gst > 0) ? Number(item.gst) : globalGstRate;
+        // Fallback to global GST rate if per-product is disabled OR item.gst is missing
+        const rate = (perProductEnabled && item.gst !== undefined && item.gst !== null) 
+          ? Number(item.gst) 
+          : globalGstRate;
         const qty = Number(item.qty || item.quantity) || 0;
         const price = Number(item.rate || item.price) || 0;
         const gross = qty * price;
@@ -101,6 +105,8 @@ export async function GET(req: Request) {
         billSgst += sgst;
         billIgst += igst;
         billGst += gst;
+        rates.add(rate);
+        if (item.hsnCode) hsns.add(item.hsnCode);
 
         // HSN Summary
         const hsn = item.hsnCode || "NA";
@@ -130,7 +136,9 @@ export async function GET(req: Request) {
         sgst: Number(billSgst.toFixed(2)),
         igst: Number(billIgst.toFixed(2)),
         totalGst: Number(billGst.toFixed(2)),
-        grandTotal: bill.total,
+        grandTotal: Number((billTaxable + billGst).toFixed(2)),
+        rates: Array.from(rates).sort((a,b)=>a-b).join(", ") + "%",
+        hsns: Array.from(hsns).join(", ") || "-",
         paymentMode: bill.paymentMode,
         type: bill.buyerGSTIN ? "B2B" : "B2C",
       });
@@ -141,7 +149,7 @@ export async function GET(req: Request) {
       }
       const dailyData = dailyMap.get(dateStr);
       dailyData.bills += 1;
-      dailyData.gross += bill.total;
+      dailyData.gross += (billTaxable + billGst);
       dailyData.taxable += billTaxable;
       dailyData.cgst += billCgst;
       dailyData.sgst += billSgst;
