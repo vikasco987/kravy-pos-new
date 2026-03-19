@@ -15,6 +15,7 @@ export interface DiscountOffer {
   buyQty?: number;
   getItemOffId?: string;
   getQty?: number;
+  getDiscount?: number;
   applyOnCategory?: string;
 }
 
@@ -44,9 +45,8 @@ export function calculateDiscount(offer: DiscountOffer, subtotal: number, items:
         // Find the get item to see its price (we give it for free)
         const getItem = items.find(i => i.id === offer.getItemOffId);
         if (getItem) {
-          // Discount = (Price of Get Item) * (Off Qty)
-          // Simple logic: one set of BOGO per bill for now
-          discountAmt = getItem.rate * (offer.getQty || 1);
+          // Discount = (Price of Get Item * Qty) * (Discount % / 100)
+          discountAmt = (getItem.rate * Math.min(getItem.qty, (offer.getQty || 1)) * (offer.getDiscount || 100)) / 100;
         }
       }
       break;

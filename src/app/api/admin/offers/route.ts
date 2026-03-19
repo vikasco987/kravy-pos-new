@@ -37,10 +37,17 @@ export async function POST(req: NextRequest) {
             startDate,
             endDate,
             isActive,
+            // BOGO Fields
+            buyItemId,
+            buyQty,
+            getItemOffId,
+            getQty,
+            getDiscount,
+            usageLimit,
         } = body;
 
-        if (!title || !discountType || isNaN(discountValue)) {
-            return NextResponse.json({ error: "Title, Discount Type and Value are required" }, { status: 400 });
+        if (!title || !discountType) {
+            return NextResponse.json({ error: "Title and Discount Type are required" }, { status: 400 });
         }
 
         const offer = await prisma.offer.create({
@@ -49,13 +56,20 @@ export async function POST(req: NextRequest) {
                 description,
                 code: (code && code.trim()) ? code.trim().toUpperCase() : `${title.toUpperCase().replace(/\s+/g, "").slice(0, 8)}${Math.floor(Math.random() * 999)}`,
                 discountType,
-                discountValue: parseFloat(discountValue),
+                discountValue: discountValue ? parseFloat(discountValue) : 0,
                 minOrderValue: minOrderValue ? parseFloat(minOrderValue) : null,
                 maxDiscount: maxDiscount ? parseFloat(maxDiscount) : null,
                 startDate: startDate ? new Date(startDate) : null,
                 endDate: endDate ? new Date(endDate) : null,
                 isActive: isActive !== undefined ? isActive : true,
                 clerkUserId: effectiveId,
+                // BOGO mappings
+                buyItemId: buyItemId || null,
+                buyQty: buyQty ? parseInt(buyQty) : 1,
+                getItemOffId: getItemOffId || null,
+                getQty: getQty ? parseInt(getQty) : 1,
+                getDiscount: getDiscount ? parseFloat(getDiscount) : 100,
+                usageLimit: usageLimit ? parseInt(usageLimit) : null,
             },
         });
 

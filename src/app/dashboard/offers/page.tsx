@@ -45,6 +45,13 @@ interface Offer {
     maxDiscount: number | null;
     startDate: string | null;
     endDate: string | null;
+    usageLimit: number | null;
+    currentUsage: number;
+    buyItemId: string | null;
+    buyQty: number | null;
+    getItemOffId: string | null;
+    getQty: number | null;
+    getDiscount: number | null;
     isActive: boolean;
 }
 
@@ -67,8 +74,16 @@ export default function OffersPage() {
         maxDiscount: "",
         startDate: "",
         endDate: "",
+        usageLimit: "",
+        buyItemId: "",
+        buyQty: 1,
+        getItemOffId: "",
+        getQty: 1,
+        getDiscount: 100,
         isActive: true,
     });
+
+    const [menuItems, setMenuItems] = useState<any[]>([]);
 
     const fetchOffers = async () => {
         try {
@@ -83,8 +98,19 @@ export default function OffersPage() {
         }
     };
 
+    const fetchMenu = async () => {
+        try {
+            const res = await fetch("/api/menu");
+            const data = await res.json();
+            setMenuItems(data.items || data);
+        } catch (error) {
+            console.error("Failed to load menu items");
+        }
+    };
+
     useEffect(() => {
         fetchOffers();
+        fetchMenu();
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -116,6 +142,12 @@ export default function OffersPage() {
                     maxDiscount: "",
                     startDate: "",
                     endDate: "",
+                    usageLimit: "",
+                    buyItemId: "",
+                    buyQty: 1,
+                    getItemOffId: "",
+                    getQty: 1,
+                    getDiscount: 100,
                     isActive: true,
                 });
                 fetchOffers();
@@ -180,6 +212,12 @@ export default function OffersPage() {
                             maxDiscount: "",
                             startDate: "",
                             endDate: "",
+                            usageLimit: "",
+                            buyItemId: "",
+                            buyQty: 1,
+                            getItemOffId: "",
+                            getQty: 1,
+                            getDiscount: 100,
                             isActive: true,
                         });
                     }
@@ -229,22 +267,25 @@ export default function OffersPage() {
                                         >
                                             <option value="PERCENTAGE">Percentage (%)</option>
                                             <option value="FLAT">Flat Amount (₹)</option>
+                                            <option value="BOGO">BOGO (Buy X Get Y)</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label className="font-black text-xs uppercase tracking-widest opacity-60">Value</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="25"
-                                            value={formData.discountValue}
-                                            onChange={e => setFormData({ ...formData, discountValue: e.target.value })}
-                                            required
-                                            className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
-                                        />
-                                    </div>
+                                    {formData.discountType !== "BOGO" && (
+                                        <div className="space-y-2">
+                                            <Label className="font-black text-xs uppercase tracking-widest opacity-60">Value</Label>
+                                            <Input
+                                                type="number"
+                                                placeholder="25"
+                                                value={formData.discountValue}
+                                                onChange={e => setFormData({ ...formData, discountValue: e.target.value })}
+                                                required
+                                                className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
+                                            />
+                                        </div>
+                                    )}
                                     <div className="space-y-2">
                                         <Label className="font-black text-xs uppercase tracking-widest opacity-60">Min. Billing</Label>
                                         <Input
@@ -255,6 +296,117 @@ export default function OffersPage() {
                                             className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
                                         />
                                     </div>
+                                </div>
+
+                                {formData.discountType === "BOGO" && (
+                                    <div className="space-y-6 p-5 bg-amber-50/50 rounded-2xl border border-amber-200">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">BOGO Configuration</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label className="font-black text-[10px] uppercase opacity-60">Customer Buys</Label>
+                                                <select
+                                                    value={formData.buyItemId}
+                                                    onChange={e => setFormData({ ...formData, buyItemId: e.target.value })}
+                                                    className="w-full h-11 rounded-xl border border-amber-200 bg-white px-3 text-xs font-bold outline-none"
+                                                >
+                                                    <option value="">Select Item...</option>
+                                                    {menuItems.map(item => (
+                                                        <option key={item.id} value={item.id}>{item.name}</option>
+                                                    ))}
+                                                </select>
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <span className="text-[9px] font-bold text-amber-600/60 uppercase">Qty:</span>
+                                                    <Input
+                                                        type="number"
+                                                        value={formData.buyQty}
+                                                        onChange={e => setFormData({ ...formData, buyQty: parseInt(e.target.value) })}
+                                                        className="w-20 h-8 text-xs font-bold rounded-lg"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="font-black text-[10px] uppercase opacity-60">Customer Gets</Label>
+                                                <select
+                                                    value={formData.getItemOffId}
+                                                    onChange={e => setFormData({ ...formData, getItemOffId: e.target.value })}
+                                                    className="w-full h-11 rounded-xl border border-amber-200 bg-white px-3 text-xs font-bold outline-none"
+                                                >
+                                                    <option value="">Select Item...</option>
+                                                    {menuItems.map(item => (
+                                                        <option key={item.id} value={item.id}>{item.name}</option>
+                                                    ))}
+                                                </select>
+                                                <div className="flex items-center justify-between gap-2 mt-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[9px] font-bold text-amber-600/60 uppercase">Qty:</span>
+                                                        <Input
+                                                            type="number"
+                                                            value={formData.getQty}
+                                                            onChange={e => setFormData({ ...formData, getQty: parseInt(e.target.value) })}
+                                                            className="w-16 h-8 text-xs font-bold rounded-lg"
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[9px] font-bold text-amber-600/60 uppercase">Off:</span>
+                                                        <Input
+                                                            type="number"
+                                                            value={formData.getDiscount}
+                                                            onChange={e => setFormData({ ...formData, getDiscount: parseFloat(e.target.value) })}
+                                                            placeholder="100%"
+                                                            className="w-16 h-8 text-xs font-bold rounded-lg"
+                                                        />
+                                                        <span className="text-[9px] font-black">%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="font-black text-xs uppercase tracking-widest opacity-60">Valid From</Label>
+                                        <Input
+                                            type="date"
+                                            value={formData.startDate.split('T')[0]}
+                                            onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                                            className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="font-black text-xs uppercase tracking-widest opacity-60">Valid Until</Label>
+                                        <Input
+                                            type="date"
+                                            value={formData.endDate.split('T')[0]}
+                                            onChange={e => setFormData({ ...formData, endDate: e.target.value })}
+                                            className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="font-black text-xs uppercase tracking-widest opacity-60">Max Uses</Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="Unlimited"
+                                            value={formData.usageLimit}
+                                            onChange={e => setFormData({ ...formData, usageLimit: e.target.value })}
+                                            className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
+                                        />
+                                    </div>
+                                    {formData.discountType === "PERCENTAGE" && (
+                                        <div className="space-y-2">
+                                            <Label className="font-black text-xs uppercase tracking-widest opacity-60">Max Discount (₹)</Label>
+                                            <Input
+                                                type="number"
+                                                placeholder="150"
+                                                value={formData.maxDiscount}
+                                                onChange={e => setFormData({ ...formData, maxDiscount: e.target.value })}
+                                                className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-2">
@@ -399,11 +551,17 @@ export default function OffersPage() {
                                                         description: offer.description || "",
                                                         code: offer.code || "",
                                                         discountType: offer.discountType,
-                                                        discountValue: offer.discountValue.toString(),
+                                                        discountValue: offer.discountValue?.toString() || "",
                                                         minOrderValue: offer.minOrderValue?.toString() || "",
                                                         maxDiscount: offer.maxDiscount?.toString() || "",
                                                         startDate: offer.startDate || "",
                                                         endDate: offer.endDate || "",
+                                                        usageLimit: offer.usageLimit?.toString() || "",
+                                                        buyItemId: offer.buyItemId || "",
+                                                        buyQty: offer.buyQty || 1,
+                                                        getItemOffId: offer.getItemOffId || "",
+                                                        getQty: offer.getQty || 1,
+                                                        getDiscount: offer.getDiscount || 100,
                                                         isActive: offer.isActive,
                                                     });
                                                     setIsSheetOpen(true);
@@ -452,7 +610,14 @@ export default function OffersPage() {
                                 {/* Decorative Bottom */}
                                 <div className="bg-gray-50/80 px-6 py-3 border-t border-[var(--kravy-border)] flex items-center justify-between">
                                     <div className="flex items-center gap-2 text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider">
-                                        <Calendar size={12} /> No expiry set
+                                        <Calendar size={12} /> 
+                                        {offer.startDate ? (
+                                            <>
+                                                {new Date(offer.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} 
+                                                {' - '}
+                                                {offer.endDate ? new Date(offer.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Never'}
+                                            </>
+                                        ) : 'No expiry set'}
                                     </div>
                                     <Button variant="ghost" size="sm" className="text-amber-600 font-bold hover:bg-white text-[10px] p-0 h-auto">
                                         View Details <ChevronRight size={14} />

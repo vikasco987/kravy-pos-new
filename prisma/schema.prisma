@@ -447,6 +447,7 @@ model Offer {
   buyQty        Int?     @default(1)
   getItemOffId  String?  @db.ObjectId // Item given off
   getQty        Int?     @default(1)
+  getDiscount   Float?   @default(100)
   applyOnCategory String? // For Item-wise category discount
   
   startDate     DateTime?
