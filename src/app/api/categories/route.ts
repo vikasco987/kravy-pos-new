@@ -6,6 +6,10 @@ import { getEffectiveClerkId } from "@/lib/auth-utils";
 export async function GET() {
   try {
     const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const categories = await prisma.category.findMany({
       where: {
         OR: [
