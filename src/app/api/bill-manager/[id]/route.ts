@@ -68,6 +68,7 @@ export async function PUT(
       upiTxnRef,
       customerName,
       customerPhone,
+      discountCode,
     } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -120,7 +121,24 @@ export async function PUT(
 
     const finalSubtotal = Number(calcSubtotal.toFixed(2));
     const tax = Number(totalTax.toFixed(2));
-    const finalTotal = Number((finalSubtotal + tax).toFixed(2));
+
+    // 🎟️ SERVER-SIDE DISCOUNT VALIDATION
+    let serverDiscountAmt = 0;
+    let validatedDiscountCode = null;
+
+    if (discountCode) {
+      const offer = await prisma.offer.findFirst({
+        where: { code: discountCode.toUpperCase(), isActive: true, clerkUserId: effectiveId },
+      });
+
+      if (offer) {
+        const { calculateDiscount } = require("@/lib/discount-utils");
+        serverDiscountAmt = calculateDiscount(offer, finalSubtotal, items);
+        validatedDiscountCode = offer.code;
+      }
+    }
+
+    const finalTotal = Number((finalSubtotal + tax - serverDiscountAmt).toFixed(2));
 
     /* ---------- PAYMENT STATUS ---------- */
     let finalPaymentStatus: string;
@@ -173,6 +191,8 @@ export async function PUT(
         customerName: customerName || null,
         customerPhone: customerPhone || null,
         partyId: partyId,
+        discountAmount: serverDiscountAmt,
+        discountCode: validatedDiscountCode,
         auditNote: body.auditNote || null,
       },
     });

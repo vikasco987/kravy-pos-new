@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
             data: {
                 title,
                 description,
-                code: code || null,
+                code: (code && code.trim()) ? code.trim().toUpperCase() : `${title.toUpperCase().replace(/\s+/g, "").slice(0, 8)}${Math.floor(Math.random() * 999)}`,
                 discountType,
                 discountValue: parseFloat(discountValue),
                 minOrderValue: minOrderValue ? parseFloat(minOrderValue) : null,

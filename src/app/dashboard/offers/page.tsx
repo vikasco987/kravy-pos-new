@@ -54,6 +54,7 @@ export default function OffersPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+    const [submitting, setSubmitting] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -88,6 +89,8 @@ export default function OffersPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (submitting) return;
+        setSubmitting(true);
         const method = editingOffer ? "PATCH" : "POST";
         const url = editingOffer ? `/api/admin/offers/${editingOffer.id}` : "/api/admin/offers";
 
@@ -124,6 +127,8 @@ export default function OffersPage() {
         } catch (error) {
             kravy.error();
             toast.error("Failed to save offer");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -265,8 +270,8 @@ export default function OffersPage() {
                                     </Button>
                                 </div>
 
-                                <Button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-white h-14 rounded-2xl font-black text-lg shadow-xl shadow-amber-500/20">
-                                    {editingOffer ? "Update Offer" : "Launch Promotion 🚀"}
+                                <Button type="submit" disabled={submitting} className="w-full bg-amber-500 hover:bg-amber-600 text-white h-14 rounded-2xl font-black text-lg shadow-xl shadow-amber-500/20 disabled:opacity-50">
+                                    {submitting ? "Launching..." : (editingOffer ? "Update Offer" : "Launch Promotion 🚀")}
                                 </Button>
                             </form>
                         </div>

@@ -371,6 +371,8 @@ model BillManager {
   items         Json
 
   subtotal      Float
+  discountAmount Float? @default(0)
+  discountCode   String?
   tax           Float?
   total         Float
 
@@ -433,12 +435,26 @@ model Offer {
   title         String
   description   String?
   code          String?  @unique
-  discountType  String   // "PERCENTAGE", "FLAT"
-  discountValue Float
-  minOrderValue Float?
+  discountType  String   // "PERCENTAGE", "FLAT", "BOGO", "ITEM_WISE"
+  discountValue Float?   // 0 for BOGO
+  
+  // Advanced Rules
+  minOrderValue Float?   @default(0)
   maxDiscount   Float?
+  
+  // BOGO / Item-wise rules
+  buyItemId     String?  @db.ObjectId // Item to buy
+  buyQty        Int?     @default(1)
+  getItemOffId  String?  @db.ObjectId // Item given off
+  getQty        Int?     @default(1)
+  applyOnCategory String? // For Item-wise category discount
+  
   startDate     DateTime?
   endDate       DateTime?
+  
+  usageLimit    Int?     @default(1000)
+  currentUsage  Int      @default(0)
+  
   isActive      Boolean  @default(true)
   clerkUserId   String
   user          User     @relation(fields: [clerkUserId], references: [clerkId])

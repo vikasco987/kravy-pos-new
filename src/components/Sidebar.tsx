@@ -628,12 +628,12 @@ export default function Sidebar() {
                           <div style={{ fontSize: "0.55rem", fontWeight: 700, textTransform: 'uppercase' }}>Combos</div>
                         </div>
                       </Link>
-                      <Link href="/dashboard/offers" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => kravy.click()}>
+                      <Link href="/dashboard/discounts" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => kravy.click()}>
                         <div style={{
-                          background: pathname === '/dashboard/offers' ? "rgba(245,158,11,0.15)" : "rgba(245,158,11,0.05)",
-                          border: pathname === '/dashboard/offers' ? "1px solid rgba(245,158,11,0.3)" : "1px solid rgba(245,158,11,0.1)",
+                          background: pathname === '/dashboard/discounts' ? "rgba(245,158,11,0.15)" : "rgba(245,158,11,0.05)",
+                          border: pathname === '/dashboard/discounts' ? "1px solid rgba(245,158,11,0.3)" : "1px solid rgba(245,158,11,0.1)",
                           borderRadius: "8px", padding: "6px 0", textAlign: "center", transition: "all 0.2s",
-                          color: pathname === '/dashboard/offers' ? "#F59E0B" : (isDark ? "rgba(255,255,255,0.6)" : "var(--kravy-text-secondary)")
+                          color: pathname === '/dashboard/discounts' ? "#F59E0B" : (isDark ? "rgba(255,255,255,0.6)" : "var(--kravy-text-secondary)")
                         }}>
                           <Tag size={14} style={{ margin: "0 auto 4px" }} />
                           <div style={{ fontSize: "0.55rem", fontWeight: 700, textTransform: 'uppercase' }}>Offers</div>

@@ -59,6 +59,8 @@ export async function POST(req: NextRequest) {
   customerName,
   customerPhone,
   tableName,
+  discountCode,
+  discountAmount,
 } = body;
 
 // ✅ HARD DEFAULTS (CRITICAL)
@@ -104,7 +106,25 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
 
     const finalSubtotal = Number(calcSubtotal.toFixed(2));
     const calculatedTax = Number(totalTax.toFixed(2));
-    const finalTotal = Number((finalSubtotal + calculatedTax).toFixed(2));
+    
+    // 🎟️ SERVER-SIDE DISCOUNT VALIDATION
+    let serverDiscountAmt = 0;
+    let validatedDiscountCode = null;
+
+    if (discountCode) {
+      const offer = await prisma.offer.findFirst({
+        where: { code: discountCode.toUpperCase(), isActive: true, clerkUserId: effectiveId },
+      });
+
+      if (offer) {
+        // Simple validation, you could use the full calculateDiscount logic here too
+        const { calculateDiscount } = require("@/lib/discount-utils");
+        serverDiscountAmt = calculateDiscount(offer, finalSubtotal, items);
+        validatedDiscountCode = offer.code;
+      }
+    }
+
+    const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt).toFixed(2));
 
 
     // Basic validation
@@ -195,6 +215,8 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
         customerPhone: customerPhone || null,
         partyId: partyId,
         tableName: tableName || "POS",
+        discountAmount: serverDiscountAmt,
+        discountCode: validatedDiscountCode,
         auditNote: body.auditNote || null,
       },
     });
