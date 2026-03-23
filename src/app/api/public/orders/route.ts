@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { clerkUserId, tableId, items, total, customerName, customerPhone, caseType, parentOrderId } = body;
+        const { clerkUserId, tableId, items, total, customerName, customerPhone, caseType, parentOrderId, paymentMethod } = body;
 
         if (!clerkUserId || !items || !total) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
                     total: existing.total + parseFloat(total),
                     isMerged: true,
                     mergedAt: new Date(),
+                    paymentMode: paymentMethod || existing.paymentMode // keep or update
                 },
                 include: { table: true },
             });
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
                 status: "PENDING",
                 caseType: caseType || "new",
                 parentOrderId: parentOrderId || null,
+                paymentMode: paymentMethod || "UPI / QR"
             },
             include: {
                 table: true,

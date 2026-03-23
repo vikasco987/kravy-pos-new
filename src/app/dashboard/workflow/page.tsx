@@ -586,6 +586,11 @@ export default function KravyPOS() {
                                                                 <span className="px-1.5 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-[9px] font-black text-emerald-600 uppercase">
                                                                     {order.isBillPrinted ? "PAID" : "UNPAID"}
                                                                 </span>
+                                                                {(order as any).paymentMode && (
+                                                                    <span className="px-1.5 py-0.5 rounded border border-blue-200 bg-blue-50 text-[9px] font-black text-blue-600 uppercase">
+                                                                        {(order as any).paymentMode}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <span className="text-sm font-bold text-slate-800">₹{order.total}</span>
                                                         </div>

@@ -158,6 +158,7 @@ function PublicMenu() {
     const [customerPhone, setCustomerPhone] = useState("");
     const [customerName, setCustomerName] = useState("");
     const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+    const [paymentMethod, setPaymentMethod] = useState("UPI / QR");
 
     // Order Flow
     const [orderStatus, setOrderStatus] = useState<"none" | "placing" | "placed">("none");
@@ -475,7 +476,8 @@ function PublicMenu() {
                     total,
                     customerName: customerName || "Guest",
                     customerPhone,
-                    caseType: "new"
+                    caseType: "new",
+                    paymentMethod // ✅ NEW: capturing intent
                 })
             });
 
@@ -1572,10 +1574,14 @@ function PublicMenu() {
                                 <div className="px-4 py-3.5 bg-white space-y-3">
                                     <div className="text-[0.78rem] font-[900] uppercase tracking-wider">Payment Method</div>
                                     <div className="grid grid-cols-3 gap-2">
-                                        {["UPI / QR", "Cash", "Card"].map((opt, i) => (
-                                            <div key={opt} className={`border-[1.5px] rounded-xl p-2 text-center cursor-pointer transition-all ${i === 0 ? "border-[#E23744] bg-red-50" : "border-[#EBEBEB]"}`}>
-                                                <div className="text-xl mb-1">{i === 0 ? "📱" : i === 1 ? "💵" : "💳"}</div>
-                                                <div className={`text-[0.62rem] font-[800] upper ${i === 0 ? "text-[#E23744]" : "text-[#696969]"}`}>{opt}</div>
+                                        {["UPI / QR", "Cash", "Card"].map((opt) => (
+                                            <div 
+                                                key={opt} 
+                                                onClick={() => { kravy.click(); setPaymentMethod(opt); }} 
+                                                className={`border-[1.5px] rounded-xl p-2 text-center cursor-pointer transition-all ${paymentMethod === opt ? "border-[#E23744] bg-red-50" : "border-[#EBEBEB]"}`}
+                                            >
+                                                <div className="text-xl mb-1">{opt === "UPI / QR" ? "📱" : opt === "Cash" ? "💵" : "💳"}</div>
+                                                <div className={`text-[0.62rem] font-[800] upper ${paymentMethod === opt ? "text-[#E23744]" : "text-[#696969]"}`}>{opt}</div>
                                             </div>
                                         ))}
                                     </div>

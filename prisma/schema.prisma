@@ -226,7 +226,8 @@ model Order {
   
   customerName  String?
   customerPhone String?
-  
+  paymentMode   String?  // UPI, CASH, CARD intent from QR menu
+
   isKotPrinted  Boolean  @default(false)
   isBillPrinted Boolean  @default(false)
   
