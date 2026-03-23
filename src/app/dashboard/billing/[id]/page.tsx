@@ -391,6 +391,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { MessageCircle, Printer, Download, ArrowLeft } from "lucide-react";
 import { formatWhatsAppNumber } from "@/lib/whatsapp";
+import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 import type {
   BillManager,
   BusinessProfile as PrismaBusinessProfile,
@@ -427,9 +428,18 @@ export default function ViewBillPage() {
 
   const [bill, setBill] = useState<BillManager | null>(null);
   const [business, setBusiness] = useState<PrismaBusinessProfile | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const receiptRef = useRef<HTMLDivElement>(null);
 
+
+  // ✅ Fetch Role
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => setUserRole(data.role))
+      .catch(err => console.error("Failed to fetch role", err));
+  }, []);
 
   // ✅ Fetch from BillManager API
   useEffect(() => {
@@ -564,14 +574,14 @@ export default function ViewBillPage() {
             <Printer size={18} />
             Print
           </button>
-          <button
-            onClick={handleWhatsApp}
-            disabled={bill.isHeld}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 border px-4 py-2 rounded-xl font-bold bg-[#25D366] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#128C7E] transition-colors"
-          >
-            <MessageCircle size={18} />
-            WhatsApp
-          </button>
+          
+          {(userRole === "ADMIN" || userRole === "MASTER") && (
+            <WhatsAppBillButton 
+              billId={id} 
+              defaultPhone={bill.customerPhone || ""} 
+              onSent={() => {}} 
+            />
+          )}
 
           <button
             onClick={() => window.open((bill as any).pdfUrl || `/api/bill-manager/${bill.id}/pdf${bill.clerkUserId ? `?clerkId=${bill.clerkUserId}` : ""}`, "_blank")}

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 export async function PUT(req: Request) {
@@ -27,9 +27,18 @@ export async function PUT(req: Request) {
       );
     }
 
+    // Update DB
     const updated = await prisma.user.update({
       where: { id: targetUserId },
       data: { role },
+    });
+
+    // ✅ ALSO UPDATE CLERK (IMPORTANT: Sync issue fix)
+    const client = await clerkClient();
+    await client.users.updateUser(updated.clerkId, {
+      publicMetadata: {
+        role,
+      },
     });
 
     return NextResponse.json(updated);

@@ -11,6 +11,7 @@ import {
 import { calculateDiscount } from "@/lib/discount-utils";
 import { toast } from "sonner";
 import { kravy } from "@/lib/sounds";
+import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 
 /* ================= TYPES ================= */
 
@@ -169,6 +170,8 @@ export default function CheckoutClient() {
   const [showHeldBills, setShowHeldBills] = useState(false);
   const [heldBillsLoading, setHeldBillsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [lastSavedBillId, setLastSavedBillId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [previewZoom, setPreviewZoom] = useState(1);
   const [quickAddCat, setQuickAddCat] = useState<{ id: string, name: string } | null>(null);
   const [quickAddTaxStatus, setQuickAddTaxStatus] = useState("Without Tax");
@@ -222,6 +225,12 @@ export default function CheckoutClient() {
   useEffect(() => { 
     fetchHeldBills();
     fetchParties();
+    
+    // Fetch User Role
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => setUserRole(data.role))
+      .catch(err => console.error("Failed to fetch role", err));
   }, []);
 
   const [billNumber, setBillNumber] = useState("");
@@ -668,7 +677,9 @@ export default function CheckoutClient() {
       const data = await res.json();
       // Refresh parties to include any new customer
       fetchParties();
-      return data.bill ?? data;
+      const savedBill = data.bill ?? data;
+      if (savedBill?.id) setLastSavedBillId(savedBill.id);
+      return savedBill;
     } catch (err) {
       console.error("Save bill error", err);
       alert("Something went wrong");
@@ -2112,14 +2123,23 @@ export default function CheckoutClient() {
               </div>
             </div>
 
-            {/* Footer Action */}
-            <div className="px-5 py-4 border-t border-[var(--kravy-border)] bg-[var(--kravy-surface)] shrink-0 flex gap-3">
-              <button
-                onClick={() => { kravy.close(); setShowPreview(false); }}
-                className="flex-1 py-3.5 rounded-xl border border-[var(--kravy-border)] font-bold text-sm text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-bg)] transition-all"
-              >
-                Close
-              </button>
+            <div className="px-5 py-4 border-t border-[var(--kravy-border)] bg-[var(--kravy-surface)] shrink-0 flex flex-col gap-3">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { kravy.close(); setShowPreview(false); }}
+                  className="flex-1 py-3.5 rounded-xl border border-[var(--kravy-border)] font-bold text-sm text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-bg)] transition-all"
+                >
+                  Close
+                </button>
+                {lastSavedBillId && (userRole === "ADMIN" || userRole === "MASTER") && (
+                  <div className="flex-[2]">
+                    <WhatsAppBillButton 
+                      billId={lastSavedBillId} 
+                      defaultPhone={customerPhone} 
+                    />
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => {
                   kravy.ping();

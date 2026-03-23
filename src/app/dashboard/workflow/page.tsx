@@ -10,7 +10,7 @@ import {
     Edit3, LogOut, Table as TableIcon, History,
     RotateCcw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
     Wifi, Battery, Signal, Smartphone, Timer, AlertTriangle, ChevronUp, Package2,
-    Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut
+    Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut, Phone
 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import OrderAlertLoop from "./components/order-alert-loop";
@@ -40,6 +40,7 @@ type Order = {
     isMerged?: boolean;
     isKotPrinted?: boolean;
     isBillPrinted?: boolean;
+    updatedAt: string;
 };
 
 type TableStatus = {
@@ -52,6 +53,7 @@ type TableStatus = {
 };
 
 const TABS = [
+    { key: "live-orders", label: "Live Orders", icon: ChefHat },
     { key: "dashboard", label: "Terminal", icon: LayoutDashboard },
     { key: "kitchen", label: "Kitchen", icon: ChefHat },
     { key: "payment", label: "Cashier", icon: CreditCard },
@@ -64,7 +66,9 @@ export default function KravyPOS() {
     const receiptRef = useRef<HTMLDivElement | null>(null);
     const billReceiptRef = useRef<HTMLDivElement | null>(null);
     const kotReceiptRef = useRef<HTMLDivElement | null>(null);
-    const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
+    const [activeTab, setActiveTab] = useState<TabKey>("live-orders");
+    const [liveOrderTab, setLiveOrderTab] = useState<"PREPARING" | "READY" | "COMPLETED">("PREPARING");
+    const [liveOrderSearch, setLiveOrderSearch] = useState("");
     const [orders, setOrders] = useState<Order[]>([]);
     const [tablesList, setTablesList] = useState<TableStatus[]>([]);
     const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
@@ -78,6 +82,8 @@ export default function KravyPOS() {
     const [showPreview, setShowPreview] = useState(false);
     const [previewMode, setPreviewMode] = useState<"KOT" | "BILL">("BILL");
     const [previewZoom, setPreviewZoom] = useState(1);
+    const [printOrder, setPrintOrder] = useState<Order | null>(null);
+    const [printTable, setPrintTable] = useState<TableStatus | null>(null);
 
     const handlePrint = (type: "KOT" | "BILL") => {
         // Use preview ref if open, otherwise use the corresponding hidden ref
@@ -124,8 +130,9 @@ export default function KravyPOS() {
         window.print();
 
         // Track printing in the DB
-        if (activeOrderForSelected) {
-            const body: any = { orderId: activeOrderForSelected.id };
+        const targetOrder = printOrder || activeOrderForSelected;
+        if (targetOrder) {
+            const body: any = { orderId: targetOrder.id };
             if (type === "KOT") body.isKotPrinted = true;
             if (type === "BILL") body.isBillPrinted = true;
 
@@ -139,6 +146,9 @@ export default function KravyPOS() {
         setTimeout(() => {
             document.head.removeChild(styleSheet);
             document.body.removeChild(printContainer);
+            // Clear specific print state if it was set
+            setPrintOrder(null);
+            setPrintTable(null);
         }, 1000);
     };
 
@@ -345,6 +355,7 @@ export default function KravyPOS() {
                         const Icon = t.icon;
                         const isActive = activeTab === t.key;
                         let badgeCount = 0;
+                        if (t.key === "live-orders") badgeCount = stats.pending + stats.running;
                         if (t.key === "kitchen") badgeCount = stats.pending + stats.running;
                         if (t.key === "payment") badgeCount = stats.ready;
 
@@ -399,6 +410,269 @@ export default function KravyPOS() {
             {/* ═══ MAIN ═══ */}
             <main className="flex-1 overflow-hidden">
                 <AnimatePresence mode="wait">
+
+                    {/* ── LIVE ORDERS / QR MANAGER TAB ── */}
+                    {activeTab === "live-orders" && (
+                        <motion.div
+                            key="live-orders"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="flex flex-col h-full bg-slate-50"
+                        >
+                            {/* Live Orders Sub-Header */}
+                            <div className="bg-white border-b border-slate-200 px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl">
+                                    {(["PREPARING", "READY", "COMPLETED"] as const).map(tab => {
+                                        const count = tab === "PREPARING" 
+                                            ? orders.filter(o => ["PENDING", "ACCEPTED", "PREPARING"].includes(o.status)).length
+                                            : tab === "READY" 
+                                                ? orders.filter(o => o.status === "READY").length
+                                                : orders.filter(o => o.status === "COMPLETED").length;
+                                        
+                                        const isActive = liveOrderTab === tab;
+                                        const label = tab === "PREPARING" ? "Preparing" : tab === "READY" ? "Ready" : "Picked up";
+                                        
+                                        return (
+                                            <button
+                                                key={tab}
+                                                onClick={() => { kravy.click(); setLiveOrderTab(tab); }}
+                                                className={`px-4 py-1.5 rounded-lg text-[13px] font-medium transition-all flex items-center gap-1.5 border ${
+                                                    isActive 
+                                                        ? "bg-[#EF6C00] text-white border-[#EF6C00] shadow-sm" 
+                                                        : "bg-white text-slate-500 border-slate-300 hover:bg-slate-50"
+                                                }`}
+                                            >
+                                                {label} ({count})
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="flex items-center gap-3 w-full md:w-auto">
+                                    <div className="relative flex-1 md:w-80">
+                                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search by the 4 digit order ID"
+                                            className="w-full h-10 pl-11 pr-4 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-slate-400"
+                                            value={liveOrderSearch}
+                                            onChange={e => setLiveOrderSearch(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="relative group">
+                                        <select className="h-10 px-4 pr-10 bg-white border border-slate-300 rounded-lg text-sm appearance-none focus:outline-none cursor-pointer">
+                                            <option>Placed At</option>
+                                        </select>
+                                        <ChevronRight size={14} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-blue-600" />
+                                    </div>
+                                    <button onClick={fetchData} className="w-10 h-10 rounded-lg bg-white border border-slate-300 text-slate-400 flex items-center justify-center hover:text-slate-900 transition-all shadow-sm"><RotateCcw size={18} /></button>
+                                </div>
+                            </div>
+
+                            {/* Orders Grid */}
+                            <div className="flex-1 overflow-y-auto p-4 md:p-8">
+                                <div className="max-w-7xl mx-auto space-y-6">
+                                    {orders
+                                        .filter(o => {
+                                            const statusMatch = liveOrderTab === "PREPARING" 
+                                                ? ["PENDING", "ACCEPTED", "PREPARING"].includes(o.status)
+                                                : o.status === liveOrderTab;
+                                            const searchMatch = !liveOrderSearch || o.id.toLowerCase().includes(liveOrderSearch.toLowerCase()) || (o.customerName && o.customerName.toLowerCase().includes(liveOrderSearch.toLowerCase()));
+                                            return statusMatch && searchMatch;
+                                        })
+                                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                        .map((order, idx) => (
+                                            <motion.div
+                                                key={order.id}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: idx * 0.05 }}
+                                                className="bg-white border border-slate-200 rounded-[2.5rem] shadow-sm overflow-hidden flex flex-col md:flex-row min-h-[180px] hover:shadow-xl hover:border-slate-300 transition-all group"
+                                            >
+                                                {/* Left Section: Info & Buttons */}
+                                                <div className="md:w-72 border-r border-slate-200 flex flex-col">
+                                                    <div className="bg-[#E8EAF6] text-[#3F51B5] px-4 py-1.5 text-[10px] font-black uppercase tracking-widest">
+                                                        QR ORDER - {order.caseType || "DINE-IN"}
+                                                    </div>
+                                                    <div className="p-4 flex-1 space-y-4">
+                                                        <div>
+                                                            <h3 className="text-base font-bold text-slate-800 leading-tight">{business?.businessName || "Terminal kitchen"}</h3>
+                                                            <p className="text-[11px] text-slate-500">{order.table?.name || "Counter"}</p>
+                                                        </div>
+                                                        
+                                                        <div className="pt-2 border-t border-slate-100">
+                                                            <p className="text-sm font-bold text-slate-900">ID: {order.id.slice(-4).toUpperCase()}</p>
+                                                        </div>
+
+                                                        <div className="flex gap-2">
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const tbl = tablesList.find(t => t.id === order.table?.id);
+                                                                    setPrintOrder(order);
+                                                                    setPrintTable(tbl || null);
+                                                                    setPreviewMode("KOT");
+                                                                    setShowPreview(true);
+                                                                }}
+                                                                className="flex-1 h-8 rounded border border-blue-600 bg-white text-[10px] font-black uppercase text-blue-600 flex items-center justify-center gap-1.5 hover:bg-blue-50 transition-all"
+                                                            >
+                                                                <Printer size={12} /> KOT
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const tbl = tablesList.find(t => t.id === order.table?.id);
+                                                                    setPrintOrder(order);
+                                                                    setPrintTable(tbl || null);
+                                                                    setPreviewMode("BILL");
+                                                                    setShowPreview(true);
+                                                                }}
+                                                                className="flex-1 h-8 rounded border border-blue-600 bg-white text-[10px] font-black uppercase text-blue-600 flex items-center justify-center gap-1.5 hover:bg-blue-50 transition-all"
+                                                            >
+                                                                <CreditCard size={12} /> ORDER
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="pt-2 border-t border-slate-100 space-y-1">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-[11px] font-black text-blue-600 uppercase tracking-tight truncate">{order.customerName || "WALK-IN"}</span>
+                                                                <Phone size={12} className="text-slate-400" />
+                                                            </div>
+                                                            <p className="text-[10px] font-bold text-slate-500">{order.customerPhone || "No contact"}</p>
+                                                            <p className="text-[10px] text-slate-400 leading-tight">1st order</p>
+                                                            {(order as any).address && (
+                                                                <p className="text-[10px] font-medium text-slate-600 leading-tight border-l-2 border-slate-200 pl-2 mt-2">
+                                                                    {(order as any).address}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                                                        <span className="text-[10px] text-slate-500">Placed: {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        <div className="flex items-center gap-1 text-[10px] text-blue-600 font-bold cursor-pointer hover:underline">
+                                                            <Clock size={10} /> Timeline
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Middle Section: Items & Status */}
+                                                <div className="flex-1 p-6 flex flex-col border-r border-slate-200" style={{ minWidth: 0 }}>
+                                                    <div className="flex items-center gap-2 mb-4 text-[11px] font-bold text-emerald-600">
+                                                        <CheckCircle2 size={12} /> Send cutlery
+                                                    </div>
+
+                                                    <div className="flex-1 space-y-3">
+                                                        {order.items.map((it, i) => (
+                                                            <div key={i} className="flex items-start justify-between group/item">
+                                                                <div className="flex items-start gap-2 min-w-0">
+                                                                    <div className={`mt-1 w-3 h-3 border border-slate-300 flex items-center justify-center shrink-0`}>
+                                                                        <div className={`w-1.5 h-1.5 rounded-full ${it.isVeg === false ? "bg-rose-600" : "bg-emerald-600"}`} />
+                                                                    </div>
+                                                                    <div className="flex flex-col min-w-0">
+                                                                        <span className="text-sm font-medium text-slate-800 truncate">
+                                                                            <span className="font-bold">{it.quantity} x</span> {it.name}
+                                                                        </span>
+                                                                        <span className="text-[10px] text-slate-400 uppercase tracking-widest truncate">{it.instruction || "Standard Prepared"}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <span className="text-sm font-medium text-slate-600 shrink-0">₹{it.price * it.quantity}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    <div className="mt-6 pt-4 border-t border-slate-200 space-y-4">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm font-bold text-slate-800 uppercase">Total Bill</span>
+                                                                <span className="px-1.5 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-[9px] font-black text-emerald-600 uppercase">
+                                                                    {order.isBillPrinted ? "PAID" : "UNPAID"}
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-sm font-bold text-slate-800">₹{order.total}</span>
+                                                        </div>
+
+                                                        {liveOrderTab !== "COMPLETED" && (
+                                                            <div className="space-y-2">
+                                                                <div className="flex items-center justify-between text-[11px]">
+                                                                    <span className="text-slate-500 font-medium">
+                                                                        {order.status === 'READY' ? 'Handover food in' : 'Preparing food'}
+                                                                    </span>
+                                                                    <span className="font-bold text-slate-700">
+                                                                        {Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000)}m elapsed
+                                                                    </span>
+                                                                </div>
+                                                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                                    <motion.div 
+                                                                        initial={{ width: 0 }}
+                                                                        animate={{ width: "65%" }}
+                                                                        className="h-full bg-emerald-500"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Right Section: Partner & Support */}
+                                                <div className="md:w-72 p-6 flex flex-col justify-between">
+                                                    <div className="space-y-4">
+                                                        {order.status === "READY" ? (
+                                                            <div className="p-3 border border-slate-200 rounded-lg flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                                                                    <User size={20} className="text-slate-400" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-[11px] font-bold text-slate-800">Server awaiting</p>
+                                                                    <p className="text-[10px] text-blue-600 flex items-center gap-1 font-bold cursor-pointer">Call | OTP: 8381</p>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex flex-col items-center justify-center py-4 text-center">
+                                                                <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-2">
+                                                                    <ChefHat size={24} className="text-slate-300" />
+                                                                </div>
+                                                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Incoming Workflow</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <button 
+                                                            onClick={() => updateOrderStatus(order.id, order.status === "PENDING" ? "ACCEPTED" : order.status === "ACCEPTED" ? "PREPARING" : order.status === "PREPARING" ? "READY" : "COMPLETED")}
+                                                            className={`w-full h-10 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
+                                                                order.status === 'READY' ? 'bg-[#EF6C00] text-white' : 'bg-slate-900 text-white'
+                                                            }`}
+                                                        >
+                                                            {order.status === 'PENDING' ? 'Accept' : order.status === 'ACCEPTED' ? 'Start' : order.status === 'PREPARING' ? 'Set Ready' : 'Handover'}
+                                                        </button>
+                                                        <div className="flex flex-col gap-2">
+                                                            <button className="h-8 rounded border border-blue-600 text-[10px] font-bold text-blue-600 flex items-center justify-center gap-1.5 hover:bg-blue-50 transition-all uppercase">
+                                                                <MoreHorizontal size={14} /> Live order chat support
+                                                            </button>
+                                                            <button className="h-8 rounded border border-blue-600 text-[10px] font-bold text-blue-600 flex items-center justify-center gap-1.5 hover:bg-blue-50 transition-all uppercase">
+                                                                <User size={14} /> Order help
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+
+                                    {orders.filter(o => {
+                                        const statusMatch = liveOrderTab === "PREPARING" 
+                                            ? ["PENDING", "ACCEPTED", "PREPARING"].includes(o.status)
+                                            : o.status === liveOrderTab;
+                                        return statusMatch;
+                                    }).length === 0 && (
+                                        <div className="flex flex-col items-center justify-center py-32 opacity-20 text-center">
+                                            <div className="w-24 h-24 bg-slate-200 rounded-[3rem] flex items-center justify-center text-slate-400 mb-8 shadow-inner"><Layers size={48} strokeWidth={1} /></div>
+                                            <p className="text-3xl font-black text-slate-900 italic tracking-tighter uppercase">No Live Orders</p>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-4">Safe and Sound. Everything is handled.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
 
                     {/* ── TERMINAL TAB ── */ }
                     {activeTab === "dashboard" && (
@@ -1148,19 +1422,28 @@ export default function KravyPOS() {
                                         marginBottom: `${previewZoom * 120}px` 
                                     }}
                                 >
-                                    {getReceiptJSX(
-                                        previewMode,
-                                        business,
-                                        activeOrderForSelected,
-                                        selectedTable,
-                                        subtotalCost,
-                                        isTaxEnabled,
-                                        taxRate,
-                                        calculatedGst,
-                                        grandTotal,
-                                        payMethod,
-                                        qrUrl
-                                    )}
+                                    {(() => {
+                                        const targetO = printOrder || activeOrderForSelected;
+                                        const targetT = printTable || selectedTable;
+                                        if (!targetO || !targetT) return null;
+                                        const sub = targetO.items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+                                        const gst = isTaxEnabled ? (sub * taxRate) / 100 : 0;
+                                        const total = sub + gst;
+                                        
+                                        return getReceiptJSX(
+                                            previewMode,
+                                            business,
+                                            targetO,
+                                            targetT,
+                                            sub,
+                                            isTaxEnabled,
+                                            taxRate,
+                                            gst,
+                                            total,
+                                            payMethod,
+                                            qrUrl
+                                        );
+                                    })()}
                                 </motion.div>
                             </div>
 
@@ -1190,10 +1473,26 @@ export default function KravyPOS() {
             {/* Hidden Printer Zone */}
             <div style={{ position: 'absolute', top: -9999, left: -9999, opacity: 0, pointerEvents: 'none' }}>
                 <div ref={billReceiptRef} style={{ width: '58mm' }}>
-                    {getReceiptJSX("BILL", business, activeOrderForSelected, selectedTable, subtotalCost, isTaxEnabled, taxRate, calculatedGst, grandTotal, payMethod, qrUrl)}
+                    {(() => {
+                        const targetO = printOrder || activeOrderForSelected;
+                        const targetT = printTable || selectedTable;
+                        if (!targetO || !targetT) return null;
+                        const sub = targetO.items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+                        const gst = isTaxEnabled ? (sub * taxRate) / 100 : 0;
+                        const total = sub + gst;
+                        return getReceiptJSX("BILL", business, targetO, targetT, sub, isTaxEnabled, taxRate, gst, total, payMethod, qrUrl);
+                    })()}
                 </div>
                 <div ref={kotReceiptRef} style={{ width: '58mm' }}>
-                    {getReceiptJSX("KOT", business, activeOrderForSelected, selectedTable, subtotalCost, isTaxEnabled, taxRate, calculatedGst, grandTotal, payMethod, qrUrl)}
+                    {(() => {
+                        const targetO = printOrder || activeOrderForSelected;
+                        const targetT = printTable || selectedTable;
+                        if (!targetO || !targetT) return null;
+                        const sub = targetO.items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+                        const gst = isTaxEnabled ? (sub * taxRate) / 100 : 0;
+                        const total = sub + gst;
+                        return getReceiptJSX("KOT", business, targetO, targetT, sub, isTaxEnabled, taxRate, gst, total, payMethod, qrUrl);
+                    })()}
                 </div>
             </div>
 

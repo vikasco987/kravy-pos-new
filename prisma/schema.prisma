@@ -397,6 +397,11 @@ model BillManager {
   pdfUrl          String?   // ✅ Added for direct sharing
   tableName       String?   // ✅ Added to track source (Table Name or "POS")
   auditNote       String?   // SaaS Feature: Audit trail for tax corrections
+  
+  // WhatsApp Tracking
+  whatsappSent    Boolean   @default(false)
+  whatsappSentAt  DateTime?
+  whatsappSid     String?
 
   @@index([clerkUserId])
   @@index([isDeleted, createdAt])

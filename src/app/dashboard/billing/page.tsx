@@ -12,6 +12,7 @@ import {
   CreditCard, Smartphone, Banknote, Clock, FileText, CheckCircle2, UtensilsCrossed, ChefHat, 
   ChevronLeft, ChevronRight, Settings2, Check, LayoutGrid, Filter, Search
 } from "lucide-react";
+import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 
 type BillManager = {
   id: string;
@@ -887,7 +888,15 @@ function StatusBadge({ status, isHeld }: { status: string; isHeld?: boolean }) {
 /* ─── Bill Actions ─── */
 function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; refresh: () => void; clerkId?: string | null; business?: any }) {
   const [open, setOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => setUserRole(data.role))
+      .catch(err => console.error("Failed to fetch role", err));
+  }, []);
 
   const handleWhatsApp = async () => {
     let pdfUrl = bill.pdfUrl;
@@ -1007,20 +1016,14 @@ function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; 
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-      <button
-        onClick={handleWhatsApp}
-        style={{
-          width: "34px", height: "34px", borderRadius: "9px",
-          background: "rgba(37, 211, 102, 0.1)", border: "1px solid rgba(37, 211, 102, 0.2)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", color: "rgb(37, 211, 102)", transition: "all 0.2s"
-        }}
-        title="Share on WhatsApp"
-        onMouseEnter={(e) => e.currentTarget.style.background = "rgba(37, 211, 102, 0.2)"}
-        onMouseLeave={(e) => e.currentTarget.style.background = "rgba(37, 211, 102, 0.1)"}
-      >
-        <MessageCircle size={16} />
-      </button>
+      {(userRole === "ADMIN" || userRole === "MASTER") && (
+        <div style={{ width: "160px" }}>
+          <WhatsAppBillButton 
+            billId={bill.id} 
+            defaultPhone={bill.customerPhone || ""} 
+          />
+        </div>
+      )}
 
       <div style={{ position: "relative" }}>
         <button
