@@ -679,6 +679,7 @@ export default function CheckoutClient() {
       fetchParties();
       const savedBill = data.bill ?? data;
       if (savedBill?.id) setLastSavedBillId(savedBill.id);
+      if (savedBill?.billNumber) setBillNumber(savedBill.billNumber);
       return savedBill;
     } catch (err) {
       console.error("Save bill error", err);

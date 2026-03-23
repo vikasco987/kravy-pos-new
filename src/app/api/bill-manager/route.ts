@@ -48,20 +48,20 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // ❌ DO NOT destructure billNumber
-   const {
-  items,
-  subtotal,
-  total,
-  paymentMode,
-  paymentStatus,
-  isHeld,
-  upiTxnRef,
-  customerName,
-  customerPhone,
-  tableName,
-  discountCode,
-  discountAmount,
-} = body;
+    const {
+      items,
+      subtotal,
+      total,
+      paymentMode,
+      paymentStatus,
+      isHeld,
+      upiTxnRef,
+      customerName,
+      customerPhone,
+      tableName,
+      discountCode,
+      discountAmount,
+    } = body;
 
 // ✅ HARD DEFAULTS (CRITICAL)
 const finalPaymentMode: "Cash" | "UPI" | "Card" =
@@ -148,15 +148,28 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
     const mm = String(nowLocal.getMonth() + 1).padStart(2, '0');
     
     const monthStart = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), 1);
-    const count = await prisma.billManager.count({
+    
+    // 🛡️ FIX: find the HIGHEST serial this month rather than just counting (handles deletions)
+    const lastBill = await prisma.billManager.findFirst({
       where: {
         clerkUserId: effectiveId,
         createdAt: { gte: monthStart }
-      }
+      },
+      orderBy: { billNumber: 'desc' },
+      select: { billNumber: true }
     });
     
-    const serial = String(count + 1).padStart(4, '0');
-    const billNumber = `SV/${yy}${mm}/${serial}`;
+    let nextSerial = 1;
+    if (lastBill && lastBill.billNumber) {
+      const parts = lastBill.billNumber.split('/');
+      const lastSerial = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(lastSerial)) {
+        nextSerial = lastSerial + 1;
+      }
+    }
+    
+    const serialLabel = String(nextSerial).padStart(4, '0');
+    const billNumber = `SV/${yy}${mm}/${serialLabel}`;
 
 
     // ✅ DERIVE FINAL PAYMENT STATUS (SOURCE OF TRUTH)
