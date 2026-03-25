@@ -66,7 +66,7 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
   const addAddonRow = () => setNewAddonGroup(p => ({ ...p, addons: [...p.addons, { id: Math.random().toString(), name: '', price: '', foodType: 'veg', imageUrl: '' }] }))
   const updateAddonRow = (id: string, k: string, v: any) => setNewAddonGroup(p => ({ ...p, addons: p.addons.map(a => a.id === id ? { ...a, [k]: v } : a) }))
   const saveNewAddonGroup = () => { if(!newAddonGroup.name) return; update('addonGroupIds', [...form.addonGroupIds, Math.random().toString()]); setAddonState('list'); }
-  const toggleLink = (id: string) => update('addonGroupIds', form.addonGroupIds.includes(id) ? form.addonGroupIds.filter(i => i !== id) : [...form.addonGroupIds, id])
+  const toggleLink = (id: string) => update('addonGroupIds', form.addonGroupIds.includes(id) ? form.addonGroupIds.filter((i: string) => i !== id) : [...form.addonGroupIds, id])
 
   function handleSubmit() {
     if (!form.name || !form.sellingPrice) return alert('Name and Price are required')
@@ -254,8 +254,8 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
                              <div className="flex gap-2 justify-end"><button onClick={() => setVariantState('list')} className="text-[0.68rem] font-black text-gray-400 uppercase tracking-widest px-4">Cancel</button><button onClick={saveVariant} className="bg-blue-600 text-white px-8 py-2.5 rounded-xl text-[0.68rem] font-black uppercase shadow-lg shadow-blue-500/10">Save Group</button></div>
                           </div>
                           <div className="grid grid-cols-2 gap-4 border-y border-white py-3">
-                             <Toggle label="Selection mandatory (customer must choose)" value={newVariant.required} onChange={v => setNewVariant(p => ({ ...p, required: v }))} />
-                             <Toggle label="Allow multiple items selection" value={newVariant.multiSelect} onChange={v => setNewVariant(p => ({ ...p, multiSelect: v }))} />
+                             <Toggle label="Selection mandatory (customer must choose)" value={newVariant.required} onChange={(v: boolean) => setNewVariant(p => ({ ...p, required: v }))} />
+                             <Toggle label="Allow multiple items selection" value={newVariant.multiSelect} onChange={(v: boolean) => setNewVariant(p => ({ ...p, multiSelect: v }))} />
                           </div>
                           <div className="space-y-2.5">
                              {newVariant.options.map((opt, idx) => (

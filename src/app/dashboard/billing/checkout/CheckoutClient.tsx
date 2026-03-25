@@ -452,6 +452,12 @@ export default function CheckoutClient() {
     fssaiEnabled?: boolean;
     hsnEnabled?: boolean;
     perProductTaxEnabled?: boolean;
+    collectCustomerName?: boolean;
+    requireCustomerName?: boolean;
+    collectCustomerPhone?: boolean;
+    requireCustomerPhone?: boolean;
+    collectCustomerAddress?: boolean;
+    requireCustomerAddress?: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -476,6 +482,12 @@ export default function CheckoutClient() {
             fssaiNumber: data.fssaiNumber,
             fssaiEnabled: data.fssaiEnabled ?? false,
             perProductTaxEnabled: data.perProductTaxEnabled ?? false,
+            collectCustomerName: data.collectCustomerName ?? true,
+            requireCustomerName: data.requireCustomerName ?? false,
+            collectCustomerPhone: data.collectCustomerPhone ?? true,
+            requireCustomerPhone: data.requireCustomerPhone ?? false,
+            collectCustomerAddress: data.collectCustomerAddress ?? false,
+            requireCustomerAddress: data.requireCustomerAddress ?? false,
           });
         }
       } catch (err) {
