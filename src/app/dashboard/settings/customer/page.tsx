@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
-import { kravy } from "@/lib/kravy-utils";
+import { kravy } from "@/lib/sounds";
 
 export default function CustomerDataSettings() {
     const [loading, setLoading] = useState(true);
