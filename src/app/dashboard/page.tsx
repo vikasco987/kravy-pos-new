@@ -9,7 +9,8 @@ import TopItems from "./components/top-items";
 import DateFilter from "./components/date-filter";
 import PaymentModeChart from "./components/payment-mode-chart";
 import DashboardSoundAlerts from "./components/dashboard-sound-alerts";
-import { Sparkles, Tag } from "lucide-react";
+import { Sparkles, Tag, Fingerprint, Copy, ShieldCheck, Zap, Smartphone } from "lucide-react";
+import CopyButton from "./components/copy-button";
 
 export const revalidate = 0;
 
@@ -269,37 +270,79 @@ export default async function DashboardPage({
         gap: "16px"
       }}>
         {/* ... existing header code ... */}
-        <div>
+        <div className="flex flex-col gap-2">
           <div style={{
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-            marginBottom: "6px"
+            gap: "12px",
           }}>
             <div style={{
-              width: "6px",
-              height: "32px",
-              background: "linear-gradient(180deg, #FF6B35, #F59E0B)",
-              borderRadius: "10px"
-            }} />
-            <h1 style={{
-              fontSize: "1.75rem",
-              fontWeight: 900,
-              color: "var(--kravy-text-primary)",
-              letterSpacing: "-1px",
-              lineHeight: 1
+              width: "42px",
+              height: "42px",
+              background: "linear-gradient(135deg, #FF6B35, #F59E0B)",
+              borderRadius: "14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              boxShadow: "0 10px 15px -3px rgba(245, 158, 11, 0.3)"
             }}>
-              Performance Overview
-            </h1>
+              <Zap size={20} fill="white" />
+            </div>
+            <div>
+              <h1 style={{
+                fontSize: "1.75rem",
+                fontWeight: 900,
+                color: "var(--kravy-text-primary)",
+                letterSpacing: "-1.2px",
+                lineHeight: 1
+              }}>
+                Performance Dashboard
+              </h1>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginTop: "6px"
+              }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "4px 8px",
+                  background: "var(--kravy-surface)",
+                  border: "1px solid var(--kravy-border)",
+                  borderRadius: "8px",
+                  fontSize: "0.65rem",
+                  color: "var(--kravy-text-muted)",
+                  fontWeight: 800,
+                  fontFamily: "monospace",
+                  textTransform: "uppercase"
+                }}>
+                  <Fingerprint size={10} className="text-orange-500" />
+                  ID: <span style={{ color: "var(--kravy-text-primary)" }}>{effectiveId}</span>
+                  <CopyButton text={effectiveId} />
+                </div>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "4px 8px",
+                  background: "rgba(16, 185, 129, 0.08)",
+                  border: "1px solid rgba(16, 185, 129, 0.2)",
+                  borderRadius: "8px",
+                  fontSize: "0.6rem",
+                  color: "#10B981",
+                  fontWeight: 900,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px"
+                }}>
+                  <ShieldCheck size={10} />
+                  Admin Verified
+                </div>
+              </div>
+            </div>
           </div>
-          <p style={{
-            fontSize: "0.8rem",
-            color: "var(--kravy-text-muted)",
-            marginLeft: "16px",
-            fontFamily: "monospace"
-          }}>
-            Real-time business analytics · Last {range} days
-          </p>
         </div>
         <DateFilter />
       </div>
@@ -326,6 +369,104 @@ export default async function DashboardPage({
         }}
         range={range}
       />
+
+      {/* ── API & SCRAPER INTEGRATION (Admin Central) ── */}
+      <div style={{
+        background: "linear-gradient(135deg, rgba(30, 41, 59, 0.02), rgba(30, 41, 59, 0.05))",
+        border: "1px solid var(--kravy-border)",
+        borderRadius: "28px",
+        padding: "24px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "20px",
+        position: "relative",
+        overflow: "hidden"
+      }}>
+        <div style={{
+          position: "absolute",
+          top: "-20px",
+          right: "-20px",
+          width: "140px",
+          height: "140px",
+          background: "radial-gradient(circle, rgba(99, 102, 241, 0.1), transparent)",
+          borderRadius: "50%",
+          filter: "blur(30px)"
+        }} />
+
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{
+            width: "36px",
+            height: "36px",
+            background: "var(--kravy-surface)",
+            border: "1px solid var(--kravy-border)",
+            borderRadius: "12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--kravy-brand)"
+          }}>
+            <Smartphone size={20} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)", letterSpacing: "-0.5px" }}>
+              API & External Integration
+            </h2>
+            <p style={{ fontSize: "0.68rem", color: "var(--kravy-text-muted)", fontFamily: "monospace", textTransform: "uppercase" }}>
+              Automate your menu enrichment & scraping
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Admin Clerk ID", value: effectiveId, icon: <Fingerprint size={14} />, color: "#6366F1" },
+            { label: "Scraper Secret", value: "********", type: "secret", icon: <ShieldCheck size={14} />, color: "#10B981" },
+            { label: "Menu Fetch Endpoint", value: `/api/external/menu/${effectiveId}`, icon: <Copy size={14} />, color: "#F59E0B" },
+            { label: "API Base URL", value: "billing.kravy.in", icon: <Copy size={14} />, color: "#8B5CF6" }
+          ].map((item, idx) => (
+            <div key={idx} style={{
+              background: "var(--kravy-surface)",
+              border: "1px solid var(--kravy-border)",
+              borderRadius: "18px",
+              padding: "16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ color: item.color }}>{item.icon}</span>
+                <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  {item.label}
+                </span>
+              </div>
+              <div style={{ 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "space-between",
+                background: "var(--kravy-bg-2)",
+                padding: "8px 12px",
+                borderRadius: "10px",
+                border: "1px solid var(--kravy-border)"
+              }}>
+                <span style={{ 
+                  fontSize: "0.72rem", 
+                  fontWeight: 900, 
+                  color: "var(--kravy-text-primary)",
+                  fontFamily: "monospace",
+                  maxWidth: "140px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap"
+                }}>
+                  {item.value}
+                </span>
+                <CopyButton text={item.value === "********" ? "kravy_scraper_secret_2026" : (item.value.startsWith("/") ? `https://billing.kravy.in${item.value}` : item.value)} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ── Charts Row ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
