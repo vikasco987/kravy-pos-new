@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
+import { calculateDiscount } from "@/lib/discount-utils";
+import { clerkClient } from "@clerk/nextjs/server";
+
+export const runtime = "nodejs";
 
 /**
  * GET → List bills
@@ -39,15 +42,11 @@ export async function POST(req: NextRequest) {
     const effectiveId = await getEffectiveClerkId();
 
     if (!effectiveId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
 
-    // ❌ DO NOT destructure billNumber
     const {
       items,
       subtotal,
@@ -58,16 +57,49 @@ export async function POST(req: NextRequest) {
       upiTxnRef,
       customerName,
       customerPhone,
+      customerAddress,
       tableName,
       discountCode,
       discountAmount,
+      isKotPrinted,
     } = body;
 
-// ✅ HARD DEFAULTS (CRITICAL)
-const finalPaymentMode: "Cash" | "UPI" | "Card" =
-  paymentMode === "UPI" || paymentMode === "Card"
-    ? paymentMode
-    : "Cash";
+    // 🛑 1. ROBUST VALIDATION (Critical Fix for UI Crashes)
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: "आइटम्स (Cart) खाली हैं। कृपया कम से कम एक आइटम जोड़ें।" }, { status: 400 });
+    }
+
+    if (total == null || isNaN(Number(total))) {
+      return NextResponse.json({ error: "कुल राशि (Total) सही नहीं है।" }, { status: 400 });
+    }
+
+    // 🛡️ 2. PRISMA USER SYNC FALLBACK (Critical Fix for "Failed to create bill")
+    // If the effectiveId (Owner or Staff) doesn't exist in our User table, 
+    // Prisma will fail with a relation error. We must ensure it exists.
+    const dbUser = await prisma.user.findUnique({ where: { clerkId: effectiveId } });
+    if (!dbUser) {
+      try {
+        const client = await clerkClient();
+        const fullUser = await client.users.getUser(effectiveId);
+        await prisma.user.create({
+          data: {
+            clerkId: effectiveId,
+            email: fullUser.emailAddresses[0].emailAddress,
+            name: `${fullUser.firstName || ""} ${fullUser.lastName || ""}`.trim() || fullUser.username || "Staff Member",
+            role: "USER",
+            ownerId: (fullUser.publicMetadata?.ownerId as string) || null,
+          }
+        });
+      } catch (syncErr) {
+        console.error("USER SYNC FALLBACK ERROR:", syncErr);
+      }
+    }
+
+    // ✅ HARD DEFAULTS (CRITICAL)
+    const finalPaymentMode: "Cash" | "UPI" | "Card" =
+      paymentMode === "UPI" || paymentMode === "Card"
+        ? paymentMode
+        : "Cash";
 
     // ✅ FETCH PROFILE FOR GLOBAL GST FALLBACK
     const profile = await prisma.businessProfile.findUnique({
@@ -117,30 +149,12 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
       });
 
       if (offer) {
-        // Simple validation, you could use the full calculateDiscount logic here too
-        const { calculateDiscount } = require("@/lib/discount-utils");
-        serverDiscountAmt = calculateDiscount(offer, finalSubtotal, items);
+        serverDiscountAmt = calculateDiscount(offer as any, finalSubtotal, items);
         validatedDiscountCode = offer.code;
       }
     }
 
     const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt).toFixed(2));
-
-
-    // Basic validation
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json(
-        { error: "Items are required" },
-        { status: 400 }
-      );
-    }
-
-    if (total == null) {
-      return NextResponse.json(
-        { error: "Total is required" },
-        { status: 400 }
-      );
-    }
 
     // ✅ Generate unique sequential bill number (SV/YYMM/XXXX)
     const nowLocal = new Date();
@@ -149,7 +163,6 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
     
     const monthStart = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), 1);
     
-    // 🛡️ FIX: find the HIGHEST serial this month rather than just counting (handles deletions)
     const lastBill = await prisma.billManager.findFirst({
       where: {
         clerkUserId: effectiveId,
@@ -171,8 +184,7 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
     const serialLabel = String(nextSerial).padStart(4, '0');
     const billNumber = `SV/${yy}${mm}/${serialLabel}`;
 
-
-    // ✅ DERIVE FINAL PAYMENT STATUS (SOURCE OF TRUTH)
+    // ✅ DERIVE FINAL PAYMENT STATUS
     let finalPaymentStatus: string;
     if (isHeld === true) {
       finalPaymentStatus = "HELD";
@@ -186,10 +198,7 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
     let partyId = null;
     if (customerPhone && customerName && customerName !== "Walk-in Customer") {
       try {
-        // Clean phone number (remove spaces, etc.) for better matching
         const cleanPhone = customerPhone.replace(/[\s\-\(\)\+]/g, "").slice(-10);
-
-        // Upsert customer into the Party table
         const party = await prisma.party.upsert({
           where: {
             phone_createdBy: {
@@ -197,9 +206,7 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
               createdBy: effectiveId,
             },
           },
-          update: {
-            name: customerName,
-          },
+          update: { name: customerName },
           create: {
             name: customerName,
             phone: cleanPhone,
@@ -214,23 +221,25 @@ const finalPaymentMode: "Cash" | "UPI" | "Card" =
 
     const bill = await prisma.billManager.create({
       data: {
-        clerkUserId: effectiveId,
-        billNumber,
-        items,
+        clerkUserId: effectiveId || "Unknown",
+        billNumber: billNumber,
+        items: items,
         subtotal: finalSubtotal,
         tax: calculatedTax,
         total: finalTotal,
-        paymentMode: finalPaymentMode,     // ✅ GUARANTEED
-        paymentStatus: finalPaymentStatus, // ✅ SOURCE OF TRUTH
-        isHeld: isHeld === true, // ✅ THIS LINE WAS MISSING
+        paymentMode: finalPaymentMode,
+        paymentStatus: finalPaymentStatus,
+        isHeld: isHeld === true,
         upiTxnRef: upiTxnRef || null,
         customerName: customerName || null,
         customerPhone: customerPhone || null,
+        customerAddress: customerAddress || null,
         partyId: partyId,
         tableName: tableName || "POS",
         discountAmount: serverDiscountAmt,
         discountCode: validatedDiscountCode,
         auditNote: body.auditNote || null,
+        isKotPrinted: isKotPrinted === true,
       },
     });
 

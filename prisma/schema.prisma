@@ -69,9 +69,9 @@ model Item {
   gst          Float?
   unit         String?
   barcode      String?
-  taxStatus    String?   // "With Tax" or "Without Tax"
+  taxStatus    String? // "With Tax" or "Without Tax"
   imageUrl     String?
-  image        String?   // ✅ THIS MUST EXIST
+  image        String? // ✅ THIS MUST EXIST
 
   categoryId String?   @db.ObjectId
   category   Category? @relation(fields: [categoryId], references: [id])
@@ -79,29 +79,65 @@ model Item {
   clerkId String
   userId  String @db.ObjectId
 
-  isActive     Boolean  @default(true)
-  
+  isActive Boolean @default(true)
+
   // Inventory Details
-  openingStock  Float?   @default(0)
-  currentStock  Float?   @default(0)
-  reorderLevel  Float?   @default(0)
+  openingStock Float? @default(0)
+  currentStock Float? @default(0)
+  reorderLevel Float? @default(0)
 
   // QR Menu Enhancements
-  isVeg          Boolean  @default(true)
-  isBestseller   Boolean  @default(false)
-  isRecommended  Boolean  @default(false)
-  isNew          Boolean  @default(false)
-  spiciness      String?  // mild, medium, hot
-  rating         Float?   @default(4.5)
-  hiName         String?
-  mrName         String?
-  taName         String?
-  upsellText     String?
-  hsnCode        String?
+  isVeg         Boolean @default(true)
+  isEgg         Boolean @default(false)
+  isBestseller  Boolean @default(false)
+  isRecommended Boolean @default(false)
+  isNew         Boolean @default(false)
+  spiciness     String? // mild, medium, hot
+  rating        Float?  @default(4.5)
+  hiName        String?
+  mrName        String?
+  taName        String?
+  upsellText    String?
+  hsnCode       String?
+  variants      Json? // List of { id, groupName, type ('radio'|'checkbox'), required, options: [{id, name, price}] }
+  tags          String[] // e.g. ["bestseller", "spicy"]
+  
+  packagingCharges Float? @default(0)
+  gstType          String? // GOODS, SERVICES
+  taxRate          String? // GST 5.0% etc
+  calories         Float?
+  protein          Float?
 
-  user    User   @relation(fields: [userId], references: [id])
+  // Relationship to AddonGroups
+  addonGroups   AddonGroup[] @relation("ItemToAddonGroups", fields: [addonGroupIds], references: [id])
+  addonGroupIds String[]     @db.ObjectId
+
+  user User @relation(fields: [userId], references: [id])
 
   reviews   Review[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clerkId])
+}
+
+model AddonGroup {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkId           String?
+  userId            String   @db.ObjectId
+  name              String
+  isCompulsory      Boolean  @default(false)
+  minSelection      Int      @default(0)
+  maxSelection      Int      @default(5)
+  allowMultipleUnits Boolean  @default(false)
+  items             Json     // List of { name, price, foodType, isAvailable }
+
+  // Many-to-many with items
+  itemsOnMenu       Item[]   @relation("ItemToAddonGroups", fields: [itemIds], references: [id])
+  itemIds           String[] @db.ObjectId
+
+  user User @relation(fields: [userId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -121,31 +157,29 @@ model Party {
   createdBy String
   user      User?     @relation(fields: [createdBy], references: [clerkId])
 
+  loyaltyPoints Int @default(0)
+
+  bills BillManager[]
+
+  createdAt DateTime @default(now())
+
   @@unique([phone, createdBy])
-
-  loyaltyPoints Int   @default(0)
-
-  bills     BillManager[]
-
-  createdAt DateTime  @default(now())
 }
-
 
 //////////////////////////////////////////////////
 // PAYMENT
 //////////////////////////////////////////////////
 
 model Payment {
-  id     String       @id @default(auto()) @map("_id") @db.ObjectId
-  billId String       @db.ObjectId
-  bill   BillManager  @relation(fields: [billId], references: [id])
+  id     String      @id @default(auto()) @map("_id") @db.ObjectId
+  billId String      @db.ObjectId
+  bill   BillManager @relation(fields: [billId], references: [id])
 
   amount Float
   mode   String
   txnRef String?
   paidAt DateTime @default(now())
 }
-
 
 //////////////////////////////////////////////////
 // USER
@@ -164,14 +198,15 @@ model User {
   forms    Form[]
   profiles BusinessProfile[]
   uploads  Upload[]
+  addonGroups AddonGroup[]
 
   isDisabled   Boolean  @default(false)
   ownerId      String?
   allowedPaths String[]
 
-  uiPreferences Json?    @default("{}")
+  uiPreferences Json? @default("{}")
 
-  createdAt    DateTime @default(now())
+  createdAt DateTime @default(now())
 
   activities ActivityLog[]
   orders     Order[]
@@ -188,7 +223,7 @@ model User {
 model Table {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  qrUrl       String?  // persisted QR code image URL (150x150) for this table
+  qrUrl       String? // persisted QR code image URL (150x150) for this table
   clerkUserId String
   user        User     @relation(fields: [clerkUserId], references: [clerkId])
   orders      Order[]
@@ -203,36 +238,37 @@ model Table {
 //////////////////////////////////////////////////
 
 model Order {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  clerkUserId   String
-  user          User     @relation(fields: [clerkUserId], references: [clerkId])
-  
-  tableId       String?  @db.ObjectId
-  table         Table?   @relation(fields: [tableId], references: [id])
-  
-  items         Json     // Array of { name, price, quantity, itemId, addedAt, addedInCase }
-  total         Float
-  
-  status        String   @default("PENDING") // PENDING, ACCEPTING, ACCEPTED, PREPARING, READY, SERVED, COMPLETED
-  
-  // For Case 1 (Merge)
-  parentOrderId String?  @db.ObjectId
-  caseType      String?  // "merge", "separate", "round2"
-  isMerged      Boolean  @default(false)
-  mergedAt      DateTime?
-  
-  // For Case 2 (Separate) - Track related orders
-  relatedOrders String[] @db.ObjectId  // Array of order IDs in same session
-  
-  customerName  String?
-  customerPhone String?
-  paymentMode   String?  // UPI, CASH, CARD intent from QR menu
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  clerkUserId String
+  user        User   @relation(fields: [clerkUserId], references: [clerkId])
 
-  isKotPrinted  Boolean  @default(false)
-  isBillPrinted Boolean  @default(false)
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  tableId String? @db.ObjectId
+  table   Table?  @relation(fields: [tableId], references: [id])
+
+  items Json // Array of { name, price, quantity, itemId, addedAt, addedInCase }
+  total Float
+
+  status String @default("PENDING") // PENDING, ACCEPTING, ACCEPTED, PREPARING, READY, SERVED, COMPLETED
+
+  // For Case 1 (Merge)
+  parentOrderId String?   @db.ObjectId
+  caseType      String? // "merge", "separate", "round2"
+  isMerged      Boolean   @default(false)
+  mergedAt      DateTime?
+
+  // For Case 2 (Separate) - Track related orders
+  relatedOrders String[] @db.ObjectId // Array of order IDs in same session
+
+  customerName    String?
+  customerPhone   String?
+  customerAddress String? // ✅ Added for home delivery / address tracking
+  paymentMode     String? // UPI, CASH, CARD intent from QR menu
+
+  isKotPrinted  Boolean @default(false)
+  isBillPrinted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([clerkUserId])
   @@index([status])
@@ -286,44 +322,51 @@ model Field {
 //////////////////////////////////////////////////
 
 model BusinessProfile {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [clerkId])
 
-  businessType       String?
-  businessName       String?
-  businessTagLine    String?
+  businessType    String?
+  businessName    String?
+  businessTagLine String?
 
   contactPersonName  String?
   contactPersonPhone String?
   contactPersonEmail String?
 
-  upi                String?
-  upiQrEnabled       Boolean  @default(true)
-  menuLinkEnabled    Boolean  @default(true)
+  upi             String?
+  upiQrEnabled    Boolean @default(true)
+  menuLinkEnabled Boolean @default(true)
 
-  profileImageUrl    String?
-  logoUrl            String?
-  signatureUrl       String?
+  profileImageUrl String?
+  logoUrl         String?
+  signatureUrl    String?
 
-  gstNumber          String?
-  businessAddress    String?
-  state              String?
-  district           String?
-  pinCode            String?
-  taxEnabled         Boolean  @default(true)
-  taxRate            Float    @default(5.0)
-  gstType            String?  @default("PRODUCT") // "PRODUCT" or "UNIVERSAL"
-  perProductTaxEnabled Boolean  @default(false)
+  gstNumber            String?
+  businessAddress      String?
+  state                String?
+  district             String?
+  pinCode              String?
+  taxEnabled           Boolean @default(true)
+  taxRate              Float   @default(5.0)
+  gstType              String? @default("PRODUCT") // "PRODUCT" or "UNIVERSAL"
+  perProductTaxEnabled Boolean @default(false)
 
+  // ✅ Customer Data Requirement Settings
+  collectCustomerName    Boolean @default(true)
+  requireCustomerName    Boolean @default(false)
+  collectCustomerPhone   Boolean @default(true)
+  requireCustomerPhone   Boolean @default(false)
+  collectCustomerAddress Boolean @default(false)
+  requireCustomerAddress Boolean @default(false)
 
-  greetingMessage    String?  @default("Thank You 🙏 Visit Again!")
-  businessNameSize   String?  @default("large") // medium, large, xlarge
+  greetingMessage  String? @default("Thank You 🙏 Visit Again!")
+  businessNameSize String? @default("large") // medium, large, xlarge
 
-  fssaiNumber        String?
-  fssaiEnabled       Boolean  @default(false)
-  hsnEnabled         Boolean  @default(false)
+  fssaiNumber  String?
+  fssaiEnabled Boolean @default(false)
+  hsnEnabled   Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -355,55 +398,58 @@ model ActivityLog {
   user User @relation(fields: [userId], references: [id])
 }
 
-
 //////////////////////////////////////////////////
 // BillManager
 //////////////////////////////////////////////////
 
 model BillManager {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  clerkUserId   String
-  user          User     @relation(fields: [clerkUserId], references: [clerkId])
+  clerkUserId String
+  user        User   @relation(fields: [clerkUserId], references: [clerkId])
 
-  billNumber    String   @unique
-  createdAt     DateTime @default(now())
+  billNumber String
+  createdAt  DateTime @default(now())
 
-  items         Json
+  items Json
 
-  subtotal      Float
-  discountAmount Float? @default(0)
+  subtotal       Float
+  discountAmount Float?  @default(0)
   discountCode   String?
-  tax           Float?
-  total         Float
+  tax            Float?
+  total          Float
 
   paymentMode   String
   paymentStatus String
   upiTxnRef     String?
-  isHeld        Boolean  @default(false)
+  isHeld        Boolean @default(false)
 
-  customerName  String?
-  customerPhone String?
-  buyerGSTIN    String?
-  placeOfSupply String?
+  customerName    String?
+  customerPhone   String?
+  customerAddress String? // ✅ Added for home delivery / address tracking
+  buyerGSTIN      String?
+  placeOfSupply   String?
 
-  partyId       String?   @db.ObjectId
-  party         Party?    @relation(fields: [partyId], references: [id])
+  isKotPrinted Boolean @default(false) // ✅ Added KOT status
 
-  payments      Payment[]   // ✅ ADD THIS
+  partyId String? @db.ObjectId
+  party   Party?  @relation(fields: [partyId], references: [id])
 
-  isDeleted       Boolean  @default(false)
+  payments Payment[] // ✅ ADD THIS
+
+  isDeleted       Boolean   @default(false)
   deletedAt       DateTime?
   deletedSnapshot Json?
-  pdfUrl          String?   // ✅ Added for direct sharing
-  tableName       String?   // ✅ Added to track source (Table Name or "POS")
-  auditNote       String?   // SaaS Feature: Audit trail for tax corrections
-  
-  // WhatsApp Tracking
-  whatsappSent    Boolean   @default(false)
-  whatsappSentAt  DateTime?
-  whatsappSid     String?
+  pdfUrl          String? // ✅ Added for direct sharing
+  tableName       String? // ✅ Added to track source (Table Name or "POS")
+  auditNote       String? // SaaS Feature: Audit trail for tax corrections
 
+  // WhatsApp Tracking
+  whatsappSent   Boolean   @default(false)
+  whatsappSentAt DateTime?
+  whatsappSid    String?
+
+  @@unique([clerkUserId, billNumber]) // ✅ FIX: Global uniqueness changed to per-business uniqueness
   @@index([clerkUserId])
   @@index([isDeleted, createdAt])
 }
@@ -413,21 +459,21 @@ model BillManager {
 //////////////////////////////////////////////////
 
 model Combo {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   description String?
   price       Float
   imageUrl    String?
   clerkUserId String
-  user        User     @relation(fields: [clerkUserId], references: [clerkId])
-  isActive    Boolean  @default(true)
-  
+  user        User    @relation(fields: [clerkUserId], references: [clerkId])
+  isActive    Boolean @default(true)
+
   // Array of selections
   // e.g., [{ type: 'fixed', itemId: '...', qty: 1 }, { type: 'choice', categoryId: '...', label: 'Pick a Beverage' }]
-  selections  Json
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  selections Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([clerkUserId])
 }
@@ -437,68 +483,69 @@ model Combo {
 //////////////////////////////////////////////////
 
 model Offer {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id            String  @id @default(auto()) @map("_id") @db.ObjectId
   title         String
   description   String?
-  code          String?  @unique
-  discountType  String   // "PERCENTAGE", "FLAT", "BOGO", "ITEM_WISE"
-  discountValue Float?   // 0 for BOGO
-  
+  code          String? @unique
+  discountType  String // "PERCENTAGE", "FLAT", "BOGO", "ITEM_WISE"
+  discountValue Float? // 0 for BOGO
+
   // Advanced Rules
-  minOrderValue Float?   @default(0)
+  minOrderValue Float? @default(0)
   maxDiscount   Float?
-  
+
   // BOGO / Item-wise rules
-  buyItemId     String?  @db.ObjectId // Item to buy
-  buyQty        Int?     @default(1)
-  getItemOffId  String?  @db.ObjectId // Item given off
-  getQty        Int?     @default(1)
-  getDiscount   Float?   @default(100)
+  buyItemId       String? @db.ObjectId // Item to buy
+  buyQty          Int?    @default(1)
+  getItemOffId    String? @db.ObjectId // Item given off
+  getQty          Int?    @default(1)
+  getDiscount     Float?  @default(100)
   applyOnCategory String? // For Item-wise category discount
-  
-  startDate     DateTime?
-  endDate       DateTime?
-  
-  usageLimit    Int?     @default(1000)
-  currentUsage  Int      @default(0)
-  
-  isActive      Boolean  @default(true)
-  clerkUserId   String
-  user          User     @relation(fields: [clerkUserId], references: [clerkId])
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  usageLimit   Int? @default(1000)
+  currentUsage Int  @default(0)
+
+  isActive    Boolean @default(true)
+  clerkUserId String
+  user        User    @relation(fields: [clerkUserId], references: [clerkId])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([clerkUserId])
 }
+
 //////////////////////////////////////////////////
 // REWARD (Loyalty Redemption)
 //////////////////////////////////////////////////
 
 model Reward {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
   title          String
   description    String?
   pointsRequired Int
-  isActive       Boolean  @default(true)
+  isActive       Boolean @default(true)
   clerkUserId    String
-  user           User     @relation(fields: [clerkUserId], references: [clerkId])
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  user           User    @relation(fields: [clerkUserId], references: [clerkId])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([clerkUserId])
 }
 
 model GalleryImage {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  clerkUserId  String
-  imageUrl     String
-  category     String   @default("food")  // food | interior | promo | other
-  caption      String?
-  sortOrder    Int      @default(0)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkUserId String
+  imageUrl    String
+  category    String   @default("food") // food | interior | promo | other
+  caption     String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
 
   @@index([clerkUserId])
   @@index([clerkUserId, category])
@@ -507,9 +554,9 @@ model GalleryImage {
 model Backup {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   filename  String
-  fileSize  Int      // in bytes
+  fileSize  Int // in bytes
   s3Url     String?
-  status    String   // SUCCESS, FAILED
+  status    String // SUCCESS, FAILED
   error     String?
   createdAt DateTime @default(now())
 }

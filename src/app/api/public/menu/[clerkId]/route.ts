@@ -17,12 +17,14 @@ export async function GET(
         const items = await prisma.item.findMany({
             where: {
                 clerkId: clerkId,
+                isActive: true, // Only show live items
             },
             orderBy: {
                 name: "asc",
             },
             include: {
                 category: true,
+                addonGroups: true, // Fetch global customizations
             },
         });
 

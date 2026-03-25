@@ -391,6 +391,8 @@ export default function CheckoutClient() {
   const [showCustomer, setShowCustomer] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [isKotPrinted, setIsKotPrinted] = useState(false);
   const [buyerGSTIN, setBuyerGSTIN] = useState("");
   const [placeOfSupply, setPlaceOfSupply] = useState("");
 
@@ -417,6 +419,7 @@ export default function CheckoutClient() {
   const selectCustomer = (p: any) => {
     setCustomerName(p.name);
     setCustomerPhone(p.phone || "");
+    setCustomerAddress(p.address || "");
     setCustomerSuggestions([]);
     kravy.success();
     toast.success(`Customer ${p.name} selected`, {
@@ -657,6 +660,8 @@ export default function CheckoutClient() {
       upiTxnRef: paymentMode === "UPI" ? upiTxnRef : null,
       isHeld, customerName: customerName || "Walk-in Customer",
       customerPhone: customerPhone || null,
+      customerAddress: customerAddress || null,
+      isKotPrinted: isKotPrinted === true,
       tableName: "POS",
       buyerGSTIN: buyerGSTIN || null,
       placeOfSupply: placeOfSupply || null,
@@ -695,7 +700,7 @@ export default function CheckoutClient() {
       if (res.ok) {
         if (resumeBillId === id) {
           router.replace("/dashboard/billing/checkout");
-          setItems([]); setCustomerName(""); setCustomerPhone("");
+          setItems([]); setCustomerName(""); setCustomerPhone(""); setCustomerAddress("");
         }
         return true;
       } else { alert("Failed to delete bill"); return false; }
@@ -753,6 +758,7 @@ export default function CheckoutClient() {
   }
 
   const printKOT = () => {
+    setIsKotPrinted(true);
     if (!kotRef.current) { alert("Nothing to print in KOT"); return; }
     
     // Create hidden print iframe if not already existing
@@ -1221,6 +1227,21 @@ export default function CheckoutClient() {
                 />
               </div>
 
+              {(business?.collectCustomerAddress || customerAddress) && (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Address</label>
+                  <textarea
+                    placeholder="Enter customer address..."
+                    value={customerAddress}
+                    onChange={(e) => setCustomerAddress(e.target.value)}
+                    rows={2}
+                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
+                      p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                      focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-medium resize-none"
+                  />
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Buyer GSTIN</label>
@@ -1497,8 +1518,9 @@ export default function CheckoutClient() {
                   saveBill().catch(console.error);
                   kravy.payment(); 
                   printReceipt();
-                  setItems([]); setCustomerName(""); setCustomerPhone("");
+                  setItems([]); setCustomerName(""); setCustomerPhone(""); setCustomerAddress("");
                   setUpiTxnRef(""); setPaymentMode("Cash"); setPaymentStatus("Paid");
+                  setIsKotPrinted(false);
                   setBillNumber(`SV-${Date.now()}`);
                   setBillDate(new Date().toLocaleString());
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
@@ -1595,6 +1617,11 @@ export default function CheckoutClient() {
               <span>GRAND TOTAL</span>
               <span>₹{finalTotal.toFixed(2)}</span>
             </div>
+            {isKotPrinted && (
+              <div className="mt-1 text-center font-black text-[8px] uppercase tracking-tighter italic">
+                ✓ KOT Printed 👨‍🍳
+              </div>
+            )}
           </div>
 
           {(taxActive || perProductEnabled) && taxBreakup.length > 0 && (

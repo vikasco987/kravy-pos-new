@@ -312,9 +312,18 @@ export async function GET(req: Request) {
       return NextResponse.json(item);
     }
 
+    const categoryId = url.searchParams.get("categoryId");
+
     const items = await prisma.item.findMany({
-      where: { clerkId: effectiveId },
+      where: { 
+        clerkId: effectiveId,
+        ...(categoryId ? { categoryId } : {})
+      },
       orderBy: { createdAt: "desc" },
+      include: {
+        category: true,
+        addonGroups: true
+      }
     });
 
     return NextResponse.json(items);
@@ -379,7 +388,13 @@ export async function POST(req: Request) {
         openingStock: body.openingStock != null ? Number(body.openingStock) : 0,
         currentStock: body.currentStock != null ? Number(body.currentStock) : 0,
         reorderLevel: body.reorderLevel != null ? Number(body.reorderLevel) : 0,
+        variants: body.variants || null,
+        addonGroupIds: body.addonGroupIds || [],
       },
+      include: {
+        category: true,
+        addonGroups: true
+      }
     });
 
     return NextResponse.json(item, { status: 201 });
@@ -452,7 +467,14 @@ export async function PUT(req: Request) {
         openingStock: body.openingStock !== undefined ? Number(body.openingStock) : undefined,
         currentStock: body.currentStock !== undefined ? Number(body.currentStock) : undefined,
         reorderLevel: body.reorderLevel !== undefined ? Number(body.reorderLevel) : undefined,
+        variants: body.variants !== undefined ? body.variants : undefined,
+        addonGroupIds: body.addonGroupIds !== undefined ? body.addonGroupIds : undefined,
+        isActive: body.isActive !== undefined ? Boolean(body.isActive) : undefined,
       },
+      include: {
+        category: true,
+        addonGroups: true
+      }
     });
 
     return NextResponse.json(updated);

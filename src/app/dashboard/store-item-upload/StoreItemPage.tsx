@@ -63,7 +63,8 @@ export default function StoreItemPage() {
     name: "",
     price: "",
     category: "",
-    description: ""
+    description: "",
+    imageUrl: ""
   });
 
 
@@ -189,7 +190,8 @@ export default function StoreItemPage() {
                 name: headers.find(h => /name/i.test(h)) || "",
                 price: headers.find(h => /price|selling|mrp/i.test(h)) || "",
                 category: headers.find(h => /category/i.test(h)) || "",
-                description: headers.find(h => /desc|info|detail|composition/i.test(h)) || ""
+                description: headers.find(h => /desc|info|detail|composition/i.test(h)) || "",
+                imageUrl: headers.find(h => /image|url|photo|img|link/i.test(h)) || ""
               });
               setMappingOpen(true);
             }
@@ -217,7 +219,8 @@ export default function StoreItemPage() {
           name: headers.find(h => /name/i.test(h)) || "",
           price: headers.find(h => /price|selling|mrp/i.test(h)) || "",
           category: headers.find(h => /category/i.test(h)) || "",
-          description: headers.find(h => /desc|info|detail|composition/i.test(h)) || ""
+          description: headers.find(h => /desc|info|detail|composition/i.test(h)) || "",
+          imageUrl: headers.find(h => /image|url|photo|img|link/i.test(h)) || ""
         });
         setMappingOpen(true);
         setUploadProgress(100);
@@ -282,7 +285,7 @@ export default function StoreItemPage() {
         price: Number(row[mapping.price] || 0),
         categoryId,
         clerkId: userId ?? null,
-        imageUrl: null,
+        imageUrl: String(row[mapping.imageUrl] || "").trim() || null,
         isActive: true,
       });
 
@@ -949,6 +952,7 @@ export default function StoreItemPage() {
                   { key: "description", label: "Description", icon: "📝", required: false },
                   { key: "price", label: "Selling Price", icon: "💰", required: true },
                   { key: "category", label: "Category", icon: "🏷️", required: false },
+                  { key: "imageUrl", label: "Image URL", icon: "🖼️", required: false },
                 ].map((field) => (
                   <div key={field.key} className="flex items-center gap-6 p-4 rounded-3xl bg-gray-50/50 border border-gray-100/50">
                     <div className="w-14 h-14 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-2xl shadow-sm">

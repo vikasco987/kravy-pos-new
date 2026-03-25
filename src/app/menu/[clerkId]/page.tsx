@@ -27,6 +27,7 @@ import {
     Info,
     Tag,
     Users,
+    MapPin,
     Terminal,
     History,
     AlertCircle,
@@ -66,6 +67,7 @@ type MenuItem = {
     gst?: number;
     taxStatus?: string;
     ico?: string;
+    variants?: any[] | null;
 };
 
 type BusinessProfile = {
@@ -77,6 +79,12 @@ type BusinessProfile = {
     taxEnabled?: boolean;
     taxRate?: number;
     perProductTaxEnabled?: boolean;
+    collectCustomerName?: boolean;
+    requireCustomerName?: boolean;
+    collectCustomerPhone?: boolean;
+    requireCustomerPhone?: boolean;
+    collectCustomerAddress?: boolean;
+    requireCustomerAddress?: boolean;
 };
 
 type ComboSelection = {
@@ -157,6 +165,7 @@ function PublicMenu() {
     // User Data
     const [customerPhone, setCustomerPhone] = useState("");
     const [customerName, setCustomerName] = useState("");
+    const [customerAddress, setCustomerAddress] = useState("");
     const [loyaltyPoints, setLoyaltyPoints] = useState(0);
     const [paymentMethod, setPaymentMethod] = useState("UPI / QR");
 
@@ -169,6 +178,9 @@ function PublicMenu() {
     const [activeCombo, setActiveCombo] = useState<Combo | null>(null);
     const [comboSelections, setComboSelections] = useState<Record<number, string>>({});
     const [combosCart, setCombosCart] = useState<{ id: string, name: string, price: number, selections: any[] }[]>([]);
+    const [customizingItem, setCustomizingItem] = useState<MenuItem | null>(null);
+    const [selectedVariants, setSelectedVariants] = useState<Record<string, any>>({});
+    const [variantCart, setVariantCart] = useState<any[]>([]);
 
     // Review State
     const [showReviewSheet, setShowReviewSheet] = useState(false);
@@ -354,13 +366,14 @@ function PublicMenu() {
         });
     }, [items, vegOnly, searchQ, activeCategory]);
 
-    const cartCount = Object.values(cart).reduce((a, b) => a + b, 0) + combosCart.length;
+    const cartCount = Object.values(cart).reduce((a, b) => a + b, 0) + combosCart.length + variantCart.reduce((a, b) => a + b.qty, 0);
     const itemSubtotal = Object.entries(cart).reduce((sum, [id, qty]) => {
         const item = items.find(i => i.id === id);
         return sum + (item ? (item.sellingPrice || item.price || 0) * qty : 0);
     }, 0);
     const comboSubtotal = combosCart.reduce((sum, c) => sum + c.price, 0);
-    const subtotal = itemSubtotal + comboSubtotal;
+    const variantSubtotal = variantCart.reduce((sum, vit) => sum + (vit.totalPrice * vit.qty), 0);
+    const subtotal = itemSubtotal + comboSubtotal + variantSubtotal;
     // 🥇 PRIORITY LOGIC: Product GST > Default GST
     const taxEnabled = profile?.taxEnabled ?? true;
     const perProductEnabled = profile?.perProductTaxEnabled ?? false;
@@ -391,9 +404,100 @@ function PublicMenu() {
 
     // Actions
     const addToCart = (id: string) => {
+        const item = items.find(it => it.id === id);
+        if (!item) return;
+
+        // ✅ If item has variants OR addon groups, open selection sheet
+        if ((item.variants && (item.variants as any[]).length > 0) || ((item as any).addonGroups && ((item as any).addonGroups as any[]).length > 0)) {
+            setCustomizingItem(item);
+            const initial: Record<string, any> = {};
+            
+            // Item-specific variants
+            (item.variants as any[] || []).forEach((v: any) => {
+                if (v.type === "radio" && v.options?.length > 0) {
+                    initial[v.id] = v.options[0];
+                } else if (v.type === "checkbox") {
+                    initial[v.id] = [];
+                }
+            });
+
+            // Global Addon Groups
+            ((item as any).addonGroups as any[] || []).forEach((ag: any) => {
+                initial[`ag_${ag.id}`] = [];
+            });
+
+            setSelectedVariants(initial);
+            kravy.open();
+            return;
+        }
+
         setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
         kravy.add();
         toast.success("Added to cart", { duration: 800, position: "top-center" });
+    };
+
+    const addVariantItemToCart = () => {
+        if (!customizingItem) return;
+
+        let extra = 0;
+        const selections: any[] = [];
+        
+        // Validation check for mandatory addon groups
+        const missingMandatoryGroups: string[] = [];
+        ((customizingItem as any).addonGroups as any[] || []).forEach((ag: any) => {
+            if (ag.isCompulsory) {
+                const selected = selectedVariants[`ag_${ag.id}`];
+                if (!selected || selected.length === 0) {
+                    missingMandatoryGroups.push(ag.name);
+                }
+            }
+        });
+
+        if (missingMandatoryGroups.length > 0) {
+            toast.error(`Required: ${missingMandatoryGroups.join(", ")}`);
+            return;
+        }
+
+        Object.entries(selectedVariants).forEach(([groupId, val]) => {
+            if (groupId.startsWith('ag_')) {
+               const agId = groupId.replace('ag_', '');
+               const ag = ((customizingItem as any).addonGroups as any[])?.find(g => g.id === agId);
+               if (ag && Array.isArray(val)) {
+                   val.forEach((opt: any) => {
+                       extra += (opt.price || 0);
+                       selections.push({ group: ag.name, option: opt.name, price: opt.price });
+                   });
+               }
+               return;
+            }
+
+            const group = (customizingItem.variants as any[])?.find((g: any) => g.id === groupId);
+            if (!group) return;
+            if (group.type === "radio" && val) {
+                extra += (val.price || 0);
+                selections.push({ group: group.name, option: (val.name || val.label), price: val.price });
+            } else if (group.type === "checkbox" && Array.isArray(val)) {
+                val.forEach((opt: any) => {
+                    extra += (opt.price || 0);
+                    selections.push({ group: group.name, option: (opt.name || opt.label), price: opt.price });
+                });
+            }
+        });
+
+        const newCartItem = {
+            uniqueId: Date.now().toString(),
+            id: customizingItem.id,
+            name: customizingItem.name,
+            totalPrice: (customizingItem.sellingPrice || customizingItem.price || 0) + extra,
+            qty: 1,
+            variants: selections,
+            isVeg: customizingItem.isVeg
+        };
+
+        setVariantCart(prev => [...prev, newCartItem]);
+        setCustomizingItem(null);
+        kravy.success();
+        toast.success("Added with customizations!");
     };
 
     const updateQty = (id: string, delta: number) => {
@@ -436,23 +540,56 @@ function PublicMenu() {
     };
 
     const placeOrder = async () => {
-        if (!customerPhone || customerPhone.length < 10) {
-            toast.error("Enter phone number to place order");
+        const { 
+            collectCustomerName = true, 
+            requireCustomerName = false, 
+            collectCustomerPhone = true, 
+            requireCustomerPhone = false,
+            collectCustomerAddress = false,
+            requireCustomerAddress = false
+        } = profile || {};
+
+        if (collectCustomerPhone && requireCustomerPhone && (!customerPhone || customerPhone.length < 10)) {
+            toast.error("Valid mobile number is required");
             return;
         }
+
+        if (collectCustomerName && requireCustomerName && !customerName.trim()) {
+            toast.error("Please enter your name");
+            return;
+        }
+
+        if (collectCustomerAddress && requireCustomerAddress && !customerAddress.trim()) {
+            toast.error("Delivery address is required");
+            return;
+        }
+
         setOrderStatus("placing");
         try {
-            const orderItems = Object.entries(cart).map(([id, qty]) => {
-                const item = items.find(i => i.id === id);
-                return {
-                    itemId: id,
-                    name: item?.name,
-                    price: item?.sellingPrice || item?.price,
-                    quantity: qty,
-                    total: (item?.sellingPrice || item?.price || 0) * qty,
-                    instruction: instructions[id]
-                };
-            });
+            const orderItems = Object.entries(cart)
+                .filter(([_, qty]) => qty > 0)
+                .map(([id, qty]) => {
+                    const item = items.find(i => i.id === id);
+                    return {
+                        itemId: id,
+                        name: item?.name,
+                        price: item?.sellingPrice || item?.price,
+                        quantity: qty,
+                        total: (item?.sellingPrice || item?.price || 0) * qty,
+                        instruction: instructions[id],
+                        isVeg: item?.isVeg
+                    };
+                });
+
+            const variantOrderItems = variantCart.map((vit) => ({
+                itemId: vit.id,
+                name: vit.name,
+                price: vit.totalPrice,
+                quantity: vit.qty,
+                total: vit.totalPrice * vit.qty,
+                variants: vit.variants,
+                isVeg: vit.isVeg
+            }));
 
             const comboOrderItems = combosCart.map((combo) => ({
                 itemId: combo.id,
@@ -464,7 +601,7 @@ function PublicMenu() {
                 selections: combo.selections
             }));
 
-            const allOrderItems = [...orderItems, ...comboOrderItems];
+            const allOrderItems = [...orderItems, ...variantOrderItems, ...comboOrderItems];
 
             const res = await fetch("/api/public/orders", {
                 method: "POST",
@@ -475,7 +612,8 @@ function PublicMenu() {
                     items: allOrderItems,
                     total,
                     customerName: customerName || "Guest",
-                    customerPhone,
+                    customerPhone: customerPhone || null,
+                    customerAddress: customerAddress || null,
                     caseType: "new",
                     paymentMethod // ✅ NEW: capturing intent
                 })
@@ -484,9 +622,11 @@ function PublicMenu() {
             if (res.ok) {
                 const orderData = await res.json();
                 setPlacedOrderId(orderData.id);
-                setLastOrderItems(orderItems);
+                setLastOrderItems(allOrderItems);
                 setOrderStatus("placed");
                 setCart({});
+                setVariantCart([]);
+                setCombosCart([]);
                 setShowCartSheet(false);
                 kravy.payment(); // 💰 Cash register sound on order placed
 
@@ -1465,6 +1605,42 @@ function PublicMenu() {
                                     </div>
                                 ))}
 
+                                {/* Variant Items List */}
+                                {variantCart.map((vit, vIdx) => (
+                                    <div key={vit.uniqueId} className="py-4 border-b border-[#F7F7F7] space-y-3">
+                                        <div className="flex items-start gap-2.5">
+                                            <div className={`mt-1 w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center ${vit.isVeg ? "border-[#22C55E]" : "border-[#E23744]"}`}>
+                                                <div className={`w-1.5 h-1.5 rounded-full ${vit.isVeg ? "bg-[#22C55E]" : "bg-[#E23744]"}`} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="font-[700] text-[0.84rem]">{vit.name}</div>
+                                                <div className="flex flex-wrap gap-1 mt-1">
+                                                    {vit.variants.map((v: any, idx: number) => (
+                                                        <span key={idx} className="text-[0.6rem] font-black text-indigo-500 uppercase italic bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
+                                                            {v.option}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center bg-[#E23744] text-white rounded-lg h-7 gap-3 px-1.5 shadow-sm">
+                                                <button onClick={() => {
+                                                    const newCart = [...variantCart];
+                                                    if (vit.qty > 1) { newCart[vIdx].qty -= 1; } 
+                                                    else { newCart.splice(vIdx, 1); }
+                                                    setVariantCart(newCart);
+                                                }} className="text-lg font-bold">−</button>
+                                                <span className="text-[0.8rem] font-black">{vit.qty}</span>
+                                                <button onClick={() => {
+                                                    const newCart = [...variantCart];
+                                                    newCart[vIdx].qty += 1;
+                                                    setVariantCart(newCart);
+                                                }} className="text-lg font-bold">+</button>
+                                            </div>
+                                            <div className="text-[0.84rem] font-[800] min-w-[50px] text-right">₹{vit.totalPrice * vit.qty}</div>
+                                        </div>
+                                    </div>
+                                ))}
+
                                 {/* Item List with Instructions */}
                                 {Object.entries(cart).map(([id, qty]) => {
                                     const item = items.find(i => i.id === id);
@@ -1534,23 +1710,50 @@ function PublicMenu() {
                                     </div>
                                 )}
 
-                                {/* Checkout Form */}
+                                {/* Checkout Form (Dynamic via Profile Settings) */}
                                 <div className="px-4 space-y-3.5 mb-6">
-                                    <div className="text-[0.78rem] font-[900] uppercase tracking-wider">Checkout Options</div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="text-[0.78rem] font-[900] uppercase tracking-wider">Customer Details</div>
+                                        <span className="text-[10px] text-gray-400 font-bold">* Indicates Required</span>
+                                    </div>
                                     <div className="space-y-3">
-                                        <input
-                                            value={customerPhone}
-                                            onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                                            placeholder="Mobile Number"
-                                            type="tel"
-                                            className="w-full bg-[#F4F4F4] border border-[#EBEBEB] rounded-xl px-4 py-3.5 text-sm font-bold outline-none border-none shadow-sm"
-                                        />
-                                        <input
-                                            value={customerName}
-                                            onChange={(e) => setCustomerName(e.target.value)}
-                                            placeholder="Your Name (Optional)"
-                                            className="w-full bg-[#F4F4F4] border border-[#EBEBEB] rounded-xl px-4 py-3.5 text-sm font-bold outline-none border-none shadow-sm"
-                                        />
+                                        {(profile?.collectCustomerName ?? true) && (
+                                            <div className="relative">
+                                                <input
+                                                    value={customerName}
+                                                    onChange={(e) => setCustomerName(e.target.value)}
+                                                    placeholder={`Your Name${profile?.requireCustomerName ? ' *' : ' (Optional)'}`}
+                                                    className="w-full bg-[#F4F4F4] border border-[#EBEBEB] rounded-xl px-4 py-3.5 text-sm font-bold outline-none border-none shadow-sm"
+                                                />
+                                                <User size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300" />
+                                            </div>
+                                        )}
+                                        
+                                        {(profile?.collectCustomerPhone ?? true) && (
+                                            <div className="relative">
+                                                <input
+                                                    value={customerPhone}
+                                                    onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                                                    placeholder={`Mobile Number${profile?.requireCustomerPhone ? ' *' : ' (Optional)'}`}
+                                                    type="tel"
+                                                    className="w-full bg-[#F4F4F4] border border-[#EBEBEB] rounded-xl px-4 py-3.5 text-sm font-bold outline-none border-none shadow-sm"
+                                                />
+                                                <Phone size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300" />
+                                            </div>
+                                        )}
+
+                                        {profile?.collectCustomerAddress && (
+                                            <div className="relative">
+                                                <textarea
+                                                    value={customerAddress}
+                                                    onChange={(e) => setCustomerAddress(e.target.value)}
+                                                    placeholder={`Complete Address${profile?.requireCustomerAddress ? ' *' : ' (Optional)'}`}
+                                                    rows={2}
+                                                    className="w-full bg-[#F4F4F4] border border-[#EBEBEB] rounded-xl px-4 py-3.5 text-sm font-bold outline-none border-none shadow-sm resize-none"
+                                                />
+                                                <MapPin size={16} className="absolute right-4 top-4 text-gray-300" />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -1869,6 +2072,175 @@ function PublicMenu() {
                             </div>
                         </motion.div>
                     </>
+                )}
+            </AnimatePresence>
+
+            {/* ITEM CUSTOMIZATION SHEET */}
+            <AnimatePresence>
+                {customizingItem && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[310] bg-black/60 backdrop-blur-sm flex items-end justify-center p-0"
+                        onClick={() => setCustomizingItem(null)}
+                    >
+                        <motion.div
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-t-[2.5rem] w-full max-w-[480px] max-h-[90vh] overflow-hidden shadow-2xl relative flex flex-col"
+                        >
+                            {/* Close Handle */}
+                            <div className="absolute top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-200 rounded-full z-20" />
+                            
+                            <div className="p-6 pt-10 overflow-y-auto no-scrollbar flex-1 pb-32">
+                                <div className="flex gap-4 items-start mb-8">
+                                    <div className="w-24 h-24 rounded-3xl overflow-hidden relative border border-gray-100 shadow-sm shrink-0">
+                                        {(customizingItem as any).imageUrl || (customizingItem as any).image ? (
+                                            <Image src={((customizingItem as any).imageUrl || (customizingItem as any).image) as string} alt={customizingItem.name} fill className="object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-4xl">{customizingItem.ico || "🥘"}</div>
+                                        )}
+                                    </div>
+                                    <div className="pt-1">
+                                        <h3 className="text-xl font-black text-gray-900 leading-tight mb-1.5">{customizingItem.name}</h3>
+                                        <p className="text-[0.72rem] text-gray-500 font-bold line-clamp-2 leading-relaxed mb-2 opacity-80">{customizingItem.description}</p>
+                                        <div className="text-[1.1rem] font-black text-[#E23744] italic">₹{customizingItem.sellingPrice || customizingItem.price}</div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-8">
+                                    {(customizingItem.variants as any[])?.map((vGroup: any) => (
+                                        <div key={vGroup.id} className="space-y-4">
+                                            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                                                <h4 className="text-[0.85rem] font-black uppercase tracking-[0.15em] text-gray-800">{vGroup.name}</h4>
+                                                {vGroup.required && (
+                                                    <span className="text-[0.58rem] font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase tracking-widest border border-amber-100/50">
+                                                        Choice Required
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="space-y-3">
+                                                {vGroup.options.map((opt: any) => {
+                                                    const isSelected = vGroup.type === "radio" 
+                                                        ? selectedVariants[vGroup.id]?.id === opt.id
+                                                        : selectedVariants[vGroup.id]?.some((o: any) => o.id === opt.id);
+                                                    
+                                                    return (
+                                                        <motion.div 
+                                                            key={opt.id}
+                                                            whileTap={{ scale: 0.98 }}
+                                                            onClick={() => {
+                                                                kravy.click();
+                                                                const updated = { ...selectedVariants };
+                                                                if (vGroup.type === "radio") {
+                                                                    updated[vGroup.id] = opt;
+                                                                } else {
+                                                                    const arr = updated[vGroup.id] || [];
+                                                                    if (isSelected) {
+                                                                        updated[vGroup.id] = arr.filter((o: any) => o.id !== opt.id);
+                                                                    } else {
+                                                                        updated[vGroup.id] = [...arr, opt];
+                                                                    }
+                                                                }
+                                                                setSelectedVariants(updated);
+                                                            }}
+                                                            className={`flex items-center justify-between p-4 rounded-[1.25rem] border-2 transition-all cursor-pointer ${isSelected ? "border-red-600 bg-red-50/20 shadow-sm" : "border-gray-100 bg-white"}`}
+                                                        >
+                                                            <div className="flex items-center gap-3.5">
+                                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-red-600 bg-red-600 shadow-inner" : "border-gray-300 bg-white"}`}>
+                                                                    {isSelected && (
+                                                                        vGroup.type === 'radio' 
+                                                                            ? <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                                                                            : <Check size={12} className="text-white" strokeWidth={4} />
+                                                                    )}
+                                                                </div>
+                                                                <span className={`text-[0.88rem] font-[800] ${isSelected ? "text-red-700" : "text-gray-700"}`}>{opt.name}</span>
+                                                            </div>
+                                                            {opt.price > 0 && <span className={`text-[0.85rem] font-black italic ${isSelected ? "text-red-600" : "text-emerald-600"}`}>+₹{opt.price}</span>}
+                                                        </motion.div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {/* Addon Groups */}
+                                    {((customizingItem as any).addonGroups as any[])?.map((ag: any) => (
+                                        <div key={ag.id} className="space-y-4">
+                                            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                                                <h4 className="text-[0.85rem] font-black uppercase tracking-[0.15em] text-gray-800">{ag.name}</h4>
+                                                {ag.isCompulsory && (
+                                                    <span className="text-[0.58rem] font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase tracking-widest border border-amber-100/50">
+                                                        Selection Mandatory
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="space-y-3">
+                                                {(ag.items as any[]).map((opt: any) => {
+                                                    const isSelected = selectedVariants[`ag_${ag.id}`]?.some((o: any) => o.name === opt.name);
+                                                    return (
+                                                        <motion.div 
+                                                            key={opt.name}
+                                                            whileTap={{ scale: 0.98 }}
+                                                            onClick={() => {
+                                                                kravy.click();
+                                                                const updated = { ...selectedVariants };
+                                                                const arr = updated[`ag_${ag.id}`] || [];
+                                                                if (isSelected) {
+                                                                    updated[`ag_${ag.id}`] = arr.filter((o: any) => o.name !== opt.name);
+                                                                } else {
+                                                                    if (ag.maxSelection && arr.length >= ag.maxSelection) {
+                                                                        toast.error(`Max ${ag.maxSelection} items only`);
+                                                                        return;
+                                                                    }
+                                                                    updated[`ag_${ag.id}`] = [...arr, opt];
+                                                                }
+                                                                setSelectedVariants(updated);
+                                                            }}
+                                                            className={`flex items-center justify-between p-4 rounded-[1.25rem] border-2 transition-all cursor-pointer ${isSelected ? "border-red-600 bg-red-50/20 shadow-sm" : "border-gray-100 bg-white"}`}
+                                                        >
+                                                            <div className="flex items-center gap-3.5">
+                                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-red-600 bg-red-600 shadow-inner" : "border-gray-300 bg-white"}`}>
+                                                                    {isSelected && <Check size={12} className="text-white" strokeWidth={4} />}
+                                                                </div>
+                                                                <span className={`text-[0.88rem] font-[800] ${isSelected ? "text-red-700" : "text-gray-700"}`}>{opt.name}</span>
+                                                            </div>
+                                                            {opt.price > 0 && <span className={`text-[0.85rem] font-black italic ${isSelected ? "text-red-600" : "text-emerald-600"}`}>+₹{opt.price}</span>}
+                                                        </motion.div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Footer Action */}
+                            <div className="absolute bottom-0 left-0 right-0 p-6 bg-white/90 backdrop-blur-md border-t border-gray-100 z-30">
+                                <button 
+                                    onClick={addVariantItemToCart}
+                                    className="w-full bg-[#E23744] text-white rounded-[1.25rem] h-[64px] font-black uppercase tracking-[0.15em] text-[0.9rem] shadow-2xl shadow-red-500/20 flex items-center justify-between px-10 active:scale-95 transition-all"
+                                >
+                                    <span className="flex items-center gap-2">Add To Cart <ArrowRight size={18} /></span>
+                                    <span className="text-lg italic tracking-tighter">₹{
+                                        ((customizingItem.sellingPrice || customizingItem.price || 0) + 
+                                        Object.entries(selectedVariants).reduce((acc, [gid, val]) => {
+                                            if (gid.startsWith('ag_')) {
+                                               return acc + ((val as any[])?.reduce?.((s, o) => s + (o.price || 0), 0) || 0);
+                                            }
+                                            const group = (customizingItem.variants as any[])?.find((g: any) => g.id === gid);
+                                            if (group?.type === "radio") return acc + (val?.price || 0);
+                                            if (group?.type === "checkbox") return acc + (val?.reduce?.((s: number, o: any) => s + (o.price || 0), 0) || 0);
+                                            return acc;
+                                        }, 0)).toFixed(0)
+                                    }</span>
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 

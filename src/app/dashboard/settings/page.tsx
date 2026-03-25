@@ -46,6 +46,13 @@ export default function SettingsPage() {
           label: "Tax Management",
           desc: "Enable/Disable GST and configure tax rates"
         },
+        {
+          href: "/dashboard/settings/customer",
+          icon: <Users size={20} />,
+          color: "#06B6D4",
+          label: "Customer Setup",
+          desc: "Configure QR Menu data collection rules (Name, Phone, Address)"
+        },
       ]
     },
     {

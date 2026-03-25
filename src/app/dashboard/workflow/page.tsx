@@ -24,6 +24,7 @@ type OrderItem = {
     isVeg?: boolean;
     isNew?: boolean;
     instruction?: string;
+    variants?: any[];
 };
 
 type Order = {
@@ -206,6 +207,9 @@ export default function KravyPOS() {
 
     const updateOrderStatus = async (orderId: string, newStatus: string) => {
         try {
+            // ✅ Sound on Interaction (Immediate)
+            kravy.click();
+
             const res = await fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId, status: newStatus }) });
             if (res.ok) { 
                 if (newStatus === "PREPARING") kravy.orderAccept();
@@ -571,6 +575,15 @@ export default function KravyPOS() {
                                                                         <span className="text-sm font-medium text-slate-800 truncate">
                                                                             <span className="font-bold">{it.quantity} x</span> {it.name}
                                                                         </span>
+                                                                        {it.variants && it.variants.length > 0 && (
+                                                                            <div className="flex flex-wrap gap-1 mt-0.5">
+                                                                                {it.variants.map((v: any, idx: number) => (
+                                                                                    <span key={idx} className="bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase border border-indigo-100 italic">
+                                                                                        {v.option}
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
                                                                         <span className="text-[10px] text-slate-400 uppercase tracking-widest truncate">{it.instruction || "Standard Prepared"}</span>
                                                                     </div>
                                                                 </div>
@@ -586,6 +599,11 @@ export default function KravyPOS() {
                                                                 <span className="px-1.5 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-[9px] font-black text-emerald-600 uppercase">
                                                                     {order.isBillPrinted ? "PAID" : "UNPAID"}
                                                                 </span>
+                                                                {order.isKotPrinted && (
+                                                                    <span className="px-1.5 py-0.5 rounded border border-emerald-500 bg-emerald-500 text-[9px] font-black text-white uppercase flex items-center gap-1">
+                                                                        <Check size={8} /> KOT Printed
+                                                                    </span>
+                                                                )}
                                                                 {(order as any).paymentMode && (
                                                                     <span className="px-1.5 py-0.5 rounded border border-blue-200 bg-blue-50 text-[9px] font-black text-blue-600 uppercase">
                                                                         {(order as any).paymentMode}
@@ -641,14 +659,15 @@ export default function KravyPOS() {
                                                     </div>
 
                                                     <div className="space-y-2">
-                                                        <button 
+                                                        <motion.button 
+                                                            whileTap={{ scale: 0.95 }}
                                                             onClick={() => updateOrderStatus(order.id, order.status === "PENDING" ? "ACCEPTED" : order.status === "ACCEPTED" ? "PREPARING" : order.status === "PREPARING" ? "READY" : "COMPLETED")}
                                                             className={`w-full h-10 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
                                                                 order.status === 'READY' ? 'bg-[#EF6C00] text-white' : 'bg-slate-900 text-white'
                                                             }`}
                                                         >
                                                             {order.status === 'PENDING' ? 'Accept' : order.status === 'ACCEPTED' ? 'Start' : order.status === 'PREPARING' ? 'Set Ready' : 'Handover'}
-                                                        </button>
+                                                        </motion.button>
                                                         <div className="flex flex-col gap-2">
                                                             <button className="h-8 rounded border border-blue-600 text-[10px] font-bold text-blue-600 flex items-center justify-center gap-1.5 hover:bg-blue-50 transition-all uppercase">
                                                                 <MoreHorizontal size={14} /> Live order chat support
@@ -1118,6 +1137,15 @@ export default function KravyPOS() {
                                                 <div key={idx} className="flex justify-between items-start group">
                                                     <div className="flex-1 pr-4">
                                                         <p className="text-sm font-black text-slate-900 uppercase leading-none mb-1">{it.name}</p>
+                                                        {it.variants && it.variants.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1 mb-1">
+                                                                {it.variants.map((v: any, idx: number) => (
+                                                                    <span key={idx} className="text-[8px] font-black text-indigo-500 uppercase italic">
+                                                                        • {v.option}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                         <p className="text-[10px] font-bold text-slate-400 tracking-tight uppercase">{it.quantity} × ₹{it.price}</p>
                                                     </div>
                                                     <span className="text-xs font-black italic text-slate-900">₹{it.price * it.quantity}</span>
@@ -1321,9 +1349,18 @@ export default function KravyPOS() {
                                                         <td className="px-6 py-4 max-w-[200px]">
                                                             <div className="flex flex-wrap gap-1">
                                                                 {o.items.map((it, i) => (
-                                                                    <span key={i} className="px-2 py-0.5 bg-slate-100 rounded-lg text-[9px] font-black text-slate-500 uppercase whitespace-nowrap">
-                                                                        {it.quantity}x {it.name}
-                                                                    </span>
+                                                                    <div key={i} className="flex flex-col">
+                                                                        <span className="px-2 py-0.5 bg-slate-100 rounded-lg text-[9px] font-black text-slate-500 uppercase whitespace-nowrap">
+                                                                            {it.quantity}x {it.name}
+                                                                        </span>
+                                                                        {it.variants && it.variants.length > 0 && (
+                                                                            <div className="flex flex-wrap gap-0.5 mt-0.5 pl-1">
+                                                                                {it.variants.map((v: any, idx: number) => (
+                                                                                    <span key={idx} className="text-[7px] text-indigo-400 font-bold uppercase truncate max-w-[60px]">+{v.option}</span>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 ))}
                                                             </div>
                                                         </td>

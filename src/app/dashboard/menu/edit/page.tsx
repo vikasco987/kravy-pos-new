@@ -25,6 +25,7 @@ type MenuItem = {
     hsnCode: string | null;
     gst: number | null;
     taxStatus: string | null;
+    variants?: any[] | null;
 };
 
 export default function MenuEditPage() {
@@ -47,6 +48,7 @@ export default function MenuEditPage() {
         hsnCode: "",
         gst: "",
         taxStatus: "Without Tax",
+        variants: [] as any[],
     });
 
     const [isSaving, setIsSaving] = useState(false);
@@ -85,6 +87,7 @@ export default function MenuEditPage() {
             hsnCode: item.hsnCode || "",
             gst: item.gst ? String(item.gst) : "",
             taxStatus: item.taxStatus || "Without Tax",
+            variants: item.variants || [],
         });
         setIsFormOpen(true);
     };
@@ -100,6 +103,7 @@ export default function MenuEditPage() {
             hsnCode: "",
             gst: "",
             taxStatus: "Without Tax",
+            variants: [],
         });
         setIsFormOpen(true);
     };
@@ -119,6 +123,7 @@ export default function MenuEditPage() {
                 hsnCode: formData.hsnCode || null,
                 gst: formData.gst ? parseFloat(formData.gst) : 0,
                 taxStatus: formData.taxStatus,
+                variants: formData.variants,
                 ...(editingItem ? { id: editingItem.id } : {})
             };
 
@@ -374,6 +379,123 @@ export default function MenuEditPage() {
                                         />
                                     </div>
                                     <p className="text-[10px] text-[var(--kravy-text-muted)] mt-2 font-bold uppercase tracking-wider">Paste a direct link to an image.</p>
+                                </div>
+
+                                {/* ── VARIANT BUILDER ── */}
+                                <div className="pt-4 border-t border-[var(--kravy-border)] space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-black text-[var(--kravy-text-primary)] uppercase tracking-wider">Item Customizations (Variants / Addons)</label>
+                                        <button 
+                                            type="button"
+                                            onClick={() => {
+                                                const newVariants = [...formData.variants, {
+                                                    id: Date.now().toString(),
+                                                    name: "New Group",
+                                                    type: "radio", // or checkbox
+                                                    required: false,
+                                                    options: [{ id: "opt-" + Date.now(), name: "Regular", price: 0 }]
+                                                }];
+                                                setFormData({ ...formData, variants: newVariants });
+                                            }}
+                                            className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md hover:bg-indigo-100 transition-colors"
+                                        >
+                                            + ADD GROUP
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {formData.variants.map((vGroup: any, gIdx: number) => (
+                                            <div key={vGroup.id} className="bg-[var(--kravy-bg-2)]/40 border border-[var(--kravy-border)] rounded-2xl p-4 space-y-3 relative group">
+                                                <div className="flex items-center gap-3">
+                                                    <input 
+                                                        className="flex-1 bg-transparent border-none p-0 font-bold text-sm outline-none placeholder:text-gray-300"
+                                                        placeholder="Group Name (e.g. Size)"
+                                                        value={vGroup.name}
+                                                        onChange={(e) => {
+                                                            const updated = [...formData.variants];
+                                                            updated[gIdx].name = e.target.value;
+                                                            setFormData({ ...formData, variants: updated });
+                                                        }}
+                                                    />
+                                                    <select 
+                                                        className="text-[10px] font-black bg-white border border-gray-200 rounded-md px-1.5 py-1 outline-none"
+                                                        value={vGroup.type}
+                                                        onChange={(e) => {
+                                                            const updated = [...formData.variants];
+                                                            updated[gIdx].type = e.target.value;
+                                                            setFormData({ ...formData, variants: updated });
+                                                        }}
+                                                    >
+                                                        <option value="radio">SINGLE SELECT</option>
+                                                        <option value="checkbox">MULTI SELECT (ADDONS)</option>
+                                                    </select>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const updated = formData.variants.filter((_: any, i: number) => i !== gIdx);
+                                                            setFormData({ ...formData, variants: updated });
+                                                        }}
+                                                        className="text-gray-400 hover:text-red-500"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+
+                                                <div className="space-y-2 pl-2 border-l-2 border-indigo-100">
+                                                    {vGroup.options.map((opt: any, oIdx: number) => (
+                                                        <div key={opt.id} className="flex items-center gap-2">
+                                                            <input 
+                                                                className="flex-1 bg-white border border-gray-100 rounded-lg px-3 py-1.5 text-xs font-semibold placeholder:text-gray-300"
+                                                                placeholder="Option Name"
+                                                                value={opt.name}
+                                                                onChange={(e) => {
+                                                                    const updated = [...formData.variants];
+                                                                    updated[gIdx].options[oIdx].name = e.target.value;
+                                                                    setFormData({ ...formData, variants: updated });
+                                                                }}
+                                                            />
+                                                            <div className="relative w-20">
+                                                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-emerald-500">₹</span>
+                                                                <input 
+                                                                    type="number"
+                                                                    className="w-full bg-white border border-gray-100 rounded-lg pl-5 pr-2 py-1.5 text-xs font-black text-emerald-600 outline-none"
+                                                                    placeholder="0"
+                                                                    value={opt.price}
+                                                                    onChange={(e) => {
+                                                                        const updated = [...formData.variants];
+                                                                        updated[gIdx].options[oIdx].price = Number(e.target.value);
+                                                                        setFormData({ ...formData, variants: updated });
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const updated = [...formData.variants];
+                                                                    updated[gIdx].options = updated[gIdx].options.filter((_: any, i: number) => i !== oIdx);
+                                                                    setFormData({ ...formData, variants: updated });
+                                                                }}
+                                                                className="text-gray-300 hover:text-red-400"
+                                                            >
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const updated = [...formData.variants];
+                                                            updated[gIdx].options.push({ id: "opt-" + Date.now(), name: "", price: 0 });
+                                                            setFormData({ ...formData, variants: updated });
+                                                        }}
+                                                        className="text-[9px] font-black text-emerald-600 pl-1 uppercase tracking-wider"
+                                                    >
+                                                        + ADD OPTION
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </form>
                         </div>
