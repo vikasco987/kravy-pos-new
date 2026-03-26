@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   UserCircle, Activity, Users, BarChart3,
-  ChevronRight, Shield, Bell, Palette, HelpCircle, Database, Percent, Book
+  ChevronRight, Shield, Bell, Palette, HelpCircle, Database, Percent, Book, Award
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -52,6 +52,13 @@ export default function SettingsPage() {
           color: "#06B6D4",
           label: "Customer Setup",
           desc: "Configure QR Menu data collection rules (Name, Phone, Address)"
+        },
+        {
+          href: "/dashboard/settings/loyalty",
+          icon: <Award size={20} />,
+          color: "#D4A353",
+          label: "Loyalty Program",
+          desc: "Set point ratios and redemption rules for customers"
         },
       ]
     },

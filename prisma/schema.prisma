@@ -267,6 +267,9 @@ model Order {
   isKotPrinted  Boolean @default(false)
   isBillPrinted Boolean @default(false)
 
+  notes       String? // ✅ Global order instructions
+  preferences Json?   // ✅ Added for preferences like { dontSendCutlery: true }
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -367,6 +370,10 @@ model BusinessProfile {
   fssaiNumber  String?
   fssaiEnabled Boolean @default(false)
   hsnEnabled   Boolean @default(false)
+  
+  // ✅ Loyalty Program Settings
+  loyaltyPointRatio Float @default(10.0) // 1 point per X rupees
+  loyaltyMinRedeem  Int   @default(100)  // Minimum points to unlock reward
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -10,7 +10,7 @@ import {
     Edit3, LogOut, Table as TableIcon, History,
     RotateCcw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
     Wifi, Battery, Signal, Smartphone, Timer, AlertTriangle, ChevronUp, Package2,
-    Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut, Phone
+    Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut, Phone, MessageSquare
 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import OrderAlertLoop from "./components/order-alert-loop";
@@ -42,6 +42,10 @@ type Order = {
     isKotPrinted?: boolean;
     isBillPrinted?: boolean;
     updatedAt: string;
+    notes?: string;
+    preferences?: {
+        dontSendCutlery?: boolean;
+    };
 };
 
 type TableStatus = {
@@ -560,8 +564,18 @@ export default function KravyPOS() {
 
                                                 {/* Middle Section: Items & Status */}
                                                 <div className="flex-1 p-6 flex flex-col border-r border-slate-200" style={{ minWidth: 0 }}>
-                                                    <div className="flex items-center gap-2 mb-4 text-[11px] font-bold text-emerald-600">
-                                                        <CheckCircle2 size={12} /> Send cutlery
+                                                    <div className={`flex items-center gap-2 mb-4 text-[11px] font-black uppercase tracking-wider ${order.preferences?.dontSendCutlery ? "text-rose-600 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-100" : "text-emerald-600"}`}>
+                                                        {order.preferences?.dontSendCutlery ? (
+                                                            <>
+                                                                <AlertTriangle size={12} /> 
+                                                                Don't send cutlery
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <CheckCircle2 size={12} /> 
+                                                                Send cutlery
+                                                            </>
+                                                        )}
                                                     </div>
 
                                                     <div className="flex-1 space-y-3">
@@ -590,6 +604,16 @@ export default function KravyPOS() {
                                                                 <span className="text-sm font-medium text-slate-600 shrink-0">₹{it.price * it.quantity}</span>
                                                             </div>
                                                         ))}
+
+                                                        {order.notes && (
+                                                            <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-2xl flex gap-2.5 items-start">
+                                                                <MessageSquare size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                                                                <div>
+                                                                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none mb-1">Global Instruction</p>
+                                                                    <p className="text-[12px] font-bold text-blue-800 leading-tight italic">"{order.notes}"</p>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     <div className="mt-6 pt-4 border-t border-slate-200 space-y-4">

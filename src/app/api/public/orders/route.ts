@@ -30,6 +30,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
+        // Fetch business profile for dynamic settings
+        const profile = await prisma.businessProfile.findUnique({
+            where: { userId: clerkUserId }
+        });
+
         // Case 1: MERGE INTO EXISTING ORDER
         if (caseType === "merge" && parentOrderId) {
             const existing = await prisma.order.findUnique({ where: { id: parentOrderId } });
@@ -38,7 +43,6 @@ export async function POST(req: NextRequest) {
             // Mark new items explicitly so kitchen can highlight them
             const newItems = items.map((i: any) => ({ ...i, isNew: true, addedAt: new Date().toISOString() }));
 
-            // Append rather than replace
             const currentItems = Array.isArray(existing.items) ? existing.items : [];
             const updatedItems = [...currentItems, ...newItems];
 
@@ -49,7 +53,9 @@ export async function POST(req: NextRequest) {
                     total: existing.total + parseFloat(total),
                     isMerged: true,
                     mergedAt: new Date(),
-                    paymentMode: paymentMethod || existing.paymentMode // keep or update
+                    paymentMode: paymentMethod || existing.paymentMode,
+                    notes: body.notes || existing.notes || null, // ✅ Append or Update
+                    preferences: body.preferences || existing.preferences || null // ✅ Update preferences
                 },
                 include: { table: true },
             });
@@ -85,42 +91,45 @@ export async function POST(req: NextRequest) {
                 status: "PENDING",
                 caseType: caseType || "new",
                 parentOrderId: parentOrderId || null,
-                paymentMode: paymentMethod || "UPI / QR"
+                paymentMode: paymentMethod || "UPI / QR",
+                notes: body.notes || null, // ✅ NEW
+                preferences: body.preferences || null // ✅ NEW
             },
             include: {
                 table: true,
             }
         });
 
-        // Award Loyalty Points (1 point per ₹10)
+        // Award Loyalty Points (Dynamic Ratio)
         if (customerPhone) {
             try {
-                const pointsToAward = Math.floor(parseFloat(total) / 10);
-
-                // Single point of truth: Find or Create the Party record for this business
-                await prisma.party.upsert({
-                    where: {
-                        phone_createdBy: {
+                const ratio = profile?.loyaltyPointRatio || 10;
+                const pointsToAward = Math.floor(parseFloat(total) / ratio);
+                if (pointsToAward > 0) {
+                    await prisma.party.upsert({
+                        where: {
+                            phone_createdBy: {
+                                phone: customerPhone,
+                                createdBy: clerkUserId
+                            }
+                        },
+                        update: {
+                            loyaltyPoints: { increment: pointsToAward },
+                            name: customerName || undefined
+                        },
+                        create: {
                             phone: customerPhone,
-                            createdBy: clerkUserId
+                            name: customerName || "Guest",
+                            createdBy: clerkUserId,
+                            loyaltyPoints: pointsToAward
                         }
-                    },
-                    update: {
-                        loyaltyPoints: { increment: pointsToAward },
-                        name: customerName || undefined // only update name if provided
-                    },
-                    create: {
-                        phone: customerPhone,
-                        name: customerName || "Guest",
-                        createdBy: clerkUserId,
-                        loyaltyPoints: pointsToAward
-                    }
-                });
+                    });
+                }
             } catch (loyaltyError) {
-                // Log but don't fail the order placement
-                console.error("LOYALTY_AWARD_ERROR (Skipping loyalty update):", loyaltyError);
+                console.error("LOYALTY_AWARD_ERROR:", loyaltyError);
             }
         }
+
 
         return NextResponse.json(order);
     } catch (error) {

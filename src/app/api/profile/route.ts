@@ -85,6 +85,8 @@ export async function POST(request: Request) {
         hsnEnabled: body.hsnEnabled !== undefined ? body.hsnEnabled : undefined,
         gstType: body.gstType !== undefined ? body.gstType : undefined,
         perProductTaxEnabled: body.perProductTaxEnabled !== undefined ? body.perProductTaxEnabled : undefined,
+        loyaltyPointRatio: body.loyaltyPointRatio !== undefined ? body.loyaltyPointRatio : undefined,
+        loyaltyMinRedeem: body.loyaltyMinRedeem !== undefined ? body.loyaltyMinRedeem : undefined,
       },
 
       create: {
@@ -120,6 +122,8 @@ export async function POST(request: Request) {
         hsnEnabled: body.hsnEnabled ?? false,
         gstType: body.gstType ?? "PRODUCT",
         perProductTaxEnabled: body.perProductTaxEnabled ?? false,
+        loyaltyPointRatio: body.loyaltyPointRatio ?? 10.0,
+        loyaltyMinRedeem: body.loyaltyMinRedeem ?? 100,
       },
     });
 

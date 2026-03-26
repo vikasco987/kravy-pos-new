@@ -673,7 +673,9 @@ function PublicMenu() {
                     customerPhone: customerPhone || null,
                     customerAddress: customerAddress || null,
                     caseType: "new",
-                    paymentMethod // ✅ NEW: capturing intent
+                    paymentMethod, // ✅ NEW: capturing intent
+                    notes: orderNote, // 📝 Global order note
+                    preferences: { dontSendCutlery } // 🍴 Cutlery preference
                 })
             });
 
@@ -1943,13 +1945,52 @@ function PublicMenu() {
                                     </div>
                                 </div>
 
-                                {/* Loyalty Redeem */}
-                                <div className="bg-[#D4A353]/10 border border-[#D4A353]/25 rounded-xl m-4 p-3 flex items-center justify-between">
-                                    <div className="text-[0.78rem] font-[700] text-[#7A5A00]">👑 {loyaltyPoints} pts — ₹32.50 discount unlock?</div>
-                                    <div className={`w-[38px] h-[21px] rounded-full relative cursor-pointer transition-colors ${loyaltyOn ? "bg-[#D4A353]" : "bg-[#EBEBEB]"}`} onClick={() => { kravy.toggle(); setLoyaltyOn(!loyaltyOn); }}>
-                                        <div className={`absolute top-[3px] w-[15px] h-[15px] bg-white rounded-full shadow-md transition-all ${loyaltyOn ? "left-[20px]" : "left-[3px]"}`} />
-                                    </div>
-                                </div>
+                                 {/* Loyalty Redeem */}
+                                 {customerPhone && (
+                                     <div className="bg-[#D4A353]/10 border border-[#D4A353]/25 rounded-xl m-4 p-3">
+                                         <div className="flex items-center justify-between mb-2">
+                                             <div className="text-[0.78rem] font-[900] text-[#7A5A00] flex items-center gap-1.5">
+                                                 <Award size={14} /> {loyaltyPoints} Points Available
+                                             </div>
+                                             <div className={`w-[38px] h-[21px] rounded-full relative cursor-pointer transition-all ${loyaltyOn ? "bg-[#D4A353]" : "bg-gray-200"}`} onClick={() => { kravy.toggle(); setLoyaltyOn(!loyaltyOn); }}>
+                                                 <div className={`absolute top-[3px] w-[15px] h-[15px] bg-white rounded-full shadow-md transition-all ${loyaltyOn ? "left-[20px]" : "left-[3px]"}`} />
+                                             </div>
+                                         </div>
+                                         
+                                         {rewards.length > 0 && (
+                                             <div className="space-y-2">
+                                                 {(() => {
+                                                     const nextReward = rewards
+                                                         .filter(r => r.pointsRequired > loyaltyPoints)
+                                                         .sort((a, b) => a.pointsRequired - b.pointsRequired)[0];
+                                                     
+                                                     const unlockedRewards = rewards.filter(r => r.pointsRequired <= loyaltyPoints);
+                                                     
+                                                     if (nextReward) {
+                                                         const progress = (loyaltyPoints / nextReward.pointsRequired) * 100;
+                                                         return (
+                                                             <>
+                                                                 <div className="w-full h-1.5 bg-white/50 rounded-full overflow-hidden">
+                                                                     <div className="h-full bg-[#D4A353] rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} />
+                                                                 </div>
+                                                                 <p className="text-[0.62rem] font-black text-[#B5892F] uppercase tracking-widest text-center">
+                                                                     {nextReward.pointsRequired - loyaltyPoints} pts more to unlock {nextReward.title}
+                                                                 </p>
+                                                             </>
+                                                         );
+                                                     } else if (unlockedRewards.length > 0) {
+                                                         return (
+                                                             <p className="text-[0.62rem] font-black text-green-600 uppercase tracking-widest text-center animate-pulse">
+                                                                 ✨ Multiple rewards unlocked!
+                                                             </p>
+                                                         );
+                                                     }
+                                                     return null;
+                                                 })()}
+                                             </div>
+                                         )}
+                                     </div>
+                                 )}
 
                                 {/* Active Coupons Section */}
                                 {offers.length > 0 && (
