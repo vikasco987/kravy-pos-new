@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import Link from "next/link";
-
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Users, UserPlus, Shield, ShieldAlert, Mail, Search, Filter, 
+  MoreVertical, CheckCircle2, XCircle, Lock, Unlock, ArrowRight,
+  ShieldCheck, ArrowLeft, RefreshCw, Eye
+} from "lucide-react";
 
 type Role = "USER" | "SELLER" | "ADMIN";
 
@@ -17,28 +22,31 @@ type User = {
   createdAt: string;
 };
 
-const roleBadge: Record<Role, string> = {
-  ADMIN: "bg-red-100 text-red-700",
-  SELLER: "bg-blue-100 text-blue-700",
-  USER: "bg-gray-100 text-gray-700",
+const roleStyles: Record<Role, { bg: string; text: string; icon: any }> = {
+  ADMIN: { bg: "bg-rose-50", text: "text-rose-600", icon: <ShieldAlert size={14} /> },
+  SELLER: { bg: "bg-indigo-50", text: "text-indigo-600", icon: <ShieldCheck size={14} /> },
+  USER: { bg: "bg-slate-50", text: "text-slate-600", icon: <Users size={14} /> },
 };
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"ALL" | Role>("ALL");
   const [actionUserId, setActionUserId] = useState<string | null>(null);
-
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  // invite
+  // Invite state
   const [email, setEmail] = useState("");
   const [newRole, setNewRole] = useState<Role>("USER");
   const [inviting, setInviting] = useState(false);
 
-  /* -------------------------
-     FETCH USERS
-  --------------------------*/
   useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = () => {
+    setLoading(true);
     fetch("/api/admin/users")
       .then(async (res) => {
         if (!res.ok) throw new Error("Forbidden");
@@ -47,32 +55,26 @@ export default function AdminUsersPage() {
       .then(setUsers)
       .catch(() => toast.error("Access denied"))
       .finally(() => setLoading(false));
-  }, []);
+  };
 
-  /* -------------------------
-     INVITE USER
-  --------------------------*/
   const inviteUser = async () => {
     if (!email) {
       toast.error("Email is required");
       return;
     }
-
+    setInviting(true);
     try {
-      setInviting(true);
       const res = await fetch("/api/admin/users/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, role: newRole }),
       });
-
-      const data = await res.json();
-
       if (res.ok) {
-        toast.success("Invitation sent");
+        toast.success("Invitation sent successfully");
         setEmail("");
-        setNewRole("USER");
+        fetchUsers();
       } else {
+        const data = await res.json();
         toast.error(data?.error || "Invite failed");
       }
     } catch {
@@ -82,26 +84,17 @@ export default function AdminUsersPage() {
     }
   };
 
-  /* -------------------------
-     ROLE CHANGE
-  --------------------------*/
   const changeRole = async (userId: string, role: Role) => {
+    setActionUserId(userId);
     try {
-      setActionUserId(userId);
-
       const res = await fetch("/api/admin/users/role", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetUserId: userId, role }),
       });
-
       if (res.ok) {
-        toast.success("Role updated");
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.id === userId ? { ...u, role } : u
-          )
-        );
+        toast.success("User role updated");
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u));
       } else {
         toast.error("Failed to update role");
       }
@@ -112,36 +105,22 @@ export default function AdminUsersPage() {
     }
   };
 
-  /* -------------------------
-     ENABLE / DISABLE
-  --------------------------*/
-  const toggleUser = async (u: User) => {
+  const toggleUserStatus = async (user: User) => {
+    setActionUserId(user.id);
     try {
-      setActionUserId(u.id);
-
       const res = await fetch("/api/admin/users/disable", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          targetUserId: u.id,
-          disable: !u.isDisabled,
+          targetUserId: user.id,
+          disable: !user.isDisabled,
         }),
       });
-
       if (res.ok) {
-        toast.success(
-          u.isDisabled ? "User enabled" : "User disabled"
-        );
-
-        setUsers((prev) =>
-          prev.map((x) =>
-            x.id === u.id
-              ? { ...x, isDisabled: !x.isDisabled }
-              : x
-          )
-        );
+        toast.success(user.isDisabled ? "User access restored" : "User access revoked");
+        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, isDisabled: !u.isDisabled } : u));
       } else {
-        toast.error("Action failed");
+        toast.error("Status update failed");
       }
     } catch {
       toast.error("Network error");
@@ -150,286 +129,361 @@ export default function AdminUsersPage() {
     }
   };
 
+  const filteredUsers = useMemo(() => {
+    return users.filter(u => {
+      const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           u.email.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
+      return matchesSearch && matchesRole;
+    });
+  }, [users, searchQuery, roleFilter]);
+
   if (loading) {
-    return <div className="p-6">Loading users…</div>;
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <RefreshCw className="animate-spin text-indigo-600" size={32} />
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Synchronizing users...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-16 space-y-10">
-      {/* HEADER */}
-<div className="flex items-center justify-between">
-  <div>
-    <h1 className="text-2xl font-semibold">User Management</h1>
-    <p className="text-sm text-gray-500">
-      Invite users, manage roles, enable or disable access
-    </p>
-  </div>
+    <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8 lg:p-12">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        {/* TOP HEADER */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-indigo-600">
+               <Shield size={20} />
+               <span className="text-[10px] font-black uppercase tracking-[0.2em]">Administrative Control</span>
+            </div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Access Management</h1>
+            <p className="text-slate-500 max-w-lg font-medium">Configure team roles, permissions, and system-wide visibility controls for your staff.</p>
+          </div>
 
-  {/* ACTIONS */}
-  <div className="flex gap-3">
-    <Link
-      href="/admin/users/roles"
-      className="px-4 py-2 rounded-md border-2 border-indigo-600 bg-indigo-50 text-indigo-700 text-sm font-bold hover:bg-indigo-100 flex items-center gap-2"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20"/><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="m4 8 16-4"/><path d="m8 6 8-4"/><circle cx="12" cy="12" r="2"/></svg>
-      Role Visibility
-    </Link>
-    <Link
-      href="/admin/users/docs"
-      className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 flex items-center gap-2"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-      Basic Docs
-    </Link>
-    <Link
-      href="/admin/docs/architecture"
-      className="px-4 py-2 rounded-md border-2 border-slate-900 bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 flex items-center gap-2"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-      Deep Docs (Architect)
-    </Link>
-    <Link
-      href="/admin/users/create"
-      className="px-4 py-2 rounded-md bg-black text-white text-sm hover:opacity-90 flex items-center"
-    >
-      + Create New User
-    </Link>
-  </div>
-</div>
-
-
-      {/* INVITE CARD */}
-      <div className="rounded-xl border bg-white p-6 space-y-4">
-        <h2 className="font-medium">Invite new user</h2>
-
-        <div className="flex flex-wrap gap-3">
-          <input
-            type="email"
-            placeholder="user@email.com"
-            className="border rounded-md px-3 py-2 w-64"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <select
-            className="border rounded-md px-3 py-2"
-            value={newRole}
-            onChange={(e) =>
-              setNewRole(e.target.value as Role)
-            }
-          >
-            <option value="USER">USER</option>
-            <option value="SELLER">SELLER</option>
-            <option value="ADMIN">ADMIN</option>
-          </select>
-
-          <button
-            onClick={inviteUser}
-            disabled={inviting}
-            className="px-5 py-2 rounded-md bg-black text-white disabled:opacity-50"
-          >
-            {inviting ? "Sending…" : "Send Invite"}
-          </button>
+          <div className="flex flex-wrap gap-3">
+             <Link href="/dashboard" className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all font-bold text-sm shadow-sm">
+                <ArrowLeft size={16} /> Exit to Dashboard
+             </Link>
+             <Link href="/admin/users/roles" className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all font-black text-sm shadow-lg shadow-indigo-600/20">
+                <Lock size={16} /> Visibility Rules
+             </Link>
+          </div>
         </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* LEFT: INVITE & STATS */}
+          <div className="lg:col-span-4 space-y-8">
+            
+            {/* INVITE BOX */}
+            <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-xl shadow-slate-200/50 space-y-6 relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -translate-y-1/2 translate-x-1/2 -z-0 opacity-50" />
+               
+               <div className="relative z-10 space-y-6">
+                 <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+                     <UserPlus size={24} />
+                   </div>
+                   <div>
+                     <h2 className="text-xl font-black text-slate-900 leading-none">Invite User</h2>
+                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Add new staff member</p>
+                   </div>
+                 </div>
+
+                 <div className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                       <div className="relative">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                          <input 
+                            type="email" 
+                            placeholder="staff@kravy.pos"
+                            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                          />
+                       </div>
+                    </div>
+
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Role</label>
+                       <select 
+                         className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-black text-sm transition-all"
+                         value={newRole}
+                         onChange={(e) => setNewRole(e.target.value as Role)}
+                       >
+                         <option value="USER">Standard User</option>
+                         <option value="SELLER">Outlet Seller</option>
+                         <option value="ADMIN">Super Admin</option>
+                       </select>
+                    </div>
+
+                    <button 
+                      onClick={inviteUser}
+                      disabled={inviting}
+                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl disabled:opacity-50 active:scale-95 flex items-center justify-center gap-3"
+                    >
+                      {inviting ? <RefreshCw className="animate-spin" size={18} /> : (
+                        <>Send Invitation <ArrowRight size={18} /></>
+                      )}
+                    </button>
+                 </div>
+               </div>
+            </div>
+
+            {/* QUICK STATS */}
+            <div className="grid grid-cols-2 gap-4">
+               <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm text-center">
+                  <p className="text-3xl font-black text-slate-900 leading-none mb-1">{users.length}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Staff</p>
+               </div>
+               <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm text-center">
+                  <p className="text-3xl font-black text-rose-600 leading-none mb-1">{users.filter(u => u.isDisabled).length}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Disabled</p>
+               </div>
+            </div>
+
+          </div>
+
+          {/* RIGHT: TABLE & FILTERS */}
+          <div className="lg:col-span-8 space-y-6">
+            
+            {/* SEARCH & FILTER BAR */}
+            <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
+               <div className="relative flex-1">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="Search by name or email..."
+                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:border-slate-200 font-medium transition-all"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+               </div>
+               <div className="flex gap-2">
+                  <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1 rounded-2xl border border-slate-100">
+                     <Filter size={14} className="text-slate-400" />
+                     <select 
+                       className="bg-transparent border-none outline-none font-black text-[11px] uppercase tracking-widest text-slate-600 py-2 pr-4"
+                       value={roleFilter}
+                       onChange={(e) => setRoleFilter(e.target.value as any)}
+                     >
+                        <option value="ALL">All Roles</option>
+                        <option value="ADMIN">Admin</option>
+                        <option value="SELLER">Seller</option>
+                        <option value="USER">User</option>
+                     </select>
+                  </div>
+               </div>
+            </div>
+
+            {/* USERS TABLE */}
+            <div className="bg-white rounded-[32px] border border-slate-200 shadow-xl overflow-hidden">
+               <div className="overflow-x-auto">
+                  <table className="w-full">
+                     <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100">
+                           <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">User Profile</th>
+                           <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status / Role</th>
+                           <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Administrative Actions</th>
+                        </tr>
+                     </thead>
+                     <tbody className="divide-y divide-slate-50">
+                        {filteredUsers.map((u) => (
+                           <motion.tr 
+                             key={u.id}
+                             initial={{ opacity: 0 }}
+                             animate={{ opacity: 1 }}
+                             className="hover:bg-slate-50/50 transition-colors group"
+                           >
+                              <td className="px-8 py-6">
+                                 <div className="flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${roleStyles[u.role].bg} ${roleStyles[u.role].text}`}>
+                                       {u.name?.[0] || 'U'}
+                                    </div>
+                                    <div>
+                                       <button 
+                                         onClick={() => setSelectedUser(u)}
+                                         className="font-black text-slate-900 hover:text-indigo-600 transition-colors block text-sm"
+                                       >
+                                          {u.name || "Pending Account"}
+                                       </button>
+                                       <div className="text-xs text-slate-400 font-medium">
+                                          {u.email}
+                                       </div>
+                                    </div>
+                                 </div>
+                              </td>
+
+                              <td className="px-8 py-6 text-center">
+                                 <div className="flex flex-col items-center gap-2">
+                                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${roleStyles[u.role].bg} ${roleStyles[u.role].text} text-[10px] font-black uppercase tracking-widest`}>
+                                       {roleStyles[u.role].icon}
+                                       {u.role}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                       <div className={`w-1.5 h-1.5 rounded-full ${u.isDisabled ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`} />
+                                       <span className={`text-[9px] font-black uppercase tracking-tighter ${u.isDisabled ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                          {u.isDisabled ? "Access Revoked" : "Live Session"}
+                                       </span>
+                                    </div>
+                                 </div>
+                              </td>
+
+                              <td className="px-8 py-6">
+                                 <div className="flex items-center justify-end gap-3">
+                                    <select 
+                                      className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-widest outline-none focus:border-indigo-500 hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-50"
+                                      value={u.role}
+                                      disabled={u.isDisabled || actionUserId === u.id}
+                                      onChange={(e) => changeRole(u.id, e.target.value as Role)}
+                                    >
+                                       <option value="USER">User</option>
+                                       <option value="SELLER">Seller</option>
+                                       <option value="ADMIN">Admin</option>
+                                    </select>
+
+                                    <div className="w-[1px] h-6 bg-slate-100" />
+
+                                    <button 
+                                      disabled={actionUserId === u.id}
+                                      onClick={() => toggleUserStatus(u)}
+                                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${u.isDisabled ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white' : 'bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white'} shadow-sm active:scale-90`}
+                                      title={u.isDisabled ? "Grant Access" : "Revoke Access"}
+                                    >
+                                       {actionUserId === u.id ? <RefreshCw className="animate-spin" size={16} /> : (
+                                          u.isDisabled ? <Unlock size={18} /> : <Lock size={18} />
+                                       )}
+                                    </button>
+
+                                    <button className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-900 hover:text-white transition-all">
+                                       <MoreVertical size={18} />
+                                    </button>
+                                 </div>
+                              </td>
+                           </motion.tr>
+                        ))}
+                     </tbody>
+                  </table>
+                  {filteredUsers.length === 0 && (
+                     <div className="p-12 text-center space-y-2">
+                        <Users className="mx-auto text-slate-200" size={48} />
+                        <p className="text-slate-400 font-bold">No matching users found in your scope.</p>
+                     </div>
+                  )}
+               </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
-      {/* USERS TABLE */}
-      <div className="border rounded-xl overflow-hidden bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-4 text-left">User</th>
-              <th className="p-4">Role</th>
-              <th className="p-4">Status</th>
-              <th className="p-4 text-right">Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {users.map((u) => (
-              <tr
-                key={u.id}
-                className="border-t hover:bg-gray-50 transition"
-              >
-                {/* USER */}
-                <td className="p-4">
-                  <button
-                    onClick={() => setSelectedUser(u)}
-                    className="font-medium text-blue-600 hover:underline"
-                  >
-                    {u.name}
-                  </button>
-                  <div className="text-xs text-gray-500">
-                    {u.email}
+      {/* USER DETAIL MODAL */}
+      <AnimatePresence>
+        {selectedUser && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedUser(null)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl border border-slate-100"
+            >
+               <div className={`h-32 bg-gradient-to-br ${uRoleGradient[selectedUser.role]} p-8 relative overflow-hidden`}>
+                  <div className="absolute inset-0 bg-white/10 backdrop-blur-3xl" />
+                  <div className="relative flex justify-between items-start">
+                     <div>
+                        <h3 className="text-white text-2xl font-black">{selectedUser.name || "New Staff"}</h3>
+                        <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">{selectedUser.role}</p>
+                     </div>
+                     <button onClick={() => setSelectedUser(null)} className="w-8 h-8 bg-black/20 text-white rounded-full flex items-center justify-center hover:bg-black/40 transition-all">
+                        <XCircle size={20} />
+                     </button>
                   </div>
-                </td>
+               </div>
 
-                {/* ROLE */}
-                <td className="p-4">
-                  <div className="flex items-center justify-center gap-2">
-                    <span
-                      className={`px-2 py-1 text-xs rounded font-medium ${roleBadge[u.role]}`}
-                    >
-                      {u.role}
-                    </span>
-
-                    <select
-                      disabled={u.isDisabled || actionUserId === u.id}
-                      className="border rounded px-2 py-1 text-xs disabled:opacity-50"
-                      value={u.role}
-                      onChange={(e) =>
-                        changeRole(
-                          u.id,
-                          e.target.value as Role
-                        )
-                      }
-                    >
-                      <option value="USER">USER</option>
-                      <option value="SELLER">SELLER</option>
-                      <option value="ADMIN">ADMIN</option>
-                    </select>
+               <div className="p-8 space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
+                     <div className="space-y-1">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Platform ID</p>
+                        <p className="font-mono text-[10px] font-bold text-slate-800 bg-slate-50 p-2 rounded-lg truncate">{selectedUser.id}</p>
+                     </div>
+                     <div className="space-y-1">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Onboarded</p>
+                        <p className="text-xs font-bold text-slate-800">{new Date(selectedUser.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
+                     </div>
                   </div>
-                </td>
 
-                {/* STATUS */}
-                <td className="p-4 text-center">
-                  {u.isDisabled ? (
-                    <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">
-                      Disabled
-                    </span>
-                  ) : (
-                    <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700">
-                      Active
-                    </span>
-                  )}
-                </td>
+                  <div className="space-y-4">
+                     <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <Mail className="text-indigo-600" size={20} />
+                        <div className="flex-1">
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Primary Email</p>
+                           <p className="text-sm font-bold text-slate-900">{selectedUser.email}</p>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(selectedUser.email);
+                            toast.success("Email copied");
+                          }}
+                          className="text-[10px] font-black text-indigo-600 uppercase"
+                        >
+                           Copy
+                        </button>
+                     </div>
 
-                {/* ACTION */}
-                <td className="p-4 text-right">
-                  <button
-                    disabled={actionUserId === u.id}
-                    onClick={() => toggleUser(u)}
-                    className={`px-4 py-1.5 rounded-md text-sm text-white disabled:opacity-50 ${
-                      u.isDisabled
-                        ? "bg-green-600"
-                        : "bg-red-600"
-                    }`}
-                  >
-                    {actionUserId === u.id
-                      ? "Please wait…"
-                      : u.isDisabled
-                      ? "Enable"
-                      : "Disable"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                     <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <Lock className="text-slate-400" size={20} />
+                        <div className="flex-1">
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Authentication ID</p>
+                           <p className="text-[10px] font-bold text-slate-800 truncate max-w-[180px]">{selectedUser.clerkId}</p>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(selectedUser.clerkId);
+                            toast.success("ID copied");
+                          }}
+                          className="text-[10px] font-black text-indigo-600 uppercase"
+                        >
+                           Copy
+                        </button>
+                     </div>
+                  </div>
 
-        {users.length === 0 && (
-          <div className="p-6 text-gray-500 text-center">
-            No users found
+                  <div className="pt-4 flex gap-3">
+                     <button 
+                       onClick={() => toggleUserStatus(selectedUser)}
+                       className={`flex-1 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${selectedUser.isDisabled ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}
+                     >
+                        {selectedUser.isDisabled ? "Resume Access" : "Revoke Access"}
+                     </button>
+                     <button className="flex-1 py-3 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg">
+                        Session Log
+                     </button>
+                  </div>
+               </div>
+            </motion.div>
           </div>
         )}
-      </div>
+      </AnimatePresence>
 
-      {/* USER DETAIL POPUP – unchanged logic */}
-      {selectedUser && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => setSelectedUser(null)}
-        >
-          <div
-            className="bg-white w-full max-w-md rounded-xl p-6 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">
-                User Details
-              </h3>
-              <button
-                onClick={() => setSelectedUser(null)}
-                className="text-gray-400 hover:text-black"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-sm">
-              <div>
-                <p className="text-gray-500">Name</p>
-                <p className="font-medium">{selectedUser.name}</p>
-              </div>
-
-              <div>
-                <p className="text-gray-500">Email</p>
-                <p className="break-all">{selectedUser.email}</p>
-              </div>
-
-              <div className="rounded-md border bg-gray-50 p-3">
-                <p className="text-xs text-gray-500 mb-1">
-                  Clerk User ID
-                </p>
-
-                <div className="flex items-center gap-2">
-                  <code className="text-xs font-mono break-all text-gray-800">
-                    {selectedUser.clerkId}
-                  </code>
-
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        selectedUser.clerkId
-                      );
-                      toast.success("Clerk ID copied");
-                    }}
-                    className="ml-auto text-xs px-2 py-1 border rounded hover:bg-white"
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex gap-6">
-                <div>
-                  <p className="text-gray-500">Role</p>
-                  <p className="font-medium">
-                    {selectedUser.role}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500">Status</p>
-                  <p className="font-medium">
-                    {selectedUser.isDisabled
-                      ? "Disabled"
-                      : "Active"}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-gray-500">Created At</p>
-                <p>
-                  {new Date(
-                    selectedUser.createdAt
-                  ).toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 text-right">
-              <button
-                onClick={() => setSelectedUser(null)}
-                className="px-4 py-2 rounded-md border text-sm hover:bg-gray-50"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+
+const uRoleGradient: Record<Role, string> = {
+  ADMIN: "from-rose-600 to-rose-400",
+  SELLER: "from-indigo-600 to-indigo-400",
+  USER: "from-slate-600 to-slate-400",
+};

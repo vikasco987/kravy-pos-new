@@ -124,6 +124,13 @@ export default function SettingsPage() {
           label: "System Reports",
           desc: "Access advanced sales and system analytics"
         },
+        {
+          href: "/dashboard/settings/advanced",
+          icon: <Zap size={20} />,
+          color: "#F59E0B",
+          label: "Advanced Controls",
+          desc: "Manage tool visibility and feature flags for staff"
+        },
       ]
     }] : [])
   ];

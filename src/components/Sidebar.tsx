@@ -133,9 +133,9 @@ const navGroups = [
     items: [
       { icon: <UtensilsCrossed size={18} />, label: "Browse Products", href: "/dashboard/menu/view" },
       { icon: <Sparkles size={18} />, label: "Interactive Editor", href: "/dashboard/menu-editor", badge: "New", badgeColor: "#8B5CF6" },
-      { icon: <Zap size={18} />, label: "AI Menu Scraper", href: "/dashboard/ai-scraper", badge: "AI", badgeColor: "#F59E0B" },
+      { icon: <Zap size={18} />, label: "AI Menu Scraper", href: "/dashboard/ai-scraper", badge: "AI", badgeColor: "#F59E0B", roles: ["ADMIN"] },
       { icon: <PlusCircle size={18} />, label: "Add Single Item", href: "/dashboard/menu/upload" },
-      { icon: <Upload size={18} />, label: "Excel Bulk Import", href: "/dashboard/store-item-upload", badge: "Import", badgeColor: "#FF6B35" },
+      { icon: <Upload size={18} />, label: "Excel Bulk Import", href: "/dashboard/store-item-upload", badge: "Import", badgeColor: "#FF6B35", roles: ["ADMIN"] },
       { icon: <Settings size={18} />, label: "Category & Editor", href: "/dashboard/menu/edit" },
     ]
   },
@@ -196,6 +196,8 @@ export default function Sidebar() {
   const [allowedPaths, setAllowedPaths] = useState<string[]>([]);
   const [loadingRole, setLoadingRole] = useState(true);
   const [taxEnabled, setTaxEnabled] = useState(false);
+  const [aiScraperEnabled, setAiScraperEnabled] = useState(false);
+  const [excelImportEnabled, setExcelImportEnabled] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -218,9 +220,10 @@ export default function Sidebar() {
     fetch("/api/profile")
       .then(res => res.json())
       .then(data => {
-        // Feature is enabled if either Global tax is on OR per-product tax is on
-        if (data && (data.taxEnabled || data.perProductTaxEnabled)) {
-          setTaxEnabled(true);
+        if (data) {
+          if (data.taxEnabled || data.perProductTaxEnabled) setTaxEnabled(true);
+          if (data.aiScraperEnabled) setAiScraperEnabled(true);
+          if (data.excelImportEnabled) setExcelImportEnabled(true);
         }
       })
       .catch(() => {});
@@ -484,6 +487,10 @@ export default function Sidebar() {
           const visibleItems = group.items.filter((item: any) => {
             // ABSOLUTE PRIORITY: GST Report visibility 
             if (item.label === "GST Reports" && !taxEnabled) return false;
+
+            // ADMISTRATIVE CONTROL: AI Scraper & Excel Import for Sellers
+            if (item.label === "AI Menu Scraper" && userRole === "SELLER" && aiScraperEnabled) return true;
+            if (item.label === "Excel Bulk Import" && userRole === "SELLER" && excelImportEnabled) return true;
 
             // Priority 1: Admins see everything
             if (userRole === "ADMIN") return true;
