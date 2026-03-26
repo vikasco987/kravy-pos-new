@@ -17,7 +17,7 @@ export async function GET(
         const items = await prisma.item.findMany({
             where: {
                 clerkId: clerkId,
-                isActive: true, // Only show live items
+                // isActive: true, // Show all items for now to debug
             },
             orderBy: {
                 name: "asc",
