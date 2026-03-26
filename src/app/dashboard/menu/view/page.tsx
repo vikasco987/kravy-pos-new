@@ -469,8 +469,9 @@ export default function ViewMenuPage() {
   const [quickAddGst, setQuickAddGst] = useState(0);
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [showAddCategory, setShowAddCategory] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<MenuCategory | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [quickAddImage, setQuickAddImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -808,7 +809,8 @@ export default function ViewMenuPage() {
     const name = formData.get("name") as string;
     const price = formData.get("price") as string;
     const description = formData.get("description") as string;
-    const imageUrl = formData.get("imageUrl") as string;
+    const manualImageUrl = formData.get("imageUrl") as string;
+    const imageUrl = quickAddImage || manualImageUrl;
 
     if (!name || !price) {
       setToast("Name and price are required");
@@ -840,6 +842,7 @@ export default function ViewMenuPage() {
     setQuickAddCat(null); 
     setQuickAddTaxStatus("Without Tax");
     setQuickAddGst(0);
+    setQuickAddImage(null);
     setToast(`"${name}" added to ${quickAddCat.name}`);
 
     // Backend update in background
@@ -927,10 +930,34 @@ export default function ViewMenuPage() {
 
   function EditModal({ item, onClose, onSave }: { item: MenuItem; onClose: () => void; onSave: (u: MenuItem) => void }) {
     const [local, setLocal] = useState<MenuItem>(item);
-    const [tab, setTab] = useState<"basic" | "qr" | "lang">("basic");
+    const [tab, setTab] = useState<"basic" | "qr" | "lang" | "image">("basic");
+    const [uploading, setUploading] = useState(false);
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
     useEffect(() => setLocal(item), [item]);
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files?.[0]) return;
+      const file = e.target.files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        setUploading(true);
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (res.ok && data.secure_url) {
+          setLocal(prev => ({ ...prev, imageUrl: data.secure_url }));
+          setToast("Image uploaded to Cloudinary!");
+        } else {
+          setToast("Upload failed");
+        }
+      } catch (err) {
+        setToast("Upload Error");
+      } finally {
+        setUploading(false);
+      }
+    };
 
     if (!mounted) return null;
 
@@ -946,13 +973,13 @@ export default function ViewMenuPage() {
             </h3>
 
             <div className="flex gap-2 mb-6 border-b border-[var(--kravy-border)]">
-              {(["basic", "qr", "lang"] as const).map(t => (
+              {(["basic", "image", "qr", "lang"] as const).map(t => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
                   className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${tab === t ? "border-indigo-600 text-indigo-600" : "border-transparent text-[var(--kravy-text-muted)]"}`}
                 >
-                  {t === "basic" ? "Basic Info" : t === "qr" ? "QR Enhancements" : "Translations"}
+                  {t === "basic" ? "Info" : t === "image" ? "Photo" : t === "qr" ? "QR Extra" : "Lang"}
                 </button>
               ))}
             </div>
@@ -1023,10 +1050,11 @@ export default function ViewMenuPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Image URL</label>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Manual Image URL</label>
                   <input
                     className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
                     value={local.imageUrl ?? ""}
+                    placeholder="https://..."
                     onChange={(e) => setLocal({ ...local, imageUrl: e.target.value })}
                   />
                 </div>
@@ -1079,7 +1107,43 @@ export default function ViewMenuPage() {
                       />
                     </div>
                   </div>
-                )}
+              </div>
+            )}
+
+            {tab === "image" && (
+              <div className="space-y-6 flex flex-col items-center">
+                 <div className="w-full h-48 rounded-[2rem] border-2 border-dashed border-[var(--kravy-border)] bg-[var(--kravy-bg)] relative overflow-hidden flex items-center justify-center group">
+                    {local.imageUrl ? (
+                      <>
+                        <Image src={local.imageUrl} alt="Preview" fill className="object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                           <p className="text-white text-[10px] font-black uppercase">Change Photo</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center p-4">
+                        <Plus size={32} className="mx-auto text-indigo-400 mb-2" />
+                        <p className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest">No Image Set</p>
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                      onChange={handleFileChange}
+                      disabled={uploading}
+                    />
+                 </div>
+                 
+                 {uploading && (
+                   <div className="flex items-center gap-2 text-indigo-600 font-black text-[10px] uppercase animate-pulse">
+                      <RotateCcw className="animate-spin" size={12} /> Uploading...
+                   </div>
+                 )}
+
+                 <div className="w-full space-y-2">
+                    <p className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest text-center">Or enter URL manually in Basic tab</p>
+                 </div>
               </div>
             )}
 
@@ -1598,6 +1662,51 @@ export default function ViewMenuPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Quick Image Upload UI */}
+              <div className="mb-6">
+                 <div className={`w-full h-32 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center relative overflow-hidden group ${quickAddImage ? "border-emerald-500 bg-emerald-50" : "border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50"}`}>
+                    {quickAddImage ? (
+                      <>
+                        <Image src={quickAddImage} alt="Preview" fill className="object-cover" />
+                        <button 
+                          onClick={(e) => { e.preventDefault(); setQuickAddImage(null); }}
+                          className="absolute top-2 right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg z-20"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                         {isUploading ? (
+                           <RotateCcw className="animate-spin text-indigo-500" />
+                         ) : (
+                           <>
+                             <Plus className="text-indigo-400 mb-1" size={20} />
+                             <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Upload Item Photo</p>
+                           </>
+                         )}
+                         <input 
+                           type="file"
+                           accept="image/*"
+                           className="absolute inset-0 opacity-0 cursor-pointer"
+                           onChange={async (e) => {
+                             if (!e.target.files?.[0]) return;
+                             const f = e.target.files[0];
+                             const fd = new FormData();
+                             fd.append("file", f);
+                             try {
+                               setIsUploading(true);
+                               const r = await fetch("/api/upload", { method: "POST", body: fd });
+                               const d = await r.json();
+                               if (r.ok && d.secure_url) setQuickAddImage(d.secure_url);
+                             } catch (err) {} finally { setIsUploading(false); }
+                           }}
+                         />
+                      </>
+                    )}
+                 </div>
               </div>
               
               <form onSubmit={handleQuickAdd} className="space-y-4">
