@@ -20,10 +20,13 @@ export async function PATCH(
       return NextResponse.json({ error: "No imageUrl provided" }, { status: 400 });
     }
 
-    // Update the image URL for this item
+    // Update the image URLs for this item
     const updatedItem = await prisma.item.update({
       where: { id },
-      data: { imageUrl },
+      data: { 
+        imageUrl,
+        image: imageUrl // Also update legacy field
+      },
     });
 
     return NextResponse.json(updatedItem, { status: 200 });
