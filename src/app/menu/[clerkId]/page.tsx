@@ -361,15 +361,28 @@ function PublicMenu() {
         cats.forEach(cat => {
             const lower = cat.toLowerCase();
             let icon = "";
+            
+            // 🌟 ROBUST KEYWORD MATCHING
             if (lower.includes("pizza")) icon = "🍕";
-            else if (lower.includes("burger")) icon = "🍔";
-            else if (lower.includes("biryani") || lower.includes("rice")) icon = "🍛";
-            else if (lower.includes("chicken")) icon = "🍗";
-            else if (lower.includes("drink") || lower.includes("beverage")) icon = "🥤";
-            else if (lower.includes("tea")) icon = "🍵";
+            else if (lower.includes("burger") || lower.includes("sandwich")) icon = "🍔";
+            else if (lower.includes("biryani") || lower.includes("rice") || lower.includes("pulao")) icon = "🍛";
+            else if (lower.includes("chicken") || lower.includes("non-veg") || lower.includes("mutton") || lower.includes("fish")) icon = "🍗";
+            else if (lower.includes("drink") || lower.includes("beverage") || lower.includes("juice") || lower.includes("mocktail") || lower.includes("shake") || lower.includes("cold coffee")) icon = "🥤";
+            else if (lower.includes("tea") || lower.includes("chai")) icon = "🍵";
             else if (lower.includes("coffee")) icon = "☕";
-            else if (lower.includes("chinese") || lower.includes("noodle")) icon = "🍜";
-            else if (lower.includes("ice cream")) icon = "🍦";
+            else if (lower.includes("chinese") || lower.includes("noodle") || lower.includes("chowmein")) icon = "🍜";
+            else if (lower.includes("momo") || lower.includes("dimsum")) icon = "🥟";
+            else if (lower.includes("dessert") || lower.includes("sweet") || lower.includes("cake") || lower.includes("pastry") || lower.includes("waffle")) icon = "🍰";
+            else if (lower.includes("ice cream") || lower.includes("gelato") || lower.includes("kulfi")) icon = "🍦";
+            else if (lower.includes("starter") || lower.includes("snack") || lower.includes("appetizer") || lower.includes("roll")) icon = "🍟";
+            else if (lower.includes("paneer") || lower.includes("veg") || lower.includes("main course") || lower.includes("curry") || lower.includes("dal")) icon = "🥘";
+            else if (lower.includes("soup")) icon = "🥣";
+            else if (lower.includes("salad")) icon = "🥗";
+            else if (lower.includes("south indian") || lower.includes("dosa") || lower.includes("idli") || lower.includes("vada")) icon = "🥞";
+            else if (lower.includes("thali") || lower.includes("meal")) icon = "🍱";
+            else if (lower.includes("bread") || lower.includes("roti") || lower.includes("naan") || lower.includes("paratha")) icon = "🫓";
+            else if (lower.includes("pasta") || lower.includes("spaghetti")) icon = "🍝";
+            else if (lower.includes("combos") || lower.includes("deals") || lower.includes("offers")) icon = "🎁";
             
             if (!icon || usedIcons.has(icon)) {
                 let hash = 0;
