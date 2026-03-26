@@ -36,7 +36,9 @@ import {
     Sparkles,
     ChevronDown,
     Check,
-    UtensilsCrossed
+    UtensilsCrossed,
+    FileText,
+    Utensils
 } from "lucide-react";
 import { saveOrderLocally } from "@/lib/orderStorage";
 import ActiveOrderBanner from "@/components/ActiveOrderBanner";
