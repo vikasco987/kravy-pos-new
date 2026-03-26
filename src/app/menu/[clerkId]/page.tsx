@@ -1611,16 +1611,15 @@ function PublicMenu() {
             <AnimatePresence>
                 {activeTab === "menu" && !showCartSheet && !showCategorySheet && (
                     <motion.button
-                        initial={{ scale: 0.8, opacity: 0, x: 20 }}
+                        initial={{ scale: 0.8, opacity: 0, y: 20 }}
                         animate={{ 
                             scale: 1, 
                             opacity: 1, 
-                            x: 0,
-                            y: cartCount > 0 ? -95 : 0 
+                            y: cartCount > 0 ? -110 : 0 
                         }}
-                        exit={{ scale: 0.8, opacity: 0, x: 20 }}
+                        exit={{ scale: 0.8, opacity: 0, y: 20 }}
                         onClick={() => { kravy.open(); setShowCategorySheet(true); }}
-                        className="fixed bottom-24 right-6 z-[105] bg-[#2D2D32]/95 backdrop-blur-md text-white rounded-full px-5 py-3 flex items-center gap-2.5 shadow-[0_15px_40px_rgba(0,0,0,0.4)] active:scale-90 transition-all border border-white/10"
+                        className="fixed bottom-8 right-5 z-[105] bg-[#2D2D32]/95 backdrop-blur-md text-white rounded-full px-5 py-3 flex items-center gap-2.5 shadow-[0_15px_40px_rgba(0,0,0,0.4)] active:scale-90 border border-white/10"
                     >
                         <UtensilsCrossed size={18} className="text-white fill-white/10" />
                         <span className="font-black text-[0.85rem] uppercase tracking-wider">Menu</span>

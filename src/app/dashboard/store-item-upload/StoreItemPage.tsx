@@ -279,13 +279,16 @@ export default function StoreItemPage() {
       const catName = String(row[mapping.category] || "").trim();
       const categoryId = catName ? (catMap[catName.toLowerCase()] || null) : null;
 
+      const rawPrice = mapping.price ? String(row[mapping.price] || "0") : "0";
+      const parsedPrice = parseFloat(rawPrice.replace(/[^\d.-]/g, '')) || 0;
+
       newItems.push({
         name,
-        description: String(row[mapping.description] || "").trim(),
-        price: Number(row[mapping.price] || 0),
+        description: mapping.description ? String(row[mapping.description] || "").trim() : "",
+        price: parsedPrice,
         categoryId,
         clerkId: userId ?? null,
-        imageUrl: String(row[mapping.imageUrl] || "").trim() || null,
+        imageUrl: mapping.imageUrl ? String(row[mapping.imageUrl] || "").trim() || null : null,
         isActive: true,
       });
 

@@ -69,6 +69,7 @@ export async function POST(req: Request) {
         unit: item.unit ?? null,
         barcode: item.barcode ?? null,
         imageUrl: item.imageUrl ?? null,
+        image: item.imageUrl ?? null,
         categoryId: item.categoryId ?? null,
         isActive: item.isActive ?? true,
       })),

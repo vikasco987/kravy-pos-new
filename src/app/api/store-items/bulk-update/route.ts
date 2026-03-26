@@ -213,6 +213,7 @@ export async function PUT(req: Request) {
         price:
           item.price != null ? Number(item.price) : null,
         imageUrl: item.imageUrl ?? null,
+        image: item.imageUrl ?? null,
         isActive: item.isActive ?? true,
 
         // 🔐 ROLE RULE
