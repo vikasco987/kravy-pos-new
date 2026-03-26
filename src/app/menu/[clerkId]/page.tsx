@@ -252,7 +252,6 @@ function PublicMenu() {
         return colors[Math.abs(hash) % colors.length];
     };
 
-    // Realistic Indian names for Guest reviews
     const getIndianName = (seed: string) => {
         const names = [
             "Rahul S.", "Priya P.", "Amit K.", "Neha S.", "Vikram G.",
@@ -265,32 +264,6 @@ function PublicMenu() {
             hash = seed.charCodeAt(i) + ((hash << 5) - hash);
         }
         return names[Math.abs(hash) % names.length];
-    };
-
-    const getCategoryIcon = (name: string) => {
-        const lower = name.toLowerCase();
-        if (lower.includes("pizza")) return "🍕";
-        if (lower.includes("burger") || lower.includes("sandwich")) return "🍔";
-        if (lower.includes("biryani") || lower.includes("rice")) return "🍛";
-        if (lower.includes("chicken") || lower.includes("non-veg")) return "🍗";
-        if (lower.includes("paneer") || lower.includes("veg")) return "🥬";
-        if (lower.includes("chinese") || lower.includes("noodle")) return "🍜";
-        if (lower.includes("momo") || lower.includes("dimsum")) return "🥟";
-        if (lower.includes("drink") || lower.includes("beverage")) return "🥤";
-        if (lower.includes("juice") || lower.includes("mocktail") || lower.includes("shake")) return "🥤";
-        if (lower.includes("coffee")) return "☕";
-        if (lower.includes("tea") || lower.includes("chai")) return "🍵";
-        if (lower.includes("dessert") || lower.includes("sweet") || lower.includes("cake") || lower.includes("pastry")) return "🍰";
-        if (lower.includes("ice cream")) return "🍦";
-        if (lower.includes("starter") || lower.includes("snack") || lower.includes("appetizer")) return "🍟";
-        if (lower.includes("soup")) return "🥣";
-        if (lower.includes("salad")) return "🥗";
-        if (lower.includes("south indian") || lower.includes("dosa") || lower.includes("idli")) return "🥞";
-        if (lower.includes("thali") || lower.includes("meal")) return "🍱";
-        if (lower.includes("bread") || lower.includes("roti") || lower.includes("naan")) return "🫓";
-        if (lower.includes("dal") || lower.includes("curry")) return "🥘";
-        if (lower.includes("pasta")) return "🍝";
-        return "🍽️";
     };
 
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -379,10 +352,40 @@ function PublicMenu() {
     }, [customerPhone, clerkId]);
 
     // Derived Values
-    const categories = useMemo(() => {
+    const categoriesInfo = useMemo(() => {
         const cats = Array.from(new Set(items.map(it => it.category?.name || "Other")));
-        return ["all", ...cats];
+        const mapping: Record<string, string> = { "all": "🔥" };
+        const usedIcons = new Set(["🔥"]);
+        const pool = ["🍕", "🍔", "🍟", "🌭", "🍿", "🧂", "🥓", "🥚", "🍳", "🥞", "🧇", "🍞", "🥐", "🥨", "🥯", "🥖", "🌮", "🌯", "🥙", "🧆", "🥘", "🍲", "🥣", "🥗", "🍱", "🍚", "🍛", "🍜", "🍝", "🍠", "🍢", "🍣", "🍤", "🍥", "🥮", "🥟", "🦪", "🧁", "🍰", "🎂", "🍮", "🍭", "🍬", "🍫", "🍩", "🍪", "🌰", "🥜", "🍯", "🥤", "🧋", "☕", "🍵", "🍼", "🍶", "🍺", "🍻", "🥂", "🍷", "🥃", "🍸", "🍹", "🧉", "🧊", "🍐", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🍆", "🥑", "🥦", "🥬", "🥒", "🫑", "🌽", "🥕", "🫒", "🧄", "🧅", "🍄"];
+        
+        cats.forEach(cat => {
+            const lower = cat.toLowerCase();
+            let icon = "";
+            if (lower.includes("pizza")) icon = "🍕";
+            else if (lower.includes("burger")) icon = "🍔";
+            else if (lower.includes("biryani") || lower.includes("rice")) icon = "🍛";
+            else if (lower.includes("chicken")) icon = "🍗";
+            else if (lower.includes("drink") || lower.includes("beverage")) icon = "🥤";
+            else if (lower.includes("tea")) icon = "🍵";
+            else if (lower.includes("coffee")) icon = "☕";
+            else if (lower.includes("chinese") || lower.includes("noodle")) icon = "🍜";
+            else if (lower.includes("ice cream")) icon = "🍦";
+            
+            if (!icon || usedIcons.has(icon)) {
+                let hash = 0;
+                for (let i = 0; i < cat.length; i++) { hash = cat.charCodeAt(i) + ((hash << 5) - hash); }
+                let idx = Math.abs(hash) % pool.length;
+                while (usedIcons.has(pool[idx])) { idx = (idx + 1) % pool.length; }
+                icon = pool[idx];
+            }
+            mapping[cat] = icon;
+            usedIcons.add(icon);
+        });
+        return { names: ["all", ...cats], mapping };
     }, [items]);
+
+    const categories = categoriesInfo.names;
+    const categoryIcons = categoriesInfo.mapping;
 
     const filteredItems = useMemo(() => {
         return items.filter(it => {
@@ -1130,7 +1133,7 @@ function PublicMenu() {
                                             }}
                                             className={`px-4 py-2.5 flex items-center gap-1.5 text-[0.84rem] font-[800] capitalize whitespace-nowrap border-b-[3px] transition-all ${activeCategory === c ? "text-[#E23744] border-[#E23744] bg-red-50/30" : "text-[#696969] border-transparent opacity-60"}`}
                                         >
-                                            <span className="text-base">{c === "all" ? "🔥" : getCategoryIcon(c)}</span>
+                                            <span className="text-base">{categoryIcons[c]}</span>
                                             {c === "all" ? "All" : c}
                                         </button>
                                     ))}
@@ -1147,7 +1150,7 @@ function PublicMenu() {
                                     <div key={categoryName} id={`cat-${categoryName}`} className="mb-6 pt-4">
                                       {/* Category Header */}
                                       <div className="px-4 flex items-center gap-2 mb-2">
-                                        <span className="text-[1.2rem]">{getCategoryIcon(categoryName)}</span>
+                                        <span className="text-[1.2rem]">{categoryIcons[categoryName]}</span>
                                         <h2 className="text-[1.12rem] font-[900] text-gray-900 tracking-tight">{categoryName}</h2>
                                       </div>
 
@@ -1693,7 +1696,7 @@ function PublicMenu() {
                                     >
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-xl shadow-sm group-hover:scale-110 transition-transform">
-                                                {getCategoryIcon(catName)}
+                                                {categoryIcons[catName]}
                                             </div>
                                             <span className="font-[Syne] font-[800] text-[1.1rem] text-gray-800 tracking-tight">{catName}</span>
                                         </div>
