@@ -35,7 +35,8 @@ import {
     Award,
     Sparkles,
     ChevronDown,
-    Check
+    Check,
+    UtensilsCrossed
 } from "lucide-react";
 import { saveOrderLocally } from "@/lib/orderStorage";
 import ActiveOrderBanner from "@/components/ActiveOrderBanner";
@@ -160,6 +161,8 @@ function PublicMenu() {
     const [activeCategory, setActiveCategory] = useState("all");
     const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
     const [showCartSheet, setShowCartSheet] = useState(false);
+    const [showReviewSheet, setShowReviewSheet] = useState(false);
+    const [showCategorySheet, setShowCategorySheet] = useState(false);
     const [loyaltyOn, setLoyaltyOn] = useState(false);
 
     // User Data
@@ -183,7 +186,6 @@ function PublicMenu() {
     const [variantCart, setVariantCart] = useState<any[]>([]);
 
     // Review State
-    const [showReviewSheet, setShowReviewSheet] = useState(false);
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewComment, setReviewComment] = useState("");
     const [reviewImageUrl, setReviewImageUrl] = useState("");
@@ -361,10 +363,19 @@ function PublicMenu() {
             const matchVeg = vegOnly ? it.isVeg : true;
             const matchSearch = (it.name.toLowerCase().includes(searchQ.toLowerCase())) ||
                 (it.hiName?.includes(searchQ));
-            const matchCat = activeCategory === "all" || (it.category?.name || "Other") === activeCategory;
-            return matchVeg && matchSearch && matchCat;
+            return matchVeg && matchSearch;
         });
-    }, [items, vegOnly, searchQ, activeCategory]);
+    }, [items, vegOnly, searchQ]);
+
+    const categorized = useMemo(() => {
+        const groups: Record<string, any[]> = {};
+        filteredItems.forEach(it => {
+            const catName = it.category?.name || "Other";
+            if (!groups[catName]) groups[catName] = [];
+            groups[catName].push(it);
+        });
+        return groups;
+    }, [filteredItems]);
 
     const cartCount = Object.values(cart).reduce((a, b) => a + b, 0) + combosCart.length + variantCart.reduce((a, b) => a + b.qty, 0);
     const itemSubtotal = Object.entries(cart).reduce((sum, [id, qty]) => {
@@ -782,41 +793,57 @@ function PublicMenu() {
     return (
         <div className="max-w-[480px] mx-auto bg-[#F4F4F4] min-h-screen relative font-sans text-[#1C1C1C]">
 
-            {/* ── TOP NAV ── */}
+            {/* ── TOP NAV (Fixed Layout) ── */}
             <nav className="sticky top-0 z-[100] bg-white shadow-sm">
-                <div className="flex items-center gap-3 px-3.5 py-3 border-b border-[#EBEBEB]">
-                    <button className="w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center">
-                        <ChevronLeft size={18} />
-                    </button>
-                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                        {profile?.logoUrl && (
-                            <div className="w-[34px] h-[34px] rounded-lg overflow-hidden border border-[#EBEBEB] shrink-0 bg-white">
-                                <img src={profile.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                <div className="pt-3 pb-2 px-4 border-b border-gray-50">
+                    <div className="flex items-center gap-3 mb-4">
+                        <button className="w-9 h-9 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm" onClick={() => window.history.back()}>
+                            <ChevronLeft size={20} strokeWidth={2.5} />
+                        </button>
+                        <div className="flex-1 bg-[#F5F5F5] rounded-2xl flex items-center gap-2 px-4 py-2.5 border border-transparent focus-within:border-gray-200 focus-within:bg-white transition-all shadow-inner">
+                            <Search size={18} className="text-[#E23744]" strokeWidth={3} />
+                            <input
+                                ref={searchInputRef}
+                                value={searchQ}
+                                onChange={(e) => setSearchQ(e.target.value)}
+                                placeholder={`Search in ${profile?.businessName || "Restaurant"}`}
+                                className="bg-transparent text-[0.92rem] w-full outline-none font-[600] text-gray-800 placeholder:text-gray-400"
+                            />
+                        </div>
+                        <button className="w-9 h-9 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm text-gray-400">
+                            <div className="flex flex-col gap-0.5 items-center">
+                              <div className="w-1 h-1 rounded-full bg-gray-400"/>
+                              <div className="w-1 h-1 rounded-full bg-gray-400"/>
+                              <div className="w-1 h-1 rounded-full bg-gray-400"/>
                             </div>
-                        )}
-                        <div className="flex-1 truncate">
-                            <div className="text-[0.95rem] font-[900] truncate">{profile?.businessName || "Masala House"}</div>
-                            <div className="text-[0.67rem] text-[#ABABAB] font-[600] uppercase tracking-wider truncate">North Indian · Table {tableName}</div>
+                        </button>
+                    </div>
+
+                    {/* Filter Chips */}
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                        <button 
+                          onClick={() => setVegOnly(!vegOnly)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[0.72rem] font-black transition-all whitespace-nowrap ${vegOnly ? 'bg-green-50 border-green-200 text-green-600 shadow-sm' : 'bg-white border-gray-200 text-gray-600'}`}
+                        >
+                            <div className="w-3.5 h-3.5 border border-gray-300 rounded-sm flex items-center justify-center bg-white">
+                              <div className={`w-1.5 h-1.5 rounded-full ${vegOnly ? 'bg-green-500' : 'bg-gray-300 opacity-0'}`} />
+                            </div>
+                            Filters <ChevronDown size={14} />
+                        </button>
+                        {offers.map(offer => (
+                          <div key={offer.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-100 bg-blue-50 text-blue-600 text-[0.72rem] font-black whitespace-nowrap shadow-sm">
+                            <div className="bg-blue-600 text-white rounded p-0.5 w-4 h-4 flex items-center justify-center"><Tag size={10} fill="currentColor" /></div>
+                            Items @ {offer.discountValue}% OFF
+                          </div>
+                        ))}
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-100 bg-gray-50 text-gray-500 text-[0.72rem] font-black whitespace-nowrap">
+                           Fast Delivery
                         </div>
                     </div>
-                    <div className="flex gap-1.5">
-                        <button className="w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center" onClick={() => { kravy.ping(); searchInputRef.current?.focus(); }}>
-                            <Search size={16} />
-                        </button>
-                        <button className="relative w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center" onClick={() => { kravy.toggle(); setActiveTab("loyalty"); }}>
-                            <Gift size={16} />
-                            <span className="absolute -top-1 -right-1 bg-[#3B82F6] text-white text-[0.5rem] font-[900] px-1 py-0.5 rounded-md border-2 border-white">{activeLang.toUpperCase()}</span>
-                        </button>
-                        <button className="relative w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center transition-all active:scale-90" onClick={() => { kravy.click(); setActiveTab("loyalty"); }}>
-                            <History size={16} className={recentOrderIds.length > 0 ? "text-[#E23744]" : ""} />
-                            {recentOrderIds.length > 0 && (
-                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#E23744] rounded-full border-2 border-white animate-pulse" />
-                            )}
-                        </button>
-                    </div>
                 </div>
+
                 {recentOrderIds.length > 0 && (
-                    <div className="flex bg-[#F0FDF4] px-3.5 py-2 overflow-x-auto no-scrollbar gap-2.5 border-b border-[#DCFCE7]">
+                    <div className="flex bg-[#F0FDF4] px-4 py-2 overflow-x-auto no-scrollbar gap-2.5 border-b border-[#DCFCE7]">
                         <span className="text-[0.65rem] font-[900] text-[#166534] uppercase tracking-wider shrink-0 flex items-center gap-1">
                             <Clock size={12} /> Active:
                         </span>
@@ -831,12 +858,13 @@ function PublicMenu() {
                         ))}
                     </div>
                 )}
-                <div className="flex border-b border-[#EBEBEB] overflow-x-auto scrollbar-none">
+                
+                <div className="flex border-b border-[#EBEBEB] overflow-x-auto no-scrollbar scrollbar-none px-2">
                     {(["menu", "reviews", "gallery", "loyalty"] as const).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => { kravy.click(); setActiveTab(tab); }}
-                            className={`flex-shrink-0 flex-1 py-2.5 text-[0.72rem] font-[800] capitalize transition-all border-b-[2.5px] min-w-[70px] ${activeTab === tab ? "text-[#E23744] border-[#E23744]" : "text-[#696969] border-transparent"}`}
+                            className={`flex-shrink-0 flex-1 py-3 text-[0.72rem] font-[800] capitalize transition-all border-b-[2.5px] min-w-[70px] ${activeTab === tab ? "text-[#E23744] border-[#E23744]" : "text-[#696969] border-transparent"}`}
                         >
                             {tab === "menu" ? "🍛 Menu" : tab === "reviews" ? "⭐ Reviews" : tab === "gallery" ? "📸 Gallery" : "🎁 Loyalty"}
                         </button>
@@ -1065,69 +1093,115 @@ function PublicMenu() {
                                     {categories.map(c => (
                                         <button
                                             key={c}
-                                            onClick={() => { kravy.click(); setActiveCategory(c); }}
+                                            onClick={() => { 
+                                                kravy.click(); 
+                                                const el = document.getElementById(`cat-${c}`);
+                                                if (el) {
+                                                    const offset = 140;
+                                                    window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
+                                                }
+                                                setActiveCategory(c); 
+                                            }}
                                             className={`px-4 py-3 text-[0.8rem] font-[700] capitalize whitespace-nowrap border-b-[2.5px] transition-all ${activeCategory === c ? "text-[#E23744] border-[#E23744]" : "text-[#696969] border-transparent"}`}
                                         >
-                                            {c}
+                                            {c === "all" ? "🔥 All" : c}
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-
-                            {/* MENU CONTENT LIST */}
+                            {/* MENU CONTENT LIST (Zomato Split Layout) */}
                             <div className="bg-white">
-                                {filteredItems.map(item => (
-                                    <div 
-                                        key={item.id} 
-                                        className="flex gap-2.5 p-3.5 border-b border-[#F7F7F7] last:border-0 items-start cursor-pointer active:bg-gray-50/50 transition-colors"
-                                        onClick={() => { kravy.open(); setSelectedMenuItem(item); }}
-                                    >
-                                        <div className="flex-1 min-w-0">
-                                            <div className={`w-4 h-4 border-[1.5px] rounded-sm flex items-center justify-center mb-1.5 ${item.isVeg ? "border-[#22C55E]" : "border-[#E23744]"}`}>
-                                                <div className={`w-2 h-2 rounded-full ${item.isVeg ? "bg-[#22C55E]" : "bg-[#E23744]"}`} />
-                                            </div>
-                                            <div className="flex gap-1 mb-1">
-                                                {item.isBestseller && <span className="bg-[#FFF2E2] text-[#CC5500] text-[0.58rem] font-[800] px-1.5 py-0.5 rounded uppercase">🏅 Bestseller</span>}
-                                                {item.isRecommended && <span className="bg-[#F0FDF4] text-[#22C55E] text-[0.58rem] font-[800] px-1.5 py-0.5 rounded uppercase">👍 Chef Pick</span>}
-                                            </div>
-                                            <div className="flex items-center gap-1.5 mb-1">
-                                                <span className="text-[0.9rem] font-[800] leading-tight">
+                                {categories.filter(c => c !== "all").map(categoryName => {
+                                  const categoryItems = filteredItems.filter(it => (it.category?.name || "Other") === categoryName);
+                                  if (categoryItems.length === 0) return null;
+                                  
+                                  return (
+                                    <div key={categoryName} id={`cat-${categoryName}`} className="mb-6 pt-4">
+                                      {/* Category Header */}
+                                      <div className="px-4 flex items-center justify-between mb-2">
+                                        <h2 className="text-[1.12rem] font-[900] text-gray-900 tracking-tight">{categoryName}</h2>
+                                        <ChevronDown size={20} className="text-gray-400" />
+                                      </div>
+
+                                      {categoryItems.map(item => (
+                                        <div 
+                                          key={item.id} 
+                                          className="flex gap-5 px-4 py-8 border-b border-gray-100 last:border-0 items-start group"
+                                          onClick={() => { kravy.open(); setSelectedMenuItem(item); }}
+                                        >
+                                          {/* Item Details (Left) */}
+                                          <div className="flex-1 min-w-0">
+                                              <div className={`w-[15px] h-[15px] border-[1.5px] rounded-sm flex items-center justify-center mb-1.5 ${item.isVeg ? "border-green-600" : "border-red-600"}`}>
+                                                  <div className={`w-[7px] h-[7px] rounded-full ${item.isVeg ? "bg-green-600" : "bg-red-600"}`} />
+                                              </div>
+                                              
+                                              <div className="mb-1">
+                                                <h3 className="text-[1.05rem] font-[800] text-gray-800 leading-tight mb-0.5">
                                                     {activeLang === "hi" && item.hiName ? item.hiName : item.name}
-                                                </span>
-                                                {item.rating && <span className="flex items-center gap-0.5 text-[0.62rem] font-[800] text-[#22C55E] bg-[#F0FDF4] px-1.5 py-0.5 rounded-md">★ {item.rating}</span>}
-                                            </div>
-                                            <p className="text-[0.73rem] text-[#696969] leading-relaxed line-clamp-2 mb-2">{item.description}</p>
-                                            <div className="text-[0.95rem] font-[900]">₹{item.sellingPrice || item.price}</div>
-                                        </div>
-                                        <div className="flex flex-col items-center flex-shrink-0" onClick={e => e.stopPropagation()}>
-                                            <div className="w-[108px] h-[92px] rounded-xl overflow-hidden relative border border-[#EBEBEB]">
-                                                {item.imageUrl || item.image ? (
-                                                    <Image src={(item.imageUrl || item.image) as string} alt={item.name} fill className="object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-[#FFF0F1] to-[#FFF8EC] flex items-center justify-center text-4xl">{item.ico || "🥘"}</div>
+                                                </h3>
+                                              </div>
+
+                                              <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-[1.05rem] font-[800] text-gray-900 leading-tight">₹{item.sellingPrice || item.price}</span>
+                                                {item.price && item.sellingPrice && item.sellingPrice < item.price && (
+                                                  <>
+                                                    <span className="text-[0.8rem] text-gray-400 line-through font-bold">₹{item.price}</span>
+                                                    <span className="text-[0.75rem] font-black text-blue-600">{Math.round(((item.price - item.sellingPrice) / item.price) * 100)}% OFF</span>
+                                                  </>
                                                 )}
-                                            </div>
-                                            <div className="mt-[-13px] relative z-10 w-full flex justify-center px-2">
-                                                {cart[item.id] ? (
-                                                    <div className="bg-[#E23744] text-white rounded-lg flex items-center justify-between w-full h-[32px] px-1 shadow-lg shadow-red-100">
-                                                        <button onClick={(e) => { e.stopPropagation(); updateQty(item.id, -1); }} className="w-7 h-full flex items-center justify-center text-lg font-bold">−</button>
-                                                        <span className="text-[0.88rem] font-black">{cart[item.id]}</span>
-                                                        <button onClick={(e) => { e.stopPropagation(); updateQty(item.id, 1); }} className="w-7 h-full flex items-center justify-center text-lg font-bold">+</button>
-                                                    </div>
-                                                ) : (
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); addToCart(item.id); }}
-                                                        className="bg-white border-[1.5px] border-[#E23744] text-[#E23744] rounded-lg px-4 py-1.5 text-[0.82rem] font-[900] shadow-md active:scale-95 transition-all w-full"
-                                                    >
-                                                        ADD
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <div className="text-[0.58rem] text-[#ABABAB] mt-1 font-[600]">customisable</div>
+                                              </div>
+
+                                              <p className="text-[0.82rem] text-gray-400 font-[500] leading-relaxed line-clamp-2 mb-4 pr-2">{item.description || "A delicious treat prepared with love and fresh ingredients."}</p>
+                                              
+                                              {/* Badges/Tags */}
+                                              <div className="flex flex-wrap gap-2 mb-4">
+                                                {item.isBestseller && <span className="bg-red-50 text-red-600 text-[0.6rem] font-[800] px-2 py-0.5 rounded shadow-sm">NOT ELIGIBLE FOR COUPONS</span>}
+                                                {item.isRecommended && <span className="bg-green-50 text-green-600 text-[0.6rem] font-[800] px-2 py-0.5 rounded shadow-sm">STAY SAFE</span>}
+                                              </div>
+
+                                              {/* Action Area Spacer */}
+                                              <div className="h-2" />
+                                          </div>
+
+                                          {/* Item Image & ADD Button (Right) */}
+                                          <div className="relative flex-shrink-0" onClick={e => e.stopPropagation()}>
+                                              <div className="w-[124px] h-[124px] rounded-2xl overflow-hidden relative shadow-md border border-gray-50">
+                                                  {item.imageUrl || item.image ? (
+                                                      <Image src={(item.imageUrl || item.image) as string} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                                                  ) : (
+                                                      <div className="w-full h-full bg-gradient-to-br from-[#FFF0F1] to-[#FFF8EC] flex items-center justify-center text-5xl">{item.ico || "🥘"}</div>
+                                                  )}
+                                              </div>
+                                              
+                                              {/* Floating Add Card */}
+                                              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-full px-2.5">
+                                                  <div className="bg-white rounded-xl shadow-xl shadow-red-100 border border-red-50 overflow-hidden">
+                                                    {cart[item.id] ? (
+                                                        <div className="text-red-500 flex items-center justify-between w-full h-[38px] px-1 font-black">
+                                                            <button onClick={(e) => { e.stopPropagation(); updateQty(item.id, -1); }} className="w-9 h-full flex items-center justify-center text-xl hover:bg-red-50 transition-colors">−</button>
+                                                            <span className="text-[0.95rem]">{cart[item.id]}</span>
+                                                            <button onClick={(e) => { e.stopPropagation(); updateQty(item.id, 1); }} className="w-9 h-full flex items-center justify-center text-xl hover:bg-red-50 transition-colors">+</button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); addToCart(item.id); }}
+                                                            className="text-[#E23744] rounded-xl py-2 text-[0.95rem] font-[800] tracking-wider transition-all w-full flex items-center justify-center gap-2 hover:bg-red-50"
+                                                        >
+                                                            ADD <Plus size={14} strokeWidth={3} />
+                                                        </button>
+                                                    )}
+                                                  </div>
+                                                  <div className="text-[0.55rem] text-center text-gray-400 mt-1 font-black uppercase tracking-widest">customisable</div>
+                                              </div>
+                                          </div>
                                         </div>
+                                      ))}
+                                      
+                                      <div className="h-1.5 bg-gray-50 mt-4" />
                                     </div>
-                                ))}
+                                  );
+                                })}
                             </div>
 
                         </motion.div>
@@ -1532,17 +1606,110 @@ function PublicMenu() {
 
                 </AnimatePresence>
             </main>
+            
+            {/* ── FLOATING CATEGORY BUTTON ── */}
+            <AnimatePresence>
+                {activeTab === "menu" && !showCartSheet && !showCategorySheet && (
+                    <motion.button
+                        initial={{ scale: 0.8, opacity: 0, x: 20 }}
+                        animate={{ 
+                            scale: 1, 
+                            opacity: 1, 
+                            x: 0,
+                            y: cartCount > 0 ? -95 : 0 
+                        }}
+                        exit={{ scale: 0.8, opacity: 0, x: 20 }}
+                        onClick={() => { kravy.open(); setShowCategorySheet(true); }}
+                        className="fixed bottom-24 right-6 z-[105] bg-[#2D2D32]/95 backdrop-blur-md text-white rounded-full px-5 py-3 flex items-center gap-2.5 shadow-[0_15px_40px_rgba(0,0,0,0.4)] active:scale-90 transition-all border border-white/10"
+                    >
+                        <UtensilsCrossed size={18} className="text-white fill-white/10" />
+                        <span className="font-black text-[0.85rem] uppercase tracking-wider">Menu</span>
+                    </motion.button>
+                )}
+            </AnimatePresence>
 
-            {/* ── STICKY CART BAR ── */}
-            <div className={`fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-[110] px-3.5 pt-2.5 pb-5 backdrop-blur-md bg-[#F4F4F4]/70 transition-transform duration-300 ${cartCount > 0 && !showCartSheet ? "translate-y-0" : "translate-y-full"}`}>
-                <div onClick={() => { kravy.open(); setShowCartSheet(true); }} className="bg-[#E23744] text-white rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-2xl active:scale-95 transition-all cursor-pointer">
-                    <div className="flex items-center gap-2.5 transition-all">
-                        <div className="bg-white/20 rounded-md px-2 py-1 text-[0.78rem] font-[900]">{cartCount} {cartCount === 1 ? "item" : "items"}</div>
-                        <span className="text-[0.88rem] font-[800] uppercase tracking-wide">View Cart</span>
+            {/* ── CATEGORY SELECTION SHEET ── */}
+            <AnimatePresence>
+                {showCategorySheet && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowCategorySheet(false)}
+                            className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[210]"
+                        />
+                        <motion.div
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white rounded-t-[2.5rem] z-[211] p-6 pb-12 shadow-2xl"
+                        >
+                            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
+                            <div className="flex items-center justify-between mb-8 px-2">
+                                <h3 className="text-xl font-black font-[Syne]">Browse Menu</h3>
+                                <button onClick={() => setShowCategorySheet(false)} className="w-9 h-9 bg-gray-50 rounded-full flex items-center justify-center text-gray-400">✕</button>
+                            </div>
+                            <div className="grid grid-cols-1 gap-2 max-h-[50vh] overflow-y-auto no-scrollbar px-1">
+                                {Object.keys(categorized).map((catName) => (
+                                    <button
+                                        key={catName}
+                                        onClick={() => {
+                                            setShowCategorySheet(false);
+                                            const el = document.getElementById(`cat-${catName}`);
+                                            if (el) {
+                                                const offset = 140;
+                                                window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
+                                            }
+                                        }}
+                                        className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-all group bg-white border border-transparent active:border-red-50"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-2 h-2 rounded-full bg-red-500 opacity-60 group-hover:scale-150 transition-transform" />
+                                            <span className="font-[Syne] font-[800] text-[1.1rem] text-gray-800 tracking-tight">{catName}</span>
+                                        </div>
+                                        <div className="bg-gray-50 px-3 py-1 rounded-lg text-gray-400 font-black text-xs">
+                                            {categorized[catName].length} items
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* ── STICKY CART BAR (Zomato Style) ── */}
+            <div className={`fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-[110] px-4 pt-2 pb-6 transition-transform duration-500 ease-in-out ${cartCount > 0 && !showCartSheet ? "translate-y-0" : "translate-y-full"}`}>
+                
+                {/* Coupon Hint */}
+                <div className="bg-[#E8F3FF] border border-blue-100 rounded-t-xl px-4 py-2 flex items-center gap-2 mb-[-5px] relative z-0">
+                  <div className="bg-blue-600 text-white rounded p-0.5"><Tag size={12} fill="currentColor"/></div>
+                  <span className="text-[0.72rem] font-black text-blue-700">You have unlocked 60% OFF up to ₹120</span>
+                </div>
+
+                <div onClick={() => { kravy.open(); setShowCartSheet(true); }} className="bg-[#E23744] text-white rounded-2xl px-4 py-3 flex items-center justify-between shadow-2xl active:scale-95 transition-all cursor-pointer relative z-10">
+                    <div className="flex items-center gap-3">
+                        <div className="flex -space-x-2">
+                           {/* Show thumb of first 2 items */}
+                           {Object.keys(cart).slice(0, 2).map((id, i) => {
+                             const it = items.find(x => x.id === id);
+                             return (
+                               <div key={id} className="w-10 h-10 rounded-lg border-2 border-white overflow-hidden bg-white">
+                                 <img src={it?.imageUrl || it?.image || ""} className="w-full h-full object-cover" />
+                               </div>
+                             )
+                           })}
+                        </div>
+                        <div>
+                          <div className="text-[0.95rem] font-black leading-none mb-0.5">{cartCount} items added</div>
+                          <div className="text-[0.65rem] font-bold text-white/70 uppercase tracking-wider">From {profile?.businessName}</div>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-[0.9rem] font-[900]">₹{total.toLocaleString("en-IN")}</span>
-                        <span className="text-xl">›</span>
+                    <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-xl border border-white/20">
+                        <span className="text-[0.92rem] font-black">View cart</span>
+                        <ChevronRight size={18} strokeWidth={3} />
                     </div>
                 </div>
             </div>
