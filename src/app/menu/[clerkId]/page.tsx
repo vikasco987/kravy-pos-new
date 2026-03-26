@@ -361,7 +361,7 @@ function PublicMenu() {
             const matchVeg = vegOnly ? it.isVeg : true;
             const matchSearch = (it.name.toLowerCase().includes(searchQ.toLowerCase())) ||
                 (it.hiName?.includes(searchQ));
-            const matchCat = activeCategory === "all" || it.category?.name === activeCategory;
+            const matchCat = activeCategory === "all" || (it.category?.name || "Other") === activeCategory;
             return matchVeg && matchSearch && matchCat;
         });
     }, [items, vegOnly, searchQ, activeCategory]);
