@@ -80,6 +80,7 @@ export default function KravyPOS() {
     const [payMethod, setPayMethod] = useState("upi");
     const [tableSearch, setTableSearch] = useState("");
     const [tableFilter, setTableFilter] = useState<"ALL" | "RUNNING" | "READY">("ALL");
+    const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
     const [clock, setClock] = useState("");
     const [dateStr, setDateStr] = useState("");
     const [business, setBusiness] = useState<any>(null);
@@ -211,24 +212,44 @@ export default function KravyPOS() {
 
     const updateOrderStatus = async (orderId: string, newStatus: string) => {
         try {
-            // ✅ Sound on Interaction (Immediate)
+            // ✅ Sound on Interaction
             kravy.click();
+            setUpdatingOrders(prev => new Set(prev).add(orderId));
 
             const res = await fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId, status: newStatus }) });
             if (res.ok) { 
-                if (newStatus === "PREPARING") kravy.orderAccept();
-                else if (newStatus === "READY") kravy.orderReady();
-                else kravy.success();
+                if (newStatus === "ACCEPTED") {
+                    kravy.orderAccept();
+                    toast.success("Order Accepted 🧑‍🍳");
+                } else if (newStatus === "PREPARING") {
+                    kravy.orderAccept();
+                    toast.success("Cooking Started 🔥");
+                } else if (newStatus === "READY") {
+                    kravy.orderReady();
+                    toast.success("Order Ready! 🛎️");
+                } else if (newStatus === "COMPLETED") {
+                    kravy.success();
+                    toast.success("Order Delivered! ✅");
+                } else {
+                    kravy.success();
+                }
 
                 if (newStatus === "COMPLETED") {
-                    // Automatically trigger checkout logic if not already done
                     await handleCheckout(orderId, true); 
                 } else {
                     fetchData(); 
-                    toast.success(`Order → ${newStatus}`);
                 }
             }
-        } catch { kravy.error(); toast.error("Update failed"); }
+        } catch { 
+            kravy.error(); 
+            toast.error("Update failed"); 
+        } finally {
+            setUpdatingOrders(prev => {
+                const next = new Set(prev);
+                next.delete(orderId);
+                return next;
+            });
+        }
     };
 
     const handleCheckout = async (targetOrderId: string, silent = false) => {
@@ -304,11 +325,11 @@ export default function KravyPOS() {
     };
 
     const statusConfig = {
-        FREE: { bg: "bg-slate-50", text: "text-slate-400", dot: "bg-slate-300", ring: "ring-slate-100", label: "Vacant" },
-        PENDING: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500", ring: "ring-rose-200", label: "Accepting" },
-        ACCEPTED: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500", ring: "ring-blue-200", label: "New Order" },
-        PREPARING: { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500", ring: "ring-indigo-200", label: "Kitchen" },
-        READY: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", ring: "ring-emerald-200", label: "Done" }
+        FREE: { bg: "bg-slate-50", text: "text-slate-400", dot: "bg-slate-300", ring: "ring-slate-100", label: "Vacant", btn: "bg-slate-900" },
+        PENDING: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500", ring: "ring-rose-200", label: "Reviewing", btn: "bg-rose-600 hover:bg-rose-700" },
+        ACCEPTED: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", ring: "ring-amber-200", label: "Accepted", btn: "bg-amber-600 hover:bg-amber-700" },
+        PREPARING: { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500", ring: "ring-indigo-200", label: "Preparing", btn: "bg-indigo-600 hover:bg-indigo-700" },
+        READY: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", ring: "ring-emerald-200", label: "Serve Now", btn: "bg-emerald-600 hover:bg-emerald-700" }
     };
 
     // Helper: Aggregate items for Chef
@@ -684,13 +705,31 @@ export default function KravyPOS() {
 
                                                     <div className="space-y-2">
                                                         <motion.button 
+                                                            whileHover={{ scale: 1.02 }}
                                                             whileTap={{ scale: 0.95 }}
-                                                            onClick={() => updateOrderStatus(order.id, order.status === "PENDING" ? "ACCEPTED" : order.status === "ACCEPTED" ? "PREPARING" : order.status === "PREPARING" ? "READY" : "COMPLETED")}
-                                                            className={`w-full h-10 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
-                                                                order.status === 'READY' ? 'bg-[#EF6C00] text-white' : 'bg-slate-900 text-white'
+                                                            disabled={updatingOrders.has(order.id)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const nextStatus = order.status === "PENDING" ? "ACCEPTED" : order.status === "ACCEPTED" ? "PREPARING" : order.status === "PREPARING" ? "READY" : "COMPLETED";
+                                                                updateOrderStatus(order.id, nextStatus);
+                                                            }}
+                                                            className={`w-full h-12 rounded-xl text-xs font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-2 shadow-lg ${
+                                                                updatingOrders.has(order.id) 
+                                                                    ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+                                                                    : (statusConfig[order.status as keyof typeof statusConfig]?.btn || "bg-slate-900") + " text-white"
                                                             }`}
                                                         >
-                                                            {order.status === 'PENDING' ? 'Accept' : order.status === 'ACCEPTED' ? 'Start' : order.status === 'PREPARING' ? 'Set Ready' : 'Handover'}
+                                                            {updatingOrders.has(order.id) ? (
+                                                                <RotateCcw className="animate-spin" size={16} />
+                                                            ) : (
+                                                                <>
+                                                                    {order.status === 'PENDING' && <><Check size={16} strokeWidth={3} /> Confirm Accept</>}
+                                                                    {order.status === 'ACCEPTED' && <><Flame size={16} /> Start Cooking</>}
+                                                                    {order.status === 'PREPARING' && <><Bell size={16} /> Mark as Ready</>}
+                                                                    {order.status === 'READY' && <><CheckCircle2 size={16} /> Order Handover</>}
+                                                                    {order.status === 'COMPLETED' && 'Done'}
+                                                                </>
+                                                            )}
                                                         </motion.button>
                                                         <div className="flex flex-col gap-2">
                                                             <button className="h-8 rounded border border-blue-600 text-[10px] font-bold text-blue-600 flex items-center justify-center gap-1.5 hover:bg-blue-50 transition-all uppercase">

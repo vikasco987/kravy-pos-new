@@ -343,19 +343,24 @@ export const kravy = {
     alertLoop() {
         play(c => {
             const t = c.currentTime;
-            // 🎶 Premium Triad Alert (Rich Arpeggio)
-            // Tone 1: Root (G5)
-            tone(c, 784, t,        0.2, 0.25, "sine");
-            tone(c, 784, t,        0.2, 0.1,  "triangle");
+            
+            // 🎶 Aggressive Zomato-Style Buzz Alert
+            // Using Sawtooth & Square for maximum intensity
+            
+            // Pulse 1
+            tone(c, 880,  t,        0.1,  0.5, "sawtooth"); 
+            tone(c, 440,  t,        0.1,  0.4, "square");
+            
+            // Pulse 2 (Shifted slightly)
+            tone(c, 1174, t + 0.12, 0.1,  0.5, "sawtooth");
+            tone(c, 587,  t + 0.12, 0.1,  0.4, "square");
 
-            // Tone 2: Mid (C5)
-            tone(c, 523, t + 0.1,  0.2, 0.2,  "sine");
+            // Pulse 3 (Climax)
+            tone(c, 1568, t + 0.24, 0.15, 0.5, "sawtooth");
+            tone(c, 784,  t + 0.24, 0.15, 0.3, "square");
             
-            // Tone 3: High (B5) - Creates a bright, urgent feel
-            tone(c, 987, t + 0.2,  0.3, 0.2,  "sine");
-            
-            // Subtle high-pitch "sparkle"
-            tone(c, 1568, t + 0.05, 0.05, 0.05, "sine");
+            // Piercing high "chirp" for attention
+            tone(c, 3136, t + 0.05, 0.08, 0.2, "sine");
         });
     },
 };
