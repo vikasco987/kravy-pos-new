@@ -15,17 +15,10 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch items with no image or placeholder image for this userId (clerkId)
+    // Fetch ALL items for this userId (clerkId) to allow full menu inspection
     const items = await prisma.item.findMany({
       where: {
         clerkId: userId,
-        OR: [
-          { imageUrl: null },
-          { imageUrl: "" },
-          { imageUrl: { startsWith: "https://picsum.photos" } },
-          { imageUrl: { startsWith: "https://source.unsplash.com" } },
-          { imageUrl: { startsWith: "https://loremflickr.com" } },
-        ],
       },
       select: {
         id: true,
