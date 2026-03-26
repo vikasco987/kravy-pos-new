@@ -164,6 +164,9 @@ function PublicMenu() {
     const [showReviewSheet, setShowReviewSheet] = useState(false);
     const [showCategorySheet, setShowCategorySheet] = useState(false);
     const [loyaltyOn, setLoyaltyOn] = useState(false);
+    const [orderNote, setOrderNote] = useState("");
+    const [showNoteSheet, setShowNoteSheet] = useState(false);
+    const [dontSendCutlery, setDontSendCutlery] = useState(false);
 
     // User Data
     const [customerPhone, setCustomerPhone] = useState("");
@@ -1818,69 +1821,125 @@ function PublicMenu() {
 
                                 {/* Variant Items List */}
                                 {variantCart.map((vit, vIdx) => (
-                                    <div key={vit.uniqueId} className="py-4 border-b border-[#F7F7F7] space-y-3">
-                                        <div className="flex items-start gap-2.5">
-                                            <div className={`mt-1 w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center ${vit.isVeg ? "border-[#22C55E]" : "border-[#E23744]"}`}>
-                                                <div className={`w-1.5 h-1.5 rounded-full ${vit.isVeg ? "bg-[#22C55E]" : "bg-[#E23744]"}`} />
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="font-[700] text-[0.84rem]">{vit.name}</div>
-                                                <div className="flex flex-wrap gap-1 mt-1">
-                                                    {vit.variants.map((v: any, idx: number) => (
-                                                        <span key={idx} className="text-[0.6rem] font-black text-indigo-500 uppercase italic bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
-                                                            {v.option}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center bg-[#E23744] text-white rounded-lg h-7 gap-3 px-1.5 shadow-sm">
-                                                <button onClick={() => {
-                                                    const newCart = [...variantCart];
-                                                    if (vit.qty > 1) { newCart[vIdx].qty -= 1; } 
-                                                    else { newCart.splice(vIdx, 1); }
-                                                    setVariantCart(newCart);
-                                                }} className="text-lg font-bold">−</button>
-                                                <span className="text-[0.8rem] font-black">{vit.qty}</span>
-                                                <button onClick={() => {
-                                                    const newCart = [...variantCart];
-                                                    newCart[vIdx].qty += 1;
-                                                    setVariantCart(newCart);
-                                                }} className="text-lg font-bold">+</button>
-                                            </div>
-                                            <div className="text-[0.84rem] font-[800] min-w-[50px] text-right">₹{vit.totalPrice * vit.qty}</div>
+                                    <div key={vit.uniqueId} className="flex items-center gap-3 py-4 border-b border-[#F7F7F7]">
+                                        <div className={`w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center shrink-0 ${vit.isVeg ? "border-[#22C55E]" : "border-[#E23744]"}`}>
+                                            <div className={`w-1.5 h-1.5 rounded-full ${vit.isVeg ? "bg-[#22C55E]" : "bg-[#E23744]"}`} />
                                         </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-[800] text-[0.92rem] text-gray-900 truncate">{vit.name}</div>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {vit.variants.map((v: any, idx: number) => (
+                                                    <span key={idx} className="text-[0.62rem] font-[800] text-gray-400 capitalize whitespace-nowrap">
+                                                        {v.option}{idx < vit.variants.length - 1 ? " · " : ""}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center bg-[#FFF2F3] border border-[#ffecf0] rounded-xl h-[34px] w-[100px] shadow-sm">
+                                            <button onClick={() => {
+                                                const newCart = [...variantCart];
+                                                if (vit.qty > 1) { newCart[vIdx].qty -= 1; } 
+                                                else { newCart.splice(vIdx, 1); }
+                                                setVariantCart(newCart);
+                                            }} className="flex-1 text-lg font-black text-[#E23744] hover:bg-white/50 transition-colors">−</button>
+                                            <span className="w-8 text-center text-[0.85rem] font-black text-gray-800">{vit.qty}</span>
+                                            <button onClick={() => {
+                                                const newCart = [...variantCart];
+                                                newCart[vIdx].qty += 1;
+                                                setVariantCart(newCart);
+                                            }} className="flex-1 text-lg font-black text-[#E23744] hover:bg-white/50 transition-colors">+</button>
+                                        </div>
+                                        <div className="text-[0.9rem] font-black min-w-[60px] text-right text-gray-900">₹{vit.totalPrice * vit.qty}</div>
                                     </div>
                                 ))}
 
-                                {/* Item List with Instructions */}
-                                {Object.entries(cart).map(([id, qty]) => {
-                                    const item = items.find(i => i.id === id);
-                                    if (!item) return null;
-                                    return (
-                                        <div key={id} className="py-4 border-b border-[#F7F7F7] space-y-3">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className={`w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center ${item.isVeg ? "border-[#22C55E]" : "border-[#E23744]"}`}>
+                                {/* Item List */}
+                                <div className="space-y-0">
+                                    {Object.entries(cart).map(([id, qty]) => {
+                                        const item = items.find(i => i.id === id);
+                                        if (!item) return null;
+                                        return (
+                                            <div key={id} className="flex items-center gap-3 py-4 border-b border-[#F7F7F7]">
+                                                <div className={`w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center shrink-0 ${item.isVeg ? "border-[#22C55E]" : "border-[#E23744]"}`}>
                                                     <div className={`w-1.5 h-1.5 rounded-full ${item.isVeg ? "bg-[#22C55E]" : "bg-[#E23744]"}`} />
                                                 </div>
-                                                <div className="flex-1 font-[700] text-[0.84rem]">{item.name}</div>
-                                                <div className="flex items-center bg-[#E23744] text-white rounded-lg h-7 gap-3 px-1.5 overflow-hidden">
-                                                    <button onClick={() => updateQty(id, -1)} className="text-lg font-bold">−</button>
-                                                    <span className="text-[0.8rem] font-black">{qty}</span>
-                                                    <button onClick={() => updateQty(id, 1)} className="text-lg font-bold">+</button>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-[800] text-[0.92rem] text-gray-900 truncate">{item.name}</div>
+                                                    <div className="text-[0.65rem] font-black text-gray-400 uppercase tracking-widest mt-0.5">₹{item.sellingPrice || item.price}</div>
                                                 </div>
-                                                <div className="text-[0.84rem] font-[800] min-w-[50px] text-right">₹{(item.sellingPrice || item.price || 0) * qty}</div>
+                                                <div className="flex items-center bg-[#FFF2F3] border border-[#ffecf0] rounded-xl h-[34px] w-[90px] shadow-sm">
+                                                    <button onClick={() => updateQty(id, -1)} className="flex-1 text-lg font-black text-[#E23744]">−</button>
+                                                    <span className="w-8 text-center text-[0.85rem] font-black text-gray-800">{qty}</span>
+                                                    <button onClick={() => updateQty(id, 1)} className="flex-1 text-lg font-black text-[#E23744]">+</button>
+                                                </div>
+                                                <div className="text-[0.9rem] font-black min-w-[60px] text-right text-gray-900">₹{(item.sellingPrice || item.price || 0) * qty}</div>
                                             </div>
-                                            <input
-                                                key={`instruction-${id}`}
-                                                value={instructions[id] || ""}
-                                                onChange={(e) => setInstructions(prev => ({ ...prev, [id]: e.target.value }))}
-                                                placeholder="Instructions? (e.g. No onion)"
-                                                autoComplete="off"
-                                                className="w-full bg-[#F4F4F4] border-none rounded-lg px-3 py-2 text-[0.72rem] font-[600] outline-none"
-                                            />
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Add More / Preferences */}
+                                <div className="mt-4 space-y-6">
+                                    <button 
+                                        onClick={() => { kravy.close(); setShowCartSheet(false); }}
+                                        className="flex items-center gap-2 text-[#E23744] font-black text-[0.92rem] hover:opacity-80 transition-opacity active:scale-95"
+                                    >
+                                        <div className="w-5 h-5 flex items-center justify-center border-2 border-[#E23744] rounded-md text-xs">+</div>
+                                        Add more items
+                                    </button>
+
+                                    <div className="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth">
+                                        <button 
+                                            onClick={() => { kravy.open(); setShowNoteSheet(true); }}
+                                            className={`flex h-[52px] items-center gap-2 px-4 rounded-xl border border-gray-100 transition-all active:scale-95 whitespace-nowrap shadow-sm group ${orderNote ? "bg-amber-50 border-amber-200" : "bg-white"}`}
+                                        >
+                                            <FileText size={18} className={orderNote ? "text-amber-500" : "text-gray-400"} />
+                                            <div className="flex flex-col items-start leading-none gap-0.5">
+                                                <span className="text-[0.8rem] font-[800] text-gray-800">{orderNote ? "Note for restaurant" : "Add a note for the restaurant"}</span>
+                                                {orderNote && <span className="text-[0.6rem] font-bold text-amber-600 truncate max-w-[120px]">{orderNote}</span>}
+                                            </div>
+                                        </button>
+                                        
+                                        <button 
+                                            onClick={() => { kravy.toggle(); setDontSendCutlery(!dontSendCutlery); }}
+                                            className={`flex h-[52px] items-center gap-2 px-4 rounded-xl border border-gray-100 transition-all active:scale-95 whitespace-nowrap shadow-sm ${dontSendCutlery ? "bg-indigo-50 border-indigo-200" : "bg-white"}`}
+                                        >
+                                            <Utensils size={18} className={dontSendCutlery ? "text-indigo-500" : "text-gray-400"} />
+                                            <span className="text-[0.8rem] font-[800] text-gray-800">Don't send cutlery</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Suggested Add-ons (Zomato Style) */}
+                                <div className="mt-10 mb-6 bg-gray-50/50 p-4 rounded-3xl">
+                                    <div className="text-[0.72rem] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <Star size={12} fill="currentColor" /> Popular additions
+                                    </div>
+                                    <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+                                        {items.filter(it => !cart[it.id] && it.isBestseller).slice(0, 6).map(it => (
+                                            <div key={it.id} className="min-w-[140px] bg-white rounded-2xl p-2.5 shadow-sm border border-gray-100">
+                                                <div className="relative h-24 w-full rounded-xl overflow-hidden mb-2 shadow-inner">
+                                                    <img src={it.imageUrl || it.image || ""} alt={it.name} className="w-full h-full object-cover" />
+                                                    <div className="absolute top-1 left-1">
+                                                        <div className={`w-3 h-3 border border-white rounded-sm flex items-center justify-center ${it.isVeg ? "bg-green-600" : "bg-red-600"}`}>
+                                                            <div className="w-[3px] h-[3px] rounded-full bg-white transition-transform" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-[0.75rem] font-black text-gray-800 truncate mb-1">{it.name}</div>
+                                                <div className="flex items-center justify-between gap-1 mt-2">
+                                                    <span className="text-[0.78rem] font-black text-gray-900">₹{it.sellingPrice || it.price}</span>
+                                                    <button 
+                                                        onClick={() => { kravy.click(); addToCart(it.id); }}
+                                                        className="px-3 py-1 bg-[#E23744] text-white rounded-lg text-[0.65rem] font-black uppercase tracking-widest active:scale-90 transition-transform shadow-md shadow-red-100"
+                                                    >
+                                                        Add
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
 
                                 {/* Loyalty Redeem */}
                                 <div className="bg-[#D4A353]/10 border border-[#D4A353]/25 rounded-xl m-4 p-3 flex items-center justify-between">
@@ -2572,6 +2631,48 @@ function PublicMenu() {
                                     Add item · ₹{(selectedMenuItem.sellingPrice || selectedMenuItem.price || 0) * (cart[selectedMenuItem.id] || 1)}
                                 </button>
                             </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ORDER NOTE BOTTOM SHEET */}
+            <AnimatePresence>
+                {showNoteSheet && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[320] bg-black/60 backdrop-blur-sm flex items-end justify-center"
+                        onClick={() => setShowNoteSheet(false)}
+                    >
+                        <motion.div
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "100%" }}
+                            transition={{ type: "spring", damping: 28, stiffness: 220 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full max-w-[480px] bg-white rounded-t-[3rem] px-6 pt-10 pb-12 flex flex-col shadow-2xl relative"
+                        >
+                            <div className="absolute top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-200 rounded-full" />
+                            
+                            <h3 className="text-2xl font-black text-gray-900 mb-2">Order Note</h3>
+                            <p className="text-sm font-bold text-gray-400 mb-6">Tell us about any specific instructions (e.g. No onion, extra spicy)</p>
+                            
+                            <textarea
+                                autoFocus
+                                value={orderNote}
+                                onChange={(e) => setOrderNote(e.target.value)}
+                                placeholder="Type your instruction here..."
+                                className="w-full h-32 bg-gray-50 border border-gray-100 rounded-2xl p-4 text-base font-bold text-gray-800 outline-none focus:border-red-400 transition-colors resize-none mb-8"
+                            />
+                            
+                            <button 
+                                onClick={() => { kravy.success(); setShowNoteSheet(false); }}
+                                className="w-full h-16 bg-[#E23744] text-white rounded-2xl font-black text-lg shadow-xl shadow-red-100 flex items-center justify-center active:scale-95 transition-transform"
+                            >
+                                Save Instruction
+                            </button>
                         </motion.div>
                     </motion.div>
                 )}
