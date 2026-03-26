@@ -267,6 +267,32 @@ function PublicMenu() {
         return names[Math.abs(hash) % names.length];
     };
 
+    const getCategoryIcon = (name: string) => {
+        const lower = name.toLowerCase();
+        if (lower.includes("pizza")) return "🍕";
+        if (lower.includes("burger") || lower.includes("sandwich")) return "🍔";
+        if (lower.includes("biryani") || lower.includes("rice")) return "🍛";
+        if (lower.includes("chicken") || lower.includes("non-veg")) return "🍗";
+        if (lower.includes("paneer") || lower.includes("veg")) return "🥬";
+        if (lower.includes("chinese") || lower.includes("noodle")) return "🍜";
+        if (lower.includes("momo") || lower.includes("dimsum")) return "🥟";
+        if (lower.includes("drink") || lower.includes("beverage")) return "🥤";
+        if (lower.includes("juice") || lower.includes("mocktail") || lower.includes("shake")) return "🥤";
+        if (lower.includes("coffee")) return "☕";
+        if (lower.includes("tea") || lower.includes("chai")) return "🍵";
+        if (lower.includes("dessert") || lower.includes("sweet") || lower.includes("cake") || lower.includes("pastry")) return "🍰";
+        if (lower.includes("ice cream")) return "🍦";
+        if (lower.includes("starter") || lower.includes("snack") || lower.includes("appetizer")) return "🍟";
+        if (lower.includes("soup")) return "🥣";
+        if (lower.includes("salad")) return "🥗";
+        if (lower.includes("south indian") || lower.includes("dosa") || lower.includes("idli")) return "🥞";
+        if (lower.includes("thali") || lower.includes("meal")) return "🍱";
+        if (lower.includes("bread") || lower.includes("roti") || lower.includes("naan")) return "🫓";
+        if (lower.includes("dal") || lower.includes("curry")) return "🥘";
+        if (lower.includes("pasta")) return "🍝";
+        return "🍽️";
+    };
+
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // Initialize recent orders from localStorage
@@ -1102,9 +1128,10 @@ function PublicMenu() {
                                                 }
                                                 setActiveCategory(c); 
                                             }}
-                                            className={`px-4 py-3 text-[0.8rem] font-[700] capitalize whitespace-nowrap border-b-[2.5px] transition-all ${activeCategory === c ? "text-[#E23744] border-[#E23744]" : "text-[#696969] border-transparent"}`}
+                                            className={`px-4 py-2.5 flex items-center gap-1.5 text-[0.84rem] font-[800] capitalize whitespace-nowrap border-b-[3px] transition-all ${activeCategory === c ? "text-[#E23744] border-[#E23744] bg-red-50/30" : "text-[#696969] border-transparent opacity-60"}`}
                                         >
-                                            {c === "all" ? "🔥 All" : c}
+                                            <span className="text-base">{c === "all" ? "🔥" : getCategoryIcon(c)}</span>
+                                            {c === "all" ? "All" : c}
                                         </button>
                                     ))}
                                 </div>
@@ -1119,9 +1146,9 @@ function PublicMenu() {
                                   return (
                                     <div key={categoryName} id={`cat-${categoryName}`} className="mb-6 pt-4">
                                       {/* Category Header */}
-                                      <div className="px-4 flex items-center justify-between mb-2">
+                                      <div className="px-4 flex items-center gap-2 mb-2">
+                                        <span className="text-[1.2rem]">{getCategoryIcon(categoryName)}</span>
                                         <h2 className="text-[1.12rem] font-[900] text-gray-900 tracking-tight">{categoryName}</h2>
-                                        <ChevronDown size={20} className="text-gray-400" />
                                       </div>
 
                                       {categoryItems.map(item => (
@@ -1665,7 +1692,9 @@ function PublicMenu() {
                                         className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-all group bg-white border border-transparent active:border-red-50"
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className="w-2 h-2 rounded-full bg-red-500 opacity-60 group-hover:scale-150 transition-transform" />
+                                            <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-xl shadow-sm group-hover:scale-110 transition-transform">
+                                                {getCategoryIcon(catName)}
+                                            </div>
                                             <span className="font-[Syne] font-[800] text-[1.1rem] text-gray-800 tracking-tight">{catName}</span>
                                         </div>
                                         <div className="bg-gray-50 px-3 py-1 rounded-lg text-gray-400 font-black text-xs">
