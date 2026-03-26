@@ -2417,28 +2417,31 @@ function PublicMenu() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+                        className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end justify-center"
                         onClick={() => setSelectedMenuItem(null)}
                     >
                         <motion.div
-                            initial={{ scale: 0.9, y: 50, opacity: 0 }}
-                            animate={{ scale: 1, y: 0, opacity: 1 }}
-                            exit={{ scale: 0.9, y: 50, opacity: 0 }}
-                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "100%" }}
+                            transition={{ type: "spring", damping: 28, stiffness: 200 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full max-w-[420px] bg-white rounded-[32px] overflow-hidden flex flex-col shadow-[0_40px_100px_rgba(0,0,0,0.5)] relative"
+                            className="w-full max-w-[480px] bg-white rounded-t-[3rem] overflow-hidden flex flex-col shadow-[0_-15px_60px_rgba(0,0,0,0.3)] relative"
                         >
-                            {/* Close Button Inside/Above */}
+                            {/* Drag Handle */}
+                            <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-200 rounded-full z-20" />
+
+                            {/* Close Button Inside */}
                             <button 
                                 onClick={() => setSelectedMenuItem(null)}
-                                className="absolute top-4 right-4 w-10 h-10 bg-black/20 hover:bg-black/40 backdrop-blur-xl rounded-full flex items-center justify-center text-white z-[210] transition-colors"
+                                className="absolute top-6 right-6 w-9 h-9 bg-gray-100/30 hover:bg-gray-200/50 backdrop-blur-md rounded-full flex items-center justify-center text-gray-800 z-[210] transition-colors"
                             >
-                                <X size={20} />
+                                <X size={18} strokeWidth={3} />
                             </button>
 
-                            <div className="overflow-y-auto max-h-[85vh] no-scrollbar">
+                            <div className="overflow-y-auto max-h-[85vh] no-scrollbar pt-6">
                                 {/* Large Image Area */}
-                                <div className="relative h-[280px] w-full overflow-hidden bg-gray-50">
+                                <div className="relative h-[280px] mx-4 rounded-2xl overflow-hidden bg-gray-100/50">
                                     {selectedMenuItem.imageUrl || selectedMenuItem.image ? (
                                         <Image 
                                             src={(selectedMenuItem.imageUrl || selectedMenuItem.image) as string} 
