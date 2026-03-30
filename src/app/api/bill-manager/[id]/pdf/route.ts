@@ -81,6 +81,30 @@ export async function GET(
       y -= size + 5;
     };
 
+    const multiLine = (text: string, size = 8, align: 'left' | 'center' | 'right' = 'center', isBold = false) => {
+      if (!text) return;
+      const currentFont = isBold ? fontBold : font;
+      const cleanText = text.replace(/[^\x00-\x7F]/g, ""); 
+      
+      const maxWidth = 210; 
+      const words = cleanText.split(" ");
+      let lines: string[] = [];
+      let currentLine = "";
+
+      words.forEach(word => {
+        const testLine = currentLine ? currentLine + " " + word : word;
+        if (currentFont.widthOfTextAtSize(testLine, size) <= maxWidth) {
+          currentLine = testLine;
+        } else {
+          lines.push(currentLine);
+          currentLine = word;
+        }
+      });
+      if (currentLine) lines.push(currentLine);
+
+      lines.forEach(l => line(l, size, align, isBold));
+    };
+
     const hr = () => {
       page.drawLine({
         start: { x: 15, y: y + 2 },
@@ -120,14 +144,35 @@ export async function GET(
     }
 
     /* ================= HEADER ================= */
-    line(business?.businessName || "KRAVY POS", 14, 'center', true);
+    y -= 10;
+    multiLine(business?.businessName?.toUpperCase() || "KRAVY POS", 14, 'center', true);
+    
     if (business?.businessTagLine) {
       line(business.businessTagLine, 8, 'center');
     }
+    
     y -= 5;
-    if (business?.businessAddress) line(business.businessAddress, 8, 'center');
-    if (business?.contactPersonPhone) line(`Ph: ${business.contactPersonPhone}`, 8, 'center');
-    if (business?.gstNumber) line(`GSTIN: ${business.gstNumber}`, 8, 'center');
+    if (business?.businessAddress) {
+      multiLine(business.businessAddress, 8, 'center');
+    }
+    
+    y -= 2;
+    if (business?.contactPersonPhone) {
+      const displayPhone = business.contactPersonPhone.includes("+91") 
+        ? business.contactPersonPhone 
+        : `+91 ${business.contactPersonPhone}`;
+      line(`Mob: ${displayPhone}`, 8, 'center', true);
+    }
+    
+    // GST & FSSAI
+    y -= 5;
+    const certs = [];
+    if (business?.gstNumber) certs.push(`GSTIN: ${business.gstNumber}`);
+    if (business?.fssaiEnabled && business?.fssaiNumber) certs.push(`FSSAI: ${business.fssaiNumber}`);
+    
+    if (certs.length > 0) {
+      certs.forEach(c => line(c, 8, 'center', true));
+    }
 
     hr();
 
@@ -186,11 +231,35 @@ export async function GET(
         }
       }
 
-      const displayName = name.length > 20 ? name.substring(0, 18) + ".." : name;
-      page.drawText(`${displayName} ${hsn}`, { x: 15, y, size: 7, font });
+      const displayName = `${name} ${hsn}`;
+      const maxWidthName = 110; 
+      const words = displayName.split(" ");
+      let currentLine = "";
+      let itemLines: string[] = [];
+
+      words.forEach(word => {
+          const testLine = currentLine ? currentLine + " " + word : word;
+          if (font.widthOfTextAtSize(testLine, 7) <= maxWidthName) {
+              currentLine = testLine;
+          } else {
+              itemLines.push(currentLine);
+              currentLine = word;
+          }
+      });
+      if (currentLine) itemLines.push(currentLine);
+
+      // First line includes Qty and Total
+      page.drawText(itemLines[0] || "", { x: 15, y, size: 7, font });
       page.drawText(`${qty}`, { x: 130, y, size: 8, font });
       page.drawText(`${gross.toFixed(2)}`, { x: 200, y, size: 8, font });
-      y -= 12;
+      y -= 10;
+
+      // Wrap-around lines for the name only
+      for (let k = 1; k < itemLines.length; k++) {
+          page.drawText(itemLines[k], { x: 15, y, size: 7, font });
+          y -= 10;
+      }
+      y -= 5;
     });
 
     hr();

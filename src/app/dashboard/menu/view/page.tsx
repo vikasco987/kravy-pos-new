@@ -398,7 +398,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Plus, Search, ChevronDown, Trash2, Pencil } from "lucide-react";
+import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw } from "lucide-react";
 
 /* types */
 type MenuItem = {
@@ -470,6 +470,7 @@ export default function ViewMenuPage() {
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [deletingCategory, setDeletingCategory] = useState<MenuCategory | null>(null);
+  const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [quickAddImage, setQuickAddImage] = useState<string | null>(null);
 
@@ -1106,7 +1107,8 @@ export default function ViewMenuPage() {
                         onChange={(e) => setLocal({ ...local, hsnCode: e.target.value })}
                       />
                     </div>
-                  </div>
+                    </div>
+                  )}
               </div>
             )}
 

@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
       sgst: (bill.tax || 0) / 2,
       grandTotal: bill.total,
       paymentMode: bill.paymentMode || "Cash",
+      fssai: (business?.fssaiEnabled && business?.fssaiNumber) ? business.fssaiNumber : undefined,
     };
 
     const result = await sendWhatsAppBill(billData);

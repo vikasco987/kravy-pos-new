@@ -33,6 +33,7 @@ interface BillData {
   sgst: number;
   grandTotal: number;
   paymentMode: string;
+  fssai?: string;
 }
 
 // ── Format bill as WhatsApp text message ──────────────────────────────────
@@ -55,9 +56,9 @@ function formatBillText(bill: BillData): string {
       : "";
 
   const message = `
-🍽️ *${bill.restaurantName}*
+🍽️ *${bill.restaurantName.toUpperCase()}*
 📍 ${bill.restaurantAddress}
-GSTIN: ${bill.gstin}
+${bill.gstin ? `GSTIN: ${bill.gstin}` : ""}${bill.fssai ? `\nFSSAI: ${bill.fssai}` : ""}
 ${dline}
 
 📄 *Bill No:* ${bill.invoiceNo}
