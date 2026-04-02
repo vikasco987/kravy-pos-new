@@ -89,6 +89,7 @@ export async function POST(request: Request) {
         loyaltyMinRedeem: body.loyaltyMinRedeem !== undefined ? body.loyaltyMinRedeem : undefined,
         aiScraperEnabled: body.aiScraperEnabled !== undefined ? body.aiScraperEnabled : undefined,
         excelImportEnabled: body.excelImportEnabled !== undefined ? body.excelImportEnabled : undefined,
+        qrMenuPriceInclusive: body.qrMenuPriceInclusive !== undefined ? body.qrMenuPriceInclusive : undefined,
       },
 
       create: {
@@ -128,6 +129,7 @@ export async function POST(request: Request) {
         loyaltyMinRedeem: body.loyaltyMinRedeem ?? 100,
         aiScraperEnabled: body.aiScraperEnabled ?? false,
         excelImportEnabled: body.excelImportEnabled ?? false,
+        qrMenuPriceInclusive: body.qrMenuPriceInclusive ?? false,
       },
     });
 

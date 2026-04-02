@@ -2090,10 +2090,14 @@ function PublicMenu() {
                                 {/* Summary */}
                                 <div className="px-4 py-3.5 border-t-8 border-[#F4F4F4] space-y-1.5">
                                     <div className="text-[0.78rem] font-[900] uppercase tracking-wider mb-2">Order Summary</div>
-                                    <div className="flex justify-between text-[0.8rem] text-[#696969] font-bold"><span>Subtotal</span><span>₹{subtotal}</span></div>
+                                    <div className="flex justify-between text-[0.8rem] text-[#696969] font-bold">
+                                        <span>Subtotal {isInclusive && <span className="text-[10px] text-[#ABABAB] font-normal tracking-normal lowercase">(incl. gst)</span>}</span>
+                                        <span>₹{subtotal}</span>
+                                    </div>
                                     {taxEnabled && tax > 0 && (
                                         <div className="flex justify-between text-[0.8rem] text-[#696969] font-bold">
-                                            <span>GST ({globalRate}%)</span><span>₹{tax}</span>
+                                            <span>{isInclusive ? "GST Content" : `GST (${globalRate}%)`}</span>
+                                            <span>{isInclusive ? "" : "+"}₹{tax.toFixed(0)}</span>
                                         </div>
                                     )}
                                     {loyaltyDisc > 0 && <div className="flex justify-between text-[0.8rem] text-[#D4A353] font-bold"><span>👑 Loyalty Discount</span><span>−₹{loyaltyDisc}</span></div>}
