@@ -616,7 +616,7 @@ export default function CheckoutClient() {
   const auditNote = hasAuditNotes ? "Some items used global default tax rate." : null;
 
   /* ================= PAYMENT STATE ================= */
-  const [paymentMode, setPaymentMode] = useState<"Cash" | "UPI" | "Card">("Cash");
+  const [paymentMode, setPaymentMode] = useState<"Cash" | "UPI" | "Card" | "Pay on Counter">("Cash");
   const [paymentStatus, setPaymentStatus] = useState<"Pending" | "Paid">("Paid");
   const [upiTxnRef, setUpiTxnRef] = useState("");
 
@@ -627,7 +627,7 @@ export default function CheckoutClient() {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}`;
 
   useEffect(() => {
-    if (paymentMode === "Cash" || paymentMode === "Card") setPaymentStatus("Paid");
+    if (paymentMode === "Cash" || paymentMode === "Card" || paymentMode === "Pay on Counter") setPaymentStatus("Paid");
   }, [paymentMode]);
 
   /* ================= DELETE CONFIRM MODAL ================= */
@@ -1420,18 +1420,18 @@ export default function CheckoutClient() {
               <p className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest shrink-0">
                 Payment
               </p>
-              <div className="flex-1 grid grid-cols-3 gap-1.5">
-                {(["Cash", "UPI", "Card"] as const).map((mode) => (
+              <div className="flex-1 grid grid-cols-4 gap-1">
+                {(["Cash", "UPI", "Card", "Pay on Counter"] as const).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
-                    className={`py-1.5 rounded-lg border font-black text-[10px] transition-all flex items-center justify-center gap-1 ${paymentMode === mode
+                    className={`py-1.5 rounded-lg border font-black text-[8px] transition-all flex flex-col items-center justify-center gap-0.5 ${paymentMode === mode
                       ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-sm"
                       : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)]"
                       }`}
                   >
-                    <span className="text-[11px]">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : "💳"}</span>
-                    {mode}
+                    <span className="text-[12px]">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : "🏪"}</span>
+                    <span className="truncate w-full px-0.5 text-center">{mode === "Pay on Counter" ? "Counter" : mode}</span>
                   </button>
                 ))}
               </div>

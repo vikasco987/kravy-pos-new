@@ -96,8 +96,8 @@ export async function POST(req: NextRequest) {
     }
 
     // ✅ HARD DEFAULTS (CRITICAL)
-    const finalPaymentMode: "Cash" | "UPI" | "Card" =
-      paymentMode === "UPI" || paymentMode === "Card"
+    const finalPaymentMode: "Cash" | "UPI" | "Card" | "Pay on Counter" =
+      paymentMode === "UPI" || paymentMode === "Card" || paymentMode === "Pay on Counter"
         ? paymentMode
         : "Cash";
 

@@ -571,3 +571,19 @@ model Backup {
   error     String?
   createdAt DateTime @default(now())
 }
+model Staff {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  phone        String   @unique
+  accessType   String   @default("Sales Access") // "Sales Access", "Full Access", "Custom Access"
+  permissions  String[] @default([])
+  businessId   String   
+  lastLogin    DateTime?
+  
+  status       String   @default("active") // "active", "inactive"
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([businessId])
+}

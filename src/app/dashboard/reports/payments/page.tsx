@@ -50,6 +50,7 @@ export default async function PaymentSplitReportPage({
   const cashTotal = bills.filter(b => b.paymentMode === "Cash").reduce((sum, b) => sum + b.total, 0);
   const upiTotal = bills.filter(b => b.paymentMode === "UPI").reduce((sum, b) => sum + b.total, 0);
   const cardTotal = bills.filter(b => b.paymentMode === "Card").reduce((sum, b) => sum + b.total, 0);
+  const counterTotal = bills.filter(b => b.paymentMode === "Pay on Counter").reduce((sum, b) => sum + b.total, 0);
 
   const format = (num: number) => new Intl.NumberFormat("en-IN").format(Math.round(num));
 
@@ -78,12 +79,13 @@ export default async function PaymentSplitReportPage({
       </div>
 
       {/* ── Summary Cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
         {[
           { label: selectedStatus === "Deleted" ? "Deleted Value" : "Total Revenue", value: `₹${format(totalRevenue)}`, icon: <Wallet size={20} />, color: selectedStatus === "Deleted" ? "#EF4444" : "var(--kravy-brand)" },
           { label: "Cash Income", value: `₹${format(cashTotal)}`, icon: <Banknote size={20} />, color: "#10B981" },
           { label: "UPI Payments", value: `₹${format(upiTotal)}`, icon: <CreditCard size={20} />, color: "#8B5CF6" },
           { label: "Card Sales", value: `₹${format(cardTotal)}`, icon: <CreditCard size={20} />, color: "#F59E0B" },
+          { label: "Counter Pay", value: `₹${format(counterTotal)}`, icon: <Wallet size={20} />, color: "#3B82F6" },
         ].map((s, i) => (
           <div key={i} style={{
             background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)",
@@ -108,8 +110,8 @@ export default async function PaymentSplitReportPage({
        {/* ── Main Filters Row ── */}
        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
           {/* Mode Tabs */}
-          <div style={{ display: "flex", gap: "10px" }}>
-            {["All", "Cash", "UPI", "Card"].map((m) => (
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            {["All", "Cash", "UPI", "Card", "Pay on Counter"].map((m) => (
               <Link
                 key={m}
                 href={`/dashboard/reports/payments?range=${range}&mode=${m}&status=${selectedStatus}`}

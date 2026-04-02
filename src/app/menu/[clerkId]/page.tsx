@@ -1748,7 +1748,7 @@ function PublicMenu() {
                              const it = items.find(x => x.id === id);
                              return (
                                <div key={id} className="w-10 h-10 rounded-lg border-2 border-white overflow-hidden bg-white">
-                                 <img src={it?.imageUrl || it?.image || ""} className="w-full h-full object-cover" />
+                                 <img src={it?.imageUrl || it?.image || "/no-image.png"} className="w-full h-full object-cover" />
                                </div>
                              )
                            })}
@@ -1923,7 +1923,7 @@ function PublicMenu() {
                                         {items.filter(it => !cart[it.id] && it.isBestseller).slice(0, 6).map(it => (
                                             <div key={it.id} className="min-w-[140px] bg-white rounded-2xl p-2.5 shadow-sm border border-gray-100">
                                                 <div className="relative h-24 w-full rounded-xl overflow-hidden mb-2 shadow-inner">
-                                                    <img src={it.imageUrl || it.image || ""} alt={it.name} className="w-full h-full object-cover" />
+                                                    <img src={it.imageUrl || it.image || "/no-image.png"} alt={it.name} className="w-full h-full object-cover" />
                                                     <div className="absolute top-1 left-1">
                                                         <div className={`w-3 h-3 border border-white rounded-sm flex items-center justify-center ${it.isVeg ? "bg-green-600" : "bg-red-600"}`}>
                                                             <div className="w-[3px] h-[3px] rounded-full bg-white transition-transform" />
@@ -2089,15 +2089,19 @@ function PublicMenu() {
                                 {/* Payment grid */}
                                 <div className="px-4 py-3.5 bg-white space-y-3">
                                     <div className="text-[0.78rem] font-[900] uppercase tracking-wider">Payment Method</div>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {["UPI / QR", "Cash", "Card"].map((opt) => (
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {["UPI / QR", "Cash", "Card", "Pay on Counter"].map((opt) => (
                                             <div 
                                                 key={opt} 
                                                 onClick={() => { kravy.click(); setPaymentMethod(opt); }} 
                                                 className={`border-[1.5px] rounded-xl p-2 text-center cursor-pointer transition-all ${paymentMethod === opt ? "border-[#E23744] bg-red-50" : "border-[#EBEBEB]"}`}
                                             >
-                                                <div className="text-xl mb-1">{opt === "UPI / QR" ? "📱" : opt === "Cash" ? "💵" : "💳"}</div>
-                                                <div className={`text-[0.62rem] font-[800] upper ${paymentMethod === opt ? "text-[#E23744]" : "text-[#696969]"}`}>{opt}</div>
+                                                <div className="text-xl mb-1">
+                                                    {opt === "UPI / QR" ? "📱" : opt === "Cash" ? "💵" : opt === "Card" ? "💳" : "🏪"}
+                                                </div>
+                                                <div className={`text-[0.55rem] font-[800] leading-tight ${paymentMethod === opt ? "text-[#E23744]" : "text-[#696969]"}`}>
+                                                    {opt}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>

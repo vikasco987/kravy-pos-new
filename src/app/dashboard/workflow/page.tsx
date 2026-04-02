@@ -1034,7 +1034,17 @@ export default function KravyPOS() {
                                                 </button>
                                                 <button
                                                     disabled={!activeOrderForSelected}
-                                                    onClick={() => { kravy.payment(); setActiveTab("payment"); }}
+                                                    onClick={() => { 
+                                                        kravy.payment(); 
+                                                        if (activeOrderForSelected && (activeOrderForSelected as any).paymentMode) {
+                                                            const m = (activeOrderForSelected as any).paymentMode.toLowerCase();
+                                                            if (m.includes("upi")) setPayMethod("upi");
+                                                            else if (m.includes("cash")) setPayMethod("cash");
+                                                            else if (m.includes("card")) setPayMethod("card");
+                                                            else if (m.includes("counter")) setPayMethod("pay on counter");
+                                                        }
+                                                        setActiveTab("payment"); 
+                                                    }}
                                                     className="flex-[2.5] h-14 rounded-2xl flex items-center justify-center gap-3 bg-slate-900 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-900/20 active:scale-95 transition-all hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     <CreditCard size={16} /> Proceed to Billing
@@ -1248,7 +1258,7 @@ export default function KravyPOS() {
                                                 { id: "upi", label: "UPI Scan", emoji: "📱", desc: "Digital Transfer", theme: "slate" },
                                                 { id: "cash", label: "Cash", emoji: "💵", desc: "Physical Paper", theme: "slate" },
                                                 { id: "card", label: "Card", emoji: "💳", desc: "Swipe / Dip", theme: "slate" },
-                                                { id: "split", label: "Split", emoji: "✂️", desc: "Hybrid Pay", theme: "slate" },
+                                                { id: "pay on counter", label: "Counter", emoji: "🏪", desc: "Pay at counter", theme: "slate" },
                                             ].map(m => (
                                                 <button
                                                     key={m.id}
