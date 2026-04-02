@@ -39,9 +39,9 @@ export async function POST(req: NextRequest) {
         const staff = await prisma.staff.create({
             data: {
                 name: name || "Staff Member",
+                phone,
                 email,
-                password, // NOTE: In prod, please hash this!
-                phone: phone || null,
+                password,
                 accessType: accessType || "Sales Access",
                 permissions: permissions || [],
                 businessId: businessId,
@@ -93,6 +93,45 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ 
             success: false, 
             message: "Internal Server Error: " + err.message 
+        }, { status: 500 });
+    }
+}
+// PUT: Update an existing staff member
+export async function PUT(req: NextRequest) {
+    try {
+        const body = await req.json();
+        const { id, name, phone, email, password, accessType, permissions } = body;
+
+        if (!id) {
+            return NextResponse.json({ 
+                success: false, 
+                message: "Staff ID is required for update" 
+            }, { status: 400 });
+        }
+
+        const updatedStaff = await prisma.staff.update({
+            where: { id: id },
+            data: {
+                name,
+                phone,
+                email,
+                password,
+                accessType,
+                permissions,
+            }
+        });
+
+        return NextResponse.json({ 
+            success: true, 
+            message: "Staff updated successfully!", 
+            data: updatedStaff 
+        }, { status: 200 });
+
+    } catch (err: any) {
+        console.error("STAFF_PUT_ERROR:", err);
+        return NextResponse.json({ 
+            success: false, 
+            message: "Update failed: " + err.message 
         }, { status: 500 });
     }
 }
