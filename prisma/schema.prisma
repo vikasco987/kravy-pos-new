@@ -574,7 +574,9 @@ model Backup {
 model Staff {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   name         String
-  phone        String   @unique
+  email        String   @unique
+  password     String?  // Optional if using OTP, but good for email login
+  phone        String?  
   accessType   String   @default("Sales Access") // "Sales Access", "Full Access", "Custom Access"
   permissions  String[] @default([])
   businessId   String   

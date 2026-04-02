@@ -14,11 +14,7 @@ export async function PUT(req: NextRequest, context: any) {
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
     const body = await req.json();
-    const { name, phone, address, dob } = body;
-
-    if (!name || !phone) {
-      return NextResponse.json({ error: "Name and phone are required" }, { status: 400 });
-    }
+    const { name, phone, address, dob, remarks, status } = body;
 
     const existing = await prisma.party.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -26,7 +22,14 @@ export async function PUT(req: NextRequest, context: any) {
 
     const updated = await prisma.party.update({
       where: { id },
-      data: { name, phone, address, dob: dob ? new Date(dob) : null },
+      data: { 
+        name: name || existing.name, 
+        phone: phone || existing.phone, 
+        address: address !== undefined ? address : existing.address, 
+        dob: dob ? new Date(dob) : existing.dob,
+        remarks: remarks !== undefined ? remarks : existing.remarks,
+        status: status || existing.status
+      },
     });
 
     return NextResponse.json(updated, { status: 200 });

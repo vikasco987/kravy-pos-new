@@ -6,13 +6,13 @@ import prisma from "@/lib/prisma";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { name, phone, accessType, permissions, businessId } = body;
+        const { name, email, password, accessType, permissions, businessId, phone } = body;
 
         // 1. Basic Validation
-        if (!phone || phone.length < 10) {
+        if (!email || !password) {
             return NextResponse.json({ 
                 success: false, 
-                message: "Valid 10-digit phone number is required" 
+                message: "Email and Password are required" 
             }, { status: 400 });
         }
 
@@ -25,13 +25,13 @@ export async function POST(req: NextRequest) {
 
         // 2. Duplicate Check
         const existing = await prisma.staff.findUnique({
-            where: { phone }
+            where: { email }
         });
 
         if (existing) {
             return NextResponse.json({ 
                 success: false, 
-                message: "This phone number is already registered" 
+                message: "This email is already registered" 
             }, { status: 409 });
         }
 
@@ -39,7 +39,9 @@ export async function POST(req: NextRequest) {
         const staff = await prisma.staff.create({
             data: {
                 name: name || "Staff Member",
-                phone,
+                email,
+                password, // NOTE: In prod, please hash this!
+                phone: phone || null,
                 accessType: accessType || "Sales Access",
                 permissions: permissions || [],
                 businessId: businessId,

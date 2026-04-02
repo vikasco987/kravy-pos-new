@@ -207,7 +207,7 @@ export async function POST(req: NextRequest) {
     if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { name, phone, address, dob } = body;
+    const { name, phone, address, dob, remarks, status } = body;
 
     if (!name || !phone) {
       return NextResponse.json({ error: "Name and phone are required" }, { status: 400 });
@@ -221,6 +221,8 @@ export async function POST(req: NextRequest) {
           phone: cleanPhone,
           address,
           dob: dob ? new Date(dob) : null,
+          remarks: remarks || null,
+          status: status || "ACTIVE",
           createdBy: effectiveId,
         },
       });
@@ -248,7 +250,7 @@ export async function PUT(req: NextRequest) {
     if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { id, name, phone, address, dob, loyaltyPoints } = body;
+    const { id, name, phone, address, dob, loyaltyPoints, remarks, status } = body;
 
     if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
 
@@ -266,6 +268,8 @@ export async function PUT(req: NextRequest) {
         address: address !== undefined ? address : existing.address,
         dob: dob ? new Date(dob) : existing.dob,
         loyaltyPoints: loyaltyPoints !== undefined ? loyaltyPoints : existing.loyaltyPoints,
+        remarks: remarks !== undefined ? remarks : existing.remarks,
+        status: status || existing.status,
       },
     });
 
