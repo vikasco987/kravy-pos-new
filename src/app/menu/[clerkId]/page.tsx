@@ -88,6 +88,7 @@ type BusinessProfile = {
     requireCustomerPhone?: boolean;
     collectCustomerAddress?: boolean;
     requireCustomerAddress?: boolean;
+    qrMenuPriceInclusive?: boolean;
 };
 
 type ComboSelection = {
@@ -433,32 +434,48 @@ function PublicMenu() {
     const variantSubtotal = variantCart.reduce((sum, vit) => sum + (vit.totalPrice * vit.qty), 0);
     const subtotal = itemSubtotal + comboSubtotal + variantSubtotal;
     // 🥇 PRIORITY LOGIC: Product GST > Default GST
-    const taxEnabled = profile?.taxEnabled ?? true;
-    const perProductEnabled = profile?.perProductTaxEnabled ?? false;
-    const globalRate = profile?.taxRate ?? 0;
+    const { taxEnabled, perProductEnabled, globalRate, isInclusive } = useMemo(() => ({
+        taxEnabled: profile?.taxEnabled ?? true,
+        perProductEnabled: profile?.perProductTaxEnabled ?? false,
+        globalRate: profile?.taxRate ?? 0,
+        isInclusive: profile?.qrMenuPriceInclusive ?? false
+    }), [profile]);
 
-    const itemTax = Object.entries(cart).reduce((sum, [id, qty]) => {
-        const item = items.find(i => i.id === id);
-        if (!item || !taxEnabled) return sum;
+    const itemTax = useMemo(() => {
+        return Object.entries(cart).reduce((sum, [id, qty]) => {
+            const item = items.find(i => i.id === id);
+            if (!item || !taxEnabled) return sum;
 
-        let rate = globalRate;
-        if (perProductEnabled && item.gst !== undefined && item.gst !== null && item.gst > 0) {
-            rate = item.gst;
-        }
+            let rate = globalRate;
+            if (perProductEnabled && item.gst !== undefined && item.gst !== null && item.gst > 0) {
+                rate = item.gst;
+            }
 
-        const price = (item.sellingPrice || item.price || 0);
-        return sum + Math.round((price * qty) * rate / 100);
-    }, 0);
+            const price = (item.sellingPrice || item.price || 0);
+            if (isInclusive) {
+                const lineTotal = price * qty;
+                return sum + (lineTotal * (1 - 1 / (1 + rate / 100)));
+            } else {
+                return sum + Math.round((price * qty) * rate / 100);
+            }
+        }, 0);
+    }, [cart, items, taxEnabled, globalRate, perProductEnabled, isInclusive]);
 
-    // Also handle combos (usually combos use global tax or are tax-inclusive, but here we fallback to global)
-    const comboTax = combosCart.reduce((sum, c) => {
-        if (!taxEnabled) return sum;
-        return sum + Math.round(c.price * globalRate / 100);
-    }, 0);
+    const comboTax = useMemo(() => {
+        return combosCart.reduce((sum, c) => {
+            if (!taxEnabled) return sum;
+            if (isInclusive) {
+                return sum + (c.price * (1 - 1 / (1 + globalRate / 100)));
+            }
+            return sum + Math.round(c.price * globalRate / 100);
+        }, 0);
+    }, [combosCart, taxEnabled, isInclusive, globalRate]);
 
     const tax = itemTax + comboTax;
     const loyaltyDisc = loyaltyOn ? 32 : 0;
-    const total = subtotal + tax - loyaltyDisc;
+    const total = useMemo(() => {
+        return isInclusive ? (subtotal - loyaltyDisc) : (subtotal + tax - loyaltyDisc);
+    }, [isInclusive, subtotal, loyaltyDisc, tax]);
 
     // Actions
     const addToCart = (id: string) => {

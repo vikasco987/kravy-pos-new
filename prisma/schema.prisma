@@ -375,7 +375,7 @@ model BusinessProfile {
   loyaltyPointRatio Float @default(10.0) // 1 point per X rupees
   loyaltyMinRedeem  Int   @default(100)  // Minimum points to unlock reward
 
-  // ✅ Advanced Feature Controls (Controllable by ADMIN)
+  qrMenuPriceInclusive Boolean @default(false)
   aiScraperEnabled   Boolean @default(false)
   excelImportEnabled Boolean @default(false)
 

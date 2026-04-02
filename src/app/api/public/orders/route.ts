@@ -35,13 +35,19 @@ export async function POST(req: NextRequest) {
             where: { userId: clerkUserId }
         });
 
+        const isInclusive = profile?.qrMenuPriceInclusive ?? false;
+        const enrichedRequestItems = items.map((i: any) => ({ 
+            ...i, 
+            taxStatus: isInclusive ? "With Tax" : "Without Tax" 
+        }));
+
         // Case 1: MERGE INTO EXISTING ORDER
         if (caseType === "merge" && parentOrderId) {
             const existing = await prisma.order.findUnique({ where: { id: parentOrderId } });
             if (!existing) return NextResponse.json({ error: "Parent order not found" }, { status: 404 });
 
             // Mark new items explicitly so kitchen can highlight them
-            const newItems = items.map((i: any) => ({ ...i, isNew: true, addedAt: new Date().toISOString() }));
+            const newItems = enrichedRequestItems.map((i: any) => ({ ...i, isNew: true, addedAt: new Date().toISOString() }));
 
             const currentItems = Array.isArray(existing.items) ? existing.items : [];
             const updatedItems = [...currentItems, ...newItems];
@@ -84,7 +90,7 @@ export async function POST(req: NextRequest) {
             data: {
                 clerkUserId,
                 tableId: realTableId,
-                items, // JSON array
+                items: enrichedRequestItems, // JSON array enriched with taxStatus
                 total: parseFloat(total),
                 customerName,
                 customerPhone,
