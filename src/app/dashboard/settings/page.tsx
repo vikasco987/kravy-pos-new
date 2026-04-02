@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   UserCircle, Activity, Users, BarChart3,
-  ChevronRight, Shield, Bell, Palette, HelpCircle, Database, Percent, Book, Award
+  ChevronRight, Shield, Bell, Palette, HelpCircle, Database, Percent, Book, Award, Zap
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
