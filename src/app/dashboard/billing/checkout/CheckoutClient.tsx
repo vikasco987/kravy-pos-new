@@ -762,10 +762,22 @@ export default function CheckoutClient() {
     printContainer.style.display = "none";
     printStyle.innerHTML += `
       @media print {
-        #print-receipt-container {
+        #print-receipt-container, #print-kot-container {
           display: block !important;
-          width: 58mm;
-          padding: 2mm;
+          width: 54mm !important; /* Slightly narrower to avoid cutting */
+          padding: 1mm !important;
+          color: #000 !important;
+          background: #fff !important;
+          font-family: 'Courier New', Courier, monospace !important;
+        }
+        * {
+          color: #000 !important;
+          border-color: #000 !important;
+          text-shadow: none !important;
+          box-shadow: none !important;
+        }
+        img {
+          filter: grayscale(100%) contrast(200%) !important;
         }
       }
     `;
@@ -1696,8 +1708,8 @@ export default function CheckoutClient() {
                 <div className="flex justify-between text-[9px]"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
               </>
             )}
-            <div className="border-t border-dashed my-1" />
-            <div className="flex justify-between font-bold text-[11px] bg-black text-white px-1 py-0.5">
+            <div className="border-t border-black border-dashed my-1" />
+            <div className="flex justify-between font-black text-[12px] border-y-2 border-black py-1 my-1">
               <span>GRAND TOTAL</span>
               <span>₹{finalTotal.toFixed(2)}</span>
             </div>
@@ -1761,9 +1773,9 @@ export default function CheckoutClient() {
               {(business?.upi && business?.upiQrEnabled !== false) && (
                 <>
                   <div>Scan & Pay</div>
-                  <div className="my-1.5 text-center">
-                    <div className="inline-block border border-[var(--kravy-border)] p-1 rounded-md bg-white">
-                      <img src={qrUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain block mix-blend-multiply" />
+                  <div className="my-2 text-center">
+                    <div className="inline-block border-2 border-black p-1 bg-white">
+                      <img src={qrUrl} alt="UPI QR" className="w-[32mm] h-[32mm] object-contain block" style={{ imageRendering: 'pixelated' }} />
                     </div>
                   </div>
                   <div className="mb-2">UPI: {business.upi}</div>
