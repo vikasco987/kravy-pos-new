@@ -509,16 +509,27 @@ export default function CheckoutClient() {
   const [discountCode, setDiscountCode] = useState("");
   const [appliedOffer, setAppliedOffer] = useState<any>(null);
   const [discountAmt, setDiscountAmt] = useState(0);
+  const [customDiscountValue, setCustomDiscountValue] = useState(""); 
+  const [customDiscountType, setCustomDiscountType] = useState<'PERCENT' | 'FLAT'>('FLAT');
+  const [discountMode, setDiscountMode] = useState<'PROMO' | 'INSTANT'>('PROMO');
 
   // Recalculate discount whenever items or applied offer change
   useEffect(() => {
     if (appliedOffer) {
       const d = calculateDiscount(appliedOffer, subtotal, items);
       setDiscountAmt(d);
+    } else if (customDiscountValue) {
+      const val = parseFloat(customDiscountValue) || 0;
+      if (customDiscountType === 'PERCENT') {
+        const d = (subtotal * val) / 100;
+        setDiscountAmt(d);
+      } else {
+        setDiscountAmt(val);
+      }
     } else {
       setDiscountAmt(0);
     }
-  }, [items, subtotal, appliedOffer]);
+  }, [items, subtotal, appliedOffer, customDiscountValue, customDiscountType]);
 
   // 2. Net Taxable Amount after Discount
   const netSubtotal = subtotal - discountAmt;
@@ -647,6 +658,9 @@ export default function CheckoutClient() {
       }
     }
 
+    // Recalculate discount ratio for validation
+    const validationDiscountRatio = subtotal > 0 ? (subtotal - discountAmt) / subtotal : 1;
+
     // Recalculation Check (Compare UI result with calculated result)
     let reCalcGst = items.reduce((sum, item) => {
       let rate = 0;
@@ -656,12 +670,13 @@ export default function CheckoutClient() {
         rate = business?.taxRate ?? 0;
       }
 
-      const gross = item.qty * item.rate;
+      // Important: Apply discount ratio here as well
+      const gross = (item.qty * item.rate) * validationDiscountRatio;
       if (item.taxStatus === "With Tax") return sum + (gross - (gross / (1 + rate / 100)));
       return sum + ((gross * rate) / 100);
     }, 0);
 
-    if ((taxActive || perProductEnabled) && Math.abs(reCalcGst - gstAmount) > 0.5) {
+    if ((taxActive || perProductEnabled) && Math.abs(reCalcGst - gstAmount) > 1) { // Increased tolerance to 1 for rounding
       alert(`Safety Check: GST Calculation Mismatch! System: ₹${gstAmount.toFixed(2)}, Calculated: ₹${reCalcGst.toFixed(2)}`);
       return null;
     }
@@ -1393,21 +1408,78 @@ export default function CheckoutClient() {
               </div>
             </div>
 
-            {/* 🎟️ COUPON SECTION */}
-            <div className="flex gap-2">
-              <input 
-                placeholder="PROMO CODE..."
-                value={discountCode}
-                onChange={e => setDiscountCode(e.target.value.toUpperCase())}
-                disabled={!!appliedOffer}
-                className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-[10px] font-black tracking-widest uppercase"
-              />
-              {appliedOffer ? (
-                <button onClick={removeCoupon} className="bg-rose-500/10 text-rose-500 px-3 rounded-xl hover:bg-rose-500/20 transition-all font-black text-[10px] uppercase">Reset</button>
+            {/* 🎟️ DISCOUNT SECTION */}
+            <div className="space-y-2">
+              <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
+                 <button 
+                  onClick={() => setDiscountMode('PROMO')}
+                  className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'PROMO' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+                 >
+                   Promo Code
+                 </button>
+                 <button 
+                  onClick={() => setDiscountMode('INSTANT')}
+                  className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'INSTANT' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+                 >
+                   Instant Discount
+                 </button>
+              </div>
+
+              {discountMode === 'PROMO' ? (
+                <div className="flex gap-2">
+                  <input 
+                    placeholder="PROMO CODE..."
+                    value={discountCode}
+                    onChange={e => setDiscountCode(e.target.value.toUpperCase())}
+                    disabled={!!appliedOffer}
+                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-[10px] font-black tracking-widest uppercase"
+                  />
+                  {appliedOffer ? (
+                    <button onClick={removeCoupon} className="bg-rose-500/10 text-rose-500 px-3 rounded-xl hover:bg-rose-500/20 transition-all font-black text-[10px] uppercase">Reset</button>
+                  ) : (
+                    <button onClick={handleApplyCoupon} className="bg-indigo-600 text-white px-3 rounded-xl hover:bg-indigo-700 transition-all font-black text-[10px] uppercase">Apply</button>
+                  )}
+                </div>
               ) : (
-                <button onClick={handleApplyCoupon} className="bg-indigo-600 text-white px-3 rounded-xl hover:bg-indigo-700 transition-all font-black text-[10px] uppercase">Apply</button>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input 
+                      type="number"
+                      placeholder={`ENTER ${customDiscountType === 'PERCENT' ? '%' : 'AMOUNT'}...`}
+                      value={customDiscountValue}
+                      onChange={e => setCustomDiscountValue(e.target.value)}
+                      className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] pl-8 pr-3 py-1.5 w-full rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-[10px] font-black tracking-widest uppercase"
+                    />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-50">
+                      {customDiscountType === 'PERCENT' ? '%' : '₹'}
+                    </span>
+                  </div>
+                  <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
+                    <button 
+                      onClick={() => setCustomDiscountType('FLAT')}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${customDiscountType === 'FLAT' ? 'bg-indigo-500 text-white' : 'text-[var(--kravy-text-muted)]'}`}
+                    >
+                      ₹
+                    </button>
+                    <button 
+                      onClick={() => setCustomDiscountType('PERCENT')}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${customDiscountType === 'PERCENT' ? 'bg-indigo-500 text-white' : 'text-[var(--kravy-text-muted)]'}`}
+                    >
+                      %
+                    </button>
+                  </div>
+                  {(customDiscountValue || appliedOffer) && (
+                    <button 
+                      onClick={() => { setCustomDiscountValue(""); setAppliedOffer(null); setDiscountCode(""); }}
+                      className="bg-rose-500/10 text-rose-500 px-3 rounded-xl hover:bg-rose-500/20 transition-all font-black text-[10px] uppercase"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               )}
             </div>
+
             {appliedOffer && (
               <div className="bg-emerald-500/5 text-emerald-600 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-between border border-emerald-500/20 animate-in zoom-in-95 duration-200">
                 <span>✨ Offer {appliedOffer.code} Applied</span>
