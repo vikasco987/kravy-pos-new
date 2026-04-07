@@ -377,6 +377,7 @@ model BusinessProfile {
   loyaltyMinRedeem  Int   @default(100)  // Minimum points to unlock reward
 
   qrMenuPriceInclusive Boolean @default(false)
+  enableKOTWithBill    Boolean @default(false)
   aiScraperEnabled   Boolean @default(false)
   excelImportEnabled Boolean @default(false)
 

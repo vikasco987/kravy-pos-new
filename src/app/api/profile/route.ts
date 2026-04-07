@@ -90,6 +90,7 @@ export async function POST(request: Request) {
         aiScraperEnabled: body.aiScraperEnabled !== undefined ? body.aiScraperEnabled : undefined,
         excelImportEnabled: body.excelImportEnabled !== undefined ? body.excelImportEnabled : undefined,
         qrMenuPriceInclusive: body.qrMenuPriceInclusive !== undefined ? body.qrMenuPriceInclusive : undefined,
+        enableKOTWithBill: body.enableKOTWithBill !== undefined ? body.enableKOTWithBill : undefined,
       },
 
       create: {
@@ -130,6 +131,7 @@ export async function POST(request: Request) {
         aiScraperEnabled: body.aiScraperEnabled ?? false,
         excelImportEnabled: body.excelImportEnabled ?? false,
         qrMenuPriceInclusive: body.qrMenuPriceInclusive ?? false,
+        enableKOTWithBill: body.enableKOTWithBill ?? false,
       },
     });
 

@@ -738,7 +738,7 @@ export default function CheckoutClient() {
   }
 
   /* ================= PRINT RECEIPT ================= */
-  function printReceipt() {
+  function printReceipt(forceBoth = false) {
     if (!receiptRef.current) { alert("Nothing to print"); return; }
     
     // Inject print-specific CSS
@@ -782,7 +782,13 @@ export default function CheckoutClient() {
       }
     `;
     printContainer.className = "font-mono text-[10px] leading-tight";
-    printContainer.innerHTML = receiptRef.current.innerHTML;
+    let html = receiptRef.current.innerHTML;
+    if ((forceBoth || business?.enableKOTWithBill) && kotRef.current) {
+      html += '<div style="margin: 30px 0; border-top: 2px dashed #000;"></div>';
+      html += kotRef.current.innerHTML;
+      setIsKotPrinted(true);
+    }
+    printContainer.innerHTML = html;
     
     document.body.appendChild(printContainer);
     
@@ -1613,7 +1619,7 @@ export default function CheckoutClient() {
                   if (!business) { alert("Business profile not loaded yet"); return; }
                   saveBill().catch(console.error);
                   kravy.payment(); 
-                  printReceipt();
+                  printReceipt(business?.enableKOTWithBill);
                   setItems([]); setCustomerName(""); setCustomerPhone(""); setCustomerAddress("");
                   setUpiTxnRef(""); setPaymentMode("Cash"); setPaymentStatus("Paid");
                   setIsKotPrinted(false);
@@ -2282,7 +2288,7 @@ export default function CheckoutClient() {
                   saveBill().catch(console.error);
 
                   kravy.payment(); 
-                  printReceipt();
+                  printReceipt(business?.enableKOTWithBill);
                   setShowPreview(false);
                   
                   // Reset form manually
@@ -2295,7 +2301,7 @@ export default function CheckoutClient() {
                 disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
                 className="flex-[2] py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Printer size={16} /> Print Direct
+                <Printer size={16} /> {business?.enableKOTWithBill ? "KOT & Bill" : "Print Direct"}
               </button>
             </div>
           </div>

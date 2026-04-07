@@ -32,6 +32,7 @@ export default function PricingSettingsPage() {
     const [taxEnabled, setTaxEnabled] = useState(true);
     const [perProductTaxEnabled, setPerProductTaxEnabled] = useState(false);
     const [qrMenuPriceInclusive, setQrMenuPriceInclusive] = useState(false);
+    const [enableKOTWithBill, setEnableKOTWithBill] = useState(false);
     const [taxRate, setTaxRate] = useState(5.0);
     const [businessProfile, setBusinessProfile] = useState<any>(null);
 
@@ -63,6 +64,7 @@ export default function PricingSettingsPage() {
                 setTaxEnabled(profileData?.taxEnabled ?? true);
                 setPerProductTaxEnabled(profileData?.perProductTaxEnabled ?? false);
                 setQrMenuPriceInclusive(profileData?.qrMenuPriceInclusive ?? false);
+                setEnableKOTWithBill(profileData?.enableKOTWithBill ?? false);
                 setTaxRate(profileData?.taxRate ?? 5.0);
                 setOffers(Array.isArray(offerData) ? offerData : []);
             } catch {
@@ -79,7 +81,14 @@ export default function PricingSettingsPage() {
     async function handleSaveTax() {
         setSaving(true);
         try {
-            const payload = { ...businessProfile, taxEnabled, perProductTaxEnabled, qrMenuPriceInclusive, taxRate: Number(taxRate) };
+            const payload = { 
+                ...businessProfile, 
+                taxEnabled, 
+                perProductTaxEnabled, 
+                qrMenuPriceInclusive, 
+                enableKOTWithBill,
+                taxRate: Number(taxRate) 
+            };
             const res = await fetch("/api/profile", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -259,6 +268,28 @@ export default function PricingSettingsPage() {
                         <button onClick={() => setQrMenuPriceInclusive(!qrMenuPriceInclusive)} className="shrink-0">
                             {qrMenuPriceInclusive
                                 ? <ToggleRight size={36} className="text-indigo-500" />
+                                : <ToggleLeft size={36} className="text-gray-300" />
+                            }
+                        </button>
+                    </div>
+                    {/* KOT with Bill Toggle Row */}
+                    <div className="flex items-center justify-between px-5 py-4 border-[var(--kravy-border)]">
+                        <div className="flex items-center gap-3.5">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${enableKOTWithBill ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                                <ReceiptText size={20} />
+                            </div>
+                            <div>
+                                <div className="font-black text-[0.9rem] text-[var(--kravy-text-primary)]">Auto-Print KOT with Bill</div>
+                                <div className="text-xs text-[var(--kravy-text-muted)] font-medium">
+                                    {enableKOTWithBill 
+                                        ? "KOT will print automatically when you print a bill" 
+                                        : "Print KOT and Bill separately"}
+                                </div>
+                            </div>
+                        </div>
+                        <button onClick={() => setEnableKOTWithBill(!enableKOTWithBill)} className="shrink-0">
+                            {enableKOTWithBill
+                                ? <ToggleRight size={36} className="text-emerald-500" />
                                 : <ToggleLeft size={36} className="text-gray-300" />
                             }
                         </button>

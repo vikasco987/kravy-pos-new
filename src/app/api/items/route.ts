@@ -315,7 +315,7 @@ export async function GET(req: Request) {
     const categoryId = url.searchParams.get("categoryId");
 
     const items = await prisma.item.findMany({
-      where: { 
+      where: {
         clerkId: effectiveId,
         ...(categoryId ? { categoryId } : {})
       },
