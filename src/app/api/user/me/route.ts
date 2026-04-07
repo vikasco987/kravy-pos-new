@@ -1,54 +1,36 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getAuthUser } from "@/lib/auth-utils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const authUser = await getAuthUser();
+    
+    if (!authUser) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-    });
+    // priority 1: Assigned Permissions from Auth object (JWT or Clerk-linked staff)
+    let finalAllowed: string[] = authUser.permissions || [];
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
-    }
-
-    const permission = await (prisma as any).rolePermission.findUnique({
-      where: { role: user.role }
-    });
-
-    // Priority 1: Per-user specific allowedPaths (Staff settings)
-    let finalAllowed: string[] = [];
-    if ((user as any).allowedPaths && (user as any).allowedPaths.length > 0) {
-      finalAllowed = (user as any).allowedPaths;
-    } 
-    // Priority 2: Role Based permissions from DB
-    else if (permission && permission.allowedPaths && permission.allowedPaths.length > 0) {
-      finalAllowed = permission.allowedPaths;
-    } 
-    // Priority 3: Hardcoded Fallbacks
-    else {
-      if (user.role === "ADMIN") finalAllowed = ["*"];
-      else if (user.role === "SELLER") finalAllowed = [
+    // priority 2: If it's an OWNER (ADMIN/SELLER/OWNER), give them full access
+    const isOwner = authUser.type === "OWNER" || authUser.type === "ADMIN" || authUser.type === "SELLER";
+    
+    if (isOwner) {
+      finalAllowed = [
         "/dashboard", 
         "/dashboard/billing/checkout", 
         "/dashboard/tables", 
         "/dashboard/billing", 
         "/dashboard/workflow",
         "/dashboard/menu/view", 
+        "/dashboard/menu-editor",
         "/dashboard/menu/upload", 
         "/dashboard/store-item-upload", 
         "/dashboard/menu/edit", 
@@ -62,37 +44,39 @@ export async function GET() {
         "/dashboard/settings", 
         "/dashboard/settings/tax",
         "/dashboard/billing/deleted",
-        "/dashboard/reports/sales/daily"
+        "/dashboard/reports/sales/daily",
+        "/dashboard/reports/gst",
+        "/dashboard/ai-scraper"
       ];
-      else finalAllowed = [
-        "/dashboard", 
-        "/dashboard/billing/checkout", 
-        "/dashboard/tables", 
-        "/dashboard/billing", 
-        "/dashboard/workflow",
-        "/dashboard/menu/view", 
-        "/dashboard/qr-orders",
-        "/dashboard/help"
-      ]; 
+    } 
+    // priority 3: Default fallback for staff if no permissions assigned
+    else {
+      if (finalAllowed.length === 0) {
+          finalAllowed = [
+            "/dashboard", 
+            "/dashboard/billing/checkout", 
+            "/dashboard/tables", 
+            "/dashboard/billing", 
+            "/dashboard/menu/view", 
+            "/dashboard/qr-orders",
+            "/dashboard/help"
+          ];
+      }
     }
 
-    const safeUser = {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        clerkId: user.clerkId,
-        ownerId: (user as any).ownerId,
-    };
-
-    // Always ensure /dashboard and /dashboard/help are available for UI shell stability
+    // Always ensure /dashboard and /dashboard/help are available
     const finalPaths = [...new Set(["/dashboard", "/dashboard/help", ...finalAllowed])];
 
     return NextResponse.json({ 
-        ...safeUser, 
+        id: authUser.id,
+        name: authUser.name,
+        email: authUser.email,
+        role: authUser.type, // Maintain original role for frontend
+        businessId: authUser.businessId,
         allowedPaths: finalPaths,
-        uiPreferences: (user as any).uiPreferences || {}
+        uiPreferences: {} // Default empty for now
     });
+
   } catch (error) {
     console.error("USER/ME ERROR:", error);
     return NextResponse.json(
@@ -104,20 +88,23 @@ export async function GET() {
 
 export async function PATCH(req: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const authUser = await getAuthUser();
+    if (!authUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const { uiPreferences } = body;
 
-    const user = await (prisma.user as any).update({
-      where: { clerkId: userId },
-      data: {
-        uiPreferences: uiPreferences ?? {}
-      }
-    });
+    // Only update if it's a Clerk user for now (Standard User model)
+    if (authUser.type === "OWNER") {
+        await (prisma.user as any).update({
+          where: { id: authUser.id },
+          data: {
+            uiPreferences: uiPreferences ?? {}
+          }
+        });
+    }
 
-    return NextResponse.json({ success: true, uiPreferences: (user as any).uiPreferences });
+    return NextResponse.json({ success: true, uiPreferences: uiPreferences || {} });
   } catch (error) {
     console.error("USER/ME PATCH ERROR:", error);
     return NextResponse.json({ error: "Failed to update preferences" }, { status: 500 });

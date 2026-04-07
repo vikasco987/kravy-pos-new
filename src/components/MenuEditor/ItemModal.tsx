@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { Plus, X, Tag, Sparkles, Layers, ArrowRight, Check, Trash2, Smartphone, ShieldCheck, Zap, Info, Upload, ChevronDown, Share2, HelpCircle, ChevronRight, ChevronLeft, Save, Redo2, Wand2, Ruler, Weight, ChefHat, Lightbulb, ArrowLeft, PlusCircle, LayoutGrid, Search, CheckCircle2, ImageIcon, Flame, PackageSearch } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
+import AddonGroupsModal from './AddonGroupsModal'
 
 export default function ItemModal({ item, addonGroups = [], onSave, onClose, categories = [] }: any) {
   const [mounted, setMounted] = useState(false)
@@ -26,6 +27,38 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
     gstType: item?.gstType || 'goods',
     taxRate: item?.taxRate || '5.0%',
   })
+
+  const [showAddonManager, setShowAddonManager] = useState(false)
+  const [localGroups, setLocalGroups] = useState(addonGroups)
+
+  useEffect(() => {
+    setLocalGroups(addonGroups)
+  }, [addonGroups])
+
+  async function handleQuickAddonSave(data: any) {
+    const res = await fetch(`/api/menu-editor/addon-groups`, {
+      method: data.id ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    if (res.ok) {
+      const saved = await res.json()
+      setLocalGroups((prev: any[]) => data.id ? prev.map((g: any) => g.id === data.id ? saved : g) : [saved, ...prev])
+      if (!data.id) {
+        toggleLink(saved.id)
+      }
+      setShowAddonManager(false)
+    }
+  }
+
+  async function handleQuickAddonDelete(id: string) {
+    if (!confirm("Are you sure?")) return
+    const res = await fetch(`/api/menu-editor/addon-groups?id=${id}`, { method: 'DELETE' })
+    if (res.ok) {
+       setLocalGroups((prev: any[]) => prev.filter((g: any) => g.id !== id))
+       update('addonGroupIds', form.addonGroupIds.filter((i: string) => i !== id))
+    }
+  }
 
   const [openSection, setOpenSection] = useState<string | null>('variants')
   
@@ -75,7 +108,7 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
 
   if (!mounted) return null
 
-  const filteredAddons = addonGroups.filter((g: any) => g.name.toLowerCase().includes(addonSearch.toLowerCase()))
+  const filteredAddons = localGroups.filter((g: any) => g.name.toLowerCase().includes(addonSearch.toLowerCase()))
 
   const content = (
     <div className="fixed inset-0 bg-[#f5f5f5] z-[999999999] flex overflow-hidden font-sans no-scrollbar text-[0.82rem]">
@@ -292,7 +325,7 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
                           </div>
                        ))}
                     </div>
-                    <div className="pt-2 flex justify-between items-center"><button className="text-blue-600 text-[0.7rem] font-black uppercase tracking-[0.2em] border-2 border-dashed border-blue-50 px-6 py-2.5 rounded-2xl hover:bg-blue-50">Create New Addon Group</button><span className="text-[0.6rem] text-gray-300 font-bold uppercase tracking-widest">{form.addonGroupIds.length} Linked</span></div>
+                    <div className="pt-2 flex justify-between items-center"><button onClick={() => setShowAddonManager(true)} className="text-blue-600 text-[0.7rem] font-black uppercase tracking-[0.2em] border-2 border-dashed border-blue-50 px-6 py-2.5 rounded-2xl hover:bg-blue-50 transition-all active:scale-95 hover:border-blue-200">+ Create fresh cluster cluster</button><span className="text-[0.6rem] text-gray-300 font-bold uppercase tracking-widest">{form.addonGroupIds.length} clusters linked</span></div>
                  </div>
               </AccordionItem>
 
@@ -315,6 +348,17 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
 
            <div className="h-40" />
         </div>
+
+        <AnimatePresence>
+           {showAddonManager && (
+             <AddonGroupsModal 
+               groups={localGroups}
+               onSave={handleQuickAddonSave}
+               onDelete={handleQuickAddonDelete}
+               onClose={() => setShowAddonManager(false)}
+             />
+           )}
+        </AnimatePresence>
       </div>
 
     </div>

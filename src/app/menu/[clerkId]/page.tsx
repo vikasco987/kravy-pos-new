@@ -58,6 +58,7 @@ type MenuItem = {
     categoryId?: string | null;
     category?: { id: string; name: string };
     isVeg: boolean;
+    isEgg: boolean;
     isBestseller: boolean;
     isRecommended: boolean;
     isNew: boolean;
@@ -71,7 +72,11 @@ type MenuItem = {
     taxStatus?: string;
     ico?: string;
     variants?: any[] | null;
+    addonGroups?: any[] | null;
 };
+
+/* hide placeholder for missing images */
+const ModernPlaceholder = (props: any) => null;
 
 type BusinessProfile = {
     businessName: string;
@@ -478,31 +483,40 @@ function PublicMenu() {
     }, [isInclusive, subtotal, loyaltyDisc, tax]);
 
     // Actions
+    // Auto-initialize selectedVariants when an item is selected for customization or detail view
+    useEffect(() => {
+        const item = customizingItem || selectedMenuItem;
+        if (!item) {
+            setSelectedVariants({});
+            return;
+        }
+
+        const initial: Record<string, any> = {};
+        
+        // Handle standard Variants
+        (item.variants as any[])?.forEach((v: any) => {
+            if (v.required && v.options?.length > 0) {
+                initial[v.id] = v.type === "radio" ? v.options[0] : [v.options[0]];
+            }
+        });
+
+        // Handle Addon Groups
+        (item.addonGroups as any[])?.forEach((ag: any) => {
+            if (ag.isCompulsory && ag.items?.length > 0) {
+                initial[`ag_${ag.id}`] = [ag.items[0]];
+            }
+        });
+
+        setSelectedVariants(initial);
+    }, [customizingItem?.id, selectedMenuItem?.id]);
+
     const addToCart = (id: string) => {
         const item = items.find(it => it.id === id);
         if (!item) return;
 
         // ✅ If item has variants OR addon groups, open selection sheet
-        if ((item.variants && (item.variants as any[]).length > 0) || ((item as any).addonGroups && ((item as any).addonGroups as any[]).length > 0)) {
+        if ((item.variants && (item.variants as any[]).length > 0) || (item.addonGroups && item.addonGroups.length > 0)) {
             setCustomizingItem(item);
-            const initial: Record<string, any> = {};
-            
-            // Item-specific variants
-            (item.variants as any[] || []).forEach((v: any) => {
-                if (v.type === "radio" && v.options?.length > 0) {
-                    initial[v.id] = v.options[0];
-                } else if (v.type === "checkbox") {
-                    initial[v.id] = [];
-                }
-            });
-
-            // Global Addon Groups
-            ((item as any).addonGroups as any[] || []).forEach((ag: any) => {
-                initial[`ag_${ag.id}`] = [];
-            });
-
-            setSelectedVariants(initial);
-            kravy.open();
             return;
         }
 
@@ -512,14 +526,15 @@ function PublicMenu() {
     };
 
     const addVariantItemToCart = () => {
-        if (!customizingItem) return;
+        const item = customizingItem || selectedMenuItem;
+        if (!item) return;
 
         let extra = 0;
         const selections: any[] = [];
         
         // Validation check for mandatory addon groups
         const missingMandatoryGroups: string[] = [];
-        ((customizingItem as any).addonGroups as any[] || []).forEach((ag: any) => {
+        ((item as any).addonGroups as any[] || []).forEach((ag: any) => {
             if (ag.isCompulsory) {
                 const selected = selectedVariants[`ag_${ag.id}`];
                 if (!selected || selected.length === 0) {
@@ -536,7 +551,7 @@ function PublicMenu() {
         Object.entries(selectedVariants).forEach(([groupId, val]) => {
             if (groupId.startsWith('ag_')) {
                const agId = groupId.replace('ag_', '');
-               const ag = ((customizingItem as any).addonGroups as any[])?.find(g => g.id === agId);
+               const ag = ((item as any).addonGroups as any[])?.find(g => g.id === agId);
                if (ag && Array.isArray(val)) {
                    val.forEach((opt: any) => {
                        extra += (opt.price || 0);
@@ -546,7 +561,7 @@ function PublicMenu() {
                return;
             }
 
-            const group = (customizingItem.variants as any[])?.find((g: any) => g.id === groupId);
+            const group = (item.variants as any[])?.find((g: any) => g.id === groupId);
             if (!group) return;
             if (group.type === "radio" && val) {
                 extra += (val.price || 0);
@@ -561,18 +576,19 @@ function PublicMenu() {
 
         const newCartItem = {
             uniqueId: Date.now().toString(),
-            id: customizingItem.id,
-            name: customizingItem.name,
-            totalPrice: (customizingItem.sellingPrice || customizingItem.price || 0) + extra,
+            id: item.id,
+            name: item.name,
+            totalPrice: (item.sellingPrice || item.price || 0) + extra,
             qty: 1,
             variants: selections,
-            isVeg: customizingItem.isVeg
+            isVeg: item.isVeg
         };
 
         setVariantCart(prev => [...prev, newCartItem]);
         setCustomizingItem(null);
+        setSelectedMenuItem(null);
         kravy.success();
-        toast.success("Added with customizations!");
+        toast.success("Added customized item!");
     };
 
     const updateQty = (id: string, delta: number) => {
@@ -1199,8 +1215,8 @@ function PublicMenu() {
                                         >
                                           {/* Item Details (Left) */}
                                           <div className="flex-1 min-w-0">
-                                              <div className={`w-[15px] h-[15px] border-[1.5px] rounded-sm flex items-center justify-center mb-1.5 ${item.isVeg ? "border-green-600" : "border-red-600"}`}>
-                                                  <div className={`w-[7px] h-[7px] rounded-full ${item.isVeg ? "bg-green-600" : "bg-red-600"}`} />
+                                              <div className={`w-[15px] h-[15px] border-[1.5px] rounded-sm flex items-center justify-center mb-1.5 ${item.isVeg ? "border-green-600" : item.isEgg ? "border-amber-500" : "border-red-600"}`}>
+                                                  <div className={`w-[7px] h-[7px] rounded-full ${item.isVeg ? "bg-green-600" : item.isEgg ? "bg-amber-500" : "bg-red-600"}`} />
                                               </div>
                                               
                                               <div className="mb-1">
@@ -1233,16 +1249,14 @@ function PublicMenu() {
 
                                           {/* Item Image & ADD Button (Right) */}
                                           <div className="relative flex-shrink-0" onClick={e => e.stopPropagation()}>
-                                              <div className="w-[124px] h-[124px] rounded-2xl overflow-hidden relative shadow-md border border-gray-50">
+                                               <div className={`${!(item.imageUrl || item.image) ? "hidden" : "w-[124px] h-[124px] rounded-2xl overflow-hidden relative shadow-md"} border border-gray-50`}>
                                                   {item.imageUrl || item.image ? (
                                                       <Image src={(item.imageUrl || item.image) as string} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
-                                                  ) : (
-                                                      <div className="w-full h-full bg-gradient-to-br from-[#FFF0F1] to-[#FFF8EC] flex items-center justify-center text-5xl">{item.ico || "🥘"}</div>
-                                                  )}
+                                                  ) : null}
                                               </div>
                                               
                                               {/* Floating Add Card */}
-                                              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-full px-2.5">
+                                               <div className={`${(item.imageUrl || item.image) ? "absolute -bottom-4 left-1/2 -translate-x-1/2 w-full px-2.5" : "w-full px-1 relative mt-2"}`}>
                                                   <div className="bg-white rounded-xl shadow-xl shadow-red-100 border border-red-50 overflow-hidden">
                                                     {cart[item.id] ? (
                                                         <div className="text-red-500 flex items-center justify-between w-full h-[38px] px-1 font-black">
@@ -1843,8 +1857,8 @@ function PublicMenu() {
                                 {/* Variant Items List */}
                                 {variantCart.map((vit, vIdx) => (
                                     <div key={vit.uniqueId} className="flex items-center gap-3 py-4 border-b border-[#F7F7F7]">
-                                        <div className={`w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center shrink-0 ${vit.isVeg ? "border-[#22C55E]" : "border-[#E23744]"}`}>
-                                            <div className={`w-1.5 h-1.5 rounded-full ${vit.isVeg ? "bg-[#22C55E]" : "bg-[#E23744]"}`} />
+                                        <div className={`w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center shrink-0 ${vit.isVeg ? "border-[#22C55E]" : vit.isEgg ? "border-[#F59E0B]" : "border-[#E23744]"}`}>
+                                            <div className={`w-1.5 h-1.5 rounded-full ${vit.isVeg ? "bg-[#22C55E]" : vit.isEgg ? "bg-[#F59E0B]" : "bg-[#E23744]"}`} />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="font-[800] text-[0.92rem] text-gray-900 truncate">{vit.name}</div>
@@ -1881,8 +1895,8 @@ function PublicMenu() {
                                         if (!item) return null;
                                         return (
                                             <div key={id} className="flex items-center gap-3 py-4 border-b border-[#F7F7F7]">
-                                                <div className={`w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center shrink-0 ${item.isVeg ? "border-[#22C55E]" : "border-[#E23744]"}`}>
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${item.isVeg ? "bg-[#22C55E]" : "bg-[#E23744]"}`} />
+                                                <div className={`w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center shrink-0 ${item.isVeg ? "border-[#22C55E]" : item.isEgg ? "border-[#F59E0B]" : "border-[#E23744]"}`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${item.isVeg ? "bg-[#22C55E]" : item.isEgg ? "bg-[#F59E0B]" : "bg-[#E23744]"}`} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="font-[800] text-[0.92rem] text-gray-900 truncate">{item.name}</div>
@@ -1939,14 +1953,16 @@ function PublicMenu() {
                                     <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
                                         {items.filter(it => !cart[it.id] && it.isBestseller).slice(0, 6).map(it => (
                                             <div key={it.id} className="min-w-[140px] bg-white rounded-2xl p-2.5 shadow-sm border border-gray-100">
-                                                <div className="relative h-24 w-full rounded-xl overflow-hidden mb-2 shadow-inner">
-                                                    <img src={it.imageUrl || it.image || "/no-image.png"} alt={it.name} className="w-full h-full object-cover" />
-                                                    <div className="absolute top-1 left-1">
-                                                        <div className={`w-3 h-3 border border-white rounded-sm flex items-center justify-center ${it.isVeg ? "bg-green-600" : "bg-red-600"}`}>
-                                                            <div className="w-[3px] h-[3px] rounded-full bg-white transition-transform" />
+                                                {(it.imageUrl || it.image) && (
+                                                    <div className="relative h-24 w-full rounded-xl overflow-hidden mb-2 shadow-inner">
+                                                        <img src={it.imageUrl || it.image || "/no-image.png"} alt={it.name} className="w-full h-full object-cover" />
+                                                        <div className="absolute top-1 left-1">
+                                                            <div className={`w-3 h-3 border border-white rounded-sm flex items-center justify-center ${it.isVeg ? "bg-green-600" : it.isEgg ? "bg-amber-500" : "bg-red-600"}`}>
+                                                                <div className="w-[3px] h-[3px] rounded-full bg-white transition-transform" />
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                )}
                                                 <div className="text-[0.75rem] font-black text-gray-800 truncate mb-1">{it.name}</div>
                                                 <div className="flex items-center justify-between gap-1 mt-2">
                                                     <span className="text-[0.78rem] font-black text-gray-900">₹{it.sellingPrice || it.price}</span>
@@ -2431,24 +2447,46 @@ function PublicMenu() {
                             onClick={(e) => e.stopPropagation()}
                             className="bg-white rounded-t-[2.5rem] w-full max-w-[480px] max-h-[90vh] overflow-hidden shadow-2xl relative flex flex-col"
                         >
-                            {/* Close Handle */}
-                            <div className="absolute top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-200 rounded-full z-20" />
-                            
-                            <div className="p-6 pt-10 overflow-y-auto no-scrollbar flex-1 pb-32">
-                                <div className="flex gap-4 items-start mb-8">
-                                    <div className="w-24 h-24 rounded-3xl overflow-hidden relative border border-gray-100 shadow-sm shrink-0">
-                                        {(customizingItem as any).imageUrl || (customizingItem as any).image ? (
-                                            <Image src={((customizingItem as any).imageUrl || (customizingItem as any).image) as string} alt={customizingItem.name} fill className="object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-4xl">{customizingItem.ico || "🥘"}</div>
-                                        )}
+                            <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
+                                {(customizingItem.imageUrl || customizingItem.image) && (
+                                    <div className={`relative h-[260px] overflow-hidden bg-gray-50 ${!((customizingItem as any).imageUrl || (customizingItem as any).image) ? "hidden" : ""}`}>
+                                        <Image 
+                                            src={((customizingItem as any).imageUrl || (customizingItem as any).image) as string} 
+                                            alt={customizingItem.name} 
+                                            fill 
+                                            className="object-cover" 
+                                            priority
+                                        />
+                                        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
+                                        <button 
+                                            onClick={() => setCustomizingItem(null)}
+                                            className="absolute top-6 right-6 w-10 h-10 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white z-[210] transition-all"
+                                        >
+                                            <X size={20} strokeWidth={3} />
+                                        </button>
                                     </div>
-                                    <div className="pt-1">
-                                        <h3 className="text-xl font-black text-gray-900 leading-tight mb-1.5">{customizingItem.name}</h3>
-                                        <p className="text-[0.72rem] text-gray-500 font-bold line-clamp-2 leading-relaxed mb-2 opacity-80">{customizingItem.description}</p>
-                                        <div className="text-[1.1rem] font-black text-[#E23744] italic">₹{customizingItem.sellingPrice || customizingItem.price}</div>
+                                )}
+                                
+                                {!((customizingItem as any).imageUrl || (customizingItem as any).image) && (
+                                     <button 
+                                        onClick={() => setCustomizingItem(null)}
+                                        className="absolute top-6 right-6 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-500 z-[210] transition-all"
+                                    >
+                                        <X size={20} strokeWidth={3} />
+                                    </button>
+                                )}
+
+                                <div className="p-6">
+                                    <div className="mb-8">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className={`w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center ${customizingItem.isVeg ? "border-green-600" : (customizingItem as any).isEgg ? "border-amber-500" : "border-red-600"}`}>
+                                                <div className={`w-1.5 h-1.5 rounded-full ${customizingItem.isVeg ? "bg-green-600" : (customizingItem as any).isEgg ? "bg-amber-500" : "bg-red-600"}`} />
+                                            </div>
+                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Curating Selections</span>
+                                        </div>
+                                        <h3 className="text-2xl font-black text-gray-900 leading-tight mb-2">{customizingItem.name}</h3>
+                                        <p className="text-[0.78rem] text-gray-500 font-bold leading-relaxed line-clamp-3 opacity-90">{customizingItem.description}</p>
                                     </div>
-                                </div>
 
                                 <div className="space-y-8">
                                     {(customizingItem.variants as any[])?.map((vGroup: any) => (
@@ -2555,6 +2593,7 @@ function PublicMenu() {
                                     ))}
                                 </div>
                             </div>
+                        </div>
 
                             {/* Footer Action */}
                             <div className="absolute bottom-0 left-0 right-0 p-6 bg-white/90 backdrop-blur-md border-t border-gray-100 z-30">
@@ -2612,9 +2651,8 @@ function PublicMenu() {
                             </button>
 
                             <div className="overflow-y-auto max-h-[85vh] no-scrollbar pt-6">
-                                {/* Large Image Area */}
-                                <div className="relative h-[280px] mx-4 rounded-2xl overflow-hidden bg-gray-100/50">
-                                    {selectedMenuItem.imageUrl || selectedMenuItem.image ? (
+                                {(selectedMenuItem.imageUrl || selectedMenuItem.image) && (
+                                    <div className={`relative h-[280px] mx-4 rounded-2xl overflow-hidden bg-gray-100/50 ${!(selectedMenuItem.imageUrl || selectedMenuItem.image) ? "hidden" : ""}`}>
                                         <Image 
                                             src={(selectedMenuItem.imageUrl || selectedMenuItem.image) as string} 
                                             alt={selectedMenuItem.name} 
@@ -2622,20 +2660,15 @@ function PublicMenu() {
                                             className="object-cover"
                                             priority
                                         />
-                                    ) : (
-                                        <div className="w-full h-full bg-gradient-to-br from-[#FFF0F1] to-[#FFF8EC] flex items-center justify-center text-6xl">
-                                            {selectedMenuItem.ico || "🥘"}
-                                        </div>
-                                    )}
-                                    {/* Bottom Image Fade */}
-                                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/20 to-transparent" />
-                                </div>
+                                        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/20 to-transparent" />
+                                    </div>
+                                )}
 
                                 {/* Content Details */}
                                 <div className="p-6">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <div className={`w-4 h-4 border-[1.5px] rounded-sm flex items-center justify-center ${selectedMenuItem.isVeg ? "border-green-600" : "border-red-600"}`}>
-                                            <div className={`w-1.5 h-1.5 rounded-full ${selectedMenuItem.isVeg ? "bg-green-600" : "bg-red-600"}`} />
+                                        <div className={`w-4 h-4 border-[1.5px] rounded-sm flex items-center justify-center ${selectedMenuItem.isVeg ? "border-green-600" : (selectedMenuItem as any).isEgg ? "border-amber-500" : "border-red-600"}`}>
+                                            <div className={`w-1.5 h-1.5 rounded-full ${selectedMenuItem.isVeg ? "bg-green-600" : (selectedMenuItem as any).isEgg ? "bg-amber-500" : "bg-red-600"}`} />
                                         </div>
                                         {selectedMenuItem.isBestseller && (
                                             <span className="text-[10px] font-black uppercase text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md flex items-center gap-1">
@@ -2669,35 +2702,145 @@ function PublicMenu() {
                                             </p>
                                         </div>
                                     )}
+
+                                    {/* Link Addon Groups Interactive Selection (Zomato Style) */}
+                                    {(selectedMenuItem.addonGroups || selectedMenuItem.variants) && (
+                                        <div className="mt-10 space-y-10 pb-20">
+                                            {/* Standard Variants */}
+                                            {(selectedMenuItem.variants as any[])?.map((vGroup: any) => (
+                                                <div key={vGroup.id} className="space-y-4">
+                                                    <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                                                        <h4 className="text-[0.7rem] font-black uppercase tracking-[0.2em] text-gray-500">{vGroup.name}</h4>
+                                                        {vGroup.required && <span className="text-[0.55rem] font-black text-white bg-red-500 px-2 py-0.5 rounded uppercase tracking-widest">Required</span>}
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        {vGroup.options.map((opt: any) => {
+                                                            const isSelected = vGroup.type === "radio" 
+                                                                ? selectedVariants[vGroup.id]?.id === opt.id
+                                                                : selectedVariants[vGroup.id]?.some((o: any) => o.id === opt.id);
+                                                            return (
+                                                                <div 
+                                                                    key={opt.id} 
+                                                                    onClick={() => {
+                                                                        kravy.click();
+                                                                        const updated = { ...selectedVariants };
+                                                                        if (vGroup.type === "radio") updated[vGroup.id] = opt;
+                                                                        else {
+                                                                            const arr = updated[vGroup.id] || [];
+                                                                            updated[vGroup.id] = isSelected ? arr.filter((o: any) => o.id !== opt.id) : [...arr, opt];
+                                                                        }
+                                                                        setSelectedVariants(updated);
+                                                                    }}
+                                                                    className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer ${isSelected ? "border-red-500 bg-red-50/20" : "border-gray-100 bg-white"}`}
+                                                                >
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"}`}>
+                                                                            {isSelected && <Check size={12} className="text-white" strokeWidth={4} />}
+                                                                        </div>
+                                                                        <span className={`text-[0.85rem] font-[800] ${isSelected ? "text-red-700" : "text-gray-700"}`}>{opt.name}</span>
+                                                                    </div>
+                                                                    {opt.price > 0 && <span className="text-[0.8rem] font-black text-gray-900">+₹{opt.price}</span>}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            {/* Addon Groups Mapping */}
+                                            {(selectedMenuItem.addonGroups as any[])?.map((ag: any) => (
+                                                <div key={ag.id} className="space-y-4">
+                                                    <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                                                        <h4 className="text-[0.7rem] font-black uppercase tracking-[0.2em] text-gray-500">{ag.name}</h4>
+                                                        {ag.isCompulsory && <span className="text-[0.55rem] font-black text-white bg-red-500 px-2 py-0.5 rounded uppercase tracking-widest">Mandatory</span>}
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        {(ag.items as any[]).map((opt: any) => {
+                                                            const isSelected = selectedVariants[`ag_${ag.id}`]?.some((o: any) => o.name === opt.name);
+                                                            return (
+                                                                <div 
+                                                                    key={opt.name} 
+                                                                    onClick={() => {
+                                                                        kravy.click();
+                                                                        const updated = { ...selectedVariants };
+                                                                        const arr = updated[`ag_${ag.id}`] || [];
+                                                                        if (isSelected) updated[`ag_${ag.id}`] = arr.filter((o: any) => o.name !== opt.name);
+                                                                        else {
+                                                                            if (ag.maxSelection && arr.length >= ag.maxSelection) return toast.error(`Max ${ag.maxSelection} selections allowed`);
+                                                                            updated[`ag_${ag.id}`] = [...arr, opt];
+                                                                        }
+                                                                        setSelectedVariants(updated);
+                                                                    }}
+                                                                    className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer ${isSelected ? "border-red-500 bg-red-50/20" : "border-gray-100 bg-white"}`}
+                                                                >
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"}`}>
+                                                                            {isSelected && <Check size={12} className="text-white" strokeWidth={4} />}
+                                                                        </div>
+                                                                        <span className={`text-[0.85rem] font-[800] ${isSelected ? "text-red-700" : "text-gray-700"}`}>{opt.name}</span>
+                                                                    </div>
+                                                                    {opt.price > 0 && <span className="text-[0.8rem] font-black text-gray-900">+₹{opt.price}</span>}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Sticky Action Footer */}
-                            <div className="p-5 bg-white border-t border-gray-100/50 flex items-center gap-3 shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
-                                <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-2xl h-[60px] px-2 min-w-[130px]">
-                                    <button 
-                                        onClick={() => updateQty(selectedMenuItem.id, -1)}
-                                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors text-2xl font-black active:scale-75"
+                            <div className="p-5 bg-white border-t border-gray-100/50 flex items-center gap-3 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] box-border">
+                                {(!selectedMenuItem.addonGroups || selectedMenuItem.addonGroups.length === 0) && (!selectedMenuItem.variants || (selectedMenuItem.variants as any[]).length === 0) ? (
+                                    <>
+                                        <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-2xl h-[60px] px-2 min-w-[130px]">
+                                            <button 
+                                                onClick={() => updateQty(selectedMenuItem.id, -1)}
+                                                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors text-2xl font-black active:scale-75"
+                                            >
+                                                −
+                                            </button>
+                                            <span className="text-xl font-black text-gray-800">{cart[selectedMenuItem.id] || 1}</span>
+                                            <button 
+                                                onClick={() => addToCart(selectedMenuItem.id)}
+                                                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-green-500 transition-colors text-2xl font-black active:scale-75"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                if (!cart[selectedMenuItem.id]) addToCart(selectedMenuItem.id);
+                                                setSelectedMenuItem(null);
+                                            }}
+                                            className="flex-1 bg-[#10854d] text-white rounded-2xl h-[60px] font-black text-[1.1rem] shadow-xl shadow-green-100/50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                                        >
+                                            Add item · ₹{(selectedMenuItem.sellingPrice || selectedMenuItem.price || 0) * (cart[selectedMenuItem.id] || 1)}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        onClick={addVariantItemToCart}
+                                        className="flex-1 bg-[#E23744] text-white rounded-2xl h-[60px] font-black text-[1.1rem] shadow-xl shadow-red-100 flex items-center justify-between px-6 active:scale-[0.98] transition-all"
                                     >
-                                        −
+                                        <div className="flex items-center gap-2 uppercase tracking-widest text-[0.85rem] font-black group">
+                                            <span>Add to cart</span>
+                                            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                        </div>
+                                        <span className="font-mono text-lg">₹{
+                                            ((selectedMenuItem.sellingPrice || selectedMenuItem.price || 0) + 
+                                            Object.entries(selectedVariants).reduce((acc, [gid, val]) => {
+                                                if (gid.startsWith('ag_')) return acc + ((val as any[])?.reduce?.((s, o) => s + (o.price || 0), 0) || 0);
+                                                const group = (selectedMenuItem.variants as any[])?.find((g: any) => g.id === gid);
+                                                if (group?.type === "radio") return acc + (val?.price || 0);
+                                                if (group?.type === "checkbox") return acc + (val?.reduce?.((s: number, o: any) => s + (o.price || 0), 0) || 0);
+                                                return acc;
+                                            }, 0)).toFixed(0)
+                                        }</span>
                                     </button>
-                                    <span className="text-xl font-black text-gray-800">{cart[selectedMenuItem.id] || 1}</span>
-                                    <button 
-                                        onClick={() => addToCart(selectedMenuItem.id)}
-                                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-green-500 transition-colors text-2xl font-black active:scale-75"
-                                    >
-                                        +
-                                    </button>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        if (!cart[selectedMenuItem.id]) addToCart(selectedMenuItem.id);
-                                        setSelectedMenuItem(null);
-                                    }}
-                                    className="flex-1 bg-[#10854d] text-white rounded-2xl h-[60px] font-black text-[1.1rem] shadow-xl shadow-green-100/50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
-                                >
-                                    Add item · ₹{(selectedMenuItem.sellingPrice || selectedMenuItem.price || 0) * (cart[selectedMenuItem.id] || 1)}
-                                </button>
+                                )}
                             </div>
                         </motion.div>
                     </motion.div>

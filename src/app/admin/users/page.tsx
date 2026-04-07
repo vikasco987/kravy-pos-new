@@ -36,10 +36,14 @@ export default function AdminUsersPage() {
   const [actionUserId, setActionUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  // Invite state
+  // Invite/Add state
+  const [activeTab, setActiveTab] = useState<"invite" | "add">("add");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [newRole, setNewRole] = useState<Role>("USER");
   const [inviting, setInviting] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -81,6 +85,35 @@ export default function AdminUsersPage() {
       toast.error("Network error");
     } finally {
       setInviting(false);
+    }
+  };
+
+  const directAddUser = async () => {
+    if (!email || !name || !password) {
+      toast.error("Name, Email and Password are required");
+      return;
+    }
+    setAdding(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role: newRole }),
+      });
+      if (res.ok) {
+        toast.success("User added successfully");
+        setName("");
+        setEmail("");
+        setPassword("");
+        fetchUsers();
+      } else {
+        const data = await res.json();
+        toast.error(data?.error || "Creation failed");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -150,7 +183,8 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8 lg:p-12">
+    <>
+      <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8 lg:p-12">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* TOP HEADER */}
@@ -179,22 +213,57 @@ export default function AdminUsersPage() {
           {/* LEFT: INVITE & STATS */}
           <div className="lg:col-span-4 space-y-8">
             
-            {/* INVITE BOX */}
+            {/* TOGGLE & FORM BOX */}
             <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-xl shadow-slate-200/50 space-y-6 relative overflow-hidden">
                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -translate-y-1/2 translate-x-1/2 -z-0 opacity-50" />
                
                <div className="relative z-10 space-y-6">
-                 <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
-                     <UserPlus size={24} />
-                   </div>
-                   <div>
-                     <h2 className="text-xl font-black text-slate-900 leading-none">Invite User</h2>
-                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Add new staff member</p>
+                 <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-4">
+                     <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+                       {activeTab === "invite" ? <UserPlus size={24} /> : <Users size={24} />}
+                     </div>
+                     <div>
+                       <h2 className="text-xl font-black text-slate-900 leading-none">
+                         {activeTab === "invite" ? "Invite User" : "Add Direct User"}
+                       </h2>
+                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                         {activeTab === "invite" ? "Invite via email link" : "Create account manually"}
+                       </p>
+                     </div>
                    </div>
                  </div>
 
-                 <div className="space-y-4 pt-4">
+                 {/* TAB SWITCHER */}
+                 <div className="flex p-1 bg-slate-100 rounded-xl">
+                    <button 
+                      onClick={() => setActiveTab("invite")}
+                      className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === "invite" ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      Invite
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab("add")}
+                      className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === "add" ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      Direct Add
+                    </button>
+                 </div>
+
+                 <div className="space-y-4 pt-2">
+                    {activeTab === "add" && (
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. John Doe"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                          />
+                       </div>
+                    )}
+
                     <div className="space-y-2">
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
                        <div className="relative">
@@ -202,17 +271,30 @@ export default function AdminUsersPage() {
                           <input 
                             type="email" 
                             placeholder="staff@kravy.pos"
-                            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all"
+                            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                           />
                        </div>
                     </div>
 
+                    {activeTab === "add" && (
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
+                          <input 
+                            type="text" 
+                            placeholder="Set secure password"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                          />
+                       </div>
+                    )}
+
                     <div className="space-y-2">
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Role</label>
                        <select 
-                         className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-black text-sm transition-all"
+                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-black text-sm transition-all"
                          value={newRole}
                          onChange={(e) => setNewRole(e.target.value as Role)}
                        >
@@ -223,12 +305,12 @@ export default function AdminUsersPage() {
                     </div>
 
                     <button 
-                      onClick={inviteUser}
-                      disabled={inviting}
+                      onClick={activeTab === "invite" ? inviteUser : directAddUser}
+                      disabled={inviting || adding}
                       className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl disabled:opacity-50 active:scale-95 flex items-center justify-center gap-3"
                     >
-                      {inviting ? <RefreshCw className="animate-spin" size={18} /> : (
-                        <>Send Invitation <ArrowRight size={18} /></>
+                      {inviting || adding ? <RefreshCw className="animate-spin" size={18} /> : (
+                        activeTab === "invite" ? <>Send Invitation <ArrowRight size={18} /></> : <>Create Account <Lock size={18} /></>
                       )}
                     </button>
                  </div>
@@ -478,7 +560,8 @@ export default function AdminUsersPage() {
         )}
       </AnimatePresence>
 
-    </div>
+      </div>
+    </>
   );
 }
 

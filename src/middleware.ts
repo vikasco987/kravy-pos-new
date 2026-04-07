@@ -31,20 +31,32 @@ const isPublicRoute = createRouteMatcher([
   "/api/external/(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  "/staff/login", // Added
+  "/api/staff/login", // Added
   "/"
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
   const { userId } = await auth();
+  const staffToken = request.cookies.get("staff_token")?.value;
 
-  // If user is signed in and trying to access sign-in or sign-up, redirect them to dashboard
+  // 1. Redirect Clerk users away from sign-in pages if they are already logged in
   if (userId && (request.nextUrl.pathname.startsWith('/sign-in') || request.nextUrl.pathname.startsWith('/sign-up'))) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  if (!isPublicRoute(request)) {
-    await auth.protect();
+  // 2. Allow access for Staff who have our JWT
+  if (staffToken) {
+    return NextResponse.next();
   }
+
+  // 3. Allow Public Routes
+  if (isPublicRoute(request)) {
+    return NextResponse.next();
+  }
+
+  // 4. Protect all other routes via Clerk
+  await auth.protect();
 });
 
 export const config = {

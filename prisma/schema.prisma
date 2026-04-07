@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
 }
 
 datasource db {
@@ -574,7 +575,7 @@ model Backup {
 model Staff {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  phone       String   @unique
+  phone       String?
   email       String   @unique
   password    String?
   accessType  String

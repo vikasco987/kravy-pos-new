@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 // POST: Add a new staff member
 // Route: /api/staff
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
 
         // 2. Duplicate Check
         const existing = await prisma.staff.findUnique({
-            where: { email }
+            where: { email: email.toLowerCase().trim() }
         });
 
         if (existing) {
@@ -35,13 +36,16 @@ export async function POST(req: NextRequest) {
             }, { status: 409 });
         }
 
+        // 2.5 Hash Password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         // 3. Save Data
         const staff = await prisma.staff.create({
             data: {
                 name: name || "Staff Member",
                 phone,
-                email,
-                password,
+                email: email.toLowerCase().trim(),
+                password: hashedPassword,
                 accessType: accessType || "Sales Access",
                 permissions: permissions || [],
                 businessId: businessId,
@@ -109,16 +113,21 @@ export async function PUT(req: NextRequest) {
             }, { status: 400 });
         }
 
+        const dataToUpdate: any = {
+            name,
+            phone,
+            email: email ? email.toLowerCase().trim() : undefined,
+            accessType,
+            permissions,
+        };
+
+        if (password) {
+            dataToUpdate.password = await bcrypt.hash(password, 10);
+        }
+
         const updatedStaff = await prisma.staff.update({
             where: { id: id },
-            data: {
-                name,
-                phone,
-                email,
-                password,
-                accessType,
-                permissions,
-            }
+            data: dataToUpdate
         });
 
         return NextResponse.json({ 

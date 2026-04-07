@@ -45,7 +45,6 @@ import {
   X,
   Check,
   AlertCircle,
-  Zap,
   Target,
   Award,
   Star,
@@ -92,7 +91,6 @@ import {
   Crown,
   Gem,
   Gift,
-  Sparkles,
   Flame,
   Sun,
   Moon,
@@ -112,7 +110,10 @@ import {
   Circle,
   Triangle,
   Hexagon,
-  Camera
+  Camera,
+  Layers,
+  Sparkles,
+  Zap
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { kravy } from "@/lib/sounds";
@@ -133,6 +134,7 @@ const navGroups = [
     items: [
       { icon: <UtensilsCrossed size={18} />, label: "Browse Products", href: "/dashboard/menu/view" },
       { icon: <Sparkles size={18} />, label: "Interactive Editor", href: "/dashboard/menu-editor", badge: "New", badgeColor: "#8B5CF6" },
+      { icon: <Layers size={18} />, label: "Add-on clusters", href: "/dashboard/menu/addons", badge: "Setup", badgeColor: "#10B981" },
       { icon: <Zap size={18} />, label: "AI Menu Scraper", href: "/dashboard/ai-scraper", badge: "AI", badgeColor: "#F59E0B", roles: ["ADMIN"] },
       { icon: <PlusCircle size={18} />, label: "Add Single Item", href: "/dashboard/menu/upload" },
       { icon: <Upload size={18} />, label: "Excel Bulk Import", href: "/dashboard/store-item-upload", badge: "Import", badgeColor: "#FF6B35", roles: ["ADMIN"] },
@@ -198,6 +200,7 @@ export default function Sidebar() {
   const [taxEnabled, setTaxEnabled] = useState(false);
   const [aiScraperEnabled, setAiScraperEnabled] = useState(false);
   const [excelImportEnabled, setExcelImportEnabled] = useState(false);
+  const [staffData, setStaffData] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -208,6 +211,7 @@ export default function Sidebar() {
         if (data) {
           if (data.role) setUserRole(data.role);
           if (data.allowedPaths) setAllowedPaths(data.allowedPaths);
+          setStaffData(data);
         }
         setLoadingRole(false);
       })
@@ -485,25 +489,34 @@ export default function Sidebar() {
         {navGroups.map((group) => {
           // 1. Filter items based on access
           const visibleItems = group.items.filter((item: any) => {
-            // ABSOLUTE PRIORITY: GST Report visibility 
-            if (item.label === "GST Reports" && !taxEnabled) return false;
-
-            // ADMISTRATIVE CONTROL: AI Scraper & Excel Import for Sellers
-            if (item.label === "AI Menu Scraper" && userRole === "SELLER" && aiScraperEnabled) return true;
-            if (item.label === "Excel Bulk Import" && userRole === "SELLER" && excelImportEnabled) return true;
-
-            // Priority 1: Admins see everything
+            // Priority 1: Admins (Full access)
             if (userRole === "ADMIN") return true;
-            
-            // Priority 2: Check allowedPaths from Database (Access Control settings)
+
+            // Priority 2: Per-path check (from Database settings)
             if (allowedPaths.includes("*")) return true;
             if (allowedPaths.includes(item.href)) return true;
 
-            // Fallback: If item has specific roles defined, check them
-            if (item.roles && item.roles.includes(userRole)) return true;
+            // Special flags logic
+            if (item.label === "GST Reports" && !taxEnabled) return false;
+            
+            // Admins & Sellers see certain modules by default unless path is blocked
+            const isAdminSeller = userRole === "ADMIN" || userRole === "SELLER";
+            if (item.roles && item.roles.includes(userRole)) {
+               // If item.roles contains current role, but its path isn't in allowedPaths (and allowedPaths isn't empty) -> Hide it
+               if (allowedPaths.length > 0 && !allowedPaths.includes(item.href)) return false;
+               return true;
+            }
 
-            // Priority 4: If no roles are specified, technically everyone can see it unless filtered above
-            if (!item.roles) return true;
+            // Default: If no allowedPaths populated yet, check legacy role tags
+            if (allowedPaths.length === 0 && item.roles && item.roles.includes(userRole)) return true;
+
+            // Fallback: If no roles property, and we have allowedPaths -> Hide if not in list
+            if (!item.roles && allowedPaths.length > 0) {
+              return allowedPaths.includes(item.href);
+            }
+
+            // Default fallback for everyone
+            if (!item.roles && allowedPaths.length === 0) return true;
 
             return false;
           });
@@ -730,7 +743,7 @@ export default function Sidebar() {
               }}
               whileHover={{ color: "#FF6B35" }}
             >
-              {user?.fullName || "Admin User"}
+              {staffData?.name || user?.fullName || "Admin User"}
             </motion.div>
             <motion.div
               style={{
@@ -760,11 +773,16 @@ export default function Sidebar() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 1.0 }}
           >
-            <SignOutButton>
-              <motion.button
+            <motion.button
                 whileHover={{ scale: 1.1, backgroundColor: "rgba(255,107,53,0.1)", color: "#FF6B35" }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => kravy.close()}
+                onClick={() => {
+                   kravy.close();
+                   // Clear staff cookie
+                   document.cookie = "staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                   // Hard refresh to clear Clerk state and go home
+                   window.location.href = "/";
+                }}
                 style={{
                   background: "none", border: "none",
                   color: isDark ? "#6B7280" : "var(--kravy-text-muted)",
@@ -774,7 +792,6 @@ export default function Sidebar() {
               >
                 <LogOut size={18} />
               </motion.button>
-            </SignOutButton>
           </motion.div>
         )}
       </motion.div>

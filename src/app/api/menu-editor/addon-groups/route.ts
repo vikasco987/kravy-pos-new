@@ -33,13 +33,29 @@ export async function POST(req: Request) {
     const user = await prisma.user.findUnique({ where: { clerkId: clerkId } })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
+    const { items: groupItems, itemIds, ...rest } = body
+
     const group = await prisma.addonGroup.create({
       data: {
-        ...body,
+        ...rest,
+        items: groupItems,
+        itemIds: itemIds || [],
         clerkId,
         userId: user.id,
       }
     })
+
+    // Sync items' addonGroupIds
+    if (itemIds && itemIds.length > 0) {
+      await prisma.item.updateMany({
+        where: { id: { in: itemIds } },
+        data: {
+          addonGroupIds: {
+            push: group.id
+          }
+        }
+      })
+    }
 
     return NextResponse.json(group)
   } catch (error) {
@@ -56,10 +72,53 @@ export async function PUT(req: Request) {
     const body = await req.json()
     const { id, ...data } = body
 
+    const { items: groupItems, itemIds, ...rest } = data
+
+    // 1. Get previous state to handle unlinking
+    const prevGroup = await prisma.addonGroup.findUnique({
+      where: { id, clerkId },
+      select: { itemIds: true }
+    })
+    const prevItemIds = prevGroup?.itemIds || []
+
+    // 2. Update the group itself
     const updated = await prisma.addonGroup.update({
       where: { id, clerkId },
-      data: data
+      data: {
+        ...rest,
+        items: groupItems,
+        itemIds: itemIds || []
+      }
     })
+
+    // 3. Sync items (Remove this group from items no longer linked)
+    const removedIds = prevItemIds.filter(pid => !itemIds.includes(pid))
+    if (removedIds.length > 0) {
+      for (const itemId of removedIds) {
+        const item = await prisma.item.findUnique({ where: { id: itemId }, select: { addonGroupIds: true } })
+        if (item) {
+          await prisma.item.update({
+            where: { id: itemId },
+            data: {
+              addonGroupIds: item.addonGroupIds.filter(gid => gid !== id)
+            }
+          })
+        }
+      }
+    }
+
+    // 4. Sync items (Add this group to newly linked items)
+    const addedIds = itemIds.filter((nid: string) => !prevItemIds.includes(nid))
+    if (addedIds.length > 0) {
+      await prisma.item.updateMany({
+        where: { id: { in: addedIds } },
+        data: {
+          addonGroupIds: {
+            push: id
+          }
+        }
+      })
+    }
 
     return NextResponse.json(updated)
   } catch (error) {

@@ -110,15 +110,19 @@ export async function POST(req: Request) {
     const client = await clerkClient();
 
 // ✅ Create user in Clerk
-    const clerkUser = await client.users.createUser({
-      emailAddress: [email],
-      password,
-      firstName,
-      lastName,
+    const clerkUserDetails = {
+      emailAddress: email,
+      password: password,
+      firstName: firstName,
+      lastName: lastName,
       publicMetadata: {
-        role,
+        role: role,
       },
-    });
+    };
+
+    console.log("Attempting to create Clerk user:", clerkUserDetails);
+
+    const clerkUser = await client.users.createUser(clerkUserDetails);
 
 
     // ✅ Store in DB

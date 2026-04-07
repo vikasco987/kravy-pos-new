@@ -373,6 +373,7 @@ export async function POST(req: Request) {
         userId: dbUser.id,
         // Enhanced Fields
         isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : true,
+        isEgg: body.isEgg !== undefined ? Boolean(body.isEgg) : false,
         isBestseller: Boolean(body.isBestseller),
         isRecommended: Boolean(body.isRecommended),
         isNew: Boolean(body.isNew),
@@ -421,11 +422,35 @@ export async function PUT(req: Request) {
     const body = await req.json();
     const { id, name, sellingPrice, unit, categoryId, imageUrl, description } = body;
 
+    // 🟢 BULK UPDATE SUPPORT
+    if (body.ids && Array.isArray(body.ids)) {
+      const ids = body.ids;
+      await prisma.item.updateMany({
+        where: { id: { in: ids }, clerkId: effectiveId },
+        data: {
+          isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : undefined,
+          isEgg: body.isEgg !== undefined ? Boolean(body.isEgg) : undefined,
+          isBestseller: body.isBestseller !== undefined ? Boolean(body.isBestseller) : undefined,
+          isRecommended: body.isRecommended !== undefined ? Boolean(body.isRecommended) : undefined,
+          isNew: body.isNew !== undefined ? Boolean(body.isNew) : undefined,
+          categoryId: (categoryId === "uncategorised" || categoryId === "__uncategorised__") ? null : categoryId ?? undefined,
+          taxStatus: body.taxStatus !== undefined ? body.taxStatus : undefined,
+          gst: body.gst !== undefined ? Number(body.gst) : undefined,
+          isActive: body.isActive !== undefined ? Boolean(body.isActive) : undefined,
+        }
+      });
+      return NextResponse.json({ success: true, count: ids.length });
+    }
+
     if (!id || !name) {
       return NextResponse.json(
         { error: "Item id and name are required" },
         { status: 400 }
       );
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
     }
 
     const existing = await prisma.item.findFirst({
@@ -452,6 +477,7 @@ export async function PUT(req: Request) {
         categoryId:
           (categoryId === "uncategorised" || categoryId === "__uncategorised__") ? null : categoryId ?? undefined,
         isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : undefined,
+        isEgg: body.isEgg !== undefined ? Boolean(body.isEgg) : undefined,
         isBestseller: body.isBestseller !== undefined ? Boolean(body.isBestseller) : undefined,
         isRecommended: body.isRecommended !== undefined ? Boolean(body.isRecommended) : undefined,
         isNew: body.isNew !== undefined ? Boolean(body.isNew) : undefined,

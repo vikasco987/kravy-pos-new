@@ -397,8 +397,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles } from "lucide-react";
 
 /* types */
 type MenuItem = {
@@ -411,6 +411,7 @@ type MenuItem = {
   categoryId?: string | null;
   description?: string | null;
   isVeg: boolean;
+  isEgg: boolean;
   isBestseller: boolean;
   isRecommended: boolean;
   isNew: boolean;
@@ -465,6 +466,7 @@ export default function ViewMenuPage() {
 
   // Quick Add states
   const [quickAddCat, setQuickAddCat] = useState<{ id: string; name: string } | null>(null);
+  const [quickAddDietary, setQuickAddDietary] = useState<"veg" | "nv" | "egg">("veg");
   const [quickAddTaxStatus, setQuickAddTaxStatus] = useState("Without Tax");
   const [quickAddGst, setQuickAddGst] = useState(0);
   const [taxEnabled, setTaxEnabled] = useState(true);
@@ -473,6 +475,18 @@ export default function ViewMenuPage() {
   const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [quickAddImage, setQuickAddImage] = useState<string | null>(null);
+
+  // Bulk Selection States
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [bulkDiet, setBulkDiet] = useState<"veg" | "egg" | "nv" | null>(null);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  
+  const detectDiet = (name: string) => {
+    if (name.toUpperCase().includes("(NV)")) return "nv";
+    if (name.toUpperCase().includes("(V)")) return "veg";
+    return null;
+  };
 
   useEffect(() => {
     if (!toast) return;
@@ -548,6 +562,7 @@ export default function ViewMenuPage() {
             unit: it.unit ?? null,
             categoryId: catId,
             isVeg: it.isVeg ?? true,
+            isEgg: !!it.isEgg,
             isBestseller: !!it.isBestseller,
             isRecommended: !!it.isRecommended,
             isNew: !!it.isNew,
@@ -671,6 +686,8 @@ export default function ViewMenuPage() {
           imageUrl: updated.imageUrl,
           taxStatus: updated.taxStatus,
           gst: updated.gst,
+          isVeg: updated.isVeg,
+          isEgg: updated.isEgg,
         }),
       });
 
@@ -824,7 +841,8 @@ export default function ViewMenuPage() {
       name,
       price: Number(price),
       categoryId: quickAddCat.id,
-      isVeg: true,
+      isVeg: quickAddDietary === "veg",
+      isEgg: quickAddDietary === "egg",
       isBestseller: false,
       isRecommended: false,
       isNew: true,
@@ -858,7 +876,9 @@ export default function ViewMenuPage() {
           description: description || null,
           imageUrl: imageUrl || null,
           taxStatus: quickAddTaxStatus,
-          gst: Number(quickAddGst)
+          gst: Number(quickAddGst),
+          isVeg: quickAddDietary === "veg",
+          isEgg: quickAddDietary === "egg"
         }),
       });
 
@@ -1153,16 +1173,22 @@ export default function ViewMenuPage() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-3">Dietary Type</label>
-                  <div className="flex gap-4">
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => setLocal({ ...local, isVeg: true })}
-                      className={`flex-1 py-3 rounded-xl border-2 font-black transition-all ${local.isVeg ? "border-green-500 bg-green-50 text-green-600" : "border-[var(--kravy-border)] text-[var(--kravy-text-muted)]"}`}
+                      onClick={() => setLocal({ ...local, isVeg: true, isEgg: false })}
+                      className={`flex-1 py-3 rounded-xl border-2 font-black text-[10px] transition-all ${local.isVeg ? "border-green-500 bg-green-50 text-green-600" : "border-[var(--kravy-border)] text-[var(--kravy-text-muted)]"}`}
                     >
-                      🥗 Vegetarian
+                      🥗 Veg
                     </button>
                     <button
-                      onClick={() => setLocal({ ...local, isVeg: false })}
-                      className={`flex-1 py-3 rounded-xl border-2 font-black transition-all ${!local.isVeg ? "border-red-500 bg-red-50 text-red-600" : "border-[var(--kravy-border)] text-[var(--kravy-text-muted)]"}`}
+                      onClick={() => setLocal({ ...local, isVeg: false, isEgg: true })}
+                      className={`flex-1 py-3 rounded-xl border-2 font-black text-[10px] transition-all ${local.isEgg ? "border-amber-500 bg-amber-50 text-amber-600" : "border-[var(--kravy-border)] text-[var(--kravy-text-muted)]"}`}
+                    >
+                      🥚 Egg
+                    </button>
+                    <button
+                      onClick={() => setLocal({ ...local, isVeg: false, isEgg: false })}
+                      className={`flex-1 py-3 rounded-xl border-2 font-black text-[10px] transition-all ${(!local.isVeg && !local.isEgg) ? "border-red-500 bg-red-50 text-red-600" : "border-[var(--kravy-border)] text-[var(--kravy-text-muted)]"}`}
                     >
                       🍗 Non-Veg
                     </button>
@@ -1385,6 +1411,15 @@ export default function ViewMenuPage() {
                 >
                   <Plus size={16} strokeWidth={3} /> New Category
                 </button>
+                <button
+                  onClick={() => {
+                    setIsBulkMode(!isBulkMode);
+                    if (isBulkMode) setSelectedIds(new Set());
+                  }}
+                  className={`px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest flex-shrink-0 transition-all flex items-center gap-2.5 shadow-lg active:scale-95 ${isBulkMode ? "bg-amber-500 text-white shadow-amber-500/20" : "bg-white border border-indigo-200 text-indigo-600 shadow-indigo-500/10"}`}
+                >
+                  <Check size={16} strokeWidth={3} /> {isBulkMode ? "Exit Bulk Edit" : "Bulk Edit"}
+                </button>
               </div>
             </div>
           </div>
@@ -1520,10 +1555,25 @@ export default function ViewMenuPage() {
             <div className="space-y-16">
               {groupedForUI.map((cat) => (
                 <section key={cat.id} id={`cat-${cat.id}`} className="scroll-mt-6">
-                <h3 className="font-black text-[var(--kravy-text-primary)] text-xl mb-6 flex items-center gap-4">
-                  {cat.name}
-                  <div className="flex-1 h-[2px] bg-gradient-to-r from-[var(--kravy-border-strong)] to-transparent opacity-30" />
-                </h3>
+                  <div className="flex items-center justify-between gap-4 mb-6">
+                    <h3 className="font-black text-[var(--kravy-text-primary)] text-xl flex items-center gap-4 flex-1">
+                      {cat.name}
+                      <div className="flex-1 h-[2px] bg-gradient-to-r from-[var(--kravy-border-strong)] to-transparent opacity-30" />
+                    </h3>
+                    <button 
+                      onClick={() => {
+                        const next = new Set(selectedIds);
+                        const catItemIds = cat.items.map(it => it.id);
+                        const allPresent = catItemIds.every(id => next.has(id));
+                        if (allPresent) catItemIds.forEach(id => next.delete(id));
+                        else catItemIds.forEach(id => next.add(id));
+                        setSelectedIds(next);
+                      }}
+                      className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-800 transition-colors"
+                    >
+                      {cat.items.every(it => selectedIds.has(it.id)) ? "Deselect All" : "Select All"}
+                    </button>
+                  </div>
 
                 {cat.items.length === 0 ? (
                   <p className="text-sm text-[var(--kravy-text-muted)] font-medium opacity-60">No items available in this category.</p>
@@ -1532,8 +1582,32 @@ export default function ViewMenuPage() {
                     {cat.items.map((item) => {
                       const inCart = cart[item.id]?.quantity ?? 0;
                       return (
-                        <motion.div key={item.id} layout whileHover={{ scale: 1.03, y: -4 }} className={`bg-[var(--kravy-surface)] p-4 rounded-2xl border border-[var(--kravy-border)] shadow-sm relative cursor-pointer min-w-0 transition-all ${inCart > 0 ? "ring-2 ring-indigo-500 border-indigo-500" : "hover:border-indigo-400/50"}`} onClick={() => addToCart(item)}>
-                          {inCart > 0 && <div className="absolute top-3 left-3 bg-indigo-600 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-lg z-10">{inCart}</div>}
+                        <motion.div key={item.id} layout whileHover={{ scale: 1.03, y: -4 }} className={`bg-[var(--kravy-surface)] p-4 rounded-2xl border border-[var(--kravy-border)] shadow-sm relative cursor-pointer min-w-0 transition-all ${selectedIds.has(item.id) ? "ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/30" : inCart > 0 ? "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/30" : "hover:border-indigo-400/50"}`} onClick={() => {
+                          if (isBulkMode || selectedIds.size > 0) {
+                            const next = new Set(selectedIds);
+                            if (next.has(item.id)) next.delete(item.id);
+                            else next.add(item.id);
+                            setSelectedIds(next);
+                          } else {
+                            addToCart(item);
+                          }
+                        }}>
+                          {/* Selection Checkbox */}
+                          <div className={`absolute top-4 right-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all z-20 ${selectedIds.has(item.id) ? "bg-indigo-600 border-indigo-600 scale-110" : isBulkMode || selectedIds.size > 0 ? "bg-white border-gray-300 opacity-100" : "bg-white/80 border-gray-300 opacity-0 group-hover:opacity-100"}`} onClick={(e) => {
+                            e.stopPropagation();
+                            const next = new Set(selectedIds);
+                            if (next.has(item.id)) next.delete(item.id);
+                            else next.add(item.id);
+                            setSelectedIds(next);
+                          }}>
+                            {selectedIds.has(item.id) ? (
+                              <Check size={14} strokeWidth={4} className="text-white" />
+                            ) : (
+                              <div className="w-2 h-2 bg-white/40 rounded-full" />
+                            )}
+                          </div>
+
+                          {inCart > 0 && selectedIds.size === 0 && <div className="absolute top-3 left-3 bg-emerald-600 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-lg z-10">{inCart}</div>}
 
                           <div className="w-full h-40 mb-4 relative rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center min-w-0 shadow-inner">
                             {item.imageUrl ? (
@@ -1545,7 +1619,12 @@ export default function ViewMenuPage() {
 
                           <div className="flex flex-col items-start gap-1">
                             <div className="flex items-center justify-between w-full">
-                              <h4 className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base truncate max-w-[65%] group-hover:text-indigo-500 transition-colors">{item.name}</h4>
+                              <div className="flex items-center gap-2 truncate max-w-[65%]">
+                                <div className={`w-3 h-3 border-[1.2px] rounded-sm flex items-center justify-center shrink-0 ${item.isVeg ? "border-green-600" : item.isEgg ? "border-amber-500" : "border-red-600"}`}>
+                                    <div className={`w-1 h-1 rounded-full ${item.isVeg ? "bg-green-600" : item.isEgg ? "bg-amber-500" : "bg-red-600"}`} />
+                                </div>
+                                <h4 className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base truncate group-hover:text-indigo-500 transition-colors">{item.name}</h4>
+                              </div>
                               <div className="flex items-center gap-1.5">
                                 <button onClick={(e) => { e.stopPropagation(); setEditingItem(item); }} className="p-1.5 text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:scale-110 transition-transform">Edit</button>
                                 <button onClick={(e) => { e.stopPropagation(); setDeletingItem(item); }} className="p-1.5 text-xs bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:scale-110 transition-transform">Delete</button>
@@ -1611,6 +1690,151 @@ export default function ViewMenuPage() {
           </div>
         </motion.div>
       )}
+
+      {/* 🚀 BULK ACTIONS FLOATING BAR */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }} 
+            animate={{ y: 0, opacity: 1 }} 
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed left-4 right-4 bottom-10 z-[60] bg-indigo-950 text-white p-5 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(30,27,75,0.6)] flex flex-col md:flex-row items-center justify-between gap-6 max-w-5xl mx-auto border border-white/20 backdrop-blur-2xl ring-1 ring-white/10"
+          >
+            <div className="flex items-center gap-5">
+              <div className="w-12 h-12 bg-white text-indigo-950 rounded-2xl flex items-center justify-center font-black text-lg shadow-xl rotate-3">
+                {selectedIds.size}
+              </div>
+              <div className="flex flex-col">
+                <div className="text-base font-black uppercase tracking-[0.1em] leading-none">Bulk Selections</div>
+                <div className="text-[10px] font-bold text-indigo-300 mt-2 uppercase tracking-wider">
+                  Pick status to apply to {selectedIds.size} Items
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col md:flex-row items-center gap-4 flex-1 justify-center">
+              <div className="flex p-1.5 bg-white/5 rounded-[1.5rem] gap-2 border border-white/5 scale-90 md:scale-100">
+                <button 
+                  onClick={() => setBulkDiet("veg")}
+                  className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border ${bulkDiet === "veg" ? "bg-green-500 text-white border-green-400 shadow-lg shadow-green-500/20 px-7" : "bg-white/5 text-green-400 border-white/5 hover:bg-white/10"}`}
+                >
+                  Veg <div className={`w-1.5 h-1.5 rounded-full ${bulkDiet === "veg" ? "bg-white" : "bg-green-500"}`} />
+                </button>
+                <button 
+                  onClick={() => setBulkDiet("egg")}
+                  className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border ${bulkDiet === "egg" ? "bg-amber-500 text-white border-amber-400 shadow-lg shadow-amber-500/20 px-7" : "bg-white/5 text-amber-400 border-white/5 hover:bg-white/10"}`}
+                >
+                  Egg <div className={`w-1.5 h-1.5 rounded-full ${bulkDiet === "egg" ? "bg-white" : "bg-amber-500"}`} />
+                </button>
+                <button 
+                  onClick={() => setBulkDiet("nv")}
+                  className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border ${bulkDiet === "nv" ? "bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/20 px-7" : "bg-white/5 text-rose-300 border-white/5 hover:bg-white/10"}`}
+                >
+                  NV <div className={`w-1.5 h-1.5 rounded-full ${bulkDiet === "nv" ? "bg-white" : "bg-rose-500"}`} />
+                </button>
+              </div>
+
+              <button 
+                disabled={isBulkUpdating || !bulkDiet}
+                onClick={async () => {
+                  if (!bulkDiet) return;
+                  setIsBulkUpdating(true);
+                  try {
+                    const isVeg = bulkDiet === "veg";
+                    const isEgg = bulkDiet === "egg";
+                    
+                    const res = await fetch("/api/items", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ ids: Array.from(selectedIds), isVeg, isEgg })
+                    });
+                    
+                    if (res.ok) {
+                      setIsBulkMode(false);
+                      setMenus(prev => prev.map(cat => ({
+                        ...cat,
+                        items: cat.items.map(it => selectedIds.has(it.id) ? { ...it, isVeg, isEgg } : it)
+                      })));
+                      const cnt = selectedIds.size;
+                      const label = bulkDiet === "veg" ? "Veg 🥗" : bulkDiet === "egg" ? "Egg 🥚" : "Non-Veg 🍗";
+                      setSelectedIds(new Set());
+                      setBulkDiet(null);
+                      setToast(`Set ${cnt} items as ${label}`);
+                    }
+                  } catch (err) {
+                    setToast("Bulk update failed");
+                  } finally { 
+                    setIsBulkUpdating(false); 
+                  }
+                }}
+                className={`px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-2xl active:scale-95 ${!bulkDiet ? "bg-white/5 text-white/20 cursor-not-allowed border border-white/5" : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/40"}`}
+              >
+                Apply Changes
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={async () => {
+                  setIsBulkUpdating(true);
+                  try {
+                    const itemsToFix = Array.from(selectedIds).map(id => {
+                      const item = menus.flatMap(c => c.items).find(it => it.id === id);
+                      if (!item) return null;
+                      const diet = detectDiet(item.name);
+                      if (!diet) return null;
+                      return { id, isVeg: diet === "veg", isEgg: diet === "egg" };
+                    }).filter(x => x !== null) as {id: string, isVeg: boolean, isEgg: boolean}[];
+
+                    if (itemsToFix.length === 0) {
+                      setToast("No (V) or (NV) tags found in selected items.");
+                      return;
+                    }
+
+                    // Process in batches or concurrently
+                    await Promise.all(itemsToFix.map(fix => 
+                      fetch("/api/items", {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: fix.id, name: "ignore", isVeg: fix.isVeg, isEgg: fix.isEgg })
+                      })
+                    ));
+
+                    setMenus(prev => prev.map(cat => ({
+                      ...cat,
+                      items: cat.items.map(it => {
+                        const fix = itemsToFix.find(f => f.id === it.id);
+                        return fix ? { ...it, isVeg: fix.isVeg, isEgg: fix.isEgg } : it;
+                      })
+                    })));
+
+                    setToast(`Magic Fix: Updated ${itemsToFix.length} items ✨`);
+                    setSelectedIds(new Set());
+                    setIsBulkMode(false);
+                  } catch (err) {
+                    setToast("Magic fix failed");
+                  } finally {
+                    setIsBulkUpdating(false);
+                  }
+                }}
+                className="w-12 h-12 rounded-2xl bg-indigo-500/20 hover:bg-indigo-500 text-white flex items-center justify-center transition-all group active:scale-95"
+                title="Magic Fix Diet from Names"
+              >
+                <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
+              </button>
+
+              <div className="h-10 w-[1px] bg-white/10 mx-2 hidden md:block" />
+              <button 
+                onClick={() => { setSelectedIds(new Set()); setBulkDiet(null); setIsBulkMode(false); }}
+                className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center transition-all group active:scale-95"
+                title="Cancel Bulk Mode"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {editingItem && <EditModal item={editingItem} onClose={() => setEditingItem(null)} onSave={async (u) => await saveEdit(u)} />}
       {deletingItem && <ConfirmDelete item={deletingItem} onClose={() => setDeletingItem(null)} onConfirm={() => confirmDelete(deletingItem!)} />}
@@ -1721,6 +1945,10 @@ export default function ViewMenuPage() {
                       autoComplete="off"
                       placeholder="Burger"
                       required
+                      onChange={(e) => {
+                        const diet = detectDiet(e.target.value);
+                        if (diet) setQuickAddDietary(diet);
+                      }}
                       className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold"
                     />
                   </div>
@@ -1758,9 +1986,20 @@ export default function ViewMenuPage() {
                   />
                 </div>
 
+                {/* Dietary Type Toggle */}
+                <div className="space-y-1 mt-2">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Dietary Type</label>
+                  <div className="flex gap-2 p-1 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl">
+                    <button type="button" onClick={() => setQuickAddDietary("veg")} className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${quickAddDietary === "veg" ? "bg-green-600 text-white shadow-lg shadow-green-600/20" : "text-green-600/60 hover:bg-green-50"}`}>Veg</button>
+                    <button type="button" onClick={() => setQuickAddDietary("egg")} className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${quickAddDietary === "egg" ? "bg-amber-500 text-white shadow-lg shadow-amber-500/20" : "text-amber-500/60 hover:bg-amber-50"}`}>Egg</button>
+                    <button type="button" onClick={() => setQuickAddDietary("nv")} className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${quickAddDietary === "nv" ? "bg-red-600 text-white shadow-lg shadow-red-600/20" : "text-red-600/60 hover:bg-red-50"}`}>Non-Veg</button>
+                  </div>
+                </div>
+
                 {/* Tax Options */}
                 {taxEnabled && (
                   <div className="space-y-3 pt-2">
+                    <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Tax Management</label>
                     <div className="flex gap-2 p-1 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl">
                       {["Without Tax", "With Tax"].map((status) => (
                         <button

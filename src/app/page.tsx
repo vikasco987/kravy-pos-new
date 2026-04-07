@@ -8,11 +8,14 @@ import {
   SignUpButton,
 } from "@clerk/nextjs";
 import Image from "next/image";
+import { cookies } from "next/headers";
+import Link from "next/link";
 
 export default async function HomePage() {
   const { userId } = await auth();
+  const staffToken = (await cookies()).get("staff_token");
 
-  if (userId) {
+  if (userId || staffToken) {
     redirect("/dashboard");
   }
 
@@ -67,9 +70,15 @@ export default async function HomePage() {
                   forceRedirectUrl="/dashboard"
                 >
                   <button className="w-full sm:w-auto border border-gray-300 hover:bg-gray-100 transition-all duration-300 text-gray-800 font-medium px-8 py-3 rounded-xl">
-                    Login
+                    Owner Login
                   </button>
                 </SignInButton>
+
+                <Link href="/staff/login" className="w-full sm:w-auto">
+                    <button className="w-full bg-slate-900 hover:bg-slate-800 transition-all duration-300 text-white font-medium px-8 py-3 rounded-xl shadow-md">
+                        Staff Login
+                    </button>
+                </Link>
 
               </div>
             </SignedOut>

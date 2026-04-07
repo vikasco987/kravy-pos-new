@@ -15,7 +15,10 @@ export async function GET(req: NextRequest) {
                 clerkId: clerkId,
                 isActive: true 
             },
-            include: { category: true },
+            include: { 
+                category: true,
+                addonGroups: true
+            },
             orderBy: { name: "asc" }
         });
 

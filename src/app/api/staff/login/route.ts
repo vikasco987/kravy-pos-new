@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
+
+const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
 
 export async function POST(req: Request) {
   try {
@@ -12,7 +17,7 @@ export async function POST(req: Request) {
         );
     }
 
-    // 1. Email se staff member ko dhundhein
+    // 1. Find staff by email
     const staff = await prisma.staff.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
@@ -24,31 +29,53 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Check if staff is active
+    // 2. Check status
     if (staff.status !== "active") {
         return NextResponse.json(
-            { success: false, message: "Account is inactive. Please contact your manager." },
+            { success: false, message: "Account is inactive. Contact your manager." },
             { status: 403 }
         );
     }
 
-    // 3. Password check karein
-    // NOTE: For better security, you should use bcrypt to hash and compare passwords.
-    // Currently using plain comparison as per your requirement.
-    if (staff.password !== password) {
+    // 3. Compare Password
+    const isMatch = await bcrypt.compare(password, staff.password || "");
+    if (!isMatch) {
       return NextResponse.json(
         { success: false, message: "Incorrect password!" },
         { status: 401 }
       );
     }
 
-    // 4. Login Success - Staff ka data bhejein
-    // We remove sensitive info before sending
+    // 4. Generate JWT
+    const token = jwt.sign(
+        { 
+            staffId: staff.id, 
+            email: staff.email, 
+            businessId: staff.businessId,
+            accessType: staff.accessType,
+            permissions: staff.permissions,
+            name: staff.name
+        },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+    );
+
+    // 5. Set Cookie for Browser access
+    (await cookies()).set("staff_token", token, {
+        httpOnly: false, // Must be false for ClientLayout to detect staff session
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: "/",
+    });
+
+    // 6. Return response
     const { password: _, ...staffData } = staff;
 
     return NextResponse.json({
       success: true,
       message: "Login successful",
+      token: token,
       data: staffData
     });
 

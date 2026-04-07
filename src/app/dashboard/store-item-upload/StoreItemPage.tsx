@@ -66,6 +66,7 @@ export default function StoreItemPage() {
     description: "",
     imageUrl: ""
   });
+  const [showErrorsOnly, setShowErrorsOnly] = useState(false);
 
 
   /* =============================
@@ -88,7 +89,8 @@ export default function StoreItemPage() {
   ============================= */
   const filteredClerks = useMemo(() => {
     return clerks.filter(c =>
-      c.label.toLowerCase().includes(clerkSearch.toLowerCase())
+      c.label.toLowerCase().includes(clerkSearch.toLowerCase()) ||
+      c.email.toLowerCase().includes(clerkSearch.toLowerCase())
     );
   }, [clerks, clerkSearch]);
 
@@ -176,22 +178,45 @@ export default function StoreItemPage() {
         const Papa = (await import("papaparse")).default;
 
         Papa.parse(file, {
-          header: true,
+          header: false, // Parse as arrays first to find headers
           skipEmptyLines: true,
           complete: async (result) => {
             clearInterval(progressTimer);
             if (result.data && Array.isArray(result.data)) {
-              const headers = Object.keys(result.data[0] || {});
+              const allRows = result.data as string[][];
+              
+              // Find the header row (scan first 20 rows)
+              let headerIndex = 0;
+              const keywords = ["name", "item", "price", "mrp", "rate", "category", "desc", "nam", "किमत", "मूल्य"];
+              
+              for (let i = 0; i < Math.min(20, allRows.length); i++) {
+                const row = allRows[i].map(c => String(c).toLowerCase());
+                const matchCount = row.filter(cell => keywords.some(k => cell.includes(k))).length;
+                if (matchCount >= 2) {
+                  headerIndex = i;
+                  break;
+                }
+              }
+
+              const headers = allRows[headerIndex];
+              const dataRows = allRows.slice(headerIndex + 1).map(row => {
+                const obj: any = {};
+                headers.forEach((h, idx) => {
+                  obj[h] = row[idx];
+                });
+                return obj;
+              });
+
               setFileHeaders(headers);
-              setUploadedRows(result.data);
+              setUploadedRows(dataRows);
               
               // Try to auto-map
               setColumnMapping({
-                name: headers.find(h => /name/i.test(h)) || "",
-                price: headers.find(h => /price|selling|mrp/i.test(h)) || "",
-                category: headers.find(h => /category/i.test(h)) || "",
-                description: headers.find(h => /desc|info|detail|composition/i.test(h)) || "",
-                imageUrl: headers.find(h => /image|url|photo|img|link/i.test(h)) || ""
+                name: headers.find(h => /name|dish|item|title|उत्पाद|नाम/i.test(String(h))) || "",
+                price: headers.find(h => /price|selling|mrp|cost|rate|मूल्य|कीमत/i.test(String(h))) || "",
+                category: headers.find(h => /category|group|type|श्रेणी|वर्ग/i.test(String(h))) || "",
+                description: headers.find(h => /desc|info|detail|composition|विवरण/i.test(String(h))) || "",
+                imageUrl: headers.find(h => /image|url|photo|img|link|फोटो/i.test(String(h))) || ""
               });
               setMappingOpen(true);
             }
@@ -207,20 +232,42 @@ export default function StoreItemPage() {
         const buffer = await file.arrayBuffer();
         const wb = XLSX.read(buffer, { type: 'array' });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<any>(sheet);
+        const allRows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
 
         clearInterval(progressTimer);
-        const headers = Object.keys(rows[0] || {});
-        setFileHeaders(headers);
-        setUploadedRows(rows);
+
+        // Find the header row (scan first 20 rows)
+        let headerIndex = 0;
+        const keywords = ["name", "item", "price", "mrp", "rate", "category", "desc", "nam", "किमत", "मूल्य"];
+        
+        for (let i = 0; i < Math.min(20, allRows.length); i++) {
+          const row = (allRows[i] || []).map((c: any) => String(c || "").toLowerCase());
+          const matchCount = row.filter((cell: string) => keywords.some(k => cell.includes(k))).length;
+          if (matchCount >= 2) {
+            headerIndex = i;
+            break;
+          }
+        }
+
+        const headers = (allRows[headerIndex] || []).map((h: any) => String(h || ""));
+        const dataRows = allRows.slice(headerIndex + 1).map((row: any[]) => {
+          const obj: any = {};
+          headers.forEach((h: string, idx: number) => {
+            if (h) obj[h] = row[idx];
+          });
+          return obj;
+        });
+
+        setFileHeaders(headers.filter(Boolean));
+        setUploadedRows(dataRows);
 
         // Try to auto-map
         setColumnMapping({
-          name: headers.find(h => /name/i.test(h)) || "",
-          price: headers.find(h => /price|selling|mrp/i.test(h)) || "",
-          category: headers.find(h => /category/i.test(h)) || "",
-          description: headers.find(h => /desc|info|detail|composition/i.test(h)) || "",
-          imageUrl: headers.find(h => /image|url|photo|img|link/i.test(h)) || ""
+          name: headers.find(h => /name|dish|item|title|उत्पाद|नाम/i.test(String(h))) || "",
+          price: headers.find(h => /price|selling|mrp|cost|rate|मूल्य|कीमत/i.test(String(h))) || "",
+          category: headers.find(h => /category|group|type|श्रेणी|वर्ग/i.test(String(h))) || "",
+          description: headers.find(h => /desc|info|detail|composition|विवरण/i.test(String(h))) || "",
+          imageUrl: headers.find(h => /image|url|photo|img|link|फोटो/i.test(String(h))) || ""
         });
         setMappingOpen(true);
         setUploadProgress(100);
@@ -453,16 +500,25 @@ export default function StoreItemPage() {
       setSaving(false);
     }
   };
+  const isRowInvalid = (item: StoreItem) => {
+    const nameMissing = !item.name.trim();
+    const priceInvalid = item.price == null || item.price <= 0;
+    const isDuplicate = item.name.trim() && duplicateNames.includes(item.name.trim().toLowerCase());
+    
+    return nameMissing || priceInvalid || !!isDuplicate;
+  };
+
   /* =============================
      SEARCH FILTER
   ============================= */
 
-
-  const displayedItems = search
+  let displayedItems = search
     ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
     : items;
 
-
+  if (showErrorsOnly) {
+    displayedItems = displayedItems.filter(i => isRowInvalid(i));
+  }
 
   const handleDrop = async (
     e: React.DragEvent<HTMLDivElement>,
@@ -483,19 +539,6 @@ export default function StoreItemPage() {
     await handleImageFile(file, index);
   };
 
-  const isRowInvalid = (item: StoreItem) => {
-    // only highlight during UPDATE
-    if (mode !== "update") return false;
-
-    // only existing items
-    if (!item.id) return false;
-
-    if (!item.name.trim()) return true;
-    if (item.price == null) return true;
-
-    return false;
-  };
-
 
   /* =============================
      RENDER
@@ -511,6 +554,14 @@ export default function StoreItemPage() {
         </div>
 
         <div className="flex gap-3">
+          {uploadedRows.length > 0 && (
+            <button 
+              onClick={() => setMappingOpen(true)} 
+              className="px-5 py-2.5 bg-indigo-500 text-white rounded-xl font-bold hover:bg-indigo-600 shadow-lg shadow-indigo-100 transition-all flex items-center gap-2"
+            >
+              <Settings2 size={18} /> Remap Columns
+            </button>
+          )}
           <button onClick={fetchExistingItems} className="px-5 py-2.5 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] rounded-xl font-bold hover:border-[var(--kravy-brand)] transition-all flex items-center gap-2" >
             Sync Existing
           </button>
@@ -544,6 +595,25 @@ export default function StoreItemPage() {
             </div>
           </div>
         ))}
+        
+        {/* ROW FILTER TOGGLE */}
+        <div 
+          onClick={() => setShowErrorsOnly(!showErrorsOnly)}
+          className={`bg-white border cursor-pointer border-gray-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-4 ${showErrorsOnly ? 'ring-2 ring-rose-500 bg-rose-50' : ''}`}
+        >
+          <div className={`w-12 h-12 rounded-2xl ${showErrorsOnly ? 'bg-rose-500 text-white' : 'bg-gray-50 text-gray-400'} flex items-center justify-center text-xl shadow-inner`}>
+            🚨
+          </div>
+          <div className="flex-1">
+            <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 mb-0.5">Filter</div>
+            <div className={`text-sm font-black ${showErrorsOnly ? 'text-rose-600' : 'text-gray-600'}`}>
+              {showErrorsOnly ? "Showing Errors Only" : "Show All Rows"}
+            </div>
+          </div>
+          <div className={`w-10 h-5 rounded-full relative transition-colors ${showErrorsOnly ? 'bg-rose-500' : 'bg-gray-200'}`}>
+            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${showErrorsOnly ? 'left-6' : 'left-1'}`} />
+          </div>
+        </div>
       </div>
 
       {/* MAIN ACTIONS BAR */}
@@ -650,21 +720,25 @@ export default function StoreItemPage() {
             </thead>
 
             <tbody className="divide-y divide-gray-50/80">
-              {displayedItems.map((item, i) => (
-                <tr
-                  key={item.id ?? i}
-                  className="hover:bg-gray-50/30 transition-colors group/row"
-                >
+              {displayedItems.map((item, i) => {
+                const invalid = isRowInvalid(item);
+                return (
+                  <tr
+                    key={item.id ?? i}
+                    className={`hover:bg-gray-50/30 transition-all group/row relative ${
+                      invalid ? "bg-rose-50/30 border-l-4 border-l-rose-500" : ""
+                    }`}
+                  >
                   {/* IMAGE & URL INPUT */}
                   <td className="py-8 px-8">
                     <div className="flex flex-col gap-3">
                       <div
                         onDragOver={e => e.preventDefault()}
-                        onDragEnter={() => setDragIndex(i)}
+                        onDragEnter={() => setDragIndex(items.indexOf(item))}
                         onDragLeave={() => setDragIndex(null)}
-                        onDrop={e => handleDrop(e, i)}
+                        onDrop={e => handleDrop(e, items.indexOf(item))}
                         className={`w-20 h-20 rounded-3xl shrink-0 overflow-hidden bg-gray-50/50 flex items-center justify-center border-2 transition-all duration-500 relative group/img ${
-                          dragIndex === i ? "border-indigo-400 bg-indigo-50 shadow-2xl scale-105" : "border-gray-100"
+                          dragIndex === items.indexOf(item) ? "border-indigo-400 bg-indigo-50 shadow-2xl scale-105" : "border-gray-100"
                         }`}
                       >
                         <label className="w-full h-full flex items-center justify-center cursor-pointer">
@@ -680,7 +754,7 @@ export default function StoreItemPage() {
                             type="file"
                             hidden
                             accept="image/*"
-                            onChange={e => e.target.files && handleImageFile(e.target.files[0], i)}
+                            onChange={e => e.target.files && handleImageFile(e.target.files[0], items.indexOf(item))}
                           />
                         </label>
                       </div>
@@ -689,13 +763,14 @@ export default function StoreItemPage() {
                         placeholder="Image URL..."
                         className="w-full max-w-[120px] text-[9px] bg-gray-50 border border-transparent rounded-lg px-2 py-1.5 text-gray-400 font-bold outline-none focus:border-indigo-200 focus:bg-white focus:text-gray-700 transition-all opacity-0 group-hover/row:opacity-100"
                         value={item.imageUrl ?? ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const val = e.target.value;
                           setItems(prev =>
-                            prev.map((it, idx) =>
-                              idx === i ? { ...it, imageUrl: e.target.value } : it
+                            prev.map((it) =>
+                              it === item ? { ...it, imageUrl: val } : it
                             )
                           )
-                        }
+                        }}
                       />
                     </div>
                   </td>
@@ -705,16 +780,17 @@ export default function StoreItemPage() {
                     <div className="flex flex-col gap-2">
                        <div className="flex items-center gap-2">
                           <input
-                            className={`bg-gray-50/50 border-2 ${!item.name.trim() && mode === "update" ? "border-rose-100" : "border-gray-50"} rounded-2xl px-5 py-4 w-full text-base font-black text-gray-800 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white transition-all shadow-sm placeholder:text-gray-300`}
+                            className={`bg-gray-50/50 border-2 ${!item.name.trim() ? "border-rose-200" : "border-gray-50"} rounded-2xl px-5 py-4 w-full text-base font-black text-gray-800 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white transition-all shadow-sm placeholder:text-gray-300`}
                             placeholder="e.g. Butter Chicken Large"
                             value={item.name}
-                            onChange={e =>
+                            onChange={e => {
+                              const val = e.target.value;
                               setItems(prev =>
-                                prev.map((it, idx) =>
-                                  idx === i ? { ...it, name: e.target.value } : it
+                                prev.map((it) =>
+                                  it === item ? { ...it, name: val } : it
                                 )
                               )
-                            }
+                            }}
                           />
                           <button
                             type="button"
@@ -741,13 +817,14 @@ export default function StoreItemPage() {
                         className="bg-gray-50/50 border-2 border-gray-50 rounded-2xl px-5 py-4 w-full text-sm font-bold text-gray-600 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white transition-all shadow-sm placeholder:text-gray-300 resize-none h-[100px]"
                         placeholder="Describe the dish, ingredients, or story..."
                         value={item.description || ""}
-                        onChange={e =>
+                        onChange={e => {
+                          const val = e.target.value;
                           setItems(prev =>
-                            prev.map((it, idx) =>
-                              idx === i ? { ...it, description: e.target.value } : it
+                            prev.map((it) =>
+                              it === item ? { ...it, description: val } : it
                             )
                           )
-                        }
+                        }}
                       />
                     </div>
                   </td>
@@ -758,16 +835,17 @@ export default function StoreItemPage() {
                       <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 font-black text-lg group-focus-within/price:text-emerald-500 transition-colors">₹</span>
                       <input
                         type="number"
-                        className={`bg-gray-50/50 border-2 ${(!item.price || item.price <= 0) && mode === "update" ? "border-rose-100" : "border-gray-50"} rounded-2xl pl-11 pr-5 py-4 w-36 text-base font-black text-emerald-600 outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white transition-all shadow-sm`}
+                        className={`bg-gray-50/50 border-2 ${(!item.price || item.price <= 0) ? "border-rose-200" : "border-gray-50"} rounded-2xl pl-11 pr-5 py-4 w-36 text-base font-black text-emerald-600 outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white transition-all shadow-sm`}
                         placeholder="0"
                         value={item.price ?? ""}
-                        onChange={e =>
+                        onChange={e => {
+                          const val = Number(e.target.value);
                           setItems(prev =>
-                            prev.map((it, idx) =>
-                              idx === i ? { ...it, price: Number(e.target.value) } : it
+                            prev.map((it) =>
+                              it === item ? { ...it, price: val } : it
                             )
                           )
-                        }
+                        }}
                       />
                     </div>
                   </td>
@@ -786,8 +864,8 @@ export default function StoreItemPage() {
                               try {
                                 const cat = await ensureCategory(newName.trim());
                                 setItems(prev =>
-                                  prev.map((it, idx) =>
-                                    idx === i ? { ...it, categoryId: cat.id } : it
+                                  prev.map((it) =>
+                                    it === item ? { ...it, categoryId: cat.id } : it
                                   )
                                 );
                                 toast.success(`Created & assigned category: ${cat.name}`);
@@ -797,8 +875,8 @@ export default function StoreItemPage() {
                             }
                           } else {
                             setItems(prev =>
-                              prev.map((it, idx) =>
-                                idx === i ? { ...it, categoryId: val } : it
+                              prev.map((it) =>
+                                it === item ? { ...it, categoryId: val } : it
                               )
                             );
                           }
@@ -822,13 +900,14 @@ export default function StoreItemPage() {
                       <select
                         className="bg-gray-50/50 border-2 border-gray-50 rounded-2xl px-5 py-4 w-full text-xs font-black text-gray-700 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white transition-all appearance-none cursor-pointer shadow-sm"
                         value={item.clerkId || ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const val = e.target.value;
                           setItems((prev) =>
-                            prev.map((it, idx) =>
-                              idx === i ? { ...it, clerkId: e.target.value } : it
+                            prev.map((it) =>
+                              it === item ? { ...it, clerkId: val } : it
                             )
                           )
-                        }
+                        }}
                       >
                         <option value="">No Assignment</option>
                         {clerks.map((c) => (
@@ -849,13 +928,14 @@ export default function StoreItemPage() {
                           type="checkbox"
                           className="sr-only peer"
                           checked={item.isActive}
-                          onChange={e =>
+                          onChange={e => {
+                            const checked = e.target.checked;
                             setItems(prev =>
-                              prev.map((it, idx) =>
-                                idx === i ? { ...it, isActive: e.target.checked } : it
+                              prev.map((it) =>
+                                it === item ? { ...it, isActive: checked } : it
                               )
                             )
-                          }
+                          }}
                         />
                         <div className="w-14 h-7 bg-gray-100 peer-focus:outline-none peer-focus:ring-8 peer-focus:ring-indigo-500/5 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:shadow-md after:rounded-full after:h-5 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
                       </label>
@@ -867,15 +947,16 @@ export default function StoreItemPage() {
                     <button
                       className="w-12 h-12 flex items-center justify-center bg-rose-50 text-rose-400 rounded-2xl shadow-sm hover:bg-rose-500 hover:text-white hover:shadow-rose-500/20 transition-all duration-300 active:scale-90"
                       onClick={() => {
-                        setItems(prev => prev.filter((_, idx) => idx !== i));
+                        setItems(prev => prev.filter((it) => it !== item));
                         kravy.error();
                       }}
                     >
                       <Trash2 size={24} />
                     </button>
                   </td>
-                </tr>
-              ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -973,6 +1054,14 @@ export default function StoreItemPage() {
                         <option value="">Select Column from Excel...</option>
                         {fileHeaders.map(h => <option key={h} value={h}>{h}</option>)}
                       </select>
+                      {columnMapping[field.key as keyof typeof columnMapping] && (
+                        <div className="mt-2 flex items-center gap-2 px-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
+                          <span className="text-[10px] font-bold text-indigo-500/80 uppercase truncate">
+                            Preview: {String(uploadedRows[0]?.[columnMapping[field.key as keyof typeof columnMapping]] || "---")}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

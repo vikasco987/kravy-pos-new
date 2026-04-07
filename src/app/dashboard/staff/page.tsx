@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 
 const ALL_PATHS = [
   { path: "/dashboard", label: "Store Dashboard", icon: <LayoutGrid size={16} /> },
@@ -54,30 +56,30 @@ type StaffMember = {
   isDisabled: boolean;
 };
 
-import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-
 export default function StaffManagementPage() {
   const router = useRouter();
   const { user } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      fetch("/api/user/me")
-        .then(res => res.json())
-        .then(data => setIsAdmin(data.role === "ADMIN" || data.role === "SELLER"))
-        .catch(() => {});
-    }
-  }, [user]);
-
+  const [canManage, setCanManage] = useState(false);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
-  const [newStaff, setNewStaff] = useState({ name: "", email: "", password: "" });
+  const [newStaff, setNewStaff] = useState({ name: "", email: "", password: "", phone: "" });
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [updatingPassword, setUpdatingPassword] = useState("");
+
+  useEffect(() => {
+    fetch("/api/user/me")
+      .then(res => res.json())
+      .then(data => {
+        const isOwner = data.role === "OWNER" || data.role === "SELLER" || data.role === "ADMIN";
+        const hasPerm = data.allowedPaths?.includes("/dashboard/staff");
+        setIsAdmin(isOwner);
+        setCanManage(isOwner || hasPerm);
+      })
+      .catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     fetchStaff();
@@ -109,7 +111,7 @@ export default function StaffManagementPage() {
 
       if (res.ok) {
         toast.success("Staff member added successfully");
-        setNewStaff({ name: "", email: "", password: "" });
+        setNewStaff({ name: "", email: "", password: "", phone: "" });
         fetchStaff();
       } else {
         const err = await res.json();
@@ -140,7 +142,8 @@ export default function StaffManagementPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          staffClerkId: selectedStaff.clerkId,
+          staffId: selectedStaff.id,
+          clerkId: selectedStaff.clerkId,
           allowedPaths: selectedStaff.allowedPaths,
           newPassword: updatingPassword || undefined
         })
@@ -191,87 +194,96 @@ export default function StaffManagementPage() {
       </header>
 
       <div className="grid lg:grid-cols-12 gap-8">
-        {/* Left Column: Form & List */}
         <div className="lg:col-span-7 space-y-8">
-          {/* Add Staff Form */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-              <UserPlus size={80} />
-            </div>
-            <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-              <UserPlus className="text-indigo-600" size={20} />
-              Add New Staff Member
-            </h2>
-            <form onSubmit={handleAddStaff} className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Full Name</label>
-                <input
-                  required
-                  type="text"
-                  placeholder="e.g. Rahul Singh"
-                  value={newStaff.name}
-                  onChange={e => setNewStaff({ ...newStaff, name: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                />
+          {canManage && (
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                <UserPlus size={80} />
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Email Address</label>
-                <div className="relative">
+              <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+                <UserPlus className="text-indigo-600" size={20} />
+                Add New Staff Member
+              </h2>
+              <form onSubmit={handleAddStaff} className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Full Name</label>
                   <input
                     required
-                    type="email"
-                    placeholder="rahul@kravypos.com"
-                    value={newStaff.email}
-                    onChange={e => setNewStaff({ ...newStaff, email: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      const random = Math.random().toString(36).slice(-5);
-                      setNewStaff({...newStaff, email: `staff.${random}@kravypos.com`});
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white px-2 py-1 rounded-lg border shadow-sm hover:bg-slate-50"
-                  >
-                    Auto-Generate
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Generate Password</label>
-                <div className="relative">
-                   <input
-                    required
                     type="text"
-                    placeholder="Set a secure password"
-                    value={newStaff.password}
-                    onChange={e => setNewStaff({ ...newStaff, password: e.target.value })}
+                    placeholder="e.g. Rahul Singh"
+                    value={newStaff.name}
+                    onChange={e => setNewStaff({ ...newStaff, name: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                   />
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      const pass = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase() + "!";
-                      setNewStaff({...newStaff, password: pass});
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white px-2 py-1 rounded-lg border shadow-sm hover:bg-slate-50"
-                  >
-                    Auto-Generate
-                  </button>
                 </div>
-              </div>
-              <button
-                type="submit"
-                disabled={isAdding}
-                className="sm:col-span-2 bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isAdding ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />}
-                Add Staff to Restaurant
-              </button>
-            </form>
-          </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Email Address</label>
+                  <div className="relative">
+                    <input
+                      required
+                      type="email"
+                      placeholder="rahul@kravypos.com"
+                      value={newStaff.email}
+                      onChange={e => setNewStaff({ ...newStaff, email: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const random = Math.random().toString(36).slice(-5);
+                        setNewStaff({...newStaff, email: `staff.${random}@kravypos.com`});
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white px-2 py-1 rounded-lg border shadow-sm hover:bg-slate-50"
+                    >
+                      Auto-Generate
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Phone Number (Optional)</label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. 9876543210"
+                    value={newStaff.phone}
+                    onChange={e => setNewStaff({ ...newStaff, phone: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Generate Password</label>
+                  <div className="relative">
+                     <input
+                      required
+                      type="text"
+                      placeholder="Set a secure password"
+                      value={newStaff.password}
+                      onChange={e => setNewStaff({ ...newStaff, password: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const pass = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase() + "!";
+                        setNewStaff({...newStaff, password: pass});
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white px-2 py-1 rounded-lg border shadow-sm hover:bg-slate-50"
+                    >
+                      Auto-Generate
+                    </button>
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isAdding}
+                  className="sm:col-span-2 bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isAdding ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />}
+                  Add Staff to Restaurant
+                </button>
+              </form>
+            </div>
+          )}
 
-          {/* Staff List */}
           <div className="space-y-4">
             <h2 className="text-xl font-black text-slate-800 flex items-center gap-2 ml-2">
               <Users className="text-blue-600" size={20} />
@@ -312,7 +324,6 @@ export default function StaffManagementPage() {
           </div>
         </div>
 
-        {/* Right Column: Permission Terminal */}
         <div className="lg:col-span-5">
            <AnimatePresence mode="wait">
              {selectedStaff ? (
@@ -334,7 +345,6 @@ export default function StaffManagementPage() {
                        <X size={20} />
                     </button>
                  </div>
-
 
                  <p className="text-slate-400 text-xs mb-6 font-medium leading-relaxed">
                    Select the modules this staff member can access. Unticked items will be hidden from their sidebar immediately.
