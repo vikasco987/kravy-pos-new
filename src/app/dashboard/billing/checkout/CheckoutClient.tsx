@@ -756,7 +756,7 @@ export default function CheckoutClient() {
         }
         @page {
           margin: 0;
-          size: 58mm auto;
+          size: auto;
         }
       }
     `;
@@ -768,13 +768,18 @@ export default function CheckoutClient() {
     printContainer.style.display = "none";
     printStyle.innerHTML += `
       @media print {
-        #print-receipt-container, #print-kot-container {
+        #print-receipt-container {
           display: block !important;
-          width: 54mm !important; /* Slightly narrower to avoid cutting */
-          padding: 1mm !important;
+          width: 100% !important; 
+          margin: 0 !important;
+          padding: 0 2mm !important; /* Safety padding for edges */
           color: #000 !important;
           background: #fff !important;
           font-family: 'Courier New', Courier, monospace !important;
+        }
+        .page-break {
+          page-break-after: always;
+          break-after: page;
         }
         * {
           color: #000 !important;
@@ -788,12 +793,19 @@ export default function CheckoutClient() {
       }
     `;
     printContainer.className = "font-mono text-[10px] leading-tight";
-    let html = receiptRef.current.innerHTML;
+    
+    let html = "";
+    
+    // If KOT with Bill is enabled, print KOT PREVIEW first with a page break
     if ((forceBoth || business?.enableKOTWithBill) && kotRef.current) {
-      html += '<div style="margin: 30px 0; border-top: 2px dashed #000;"></div>';
-      html += kotRef.current.innerHTML;
+      html += `<div>${kotRef.current.innerHTML}</div>`;
+      html += '<div class="page-break"></div>';
       setIsKotPrinted(true);
     }
+
+    // Then add the Full Receipt
+    html += `<div>${receiptRef.current.innerHTML}</div>`;
+    
     printContainer.innerHTML = html;
     
     document.body.appendChild(printContainer);
