@@ -757,12 +757,12 @@ export default function CheckoutClient() {
       // 1. Print KOT first
       printKOT();
       
-      // 2. Schedule the Bill print. 
-      // Because window.print() is blocking, this timeout will likely 
-      // only fire AFTER the KOT print dialog is closed.
+      // 2. Schedule the Bill print AFTER KOT.
+      // Since window.print() is blocking, we can use a small delay 
+      // to let the DOM settle after the KOT cleanup.
       setTimeout(() => {
         printActualBill();
-      }, 500); 
+      }, 300); 
     } else {
       printActualBill();
     }
@@ -771,16 +771,20 @@ export default function CheckoutClient() {
   const printActualBill = () => {
     if (!receiptRef.current) return;
     
+    // Cleanup any existing print styles/containers first
+    const oldStyle = document.getElementById("print-style-bill");
+    const oldCont = document.getElementById("print-bill-container");
+    if (oldStyle) oldStyle.remove();
+    if (oldCont) oldCont.remove();
+
     const printStyle = document.createElement("style");
+    printStyle.id = "print-style-bill";
     printStyle.innerHTML = `
       @media print {
         body > *:not(#print-bill-container) {
           display: none !important;
         }
-        @page {
-          margin: 0;
-          size: auto;
-        }
+        @page { margin: 0; size: auto; }
         #print-bill-container {
           display: block !important;
           width: 100% !important; 
@@ -791,48 +795,43 @@ export default function CheckoutClient() {
           font-family: 'Courier New', Courier, monospace !important;
           font-weight: 700 !important; 
         }
-        * {
-          color: #000 !important;
-          border-color: #000 !important;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        img {
-          filter: grayscale(100%) contrast(300%) !important;
-        }
+        * { color: #000 !important; border-color: #000 !important; }
+        img { filter: grayscale(100%) contrast(300%) !important; }
       }
     `;
     document.head.appendChild(printStyle);
     
     const printContainer = document.createElement("div");
     printContainer.id = "print-bill-container";
-    printContainer.style.display = "none";
     printContainer.className = "font-mono text-[10px] leading-tight font-bold";
     printContainer.innerHTML = receiptRef.current.innerHTML;
-    
     document.body.appendChild(printContainer);
+    
     window.print();
     
-    setTimeout(() => {
-      if (document.head.contains(printStyle)) document.head.removeChild(printStyle);
-      if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
-    }, 2000);
+    // Immediate cleanup after dialog closes
+    printStyle.remove();
+    printContainer.remove();
   }
 
   const printKOT = () => {
     setIsKotPrinted(true);
     if (!kotRef.current) { alert("Nothing to print in KOT"); return; }
     
+    // Cleanup any existing print styles/containers first
+    const oldStyle = document.getElementById("print-style-kot");
+    const oldCont = document.getElementById("print-kot-container");
+    if (oldStyle) oldStyle.remove();
+    if (oldCont) oldCont.remove();
+
     const printStyle = document.createElement("style");
+    printStyle.id = "print-style-kot";
     printStyle.innerHTML = `
       @media print {
         body > *:not(#print-kot-container) {
           display: none !important;
         }
-        @page {
-          margin: 0;
-          size: auto;
-        }
+        @page { margin: 0; size: auto; }
         #print-kot-container {
           display: block !important;
           width: 100% !important;
@@ -849,17 +848,15 @@ export default function CheckoutClient() {
     
     const printContainer = document.createElement("div");
     printContainer.id = "print-kot-container";
-    printContainer.style.display = "none";
     printContainer.className = "font-mono text-[10px] leading-tight font-bold";
     printContainer.innerHTML = kotRef.current.innerHTML;
-    
     document.body.appendChild(printContainer);
-    window.print();
     
-    setTimeout(() => {
-      if (document.head.contains(printStyle)) document.head.removeChild(printStyle);
-      if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
-    }, 2000);
+    window.print();
+
+    // Immediate cleanup after dialog closes
+    printStyle.remove();
+    printContainer.remove();
   }
 
   /* ================= QUICK ADD ITEM ================= */
