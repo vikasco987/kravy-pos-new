@@ -458,6 +458,7 @@ export default function CheckoutClient() {
     requireCustomerPhone?: boolean;
     collectCustomerAddress?: boolean;
     requireCustomerAddress?: boolean;
+    enableKOTWithBill?: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -488,6 +489,7 @@ export default function CheckoutClient() {
             requireCustomerPhone: data.requireCustomerPhone ?? false,
             collectCustomerAddress: data.collectCustomerAddress ?? false,
             requireCustomerAddress: data.requireCustomerAddress ?? false,
+            enableKOTWithBill: data.enableKOTWithBill ?? false,
           });
         }
       } catch (err) {
