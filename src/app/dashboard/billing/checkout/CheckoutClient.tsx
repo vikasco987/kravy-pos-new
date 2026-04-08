@@ -796,7 +796,7 @@ export default function CheckoutClient() {
           display: block !important;
           width: 100% !important;
           margin: 0 !important;
-          padding: 0 !important;
+          padding: 0 0 100px 0 !important; /* Added 100px bottom padding to feed paper out */
           background: #fff !important;
           color: #000 !important;
           font-family: 'Courier New', Courier, monospace !important;
@@ -817,14 +817,17 @@ export default function CheckoutClient() {
 
     if (type === "kot") setIsKotPrinted(true);
 
-    // Execute Print
-    window.print();
-
-    // Cleanup AFTER print dialog returns
-    style.remove();
-    container.remove();
-
-    if (callback) callback();
+    // Give a tiny moment for items to render in the DOM branch
+    setTimeout(() => {
+      window.print();
+      
+      // Delay cleanup to ensure spooler finishes reading the DOM
+      setTimeout(() => {
+        if (document.body.contains(container)) container.remove();
+        if (document.head.contains(style)) style.remove();
+        if (callback) callback();
+      }, 2000);
+    }, 100);
   }
 
   /* ================= QUICK ADD ITEM ================= */
