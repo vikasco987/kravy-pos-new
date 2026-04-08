@@ -753,13 +753,24 @@ export default function CheckoutClient() {
 
     const isKOTEnabled = forceBoth || business?.enableKOTWithBill;
 
-    // IF KOT is enabled, we trigger KOT first as a SEPARATE job for auto-cut
     if (isKOTEnabled && kotRef.current) {
-        printKOT(); 
-        // We continue to print the bill after the KOT dialog
+      // 1. Print KOT first
+      printKOT();
+      
+      // 2. Schedule the Bill print. 
+      // Because window.print() is blocking, this timeout will likely 
+      // only fire AFTER the KOT print dialog is closed.
+      setTimeout(() => {
+        printActualBill();
+      }, 500); 
+    } else {
+      printActualBill();
     }
+  }
 
-    // Now print the actual Bill
+  const printActualBill = () => {
+    if (!receiptRef.current) return;
+    
     const printStyle = document.createElement("style");
     printStyle.innerHTML = `
       @media print {
@@ -778,7 +789,7 @@ export default function CheckoutClient() {
           color: #000 !important;
           background: #fff !important;
           font-family: 'Courier New', Courier, monospace !important;
-          font-weight: 700 !important; /* Force bold for thermal clarity */
+          font-weight: 700 !important; 
         }
         * {
           color: #000 !important;
@@ -787,7 +798,7 @@ export default function CheckoutClient() {
           print-color-adjust: exact;
         }
         img {
-          filter: grayscale(100%) contrast(300%) !important; /* Higher contrast */
+          filter: grayscale(100%) contrast(300%) !important;
         }
       }
     `;
@@ -812,7 +823,6 @@ export default function CheckoutClient() {
     setIsKotPrinted(true);
     if (!kotRef.current) { alert("Nothing to print in KOT"); return; }
     
-    // Create hidden print iframe if not already existing
     const printStyle = document.createElement("style");
     printStyle.innerHTML = `
       @media print {
@@ -831,7 +841,7 @@ export default function CheckoutClient() {
           color: #000 !important;
           background: #fff !important;
           font-family: 'Courier New', Courier, monospace !important;
-          font-weight: 700 !important; /* High clarity */
+          font-weight: 700 !important;
         }
       }
     `;
