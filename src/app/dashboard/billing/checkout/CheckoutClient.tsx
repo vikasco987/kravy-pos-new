@@ -1801,7 +1801,7 @@ export default function CheckoutClient() {
               <div className="my-2 text-center">
                 <div className="inline-block border-2 border-black p-1 bg-white">
                   <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&ecc=L&margin=1&data=${encodeURIComponent(`https://kravy.in/menu/${business?.userId}`)}`} 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&ecc=L&margin=1&data=${encodeURIComponent(`${window.location.origin}/menu/${business?.userId}`)}`} 
                     alt="Menu QR" 
                     className="w-[28mm] h-[28mm] object-contain block" 
                     style={{ filter: 'contrast(200%) grayscale(100%)' }}
