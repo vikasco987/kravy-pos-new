@@ -100,6 +100,7 @@ export async function POST(request: Request) {
         excelImportEnabled: body.excelImportEnabled !== undefined ? body.excelImportEnabled : undefined,
         qrMenuPriceInclusive: body.qrMenuPriceInclusive !== undefined ? body.qrMenuPriceInclusive : undefined,
         enableKOTWithBill: body.enableKOTWithBill !== undefined ? body.enableKOTWithBill : undefined,
+        enableMenuQRInBill: body.enableMenuQRInBill !== undefined ? body.enableMenuQRInBill : undefined,
       },
 
       create: {
@@ -141,6 +142,7 @@ export async function POST(request: Request) {
         excelImportEnabled: body.excelImportEnabled ?? false,
         qrMenuPriceInclusive: body.qrMenuPriceInclusive ?? false,
         enableKOTWithBill: body.enableKOTWithBill ?? false,
+        enableMenuQRInBill: body.enableMenuQRInBill ?? false,
       },
     });
 

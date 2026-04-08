@@ -7,7 +7,7 @@ import {
     Percent, ChevronLeft, Save, Loader2, Settings2,
     Tag, CheckCircle2, Info, ToggleLeft, ToggleRight,
     Gift, Flame, ShieldCheck, BadgePercent, Trash2, Plus,
-    PackageOpen, ReceiptText, AlertTriangle
+    PackageOpen, ReceiptText, AlertTriangle, QrCode
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { kravy } from "@/lib/sounds";
@@ -33,6 +33,7 @@ export default function PricingSettingsPage() {
     const [perProductTaxEnabled, setPerProductTaxEnabled] = useState(false);
     const [qrMenuPriceInclusive, setQrMenuPriceInclusive] = useState(false);
     const [enableKOTWithBill, setEnableKOTWithBill] = useState(false);
+    const [enableMenuQRInBill, setEnableMenuQRInBill] = useState(false);
     const [taxRate, setTaxRate] = useState(5.0);
     const [businessProfile, setBusinessProfile] = useState<any>(null);
 
@@ -87,6 +88,7 @@ export default function PricingSettingsPage() {
                 perProductTaxEnabled, 
                 qrMenuPriceInclusive, 
                 enableKOTWithBill,
+                enableMenuQRInBill,
                 taxRate: Number(taxRate) 
             };
             const res = await fetch("/api/profile", {
@@ -175,6 +177,19 @@ export default function PricingSettingsPage() {
         } catch {
             toast.error("Failed to save printing preference");
             setEnableKOTWithBill(!newVal);
+        }
+    }
+    async function handleToggleMenuQR(val: boolean) {
+        setEnableMenuQRInBill(val);
+        try {
+            const res = await fetch("/api/profile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ enableMenuQRInBill: val }),
+            });
+            if (res.ok) toast.success(`Menu QR ${val ? 'Enabled' : 'Disabled'} on Bills ✅`);
+        } catch {
+            toast.error("Failed to update setting");
         }
     }
 
@@ -291,7 +306,7 @@ export default function PricingSettingsPage() {
                         </button>
                     </div>
                     {/* KOT with Bill Toggle Row */}
-                    <div className="flex items-center justify-between px-5 py-4 border-[var(--kravy-border)]">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--kravy-border)]">
                         <div className="flex items-center gap-3.5">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${enableKOTWithBill ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
                                 <ReceiptText size={20} />
@@ -308,6 +323,29 @@ export default function PricingSettingsPage() {
                         <button onClick={() => handleToggleKOT(!enableKOTWithBill)} className="shrink-0">
                             {enableKOTWithBill
                                 ? <ToggleRight size={36} className="text-emerald-500" />
+                                : <ToggleLeft size={36} className="text-gray-300" />
+                            }
+                        </button>
+                    </div>
+
+                    {/* Menu QR on Bill Toggle Row */}
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--kravy-border)]">
+                        <div className="flex items-center gap-3.5">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${enableMenuQRInBill ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}>
+                                <QrCode size={20} />
+                            </div>
+                            <div>
+                                <div className="font-black text-[0.9rem] text-[var(--kravy-text-primary)]">Print Menu QR on Bill</div>
+                                <div className="text-xs text-[var(--kravy-text-muted)] font-medium">
+                                    {enableMenuQRInBill 
+                                        ? "Digital menu QR will print at bottom of bill" 
+                                        : "No menu QR on bills"}
+                                </div>
+                            </div>
+                        </div>
+                        <button onClick={() => handleToggleMenuQR(!enableMenuQRInBill)} className="shrink-0">
+                            {enableMenuQRInBill
+                                ? <ToggleRight size={36} className="text-indigo-500" />
                                 : <ToggleLeft size={36} className="text-gray-300" />
                             }
                         </button>

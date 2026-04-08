@@ -179,6 +179,7 @@ export default function BusinessProfile({
           businessNameSize: data.businessNameSize,
           fssaiNumber: data.fssaiNumber,
           fssaiEnabled: data.fssaiEnabled,
+          enableMenuQRInBill: data.enableMenuQRInBill,
         }}
         onCancel={() => setEditMode(false)}
         onSuccess={() => {

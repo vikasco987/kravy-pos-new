@@ -459,6 +459,8 @@ export default function CheckoutClient() {
     collectCustomerAddress?: boolean;
     requireCustomerAddress?: boolean;
     enableKOTWithBill?: boolean;
+    enableMenuQRInBill?: boolean;
+    userId?: string;
   } | null>(null);
 
   console.log("DEBUG POS RENDER - business.enableKOTWithBill:", business?.enableKOTWithBill);
@@ -492,6 +494,8 @@ export default function CheckoutClient() {
             collectCustomerAddress: data.collectCustomerAddress ?? false,
             requireCustomerAddress: data.requireCustomerAddress ?? false,
             enableKOTWithBill: data.enableKOTWithBill ?? false,
+            enableMenuQRInBill: data.enableMenuQRInBill ?? false,
+            userId: data.userId,
           });
           console.log("DEBUG POS API RESPONSE - enableKOTWithBill:", data.enableKOTWithBill);
           console.log("DEBUG POS API FULL DATA:", data);
@@ -746,74 +750,58 @@ export default function CheckoutClient() {
   /* ================= PRINT RECEIPT ================= */
   function printReceipt(forceBoth = false) {
     if (!receiptRef.current) { alert("Nothing to print"); return; }
-    
-    // Inject print-specific CSS
+
+    const isKOTEnabled = forceBoth || business?.enableKOTWithBill;
+
+    // IF KOT is enabled, we trigger KOT first as a SEPARATE job for auto-cut
+    if (isKOTEnabled && kotRef.current) {
+        printKOT(); 
+        // We continue to print the bill after the KOT dialog
+    }
+
+    // Now print the actual Bill
     const printStyle = document.createElement("style");
     printStyle.innerHTML = `
       @media print {
-        body > *:not(#print-receipt-container) {
+        body > *:not(#print-bill-container) {
           display: none !important;
         }
         @page {
           margin: 0;
           size: auto;
         }
-      }
-    `;
-    document.head.appendChild(printStyle);
-    
-    // Create temporary print container
-    const printContainer = document.createElement("div");
-    printContainer.id = "print-receipt-container";
-    printContainer.style.display = "none";
-    printStyle.innerHTML += `
-      @media print {
-        #print-receipt-container {
+        #print-bill-container {
           display: block !important;
           width: 100% !important; 
           margin: 0 !important;
-          padding: 0 2mm !important; /* Safety padding for edges */
+          padding: 0 !important;
           color: #000 !important;
           background: #fff !important;
           font-family: 'Courier New', Courier, monospace !important;
-        }
-        .page-break {
-          page-break-after: always;
-          break-after: page;
+          font-weight: 700 !important; /* Force bold for thermal clarity */
         }
         * {
           color: #000 !important;
           border-color: #000 !important;
-          text-shadow: none !important;
-          box-shadow: none !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
         img {
-          filter: grayscale(100%) contrast(200%) !important;
+          filter: grayscale(100%) contrast(300%) !important; /* Higher contrast */
         }
       }
     `;
-    printContainer.className = "font-mono text-[10px] leading-tight";
+    document.head.appendChild(printStyle);
     
-    let html = "";
-    
-    // If KOT with Bill is enabled, print KOT PREVIEW first with a page break
-    if ((forceBoth || business?.enableKOTWithBill) && kotRef.current) {
-      html += `<div>${kotRef.current.innerHTML}</div>`;
-      html += '<div class="page-break"></div>';
-      setIsKotPrinted(true);
-    }
-
-    // Then add the Full Receipt
-    html += `<div>${receiptRef.current.innerHTML}</div>`;
-    
-    printContainer.innerHTML = html;
+    const printContainer = document.createElement("div");
+    printContainer.id = "print-bill-container";
+    printContainer.style.display = "none";
+    printContainer.className = "font-mono text-[10px] leading-tight font-bold";
+    printContainer.innerHTML = receiptRef.current.innerHTML;
     
     document.body.appendChild(printContainer);
-    
-    // Trigger the print dialog synchronously
     window.print();
     
-    // Cleanup temporary elements after printing
     setTimeout(() => {
       if (document.head.contains(printStyle)) document.head.removeChild(printStyle);
       if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
@@ -833,7 +821,17 @@ export default function CheckoutClient() {
         }
         @page {
           margin: 0;
-          size: 58mm auto;
+          size: auto;
+        }
+        #print-kot-container {
+          display: block !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          color: #000 !important;
+          background: #fff !important;
+          font-family: 'Courier New', Courier, monospace !important;
+          font-weight: 700 !important; /* High clarity */
         }
       }
     `;
@@ -842,16 +840,7 @@ export default function CheckoutClient() {
     const printContainer = document.createElement("div");
     printContainer.id = "print-kot-container";
     printContainer.style.display = "none";
-    printStyle.innerHTML += `
-      @media print {
-        #print-kot-container {
-          display: block !important;
-          width: 58mm;
-          padding: 2mm;
-        }
-      }
-    `;
-    printContainer.className = "font-mono text-[10px] leading-tight";
+    printContainer.className = "font-mono text-[10px] leading-tight font-bold";
     printContainer.innerHTML = kotRef.current.innerHTML;
     
     document.body.appendChild(printContainer);
@@ -1671,42 +1660,41 @@ export default function CheckoutClient() {
         >
           {business?.logoUrl && (
             <div className="flex justify-center mb-1">
-              <img src={business?.logoUrl} alt="Logo" className="max-h-[28mm] object-contain" />
+              <img src={business.logoUrl} alt="Logo" className="max-h-[30mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
             </div>
           )}
-          <div className="text-center font-bold text-[12px]">{business?.businessName}</div>
+          <div className="text-center font-black text-[15px]">{business?.businessName}</div>
           {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
-            <div className="text-center text-[9px]">
+            <div className="text-center text-[10px] font-bold">
               {business?.businessAddress}
               {business?.district && `, ${business.district}`}
               {business?.state && `, ${business.state}`}
               {business?.pinCode && ` - ${business.pinCode}`}
             </div>
           )}
-          {business?.gstNumber && <div className="text-center text-[9px]">GSTIN: {business.gstNumber}</div>}
-          {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[9px]">FSSAI: {business.fssaiNumber}</div>}
-          <div className="text-center text-[9px] mt-1">
+          {business?.gstNumber && <div className="text-center text-[11px] font-bold">GSTIN: {business.gstNumber}</div>}
+          {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[11px] font-bold">FSSAI: {business.fssaiNumber}</div>}
+          <div className="text-center text-[11px] mt-2 font-bold">
             <div>Bill No: {billNumber}</div>
-            <div>Date: {billDate}</div>
+            <div>Date: {billDate} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
           </div>
-          <div className="my-1 border-t border-dashed" />
-          {(customerName || customerPhone) && (
-            <div className="text-[9px]">
-              <div>Customer: {customerName || "Walk-in Customer"}</div>
-              {customerPhone && <div>Phone: {customerPhone}</div>}
-            </div>
-          )}
-          <div className="my-1 border-t border-dashed" />
-          <div className="my-1 border-t border-dashed" />
+          <div className="my-2 border-t-2 border-black" />
+          <div className="flex justify-between font-bold text-[11px]">
+            <span className="flex-1 min-w-0 pr-1">Item</span>
+            <span className="w-[8mm] text-center shrink-0">Qty</span>
+            <span className="w-[12mm] text-right shrink-0">Rate</span>
+            <span className="w-[13mm] text-right shrink-0">Total</span>
+          </div>
+          <div className="border-t-2 border-black my-1" />
           {items.map((i) => {
             const itemRate = (perProductEnabled && i.gst !== undefined && i.gst !== null) ? i.gst : (taxActive ? globalRate : 0);
             return (
               <div key={i.id} className="mb-1.5">
-                <div className="flex justify-between text-[9px] font-bold">
+                <div className="flex justify-between text-[11px] font-bold">
                   <span className="flex-1 min-w-0 pr-1 truncate">{i.name}</span>
                   <span className="w-[11mm] text-right shrink-0">{(i.qty * i.rate).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-[8px] text-gray-600">
+                <div className="flex justify-between text-[10px] font-bold">
                   <span>{i.qty} x {i.rate.toFixed(2)}</span>
                   <span>
                     {((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} 
@@ -1716,24 +1704,24 @@ export default function CheckoutClient() {
               </div>
             );
           })}
-          <div className="my-1 border-t border-dashed" />
+          <div className="my-1 border-t-2 border-black" />
           
-          <div className="space-y-0.5">
-            <div className="flex justify-between text-[9px]"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
+          <div className="space-y-1">
+            <div className="flex justify-between text-[11px] font-bold"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
             {discountAmt > 0 && (
-              <div className="flex justify-between text-[9px] font-bold italic">
+              <div className="flex justify-between text-[11px] font-bold italic">
                 <span>Discount ({appliedOffer?.code})</span>
                 <span>- ₹{discountAmt.toFixed(2)}</span>
               </div>
             )}
             {(taxActive || perProductEnabled) && (
               <>
-                <div className="flex justify-between text-[9px]"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>
-                <div className="flex justify-between text-[9px]"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
+                <div className="flex justify-between text-[10px] font-bold"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>
+                <div className="flex justify-between text-[10px] font-bold"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
               </>
             )}
-            <div className="border-t border-black border-dashed my-1" />
-            <div className="flex justify-between font-black text-[12px] border-y-2 border-black py-1 my-1">
+            <div className="border-t-2 border-black my-1" />
+            <div className="flex justify-between font-black text-[15px] border-b-2 border-black py-1.5 my-1">
               <span>GRAND TOTAL</span>
               <span>₹{finalTotal.toFixed(2)}</span>
             </div>
@@ -1746,10 +1734,10 @@ export default function CheckoutClient() {
 
           {(taxActive || perProductEnabled) && taxBreakup.length > 0 && (
             <div className="mt-3">
-              <div className="text-[8px] font-bold border-b border-dashed mb-1 pb-0.5">GST TAX BREAKUP</div>
-              <table className="w-full text-[8px] border-collapse">
+              <div className="text-[10px] font-black border-b-2 border-black mb-1 pb-0.5">GST TAX BREAKUP</div>
+              <table className="w-full text-[10px] border-collapse font-bold">
                 <thead>
-                  <tr className="border-b border-dashed">
+                  <tr className="border-b-2 border-black">
                     <th className="text-left font-bold">Rate</th>
                     <th className="text-right font-bold">Taxable</th>
                     {taxBreakup.some(g => g.igst > 0) ? (
@@ -1779,39 +1767,55 @@ export default function CheckoutClient() {
                   ))}
                 </tbody>
               </table>
-              <div className="border-t border-dashed mt-1" />
+              <div className="border-t-2 border-black mt-1" />
             </div>
           )}
 
-          <div className="mt-2 text-[8px] italic font-medium">
+          <div className="mt-2 text-[10px] italic font-bold">
             Amount in Words: {numberToWords(finalTotal)}
           </div>
 
-          <div className="mt-3 border-t border-dashed pt-1 flex justify-between text-[8px]">
+          <div className="mt-3 border-t-2 border-black pt-1 flex justify-between text-[11px] font-bold">
             <span>Payment: {paymentMode}</span>
             <span>Status: {paymentStatus}</span>
           </div>
           
           {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
-            <div className="mt-2 text-center text-[9px] font-bold border-t border-dashed pt-2">
+            <div className="mt-2 text-center text-[10px] font-bold border-t-2 border-black pt-2">
               {(business?.upi && business?.upiQrEnabled !== false) && (
                 <>
-                  <div>Scan & Pay</div>
+                  <div className="font-black">SCAN & PAY</div>
                   <div className="my-2 text-center">
                     <div className="inline-block border-2 border-black p-1 bg-white">
-                      <img src={qrUrl} alt="UPI QR" className="w-[32mm] h-[32mm] object-contain block" style={{ imageRendering: 'pixelated' }} />
+                      <img src={qrUrl} alt="UPI QR" className="w-[32mm] h-[32mm] object-contain block" style={{ imageRendering: 'pixelated', filter: 'contrast(300%) grayscale(100%)' }} />
                     </div>
                   </div>
                   <div className="mb-2">UPI: {business.upi}</div>
                 </>
               )}
               {paymentMode === "UPI" && (
-                <div className="text-center text-[9px]">Txn Ref: {upiTxnRef || "Pending"}</div>
+                <div className="text-center text-[10px]">Txn Ref: {upiTxnRef || "Pending"}</div>
               )}
             </div>
           )}
-          {business?.businessTagLine && <div className="text-center text-[9px] mt-1 italic opacity-80">{business.businessTagLine}</div>}
-          <div className="text-center font-bold text-[11px] mt-2">THANK YOU 🙏 VISIT AGAIN</div>
+          {business?.enableMenuQRInBill && (
+            <div className="mt-2 text-center border-t-2 border-black pt-2">
+              <div className="text-[11px] font-black mb-1 uppercase tracking-tighter">Scan to View Digital Menu</div>
+              <div className="my-2 text-center">
+                <div className="inline-block border-2 border-black p-1 bg-white">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`https://kravy.in/menu/${business?.userId}`)}`} 
+                    alt="Menu QR" 
+                    className="w-[30mm] h-[30mm] object-contain block" 
+                    style={{ imageRendering: 'pixelated', filter: 'contrast(300%) grayscale(100%)' }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="mt-2 text-center border-t-2 border-black pt-2">
+            <div className="text-[12px] font-black mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
+          </div>
         </div>
 
         {/* ================= PRINT KOT (58mm) ================= */}
@@ -1819,24 +1823,24 @@ export default function CheckoutClient() {
           ref={kotRef}
           className="hidden print:block font-mono text-[10px] leading-tight"
         >
-          <div className="text-center font-bold text-[14px] border-b border-black pb-1 mb-2">KOT</div>
-          <div className="flex justify-between text-[11px] font-bold mb-2">
+          <div className="text-center font-black text-[18px] border-b-2 border-black pb-1 mb-2">KOT</div>
+          <div className="flex justify-between text-[13px] font-black mb-2">
             <span>#{billNumber.split('-').pop()}</span>
             <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
-          <div className="border-t border-black my-1" />
-          <div className="flex justify-between font-bold text-[11px] mb-1">
+          <div className="border-t-2 border-black my-1" />
+          <div className="flex justify-between font-black text-[13px] mb-1">
             <span>Item</span>
             <span>Qty</span>
           </div>
-          <div className="border-t border-black mb-1" />
+          <div className="border-t-2 border-black mb-1" />
           {items.map((i, idx) => (
-            <div key={idx} className="flex justify-between text-[12px] font-bold py-1 border-b border-gray-100 italic">
+            <div key={idx} className="flex justify-between text-[15px] font-black py-2 border-b border-black italic">
               <span className="flex-1 pr-2">{i.name}</span>
               <span>x{i.qty}</span>
             </div>
           ))}
-          <div className="border-t border-black mt-2 pt-1 text-center text-[9px]">
+          <div className="border-t-2 border-black mt-2 pt-1 text-center text-[11px] font-bold">
             {new Date().toLocaleDateString()}
           </div>
         </div>

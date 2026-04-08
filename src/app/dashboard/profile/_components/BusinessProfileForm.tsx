@@ -48,6 +48,7 @@ const schema = z.object({
   fssaiNumber: z.string().optional(),
   fssaiEnabled: z.boolean().optional(),
   hsnEnabled: z.boolean().optional(),
+  enableMenuQRInBill: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -218,6 +219,7 @@ export default function BusinessProfileForm({
         fssaiNumber: values.fssaiNumber ?? null,
         fssaiEnabled: values.fssaiEnabled ?? false,
         hsnEnabled: values.hsnEnabled ?? false,
+        enableMenuQRInBill: values.enableMenuQRInBill ?? false,
       };
 
       const res = await fetch("/api/profile", {
@@ -414,6 +416,17 @@ export default function BusinessProfileForm({
               <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Include your online menu link in the invoice message</p>
             </div>
           </label>
+          <label className="flex items-center gap-3 cursor-pointer bg-[var(--kravy-bg-2)] p-4 rounded-xl border border-[var(--kravy-border)] hover:border-indigo-500/50 transition-colors">
+            <input 
+              type="checkbox" 
+              {...register("enableMenuQRInBill")} 
+              className="w-5 h-5 rounded min-w-[20px] accent-indigo-500"
+            />
+            <div>
+              <p className="text-sm font-bold text-[var(--kravy-text-primary)]">Print Menu QR on Bill</p>
+              <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Prints a scannable QR for your digital menu on receipts</p>
+            </div>
+          </label>
         </div>
       </Section>
 
@@ -573,14 +586,28 @@ export default function BusinessProfileForm({
             
             {(watchedValues.upi && watchedValues.upiQrEnabled !== false) && (
               <div className="my-2 text-center">
+                <div className="text-[8px] font-bold mb-1">SCAN & PAY</div>
                 <div className="inline-block border border-gray-300 p-1 rounded-md bg-white">
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`upi://pay?pa=${watchedValues.upi}&pn=${watchedValues.businessName || "Store"}&am=103.95&cu=INR`)}`} 
                     alt="UPI QR" 
-                    className="w-[30mm] h-[30mm] object-contain block mix-blend-multiply" 
+                    className="w-[28mm] h-[28mm] object-contain block mix-blend-multiply" 
                   />
                 </div>
-                <div className="text-center text-[9px] mt-1.5 opacity-90 text-[10px]">UPI: {watchedValues.upi}</div>
+                <div className="text-center text-[8px] mt-1.5 opacity-90">UPI: {watchedValues.upi}</div>
+              </div>
+            )}
+
+            {watchedValues.enableMenuQRInBill && (
+              <div className="my-2 text-center border-t border-dashed border-gray-300 pt-2">
+                <div className="text-[8px] font-bold mb-1 uppercase tracking-tighter">Scan to View Digital Menu</div>
+                <div className="inline-block border border-gray-300 p-1 rounded-md bg-white">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`https://kravy.in/menu/demo-user`)}`} 
+                    alt="Menu QR" 
+                    className="w-[25mm] h-[25mm] object-contain block mix-blend-multiply" 
+                  />
+                </div>
               </div>
             )}
             

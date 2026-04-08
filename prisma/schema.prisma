@@ -378,6 +378,7 @@ model BusinessProfile {
 
   qrMenuPriceInclusive Boolean @default(false)
   enableKOTWithBill    Boolean @default(false)
+  enableMenuQRInBill   Boolean @default(false)
   aiScraperEnabled   Boolean @default(false)
   excelImportEnabled Boolean @default(false)
 
