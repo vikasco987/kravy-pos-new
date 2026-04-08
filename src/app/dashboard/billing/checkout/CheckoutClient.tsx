@@ -750,113 +750,81 @@ export default function CheckoutClient() {
   /* ================= PRINT RECEIPT ================= */
   function printReceipt(forceBoth = false) {
     if (!receiptRef.current) { alert("Nothing to print"); return; }
-
+    
     const isKOTEnabled = forceBoth || business?.enableKOTWithBill;
+    console.log("PRINT TRIGGERED - KOT:", isKOTEnabled);
 
     if (isKOTEnabled && kotRef.current) {
-      // 1. Print KOT first
-      printKOT();
-      
-      // 2. Schedule the Bill print AFTER KOT.
-      // Since window.print() is blocking, we can use a small delay 
-      // to let the DOM settle after the KOT cleanup.
-      setTimeout(() => {
-        printActualBill();
-      }, 300); 
+      // 1. Print KOT
+      runPrintJob("kot", kotRef.current.innerHTML, () => {
+        // 2. ONLY AFTER KOT dialog is closed, wait 1 sec then print Bill
+        setTimeout(() => {
+          if (receiptRef.current) {
+            runPrintJob("bill", receiptRef.current.innerHTML);
+          }
+        }, 1000); 
+      });
     } else {
-      printActualBill();
+      runPrintJob("bill", receiptRef.current.innerHTML);
     }
   }
 
   const printActualBill = () => {
-    if (!receiptRef.current) return;
-    
-    // Cleanup any existing print styles/containers first
-    const oldStyle = document.getElementById("print-style-bill");
-    const oldCont = document.getElementById("print-bill-container");
-    if (oldStyle) oldStyle.remove();
-    if (oldCont) oldCont.remove();
+    if (receiptRef.current) runPrintJob("bill", receiptRef.current.innerHTML);
+  };
 
-    const printStyle = document.createElement("style");
-    printStyle.id = "print-style-bill";
-    printStyle.innerHTML = `
+  const printKOT = () => {
+    if (kotRef.current) runPrintJob("kot", kotRef.current.innerHTML);
+  };
+
+  const runPrintJob = (type: "kot" | "bill", html: string, callback?: () => void) => {
+    const containerId = `print-container-${type}`;
+    const styleId = `print-style-${type}`;
+
+    // Clean any existing ones
+    document.getElementById(containerId)?.remove();
+    document.getElementById(styleId)?.remove();
+
+    // Create Style
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.innerHTML = `
       @media print {
-        body > *:not(#print-bill-container) {
-          display: none !important;
-        }
+        body > *:not(#${containerId}) { display: none !important; }
         @page { margin: 0; size: auto; }
-        #print-bill-container {
+        #${containerId} {
           display: block !important;
-          width: 100% !important; 
+          width: 100% !important;
           margin: 0 !important;
           padding: 0 !important;
-          color: #000 !important;
           background: #fff !important;
+          color: #000 !important;
           font-family: 'Courier New', Courier, monospace !important;
-          font-weight: 700 !important; 
+          font-weight: 700 !important;
         }
         * { color: #000 !important; border-color: #000 !important; }
         img { filter: grayscale(100%) contrast(300%) !important; }
       }
     `;
-    document.head.appendChild(printStyle);
-    
-    const printContainer = document.createElement("div");
-    printContainer.id = "print-bill-container";
-    printContainer.className = "font-mono text-[10px] leading-tight font-bold";
-    printContainer.innerHTML = receiptRef.current.innerHTML;
-    document.body.appendChild(printContainer);
-    
-    window.print();
-    
-    // Immediate cleanup after dialog closes
-    printStyle.remove();
-    printContainer.remove();
-  }
+    document.head.appendChild(style);
 
-  const printKOT = () => {
-    setIsKotPrinted(true);
-    if (!kotRef.current) { alert("Nothing to print in KOT"); return; }
-    
-    // Cleanup any existing print styles/containers first
-    const oldStyle = document.getElementById("print-style-kot");
-    const oldCont = document.getElementById("print-kot-container");
-    if (oldStyle) oldStyle.remove();
-    if (oldCont) oldCont.remove();
+    // Create Container
+    const container = document.createElement("div");
+    container.id = containerId;
+    container.className = "font-mono text-[11px] leading-tight font-bold";
+    container.innerHTML = html;
+    document.body.appendChild(container);
 
-    const printStyle = document.createElement("style");
-    printStyle.id = "print-style-kot";
-    printStyle.innerHTML = `
-      @media print {
-        body > *:not(#print-kot-container) {
-          display: none !important;
-        }
-        @page { margin: 0; size: auto; }
-        #print-kot-container {
-          display: block !important;
-          width: 100% !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          color: #000 !important;
-          background: #fff !important;
-          font-family: 'Courier New', Courier, monospace !important;
-          font-weight: 700 !important;
-        }
-      }
-    `;
-    document.head.appendChild(printStyle);
-    
-    const printContainer = document.createElement("div");
-    printContainer.id = "print-kot-container";
-    printContainer.className = "font-mono text-[10px] leading-tight font-bold";
-    printContainer.innerHTML = kotRef.current.innerHTML;
-    document.body.appendChild(printContainer);
-    
+    if (type === "kot") setIsKotPrinted(true);
+
+    // Execute Print
     window.print();
 
-    // Immediate cleanup after dialog closes
-    printStyle.remove();
-    printContainer.remove();
+    // Cleanup AFTER print dialog returns
+    style.remove();
+    container.remove();
+
+    if (callback) callback();
   }
 
   /* ================= QUICK ADD ITEM ================= */
