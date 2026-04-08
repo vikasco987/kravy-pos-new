@@ -790,20 +790,37 @@ export default function CheckoutClient() {
     style.id = styleId;
     style.innerHTML = `
       @media print {
+        html, body { 
+          height: auto !important; 
+          overflow: visible !important; 
+          margin: 0 !important;
+          padding: 0 !important;
+        }
         body > *:not(#${containerId}) { display: none !important; }
         @page { margin: 0; size: auto; }
         #${containerId} {
           display: block !important;
           width: 100% !important;
+          height: auto !important;
+          overflow: visible !important;
           margin: 0 !important;
-          padding: 0 0 100px 0 !important; /* Added 100px bottom padding to feed paper out */
+          padding: 0 0 120px 0 !important; 
           background: #fff !important;
           color: #000 !important;
           font-family: 'Courier New', Courier, monospace !important;
           font-weight: 700 !important;
+          position: relative !important;
         }
-        * { color: #000 !important; border-color: #000 !important; }
-        img { filter: grayscale(100%) contrast(300%) !important; }
+        * { 
+          color: #000 !important; 
+          border-color: #000 !important; 
+          overflow: visible !important;
+        }
+        img { 
+          filter: grayscale(100%) contrast(300%) !important; 
+          max-width: 100% !important;
+          display: block !important;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -817,7 +834,7 @@ export default function CheckoutClient() {
 
     if (type === "kot") setIsKotPrinted(true);
 
-    // Give a tiny moment for items to render in the DOM branch
+    // Give more time (300ms) for items to render and images to prepare
     setTimeout(() => {
       window.print();
       
@@ -826,8 +843,8 @@ export default function CheckoutClient() {
         if (document.body.contains(container)) container.remove();
         if (document.head.contains(style)) style.remove();
         if (callback) callback();
-      }, 2000);
-    }, 100);
+      }, 2500); 
+    }, 300);
   }
 
   /* ================= QUICK ADD ITEM ================= */
