@@ -751,21 +751,23 @@ export default function CheckoutClient() {
   function printReceipt(forceBoth = false) {
     if (!receiptRef.current) { alert("Nothing to print"); return; }
     
+    // Capture content IMMEDIATELY before state can be cleared by the caller
+    const billHtml = receiptRef.current.innerHTML;
+    const kotHtml = kotRef.current?.innerHTML || "";
+
     const isKOTEnabled = forceBoth || business?.enableKOTWithBill;
     console.log("PRINT TRIGGERED - KOT:", isKOTEnabled);
 
-    if (isKOTEnabled && kotRef.current) {
+    if (isKOTEnabled && kotHtml) {
       // 1. Print KOT
-      runPrintJob("kot", kotRef.current.innerHTML, () => {
-        // 2. ONLY AFTER KOT dialog is closed, wait 1 sec then print Bill
+      runPrintJob("kot", kotHtml, () => {
+        // 2. Print Bill after KOT
         setTimeout(() => {
-          if (receiptRef.current) {
-            runPrintJob("bill", receiptRef.current.innerHTML);
-          }
+          runPrintJob("bill", billHtml);
         }, 1000); 
       });
     } else {
-      runPrintJob("bill", receiptRef.current.innerHTML);
+      runPrintJob("bill", billHtml);
     }
   }
 
