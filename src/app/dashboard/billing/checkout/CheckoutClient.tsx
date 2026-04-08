@@ -461,6 +461,8 @@ export default function CheckoutClient() {
     enableKOTWithBill?: boolean;
   } | null>(null);
 
+  console.log("DEBUG POS RENDER - business.enableKOTWithBill:", business?.enableKOTWithBill);
+
   useEffect(() => {
     async function fetchBusinessProfile() {
       try {
@@ -491,6 +493,8 @@ export default function CheckoutClient() {
             requireCustomerAddress: data.requireCustomerAddress ?? false,
             enableKOTWithBill: data.enableKOTWithBill ?? false,
           });
+          console.log("DEBUG POS API RESPONSE - enableKOTWithBill:", data.enableKOTWithBill);
+          console.log("DEBUG POS API FULL DATA:", data);
         }
       } catch (err) {
         console.error("Business profile load failed", err);

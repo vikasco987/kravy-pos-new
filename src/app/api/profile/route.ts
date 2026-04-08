@@ -24,6 +24,7 @@ export async function GET(request: Request) {
       where: { userId: effectiveId },
     });
 
+    console.log("SERVER DEBUG: GET Profile for", effectiveId, "enableKOTWithBill:", profile?.enableKOTWithBill);
     return NextResponse.json(profile, { status: 200 });
   } catch (error) {
     console.error("GET /api/profile error:", error);
@@ -143,6 +144,7 @@ export async function POST(request: Request) {
       },
     });
 
+    console.log("SERVER DEBUG: POST Profile Saved - enableKOTWithBill:", profile.enableKOTWithBill);
     return NextResponse.json(profile, { status: 200 });
   } catch (error) {
     console.error("POST /api/profile error:", error);
