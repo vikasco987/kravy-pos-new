@@ -24,7 +24,10 @@ export async function GET(request: Request) {
       where: { userId: effectiveId },
     });
 
-    console.log("SERVER DEBUG: GET Profile for", effectiveId, "enableKOTWithBill:", profile?.enableKOTWithBill);
+    console.log("SERVER DEBUG: GET Profile for", effectiveId, 
+      "enableKOTWithBill:", profile?.enableKOTWithBill,
+      "enableMenuQRInBill:", profile?.enableMenuQRInBill
+    );
     return NextResponse.json(profile, { status: 200 });
   } catch (error) {
     console.error("GET /api/profile error:", error);

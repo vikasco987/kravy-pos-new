@@ -183,15 +183,18 @@ export default function PricingSettingsPage() {
     async function handleToggleMenuQR(val: boolean) {
         setEnableMenuQRInBill(val);
         try {
+            const payload = { ...businessProfile, enableMenuQRInBill: val };
             const res = await fetch("/api/profile", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ enableMenuQRInBill: val }),
+                body: JSON.stringify(payload),
             });
             if (res.ok) {
                 const data = await res.json();
                 setBusinessProfile(data);
                 toast.success(`Menu QR ${val ? 'Enabled' : 'Disabled'} on Bills ✅`);
+            } else {
+                throw new Error("Failed to save");
             }
         } catch {
             toast.error("Failed to update setting");
