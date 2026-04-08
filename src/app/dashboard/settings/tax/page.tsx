@@ -66,6 +66,7 @@ export default function PricingSettingsPage() {
                 setPerProductTaxEnabled(profileData?.perProductTaxEnabled ?? false);
                 setQrMenuPriceInclusive(profileData?.qrMenuPriceInclusive ?? false);
                 setEnableKOTWithBill(profileData?.enableKOTWithBill ?? false);
+                setEnableMenuQRInBill(profileData?.enableMenuQRInBill ?? false);
                 setTaxRate(profileData?.taxRate ?? 5.0);
                 setOffers(Array.isArray(offerData) ? offerData : []);
             } catch {
@@ -187,9 +188,14 @@ export default function PricingSettingsPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ enableMenuQRInBill: val }),
             });
-            if (res.ok) toast.success(`Menu QR ${val ? 'Enabled' : 'Disabled'} on Bills ✅`);
+            if (res.ok) {
+                const data = await res.json();
+                setBusinessProfile(data);
+                toast.success(`Menu QR ${val ? 'Enabled' : 'Disabled'} on Bills ✅`);
+            }
         } catch {
             toast.error("Failed to update setting");
+            setEnableMenuQRInBill(!val);
         }
     }
 
