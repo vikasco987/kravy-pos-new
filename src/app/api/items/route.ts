@@ -286,6 +286,9 @@ async function findOrCreateDBUser(clerkId: string) {
   return user;
 }
 
+// Helper to check if string is a valid MongoDB ObjectId
+const isValidObjectId = (id: string) => /^[0-9a-fA-F]{24}$/.test(id);
+
 /* --------------------------------
    GET /api/items
 --------------------------------- */
@@ -369,7 +372,9 @@ export async function POST(req: Request) {
         imageUrl: body.imageUrl || null,
         description: body.description || null,
         clerkId: effectiveId,
-        categoryId: (body.categoryId === "uncategorised" || body.categoryId === "__uncategorised__") ? null : String(body.categoryId),
+        categoryId: (body.categoryId && isValidObjectId(String(body.categoryId))) 
+          ? String(body.categoryId) 
+          : null,
         userId: dbUser.id,
         // Enhanced Fields
         isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : true,
@@ -399,10 +404,10 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(item, { status: 201 });
-  } catch (err) {
+  } catch (err: any) {
     console.error("POST /api/items error:", err);
     return NextResponse.json(
-      { error: "Failed to save item" },
+      { error: "Failed to save item", details: err?.message },
       { status: 500 }
     );
   }
@@ -474,8 +479,9 @@ export async function PUT(req: Request) {
         unit: unit ?? undefined,
         imageUrl: imageUrl ?? undefined,
         description: description ?? undefined,
-        categoryId:
-          (categoryId === "uncategorised" || categoryId === "__uncategorised__") ? null : categoryId ?? undefined,
+        categoryId: (categoryId && isValidObjectId(String(categoryId))) 
+          ? String(categoryId) 
+          : (categoryId === "uncategorised" || categoryId === "__uncategorised__") ? null : undefined,
         isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : undefined,
         isEgg: body.isEgg !== undefined ? Boolean(body.isEgg) : undefined,
         isBestseller: body.isBestseller !== undefined ? Boolean(body.isBestseller) : undefined,
