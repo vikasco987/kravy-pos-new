@@ -1633,7 +1633,7 @@ export default function CheckoutClient() {
                   shadow-md hover:shadow-lg active:scale-95 transition-all
                   disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Printer size={18} /> Print Full Bill
+                <Printer size={18} /> {business?.enableKOTWithBill ? "KOT & Bill" : "Print Full Bill"}
               </button>
             </div>
 

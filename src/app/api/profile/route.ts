@@ -48,11 +48,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    let body: any = {};
+    try {
+      const textBody = await request.text();
+      if (textBody) {
+        body = JSON.parse(textBody);
+      }
+    } catch (e) {
+      console.error("Failed to parse profile body:", e);
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
 
     const profile = await prisma.businessProfile.upsert({
       where: { userId: effectiveId },
-
       update: {
         businessType: body.businessType !== undefined ? body.businessType : undefined,
         businessName: body.businessName !== undefined ? body.businessName : undefined,

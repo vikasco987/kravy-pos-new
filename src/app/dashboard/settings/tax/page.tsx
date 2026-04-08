@@ -160,6 +160,24 @@ export default function PricingSettingsPage() {
         }
     }
 
+    async function handleToggleKOT(newVal: boolean) {
+        setEnableKOTWithBill(newVal);
+        try {
+            const payload = { ...businessProfile, enableKOTWithBill: newVal };
+            const res = await fetch("/api/profile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) throw new Error();
+            kravy.success();
+            setBusinessProfile(payload);
+        } catch {
+            toast.error("Failed to save printing preference");
+            setEnableKOTWithBill(!newVal);
+        }
+    }
+
     const PRESET_RATES = [5, 12, 18, 28];
 
     if (loading) {
@@ -287,7 +305,7 @@ export default function PricingSettingsPage() {
                                 </div>
                             </div>
                         </div>
-                        <button onClick={() => setEnableKOTWithBill(!enableKOTWithBill)} className="shrink-0">
+                        <button onClick={() => handleToggleKOT(!enableKOTWithBill)} className="shrink-0">
                             {enableKOTWithBill
                                 ? <ToggleRight size={36} className="text-emerald-500" />
                                 : <ToggleLeft size={36} className="text-gray-300" />
