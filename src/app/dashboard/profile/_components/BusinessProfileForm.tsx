@@ -65,6 +65,7 @@ export default function BusinessProfileForm({
     logoUrl?: string;
     signatureUrl?: string;
     upiQrEnabled?: boolean;
+    userId?: string;
   };
   onCancel?: () => void;
   onSuccess?: () => void;
@@ -603,7 +604,7 @@ export default function BusinessProfileForm({
                 <div className="text-[8px] font-bold mb-1 uppercase tracking-tighter">Scan to View Digital Menu</div>
                 <div className="inline-block border border-gray-300 p-1 rounded-md bg-white">
                   <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`https://kravy.in/menu/demo-user`)}`} 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`${typeof window !== 'undefined' ? window.location.origin : ''}/menu/${defaultValues?.userId || 'demo-user'}`)}`} 
                     alt="Menu QR" 
                     className="w-[25mm] h-[25mm] object-contain block mix-blend-multiply" 
                   />
