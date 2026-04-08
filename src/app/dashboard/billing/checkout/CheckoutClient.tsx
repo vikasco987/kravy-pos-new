@@ -1799,12 +1799,11 @@ export default function CheckoutClient() {
             <div className="mt-2 text-center border-t-2 border-black pt-2">
               <div className="text-[11px] font-black mb-1 uppercase tracking-tighter">Scan to View Digital Menu</div>
               <div className="my-2 text-center">
-                <div className="inline-block border-2 border-black p-1 bg-white">
+                <div className="inline-block p-1 bg-white">
                   <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&ecc=L&margin=1&data=${encodeURIComponent(`${window.location.origin}/menu/${business?.userId}`)}`} 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=2&data=${encodeURIComponent(`${window.location.origin}/menu/${business?.userId}`)}`} 
                     alt="Menu QR" 
-                    className="w-[28mm] h-[28mm] object-contain block" 
-                    style={{ filter: 'contrast(200%) grayscale(100%)' }}
+                    className="w-[28mm] h-[28mm] object-contain block mx-auto" 
                   />
                 </div>
               </div>
