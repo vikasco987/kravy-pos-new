@@ -159,8 +159,10 @@ model Party {
   user      User?     @relation(fields: [createdBy], references: [clerkId])
 
   loyaltyPoints Int @default(0)
+  walletBalance Float @default(0) // Added for Deposit/Wallet System
 
   bills BillManager[]
+  walletTransactions WalletTransaction[] // Added relation
 
   createdAt DateTime @default(now())
 
@@ -588,4 +590,22 @@ model Staff {
   updatedAt   DateTime @updatedAt
 
   @@index([businessId])
+}
+
+//////////////////////////////////////////////////
+// WALLET TRANSACTION
+//////////////////////////////////////////////////
+
+model WalletTransaction {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  partyId     String   @db.ObjectId
+  party       Party    @relation(fields: [partyId], references: [id])
+  clerkId     String   // The business owner ID
+  type        String   // "CREDIT" (Deposit) | "DEBIT" (Payment)
+  amount      Float
+  description String?  // e.g., "Order #123" or "Manual Deposit"
+  createdAt   DateTime @default(now())
+
+  @@index([partyId])
+  @@index([clerkId])
 }

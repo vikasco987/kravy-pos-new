@@ -79,6 +79,9 @@ export default function PartiesPage() {
   const [selectedParty, setSelectedParty] = useState<Party | null>(null);
   const [partyBills, setPartyBills] = useState<Bill[]>([]);
   const [loadingBills, setLoadingBills] = useState(false);
+  const [walletTransactions, setWalletTransactions] = useState<any[]>([]);
+  const [loadingWallet, setLoadingWallet] = useState(false);
+  const [activeTab, setActiveTab] = useState<"bills" | "wallet">("bills");
   const [mounted, setMounted] = useState(false);
 
   // Pagination State
@@ -215,6 +218,20 @@ export default function PartiesPage() {
       console.error("Error fetching history:", error);
     } finally {
       setLoadingBills(false);
+    }
+    
+    // Also fetch wallet transactions
+    setLoadingWallet(true);
+    try {
+      const res = await fetch(`/api/wallet/history/${party.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setWalletTransactions(data);
+      }
+    } catch (err) {
+      console.error("Error fetching wallet history:", err);
+    } finally {
+      setLoadingWallet(false);
     }
   };
 
@@ -517,39 +534,84 @@ export default function PartiesPage() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] pl-2">Recent Bills</h4>
-                    {loadingBills ? (
-                      <div className="py-20 text-center animate-pulse text-[var(--kravy-text-muted)] font-black text-sm tracking-widest">Fetching Orders...</div>
-                    ) : partyBills.length === 0 ? (
-                      <div className="py-12 text-center text-[var(--kravy-text-muted)] font-bold italic">No bills found for this customer</div>
-                    ) : (
-                      partyBills.map(bill => (
-                        <div key={bill.id} className="group p-4 bg-white dark:bg-[#0D111C] border border-[var(--kravy-border)] rounded-2xl hover:border-[var(--kravy-brand)] transition-all hover:shadow-md cursor-pointer">
-                          <div className="flex justify-between items-start mb-2">
-                             <div>
-                               <div className="text-sm font-black text-[var(--kravy-text-primary)]">{bill.billNumber}</div>
-                               <div className="text-[10px] font-bold text-[var(--kravy-text-muted)]">{formatDate(bill.createdAt)}</div>
-                             </div>
-                             <div className="text-right">
-                               <div className="text-sm font-black text-indigo-500">₹{bill.total.toFixed(2)}</div>
-                               <div className={`text-[10px] font-black uppercase ${bill.paymentStatus === 'Paid' ? 'text-emerald-500' : 'text-amber-500'}`}>{bill.paymentStatus}</div>
-                             </div>
-                          </div>
-                          <div className="flex justify-between items-center pt-2 border-t border-[var(--kravy-border)]">
-                             <span className="text-[10px] font-black text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] px-2 py-0.5 rounded-lg">{bill.paymentMode}</span>
-                             <Link 
-                              href={`/dashboard/reports/sales?search=${bill.billNumber}`}
-                              className="text-[10px] font-black text-[var(--kravy-brand)] flex items-center gap-1 hover:underline"
-                             >
-                               DETAILS <ArrowRight size={10} />
-                             </Link>
-                          </div>
-                        </div>
-                      ))
-                    )}
+                  <div className="flex bg-[var(--kravy-bg-2)] p-1 rounded-2xl border border-[var(--kravy-border)]">
+                    <button 
+                      onClick={() => setActiveTab("bills")}
+                      className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "bills" ? "bg-[var(--kravy-brand)] text-white shadow-lg shadow-indigo-500/10" : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]"}`}
+                    >
+                      Bill History
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab("wallet")}
+                      className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "wallet" ? "bg-amber-500 text-white shadow-lg shadow-amber-500/10" : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]"}`}
+                    >
+                      Wallet Statement
+                    </button>
                   </div>
+
+                  {activeTab === "bills" ? (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)] pl-2">Recent Bills</h4>
+                      {loadingBills ? (
+                        <div className="py-20 text-center animate-pulse text-[var(--kravy-text-muted)] font-black text-sm tracking-widest">Fetching Orders...</div>
+                      ) : partyBills.length === 0 ? (
+                        <div className="py-12 text-center text-[var(--kravy-text-muted)] font-bold italic">No bills found for this customer</div>
+                      ) : (
+                        partyBills.map(bill => (
+                          <div key={bill.id} className="group p-4 bg-white dark:bg-[#0D111C] border border-[var(--kravy-border)] rounded-2xl hover:border-[var(--kravy-brand)] transition-all hover:shadow-md cursor-pointer">
+                            <div className="flex justify-between items-start mb-2">
+                               <div>
+                                 <div className="text-sm font-black text-[var(--kravy-text-primary)]">{bill.billNumber}</div>
+                                 <div className="text-[10px] font-bold text-[var(--kravy-text-muted)]">{formatDate(bill.createdAt)}</div>
+                               </div>
+                               <div className="text-right">
+                                 <div className="text-sm font-black text-indigo-500">₹{bill.total.toFixed(2)}</div>
+                                 <div className={`text-[10px] font-black uppercase ${bill.paymentStatus === 'Paid' ? 'text-emerald-500' : 'text-amber-500'}`}>{bill.paymentStatus}</div>
+                               </div>
+                            </div>
+                            <div className="flex justify-between items-center pt-2 border-t border-[var(--kravy-border)]">
+                               <span className="text-[10px] font-black text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] px-2 py-0.5 rounded-lg">{bill.paymentMode}</span>
+                               <Link 
+                                href={`/dashboard/reports/sales?search=${bill.billNumber}`}
+                                className="text-[10px] font-black text-[var(--kravy-brand)] flex items-center gap-1 hover:underline"
+                               >
+                                 DETAILS <ArrowRight size={10} />
+                               </Link>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center pl-2">
+                         <h4 className="text-xs font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Transaction History</h4>
+                         <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-lg">Wallet Balance: ₹{(selectedParty.walletBalance || 0).toFixed(2)}</span>
+                      </div>
+                      {loadingWallet ? (
+                        <div className="py-20 text-center animate-pulse text-[var(--kravy-text-muted)] font-black text-sm tracking-widest">Loading Transactions...</div>
+                      ) : walletTransactions.length === 0 ? (
+                        <div className="py-12 text-center text-[var(--kravy-text-muted)] font-bold italic">No wallet transactions yet</div>
+                      ) : (
+                        walletTransactions.map(tx => (
+                          <div key={tx.id} className="p-4 bg-white dark:bg-[#0D111C] border border-[var(--kravy-border)] rounded-2xl flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${tx.type === 'CREDIT' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                                 {tx.type === 'CREDIT' ? '↓' : '↑'}
+                               </div>
+                               <div>
+                                 <div className="text-sm font-black text-[var(--kravy-text-primary)]">{tx.description}</div>
+                                 <div className="text-[10px] font-bold text-[var(--kravy-text-muted)]">{formatDate(tx.createdAt)}</div>
+                               </div>
+                            </div>
+                            <div className={`font-black text-sm ${tx.type === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                               {tx.type === 'CREDIT' ? '+' : '-'} ₹{tx.amount.toFixed(2)}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
               </SideDrawer>
           )}

@@ -395,9 +395,11 @@ export default function CheckoutClient() {
   const [isKotPrinted, setIsKotPrinted] = useState(false);
   const [buyerGSTIN, setBuyerGSTIN] = useState("");
   const [placeOfSupply, setPlaceOfSupply] = useState("");
+  const [selectedParty, setSelectedParty] = useState<any | null>(null);
 
   const handleCustomerPhoneChange = (val: string) => {
     setCustomerPhone(val);
+    setSelectedParty(null); // Clear selected party if manual edit
     if (val.length >= 3) {
       const filtered = parties.filter(p => p.phone.includes(val) || p.name.toLowerCase().includes(val.toLowerCase()));
       setCustomerSuggestions(filtered.slice(0, 5));
@@ -408,6 +410,7 @@ export default function CheckoutClient() {
 
   const handleCustomerNameChange = (val: string) => {
     setCustomerName(val);
+    setSelectedParty(null); // Clear selected party if manual edit
     if (val.length >= 2) {
       const filtered = parties.filter(p => p.name.toLowerCase().includes(val.toLowerCase()) || p.phone.includes(val));
       setCustomerSuggestions(filtered.slice(0, 5));
@@ -420,6 +423,7 @@ export default function CheckoutClient() {
     setCustomerName(p.name);
     setCustomerPhone(p.phone || "");
     setCustomerAddress(p.address || "");
+    setSelectedParty(p);
     setCustomerSuggestions([]);
     kravy.success();
     toast.success(`Customer ${p.name} selected`, {
@@ -506,6 +510,35 @@ export default function CheckoutClient() {
     }
     fetchBusinessProfile();
   }, []);
+
+  const handleDeposit = async (amount: number) => {
+    if (!selectedParty) return;
+    try {
+      const res = await fetch("/api/wallet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "deposit",
+          partyId: selectedParty.id,
+          amount,
+          description: "Pos Deposit"
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(`₹${amount} added successfully!`, {
+          description: `New balance: ₹${data.balance.toFixed(2)}`
+        });
+        setSelectedParty({ ...selectedParty, walletBalance: data.balance });
+        // update main list
+        setParties(pts => pts.map(p => p.id === selectedParty.id ? { ...p, walletBalance: data.balance } : p));
+      } else {
+        toast.error("Failed to deposit money");
+      }
+    } catch (err) {
+      toast.error("Network error during deposit");
+    }
+  };
 
   /* ================= TOTALS ================= */
   const taxActive = business?.taxEnabled ?? true;
@@ -637,7 +670,7 @@ export default function CheckoutClient() {
   const auditNote = hasAuditNotes ? "Some items used global default tax rate." : null;
 
   /* ================= PAYMENT STATE ================= */
-  const [paymentMode, setPaymentMode] = useState<"Cash" | "UPI" | "Card" | "Pay on Counter">("Cash");
+  const [paymentMode, setPaymentMode] = useState<"Cash" | "UPI" | "Card" | "Pay on Counter" | "Wallet">("Cash");
   const [paymentStatus, setPaymentStatus] = useState<"Pending" | "Paid">("Paid");
   const [upiTxnRef, setUpiTxnRef] = useState("");
 
@@ -689,6 +722,46 @@ export default function CheckoutClient() {
     if ((taxActive || perProductEnabled) && Math.abs(reCalcGst - gstAmount) > 1) { // Increased tolerance to 1 for rounding
       alert(`Safety Check: GST Calculation Mismatch! System: ₹${gstAmount.toFixed(2)}, Calculated: ₹${reCalcGst.toFixed(2)}`);
       return null;
+    }
+
+    // 👛 WALLET PAYMENT LOGIC
+    if (paymentMode === "Wallet") {
+      if (!selectedParty) {
+        alert("Please select a registered customer to use Wallet payment.");
+        return null;
+      }
+      if ((selectedParty.walletBalance || 0) < finalTotal) {
+        alert(`Insufficient Wallet Balance!\nRequired: ₹${finalTotal.toFixed(2)}\nAvailable: ₹${(selectedParty.walletBalance || 0).toFixed(2)}`);
+        return null;
+      }
+
+      try {
+        const walletRes = await fetch("/api/wallet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "payment",
+            partyId: selectedParty.id,
+            amount: finalTotal,
+            description: `Order #${billNumber}`
+          })
+        });
+
+        const wData = await walletRes.json();
+
+        if (!walletRes.ok) {
+          alert(wData.error || "Wallet deduction failed");
+          return null;
+        }
+        
+        // Update local state balance
+        if (wData.success) {
+          setSelectedParty({ ...selectedParty, walletBalance: wData.balance });
+        }
+      } catch (err) {
+        alert("Wallet system connection error");
+        return null;
+      }
     }
 
     const payload = {
@@ -1275,6 +1348,26 @@ export default function CheckoutClient() {
                     focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-mono"
                 />
               </div>
+ 
+               {selectedParty && (
+                 <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-2xl flex items-center justify-between">
+                   <div>
+                     <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Active Balance</p>
+                     <p className="text-xl font-black text-indigo-600 mt-0.5">₹{selectedParty.walletBalance?.toFixed(2) || "0.00"}</p>
+                   </div>
+                   <button 
+                     onClick={() => {
+                       const amt = prompt("Enter amount to deposit (₹):");
+                       if (amt && !isNaN(Number(amt))) {
+                         handleDeposit(Number(amt));
+                       }
+                     }}
+                     className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:scale-105 active:scale-95 transition-all"
+                   >
+                     Add Money
+                   </button>
+                 </div>
+               )}
 
               {(business?.collectCustomerAddress || customerAddress) && (
                 <div className="space-y-1">
@@ -1514,8 +1607,8 @@ export default function CheckoutClient() {
               <p className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest shrink-0">
                 Payment
               </p>
-              <div className="flex-1 grid grid-cols-4 gap-1">
-                {(["Cash", "UPI", "Card", "Pay on Counter"] as const).map((mode) => (
+              <div className="flex-1 grid grid-cols-5 gap-1">
+                {(["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
@@ -1524,7 +1617,7 @@ export default function CheckoutClient() {
                       : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)]"
                       }`}
                   >
-                    <span className="text-[12px]">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : "🏪"}</span>
+                    <span className="text-[12px]">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
                     <span className="truncate w-full px-0.5 text-center">{mode === "Pay on Counter" ? "Counter" : mode}</span>
                   </button>
                 ))}
