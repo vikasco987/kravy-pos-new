@@ -199,7 +199,12 @@ export default function CheckoutClient() {
       const res = await fetch("/api/parties");
       if (res.ok) {
         const data = await res.json();
-        setParties(data || []);
+        const arr = Array.isArray(data) ? data : (data.parties || []);
+        const normalized = arr.map((p: any) => ({
+          ...p,
+          id: p.id || p._id
+        }));
+        setParties(normalized);
       }
     } catch (e) {
       console.error("Failed to fetch parties:", e);
