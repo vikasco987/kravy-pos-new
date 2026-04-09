@@ -96,8 +96,8 @@ export async function POST(req: NextRequest) {
     }
 
     // ✅ HARD DEFAULTS (CRITICAL)
-    const finalPaymentMode: "Cash" | "UPI" | "Card" | "Pay on Counter" =
-      paymentMode === "UPI" || paymentMode === "Card" || paymentMode === "Pay on Counter"
+    const finalPaymentMode: "Cash" | "UPI" | "Card" | "Pay on Counter" | "Wallet" =
+      paymentMode === "UPI" || paymentMode === "Card" || paymentMode === "Pay on Counter" || paymentMode === "Wallet"
         ? paymentMode
         : "Cash";
 
@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
     let finalPaymentStatus: string;
     if (isHeld === true) {
       finalPaymentStatus = "HELD";
-    } else if (finalPaymentMode === "Cash" || finalPaymentMode === "Card") {
+    } else if (finalPaymentMode === "Cash" || finalPaymentMode === "Card" || finalPaymentMode === "Wallet") {
       finalPaymentStatus = "Paid";
     } else {
       finalPaymentStatus = paymentStatus === "Paid" ? "Paid" : "Pending";

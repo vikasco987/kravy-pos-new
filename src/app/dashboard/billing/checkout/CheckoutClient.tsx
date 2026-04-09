@@ -1726,9 +1726,10 @@ export default function CheckoutClient() {
             <div className="mt-1">
               {/* Print */}
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (!business) { alert("Business profile not loaded yet"); return; }
-                  saveBill().catch(console.error);
+                  const bill = await saveBill();
+                  if (!bill) return;
                   kravy.payment(); 
                   printReceipt(business?.enableKOTWithBill);
                   setItems([]); setCustomerName(""); setCustomerPhone(""); setCustomerAddress("");
@@ -2407,11 +2408,12 @@ export default function CheckoutClient() {
                 <Printer size={16} /> KOT
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (!business) { alert("Business profile not loaded yet"); return; }
                   
-                  // 🔥 FIRE & FORGET
-                  saveBill().catch(console.error);
+                  // 🔥 SAVE AND WAIT
+                  const bill = await saveBill();
+                  if (!bill) return;
 
                   kravy.payment(); 
                   printReceipt(business?.enableKOTWithBill);
