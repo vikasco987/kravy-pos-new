@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { partyId: string } }
+  { params }: { params: Promise<{ partyId: string }> }
 ) {
   try {
     const effectiveId = await getEffectiveClerkId();
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { partyId } = params;
+    const { partyId } = await params;
 
     const transactions = await prisma.walletTransaction.findMany({
       where: {

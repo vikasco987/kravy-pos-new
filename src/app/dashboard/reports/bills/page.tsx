@@ -175,7 +175,15 @@ export default async function BillsReportPage({
                              }}>
                                 {isDeletedView ? "DELETED" : "SECURED"}
                              </span>
-                             <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--kravy-text-faint)" }}>{b.paymentMode.toUpperCase()} SETTLEMENT</span>
+                             <span style={{ 
+                               fontSize: "0.65rem", fontWeight: 900, 
+                               padding: "4px 10px", borderRadius: "8px",
+                               background: b.paymentMode === 'Wallet' ? '#6366F115' : b.paymentMode === 'UPI' ? '#8B5CF615' : '#10B98115',
+                               color: b.paymentMode === 'Wallet' ? '#6366F1' : b.paymentMode === 'UPI' ? '#8B5CF6' : '#10B981',
+                               border: '1px solid currentColor'
+                             }}>
+                               {b.paymentMode.toUpperCase()}
+                             </span>
                           </div>
                        </td>
                        <td style={{ padding: "28px 52px", textAlign: "right" }}>

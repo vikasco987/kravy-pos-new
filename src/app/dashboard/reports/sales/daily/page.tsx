@@ -272,8 +272,8 @@ export default async function DailySalesReportPage() {
                       <div style={{ display: "flex", flexDirection: "column", gap: "6px", alignItems: "center" }}>
                         <span style={{
                           padding: "6px 14px", borderRadius: "10px",
-                          background: b.paymentMode === "UPI" ? "#8B5CF615" : b.paymentMode === "Cash" ? "#10B98115" : "#F59E0B15",
-                          color: b.paymentMode === "UPI" ? "#8B5CF6" : b.paymentMode === "Cash" ? "#10B981" : "#F59E0B",
+                          background: b.paymentMode === "UPI" ? "#8B5CF615" : b.paymentMode === "Wallet" ? "#6366F115" : "#10B98115",
+                          color: b.paymentMode === "UPI" ? "#8B5CF6" : b.paymentMode === "Wallet" ? "#6366F1" : "#10B981",
                           fontSize: "0.7rem", fontWeight: 950, border: "1px solid currentColor"
                         }}>
                           {b.paymentMode.toUpperCase()}

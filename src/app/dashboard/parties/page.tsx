@@ -48,10 +48,13 @@ type Bill = {
 function formatDate(d?: string | null) {
   if (!d) return "—";
   try {
-    return new Date(d).toLocaleDateString("en-IN", {
+    return new Date(d).toLocaleString("en-IN", {
       day: "2-digit",
       month: "short",
-      year: "numeric"
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
     });
   } catch {
     return d;

@@ -10,7 +10,7 @@ import {
   Receipt, Plus, Trash2, Eye, Printer, MessageCircle,
   Play, MoreVertical, IndianRupee, Calendar, User, Phone,
   CreditCard, Smartphone, Banknote, Clock, FileText, CheckCircle2, UtensilsCrossed, ChefHat, 
-  ChevronLeft, ChevronRight, Settings2, Check, LayoutGrid, Filter, Search
+  ChevronLeft, ChevronRight, Settings2, Check, LayoutGrid, Filter, Search, Wallet
 } from "lucide-react";
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 
@@ -192,6 +192,7 @@ export default function BillingPage() {
     new Intl.NumberFormat("en-IN").format(Math.round(num));
 
   const totalRevenue = bills.filter(b => !b.isOrder && b.paymentStatus?.toLowerCase() === "paid").reduce((s, b) => s + b.total, 0);
+  const walletRevenue = bills.filter(b => !b.isOrder && b.paymentMode === "Wallet" && b.paymentStatus?.toLowerCase() === "paid").reduce((s, b) => s + b.total, 0);
   const paidBills = bills.filter(b => !b.isOrder && b.paymentStatus?.toLowerCase() === "paid").length;
   const heldBills = bills.filter(b => b.isHeld).length;
   const activeOrderCount = bills.filter(b => b.isOrder).length;
@@ -357,12 +358,12 @@ export default function BillingPage() {
       </div>
 
       {/* ── Stats Row ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
         {[
           { label: "Total Revenue", value: `₹${format(totalRevenue)}`, icon: <IndianRupee size={18} />, color: "rgb(16 185 129)" },
+          { label: "Wallet Coll.", value: `₹${format(walletRevenue)}`, icon: <Wallet size={18} />, color: "#6366F1" },
           { label: "Total Bills", value: bills.length.toString(), icon: <Receipt size={18} />, color: "rgb(99 102 241)" },
           { label: "Paid Bills", value: paidBills.toString(), icon: <CreditCard size={18} />, color: "rgb(139 92 246)" },
-          { label: "On Hold", value: heldBills.toString(), icon: <Clock size={18} />, color: "rgb(245 158 11)" },
           { label: "Active Orders", value: activeOrderCount.toString(), icon: <UtensilsCrossed size={18} />, color: "rgb(239 68 68)" },
         ].map((s, i) => (
           <motion.div
@@ -833,16 +834,19 @@ export default function BillingPage() {
 function PaymentBadge({ mode }: { mode: string }) {
   const lower = mode?.toLowerCase() || "";
   const isUPI = lower.includes("upi");
-  const color = isUPI ? "rgb(139 92 246)" : "rgb(16 185 129)";
-  const Icon = isUPI ? Smartphone : Banknote;
+  const isWallet = lower.includes("wallet") || lower.includes("balance");
+  
+  const color = isWallet ? "#6366F1" : (isUPI ? "#8B5CF6" : "#10B981");
+  const Icon = isWallet ? Wallet : (isUPI ? Smartphone : Banknote);
+
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: "6px",
       fontSize: "0.65rem", fontWeight: 800, padding: "4px 10px",
       borderRadius: "20px", fontFamily: "monospace",
-      background: `${color}15`, color: color, border: `1px solid ${color}25`
+      background: `${color}15`, color: color, border: `1px solid ${color}20`
     }}>
-      <Icon size={12} />{mode?.toUpperCase()}
+      <Icon size={12} />{mode?.toUpperCase() || "CASH"}
     </span>
   );
 }

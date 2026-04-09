@@ -1626,9 +1626,9 @@ export default function CheckoutClient() {
                   <button
                     key={mode}
                     onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
-                    className={`py-1.5 rounded-lg border font-black text-[8px] transition-all flex flex-col items-center justify-center gap-0.5 ${paymentMode === mode
-                      ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-sm"
-                      : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)]"
+                    className={`py-2 rounded-xl border font-black text-[10px] transition-all flex flex-col items-center justify-center gap-1 ${paymentMode === mode
+                      ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md scale-105"
+                      : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)] opacity-80"
                       }`}
                   >
                     <span className="text-[12px]">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
