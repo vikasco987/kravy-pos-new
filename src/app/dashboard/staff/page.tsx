@@ -13,6 +13,8 @@ import {
   Loader2,
   Trash2,
   UserCheck,
+  UserX,
+  Ban,
   LayoutGrid,
   ShoppingCart,
   Receipt,
@@ -24,7 +26,17 @@ import {
   QrCode,
   Key,
   Sparkles,
-  Zap
+  Zap,
+  Activity,
+  Layers,
+  Camera,
+  TrendingUp,
+  PieChart,
+  UserCircle,
+  Percent,
+  Archive,
+  HelpCircle,
+  BarChart3
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,16 +46,30 @@ import { useUser } from "@clerk/nextjs";
 const ALL_PATHS = [
   { path: "/dashboard", label: "Store Dashboard", icon: <LayoutGrid size={16} /> },
   { path: "/dashboard/billing/checkout", label: "Quick POS Billing", icon: <ShoppingCart size={16} /> },
+  { path: "/dashboard/workflow", label: "Kitchen Workflow", icon: <Activity size={16} /> },
   { path: "/dashboard/tables", label: "Table Status", icon: <LayoutGrid size={16} /> },
   { path: "/dashboard/billing", label: "Past Bills / History", icon: <Receipt size={16} /> },
   { path: "/dashboard/menu/view", label: "Browse Products", icon: <UtensilsCrossed size={16} /> },
+  { path: "/dashboard/menu-editor", label: "Interactive Editor", icon: <Sparkles size={16} /> },
+  { path: "/dashboard/menu/addons", label: "Add-on clusters", icon: <Layers size={16} /> },
+  { path: "/dashboard/ai-scraper", label: "AI Menu Scraper", icon: <Zap size={16} /> },
   { path: "/dashboard/menu/upload", label: "Add Single Item", icon: <PlusCircle size={16} /> },
   { path: "/dashboard/store-item-upload", label: "Excel Bulk Import", icon: <Upload size={16} /> },
   { path: "/dashboard/menu/edit", label: "Category & Editor", icon: <Settings size={16} /> },
   { path: "/dashboard/parties", label: "Customer Parties", icon: <Users size={16} /> },
+  { path: "/dashboard/staff", label: "Staff Management", icon: <UserPlus size={16} /> },
   { path: "/dashboard/inventory", label: "Inventory Stock", icon: <Package size={16} /> },
   { path: "/dashboard/qr-orders", label: "QR Order Terminal", icon: <QrCode size={16} /> },
-  { path: "/dashboard/settings", label: "Store Settings", icon: <Settings size={16} /> },
+  { path: "/dashboard/combos", label: "Marketing Hub", icon: <Sparkles size={16} /> },
+  { path: "/dashboard/gallery", label: "Gallery Manager", icon: <Camera size={16} /> },
+  { path: "/dashboard/reports/sales/daily", label: "Daily Sales Report", icon: <TrendingUp size={16} /> },
+  { path: "/dashboard/reports/gst", label: "GST Reports", icon: <PieChart size={16} /> },
+  { path: "/dashboard/profile", label: "Business Profile", icon: <UserCircle size={16} /> },
+  { path: "/dashboard/settings", label: "POS Settings", icon: <Settings size={16} /> },
+  { path: "/dashboard/settings/tax", label: "Tax Management", icon: <Percent size={16} /> },
+  { path: "/dashboard/backup", label: "Security & Backup", icon: <Shield size={16} /> },
+  { path: "/dashboard/billing/deleted", label: "Archive & Trash", icon: <Archive size={16} /> },
+  { path: "/dashboard/help", label: "Help & Support", icon: <HelpCircle size={16} /> },
 ];
 
 type StaffMember = {
@@ -161,6 +187,56 @@ export default function StaffManagementPage() {
       toast.error("Network error");
     } finally {
       setSavingPermissions(false);
+    }
+  };
+
+  const deleteStaff = async (member: StaffMember) => {
+    if (!confirm(`Are you sure you want to delete ${member.name}? This action cannot be undone.`)) return;
+    
+    try {
+      const url = new URL("/api/seller/staff", window.location.origin);
+      if (member.clerkId) url.searchParams.set("clerkId", member.clerkId);
+      url.searchParams.set("id", member.id);
+
+      const res = await fetch(url.toString(), { method: "DELETE" });
+      if (res.ok) {
+        toast.success("Staff member deleted");
+        fetchStaff();
+        if (selectedStaff?.id === member.id) setSelectedStaff(null);
+      } else {
+        toast.error("Failed to delete staff");
+      }
+    } catch (error) {
+      toast.error("Network error");
+    }
+  };
+
+  const toggleBlockStaff = async (member: StaffMember) => {
+    const action = member.isDisabled ? "unblock" : "block";
+    if (!confirm(`Are you sure you want to ${action} ${member.name}?`)) return;
+
+    try {
+      const res = await fetch("/api/seller/staff", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          staffId: member.id,
+          clerkId: member.clerkId,
+          isDisabled: !member.isDisabled
+        })
+      });
+
+      if (res.ok) {
+        toast.success(`Staff member ${action}ed`);
+        fetchStaff();
+        if (selectedStaff?.id === member.id) {
+          setSelectedStaff({ ...selectedStaff, isDisabled: !member.isDisabled });
+        }
+      } else {
+        toast.error(`Failed to ${action} staff`);
+      }
+    } catch (error) {
+      toast.error("Network error");
     }
   };
 
@@ -303,20 +379,39 @@ export default function StaffManagementPage() {
                     className={`bg-white border rounded-2xl p-4 flex items-center justify-between transition-all ${selectedStaff?.id === member.id ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-slate-200 hover:border-slate-300 shadow-sm'}`}
                   >
                     <div className="flex items-center gap-4">
-                       <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
-                          <UserCheck size={20} />
+                       <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${member.isDisabled ? 'bg-slate-200 text-slate-400' : 'bg-indigo-100 text-indigo-600'}`}>
+                          {member.isDisabled ? <UserX size={20} /> : <UserCheck size={20} />}
                        </div>
                        <div>
-                          <div className="font-bold text-slate-900">{member.name}</div>
-                          <div className="text-xs text-slate-500 font-medium">{member.email}</div>
+                          <div className={`font-bold transition-all ${member.isDisabled ? 'text-slate-400' : 'text-slate-900'}`}>
+                            {member.name}
+                            {member.isDisabled && <span className="ml-2 text-[8px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md uppercase font-black">Blocked</span>}
+                          </div>
+                          <div className={`text-xs font-medium transition-all ${member.isDisabled ? 'text-slate-300' : 'text-slate-500'}`}>{member.email}</div>
                        </div>
                     </div>
-                    <button
-                      onClick={() => setSelectedStaff(member)}
-                      className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all"
-                    >
-                      Manage Access
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleBlockStaff(member)}
+                        title={member.isDisabled ? "Unblock Staff" : "Block Staff"}
+                        className={`p-2 rounded-xl transition-all ${member.isDisabled ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-orange-100 text-orange-600 hover:bg-orange-200'}`}
+                      >
+                        {member.isDisabled ? <UserCheck size={18} /> : <Ban size={18} />}
+                      </button>
+                      <button
+                        onClick={() => deleteStaff(member)}
+                        title="Delete Staff"
+                        className="p-2 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 transition-all"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                      <button
+                        onClick={() => setSelectedStaff(member)}
+                        className="ml-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all"
+                      >
+                        Manage Access
+                      </button>
+                    </div>
                   </motion.div>
                 ))
               )}

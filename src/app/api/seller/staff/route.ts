@@ -195,3 +195,47 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Failed to update staff" }, { status: 500 });
   }
 }
+
+// DELETE: Remove a staff member
+export async function DELETE(req: Request) {
+  try {
+    const user = await getAuthUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    if (!checkPermission(user)) {
+        return NextResponse.json({ error: "Permission Denied" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const staffId = searchParams.get("id");
+    const clerkId = searchParams.get("clerkId");
+    const businessId = user.businessId;
+
+    if (!staffId && !clerkId) {
+      return NextResponse.json({ error: "Missing staff ID" }, { status: 400 });
+    }
+
+    // 1. If it's a Clerk User (Legacy)
+    if (clerkId) {
+      const staffUser = await prisma.user.findFirst({ where: { clerkId } });
+      if (staffUser && staffUser.ownerId === businessId) {
+        await prisma.user.delete({ where: { clerkId } });
+        return NextResponse.json({ success: true, message: "Staff member deleted" });
+      }
+    }
+
+    // 2. If it's a Prisma-only Staff
+    if (staffId) {
+      const staffPrisma = await prisma.staff.findFirst({ where: { id: staffId } });
+      if (staffPrisma && staffPrisma.businessId === businessId) {
+        await prisma.staff.delete({ where: { id: staffId } });
+        return NextResponse.json({ success: true, message: "Staff member deleted" });
+      }
+    }
+
+    return NextResponse.json({ error: "Staff not found or access denied" }, { status: 404 });
+  } catch (error) {
+    console.error("DELETE STAFF ERROR:", error);
+    return NextResponse.json({ error: "Failed to delete staff" }, { status: 500 });
+  }
+}

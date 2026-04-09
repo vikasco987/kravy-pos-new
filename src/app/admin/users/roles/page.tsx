@@ -15,6 +15,9 @@ const ALL_PATHS = [
   { group: "Operations", name: "Bill History", path: "/dashboard/billing" },
   
   { group: "Store Catalog", name: "Browse Products", path: "/dashboard/menu/view" },
+  { group: "Store Catalog", name: "Interactive Editor", path: "/dashboard/menu-editor" },
+  { group: "Store Catalog", name: "Add-on Clusters", path: "/dashboard/menu/addons" },
+  { group: "Store Catalog", name: "AI Menu Scraper", path: "/dashboard/ai-scraper" },
   { group: "Store Catalog", name: "Add Single Item", path: "/dashboard/menu/upload" },
   { group: "Store Catalog", name: "Bulk Import", path: "/dashboard/store-item-upload" },
   { group: "Store Catalog", name: "Category Editor", path: "/dashboard/menu/edit" },
@@ -27,6 +30,7 @@ const ALL_PATHS = [
   { group: "Resources & Marketing", name: "Gallery", path: "/dashboard/gallery" },
 
   { group: "Reports & Insights", name: "Daily Sales Report", path: "/dashboard/reports/sales/daily" },
+  { group: "Reports & Insights", name: "GST Reports", path: "/dashboard/reports/gst" },
 
   { group: "Administration", name: "Business Profile", path: "/dashboard/profile" },
   { group: "Administration", name: "POS Settings", path: "/dashboard/settings" },

@@ -39,9 +39,13 @@ export default function StaffLoginPage() {
         // Store user info in localStorage for UI purposes (optional)
         localStorage.setItem("staff_user", JSON.stringify(data.data));
         
+        // Redirect to their first allowed path, or dashboard if none
+        const allowedPaths = data.data.permissions || [];
+        const targetPath = allowedPaths.length > 0 ? allowedPaths[0] : "/dashboard";
+
         // Wait a bit for toast and then hard redirect to clear Clerk state
         setTimeout(() => {
-            window.location.href = "/dashboard";
+            window.location.href = targetPath;
         }, 500);
       } else {
         toast.error(data.message || "Invalid credentials");

@@ -184,6 +184,30 @@ export default function CheckoutClient() {
   const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([]);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
+  const resetForm = () => {
+    setItems([]);
+    setCustomerName("");
+    setCustomerPhone("");
+    setCustomerAddress("");
+    setSelectedParty(null);
+    setUpiTxnRef("");
+    setPaymentMode("Cash");
+    setPaymentStatus("Paid");
+    setBuyerGSTIN("");
+    setPlaceOfSupply("");
+    setAppliedOffer(null);
+    setDiscountCode("");
+    setDiscountAmt(0);
+    setIsKotPrinted(false);
+    
+    // Generate new bill number for next session
+    const now = new Date();
+    const dateStr = `${now.getDate().toString().padStart(2, '0')}${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+    const rand = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+    setBillNumber(`SV-${dateStr}-${rand}`);
+    setBillDate(now.toLocaleString());
+  };
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
@@ -824,7 +848,7 @@ export default function CheckoutClient() {
       if (res.ok) {
         if (resumeBillId === id) {
           router.replace("/dashboard/billing/checkout");
-          setItems([]); setCustomerName(""); setCustomerPhone(""); setCustomerAddress("");
+          resetForm();
         }
         return true;
       } else { alert("Failed to delete bill"); return false; }
@@ -1678,7 +1702,7 @@ export default function CheckoutClient() {
                   const bill = await saveBill(true);
                   if (!bill) return;
                   kravy.ping(); 
-                  setItems([]); setCustomerName(""); setCustomerPhone("");
+                  resetForm();
                   fetchHeldBills();
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
@@ -1694,10 +1718,7 @@ export default function CheckoutClient() {
                   const bill = await saveBill();
                   if (!bill) return;
                   kravy.success(); 
-                  setItems([]); setCustomerName(""); setCustomerPhone("");
-                  setUpiTxnRef(""); setPaymentMode("Cash"); setPaymentStatus("Paid");
-                  setBillNumber(`SV-${Date.now()}`);
-                  setBillDate(new Date().toLocaleString());
+                  resetForm();
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
                 disabled={items.length === 0}
@@ -1732,11 +1753,7 @@ export default function CheckoutClient() {
                   if (!bill) return;
                   kravy.payment(); 
                   printReceipt(business?.enableKOTWithBill);
-                  setItems([]); setCustomerName(""); setCustomerPhone(""); setCustomerAddress("");
-                  setUpiTxnRef(""); setPaymentMode("Cash"); setPaymentStatus("Paid");
-                  setIsKotPrinted(false);
-                  setBillNumber(`SV-${Date.now()}`);
-                  setBillDate(new Date().toLocaleString());
+                  resetForm();
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
                 disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
@@ -2419,11 +2436,7 @@ export default function CheckoutClient() {
                   printReceipt(business?.enableKOTWithBill);
                   setShowPreview(false);
                   
-                  // Reset form manually
-                  setItems([]); setCustomerName(""); setCustomerPhone("");
-                  setUpiTxnRef(""); setPaymentMode("Cash"); setPaymentStatus("Paid");
-                  setBillNumber(`SV-${Date.now()}`);
-                  setBillDate(new Date().toLocaleString());
+                  resetForm();
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
                 disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}

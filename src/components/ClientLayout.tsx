@@ -47,6 +47,48 @@ export default function ClientLayout({
     return <RedirectToSignIn />;
   }
 
+  // Staff Authorization Check (UI side)
+  if (!isSignedIn && isStaffAuthenticated) {
+    try {
+        const staffToken = document.cookie.split('; ').find(row => row.startsWith('staff_token='))?.split('=')[1];
+        if (staffToken) {
+            const payload = JSON.parse(atob(staffToken.split('.')[1]));
+            const permissions = payload.permissions || [];
+            const path = window.location.pathname;
+            
+            if (path.startsWith('/dashboard')) {
+                const isAllowed = permissions.some((p: string) => path === p || path.startsWith(p + '/'));
+                if (!isAllowed) {
+                    return (
+                        <div className="h-screen flex items-center justify-center bg-slate-50">
+                            <div className="text-center p-8 bg-white rounded-3xl shadow-xl border border-slate-200 max-w-sm">
+                                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <Lock size={32} />
+                                </div>
+                                <h2 className="text-xl font-black text-slate-800">Access Denied</h2>
+                                <p className="text-slate-500 text-sm mt-2 mb-6">
+                                    You don't have permission to access this module. Contact your manager.
+                                </p>
+                                <button 
+                                    onClick={() => {
+                                        document.cookie = "staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                                        window.location.href = "/staff/login";
+                                    }}
+                                    className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all"
+                                >
+                                    Log out & Try Again
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Staff permission check failed", e);
+    }
+  }
+
   // If either Clerk User or Staff User -> Show Dashboard
   return (
     <>

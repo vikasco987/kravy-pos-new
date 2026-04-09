@@ -64,8 +64,8 @@ export async function GET() {
       }
     }
 
-    // Always ensure /dashboard and /dashboard/help are available
-    const finalPaths = [...new Set(["/dashboard", "/dashboard/help", ...finalAllowed])];
+    // Ensure uniqueness, but don't force /dashboard if permissions are explicitly set
+    const finalPaths = [...new Set(finalAllowed)];
 
     return NextResponse.json({ 
         id: authUser.id,

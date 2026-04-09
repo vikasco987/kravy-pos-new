@@ -47,7 +47,28 @@ export default clerkMiddleware(async (auth, request) => {
 
   // 2. Allow access for Staff who have our JWT
   if (staffToken) {
-    return NextResponse.next();
+    try {
+      // Decode JWT payload (standard base64 decode for Edge compatibility)
+      const payloadBase64 = staffToken.split('.')[1];
+      const payload = JSON.parse(atob(payloadBase64));
+      const permissions = payload.permissions || [];
+      const path = request.nextUrl.pathname;
+
+      // If accessing dashboard, check if the path (or a parent path) is allowed
+      if (path.startsWith('/dashboard')) {
+        const isAllowed = permissions.some((p: string) => path === p || path.startsWith(p + '/'));
+        
+        if (!isAllowed) {
+           console.log(`[AUTH] Staff ${payload.name} denied access to ${path}`);
+           // Redirect to staff login if not allowed
+           return NextResponse.redirect(new URL('/staff/login?error=denied', request.url));
+        }
+      }
+      return NextResponse.next();
+    } catch (e) {
+      console.error("[AUTH] Staff token decode failed", e);
+      return NextResponse.redirect(new URL('/staff/login?error=invalid_session', request.url));
+    }
   }
 
   // 3. Allow Public Routes
