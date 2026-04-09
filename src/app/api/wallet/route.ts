@@ -38,16 +38,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "deposit") {
-      console.log(`[WALLET_API] Depositing ₹${amount} to ${party.name}...`);
+      const newBalance = (party.walletBalance || 0) + amount;
+      console.log(`[WALLET_API] Manual Calculation: ${party.walletBalance || 0} + ${amount} = ${newBalance}`);
+      
       // 1. Update Party Balance
       const updatedParty = await prisma.party.update({
         where: { id: partyId },
         data: {
-          walletBalance: { increment: amount },
+          walletBalance: newBalance,
         },
       });
 
-      console.log(`[WALLET_API] Deposit Success. New Balance: ${updatedParty.walletBalance}`);
+      console.log(`[WALLET_API] DB Update Result: Name=${updatedParty.name}, NewBalance=${updatedParty.walletBalance}`);
 
       // 2. Clear Transaction History Entry
       await prisma.walletTransaction.create({
@@ -64,15 +66,20 @@ export async function POST(req: NextRequest) {
     } 
     
     if (action === "payment") {
-      if (party.walletBalance < amount) {
+      const currentBalance = party.walletBalance || 0;
+      if (currentBalance < amount) {
+        console.warn(`[WALLET_API] Insufficient Balance: ${currentBalance} < ${amount}`);
         return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
       }
+
+      const newBalance = currentBalance - amount;
+      console.log(`[WALLET_API] Manual Deduction: ${currentBalance} - ${amount} = ${newBalance}`);
 
       // 1. Deduct Balance
       const updatedParty = await prisma.party.update({
         where: { id: partyId },
         data: {
-          walletBalance: { decrement: amount },
+          walletBalance: newBalance,
         },
       });
 

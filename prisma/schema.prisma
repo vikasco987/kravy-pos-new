@@ -159,7 +159,7 @@ model Party {
   user      User?     @relation(fields: [createdBy], references: [clerkId])
 
   loyaltyPoints Int @default(0)
-  walletBalance Float @default(0) // Added for Deposit/Wallet System
+  walletBalance Float @default(0.0) // Added for Deposit/Wallet System
 
   bills BillManager[]
   walletTransactions WalletTransaction[] // Added relation
