@@ -14,7 +14,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, partyId, amount, description } = body;
 
+    console.log(`[WALLET_API] Action: ${action}, PartyId: ${partyId}, Amount: ${amount}`);
+
     if (!partyId || !amount || amount <= 0) {
+      console.warn("[WALLET_API] Validation Failed: Missing partyId or invalid amount");
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
     }
 
@@ -23,14 +26,19 @@ export async function POST(req: NextRequest) {
     });
 
     if (!party) {
+      console.warn(`[WALLET_API] Customer not found for ID: ${partyId}`);
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
+    console.log(`[WALLET_API] Found Customer: ${party.name}, Current Balance: ${party.walletBalance}`);
+
     if (party.createdBy !== effectiveId) {
+      console.warn(`[WALLET_API] Forbidden: ${party.createdBy} !== ${effectiveId}`);
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     if (action === "deposit") {
+      console.log(`[WALLET_API] Depositing ₹${amount} to ${party.name}...`);
       // 1. Update Party Balance
       const updatedParty = await prisma.party.update({
         where: { id: partyId },
@@ -38,6 +46,8 @@ export async function POST(req: NextRequest) {
           walletBalance: { increment: amount },
         },
       });
+
+      console.log(`[WALLET_API] Deposit Success. New Balance: ${updatedParty.walletBalance}`);
 
       // 2. Clear Transaction History Entry
       await prisma.walletTransaction.create({

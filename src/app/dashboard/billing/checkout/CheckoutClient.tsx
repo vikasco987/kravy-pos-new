@@ -517,7 +517,11 @@ export default function CheckoutClient() {
   }, []);
 
   const handleDeposit = async (amount: number) => {
-    if (!selectedParty) return;
+    if (!selectedParty) {
+      console.warn("[WALLET] No customer selected for deposit");
+      return;
+    }
+    console.log("[WALLET] Starting Deposit:", { amount, partyId: selectedParty.id, partyName: selectedParty.name });
     try {
       const res = await fetch("/api/wallet", {
         method: "POST",
@@ -529,18 +533,23 @@ export default function CheckoutClient() {
           description: "Pos Deposit"
         })
       });
+      console.log("[WALLET] API Response Status:", res.status);
       if (res.ok) {
         const data = await res.json();
+        console.log("[WALLET] Success Data:", data);
         toast.success(`₹${amount} added successfully!`, {
           description: `New balance: ₹${data.balance.toFixed(2)}`
         });
         setSelectedParty({ ...selectedParty, walletBalance: data.balance });
         // update main list
-        setParties(pts => pts.map(p => p.id === selectedParty.id ? { ...p, walletBalance: data.balance } : p));
+        setParties(pts => pts.map(p => (p.id === selectedParty.id || p._id === selectedParty.id) ? { ...p, walletBalance: data.balance } : p));
       } else {
+        const errData = await res.json();
+        console.error("[WALLET] API Error:", errData);
         toast.error("Failed to deposit money");
       }
     } catch (err) {
+      console.error("[WALLET] Network/Catch Error:", err);
       toast.error("Network error during deposit");
     }
   };
