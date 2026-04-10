@@ -85,12 +85,11 @@ export async function GET() {
       "Settings Permissions": ["/dashboard/profile", "/dashboard/settings", "/dashboard/settings/tax", "/dashboard/staff"]
     };
 
-    let expandedAllowed: string[] = [];
+    // Include original permissions (for mobile app logic) AND expand them (for website sidebar)
+    let expandedAllowed: string[] = [...finalAllowed]; 
     finalAllowed.forEach(p => {
       if (PERMISSION_MAPPING[p]) {
         expandedAllowed = [...expandedAllowed, ...PERMISSION_MAPPING[p]];
-      } else {
-        expandedAllowed.push(p);
       }
     });
 
