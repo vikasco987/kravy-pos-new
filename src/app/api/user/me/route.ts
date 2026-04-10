@@ -73,8 +73,29 @@ export async function GET() {
       }
     }
 
-    // Ensure uniqueness, but don't force /dashboard if permissions are explicitly set
-    const finalPaths = [...new Set(finalAllowed)];
+    // priority 4: Expand mobile app group permissions into actual URL paths
+    const PERMISSION_MAPPING: Record<string, string[]> = {
+      "Dashboard Permissions": ["/dashboard"],
+      "Order & Billing Permissions": ["/dashboard/billing/checkout", "/dashboard/workflow", "/dashboard/tables"],
+      "Invoices & Receipts": ["/dashboard/billing", "/dashboard/billing/deleted"],
+      "Customer Permissions": ["/dashboard/parties"],
+      "Menu & Items Permissions": ["/dashboard/menu/view", "/dashboard/menu-editor", "/dashboard/menu/addons", "/dashboard/menu/upload", "/dashboard/store-item-upload", "/dashboard/menu/edit", "/dashboard/inventory"],
+      "AI Intelligence Tools": ["/dashboard/ai-scraper"],
+      "Report Permissions": ["/dashboard/reports/sales/daily", "/dashboard/reports/gst"],
+      "Settings Permissions": ["/dashboard/profile", "/dashboard/settings", "/dashboard/settings/tax", "/dashboard/staff"]
+    };
+
+    let expandedAllowed: string[] = [];
+    finalAllowed.forEach(p => {
+      if (PERMISSION_MAPPING[p]) {
+        expandedAllowed = [...expandedAllowed, ...PERMISSION_MAPPING[p]];
+      } else {
+        expandedAllowed.push(p);
+      }
+    });
+
+    // Ensure uniqueness, and include the expanded paths
+    const finalPaths = [...new Set(expandedAllowed)];
 
     return NextResponse.json({ 
         id: authUser.id,
