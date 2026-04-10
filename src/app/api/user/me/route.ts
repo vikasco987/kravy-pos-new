@@ -16,51 +16,60 @@ export async function GET() {
       );
     }
 
-    // priority 1: Assigned Permissions from Auth object (JWT or Clerk-linked staff)
+    // priority 1: Assigned Permissions from Auth object (User model or Staff model)
     let finalAllowed: string[] = authUser.permissions || [];
 
-    // priority 2: If it's an OWNER (ADMIN/SELLER/OWNER), give them full access
-    const isOwner = authUser.type === "OWNER" || authUser.type === "ADMIN" || authUser.type === "SELLER";
+    // priority 2: If no individual permissions, check GLOBAL Role-based permissions
+    if (finalAllowed.length === 0) {
+      const globalPerms = await (prisma as any).rolePermission.findUnique({
+        where: { role: authUser.role }
+      });
+      if (globalPerms) {
+        finalAllowed = globalPerms.allowedPaths;
+      }
+    }
+
+    // priority 3: Fallback Hardcoded Defaults (if still empty)
+    const isPrivileged = authUser.type === "OWNER" || authUser.type === "ADMIN" || authUser.type === "SELLER";
     
-    if (isOwner) {
-      finalAllowed = [
-        "/dashboard", 
-        "/dashboard/billing/checkout", 
-        "/dashboard/tables", 
-        "/dashboard/billing", 
-        "/dashboard/workflow",
-        "/dashboard/menu/view", 
-        "/dashboard/menu-editor",
-        "/dashboard/menu/upload", 
-        "/dashboard/store-item-upload", 
-        "/dashboard/menu/edit", 
-        "/dashboard/parties",
-        "/dashboard/staff",
-        "/dashboard/inventory", 
-        "/dashboard/qr-orders",
-        "/dashboard/combos",
-        "/dashboard/gallery",
-        "/dashboard/profile",
-        "/dashboard/settings", 
-        "/dashboard/settings/tax",
-        "/dashboard/billing/deleted",
-        "/dashboard/reports/sales/daily",
-        "/dashboard/reports/gst",
-        "/dashboard/ai-scraper"
-      ];
-    } 
-    // priority 3: Default fallback for staff if no permissions assigned
-    else {
-      if (finalAllowed.length === 0) {
-          finalAllowed = [
-            "/dashboard", 
-            "/dashboard/billing/checkout", 
-            "/dashboard/tables", 
-            "/dashboard/billing", 
-            "/dashboard/menu/view", 
-            "/dashboard/qr-orders",
-            "/dashboard/help"
-          ];
+    if (finalAllowed.length === 0) {
+      if (isPrivileged) {
+        finalAllowed = [
+          "/dashboard", 
+          "/dashboard/billing/checkout", 
+          "/dashboard/tables", 
+          "/dashboard/billing", 
+          "/dashboard/workflow",
+          "/dashboard/menu/view", 
+          "/dashboard/menu-editor",
+          "/dashboard/menu/addons",
+          "/dashboard/menu/upload", 
+          "/dashboard/store-item-upload", 
+          "/dashboard/menu/edit", 
+          "/dashboard/parties",
+          "/dashboard/staff",
+          "/dashboard/inventory", 
+          "/dashboard/qr-orders",
+          "/dashboard/combos",
+          "/dashboard/gallery",
+          "/dashboard/profile",
+          "/dashboard/settings", 
+          "/dashboard/settings/tax",
+          "/dashboard/billing/deleted",
+          "/dashboard/reports/sales/daily",
+          "/dashboard/reports/gst",
+          "/dashboard/ai-scraper"
+        ];
+      } else {
+        finalAllowed = [
+          "/dashboard", 
+          "/dashboard/billing/checkout", 
+          "/dashboard/tables", 
+          "/dashboard/billing", 
+          "/dashboard/menu/view", 
+          "/dashboard/qr-orders",
+          "/dashboard/help"
+        ];
       }
     }
 

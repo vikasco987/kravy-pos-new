@@ -372,7 +372,7 @@ export default async function DashboardPage({
 
       {/* ── API & SCRAPER INTEGRATION (Admin Central) ── */}
       <div style={{
-        background: "linear-gradient(135deg, rgba(30, 41, 59, 0.02), rgba(30, 41, 59, 0.05))",
+        background: "var(--kravy-surface)",
         border: "1px solid var(--kravy-border)",
         borderRadius: "28px",
         padding: "24px",

@@ -487,38 +487,33 @@ export default function Sidebar() {
       {/* NAV ITEMS */}
       <nav style={{ flex: 1, overflowY: "auto", padding: "8px 10px", scrollbarWidth: "none" }}>
         {navGroups.map((group) => {
-          // 1. Filter items based on access
+          // Filter items based on access rules
           const visibleItems = group.items.filter((item: any) => {
-            // Priority 1: Admins (Full access)
+            // 1. Global Admin Bypass - Show everything to administrators
             if (userRole === "ADMIN") return true;
 
-            // Priority 2: Per-path check (from Database settings)
-            if (allowedPaths.includes("*")) return true;
-            if (allowedPaths.includes(item.href)) return true;
+            // 2. Explicit Path-based Access (from DB allowedPaths)
+            // If the current user has this specific path in their allowed list, grant access
+            if (allowedPaths.includes("*") || allowedPaths.includes(item.href)) return true;
 
-            // Special flags logic
+            // 3. Application-wide Feature Flags (Controlled by profile settings)
             if (item.label === "GST Reports" && !taxEnabled) return false;
+            if (item.label === "AI Menu Scraper" && !aiScraperEnabled) return false;
+            if (item.label === "Excel Bulk Import" && !excelImportEnabled) return false;
             
-            // Admins & Sellers see certain modules by default unless path is blocked
-            const isAdminSeller = userRole === "ADMIN" || userRole === "SELLER";
-            if (item.roles && item.roles.includes(userRole)) {
-               // If item.roles contains current role, but its path isn't in allowedPaths (and allowedPaths isn't empty) -> Hide it
-               if (allowedPaths.length > 0 && !allowedPaths.includes(item.href)) return false;
-               return true;
+            // 4. Permission List Constraint
+            // If the user has a populated list of allowedPaths, but this item isn't in it,
+            // we must deny access (even if legacy role checks below might pass).
+            if (allowedPaths.length > 0) return false;
+
+            // 5. Legacy Role-based Fallback (used when allowedPaths is empty)
+            if (item.roles) {
+               return item.roles.includes(userRole);
             }
 
-            // Default: If no allowedPaths populated yet, check legacy role tags
-            if (allowedPaths.length === 0 && item.roles && item.roles.includes(userRole)) return true;
-
-            // Fallback: If no roles property, and we have allowedPaths -> Hide if not in list
-            if (!item.roles && allowedPaths.length > 0) {
-              return allowedPaths.includes(item.href);
-            }
-
-            // Default fallback for everyone
-            if (!item.roles && allowedPaths.length === 0) return true;
-
-            return false;
+            // 6. Default Default: Items without role restrictions are visible to everyone
+            // when no specific allowedPaths have been configured for the user yet.
+            return true;
           });
 
           // 2. If no items are allowed in this group, don't show the group at all

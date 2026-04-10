@@ -99,8 +99,8 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
     categories.find((c: any) => c.id === i.categoryId)?.name.toLowerCase().includes(itemSearch.toLowerCase())
   )
 
-  const sectionLabelRef = "text-[0.65rem] font-black uppercase tracking-[0.3em] text-slate-400 pl-1"
-  const inputBaseRef = "w-full border-2 border-slate-100 rounded-2xl px-5 h-14 text-[1rem] font-black text-slate-950 bg-white outline-none focus:border-red-500 focus:shadow-xl focus:shadow-red-500/5 transition-all placeholder:text-slate-200/60"
+  const sectionLabelRef = "text-[0.65rem] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500 pl-1"
+  const inputBaseRef = "w-full border-2 border-slate-100 dark:border-slate-800 rounded-2xl px-5 h-14 text-[1rem] font-black text-slate-950 dark:text-white bg-white dark:bg-slate-900 outline-none focus:border-red-500 focus:shadow-xl focus:shadow-red-500/5 transition-all placeholder:text-slate-200/60 dark:placeholder:text-slate-700"
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[250] flex items-center justify-center p-4">
@@ -108,31 +108,31 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
         initial={{ scale: 0.95, opacity: 0, y: 30 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 30 }}
-        className="bg-[#FBFBFD] w-full max-w-[1000px] rounded-[3.5rem] max-h-[92vh] overflow-hidden shadow-[0_48px_96px_-12px_rgba(0,0,0,0.2)] relative flex flex-col border border-white/50"
+        className="bg-[#FBFBFD] dark:bg-slate-950 w-full max-w-[1000px] rounded-[3.5rem] max-h-[92vh] overflow-hidden shadow-[0_48px_96px_-12px_rgba(0,0,0,0.2)] relative flex flex-col border border-white/50 dark:border-slate-800/50"
       >
         {/* MODAL HEADER */}
-        <div className="px-10 py-8 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-xl z-10 sticky top-0">
+        <div className="px-10 py-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl z-10 sticky top-0">
           <div className="flex items-center gap-5">
             {showForm && (
               <button 
                 onClick={() => setShowForm(false)} 
-                className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-900 hover:text-white transition-all shadow-sm group"
+                className="w-12 h-12 flex items-center justify-center bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-2xl hover:bg-slate-900 dark:hover:bg-white hover:text-white dark:hover:text-slate-900 transition-all shadow-sm group"
               >
                  <ArrowLeft size={22} className="group-hover:-translate-x-1 transition-transform" />
               </button>
             )}
             <div className="space-y-1">
-               <h2 className="text-[1.5rem] font-black text-slate-900 leading-none tracking-tight flex items-center gap-3">
+               <h2 className="text-[1.5rem] font-black text-slate-900 dark:text-white leading-none tracking-tight flex items-center gap-3">
                   {showForm ? (editingGroup ? 'Modify Node' : 'Initialise Group') : 'Ecosystem Nodes'}
                   <Sparkles size={20} className="text-amber-400" />
                </h2>
                <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-[0.65rem] font-black text-slate-400 tracking-[0.25em] uppercase">Ecosystem Configuration Interface</p>
+                  <p className="text-[0.65rem] font-black text-slate-400 dark:text-slate-500 tracking-[0.25em] uppercase">Ecosystem Configuration Interface</p>
                </div>
             </div>
           </div>
-          <button onClick={onClose} className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-2xl transition-all active:scale-90 border border-slate-100">
+          <button onClick={onClose} className="w-12 h-12 flex items-center justify-center bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-500 dark:hover:text-red-400 rounded-2xl transition-all active:scale-90 border border-slate-100 dark:border-slate-700">
              <X size={24} />
           </button>
         </div>
@@ -143,12 +143,12 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
               {/* PRIMARY ACTION */}
               <button 
                 onClick={openCreate}
-                className="group relative w-full h-32 bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-red-400 hover:bg-red-50/20 transition-all duration-500 shadow-sm"
+                className="group relative w-full h-32 bg-white dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-800/50 rounded-[2.5rem] flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-600 hover:border-red-400 dark:hover:border-red-900/50 hover:bg-red-50/20 dark:hover:bg-red-900/10 transition-all duration-500 shadow-sm"
               >
-                 <div className="w-14 h-14 rounded-2xl bg-slate-50 group-hover:bg-red-500 group-hover:text-white transition-all flex items-center justify-center mb-1">
+                 <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 group-hover:bg-red-500 group-hover:text-white transition-all flex items-center justify-center mb-1">
                     <Plus size={32} strokeWidth={3} />
                  </div>
-                 <span className="font-black text-[0.8rem] tracking-[0.3em] uppercase group-hover:text-red-600">Forge New Cluster Node</span>
+                 <span className="font-black text-[0.8rem] tracking-[0.3em] uppercase group-hover:text-red-600 dark:group-hover:text-red-500">Forge New Cluster Node</span>
               </button>
 
               <div className="space-y-6">
@@ -160,25 +160,25 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
                     {groups.map((group: any) => (
                       <div key={group.id} className="group flex flex-col border-2 border-slate-50 bg-white rounded-[2.5rem] p-6 hover:border-red-100 hover:shadow-xl hover:shadow-slate-200/20 transition-all duration-500 relative overflow-hidden">
                          <div className="flex items-center justify-between mb-4">
-                            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:text-red-500 group-hover:bg-red-50 transition-all">
+                            <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-300 dark:text-slate-600 group-hover:text-red-500 dark:group-hover:text-red-400 group-hover:bg-red-50 dark:group-hover:bg-red-900/30 transition-all">
                                <Layers size={20} />
                             </div>
                             <div className="flex items-center gap-1.5">
-                               <button onClick={() => openEdit(group)} className="w-9 h-9 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-900 hover:text-white transition-all flex items-center justify-center">
+                               <button onClick={() => openEdit(group)} className="w-9 h-9 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-900 dark:hover:bg-white hover:text-white dark:hover:text-slate-900 transition-all flex items-center justify-center">
                                   <Edit2 size={16} />
                                </button>
-                               <button onClick={() => onDelete(group.id)} className="w-9 h-9 rounded-lg bg-slate-50 text-slate-400 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center">
+                               <button onClick={() => onDelete(group.id)} className="w-9 h-9 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-rose-500 dark:hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center">
                                   <Trash2 size={16} />
                                </button>
                             </div>
                          </div>
-                         <h5 className="text-[1.15rem] font-black tracking-tight text-slate-900 group-hover:text-red-600 transition-colors">{group.name}</h5>
+                         <h5 className="text-[1.15rem] font-black tracking-tight text-slate-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">{group.name}</h5>
                          <div className="flex items-center gap-3 mt-4">
-                            <span className="text-[0.6rem] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 uppercase tracking-wider">
+                            <span className="text-[0.6rem] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-lg border border-emerald-100 dark:border-emerald-900/50 uppercase tracking-wider">
                                {group.items?.length || 0} Nodes
                             </span>
                             {group.isCompulsory && (
-                               <span className="text-[0.6rem] font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100 uppercase tracking-wider">
+                               <span className="text-[0.6rem] font-black text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2.5 py-1 rounded-lg border border-amber-100 dark:border-amber-900/50 uppercase tracking-wider">
                                   Compulsory
                                </span>
                             )}
@@ -213,16 +213,16 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
                         </div>
                      </div>
 
-                     <div className="bg-slate-50/80 rounded-[3rem] p-10 border border-slate-100 space-y-10 shadow-inner">
+                     <div className="bg-slate-50/80 dark:bg-slate-900/50 rounded-[3rem] p-10 border border-slate-100 dark:border-slate-800 space-y-10 shadow-inner">
                         <div className="flex items-center justify-between">
                            <div className="space-y-1.5">
-                              <h5 className="text-[1.1rem] font-black text-slate-900 tracking-tight">Requirement Protocol</h5>
-                              <p className="text-[0.7rem] font-bold text-slate-400 leading-relaxed uppercase tracking-[0.1em]">Enforce selection mandatory attribute for customers</p>
+                              <h5 className="text-[1.1rem] font-black text-slate-900 dark:text-white tracking-tight">Requirement Protocol</h5>
+                              <p className="text-[0.7rem] font-bold text-slate-400 dark:text-slate-500 leading-relaxed uppercase tracking-[0.1em]">Enforce selection mandatory attribute for customers</p>
                            </div>
                            <button 
                             type="button"
                             onClick={() => update('isCompulsory', !form.isCompulsory)}
-                            className={`w-16 h-9 rounded-full relative transition-all shadow-inner border-2 ${form.isCompulsory ? 'bg-red-500 border-red-600 shadow-red-200/50' : 'bg-slate-200 border-slate-300'}`}
+                            className={`w-16 h-9 rounded-full relative transition-all shadow-inner border-2 ${form.isCompulsory ? 'bg-red-500 border-red-600 shadow-red-200/50' : 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600'}`}
                            >
                             <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-all ${form.isCompulsory ? 'left-8' : 'left-1'}`} />
                            </button>
@@ -255,17 +255,17 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
                            </div>
                         </div>
 
-                        <div className="h-[1px] bg-slate-200" />
+                        <div className="h-[1px] bg-slate-200 dark:bg-slate-800" />
 
                         <div className="flex items-center justify-between">
                            <div className="space-y-1.5">
-                              <h5 className="text-[1.1rem] font-black text-slate-900 tracking-tight">Recursive Logic</h5>
-                              <p className="text-[0.7rem] font-bold text-slate-400 leading-relaxed uppercase tracking-[0.1em]">Allow multiple units of the same node configuration (x2, x3)</p>
+                              <h5 className="text-[1.1rem] font-black text-slate-900 dark:text-white tracking-tight">Recursive Logic</h5>
+                              <p className="text-[0.7rem] font-bold text-slate-400 dark:text-slate-500 leading-relaxed uppercase tracking-[0.1em]">Allow multiple units of the same node configuration (x2, x3)</p>
                            </div>
                            <button 
                             type="button"
                             onClick={() => update('allowMultipleUnits', !form.allowMultipleUnits)}
-                            className={`w-16 h-9 rounded-full relative transition-all shadow-inner border-2 ${form.allowMultipleUnits ? 'bg-emerald-500 border-emerald-600 shadow-emerald-200/50' : 'bg-slate-200 border-slate-300'}`}
+                            className={`w-16 h-9 rounded-full relative transition-all shadow-inner border-2 ${form.allowMultipleUnits ? 'bg-emerald-500 border-emerald-600 shadow-emerald-200/50' : 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600'}`}
                            >
                             <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-all ${form.allowMultipleUnits ? 'left-8' : 'left-1'}`} />
                            </button>
@@ -301,9 +301,9 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
                             className="group grid grid-cols-[1fr_140px_130px_60px] gap-6 items-center p-6 bg-white border-2 border-slate-50 hover:border-red-100 rounded-[2.5rem] transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-slate-200/10"
                           >
                              <div className="relative">
-                                <Info size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-200 group-hover:text-red-400 transition-colors" />
+                                <Info size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-200 dark:text-slate-700 group-hover:text-red-400 dark:group-hover:text-red-500 transition-colors" />
                                 <input 
-                                   className="w-full border-2 border-slate-100 bg-slate-50/10 rounded-2xl pl-14 pr-6 h-14 text-[0.95rem] font-black text-slate-900 outline-none focus:bg-white focus:border-red-100 transition-all"
+                                   className="w-full border-2 border-slate-100 dark:border-slate-800 bg-slate-50/10 dark:bg-slate-800/10 rounded-2xl pl-14 pr-6 h-14 text-[0.95rem] font-black text-slate-900 dark:text-white outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-red-100 dark:focus:border-red-900/30 transition-all"
                                    value={it.name}
                                    onChange={e => updateItem(index, 'name', e.target.value)}
                                    placeholder="Identification (e.g. Truffle Glaze)"
@@ -320,14 +320,14 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
                                 />
                              </div>
                              <select 
-                               className="w-full border-2 border-slate-50 bg-slate-50/30 rounded-2xl px-4 h-14 text-[0.7rem] font-black uppercase tracking-widest bg-white outline-none cursor-pointer hover:border-red-100 transition-all appearance-none"
+                               className="w-full border-2 border-slate-50 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/50 rounded-2xl px-4 h-14 text-[0.7rem] font-black uppercase tracking-widest bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none cursor-pointer hover:border-red-100 dark:hover:border-red-900/30 transition-all appearance-none"
                                value={it.foodType}
                                onChange={e => updateItem(index, 'foodType', e.target.value)}
                              >
-                               <option value="veg">🌿 VEG</option>
-                               <option value="nonveg">🍗 NON-VEG</option>
+                               <option value="veg" className="dark:bg-slate-900">🌿 VEG</option>
+                               <option value="nonveg" className="dark:bg-slate-900">🍗 NON-VEG</option>
                              </select>
-                             <button type="button" onClick={() => removeItem(index)} className="w-12 h-12 flex items-center justify-center text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all">
+                             <button type="button" onClick={() => removeItem(index)} className="w-12 h-12 flex items-center justify-center text-slate-200 dark:text-slate-700 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-2xl transition-all">
                                 <Trash2 size={24} />
                              </button>
                           </motion.div>
@@ -336,7 +336,7 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
                   </div>
 
                   {/* Surface Mapping (Items select) */}
-                  <div className="space-y-8 pt-12 border-t border-slate-100">
+                  <div className="space-y-8 pt-12 border-t border-slate-100 dark:border-slate-800">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
                          <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20">
@@ -350,7 +350,7 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
                               value={itemSearch}
                               onChange={e => setItemSearch(e.target.value)}
                               placeholder="Locate deployment assets..."
-                              className="w-full h-12 pl-14 pr-6 bg-white border-2 border-slate-100 rounded-[1.5rem] text-[0.85rem] font-black outline-none focus:border-blue-100 shadow-sm transition-all"
+                              className="w-full h-12 pl-14 pr-6 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-[0.85rem] font-black outline-none focus:border-blue-100 dark:focus:border-blue-900/30 shadow-sm transition-all text-slate-900 dark:text-white"
                             />
                          </div>
                       </div>
@@ -364,17 +364,17 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
                                 key={item.id}
                                 type="button"
                                 onClick={() => toggleItemLink(item.id)}
-                                className={`p-6 rounded-[2.5rem] border-2 text-left transition-all relative overflow-hidden group ${isLinked ? 'border-blue-500 bg-blue-50/50 shadow-xl shadow-blue-500/5' : 'border-slate-50 bg-white hover:border-slate-200'}`}
+                                className={`p-6 rounded-[2.5rem] border-2 text-left transition-all relative overflow-hidden group ${isLinked ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 shadow-xl shadow-blue-500/5' : 'border-slate-50 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-700'}`}
                               >
                                  <div className="flex flex-col gap-1.5 relative z-10 transition-transform duration-500 group-hover:translate-x-1">
-                                    <span className={`text-[0.6rem] font-black uppercase tracking-[0.2em] ${isLinked ? 'text-blue-500' : 'text-slate-300'}`}>
+                                    <span className={`text-[0.6rem] font-black uppercase tracking-[0.2em] ${isLinked ? 'text-blue-500 dark:text-blue-400' : 'text-slate-300 dark:text-slate-600'}`}>
                                        {category?.name || 'Asset Registry'}
                                     </span>
-                                    <h6 className={`text-[1rem] font-black leading-tight ${isLinked ? 'text-blue-700' : 'text-slate-900'}`}>
+                                    <h6 className={`text-[1rem] font-black leading-tight ${isLinked ? 'text-blue-700 dark:text-blue-300' : 'text-slate-900 dark:text-slate-100'}`}>
                                        {item.name}
                                     </h6>
                                  </div>
-                                 <div className={`absolute top-6 right-6 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-500 ${isLinked ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-200 group-hover:bg-slate-200'}`}>
+                                 <div className={`absolute top-6 right-6 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-500 ${isLinked ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-200 dark:text-slate-700 group-hover:bg-slate-200 dark:group-hover:bg-slate-700'}`}>
                                     <CheckCircle2 size={16} strokeWidth={3} />
                                  </div>
                                  
@@ -386,9 +386,9 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
                             )
                          })}
                          {filteredItems.length === 0 && (
-                           <div className="col-span-full py-24 text-center rounded-[3rem] border-4 border-dashed border-slate-50 bg-slate-50/30">
-                              <Search size={32} className="mx-auto text-slate-200 mb-3" />
-                              <p className="text-[0.7rem] font-black text-slate-300 uppercase tracking-[0.3em]">No matching assets identified</p>
+                           <div className="col-span-full py-24 text-center rounded-[3rem] border-4 border-dashed border-slate-50 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/10">
+                              <Search size={32} className="mx-auto text-slate-200 dark:text-slate-700 mb-3" />
+                              <p className="text-[0.7rem] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.3em]">No matching assets identified</p>
                            </div>
                          )}
                       </div>
@@ -400,18 +400,18 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
 
         {/* MODAL FOOTER - ACTION HUB */}
         {showForm && (
-          <div className="absolute bottom-0 left-0 right-0 p-10 bg-white/80 backdrop-blur-2xl border-t border-slate-100 flex items-center justify-center z-[100] shadow-[0_-24px_48px_rgba(0,0,0,0.05)]">
+          <div className="absolute bottom-0 left-0 right-0 p-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-t border-slate-100 dark:border-slate-800 flex items-center justify-center z-[100] shadow-[0_-24px_48px_rgba(0,0,0,0.05)]">
              <div className="w-full max-w-2xl flex items-center gap-6">
                 <button 
                    type="button"
                    onClick={() => setShowForm(false)}
-                   className="hidden md:flex px-8 h-16 rounded-[1.5rem] bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-[0.75rem] hover:bg-slate-100 transition-all border border-slate-100"
+                   className="hidden md:flex px-8 h-16 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest text-[0.75rem] hover:bg-slate-100 dark:hover:bg-slate-700 transition-all border border-slate-100 dark:border-slate-700"
                 >
                    Abort
                 </button>
                 <button 
                   onClick={handleSave}
-                  className="flex-1 group relative h-16 bg-slate-900 text-white rounded-[1.8rem] font-black uppercase tracking-[0.2em] text-[1rem] shadow-2xl shadow-slate-900/20 hover:scale-[1.02] active:scale-95 transition-all overflow-hidden"
+                  className="flex-1 group relative h-16 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[1.8rem] font-black uppercase tracking-[0.2em] text-[1rem] shadow-2xl shadow-slate-900/20 dark:shadow-none hover:scale-[1.02] active:scale-95 transition-all overflow-hidden"
                 >
                    <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-rose-500 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500" />
                    <div className="flex items-center justify-center gap-3 relative z-10 font-black">

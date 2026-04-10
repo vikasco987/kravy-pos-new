@@ -248,10 +248,10 @@ export default function StaffManagementPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b dark:border-slate-800 pb-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900">Manage Staff Access</h1>
-          <p className="text-slate-500 font-medium">Control what your restaurant staff can see and do.</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white">Manage Staff Access</h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Control what your restaurant staff can see and do.</p>
         </div>
         <div className="flex items-center gap-3">
           {isAdmin && (
@@ -262,9 +262,9 @@ export default function StaffManagementPage() {
               <Zap size={16} /> Technical Docs
             </button>
           )}
-          <div className="flex items-center gap-2 bg-indigo-50 px-4 py-2 rounded-2xl border border-indigo-100">
-            <Shield className="text-indigo-600" size={18} />
-            <span className="text-sm font-bold text-indigo-900">Owner Controls Active</span>
+          <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/30 px-4 py-2 rounded-2xl border border-indigo-100 dark:border-indigo-900/50">
+            <Shield className="text-indigo-600 dark:text-indigo-400" size={18} />
+            <span className="text-sm font-bold text-indigo-900 dark:text-indigo-100">Owner Controls Active</span>
           </div>
         </div>
       </header>
@@ -272,12 +272,12 @@ export default function StaffManagementPage() {
       <div className="grid lg:grid-cols-12 gap-8">
         <div className="lg:col-span-7 space-y-8">
           {canManage && (
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm overflow-hidden relative">
-              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-slate-900 dark:text-white">
                 <UserPlus size={80} />
               </div>
-              <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-                <UserPlus className="text-indigo-600" size={20} />
+              <h2 className="text-xl font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                <UserPlus className="text-indigo-600 dark:text-indigo-400" size={20} />
                 Add New Staff Member
               </h2>
               <form onSubmit={handleAddStaff} className="grid sm:grid-cols-2 gap-4">
@@ -289,7 +289,7 @@ export default function StaffManagementPage() {
                     placeholder="e.g. Rahul Singh"
                     value={newStaff.name}
                     onChange={e => setNewStaff({ ...newStaff, name: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                   />
                 </div>
                 <div className="space-y-1">
@@ -299,9 +299,9 @@ export default function StaffManagementPage() {
                       required
                       type="email"
                       placeholder="rahul@kravypos.com"
-                      value={newStaff.email}
+                       value={newStaff.email}
                       onChange={e => setNewStaff({ ...newStaff, email: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                     />
                     <button 
                       type="button"
@@ -309,7 +309,7 @@ export default function StaffManagementPage() {
                         const random = Math.random().toString(36).slice(-5);
                         setNewStaff({...newStaff, email: `staff.${random}@kravypos.com`});
                       }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white px-2 py-1 rounded-lg border shadow-sm hover:bg-slate-50"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white dark:bg-slate-700 px-2 py-1 rounded-lg border dark:border-slate-600 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 dark:text-white"
                     >
                       Auto-Generate
                     </button>
@@ -320,9 +320,9 @@ export default function StaffManagementPage() {
                   <input
                     type="tel"
                     placeholder="e.g. 9876543210"
-                    value={newStaff.phone}
+                     value={newStaff.phone}
                     onChange={e => setNewStaff({ ...newStaff, phone: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                   />
                 </div>
                 <div className="space-y-1 sm:col-span-2">
@@ -332,9 +332,9 @@ export default function StaffManagementPage() {
                       required
                       type="text"
                       placeholder="Set a secure password"
-                      value={newStaff.password}
+                       value={newStaff.password}
                       onChange={e => setNewStaff({ ...newStaff, password: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                     />
                     <button 
                       type="button"
@@ -342,7 +342,7 @@ export default function StaffManagementPage() {
                         const pass = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase() + "!";
                         setNewStaff({...newStaff, password: pass});
                       }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white px-2 py-1 rounded-lg border shadow-sm hover:bg-slate-50"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white dark:bg-slate-700 px-2 py-1 rounded-lg border dark:border-slate-600 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 dark:text-white"
                     >
                       Auto-Generate
                     </button>
@@ -351,7 +351,7 @@ export default function StaffManagementPage() {
                 <button
                   type="submit"
                   disabled={isAdding}
-                  className="sm:col-span-2 bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="sm:col-span-2 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 dark:hover:bg-slate-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isAdding ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />}
                   Add Staff to Restaurant
@@ -361,53 +361,53 @@ export default function StaffManagementPage() {
           )}
 
           <div className="space-y-4">
-            <h2 className="text-xl font-black text-slate-800 flex items-center gap-2 ml-2">
-              <Users className="text-blue-600" size={20} />
+            <h2 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2 ml-2">
+              <Users className="text-blue-600 dark:text-blue-400" size={20} />
               Current Staff ({staff.length})
             </h2>
             <div className="grid gap-3">
               {staff.length === 0 ? (
-                <div className="bg-slate-50 border border-dashed border-slate-300 rounded-3xl p-10 text-center">
-                   <AlertCircle className="mx-auto text-slate-400 mb-2" />
-                   <p className="text-slate-500 font-medium">No staff members found.</p>
+                <div className="bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-3xl p-10 text-center">
+                   <AlertCircle className="mx-auto text-slate-400 dark:text-slate-600 mb-2" />
+                   <p className="text-slate-500 dark:text-slate-400 font-medium">No staff members found.</p>
                 </div>
               ) : (
                 staff.map(member => (
                   <motion.div
                     key={member.id}
                     layoutId={member.id}
-                    className={`bg-white border rounded-2xl p-4 flex items-center justify-between transition-all ${selectedStaff?.id === member.id ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-slate-200 hover:border-slate-300 shadow-sm'}`}
+                    className={`bg-white dark:bg-slate-900 border rounded-2xl p-4 flex items-center justify-between transition-all ${selectedStaff?.id === member.id ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm'}`}
                   >
                     <div className="flex items-center gap-4">
-                       <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${member.isDisabled ? 'bg-slate-200 text-slate-400' : 'bg-indigo-100 text-indigo-600'}`}>
+                     <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${member.isDisabled ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600' : 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400'}`}>
                           {member.isDisabled ? <UserX size={20} /> : <UserCheck size={20} />}
                        </div>
                        <div>
-                          <div className={`font-bold transition-all ${member.isDisabled ? 'text-slate-400' : 'text-slate-900'}`}>
+                          <div className={`font-bold transition-all ${member.isDisabled ? 'text-slate-400 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>
                             {member.name}
-                            {member.isDisabled && <span className="ml-2 text-[8px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md uppercase font-black">Blocked</span>}
+                            {member.isDisabled && <span className="ml-2 text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-md uppercase font-black">Blocked</span>}
                           </div>
-                          <div className={`text-xs font-medium transition-all ${member.isDisabled ? 'text-slate-300' : 'text-slate-500'}`}>{member.email}</div>
+                          <div className={`text-xs font-medium transition-all ${member.isDisabled ? 'text-slate-300 dark:text-slate-700' : 'text-slate-500 dark:text-slate-400'}`}>{member.email}</div>
                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => toggleBlockStaff(member)}
                         title={member.isDisabled ? "Unblock Staff" : "Block Staff"}
-                        className={`p-2 rounded-xl transition-all ${member.isDisabled ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-orange-100 text-orange-600 hover:bg-orange-200'}`}
+                        className={`p-2 rounded-xl transition-all ${member.isDisabled ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60' : 'bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-950/80'}`}
                       >
                         {member.isDisabled ? <UserCheck size={18} /> : <Ban size={18} />}
                       </button>
                       <button
                         onClick={() => deleteStaff(member)}
                         title="Delete Staff"
-                        className="p-2 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 transition-all"
+                        className="p-2 rounded-xl bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-950/80 transition-all"
                       >
                         <Trash2 size={18} />
                       </button>
                       <button
                         onClick={() => setSelectedStaff(member)}
-                        className="ml-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all"
+                        className="ml-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all"
                       >
                         Manage Access
                       </button>

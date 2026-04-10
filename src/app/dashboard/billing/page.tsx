@@ -451,7 +451,7 @@ export default function BillingPage() {
                       </button>
                     </div>
                     {activeFilter === 'bill' && (
-                      <div style={{ position: "absolute", top: "100%", left: "16px", zIndex: 10, background: "white", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "180px" }}>
+                      <div style={{ position: "absolute", top: "100%", left: "16px", zIndex: 10, background: "var(--kravy-surface)", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "180px" }}>
                         <input 
                           autoFocus
                           placeholder="Filter bill no..."
@@ -478,7 +478,7 @@ export default function BillingPage() {
                       </button>
                     </div>
                     {activeFilter === 'source' && (
-                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "white", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "120px" }}>
+                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "var(--kravy-surface)", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "120px" }}>
                         <input 
                           autoFocus
                           placeholder="POS/Table..."
@@ -505,7 +505,7 @@ export default function BillingPage() {
                       </button>
                     </div>
                     {activeFilter === 'customer' && (
-                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "white", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "180px" }}>
+                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "var(--kravy-surface)", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "180px" }}>
                         <input 
                           autoFocus
                           placeholder="Filter name..."
@@ -532,7 +532,7 @@ export default function BillingPage() {
                       </button>
                     </div>
                     {activeFilter === 'phone' && (
-                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "white", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "160px" }}>
+                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "var(--kravy-surface)", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "160px" }}>
                         <input 
                           autoFocus
                           placeholder="Filter phone..."
@@ -566,12 +566,12 @@ export default function BillingPage() {
                       </button>
                     </div>
                     {activeFilter === 'payment' && (
-                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "white", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "150px" }}>
+                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "var(--kravy-surface)", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "150px" }}>
                         <select
                           autoFocus
                           value={colFilters.paymentStatus}
                           onChange={e => setColFilters(f => ({ ...f, paymentStatus: e.target.value }))}
-                          style={{ width: "100%", padding: "6px 4px", fontSize: "0.75rem", borderRadius: "6px", border: "1px solid var(--kravy-border)", background: "white", outline: "none" }}
+                          style={{ width: "100%", padding: "6px 4px", fontSize: "0.75rem", borderRadius: "6px", border: "1px solid var(--kravy-border)", background: "var(--kravy-surface)", color: "var(--kravy-text-primary)", outline: "none" }}
                           onBlur={() => setTimeout(() => setActiveFilter(null), 200)}
                         >
                           <option value="">All Status</option>
@@ -721,7 +721,7 @@ export default function BillingPage() {
             style={{
               width: "36px", height: "36px", borderRadius: "12px", 
               border: "1px solid var(--kravy-border)",
-              background: "white", color: currentPage === 1 ? "#ccc" : "var(--kravy-brand)",
+              background: "var(--kravy-surface)", color: currentPage === 1 ? "#ccc" : "var(--kravy-brand)",
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: currentPage === 1 ? "not-allowed" : "pointer",
               transition: "all 0.2s"
@@ -744,7 +744,7 @@ export default function BillingPage() {
             style={{
               width: "36px", height: "36px", borderRadius: "12px", 
               border: "1px solid var(--kravy-border)",
-              background: "white", color: currentPage === totalPages ? "#ccc" : "var(--kravy-brand)",
+              background: "var(--kravy-surface)", color: currentPage === totalPages ? "#ccc" : "var(--kravy-brand)",
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: currentPage === totalPages ? "not-allowed" : "pointer",
               transition: "all 0.2s"

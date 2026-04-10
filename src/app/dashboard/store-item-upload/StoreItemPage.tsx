@@ -544,10 +544,10 @@ export default function StoreItemPage() {
      RENDER
   ============================= */
   return (
-    <div className="p-6 space-y-8 bg-[var(--kravy-bg)] min-h-full">
+    <div className="p-6 space-y-8 bg-[var(--kravy-bg)] dark:bg-slate-950 min-h-full transition-colors duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-black text-[var(--kravy-text-primary)] tracking-tight">Bulk Menu Upload</h1>
+          <h1 className="text-3xl font-black text-[var(--kravy-text-primary)] dark:text-white tracking-tight">Bulk Menu Upload</h1>
           <p className="text-sm font-medium text-[var(--kravy-text-muted)] mt-1">
             {mode === "create" ? "Bulk create items with spreadsheet upload" : "Edit and update your live menu items"}
           </p>
@@ -585,12 +585,12 @@ export default function StoreItemPage() {
           { label: "Mode", value: mode.toUpperCase(), icon: "⚡", color: "text-amber-600", bg: "bg-amber-50" },
           { label: "Status", value: hasErrors ? "Invalid" : "Ready", icon: "💎", color: hasErrors ? "text-rose-600" : "text-emerald-600", bg: hasErrors ? "bg-rose-50" : "bg-emerald-50" }
         ].map((stat) => (
-          <div key={stat.label} className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center text-xl shadow-inner`}>
+          <div key={stat.label} className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl ${stat.bg} dark:bg-slate-800 ${stat.color} flex items-center justify-center text-xl shadow-inner`}>
               {stat.icon}
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 mb-0.5">{stat.label}</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500 mb-0.5">{stat.label}</div>
               <div className={`text-xl font-black ${stat.color}`}>{stat.value}</div>
             </div>
           </div>
@@ -599,25 +599,25 @@ export default function StoreItemPage() {
         {/* ROW FILTER TOGGLE */}
         <div 
           onClick={() => setShowErrorsOnly(!showErrorsOnly)}
-          className={`bg-white border cursor-pointer border-gray-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-4 ${showErrorsOnly ? 'ring-2 ring-rose-500 bg-rose-50' : ''}`}
+          className={`bg-white dark:bg-slate-900 border cursor-pointer border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-4 ${showErrorsOnly ? 'ring-2 ring-rose-500 bg-rose-50 dark:bg-rose-950/20' : ''}`}
         >
-          <div className={`w-12 h-12 rounded-2xl ${showErrorsOnly ? 'bg-rose-500 text-white' : 'bg-gray-50 text-gray-400'} flex items-center justify-center text-xl shadow-inner`}>
+          <div className={`w-12 h-12 rounded-2xl ${showErrorsOnly ? 'bg-rose-500 text-white' : 'bg-gray-50 dark:bg-slate-800 text-gray-400'} flex items-center justify-center text-xl shadow-inner`}>
             🚨
           </div>
           <div className="flex-1">
-            <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 mb-0.5">Filter</div>
-            <div className={`text-sm font-black ${showErrorsOnly ? 'text-rose-600' : 'text-gray-600'}`}>
+            <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500 mb-0.5">Filter</div>
+            <div className={`text-sm font-black ${showErrorsOnly ? 'text-rose-600' : 'text-gray-600 dark:text-gray-400'}`}>
               {showErrorsOnly ? "Showing Errors Only" : "Show All Rows"}
             </div>
           </div>
-          <div className={`w-10 h-5 rounded-full relative transition-colors ${showErrorsOnly ? 'bg-rose-500' : 'bg-gray-200'}`}>
-            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${showErrorsOnly ? 'left-6' : 'left-1'}`} />
+          <div className={`w-10 h-5 rounded-full relative transition-colors ${showErrorsOnly ? 'bg-rose-500' : 'bg-gray-200 dark:bg-slate-700'}`}>
+            <div className={`absolute top-1 w-3 h-3 bg-white dark:bg-slate-200 rounded-full transition-all ${showErrorsOnly ? 'left-6' : 'left-1'}`} />
           </div>
         </div>
       </div>
 
       {/* MAIN ACTIONS BAR */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch bg-white p-6 rounded-[32px] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.02)]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch bg-white dark:bg-slate-900 p-6 rounded-[32px] border border-gray-100 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.02)] transition-colors">
         <div className="lg:col-span-5 relative group">
           <input
             type="file"
@@ -629,9 +629,9 @@ export default function StoreItemPage() {
           />
           <label
             htmlFor="file-upload"
-            className="flex flex-col items-center justify-center gap-1 w-full border-2 border-dashed border-gray-100 rounded-[24px] py-6 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all cursor-pointer group/label"
+            className="flex flex-col items-center justify-center gap-1 w-full border-2 border-dashed border-gray-100 dark:border-slate-800 rounded-[24px] py-6 hover:border-indigo-400 dark:hover:border-indigo-500/50 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-all cursor-pointer group/label"
           >
-            <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center mb-1 group-hover/label:scale-110 transition-all duration-500">
+            <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-slate-800 flex items-center justify-center mb-1 group-hover/label:scale-110 transition-all duration-500">
               <span className="text-2xl">📤</span>
             </div>
             <span className="text-sm font-black text-gray-800 tracking-tight">
@@ -645,7 +645,7 @@ export default function StoreItemPage() {
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl opacity-40">🔍</span>
             <input
-              className="bg-gray-50/50 border border-gray-100 text-gray-900 font-[600] h-[68px] pl-12 pr-4 w-full rounded-[24px] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all shadow-inner"
+              className="bg-gray-50/50 dark:bg-slate-800/20 border border-gray-100 dark:border-slate-800 text-gray-900 dark:text-white font-[600] h-[68px] pl-12 pr-4 w-full rounded-[24px] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 transition-all shadow-inner"
               placeholder="Search in spreadsheet..."
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -666,10 +666,10 @@ export default function StoreItemPage() {
       </div>
 
       {/* DATA TABLE */}
-      <div className="bg-white border border-gray-100 rounded-[40px] shadow-[0_30px_100px_rgba(0,0,0,0.04)] overflow-hidden mb-12">
+      <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[40px] shadow-[0_30px_100px_rgba(0,0,0,0.04)] overflow-hidden mb-12 transition-colors">
         <div className="overflow-x-auto">
           <table className="min-w-[1100px] w-full text-sm border-collapse">
-            <thead className="bg-gray-50/50">
+            <thead className="bg-gray-50/50 dark:bg-slate-800/50">
               <tr>
                 <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Dish Image</th>
                 <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Dish Context</th>
@@ -691,7 +691,7 @@ export default function StoreItemPage() {
                         {filteredClerks.map((c) => (
                           <div
                             key={c.clerkId}
-                            className="px-5 py-4 text-xs font-bold text-gray-700 cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 rounded-2xl transition-all mb-1 last:mb-0 group/clerk"
+                           className="px-5 py-4 text-xs font-bold text-gray-700 dark:text-slate-300 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all mb-1 last:mb-0 group/clerk"
                             onClick={() => {
                               setBulkClerkId(c.clerkId);
                               setItems((prev) =>
@@ -719,7 +719,7 @@ export default function StoreItemPage() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-gray-50/80">
+            <tbody className="divide-y divide-gray-50/80 dark:divide-slate-800/80">
               {displayedItems.map((item, i) => {
                 const invalid = isRowInvalid(item);
                 return (
@@ -737,8 +737,8 @@ export default function StoreItemPage() {
                         onDragEnter={() => setDragIndex(items.indexOf(item))}
                         onDragLeave={() => setDragIndex(null)}
                         onDrop={e => handleDrop(e, items.indexOf(item))}
-                        className={`w-20 h-20 rounded-3xl shrink-0 overflow-hidden bg-gray-50/50 flex items-center justify-center border-2 transition-all duration-500 relative group/img ${
-                          dragIndex === items.indexOf(item) ? "border-indigo-400 bg-indigo-50 shadow-2xl scale-105" : "border-gray-100"
+                        className={`w-20 h-20 rounded-3xl shrink-0 overflow-hidden bg-gray-50/50 dark:bg-slate-800/50 flex items-center justify-center border-2 transition-all duration-500 relative group/img ${
+                          dragIndex === items.indexOf(item) ? "border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900 shadow-2xl scale-105" : "border-gray-100 dark:border-slate-800"
                         }`}
                       >
                         <label className="w-full h-full flex items-center justify-center cursor-pointer">
@@ -761,7 +761,7 @@ export default function StoreItemPage() {
                       <input
                         type="text"
                         placeholder="Image URL..."
-                        className="w-full max-w-[120px] text-[9px] bg-gray-50 border border-transparent rounded-lg px-2 py-1.5 text-gray-400 font-bold outline-none focus:border-indigo-200 focus:bg-white focus:text-gray-700 transition-all opacity-0 group-hover/row:opacity-100"
+                         className="w-full max-w-[120px] text-[9px] bg-gray-50 dark:bg-slate-800 border border-transparent rounded-lg px-2 py-1.5 text-gray-400 dark:text-gray-500 font-bold outline-none focus:border-indigo-200 dark:focus:border-indigo-900 focus:bg-white dark:focus:bg-slate-700 focus:text-gray-700 dark:focus:text-slate-300 transition-all opacity-0 group-hover/row:opacity-100"
                         value={item.imageUrl ?? ""}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -780,7 +780,7 @@ export default function StoreItemPage() {
                     <div className="flex flex-col gap-2">
                        <div className="flex items-center gap-2">
                           <input
-                            className={`bg-gray-50/50 border-2 ${!item.name.trim() ? "border-rose-200" : "border-gray-50"} rounded-2xl px-5 py-4 w-full text-base font-black text-gray-800 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white transition-all shadow-sm placeholder:text-gray-300`}
+                            className={`bg-gray-50/50 dark:bg-slate-800/50 border-2 ${!item.name.trim() ? "border-rose-200 dark:border-rose-900/50" : "border-gray-50 dark:border-slate-800"} rounded-2xl px-5 py-4 w-full text-base font-black text-gray-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-800 transition-all shadow-sm placeholder:text-gray-300 dark:placeholder:text-gray-600`}
                             placeholder="e.g. Butter Chicken Large"
                             value={item.name}
                             onChange={e => {
@@ -814,7 +814,7 @@ export default function StoreItemPage() {
                   <td className="py-8 px-8 align-top min-w-[300px]">
                     <div className="flex flex-col gap-2">
                       <textarea
-                        className="bg-gray-50/50 border-2 border-gray-50 rounded-2xl px-5 py-4 w-full text-sm font-bold text-gray-600 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white transition-all shadow-sm placeholder:text-gray-300 resize-none h-[100px]"
+                        className="bg-gray-50/50 dark:bg-slate-800/50 border-2 border-gray-50 dark:border-slate-800 rounded-2xl px-5 py-4 w-full text-sm font-bold text-gray-600 dark:text-slate-300 outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-800 transition-all shadow-sm placeholder:text-gray-300 dark:placeholder:text-gray-600 resize-none h-[100px]"
                         placeholder="Describe the dish, ingredients, or story..."
                         value={item.description || ""}
                         onChange={e => {
@@ -835,7 +835,7 @@ export default function StoreItemPage() {
                       <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 font-black text-lg group-focus-within/price:text-emerald-500 transition-colors">₹</span>
                       <input
                         type="number"
-                        className={`bg-gray-50/50 border-2 ${(!item.price || item.price <= 0) ? "border-rose-200" : "border-gray-50"} rounded-2xl pl-11 pr-5 py-4 w-36 text-base font-black text-emerald-600 outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white transition-all shadow-sm`}
+                        className={`bg-gray-50/50 dark:bg-slate-800/50 border-2 ${(!item.price || item.price <= 0) ? "border-rose-200 dark:border-rose-900/50" : "border-gray-50 dark:border-slate-800"} rounded-2xl pl-11 pr-5 py-4 w-36 text-base font-black text-emerald-600 outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-800 transition-all shadow-sm`}
                         placeholder="0"
                         value={item.price ?? ""}
                         onChange={e => {
@@ -937,7 +937,7 @@ export default function StoreItemPage() {
                             )
                           }}
                         />
-                        <div className="w-14 h-7 bg-gray-100 peer-focus:outline-none peer-focus:ring-8 peer-focus:ring-indigo-500/5 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:shadow-md after:rounded-full after:h-5 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
+                        <div className="w-14 h-7 bg-gray-100 dark:bg-slate-800 peer-focus:outline-none peer-focus:ring-8 peer-focus:ring-indigo-500/5 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:shadow-md after:rounded-full after:h-5 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
                       </label>
                     </div>
                   </td>

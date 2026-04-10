@@ -139,10 +139,10 @@ export default function MenuEditor({ clerkId }: { clerkId: string }) {
       {/* 🚀 REMOVED INTERNAL HEADER TO FIX DOUBLE HEADING ISSUE */}
 
       {/* 🛠️ INDEPENDENTLY SCROLLABLE WORKSPACE */}
-      <div className="flex flex-1 border border-gray-100/50 rounded-[2rem] overflow-hidden bg-[#FBFBFB] shadow-2xl relative shadow-gray-200/50">
+      <div className="flex flex-1 border border-gray-100/50 dark:border-slate-800 rounded-[2rem] overflow-hidden bg-[#FBFBFB] dark:bg-slate-900 shadow-2xl relative shadow-gray-200/50 dark:shadow-none transition-colors">
         
         {/* LEFT: FIXED SCROLLABLE SIDEBAR */}
-        <div className="w-[300px] h-full bg-white border-r border-gray-50 flex flex-col shrink-0 overflow-hidden">
+        <div className="w-[300px] h-full bg-white dark:bg-slate-900 border-r border-gray-50 dark:border-slate-800 flex flex-col shrink-0 overflow-hidden transition-colors">
             <CategorySidebar
               categories={categories}
               activeCatId={activeCatId}
@@ -152,7 +152,7 @@ export default function MenuEditor({ clerkId }: { clerkId: string }) {
         </div>
         
         {/* RIGHT: FIXED SCROLLABLE ITEMS LIST */}
-        <div className="flex-1 h-full bg-white flex flex-col overflow-hidden">
+        <div className="flex-1 h-full bg-white dark:bg-slate-900 flex flex-col overflow-hidden transition-colors">
             <ItemsList
               items={filteredItems}
               activeCatId={activeCatId}

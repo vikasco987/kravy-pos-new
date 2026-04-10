@@ -351,10 +351,10 @@ export default function KravyPOS() {
     };
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden bg-slate-50 font-sans">
+        <div className="flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-300">
             <OrderAlertLoop pendingCount={stats.incoming} />
             {/* ── HEADER ── */}
-            <header className="flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8 min-h-[64px] lg:h-[64px] shrink-0 bg-white border-b border-slate-200 shadow-sm z-[50] py-3 lg:py-0 gap-4 lg:gap-8">
+            <header className="flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8 min-h-[64px] lg:h-[64px] shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm z-[50] py-3 lg:py-0 gap-4 lg:gap-8 transition-colors duration-300">
                 {/* Brand & Mobile Actions */}
                 <div className="flex items-center justify-between w-full lg:w-auto">
                     <div className="flex items-center gap-3">
@@ -362,8 +362,8 @@ export default function KravyPOS() {
                             <span>K</span>
                         </div>
                         <div>
-                            <div className="text-base font-black text-slate-900 leading-none">Kravy <em className="text-rose-500 not-italic">POS</em></div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Management</div>
+                            <div className="text-base font-black text-slate-900 dark:text-white leading-none">Kravy <em className="text-rose-500 not-italic">POS</em></div>
+                            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Management</div>
                         </div>
                     </div>
 
@@ -392,7 +392,7 @@ export default function KravyPOS() {
                             <button
                                 key={t.key}
                                 onClick={() => { kravy.click(); setActiveTab(t.key); }}
-                                className={`relative flex items-center gap-2 px-3 lg:px-4 py-2 rounded-xl text-[11px] lg:text-xs font-bold transition-all whitespace-nowrap ${isActive ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"}`}
+                                className={`relative flex items-center gap-2 px-3 lg:px-4 py-2 rounded-xl text-[11px] lg:text-xs font-bold transition-all whitespace-nowrap ${isActive ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}
                             >
                                 <Icon size={14} />
                                 <span>{t.label}</span>
@@ -401,7 +401,7 @@ export default function KravyPOS() {
                                         {badgeCount}
                                     </span>
                                 )}
-                                {isActive && <motion.div layoutId="nav-ind" className="absolute -bottom-[21px] lg:-bottom-[17px] left-3 right-3 h-0.5 bg-slate-900 rounded-t-full" />}
+                                {isActive && <motion.div layoutId="nav-ind" className="absolute -bottom-[21px] lg:-bottom-[17px] left-3 right-3 h-0.5 bg-slate-900 dark:bg-white rounded-t-full" />}
                             </button>
                         );
                     })}
@@ -417,9 +417,9 @@ export default function KravyPOS() {
                         <div className="text-right">
                             <div className="flex items-center">
                                 <span className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mr-2">Pulse:</span>
-                                <div className="font-mono text-xs font-bold text-slate-900 leading-none">{clock}</div>
+                                <div className="font-mono text-xs font-bold text-slate-900 dark:text-slate-200 leading-none">{clock}</div>
                             </div>
-                            <div className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">{dateStr}</div>
+                            <div className="text-[9px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-tighter">{dateStr}</div>
                         </div>
                     </div>
                     <div className="w-px h-6 bg-slate-200" />
@@ -447,11 +447,11 @@ export default function KravyPOS() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="flex flex-col h-full bg-slate-50"
+                            className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 transition-colors duration-300"
                         >
                             {/* Live Orders Sub-Header */}
-                            <div className="bg-white border-b border-slate-200 px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-                                <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl">
+                            <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-300">
+                                <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
                                     {(["PREPARING", "READY", "COMPLETED"] as const).map(tab => {
                                         const count = tab === "PREPARING" 
                                             ? orders.filter(o => ["PENDING", "ACCEPTED", "PREPARING"].includes(o.status)).length
@@ -469,7 +469,7 @@ export default function KravyPOS() {
                                                 className={`px-4 py-1.5 rounded-lg text-[13px] font-medium transition-all flex items-center gap-1.5 border ${
                                                     isActive 
                                                         ? "bg-[#EF6C00] text-white border-[#EF6C00] shadow-sm" 
-                                                        : "bg-white text-slate-500 border-slate-300 hover:bg-slate-50"
+                                                        : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                                                 }`}
                                             >
                                                 {label} ({count})
@@ -495,7 +495,7 @@ export default function KravyPOS() {
                                         </select>
                                         <ChevronRight size={14} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-blue-600" />
                                     </div>
-                                    <button onClick={fetchData} className="w-10 h-10 rounded-lg bg-white border border-slate-300 text-slate-400 flex items-center justify-center hover:text-slate-900 transition-all shadow-sm"><RotateCcw size={18} /></button>
+                                    <button onClick={fetchData} className="w-10 h-10 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 flex items-center justify-center hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"><RotateCcw size={18} /></button>
                                 </div>
                             </div>
 
@@ -517,21 +517,21 @@ export default function KravyPOS() {
                                                 initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 transition={{ delay: idx * 0.05 }}
-                                                className="bg-white border border-slate-200 rounded-[2.5rem] shadow-sm overflow-hidden flex flex-col md:flex-row min-h-[180px] hover:shadow-xl hover:border-slate-300 transition-all group"
+                                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-sm overflow-hidden flex flex-col md:flex-row min-h-[180px] hover:shadow-xl hover:border-slate-300 dark:hover:border-slate-600 transition-all group"
                                             >
                                                 {/* Left Section: Info & Buttons */}
-                                                <div className="md:w-72 border-r border-slate-200 flex flex-col">
-                                                    <div className="bg-[#E8EAF6] text-[#3F51B5] px-4 py-1.5 text-[10px] font-black uppercase tracking-widest">
+                                                <div className="md:w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col">
+                                                    <div className="bg-[#E8EAF6] dark:bg-indigo-900/30 text-[#3F51B5] dark:text-indigo-300 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest">
                                                         QR ORDER - {order.caseType || "DINE-IN"}
                                                     </div>
                                                     <div className="p-4 flex-1 space-y-4">
                                                         <div>
-                                                            <h3 className="text-base font-bold text-slate-800 leading-tight">{business?.businessName || "Terminal kitchen"}</h3>
-                                                            <p className="text-[11px] text-slate-500">{order.table?.name || "Counter"}</p>
+                                                            <h3 className="text-base font-bold text-slate-800 dark:text-white leading-tight">{business?.businessName || "Terminal kitchen"}</h3>
+                                                            <p className="text-[11px] text-slate-500 dark:text-slate-400">{order.table?.name || "Counter"}</p>
                                                         </div>
                                                         
-                                                        <div className="pt-2 border-t border-slate-100">
-                                                            <p className="text-sm font-bold text-slate-900">ID: {order.id.slice(-4).toUpperCase()}</p>
+                                                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                                                            <p className="text-sm font-bold text-slate-900 dark:text-white">ID: {order.id.slice(-4).toUpperCase()}</p>
                                                         </div>
 
                                                         <div className="flex gap-2">
@@ -575,16 +575,16 @@ export default function KravyPOS() {
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                                                        <span className="text-[10px] text-slate-500">Placed: {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                        <div className="flex items-center gap-1 text-[10px] text-blue-600 font-bold cursor-pointer hover:underline">
+                                                    <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                                        <span className="text-[10px] text-slate-500 dark:text-slate-400">Placed: {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        <div className="flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 font-bold cursor-pointer hover:underline">
                                                             <Clock size={10} /> Timeline
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 {/* Middle Section: Items & Status */}
-                                                <div className="flex-1 p-6 flex flex-col border-r border-slate-200" style={{ minWidth: 0 }}>
+                                                <div className="flex-1 p-6 flex flex-col border-r border-slate-200 dark:border-slate-800" style={{ minWidth: 0 }}>
                                                     <div className={`flex items-center gap-2 mb-4 text-[11px] font-black uppercase tracking-wider ${order.preferences?.dontSendCutlery ? "text-rose-600 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-100" : "text-emerald-600"}`}>
                                                         {order.preferences?.dontSendCutlery ? (
                                                             <>
@@ -607,7 +607,7 @@ export default function KravyPOS() {
                                                                         <div className={`w-1.5 h-1.5 rounded-full ${it.isVeg === false ? "bg-rose-600" : "bg-emerald-600"}`} />
                                                                     </div>
                                                                     <div className="flex flex-col min-w-0">
-                                                                        <span className="text-sm font-medium text-slate-800 truncate">
+                                                                        <span className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
                                                                             <span className="font-bold">{it.quantity} x</span> {it.name}
                                                                         </span>
                                                                         {it.variants && it.variants.length > 0 && (
@@ -622,7 +622,7 @@ export default function KravyPOS() {
                                                                         <span className="text-[10px] text-slate-400 uppercase tracking-widest truncate">{it.instruction || "Standard Prepared"}</span>
                                                                     </div>
                                                                 </div>
-                                                                <span className="text-sm font-medium text-slate-600 shrink-0">₹{it.price * it.quantity}</span>
+                                                                <span className="text-sm font-medium text-slate-600 dark:text-slate-400 shrink-0">₹{it.price * it.quantity}</span>
                                                             </div>
                                                         ))}
 
@@ -640,8 +640,8 @@ export default function KravyPOS() {
                                                     <div className="mt-6 pt-4 border-t border-slate-200 space-y-4">
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center gap-2">
-                                                                <span className="text-sm font-bold text-slate-800 uppercase">Total Bill</span>
-                                                                <span className="px-1.5 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-[9px] font-black text-emerald-600 uppercase">
+                                                                <span className="text-sm font-bold text-slate-800 dark:text-white uppercase">Total Bill</span>
+                                                                <span className="px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase">
                                                                     {order.isBillPrinted ? "PAID" : "UNPAID"}
                                                                 </span>
                                                                 {order.isKotPrinted && (
@@ -650,12 +650,12 @@ export default function KravyPOS() {
                                                                     </span>
                                                                 )}
                                                                 {(order as any).paymentMode && (
-                                                                    <span className="px-1.5 py-0.5 rounded border border-blue-200 bg-blue-50 text-[9px] font-black text-blue-600 uppercase">
+                                                                    <span className="px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase">
                                                                         {(order as any).paymentMode}
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <span className="text-sm font-bold text-slate-800">₹{order.total}</span>
+                                                            <span className="text-sm font-bold text-slate-800 dark:text-white">₹{order.total}</span>
                                                         </div>
 
                                                         {liveOrderTab !== "COMPLETED" && (
@@ -772,9 +772,9 @@ export default function KravyPOS() {
                             className="flex flex-col md:flex-row h-full gap-3 p-3 overflow-y-auto md:overflow-hidden"
                         >
                             {/* LEFT PANEL */}
-                            <div className="bg-white border border-slate-200 rounded-3xl shadow-sm w-full md:w-[340px] shrink-0 flex flex-col overflow-hidden max-h-[500px] md:max-h-full">
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm w-full md:w-[340px] shrink-0 flex flex-col overflow-hidden max-h-[500px] md:max-h-full transition-colors duration-300">
                                 {/* Panel Header */}
-                                <div className="p-5 border-b border-slate-100">
+                                <div className="p-5 border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
                                     <div className="flex items-center justify-between mb-4">
                                         <span className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                             <Layers size={12} />
@@ -789,7 +789,7 @@ export default function KravyPOS() {
                                         <input
                                             type="text"
                                             placeholder="Search table..."
-                                            className="w-full h-10 pl-9 pr-4 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:bg-white transition-all"
+                                            className="w-full h-10 pl-9 pr-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:bg-white dark:focus:bg-slate-900 dark:text-white transition-all"
                                             value={tableSearch}
                                             onChange={e => setTableSearch(e.target.value)}
                                         />
@@ -801,7 +801,7 @@ export default function KravyPOS() {
                                             <button
                                                 key={f}
                                                 onClick={() => { kravy.click(); setTableFilter(f); }}
-                                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${tableFilter === f ? "bg-slate-900 text-white shadow-lg shadow-slate-900/10" : "bg-slate-50 text-slate-400 hover:text-slate-600"}`}
+                                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${tableFilter === f ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg shadow-slate-900/10" : "bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"}`}
                                             >
                                                 {f}
                                             </button>
@@ -833,7 +833,7 @@ export default function KravyPOS() {
                                                         {/* Active Order Count Badge */}
                                                         {t.activeCount > 0 && (
                                                             <div className="absolute -top-1 -right-1 flex items-center justify-center">
-                                                                <div className="bg-rose-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center shadow-lg border-2 border-white animate-in zoom-in-50 duration-300">
+                                                                <div className="bg-rose-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900 animate-in zoom-in-50 duration-300">
                                                                     {t.activeCount}
                                                                 </div>
                                                             </div>
@@ -857,22 +857,22 @@ export default function KravyPOS() {
                                 </div>
 
                                 {/* Stats Footer */}
-                                <div className="p-4 border-t border-slate-100">
-                                    <div className="flex items-center justify-between bg-slate-50 rounded-2xl p-1">
-                                        <div className="flex-1 text-center py-2 border-r border-slate-200">
+                                <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+                                    <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 rounded-2xl p-1">
+                                        <div className="flex-1 text-center py-2 border-r border-slate-200 dark:border-slate-700">
                                             <span className="block text-[11px] font-black text-indigo-600 leading-none">{stats.running}</span>
                                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Cooking</span>
                                         </div>
-                                        <div className="flex-1 text-center py-2 border-r border-slate-200">
+                                        <div className="flex-1 text-center py-2 border-r border-slate-200 dark:border-slate-700">
                                             <span className="block text-[11px] font-black text-amber-600 leading-none">{stats.pending}</span>
                                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Waiting</span>
                                         </div>
-                                        <div className="flex-1 text-center py-2 border-r border-slate-200">
+                                        <div className="flex-1 text-center py-2 border-r border-slate-200 dark:border-slate-700">
                                             <span className="block text-[11px] font-black text-emerald-600 leading-none">{stats.ready}</span>
                                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Done</span>
                                         </div>
                                         <div className="flex-1 text-center py-2">
-                                            <span className="block text-[11px] font-black text-slate-900 leading-none">₹{stats.sales}</span>
+                                            <span className="block text-[11px] font-black text-slate-900 dark:text-white leading-none">₹{stats.sales}</span>
                                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Sales</span>
                                         </div>
                                     </div>
@@ -880,7 +880,7 @@ export default function KravyPOS() {
                             </div>
 
                             {/* RIGHT PANEL */}
-                            <div className="flex-1 flex flex-col overflow-hidden bg-white border border-slate-200 rounded-3xl shadow-sm">
+                            <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm transition-colors duration-300">
                                 {selectedTable ? (
                                     <motion.div
                                         key={selectedTable.id}
@@ -889,18 +889,18 @@ export default function KravyPOS() {
                                         className="h-full flex flex-col"
                                     >
                                         {/* Order Header */}
-                                        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between transition-colors duration-300">
                                             <div className="flex items-center gap-4">
                                                 <motion.div
                                                     initial={{ rotate: -10, scale: 0.8 }}
                                                     animate={{ rotate: 0, scale: 1 }}
-                                                    className="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black italic shadow-lg shadow-slate-900/10"
+                                                    className="w-12 h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center justify-center font-black italic shadow-lg shadow-slate-900/10"
                                                 >
                                                     {selectedTable.name}
                                                 </motion.div>
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <h2 className="text-lg font-black text-slate-900 leading-none">
+                                                        <h2 className="text-lg font-black text-slate-900 dark:text-white leading-none">
                                                             {activeOrderForSelected?.customerName || "Walk-in Customer"}
                                                         </h2>
                                                         {activeOrderForSelected?.customerPhone && (
@@ -921,24 +921,24 @@ export default function KravyPOS() {
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                                                    <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">
                                                         <span className="flex items-center gap-1"><User size={11} /> 4 Guests</span>
                                                         <span className="w-1 h-1 rounded-full bg-slate-200" />
                                                         <span className="flex items-center gap-1"><ShieldCheck size={11} /> Rahul S.</span>
                                                         {activeOrderForSelected && (
                                                             <>
-                                                                <span className="w-1 h-1 rounded-full bg-slate-200" />
-                                                                <span className="text-slate-900">{activeOrderForSelected.items.length} items</span>
+                                                                <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-700" />
+                                                                <span className="text-slate-900 dark:text-white">{activeOrderForSelected.items.length} items</span>
                                                             </>
                                                         )}
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <button className="w-9 h-9 rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-white border border-slate-100 flex items-center justify-center transition-all"><MoreHorizontal size={18} /></button>
-                                                <button className="w-9 h-9 rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-white border border-slate-100 flex items-center justify-center transition-all"><Edit3 size={16} /></button>
-                                                <div className="w-px h-8 bg-slate-100 mx-1" />
-                                                <button className="h-10 px-4 rounded-xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-slate-900/10 hover:scale-105 active:scale-95 transition-all"><Plus size={14} /> Add Item</button>
+                                                <button className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 border border-slate-100 dark:border-slate-800 flex items-center justify-center transition-all"><MoreHorizontal size={18} /></button>
+                                                <button className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 border border-slate-100 dark:border-slate-800 flex items-center justify-center transition-all"><Edit3 size={16} /></button>
+                                                <div className="w-px h-8 bg-slate-100 dark:bg-slate-800 mx-1" />
+                                                <button className="h-10 px-4 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-slate-900/10 hover:scale-105 active:scale-95 transition-all"><Plus size={14} /> Add Item</button>
                                             </div>
                                         </div>
 
@@ -1005,7 +1005,7 @@ export default function KravyPOS() {
                                                                 key={i}
                                                                 disabled={!activeOrderForSelected || !btn.active}
                                                                 onClick={() => updateOrderStatus(activeOrderForSelected!.id, btn.s)}
-                                                                className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${btn.active ? "bg-slate-900 text-white shadow-lg shadow-slate-900/10" : "bg-slate-50 text-slate-300 opacity-50 cursor-not-allowed"}`}
+                                                                className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${btn.active ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg shadow-slate-900/10" : "bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 opacity-50 cursor-not-allowed"}`}
                                                             >
                                                                 {btn.icon} {btn.label}
                                                             </button>
@@ -1021,14 +1021,14 @@ export default function KravyPOS() {
                                             <div className="flex gap-3">
                                                 <button
                                                     onClick={() => { setPreviewMode("KOT"); setShowPreview(true); }}
-                                                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-200 hover:text-slate-900 hover:border-slate-900 transition-all bg-white"
+                                                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-slate-700 transition-all bg-white dark:bg-slate-900"
                                                     title="Preview KOT"
                                                 >
                                                     <Eye size={15} />
                                                 </button>
                                                 <button
                                                     onClick={() => handlePrint("KOT")}
-                                                    className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 text-xs font-black uppercase bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-900 transition-all shadow-sm"
+                                                    className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 text-xs font-black uppercase bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white transition-all shadow-sm"
                                                 >
                                                     <Printer size={15} /> KOT Token
                                                 </button>
@@ -1045,7 +1045,7 @@ export default function KravyPOS() {
                                                         }
                                                         setActiveTab("payment"); 
                                                     }}
-                                                    className="flex-[2.5] h-14 rounded-2xl flex items-center justify-center gap-3 bg-slate-900 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-900/20 active:scale-95 transition-all hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="flex-[2.5] h-14 rounded-2xl flex items-center justify-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-900/20 active:scale-95 transition-all hover:bg-slate-800 dark:hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     <CreditCard size={16} /> Proceed to Billing
                                                     <ArrowRight size={15} />
@@ -1055,11 +1055,11 @@ export default function KravyPOS() {
                                     </motion.div>
                                 ) : (
                                     <div className="h-full flex flex-col items-center justify-center opacity-30 text-center p-12">
-                                        <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-6 shadow-inner">
+                                        <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 mb-6 shadow-inner">
                                             <TableIcon size={32} strokeWidth={1.2} />
                                         </div>
-                                        <p className="text-2xl font-black text-slate-900 mb-2">Select a Table</p>
-                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Click any table to view active orders</p>
+                                        <p className="text-2xl font-black text-slate-900 dark:text-white mb-2">Select a Table</p>
+                                        <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em]">Click any table to view active orders</p>
                                     </div>
                                 )}
                             </div>
@@ -1077,17 +1077,17 @@ export default function KravyPOS() {
                         >
                             <div className="flex items-center justify-between w-full max-w-[1000px]">
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 tracking-tight italic">Kitchen Display</h2>
-                                    <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight italic">Kitchen Display</h2>
+                                    <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live from Chef Hub
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
                                         <Flame size={15} className="text-rose-500" />
                                         <span>{stats.running} Active</span>
                                     </div>
-                                    <button onClick={fetchData} className="w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:text-slate-900 transition-all"><RotateCcw size={16} /></button>
+                                    <button onClick={fetchData} className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"><RotateCcw size={16} /></button>
                                 </div>
                             </div>
 
@@ -1100,11 +1100,11 @@ export default function KravyPOS() {
                                 ].map(col => {
                                     const colOrders = orders.filter(o => o.status === col.status);
                                     return (
-                                        <div key={col.status} className={`flex-shrink-0 w-full max-w-[340px] md:w-[320px] h-fit md:h-full flex flex-col bg-slate-50/50 border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-sm`}>
-                                            <div className="p-6 flex items-center justify-between border-b border-slate-200/50 bg-white/50 backdrop-blur-sm">
+                                        <div key={col.status} className={`flex-shrink-0 w-full max-w-[340px] md:w-[320px] h-fit md:h-full flex flex-col bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-sm transition-colors duration-300`}>
+                                            <div className="p-6 flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
                                                 <div className="flex items-center gap-2.5">
                                                     <span className="text-xl leading-none">{col.emoji}</span>
-                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900">{col.title}</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">{col.title}</span>
                                                 </div>
                                                 <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black text-white shadow-lg ${col.bg}`}>{colOrders.length}</span>
                                             </div>
@@ -1114,14 +1114,14 @@ export default function KravyPOS() {
                                                         key={o.id}
                                                         initial={{ opacity: 0, scale: 0.96 }}
                                                         animate={{ opacity: 1, scale: 1 }}
-                                                        className="bg-white border border-slate-100 rounded-[2rem] p-5 shadow-sm hover:shadow-md transition-all active:scale-98"
+                                                        className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-5 shadow-sm hover:shadow-md transition-all active:scale-98"
                                                     >
                                                         <div className="flex items-center justify-between mb-5">
                                                             <div className="flex items-center gap-3">
-                                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black italic shadow-inner ${col.status === 'PENDING' ? 'bg-rose-50 text-rose-500' : col.status === 'ACCEPTED' ? 'bg-blue-50 text-blue-500' : col.status === 'PREPARING' ? 'bg-amber-50 text-amber-500' : 'bg-emerald-50 text-emerald-500'}`}>{o.table?.name}</div>
+                                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black italic shadow-inner ${col.status === 'PENDING' ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-500' : col.status === 'ACCEPTED' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-500' : col.status === 'PREPARING' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-500' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500'}`}>{o.table?.name}</div>
                                                                 <div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <p className="text-xs font-black text-slate-900">#{o.id.slice(-4).toUpperCase()}</p>
+                                                                        <p className="text-xs font-black text-slate-900 dark:text-white">#{o.id.slice(-4).toUpperCase()}</p>
                                                                         {o.isKotPrinted && (
                                                                             <span className="text-indigo-500" title="KOT Printed">
                                                                                 <Printer size={10} strokeWidth={3} />
@@ -1133,21 +1133,21 @@ export default function KravyPOS() {
                                                                             </span>
                                                                         )}
                                                                     </div>
-                                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mt-1 flex items-center gap-1">
+                                                                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter mt-1 flex items-center gap-1">
                                                                         <Clock size={8} /> 5m ago
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                            <span className="text-[9px] font-black bg-slate-900 text-white px-2.5 py-1 rounded-full">{o.items.length} items</span>
+                                                            <span className="text-[9px] font-black bg-slate-900 dark:bg-slate-800 text-white px-2.5 py-1 rounded-full">{o.items.length} items</span>
                                                         </div>
                                                         <div className="space-y-2 mb-6">
                                                             {o.items.map((it, idx) => (
                                                                 <div key={idx} className="flex justify-between items-start gap-4">
                                                                     <div className="flex items-start gap-2 max-w-[80%]">
                                                                         <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${it.isVeg === false ? "bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"}`} />
-                                                                        <span className="text-[11px] font-black text-slate-900 uppercase leading-snug">{it.name}</span>
+                                                                        <span className="text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase leading-snug">{it.name}</span>
                                                                     </div>
-                                                                    <span className="text-[11px] font-black italic text-slate-400">×{it.quantity}</span>
+                                                                    <span className="text-[11px] font-black italic text-slate-400 dark:text-slate-500">×{it.quantity}</span>
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -1185,7 +1185,7 @@ export default function KravyPOS() {
                             {selectedTable && activeOrderForSelected ? (
                                 <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-8 max-w-6xl w-full h-full lg:h-auto overflow-visible">
                                     {/* Receipt column */}
-                                    <div className="bg-white shadow-2xl rounded-[2.5rem] p-8 flex flex-col border border-slate-100 relative overflow-hidden h-fit animate-in fade-in zoom-in-95 duration-500">
+                                    <div className="bg-white dark:bg-white shadow-2xl rounded-[2.5rem] p-8 flex flex-col border border-slate-100 relative overflow-hidden h-fit animate-in fade-in zoom-in-95 duration-500">
                                         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900" />
                                         
                                         <div className="text-center pb-8 border-b border-dashed border-slate-200 mb-8 mt-4">
@@ -1247,10 +1247,10 @@ export default function KravyPOS() {
                                     </div>
 
                                     {/* Payment Options */}
-                                    <div className="bg-white/40 backdrop-blur-xl border border-white rounded-[3rem] p-8 lg:p-12 shadow-sm flex flex-col h-full animate-in slide-in-from-right-8 duration-700">
+                                    <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white dark:border-slate-800 rounded-[3rem] p-8 lg:p-12 shadow-sm flex flex-col h-full animate-in slide-in-from-right-8 duration-700">
                                         <div className="mb-10">
-                                            <h3 className="text-4xl font-black text-slate-900 tracking-tighter italic mb-2 leading-none uppercase">Checkout</h3>
-                                            <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Select Settlement Pipeline</p>
+                                            <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic mb-2 leading-none uppercase">Checkout</h3>
+                                            <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Select Settlement Pipeline</p>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4 mb-8">
@@ -1263,27 +1263,27 @@ export default function KravyPOS() {
                                                 <button
                                                     key={m.id}
                                                     onClick={() => { kravy.click(); setPayMethod(m.id); }}
-                                                    className={`relative flex flex-col items-start p-6 rounded-[2.5rem] border-2 transition-all group overflow-hidden ${payMethod === m.id ? "bg-white border-slate-900 shadow-2xl -translate-y-1" : "bg-white/50 border-transparent hover:border-slate-200"}`}
+                                                    className={`relative flex flex-col items-start p-6 rounded-[2.5rem] border-2 transition-all group overflow-hidden ${payMethod === m.id ? "bg-white dark:bg-slate-800 border-slate-900 dark:border-white shadow-2xl -translate-y-1" : "bg-white/50 dark:bg-slate-900/50 border-transparent hover:border-slate-200 dark:hover:border-slate-700"}`}
                                                 >
                                                     {payMethod === m.id && (
-                                                        <motion.div layoutId="pay-marker" className="absolute top-5 right-5 text-slate-900">
+                                                        <motion.div layoutId="pay-marker" className="absolute top-5 right-5 text-slate-900 dark:text-white">
                                                             <CheckCircle2 size={24} />
                                                         </motion.div>
                                                     )}
                                                     <span className="text-4xl mb-5 grayscale group-hover:grayscale-0 transition-all duration-500 scale-100 group-hover:scale-110">{m.emoji}</span>
-                                                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 leading-none">{m.label}</span>
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mt-1.5 leading-none">{m.desc}</span>
+                                                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white leading-none">{m.label}</span>
+                                                    <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter mt-1.5 leading-none">{m.desc}</span>
                                                 </button>
                                             ))}
                                         </div>
 
-                                        <div className="bg-white/60 rounded-[2.5rem] border border-white/80 shadow-inner p-8 mb-8 flex-1 flex flex-col justify-center min-h-[160px]">
+                                        <div className="bg-white/60 dark:bg-slate-800/60 rounded-[2.5rem] border border-white/80 dark:border-slate-700 shadow-inner p-8 mb-8 flex-1 flex flex-col justify-center min-h-[160px]">
                                             {payMethod === "upi" ? (
                                                 <div className="flex items-center gap-8 animate-in fade-in slide-in-from-bottom-4">
-                                                    <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-4xl shadow-2xl shadow-indigo-500/10 border border-slate-50">📱</div>
+                                                    <div className="w-20 h-20 bg-white dark:bg-slate-700 rounded-3xl flex items-center justify-center text-4xl shadow-2xl shadow-indigo-500/10 border border-slate-50 dark:border-slate-600">📱</div>
                                                     <div>
-                                                        <p className="text-xl font-black text-slate-900 leading-none uppercase tracking-tight mb-2 italic">Scan to Pay ₹{activeOrderForSelected.total}</p>
-                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Awaiting Digital Handshake...</p>
+                                                        <p className="text-xl font-black text-slate-900 dark:text-white leading-none uppercase tracking-tight mb-2 italic">Scan to Pay ₹{activeOrderForSelected.total}</p>
+                                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Awaiting Digital Handshake...</p>
                                                         <div className="mt-4 flex items-center gap-2 text-emerald-500 bg-emerald-50 w-fit px-3 py-1 rounded-full border border-emerald-100">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                                             <span className="text-[9px] font-black uppercase tracking-widest italic">Live Sync Active</span>
@@ -1292,8 +1292,8 @@ export default function KravyPOS() {
                                                 </div>
                                             ) : (
                                                 <div className="text-center animate-in fade-in scale-95">
-                                                    <p className="text-xl font-black text-slate-900 uppercase italic tracking-tight">Handover {payMethod.toUpperCase()} Settlement</p>
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Confirm once payment is physically received</p>
+                                                    <p className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight">Handover {payMethod.toUpperCase()} Settlement</p>
+                                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-2">Confirm once payment is physically received</p>
                                                 </div>
                                             )}
                                         </div>
@@ -1301,20 +1301,20 @@ export default function KravyPOS() {
                                         <div className="flex gap-4">
                                             <button
                                                 onClick={() => { setPreviewMode("BILL"); setShowPreview(true); }}
-                                                className="w-20 h-20 rounded-3xl bg-white border border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:text-slate-900 hover:border-slate-900 shadow-sm transition-all active:scale-90"
+                                                className="w-20 h-20 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white shadow-sm transition-all active:scale-90"
                                             >
                                                 <Eye size={20} />
                                                 <span className="text-[8px] font-black uppercase mt-1">Preview</span>
                                             </button>
                                             <button
                                                 onClick={() => handlePrint("BILL")}
-                                                className="flex-1 h-20 rounded-3xl bg-white border border-slate-200 flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-slate-900 hover:border-slate-900 shadow-sm transition-all active:scale-95"
+                                                className="flex-1 h-20 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white shadow-sm transition-all active:scale-95"
                                             >
                                                 <Printer size={18} /> Print Physical Receipt
                                             </button>
                                             <button
                                                 onClick={() => handleCheckout(activeOrderForSelected.id)}
-                                                className="flex-[2.5] h-20 bg-slate-900 text-white rounded-[1.8rem] flex items-center justify-center gap-4 text-base font-black uppercase tracking-[0.15em] shadow-2xl shadow-slate-900/40 active:scale-95 transition-all hover:bg-slate-800"
+                                                className="flex-[2.5] h-20 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[1.8rem] flex items-center justify-center gap-4 text-base font-black uppercase tracking-[0.15em] shadow-2xl shadow-slate-900/40 active:scale-95 transition-all hover:bg-slate-800 dark:hover:bg-slate-100"
                                             >
                                                 Finalize Settlement <ArrowRight size={20} />
                                             </button>
@@ -1328,7 +1328,7 @@ export default function KravyPOS() {
                                     </div>
                                     <p className="text-3xl font-black text-slate-900 mb-3 italic tracking-tighter uppercase leading-none">Billing Vault</p>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed mb-10">Select an active table from Terminal to initiate checkout flow.</p>
-                                    <button onClick={() => setActiveTab("dashboard")} className="h-14 px-10 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:scale-110 active:scale-90 transition-all">
+                                    <button onClick={() => setActiveTab("dashboard")} className="h-14 px-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:scale-110 active:scale-90 transition-all">
                                         <LayoutDashboard size={16} className="mr-2 inline" /> Back to Terminal
                                     </button>
                                 </div>
@@ -1345,12 +1345,12 @@ export default function KravyPOS() {
                             className="h-full flex flex-col p-4 lg:p-8 overflow-hidden"
                         >
                             {/* Header Stats Box */}
-                            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg"><MapPin size={22} /></div>
+                                    <div className="w-12 h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center justify-center shadow-lg"><MapPin size={22} /></div>
                                     <div>
-                                        <h2 className="text-2xl font-black text-slate-900 tracking-tighter italic leading-none uppercase">Live Order Pipeline</h2>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Real-time status monitoring</p>
+                                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter italic leading-none uppercase">Live Order Pipeline</h2>
+                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Real-time status monitoring</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 lg:gap-6">
@@ -1371,21 +1371,21 @@ export default function KravyPOS() {
                             </div>
 
                             {/* Table Container */}
-                            <div className="flex-1 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm overflow-hidden flex flex-col">
+                            <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] shadow-sm overflow-hidden flex flex-col transition-colors duration-300">
                                 <div className="flex-1 overflow-auto no-scrollbar">
                                     <table className="w-full border-collapse border-spacing-0">
-                                        <thead className="sticky top-0 z-10 bg-slate-50/80 backdrop-blur-md">
+                                        <thead className="sticky top-0 z-10 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md">
                                             <tr>
-                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Table</th>
-                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Order/Customer</th>
-                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Items</th>
-                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Amount</th>
-                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 whitespace-nowrap">Time In</th>
-                                                <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Stage</th>
-                                                <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Action</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">Table</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">Order/Customer</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">Items</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">Amount</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 whitespace-nowrap">Time In</th>
+                                                <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">Stage</th>
+                                                <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">Action</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-50">
+                                        <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                                             {orders.filter(o => o.status !== "COMPLETED").map((o, idx) => {
                                                 const age = getOrderAge(o.createdAt);
                                                 return (
@@ -1394,25 +1394,25 @@ export default function KravyPOS() {
                                                         initial={{ opacity: 0, y: 10 }}
                                                         animate={{ opacity: 1, y: 0 }}
                                                         transition={{ delay: idx * 0.03 }}
-                                                        className="hover:bg-slate-50/50 transition-colors group"
+                                                        className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group"
                                                     >
-                                                        <td className="px-6 py-4 border-r border-slate-50/50">
-                                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black italic text-base shadow-sm border border-slate-100 ${o.status === 'PENDING' ? 'bg-rose-50 text-rose-500' : o.status === 'PREPARING' ? 'bg-amber-50 text-amber-500' : 'bg-emerald-50 text-emerald-500'}`}>
+                                                        <td className="px-6 py-4 border-r border-slate-50/50 dark:border-slate-800/50">
+                                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black italic text-base shadow-sm border border-slate-100 dark:border-slate-800 ${o.status === 'PENDING' ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-500' : o.status === 'PREPARING' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-500' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500'}`}>
                                                                 {o.table?.name}
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <div>
-                                                                <p className="text-xs font-black text-slate-900 uppercase leading-none mb-1">{o.customerName || "Walk-in"}</p>
+                                                                <p className="text-xs font-black text-slate-900 dark:text-white uppercase leading-none mb-1">{o.customerName || "Walk-in"}</p>
                                                                 <div className="flex items-center gap-2">
-                                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">ID: #{o.id.slice(-6).toUpperCase()}</p>
+                                                                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter">ID: #{o.id.slice(-6).toUpperCase()}</p>
                                                                     {o.isKotPrinted && (
                                                                         <span className="flex items-center gap-0.5 text-[8px] font-black bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded-md border border-indigo-100 uppercase tracking-tighter animate-in fade-in zoom-in-50">
                                                                             <Printer size={8} /> KOT
                                                                         </span>
                                                                     )}
                                                                     {o.isBillPrinted && (
-                                                                        <span className="flex items-center gap-0.5 text-[8px] font-black bg-rose-50 text-rose-500 px-1.5 py-0.5 rounded-md border border-rose-100 uppercase tracking-tighter animate-in fade-in zoom-in-50">
+                                                                        <span className="flex items-center gap-0.5 text-[8px] font-black bg-rose-50 dark:bg-rose-900/30 text-rose-500 px-1.5 py-0.5 rounded-md border border-rose-100 dark:border-rose-800 uppercase tracking-tighter animate-in fade-in zoom-in-50">
                                                                             <CreditCard size={8} /> BILL
                                                                         </span>
                                                                     )}
@@ -1423,7 +1423,7 @@ export default function KravyPOS() {
                                                             <div className="flex flex-wrap gap-1">
                                                                 {o.items.map((it, i) => (
                                                                     <div key={i} className="flex flex-col">
-                                                                        <span className="px-2 py-0.5 bg-slate-100 rounded-lg text-[9px] font-black text-slate-500 uppercase whitespace-nowrap">
+                                                                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase whitespace-nowrap">
                                                                             {it.quantity}x {it.name}
                                                                         </span>
                                                                         {it.variants && it.variants.length > 0 && (
@@ -1438,7 +1438,7 @@ export default function KravyPOS() {
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4">
-                                                            <span className="text-sm font-black text-slate-900 italic">₹{o.total}</span>
+                                                            <span className="text-sm font-black text-slate-900 dark:text-white italic">₹{o.total}</span>
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <div className="flex flex-col">
@@ -1446,7 +1446,7 @@ export default function KravyPOS() {
                                                                     <Timer size={10} />
                                                                     {age.label}
                                                                 </div>
-                                                                <span className="text-[9px] font-bold text-slate-300 mt-0.5 uppercase">{new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                <span className="text-[9px] font-bold text-slate-300 dark:text-slate-600 mt-0.5 uppercase">{new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 text-center">
@@ -1463,7 +1463,7 @@ export default function KravyPOS() {
                                                         <td className="px-6 py-4 text-right">
                                                             <button 
                                                                 onClick={() => { kravy.click(); setActiveTab("dashboard"); setSelectedTableId(o.table?.id || null); }}
-                                                                className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-sm"
+                                                                className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-sm"
                                                             >
                                                                 <ArrowRight size={14} />
                                                             </button>
@@ -1476,9 +1476,9 @@ export default function KravyPOS() {
 
                                     {orders.filter(o => o.status !== "COMPLETED").length === 0 && (
                                         <div className="py-24 flex flex-col items-center justify-center opacity-30 text-center">
-                                            <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300 mb-6"><Zap size={40} strokeWidth={1} /></div>
-                                            <p className="text-xl font-black text-slate-900 uppercase italic tracking-tighter">No Active Pipelines</p>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-2">The kitchen is currently silent...</p>
+                                            <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center text-slate-300 dark:text-slate-600 mb-6"><Zap size={40} strokeWidth={1} /></div>
+                                            <p className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">No Active Pipelines</p>
+                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mt-2">The kitchen is currently silent...</p>
                                         </div>
                                     )}
                                 </div>
@@ -1504,19 +1504,19 @@ export default function KravyPOS() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative bg-white w-full max-w-[500px] h-[90vh] flex flex-col rounded-3xl shadow-2xl border border-slate-200 overflow-hidden"
+                            className="relative bg-white dark:bg-slate-900 w-full max-w-[500px] h-[90vh] flex flex-col rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
                         >
                             {/* Header */}
-                            <div className="px-5 py-4 border-b border-slate-100 bg-white flex items-center justify-between shrink-0">
+                            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0">
                                 <div>
-                                    <h3 className="text-sm font-black text-slate-900">{previewMode === "BILL" ? "Bill Preview" : "KOT Preview"}</h3>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Check before printing</p>
+                                    <h3 className="text-sm font-black text-slate-900 dark:text-white">{previewMode === "BILL" ? "Bill Preview" : "KOT Preview"}</h3>
+                                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">Check before printing</p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <button onClick={() => setPreviewZoom(z => Math.max(0.5, z - 0.1))} className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors"><ZoomOut size={14} /></button>
-                                    <span className="text-xs font-bold text-slate-600 w-9 text-center">{(previewZoom * 100).toFixed(0)}%</span>
-                                    <button onClick={() => setPreviewZoom(z => Math.min(2, z + 0.1))} className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors"><ZoomIn size={14} /></button>
-                                    <div className="w-px h-5 bg-slate-100 mx-1" />
+                                    <button onClick={() => setPreviewZoom(z => Math.max(0.5, z - 0.1))} className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"><ZoomOut size={14} /></button>
+                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 w-9 text-center">{(previewZoom * 100).toFixed(0)}%</span>
+                                    <button onClick={() => setPreviewZoom(z => Math.min(2, z + 0.1))} className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"><ZoomIn size={14} /></button>
+                                    <div className="w-px h-5 bg-slate-100 dark:bg-slate-800 mx-1" />
                                     <button onClick={() => setShowPreview(false)} className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all">
                                         <X size={16} />
                                     </button>
@@ -1563,10 +1563,10 @@ export default function KravyPOS() {
                             </div>
 
                             {/* Footer */}
-                            <div className="px-5 py-4 border-t border-slate-100 bg-white flex gap-3 shrink-0">
+                            <div className="px-5 py-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex gap-3 shrink-0">
                                 <button
                                     onClick={() => setShowPreview(false)}
-                                    className="flex-1 py-3.5 rounded-2xl border border-slate-200 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all"
+                                    className="flex-1 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 font-bold text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                                 >
                                     Close
                                 </button>
@@ -1575,7 +1575,7 @@ export default function KravyPOS() {
                                         handlePrint(previewMode);
                                         setShowPreview(false);
                                     }}
-                                    className="flex-[2] py-3.5 rounded-2xl bg-slate-900 text-white font-black text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                                    className="flex-[2] py-3.5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
                                 >
                                     <Printer size={16} /> Print Direct
                                 </button>

@@ -3,15 +3,15 @@ import { PlusCircle, Search, ChevronRight, Hash, Layers, Settings, Plus } from '
 
 export default function CategorySidebar({ categories, activeCatId, onSelect, onAddOns }: any) {
   return (
-    <div className="w-[320px] bg-white border-r border-gray-100 flex flex-col h-full shrink-0">
+    <div className="w-[320px] bg-white dark:bg-slate-900 border-r border-gray-100 dark:border-slate-800 flex flex-col h-full shrink-0 transition-colors">
       
       {/* 🛠️ SEARCH & HEADER AREA */}
       <div className="px-8 py-8 space-y-6">
-         <div className="flex justify-between items-center bg-white">
-            <h3 className="text-[0.75rem] font-black text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2">
+         <div className="flex justify-between items-center bg-white dark:bg-slate-900 transition-colors">
+            <h3 className="text-[0.75rem] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
                Categories ({categories.length})
             </h3>
-            <button className="text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-all active:scale-95 group">
+            <button className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 p-1.5 rounded-full transition-all active:scale-95 group">
               <Plus size={22} className="group-hover:rotate-90 transition-transform duration-300" />
             </button>
          </div>
@@ -27,8 +27,8 @@ export default function CategorySidebar({ categories, activeCatId, onSelect, onA
                     onClick={() => onSelect(cat.id)}
                     className={`group px-6 py-4.5 cursor-pointer flex justify-between items-center transition-all duration-300 rounded-2xl relative ${
                        isActive 
-                       ? 'bg-red-50/20 text-red-600 font-black' 
-                       : 'text-gray-500 hover:bg-gray-50/50 font-bold'
+                       ? 'bg-red-50/20 dark:bg-red-500/10 text-red-600 dark:text-red-500 font-black' 
+                       : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 font-bold'
                     }`}
                   >
                      {/* Red Active Indicator Vertical Bar */}
@@ -45,7 +45,7 @@ export default function CategorySidebar({ categories, activeCatId, onSelect, onA
                      <div className={`text-[0.65rem] w-6 h-6 flex items-center justify-center rounded-full transition-all duration-300 ${
                         isActive 
                         ? 'bg-red-600 text-white shadow-lg' 
-                        : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'
+                        : 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-500 group-hover:bg-gray-200 dark:group-hover:bg-slate-700'
                      }`}>
                         {cat.itemCount || 0}
                      </div>
@@ -58,7 +58,7 @@ export default function CategorySidebar({ categories, activeCatId, onSelect, onA
                            <div 
                               key={sub.id} 
                               onClick={() => onSelect(sub.id)}
-                              className={`text-[0.85rem] py-2.5 cursor-pointer flex justify-between items-center border-l border-gray-100 pl-4 hover:border-red-500 hover:text-red-500 transition-all ${activeCatId === sub.id ? 'text-red-600 font-bold border-red-500' : 'text-gray-400'}`}
+                              className={`text-[0.85rem] py-2.5 cursor-pointer flex justify-between items-center border-l border-gray-100 dark:border-slate-800 pl-4 hover:border-red-500 hover:text-red-500 transition-all ${activeCatId === sub.id ? 'text-red-600 dark:text-red-500 font-bold border-red-500' : 'text-gray-400 dark:text-gray-500'}`}
                            >
                               <span>{sub.name}</span>
                               <span className="text-[0.6rem] font-bold opacity-30 tracking-widest">({sub.itemCount || 0})</span>
@@ -72,18 +72,18 @@ export default function CategorySidebar({ categories, activeCatId, onSelect, onA
       </div>
 
       {/* 🚀 FIXED SETTINGS / ADDONS AREA */}
-      <div className="px-6 py-8 border-t border-gray-50 bg-[#FAFAFA]/50">
+      <div className="px-6 py-8 border-t border-gray-50 dark:border-slate-800 bg-[#FAFAFA]/50 dark:bg-slate-900/50 transition-colors">
          <button
             onClick={onAddOns}
-            className="w-full flex items-center justify-between px-6 py-4 bg-white border border-gray-200 rounded-2xl text-[0.85rem] font-black text-slate-800 shadow-sm hover:shadow-md hover:border-red-100 hover:text-red-600 transition-all group active:scale-[0.98]"
+            className="w-full flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl text-[0.85rem] font-black text-slate-800 dark:text-slate-200 shadow-sm hover:shadow-md hover:border-red-100 dark:hover:border-red-900/30 hover:text-red-600 transition-all group active:scale-[0.98]"
          >
             <div className="flex items-center gap-3">
-               <div className="w-8 h-8 rounded-xl bg-gray-50 group-hover:bg-red-50 flex items-center justify-center transition-colors">
-                  <Layers size={18} className="text-gray-400 group-hover:text-red-500 transition-colors" />
+               <div className="w-8 h-8 rounded-xl bg-gray-50 dark:bg-slate-800 group-hover:bg-red-50 dark:group-hover:bg-red-950/30 flex items-center justify-center transition-colors">
+                  <Layers size={18} className="text-gray-400 dark:text-gray-500 group-hover:text-red-500 transition-colors" />
                </div>
                <span>Global Add-ons</span>
             </div>
-            <ChevronRight size={18} className="text-gray-200 group-hover:text-red-400 group-hover:translate-x-1 transition-all" />
+            <ChevronRight size={18} className="text-gray-200 dark:text-gray-700 group-hover:text-red-400 group-hover:translate-x-1 transition-all" />
          </button>
       </div>
 

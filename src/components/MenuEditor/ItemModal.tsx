@@ -111,10 +111,10 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
   const filteredAddons = localGroups.filter((g: any) => g.name.toLowerCase().includes(addonSearch.toLowerCase()))
 
   const content = (
-    <div className="fixed inset-0 bg-[#f5f5f5] z-[999999999] flex overflow-hidden font-sans no-scrollbar text-[0.82rem]">
+    <div className="fixed inset-0 bg-[#f5f5f5] dark:bg-slate-950 z-[999999999] flex overflow-hidden font-sans no-scrollbar text-[0.82rem] transition-colors">
       
       {/* 📱 LEFT: GLASS PREVIEW */}
-      <div className="hidden lg:flex w-[480px] bg-white/40 backdrop-blur-[60px] border-r border-white/20 flex-col items-center justify-center p-6 sticky top-0 h-screen shrink-0 overflow-hidden shadow-[30px_0_60px_rgba(0,0,0,0.03)] border-l border-white/30">
+      <div className="hidden lg:flex w-[480px] bg-white/40 dark:bg-slate-900/40 backdrop-blur-[60px] border-r border-white/20 dark:border-slate-800/50 flex flex-col items-center justify-center p-6 sticky top-0 h-screen shrink-0 overflow-hidden shadow-[30px_0_60px_rgba(0,0,0,0.03)] border-l border-white/30 dark:border-l-slate-800/20">
         <p className="text-[0.65rem] text-gray-400 mb-8 uppercase tracking-[0.4em] font-black opacity-30">Zomato Mirror Preview</p>
         <div className="flex flex-col items-center transform scale-[0.68] origin-center shadow-[0_80px_160px_-40px_rgba(0,0,0,0.4)]">
            <div className="relative w-[340px] h-[700px] bg-[#000] rounded-[4.5rem] p-3 border border-white/10 ring-[8px] ring-gray-900/50">
@@ -157,10 +157,10 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
       </div>
 
       {/* 🚀 RIGHT: PROFESSIONAL DASHBOARD (ARRANGED CAREFULLY) */}
-      <div className="flex-1 overflow-y-auto no-scrollbar bg-white flex flex-col items-center selection:bg-blue-100/50">
+      <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-slate-900 flex flex-col items-center selection:bg-blue-100/50 transition-colors">
         
         {/* Sticky Utility Header (64px) */}
-        <div className="sticky top-0 z-[100] bg-white border-b border-gray-100 w-full px-8 h-[64px] flex justify-between items-center shadow-sm backdrop-blur-3xl bg-white/95">
+        <div className="sticky top-0 z-[100] bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 w-full px-8 h-[64px] flex justify-between items-center shadow-sm backdrop-blur-3xl bg-white/95 dark:bg-slate-900/95 transition-colors">
            <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center shadow-inner"><Flame size={18} className="text-[#e23744] fill-[#e23744]" /></div>
               <h1 className="text-[0.95rem] font-black text-gray-900 tracking-tight m-0">{form.name || 'New Item Detail'}</h1>
@@ -404,5 +404,5 @@ function Toggle({ label, value, onChange }: any) {
    )
 }
 
-const labelClass = "text-[0.65rem] font-black text-gray-400 uppercase tracking-widest pl-1"
-const inputClass = "w-full h-11 border-2 border-gray-50 rounded-2xl px-4 text-[0.82rem] font-black text-gray-900 bg-white outline-none focus:border-[#1a6de0] transition-all placeholder:text-gray-200 shadow-sm"
+const labelClass = "text-[0.65rem] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest pl-1"
+const inputClass = "w-full h-11 border-2 border-gray-50 dark:border-slate-800 rounded-2xl px-4 text-[0.82rem] font-black text-gray-900 dark:text-white bg-white dark:bg-slate-900 outline-none focus:border-[#1a6de0] dark:focus:border-[#1a6de0]/50 transition-all placeholder:text-gray-200 dark:placeholder:text-slate-700 shadow-sm"
