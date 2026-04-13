@@ -43,6 +43,9 @@ export async function POST(req: NextRequest) {
 
         // Case 1: MERGE INTO EXISTING ORDER
         if (caseType === "merge" && parentOrderId) {
+            const isValidParentId = /^[0-9a-fA-F]{24}$/.test(parentOrderId);
+            if (!isValidParentId) return NextResponse.json({ error: "Invalid parent order ID format" }, { status: 400 });
+
             const existing = await prisma.order.findUnique({ where: { id: parentOrderId } });
             if (!existing) return NextResponse.json({ error: "Parent order not found" }, { status: 404 });
 
@@ -73,10 +76,12 @@ export async function POST(req: NextRequest) {
         // Resolve table name to real table ID
         let realTableId = null;
         if (tableId) {
+            const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(tableId);
+            
             const tableRecord = await prisma.table.findFirst({
                 where: {
                     OR: [
-                        { id: tableId },
+                        ...(isValidObjectId ? [{ id: tableId }] : []),
                         { name: tableId }
                     ],
                     clerkUserId: clerkUserId
