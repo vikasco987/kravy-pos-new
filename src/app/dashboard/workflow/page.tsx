@@ -90,14 +90,14 @@ export default function KravyPOS() {
     const [previewZoom, setPreviewZoom] = useState(1);
     const [printOrder, setPrintOrder] = useState<Order | null>(null);
     const [printTable, setPrintTable] = useState<TableStatus | null>(null);
-    
+
     // Manual Combination States
     const [showCombineModal, setShowCombineModal] = useState(false);
     const [combineSelection, setCombineSelection] = useState<Set<string>>(new Set());
 
     const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL" | "MANUAL_COMBINE", customOrder?: Order, customTable?: TableStatus) => {
         kravy.click();
-        
+
         let targetOrder = customOrder || printOrder || activeOrderForSelected;
         let targetTable = customTable || printTable || selectedTable;
 
@@ -125,7 +125,7 @@ export default function KravyPOS() {
         } else if (type === "MANUAL_COMBINE") {
             const selectedOrders = orders.filter(o => combineSelection.has(o.id));
             if (selectedOrders.length === 0) return;
-            
+
             const mergedItems = selectedOrders.flatMap(o => o.items);
             const subtotal = mergedItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
             const gst = isTaxEnabled ? (subtotal * taxRate) / 100 : 0;
@@ -150,24 +150,24 @@ export default function KravyPOS() {
         // Wait for state update
         console.log(`[PRINT] Starting ${type} flow...`);
         console.log(`[PRINT] Context: Order=${targetOrder?.id}, Table=${targetTable?.name || "None"}`);
-        
+
         setTimeout(() => {
             const isBill = type === "BILL" || type === "COMBINED_BILL" || type === "MANUAL_COMBINE";
-            const targetRef = (showPreview && previewMode === (isBill ? "BILL" : "KOT")) 
-                ? receiptRef.current 
+            const targetRef = (showPreview && previewMode === (isBill ? "BILL" : "KOT"))
+                ? receiptRef.current
                 : (isBill ? billReceiptRef.current : kotReceiptRef.current);
-            
+
             if (!targetRef) {
                 console.error(`[PRINT ERROR] No DOM reference found for ${type}. Check if printer zone is rendered.`);
                 return;
             }
 
             console.log(`[PRINT] Template Found. HTML size: ${targetRef.innerHTML.length} chars`);
-            
+
             if (targetRef.innerHTML.length < 50) {
                 console.warn(`[PRINT WARNING] Template seems empty or too small. Receipt might be blank.`);
             }
-            
+
             const printStyles = `
                 @media print {
                     @page { size: 58mm auto; margin: 0; }
@@ -190,16 +190,16 @@ export default function KravyPOS() {
                     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                 }
             `;
-            
+
             const styleSheet = document.createElement("style");
             styleSheet.textContent = printStyles;
             document.head.appendChild(styleSheet);
-            
+
             const printContainer = document.createElement("div");
             printContainer.id = "print-receipt-container";
             printContainer.innerHTML = targetRef.innerHTML;
             document.body.appendChild(printContainer);
-            
+
             kravy.print();
             window.print();
 
@@ -279,7 +279,7 @@ export default function KravyPOS() {
             setUpdatingOrders(prev => new Set(prev).add(orderId));
 
             const res = await fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId, status: newStatus }) });
-            if (res.ok) { 
+            if (res.ok) {
                 if (newStatus === "ACCEPTED") {
                     kravy.orderAccept();
                     toast.success("Order Accepted 🧑‍🍳");
@@ -297,14 +297,14 @@ export default function KravyPOS() {
                 }
 
                 if (newStatus === "COMPLETED") {
-                    await handleCheckout(orderId, true); 
+                    await handleCheckout(orderId, true);
                 } else {
-                    fetchData(); 
+                    fetchData();
                 }
             }
-        } catch { 
-            kravy.error(); 
-            toast.error("Update failed"); 
+        } catch {
+            kravy.error();
+            toast.error("Update failed");
         } finally {
             setUpdatingOrders(prev => {
                 const next = new Set(prev);
@@ -323,39 +323,39 @@ export default function KravyPOS() {
         const orderTotal = orderSubtotal + orderGst;
 
         try {
-            const billData = { 
-                items: order.items.map(it => ({ 
-                    name: it.name, 
-                    price: it.price, 
-                    quantity: it.quantity, 
-                    total: it.price * it.quantity 
-                })), 
-                subtotal: orderSubtotal, 
-                total: orderTotal, 
-                paymentMode: payMethod.toUpperCase(), 
-                paymentStatus: "Paid", 
+            const billData = {
+                items: order.items.map(it => ({
+                    name: it.name,
+                    price: it.price,
+                    quantity: it.quantity,
+                    total: it.price * it.quantity
+                })),
+                subtotal: orderSubtotal,
+                total: orderTotal,
+                paymentMode: payMethod.toUpperCase(),
+                paymentStatus: "Paid",
                 customerName: order.customerName || "Walk-in",
                 tableName: order.table?.name || "Counter"
             };
             const res = await fetch("/api/bill-manager", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(billData) });
             if (!res.ok) throw new Error("fail");
-            
+
             // Only update status if not already COMPLETED (to avoid loop)
             if (order.status !== "COMPLETED") {
                 await fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: targetOrderId, status: "COMPLETED" }) });
             }
 
             if (!silent) {
-                kravy.payment(); 
-                toast.success("Transaction Finalized! 💰"); 
-                setSelectedTableId(null); 
+                kravy.payment();
+                toast.success("Transaction Finalized! 💰");
+                setSelectedTableId(null);
                 setActiveTab("dashboard");
             }
             fetchData();
-        } catch { 
+        } catch {
             if (!silent) {
-                kravy.error(); 
-                toast.error("Checkout failed"); 
+                kravy.error();
+                toast.error("Checkout failed");
             }
         }
     };
@@ -402,7 +402,7 @@ export default function KravyPOS() {
                 counts[it.name] = (counts[it.name] || 0) + it.quantity;
             });
         });
-        return Object.entries(counts).sort((a,b) => b[1] - a[1]);
+        return Object.entries(counts).sort((a, b) => b[1] - a[1]);
     }, [orders]);
 
     const getOrderAge = (createdAt: string) => {
@@ -418,18 +418,18 @@ export default function KravyPOS() {
             <AnimatePresence>
                 {showCombineModal && (
                     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/80 backdrop-blur-xl" 
+                            className="absolute inset-0 bg-black/80 backdrop-blur-xl"
                             onClick={() => {
                                 console.log("[CI] Closing Modal via Backdrop");
                                 setShowCombineModal(false);
-                            }} 
+                            }}
                         />
-                        
-                        <motion.div 
+
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.9, y: 30 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 30 }}
@@ -476,7 +476,7 @@ export default function KravyPOS() {
                                         </div>
                                     </button>
                                 ))}
-                                
+
                                 {orders.filter(o => o.status !== "COMPLETED").length === 0 && (
                                     <div className="h-full flex flex-col items-center justify-center py-20 opacity-20 text-center">
                                         <Layers size={48} strokeWidth={1} />
@@ -602,24 +602,23 @@ export default function KravyPOS() {
                             <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-300">
                                 <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
                                     {(["PREPARING", "READY", "COMPLETED"] as const).map(tab => {
-                                        const count = tab === "PREPARING" 
+                                        const count = tab === "PREPARING"
                                             ? orders.filter(o => ["PENDING", "ACCEPTED", "PREPARING"].includes(o.status)).length
-                                            : tab === "READY" 
+                                            : tab === "READY"
                                                 ? orders.filter(o => o.status === "READY").length
                                                 : orders.filter(o => o.status === "COMPLETED").length;
-                                        
+
                                         const isActive = liveOrderTab === tab;
                                         const label = tab === "PREPARING" ? "Preparing" : tab === "READY" ? "Ready" : "Picked up";
-                                        
+
                                         return (
                                             <button
                                                 key={tab}
                                                 onClick={() => { kravy.click(); setLiveOrderTab(tab); }}
-                                                className={`px-4 py-1.5 rounded-lg text-[13px] font-medium transition-all flex items-center gap-1.5 border ${
-                                                    isActive 
-                                                        ? "bg-[#EF6C00] text-white border-[#EF6C00] shadow-sm" 
+                                                className={`px-4 py-1.5 rounded-lg text-[13px] font-medium transition-all flex items-center gap-1.5 border ${isActive
+                                                        ? "bg-[#EF6C00] text-white border-[#EF6C00] shadow-sm"
                                                         : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                                }`}
+                                                    }`}
                                             >
                                                 {label} ({count})
                                             </button>
@@ -653,7 +652,7 @@ export default function KravyPOS() {
                                 <div className="max-w-7xl mx-auto space-y-6">
                                     {orders
                                         .filter(o => {
-                                            const statusMatch = liveOrderTab === "PREPARING" 
+                                            const statusMatch = liveOrderTab === "PREPARING"
                                                 ? ["PENDING", "ACCEPTED", "PREPARING"].includes(o.status)
                                                 : o.status === liveOrderTab;
                                             const searchMatch = !liveOrderSearch || o.id.toLowerCase().includes(liveOrderSearch.toLowerCase()) || (o.customerName && o.customerName.toLowerCase().includes(liveOrderSearch.toLowerCase()));
@@ -678,13 +677,13 @@ export default function KravyPOS() {
                                                             <h3 className="text-base font-bold text-slate-800 dark:text-white leading-tight">{business?.businessName || "Terminal kitchen"}</h3>
                                                             <p className="text-[11px] text-slate-500 dark:text-slate-400">{order.table?.name || "Counter"}</p>
                                                         </div>
-                                                        
+
                                                         <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                                                             <p className="text-sm font-bold text-slate-900 dark:text-white">ID: {order.id.slice(-4).toUpperCase()}</p>
                                                         </div>
 
                                                         <div className="flex gap-2">
-                                                            <button 
+                                                            <button
                                                                 onClick={() => {
                                                                     const tbl = tablesList.find(t => t.id === order.table?.id);
                                                                     setPrintOrder(order);
@@ -697,7 +696,7 @@ export default function KravyPOS() {
                                                             >
                                                                 <Eye size={12} />
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 onClick={() => {
                                                                     const tbl = tablesList.find(t => t.id === order.table?.id);
                                                                     setPrintOrder(order);
@@ -709,7 +708,7 @@ export default function KravyPOS() {
                                                             >
                                                                 <Printer size={12} /> KOT Token
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 onClick={() => {
                                                                     const tbl = tablesList.find(t => t.id === order.table?.id);
                                                                     setPrintOrder(order);
@@ -721,9 +720,9 @@ export default function KravyPOS() {
                                                                 <CreditCard size={12} /> Bill
                                                             </button>
                                                         </div>
-                                                        
+
                                                         {/* COMBINED BILL ACTION */}
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 alert("[DI] Click registered. Opening Modal.");
@@ -762,12 +761,12 @@ export default function KravyPOS() {
                                                     <div className={`flex items-center gap-2 mb-4 text-[11px] font-black uppercase tracking-wider ${order.preferences?.dontSendCutlery ? "text-rose-600 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-100" : "text-emerald-600"}`}>
                                                         {order.preferences?.dontSendCutlery ? (
                                                             <>
-                                                                <AlertTriangle size={12} /> 
+                                                                <AlertTriangle size={12} />
                                                                 Don't send cutlery
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <CheckCircle2 size={12} /> 
+                                                                <CheckCircle2 size={12} />
                                                                 Send cutlery
                                                             </>
                                                         )}
@@ -846,7 +845,7 @@ export default function KravyPOS() {
                                                                     </span>
                                                                 </div>
                                                                 <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                                    <motion.div 
+                                                                    <motion.div
                                                                         initial={{ width: 0 }}
                                                                         animate={{ width: "65%" }}
                                                                         className="h-full bg-emerald-500"
@@ -881,7 +880,7 @@ export default function KravyPOS() {
                                                     </div>
 
                                                     <div className="space-y-2">
-                                                        <motion.button 
+                                                        <motion.button
                                                             whileHover={{ scale: 1.02 }}
                                                             whileTap={{ scale: 0.95 }}
                                                             disabled={updatingOrders.has(order.id)}
@@ -890,11 +889,10 @@ export default function KravyPOS() {
                                                                 const nextStatus = order.status === "PENDING" ? "ACCEPTED" : order.status === "ACCEPTED" ? "PREPARING" : order.status === "PREPARING" ? "READY" : "COMPLETED";
                                                                 updateOrderStatus(order.id, nextStatus);
                                                             }}
-                                                            className={`w-full h-12 rounded-xl text-xs font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-2 shadow-lg ${
-                                                                updatingOrders.has(order.id) 
-                                                                    ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+                                                            className={`w-full h-12 rounded-xl text-xs font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-2 shadow-lg ${updatingOrders.has(order.id)
+                                                                    ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                                                                     : (statusConfig[order.status as keyof typeof statusConfig]?.btn || "bg-slate-900") + " text-white"
-                                                            }`}
+                                                                }`}
                                                         >
                                                             {updatingOrders.has(order.id) ? (
                                                                 <RotateCcw className="animate-spin" size={16} />
@@ -922,23 +920,23 @@ export default function KravyPOS() {
                                         ))}
 
                                     {orders.filter(o => {
-                                        const statusMatch = liveOrderTab === "PREPARING" 
+                                        const statusMatch = liveOrderTab === "PREPARING"
                                             ? ["PENDING", "ACCEPTED", "PREPARING"].includes(o.status)
                                             : o.status === liveOrderTab;
                                         return statusMatch;
                                     }).length === 0 && (
-                                        <div className="flex flex-col items-center justify-center py-32 opacity-20 text-center">
-                                            <div className="w-24 h-24 bg-slate-200 rounded-[3rem] flex items-center justify-center text-slate-400 mb-8 shadow-inner"><Layers size={48} strokeWidth={1} /></div>
-                                            <p className="text-3xl font-black text-slate-900 italic tracking-tighter uppercase">No Live Orders</p>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-4">Safe and Sound. Everything is handled.</p>
-                                        </div>
-                                    )}
+                                            <div className="flex flex-col items-center justify-center py-32 opacity-20 text-center">
+                                                <div className="w-24 h-24 bg-slate-200 rounded-[3rem] flex items-center justify-center text-slate-400 mb-8 shadow-inner"><Layers size={48} strokeWidth={1} /></div>
+                                                <p className="text-3xl font-black text-slate-900 italic tracking-tighter uppercase">No Live Orders</p>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-4">Safe and Sound. Everything is handled.</p>
+                                            </div>
+                                        )}
                                 </div>
                             </div>
                         </motion.div>
                     )}
 
-                    {/* ── TERMINAL TAB ── */ }
+                    {/* ── TERMINAL TAB ── */}
                     {activeTab === "dashboard" && (
                         <motion.div
                             key="dashboard"
@@ -1231,8 +1229,8 @@ export default function KravyPOS() {
                                                 </button>
                                                 <button
                                                     disabled={!activeOrderForSelected}
-                                                    onClick={() => { 
-                                                        kravy.payment(); 
+                                                    onClick={() => {
+                                                        kravy.payment();
                                                         if (activeOrderForSelected && (activeOrderForSelected as any).paymentMode) {
                                                             const m = (activeOrderForSelected as any).paymentMode.toLowerCase();
                                                             if (m.includes("upi")) setPayMethod("upi");
@@ -1240,7 +1238,7 @@ export default function KravyPOS() {
                                                             else if (m.includes("card")) setPayMethod("card");
                                                             else if (m.includes("counter")) setPayMethod("pay on counter");
                                                         }
-                                                        setActiveTab("payment"); 
+                                                        setActiveTab("payment");
                                                     }}
                                                     className="flex-[2.5] h-14 rounded-2xl flex items-center justify-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-900/20 active:scale-95 transition-all hover:bg-slate-800 dark:hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
@@ -1355,7 +1353,7 @@ export default function KravyPOS() {
                                                         </div>
                                                         <div className="flex flex-col gap-2 mb-2">
                                                             <div className="flex gap-2">
-                                                                <button 
+                                                                <button
                                                                     onClick={() => {
                                                                         const tbl = tablesList.find(t => t.id === o.table?.id);
                                                                         setPrintOrder(o);
@@ -1366,7 +1364,7 @@ export default function KravyPOS() {
                                                                 >
                                                                     <Printer size={14} /> KOT
                                                                 </button>
-                                                                <button 
+                                                                <button
                                                                     onClick={() => {
                                                                         const tbl = tablesList.find(t => t.id === o.table?.id);
                                                                         setPrintOrder(o);
@@ -1378,7 +1376,7 @@ export default function KravyPOS() {
                                                                     <CreditCard size={14} /> BILL
                                                                 </button>
                                                             </div>
-                                                            <button 
+                                                            <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     alert("[TC] Click registered. Opening Modal.");
@@ -1426,7 +1424,7 @@ export default function KravyPOS() {
                                     {/* Receipt column */}
                                     <div className="bg-white dark:bg-white shadow-2xl rounded-[2.5rem] p-8 flex flex-col border border-slate-100 relative overflow-hidden h-fit animate-in fade-in zoom-in-95 duration-500">
                                         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900" />
-                                        
+
                                         <div className="text-center pb-8 border-b border-dashed border-slate-200 mb-8 mt-4">
                                             <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 p-4 shadow-xl shadow-slate-900/10">
                                                 <Printer size={32} strokeWidth={1.5} />
@@ -1479,7 +1477,7 @@ export default function KravyPOS() {
                                                 <span className="text-3xl font-black italic tracking-tighter text-slate-900">₹{activeOrderForSelected.total}</span>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="mt-8 text-center opacity-20 text-[9px] font-black uppercase tracking-[0.4em] italic">
                                             Trusted by Kravy
                                         </div>
@@ -1689,18 +1687,17 @@ export default function KravyPOS() {
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 text-center">
-                                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
-                                                                o.status === 'PENDING' ? 'bg-rose-50 text-rose-500 border-rose-100' : 
-                                                                o.status === 'ACCEPTED' ? 'bg-blue-50 text-blue-500 border-blue-100' :
-                                                                o.status === 'PREPARING' ? 'bg-amber-50 text-amber-500 border-amber-100' : 
-                                                                'bg-emerald-50 text-emerald-500 border-emerald-100 animate-pulse'
-                                                            }`}>
+                                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${o.status === 'PENDING' ? 'bg-rose-50 text-rose-500 border-rose-100' :
+                                                                    o.status === 'ACCEPTED' ? 'bg-blue-50 text-blue-500 border-blue-100' :
+                                                                        o.status === 'PREPARING' ? 'bg-amber-50 text-amber-500 border-amber-100' :
+                                                                            'bg-emerald-50 text-emerald-500 border-emerald-100 animate-pulse'
+                                                                }`}>
                                                                 <span className={`w-1 h-1 rounded-full ${o.status === 'PENDING' ? 'bg-rose-500' : o.status === 'ACCEPTED' ? 'bg-blue-500' : o.status === 'PREPARING' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
                                                                 {o.status}
                                                             </span>
                                                         </td>
                                                         <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                                                            <button 
+                                                            <button
                                                                 onClick={() => {
                                                                     const tbl = tablesList.find(t => t.id === o.table?.id);
                                                                     setPrintOrder(o);
@@ -1712,7 +1709,7 @@ export default function KravyPOS() {
                                                             >
                                                                 <Printer size={13} />
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 onClick={() => {
                                                                     const tbl = tablesList.find(t => t.id === o.table?.id);
                                                                     setPrintOrder(o);
@@ -1724,7 +1721,7 @@ export default function KravyPOS() {
                                                             >
                                                                 <CreditCard size={13} />
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 onClick={() => { kravy.click(); setActiveTab("dashboard"); setSelectedTableId(o.table?.id || null); }}
                                                                 className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-sm"
                                                             >
@@ -1755,15 +1752,15 @@ export default function KravyPOS() {
             <AnimatePresence>
                 {showPreview && selectedTable && activeOrderForSelected && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/80 backdrop-blur-md" 
-                            onClick={() => setShowPreview(false)} 
+                            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                            onClick={() => setShowPreview(false)}
                         />
-                        
-                        <motion.div 
+
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1788,16 +1785,16 @@ export default function KravyPOS() {
 
                             {/* Preview Area */}
                             <div className="flex-1 overflow-auto bg-slate-200/80 dark:bg-zinc-900 p-8 flex flex-col items-center shadow-inner">
-                                <motion.div 
+                                <motion.div
                                     initial={{ y: 20, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
                                     ref={receiptRef}
                                     className="bg-white text-black p-6 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] origin-top transition-all duration-300 mx-auto ring-1 ring-black/5"
-                                    style={{ 
-                                        width: '58mm', 
+                                    style={{
+                                        width: '58mm',
                                         minHeight: '100px',
-                                        transform: `scale(${previewZoom * 1.5})`, 
-                                        marginBottom: `${previewZoom * 120}px` 
+                                        transform: `scale(${previewZoom * 1.5})`,
+                                        marginBottom: `${previewZoom * 120}px`
                                     }}
                                 >
                                     {(() => {
@@ -1807,7 +1804,7 @@ export default function KravyPOS() {
                                         const sub = targetO.items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
                                         const gst = isTaxEnabled ? (sub * taxRate) / 100 : 0;
                                         const total = sub + gst;
-                                        
+
                                         return getReceiptJSX(
                                             previewMode,
                                             business,
@@ -1906,7 +1903,7 @@ export default function KravyPOS() {
                             </p>
                         )}
                         {business?.gstNumber && <p className="text-[7px] font-bold mt-0.5">GSTIN: {business.gstNumber}</p>}
-                        
+
                         <div className="mt-1 flex flex-col items-center text-[7px] opacity-70 italic">
                             <span>Bill: ORD-{activeOrder?.id.slice(-6).toUpperCase()}</span>
                             <span>Date: {new Date().toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}</span>

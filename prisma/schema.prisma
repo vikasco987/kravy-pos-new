@@ -161,6 +161,9 @@ model Party {
   loyaltyPoints Int @default(0)
   walletBalance Float @default(0.0) // Added for Deposit/Wallet System
 
+  remarks   String?
+  status    String? @default("ACTIVE")
+
   bills BillManager[]
   walletTransactions WalletTransaction[] // Added relation
 

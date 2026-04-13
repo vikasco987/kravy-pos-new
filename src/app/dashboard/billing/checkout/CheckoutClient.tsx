@@ -1337,366 +1337,326 @@ export default function CheckoutClient() {
             </div>
           </div>
 
-          {/* Customer Section */}
-          <button
-            onClick={() => setShowCustomer(!showCustomer)}
-            className="px-4 md:px-5 py-3 text-left border-b border-[var(--kravy-border)]
-              flex items-center justify-between hover:bg-[var(--kravy-bg)] transition-colors flex-shrink-0"
-          >
-            <div className="flex items-center gap-2">
-              <User size={13} className="text-[var(--kravy-text-muted)]" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">
-                Customer Details
-              </span>
-              {(customerName || customerPhone) && (
-                <span className="text-[10px] font-bold text-[var(--kravy-brand)] bg-[var(--kravy-brand)]/10 px-2 py-0.5 rounded-md">
-                  {customerName || customerPhone}
+          {/* Scrollable Middle Content (Customer + Items) */}
+          <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar flex flex-col">
+            {/* Customer Section Toggle */}
+            <button
+              onClick={() => setShowCustomer(!showCustomer)}
+              className="px-4 md:px-5 py-3 text-left border-b border-[var(--kravy-border)]
+                flex items-center justify-between hover:bg-[var(--kravy-bg)] transition-colors flex-shrink-0"
+            >
+              <div className="flex items-center gap-2">
+                <User size={13} className="text-[var(--kravy-text-muted)]" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">
+                  Customer Details
                 </span>
-              )}
-            </div>
-            <ChevronDown
-              size={14}
-              className={`text-[var(--kravy-text-muted)] transition-transform duration-200 ${showCustomer ? "rotate-180" : ""}`}
-            />
-          </button>
-
-          {showCustomer && (
-            <div className="px-4 md:px-5 py-3 space-y-3 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg)]/30 flex-shrink-0 relative">
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Name</label>
-                <input
-                  placeholder="Customer name"
-                  value={customerName}
-                  autoComplete="off"
-                  onChange={(e) => handleCustomerNameChange(e.target.value)}
-                  className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
-                    p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
-                    focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-medium"
-                />
-              </div>
-              <div className="space-y-1 relative">
-                <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Phone</label>
-                <input
-                  placeholder="Phone number"
-                  value={customerPhone}
-                  autoComplete="off"
-                  onChange={(e) => handleCustomerPhoneChange(e.target.value)}
-                  className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
-                    p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
-                    focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-mono"
-                />
-              </div>
- 
-               {selectedParty && (
-                 <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-2xl flex items-center justify-between">
-                   <div>
-                     <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Active Balance</p>
-                     <p className="text-xl font-black text-indigo-600 mt-0.5">₹{selectedParty.walletBalance?.toFixed(2) || "0.00"}</p>
-                   </div>
-                   <button 
-                     onClick={() => {
-                       const amt = prompt("Enter amount to deposit (₹):");
-                       if (amt && !isNaN(Number(amt))) {
-                         handleDeposit(Number(amt));
-                       }
-                     }}
-                     className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:scale-105 active:scale-95 transition-all"
-                   >
-                     Add Money
-                   </button>
-                 </div>
-               )}
-
-              {(business?.collectCustomerAddress || customerAddress) && (
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Address</label>
-                  <textarea
-                    placeholder="Enter customer address..."
-                    value={customerAddress}
-                    onChange={(e) => setCustomerAddress(e.target.value)}
-                    rows={2}
-                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
-                      p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
-                      focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-medium resize-none"
-                  />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Buyer GSTIN</label>
-                  <input
-                    placeholder="Customer GSTIN"
-                    value={buyerGSTIN}
-                    autoComplete="off"
-                    onChange={(e) => setBuyerGSTIN(e.target.value.toUpperCase())}
-                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
-                      p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
-                      focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] uppercase"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Place of Supply</label>
-                  <input
-                    placeholder="e.g. Haryana"
-                    value={placeOfSupply}
-                    autoComplete="off"
-                    onChange={(e) => setPlaceOfSupply(e.target.value)}
-                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
-                      p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
-                      focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] mt-0"
-                  />
-                </div>
-              </div>
-
-              {/* Suggestions Dropdown */}
-              {customerSuggestions.length > 0 && (
-                <div 
-                  ref={suggestionsRef}
-                  className="absolute left-4 right-4 bg-[var(--kravy-surface)] border border-[var(--kravy-border-strong)] rounded-2xl shadow-2xl z-50 mt-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
-                >
-                  <div className="p-2 border-b border-[var(--kravy-border)] bg-indigo-50/30">
-                    <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Matching Customers</p>
-                  </div>
-                  {customerSuggestions.map((p, idx) => (
-                    <button
-                      key={p.id || idx}
-                      onClick={() => selectCustomer(p)}
-                      className="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-[var(--kravy-border)] last:border-0 transition-colors flex items-center justify-between"
-                    >
-                      <div>
-                        <p className="font-black text-sm text-[var(--kravy-text-primary)]">{p.name}</p>
-                        <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-0.5">{p.phone}</p>
-                      </div>
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
-                        <User size={14} />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Cart Items */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-5 py-3 space-y-2 no-scrollbar">
-            {items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center py-8 opacity-40">
-                <div className="text-4xl mb-3">🛒</div>
-                <p className="font-bold text-[var(--kravy-text-primary)] text-sm">Cart is empty</p>
-                <p className="text-xs text-[var(--kravy-text-muted)] mt-1">Tap any menu item to add</p>
-              </div>
-            ) : (
-              items.map((i) => (
-                <div
-                  key={i.id}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-xl
-                    bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
-                    hover:border-[var(--kravy-border)]/80 transition-all group"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[var(--kravy-text-primary)] truncate text-sm">{i.name}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs font-black text-emerald-600">
-                        {i.qty} × ₹{i.rate.toFixed(2)}
-                      </p>
-                      {perProductEnabled && (i.gst === undefined || i.gst === null) && (
-                        <span className="text-[8px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter border border-amber-200/50 shadow-sm animate-pulse-slow">
-                          Profile Default GST Applied ({globalRate}%)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Qty Controls */}
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <button
-                      onClick={() => dec(i.id)}
-                      className="w-7 h-7 rounded-lg border border-[var(--kravy-border)] bg-[var(--kravy-surface)]
-                        text-[var(--kravy-text-secondary)] font-black text-base flex items-center justify-center
-                        hover:bg-rose-50 hover:border-rose-200 hover:text-rose-500 transition-all"
-                    >
-                      −
-                    </button>
-                    <span className="w-6 text-center font-black text-sm text-[var(--kravy-text-primary)]">{i.qty}</span>
-                    <button
-                      onClick={() => inc(i.id)}
-                      className="w-7 h-7 rounded-lg border border-[var(--kravy-border)] bg-[var(--kravy-surface)]
-                        text-[var(--kravy-text-secondary)] font-black text-base flex items-center justify-center
-                        hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-500 transition-all"
-                    >
-                      +
-                    </button>
-                  </div>
-
-                  <span className="font-black text-[var(--kravy-text-primary)] text-sm min-w-[52px] text-right flex-shrink-0">
-                    ₹{(i.qty * i.rate).toFixed(2)}
+                {(customerName || customerPhone) && (
+                  <span className="text-[10px] font-bold text-[var(--kravy-brand)] bg-[var(--kravy-brand)]/10 px-2 py-0.5 rounded-md">
+                    {customerName || customerPhone}
                   </span>
-
-                  <button
-                    onClick={() => remove(i.id)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center
-                      text-[var(--kravy-text-muted)] hover:bg-rose-50 hover:text-rose-500 transition-all flex-shrink-0"
-                  >
-                    <X size={13} />
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Checkout Footer */}
-          <div className="border-t border-[var(--kravy-border)] px-4 md:px-5 py-2.5 bg-[var(--kravy-bg)]/30 space-y-2 flex-shrink-0">
-
-            {/* Totals - Compact */}
-            <div className="flex justify-between items-center border-b border-dashed border-[var(--kravy-border)] pb-2">
-              <div className="flex flex-col">
-                <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter">Subtotal: ₹{subtotal.toFixed(2)}</p>
-                {discountAmt > 0 && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tighter">- Discount: ₹{discountAmt.toFixed(2)}</p>}
-                {(taxActive || perProductEnabled) && <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter">Tax: ₹{gstAmount.toFixed(2)}</p>}
+                )}
               </div>
-              <div className="text-right">
-                <p className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest leading-none">Total Amount</p>
-                <p className="text-2xl font-black text-[var(--kravy-brand)]">₹{finalTotal.toFixed(2)}</p>
-              </div>
-            </div>
+              <ChevronDown
+                size={14}
+                className={`text-[var(--kravy-text-muted)] transition-transform duration-200 ${showCustomer ? "rotate-180" : ""}`}
+              />
+            </button>
 
-            {/* 🎟️ DISCOUNT SECTION */}
-            <div className="space-y-2">
-              <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
-                 <button 
-                  onClick={() => setDiscountMode('PROMO')}
-                  className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'PROMO' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
-                 >
-                   Promo Code
-                 </button>
-                 <button 
-                  onClick={() => setDiscountMode('INSTANT')}
-                  className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'INSTANT' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
-                 >
-                   Instant Discount
-                 </button>
-              </div>
-
-              {discountMode === 'PROMO' ? (
-                <div className="flex gap-2">
-                  <input 
-                    placeholder="PROMO CODE..."
-                    value={discountCode}
-                    onChange={e => setDiscountCode(e.target.value.toUpperCase())}
-                    disabled={!!appliedOffer}
-                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-[10px] font-black tracking-widest uppercase"
+            {showCustomer && (
+              <div className="px-4 md:px-5 py-3 space-y-3 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg)]/30 flex-shrink-0 relative focus-within:z-10">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Name</label>
+                  <input
+                    placeholder="Customer name"
+                    value={customerName}
+                    autoComplete="off"
+                    onChange={(e) => handleCustomerNameChange(e.target.value)}
+                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
+                      p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                      focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-medium"
                   />
-                  {appliedOffer ? (
-                    <button onClick={removeCoupon} className="bg-rose-500/10 text-rose-500 px-3 rounded-xl hover:bg-rose-500/20 transition-all font-black text-[10px] uppercase">Reset</button>
-                  ) : (
-                    <button onClick={handleApplyCoupon} className="bg-indigo-600 text-white px-3 rounded-xl hover:bg-indigo-700 transition-all font-black text-[10px] uppercase">Apply</button>
-                  )}
+                </div>
+                <div className="space-y-1 relative">
+                  <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Phone</label>
+                  <input
+                    placeholder="Phone number"
+                    value={customerPhone}
+                    autoComplete="off"
+                    onChange={(e) => handleCustomerPhoneChange(e.target.value)}
+                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
+                      p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                      focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-mono"
+                  />
+                </div>
+    
+                 {selectedParty && (
+                   <div className="bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-2xl flex items-center justify-between">
+                     <div>
+                       <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Active Balance</p>
+                       <p className="text-lg font-black text-indigo-600 mt-0.5">₹{selectedParty.walletBalance?.toFixed(2) || "0.00"}</p>
+                     </div>
+                     <button 
+                       onClick={() => {
+                         const amt = prompt("Enter amount to deposit (₹):");
+                         if (amt && !isNaN(Number(amt))) {
+                           handleDeposit(Number(amt));
+                         }
+                       }}
+                       className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:scale-105 active:scale-95 transition-all"
+                     >
+                       Add
+                     </button>
+                   </div>
+                 )}
+
+                {(business?.collectCustomerAddress || customerAddress) && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Address</label>
+                    <textarea
+                      placeholder="Enter customer address..."
+                      value={customerAddress}
+                      onChange={(e) => setCustomerAddress(e.target.value)}
+                      rows={2}
+                      className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
+                        p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                        focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-medium resize-none"
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Buyer GSTIN</label>
+                    <input
+                      placeholder="Customer GSTIN"
+                      value={buyerGSTIN}
+                      autoComplete="off"
+                      onChange={(e) => setBuyerGSTIN(e.target.value.toUpperCase())}
+                      className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
+                        p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                        focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] uppercase"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Place of Supply</label>
+                    <input
+                      placeholder="e.g. Haryana"
+                      value={placeOfSupply}
+                      autoComplete="off"
+                      onChange={(e) => setPlaceOfSupply(e.target.value)}
+                      className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
+                        p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                        focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)]"
+                    />
+                  </div>
+                </div>
+
+                {/* Suggestions Dropdown */}
+                {customerSuggestions.length > 0 && (
+                  <div 
+                    ref={suggestionsRef}
+                    className="absolute left-4 right-4 bg-[var(--kravy-surface)] border border-[var(--kravy-border-strong)] rounded-2xl shadow-2xl z-50 mt-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
+                  >
+                    <div className="p-2 border-b border-[var(--kravy-border)] bg-indigo-50/30">
+                      <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Matching Customers</p>
+                    </div>
+                    {customerSuggestions.map((p, idx) => (
+                      <button
+                        key={p.id || idx}
+                        onClick={() => selectCustomer(p)}
+                        className="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-[var(--kravy-border)] last:border-0 transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="font-black text-sm text-[var(--kravy-text-primary)]">{p.name}</p>
+                          <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-0.5">{p.phone}</p>
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                          <User size={14} />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Cart Items List */}
+            <div className="flex-1 px-4 md:px-5 py-3 space-y-2">
+              {items.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center py-8 opacity-40">
+                  <div className="text-4xl mb-3">🛒</div>
+                  <p className="font-bold text-[var(--kravy-text-primary)] text-sm">Cart is empty</p>
+                  <p className="text-xs text-[var(--kravy-text-muted)] mt-1">Tap any menu item to add</p>
                 </div>
               ) : (
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <input 
-                      type="number"
-                      placeholder={`ENTER ${customDiscountType === 'PERCENT' ? '%' : 'AMOUNT'}...`}
-                      value={customDiscountValue}
-                      onChange={e => setCustomDiscountValue(e.target.value)}
-                      className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] pl-8 pr-3 py-1.5 w-full rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-[10px] font-black tracking-widest uppercase"
-                    />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-50">
-                      {customDiscountType === 'PERCENT' ? '%' : '₹'}
+                items.map((i) => (
+                  <div
+                    key={i.id}
+                    className="flex items-center gap-3 py-2.5 px-3 rounded-xl
+                      bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
+                      hover:border-[var(--kravy-border)]/80 transition-all group shrink-0"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-[var(--kravy-text-primary)] truncate text-sm">{i.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs font-black text-emerald-600">
+                          {i.qty} × ₹{i.rate.toFixed(2)}
+                        </p>
+                        {perProductEnabled && (i.gst === undefined || i.gst === null) && (
+                          <span className="text-[8px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter border border-amber-200/50 shadow-sm animate-pulse-slow">
+                            Profile Default GST Applied ({globalRate}%)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Qty Controls */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => dec(i.id)}
+                        className="w-7 h-7 rounded-lg border border-[var(--kravy-border)] bg-[var(--kravy-surface)]
+                          text-[var(--kravy-text-secondary)] font-black text-base flex items-center justify-center
+                          hover:bg-rose-50 hover:border-rose-200 hover:text-rose-500 transition-all"
+                      >
+                        −
+                      </button>
+                      <span className="w-6 text-center font-black text-sm text-[var(--kravy-text-primary)]">{i.qty}</span>
+                      <button
+                        onClick={() => inc(i.id)}
+                        className="w-7 h-7 rounded-lg border border-[var(--kravy-border)] bg-[var(--kravy-surface)]
+                          text-[var(--kravy-text-secondary)] font-black text-base flex items-center justify-center
+                          hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-500 transition-all"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <span className="font-black text-[var(--kravy-text-primary)] text-sm min-w-[52px] text-right flex-shrink-0">
+                      ₹{(i.qty * i.rate).toFixed(2)}
                     </span>
-                  </div>
-                  <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
-                    <button 
-                      onClick={() => setCustomDiscountType('FLAT')}
-                      className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${customDiscountType === 'FLAT' ? 'bg-indigo-500 text-white' : 'text-[var(--kravy-text-muted)]'}`}
+
+                    <button
+                      onClick={() => remove(i.id)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center
+                        text-[var(--kravy-text-muted)] hover:bg-rose-50 hover:text-rose-500 transition-all flex-shrink-0"
                     >
-                      ₹
-                    </button>
-                    <button 
-                      onClick={() => setCustomDiscountType('PERCENT')}
-                      className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${customDiscountType === 'PERCENT' ? 'bg-indigo-500 text-white' : 'text-[var(--kravy-text-muted)]'}`}
-                    >
-                      %
+                      <X size={13} />
                     </button>
                   </div>
-                  {(customDiscountValue || appliedOffer) && (
-                    <button 
-                      onClick={() => { setCustomDiscountValue(""); setAppliedOffer(null); setDiscountCode(""); }}
-                      className="bg-rose-500/10 text-rose-500 px-3 rounded-xl hover:bg-rose-500/20 transition-all font-black text-[10px] uppercase"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
+                ))
               )}
             </div>
+          </div>
 
-            {appliedOffer && (
-              <div className="bg-emerald-500/5 text-emerald-600 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-between border border-emerald-500/20 animate-in zoom-in-95 duration-200">
-                <span>✨ Offer {appliedOffer.code} Applied</span>
-                <span>- ₹{discountAmt.toFixed(2)}</span>
+          {/* Checkout Footer (Pinned at Bottom) */}
+          <div className="border-t border-[var(--kravy-border)] px-4 md:px-5 py-2.5 bg-[var(--kravy-surface)] space-y-2.5 shrink-0 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
+
+            {/* Totals - Dynamic Height */}
+            <div className="flex justify-between items-center border-b border-dashed border-[var(--kravy-border)] pb-2 gap-4">
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 flex-1">
+                <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter leading-none">Sub: ₹{subtotal.toFixed(2)}</p>
+                {discountAmt > 0 && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tighter leading-none">Disc: -₹{discountAmt.toFixed(2)}</p>}
+                {(taxActive || perProductEnabled) && <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter leading-none">Tax: ₹{gstAmount.toFixed(2)}</p>}
               </div>
-            )}
-
-            {/* Payment Method - More Compact */}
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest shrink-0">
-                Payment
-              </p>
-              <div className="flex-1 grid grid-cols-5 gap-1">
-                {(["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
-                    className={`py-2 rounded-xl border font-black text-[10px] transition-all flex flex-col items-center justify-center gap-1 ${paymentMode === mode
-                      ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md scale-105"
-                      : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)] opacity-80"
-                      }`}
-                  >
-                    <span className="text-[12px]">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
-                    <span className="truncate w-full px-0.5 text-center">{mode === "Pay on Counter" ? "Counter" : mode}</span>
-                  </button>
-                ))}
+              <div className="text-right shrink-0">
+                <p className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest leading-none mb-0.5">PAYABLE</p>
+                <p className="text-2xl font-black text-[var(--kravy-brand)] leading-none">₹{finalTotal.toFixed(2)}</p>
               </div>
             </div>
 
-            {/* UPI Details */}
+            {/* 🎟️ DISCOUNT SECTION (Optional / Toggleable if space allows, but here compact) */}
+            <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
+               <button 
+                onClick={() => setDiscountMode('PROMO')}
+                className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'PROMO' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+               >
+                 Promo
+               </button>
+               <button 
+                onClick={() => setDiscountMode('INSTANT')}
+                className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'INSTANT' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+               >
+                 Discount
+               </button>
+            </div>
+            
+            <div className="flex gap-2">
+               {discountMode === 'PROMO' ? (
+                 <input 
+                   placeholder="PROMO CODE..."
+                   value={discountCode}
+                   onChange={e => setDiscountCode(e.target.value.toUpperCase())}
+                   disabled={!!appliedOffer}
+                   className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-xl outline-none text-[10px] font-black tracking-widest uppercase"
+                 />
+               ) : (
+                 <input 
+                   type="number"
+                   placeholder={`ENTER ${customDiscountType === 'PERCENT' ? '%' : 'AMT'}...`}
+                   value={customDiscountValue}
+                   onChange={e => setCustomDiscountValue(e.target.value)}
+                   className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-xl outline-none text-[10px] font-black"
+                 />
+               )}
+               {discountMode === 'PROMO' ? (
+                 <button onClick={appliedOffer ? removeCoupon : handleApplyCoupon} className={`px-3 rounded-xl font-black text-[10px] uppercase transition-all ${appliedOffer ? "bg-rose-500/10 text-rose-500" : "bg-indigo-600 text-white"}`}>
+                   {appliedOffer ? "Clear" : "Apply"}
+                 </button>
+               ) : (customDiscountValue || appliedOffer) && (
+                 <button onClick={() => { setCustomDiscountValue(""); setAppliedOffer(null); setDiscountCode(""); }} className="bg-rose-500/10 text-rose-500 px-3 rounded-xl font-black text-[10px] uppercase">✕</button>
+               )}
+            </div>
+
+            {/* Payment Method - Compact Rows */}
+            <div className="grid grid-cols-5 gap-1.5">
+              {(["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
+                  className={`py-2 rounded-xl border font-black text-[9px] transition-all flex flex-col items-center justify-center gap-1 ${paymentMode === mode
+                    ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md scale-105"
+                    : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)]"
+                    }`}
+                >
+                  <span className="text-[14px] leading-none mb-0.5">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
+                  <span className="truncate w-full px-0.5 text-center">{mode === "Pay on Counter" ? "Counter" : mode}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* UPI Details - Conditional & Compact */}
             {paymentMode === "UPI" && (
-              <div className="space-y-3 p-3.5 rounded-2xl bg-[var(--kravy-brand)]/5 border border-[var(--kravy-brand)]/15">
-                <a href={upiLink} className="block text-center text-[var(--kravy-brand)] font-black text-sm p-4 border border-dashed border-[var(--kravy-brand)]/30 rounded-xl bg-white hover:bg-emerald-50 transition-all">
-                  📱 Open UPI App →
-                </a>
+              <div className="space-y-2 p-2.5 rounded-2xl bg-[var(--kravy-brand)]/5 border border-[var(--kravy-brand)]/10">
+                <div className="grid grid-cols-2 gap-2">
+                  <a href={upiLink} className="text-center text-[var(--kravy-brand)] font-black text-[10px] py-2 border border-dashed border-[var(--kravy-brand)]/30 rounded-xl bg-white flex items-center justify-center gap-2">
+                    📱 UPI App
+                  </a>
+                  <div className="grid grid-cols-2 gap-1">
+                    {(["Pending", "Paid"] as const).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setPaymentStatus(s)}
+                        className={`py-2 rounded-xl border font-black text-[9px] transition-all ${paymentStatus === s
+                          ? s === "Paid" ? "bg-emerald-500 border-emerald-500 text-white" : "bg-amber-500 border-amber-500 text-white"
+                          : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)]"
+                          }`}
+                      >
+                        {s === "Pending" ? "🕒" : "✅"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <input
-                  placeholder="Transaction Reference No."
+                  placeholder="Txn Ref No."
                   value={upiTxnRef}
                   onChange={(e) => setUpiTxnRef(e.target.value)}
-                  className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
-                    p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
-                    focus:border-[var(--kravy-brand)] transition-all font-mono"
+                  className="bg-white border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-2 w-full rounded-xl text-[11px] outline-none focus:ring-1 focus:ring-[var(--kravy-brand)] font-mono"
                 />
-                <div className="grid grid-cols-2 gap-2">
-                  {(["Pending", "Paid"] as const).map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setPaymentStatus(s)}
-                      className={`py-2 rounded-xl border font-black text-xs transition-all ${paymentStatus === s
-                        ? s === "Paid"
-                          ? "bg-emerald-500 border-emerald-500 text-white"
-                          : "bg-amber-500 border-amber-500 text-white"
-                        : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)]"
-                        }`}
-                    >
-                      {s === "Pending" ? "🕒 Pending" : "✅ Received"}
-                    </button>
-                  ))}
-                </div>
               </div>
             )}
 
-            {/* Combined Action Grid - 2x2 or 4-cols */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {/* Primary Action Buttons */}
+            <div className="grid grid-cols-4 gap-2">
               <button
                 onClick={async () => {
                   const bill = await saveBill(true);
@@ -1707,9 +1667,10 @@ export default function CheckoutClient() {
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
                 disabled={items.length === 0}
-                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-amber-500/40 text-amber-500 font-black text-[10px] hover:bg-amber-500/10 disabled:opacity-40 transition-all uppercase"
+                className="flex flex-col items-center justify-center py-2 rounded-xl border border-amber-500/30 text-amber-500 bg-amber-500/5 hover:bg-amber-500/10 disabled:opacity-40 transition-all"
               >
-                <PauseCircle size={14} /> Hold
+                <PauseCircle size={14} className="mb-0.5" strokeWidth={3} />
+                <span className="text-[8px] font-black uppercase">Hold</span>
               </button>
 
               <button
@@ -1722,55 +1683,50 @@ export default function CheckoutClient() {
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
                 disabled={items.length === 0}
-                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-[var(--kravy-border)] bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-[10px] hover:bg-[var(--kravy-surface-hover)] disabled:opacity-40 transition-all uppercase"
+                className="flex flex-col items-center justify-center py-2 rounded-xl border border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] bg-[var(--kravy-bg)] hover:bg-[var(--kravy-surface-hover)] disabled:opacity-40 transition-all font-black"
               >
-                <Save size={14} /> Save
+                <Save size={14} className="mb-0.5" strokeWidth={3} />
+                <span className="text-[8px] uppercase">Save</span>
               </button>
 
               <button
                 onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
                 disabled={items.length === 0}
-                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-indigo-500/30 text-indigo-500 font-black text-[10px] bg-indigo-500/5 hover:bg-indigo-500/10 disabled:opacity-40 transition-all uppercase"
+                className="flex flex-col items-center justify-center py-2 rounded-xl border border-indigo-500/20 text-indigo-500 bg-indigo-500/5 hover:bg-indigo-500/10 disabled:opacity-40 transition-all font-black"
               >
-                <Eye size={14} /> Preview
+                <Eye size={14} className="mb-0.5" strokeWidth={3} />
+                <span className="text-[8px] uppercase">Preview</span>
               </button>
 
               <button
                 onClick={() => { kravy.ping(); printKOT(); }}
                 disabled={items.length === 0}
-                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-orange-500/40 text-orange-500 font-black text-[10px] bg-orange-500/5 hover:bg-orange-500/10 disabled:opacity-40 transition-all uppercase"
+                className="flex flex-col items-center justify-center py-2 rounded-xl border border-orange-500/20 text-orange-500 bg-orange-500/5 hover:bg-orange-500/10 disabled:opacity-40 transition-all font-black"
               >
-                <Printer size={14} /> KOT
+                <Printer size={14} className="mb-0.5" strokeWidth={3} />
+                <span className="text-[8px] uppercase">KOT</span>
               </button>
             </div>
 
-            <div className="mt-1">
-              {/* Print */}
-              <button
-                onClick={async () => {
-                  if (!business) { alert("Business profile not loaded yet"); return; }
-                  const bill = await saveBill();
-                  if (!bill) return;
-                  kravy.payment(); 
-                  printReceipt(business?.enableKOTWithBill);
-                  resetForm();
-                  if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                }}
-                disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
-                  bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm
-                  shadow-md hover:shadow-lg active:scale-95 transition-all
-                  disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Printer size={18} /> {business?.enableKOTWithBill ? "KOT & Bill" : "Print Full Bill"}
-              </button>
-            </div>
-
-            {business?.businessTagLine && (
-              <p className="text-[10px] text-center text-[var(--kravy-text-muted)] italic font-medium">
-                {business.businessTagLine}
-              </p>
-            )}
+            {/* Print & Finalize - Main CTA */}
+            <button
+              onClick={async () => {
+                if (!business) { alert("Business profile not loaded yet"); return; }
+                const bill = await saveBill();
+                if (!bill) return;
+                kravy.payment(); 
+                printReceipt(business?.enableKOTWithBill);
+                resetForm();
+                if (resumeBillId) router.replace("/dashboard/billing/checkout");
+              }}
+              disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl
+                bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm
+                shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 active:scale-[0.98] transition-all
+                disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-widest"
+            >
+              <Printer size={18} strokeWidth={3} /> {business?.enableKOTWithBill ? "KOT & Print Bill" : "Print Bill / Receipt"}
+            </button>
           </div>
         </div>
 
