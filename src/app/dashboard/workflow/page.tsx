@@ -91,81 +91,100 @@ export default function KravyPOS() {
     const [printOrder, setPrintOrder] = useState<Order | null>(null);
     const [printTable, setPrintTable] = useState<TableStatus | null>(null);
 
-    const handlePrint = (type: "KOT" | "BILL", customOrder?: Order, customTable?: TableStatus) => {
-        // Update state if provided, but use them directly for this print job
-        if (customOrder) setPrintOrder(customOrder);
-        if (customTable) setPrintTable(customTable);
+    const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL", customOrder?: Order, customTable?: TableStatus) => {
+        kravy.click();
+        
+        let targetOrder = customOrder || printOrder || activeOrderForSelected;
+        let targetTable = customTable || printTable || selectedTable;
 
-        // Use preview ref if open, otherwise use the corresponding hidden ref
-        const targetRef = (showPreview && previewMode === type) 
-            ? receiptRef.current 
-            : (type === "BILL" ? billReceiptRef.current : kotReceiptRef.current);
-            
-        if (!targetRef) return;
-        
-        const printContainer = document.createElement("div");
-        printContainer.id = "print-receipt-container";
-        
-        const printStyles = `
-            @media print {
-                @page { size: 58mm auto; margin: 0; }
-                body * { visibility: hidden !important; }
-                #print-receipt-container, #print-receipt-container * {
-                    visibility: visible !important;
-                    font-family: 'Courier New', Courier, monospace !important;
+        if (type === "COMBINED_BILL" && targetOrder) {
+            try {
+                const res = await fetch(`/api/public/orders/${targetOrder.id}/combined-bill`);
+                const data = await res.json();
+                if (data.success) {
+                    // Merge items for display/print
+                    const mergedItems = data.orders.flatMap((o: any) => o.items);
+                    targetOrder = {
+                        ...targetOrder,
+                        id: `Combined #${targetOrder.id.slice(-4).toUpperCase()}`,
+                        items: mergedItems,
+                        total: data.grandTotal
+                    } as any;
+                    setPrintOrder(targetOrder);
+                } else {
+                    alert("Combined bill failed: " + data.error);
+                    return;
                 }
-                #print-receipt-container {
-                    display: block !important;
-                    width: 58mm !important;
-                    position: absolute !important;
-                    top: 0 !important;
-                    left: 0 !important;
-                    padding: 0 !important;
-                    margin: 0 !important;
-                    background: white !important;
-                    color: black !important;
-                }
-                /* Ensure background and colors are preserved */
-                * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            } catch (err) {
+                console.error("Combined bill fetch error:", err);
+                return;
             }
-        `;
-        
-        const styleSheet = document.createElement("style");
-        styleSheet.textContent = printStyles;
-        document.head.appendChild(styleSheet);
-        
-        // If we have custom order/table, we might want to ensure the ref content is updated.
-        // But since we are using refs that depend on state, it's tricky.
-        // A better way is to use a timeout or wait for re-render, but for now, 
-        // the state-based refs will update on next tick.
-        // However, if we are in the Preview modal, it's already using the correct order.
-        
-        printContainer.innerHTML = targetRef.innerHTML;
-        document.body.appendChild(printContainer);
-        kravy.print();
-        window.print();
-
-        // Track printing in the DB
-        const targetOrder = customOrder || printOrder || activeOrderForSelected;
-        if (targetOrder) {
-            const body: any = { orderId: targetOrder.id };
-            if (type === "KOT") body.isKotPrinted = true;
-            if (type === "BILL") body.isBillPrinted = true;
-
-            fetch("/api/orders", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body)
-            }).then(() => fetchData());
+        } else {
+            if (customOrder) setPrintOrder(customOrder);
+            if (customTable) setPrintTable(customTable);
         }
-        
+
+        // Wait a bit for state to update and re-render the hidden printer refs
         setTimeout(() => {
+            const isBill = type === "BILL" || type === "COMBINED_BILL";
+            const targetRef = (showPreview && previewMode === (isBill ? "BILL" : "KOT")) 
+                ? receiptRef.current 
+                : (isBill ? billReceiptRef.current : kotReceiptRef.current);
+            
+            if (!targetRef) return;
+            
+            const printStyles = `
+                @media print {
+                    @page { size: 58mm auto; margin: 0; }
+                    body * { visibility: hidden !important; }
+                    #print-receipt-container, #print-receipt-container * {
+                        visibility: visible !important;
+                        font-family: 'Courier New', Courier, monospace !important;
+                    }
+                    #print-receipt-container {
+                        display: block !important;
+                        width: 58mm !important;
+                        position: absolute !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        background: white !important;
+                        color: black !important;
+                    }
+                    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                }
+            `;
+            
+            const styleSheet = document.createElement("style");
+            styleSheet.textContent = printStyles;
+            document.head.appendChild(styleSheet);
+            
+            const printContainer = document.createElement("div");
+            printContainer.id = "print-receipt-container";
+            printContainer.innerHTML = targetRef.innerHTML;
+            document.body.appendChild(printContainer);
+            
+            kravy.print();
+            window.print();
+
+            // Cleanup
             document.head.removeChild(styleSheet);
             document.body.removeChild(printContainer);
-            // Clear specific print state if it was set
-            setPrintOrder(null);
-            setPrintTable(null);
-        }, 1000);
+
+            // Track printing in the DB
+            if (targetOrder) {
+                const body: any = { orderId: (targetOrder as any).id.includes("Combined") ? customOrder?.id || printOrder?.id : targetOrder.id };
+                if (type === "KOT") body.isKotPrinted = true;
+                if (isBill) body.isBillPrinted = true;
+
+                fetch("/api/orders", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                }).then(() => fetchData());
+            }
+        }, 300);
     };
 
     const fetchData = async () => {
@@ -582,6 +601,17 @@ export default function KravyPOS() {
                                                                 <CreditCard size={12} /> Bill
                                                             </button>
                                                         </div>
+                                                        
+                                                        {/* COMBINED BILL ACTION */}
+                                                        <button 
+                                                            onClick={() => {
+                                                                const tbl = tablesList.find(t => t.id === order.table?.id);
+                                                                handlePrint("COMBINED_BILL", order, tbl || undefined);
+                                                            }}
+                                                            className="flex items-center justify-center gap-1.5 w-full h-10 rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 text-[10px] font-black uppercase text-indigo-600 hover:bg-indigo-100 transition-all shadow-sm italic"
+                                                        >
+                                                            <Layers size={14} /> Combined Bill (All Orders)
+                                                        </button>
 
                                                         <div className="pt-2 border-t border-slate-100 space-y-1">
                                                             <div className="flex items-center justify-between">
@@ -1201,28 +1231,39 @@ export default function KravyPOS() {
                                                                 </div>
                                                             ))}
                                                         </div>
-                                                        <div className="flex gap-2 mb-2">
+                                                        <div className="flex flex-col gap-2 mb-2">
+                                                            <div className="flex gap-2">
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        const tbl = tablesList.find(t => t.id === o.table?.id);
+                                                                        setPrintOrder(o);
+                                                                        setPrintTable(tbl || null);
+                                                                        setTimeout(() => handlePrint("KOT", o, tbl || undefined), 100);
+                                                                    }}
+                                                                    className="flex-1 h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all"
+                                                                >
+                                                                    <Printer size={14} /> KOT
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        const tbl = tablesList.find(t => t.id === o.table?.id);
+                                                                        setPrintOrder(o);
+                                                                        setPrintTable(tbl || null);
+                                                                        setTimeout(() => handlePrint("BILL", o, tbl || undefined), 100);
+                                                                    }}
+                                                                    className="flex-1 h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all"
+                                                                >
+                                                                    <CreditCard size={14} /> BILL
+                                                                </button>
+                                                            </div>
                                                             <button 
                                                                 onClick={() => {
                                                                     const tbl = tablesList.find(t => t.id === o.table?.id);
-                                                                    setPrintOrder(o);
-                                                                    setPrintTable(tbl || null);
-                                                                    setTimeout(() => handlePrint("KOT", o, tbl || undefined), 100);
+                                                                    handlePrint("COMBINED_BILL", o, tbl || undefined);
                                                                 }}
-                                                                className="flex-1 h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all"
+                                                                className="w-full h-10 rounded-xl border-2 border-dashed border-indigo-200 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-900/10 text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1.5 hover:bg-indigo-50 transition-all"
                                                             >
-                                                                <Printer size={14} /> KOT
-                                                            </button>
-                                                            <button 
-                                                                onClick={() => {
-                                                                    const tbl = tablesList.find(t => t.id === o.table?.id);
-                                                                    setPrintOrder(o);
-                                                                    setPrintTable(tbl || null);
-                                                                    setTimeout(() => handlePrint("BILL", o, tbl || undefined), 100);
-                                                                }}
-                                                                className="flex-1 h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all"
-                                                            >
-                                                                <CreditCard size={14} /> BILL
+                                                                <Layers size={14} /> Combined Bill (All Items)
                                                             </button>
                                                         </div>
                                                         <button
