@@ -308,16 +308,16 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
             <div className="osc-top">
               <div className="osc-icon received">⏳</div>
               <div className="osc-info">
-                <div className="osc-order-id">{mockOrderData.orderId} · Table {mockOrderData.tableId}</div>
+                <div className="osc-order-id">{activeOrderData.orderId} · Table {activeOrderData.tableId}</div>
                 <div className="osc-status">Order Received</div>
-                <div className="osc-time">Placed {mockOrderData.createdAt} · Kitchen confirming...</div>
+                <div className="osc-time">Placed {activeOrderData.createdAt} · Kitchen confirming...</div>
               </div>
               <span className={`osc-badge ${getStatusBadgeClass("received")}`}>Confirming</span>
             </div>
 
             <div className="order-items-mini">
               <div className="oim-title">Current Order Items</div>
-              {mockOrderData.items.map((item, idx) => (
+              {activeOrderData.items.map((item, idx) => (
                 <div key={idx} className="oim-item">
                   <div className="oim-dot nv"></div>
                   <span className="oim-name">{item.name}</span>
@@ -416,7 +416,7 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
 
             <div className="order-items-mini">
               <div className="oim-title">Order #1 — Ban Raha Hai</div>
-              {mockOrderData.items.map((item, idx) => (
+              {activeOrderData.items.map((item, idx) => (
                 <div key={idx} className="oim-item">
                   <div className="oim-dot nv"></div>
                   <span className="oim-name">{item.name}</span>
@@ -522,7 +522,7 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
 
             <div className="order-items-mini">
               <div className="oim-title">Order #1 — Served ✓</div>
-              {mockOrderData.items.map((item, idx) => (
+              {activeOrderData.items.map((item, idx) => (
                 <div key={idx} className="oim-item">
                   <div className="oim-dot nv"></div>
                   <span className="oim-name">{item.name}</span>
@@ -608,7 +608,7 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
               <>
                 <div className="kw-table-header">
                   <div>
-                    <div className="kwth-table">Table {sessionData.table?.name || mockOrderData.tableId}</div>
+                    <div className="kwth-table">Table {sessionData.table?.name || activeOrderData.tableId}</div>
                     <div className="kwth-session">Session Order Tracking</div>
                   </div>
                   <div className="kwth-total">
