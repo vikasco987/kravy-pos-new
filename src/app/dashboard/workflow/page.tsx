@@ -91,7 +91,11 @@ export default function KravyPOS() {
     const [printOrder, setPrintOrder] = useState<Order | null>(null);
     const [printTable, setPrintTable] = useState<TableStatus | null>(null);
 
-    const handlePrint = (type: "KOT" | "BILL") => {
+    const handlePrint = (type: "KOT" | "BILL", customOrder?: Order, customTable?: TableStatus) => {
+        // Update state if provided, but use them directly for this print job
+        if (customOrder) setPrintOrder(customOrder);
+        if (customTable) setPrintTable(customTable);
+
         // Use preview ref if open, otherwise use the corresponding hidden ref
         const targetRef = (showPreview && previewMode === type) 
             ? receiptRef.current 
@@ -130,13 +134,19 @@ export default function KravyPOS() {
         styleSheet.textContent = printStyles;
         document.head.appendChild(styleSheet);
         
+        // If we have custom order/table, we might want to ensure the ref content is updated.
+        // But since we are using refs that depend on state, it's tricky.
+        // A better way is to use a timeout or wait for re-render, but for now, 
+        // the state-based refs will update on next tick.
+        // However, if we are in the Preview modal, it's already using the correct order.
+        
         printContainer.innerHTML = targetRef.innerHTML;
         document.body.appendChild(printContainer);
         kravy.print();
         window.print();
 
         // Track printing in the DB
-        const targetOrder = printOrder || activeOrderForSelected;
+        const targetOrder = customOrder || printOrder || activeOrderForSelected;
         if (targetOrder) {
             const body: any = { orderId: targetOrder.id };
             if (type === "KOT") body.isKotPrinted = true;
@@ -543,21 +553,33 @@ export default function KravyPOS() {
                                                                     setPreviewMode("KOT");
                                                                     setShowPreview(true);
                                                                 }}
-                                                                className="flex-1 h-8 rounded border border-blue-600 bg-white text-[10px] font-black uppercase text-blue-600 flex items-center justify-center gap-1.5 hover:bg-blue-50 transition-all"
+                                                                className="flex-1 h-8 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-1.5"
+                                                                title="Preview KOT"
                                                             >
-                                                                <Printer size={12} /> KOT
+                                                                <Eye size={12} />
                                                             </button>
                                                             <button 
                                                                 onClick={() => {
                                                                     const tbl = tablesList.find(t => t.id === order.table?.id);
                                                                     setPrintOrder(order);
                                                                     setPrintTable(tbl || null);
-                                                                    setPreviewMode("BILL");
-                                                                    setShowPreview(true);
+                                                                    // Short delay to ensure refs are updated with the selected order
+                                                                    setTimeout(() => handlePrint("KOT", order, tbl || undefined), 100);
                                                                 }}
-                                                                className="flex-1 h-8 rounded border border-blue-600 bg-white text-[10px] font-black uppercase text-blue-600 flex items-center justify-center gap-1.5 hover:bg-blue-50 transition-all"
+                                                                className="flex-[3] h-8 rounded border border-blue-600 bg-white text-[10px] font-black uppercase text-blue-600 flex items-center justify-center gap-1.5 hover:bg-blue-50 transition-all font-mono"
                                                             >
-                                                                <CreditCard size={12} /> ORDER
+                                                                <Printer size={12} /> KOT Token
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const tbl = tablesList.find(t => t.id === order.table?.id);
+                                                                    setPrintOrder(order);
+                                                                    setPrintTable(tbl || null);
+                                                                    setTimeout(() => handlePrint("BILL", order, tbl || undefined), 100);
+                                                                }}
+                                                                className="flex-[2] h-8 rounded border border-emerald-600 bg-white text-[10px] font-black uppercase text-emerald-600 flex items-center justify-center gap-1.5 hover:bg-emerald-50 transition-all font-mono"
+                                                            >
+                                                                <CreditCard size={12} /> Bill
                                                             </button>
                                                         </div>
 
@@ -1027,10 +1049,30 @@ export default function KravyPOS() {
                                                     <Eye size={15} />
                                                 </button>
                                                 <button
-                                                    onClick={() => handlePrint("KOT")}
+                                                    onClick={() => {
+                                                        const tbl = tablesList.find(t => t.id === activeOrderForSelected?.table?.id);
+                                                        if (activeOrderForSelected) {
+                                                            setPrintOrder(activeOrderForSelected);
+                                                            setPrintTable(tbl || null);
+                                                            setTimeout(() => handlePrint("KOT", activeOrderForSelected, tbl || undefined), 100);
+                                                        }
+                                                    }}
                                                     className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 text-xs font-black uppercase bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white transition-all shadow-sm"
                                                 >
-                                                    <Printer size={15} /> KOT Token
+                                                    <Printer size={15} /> KOT
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        const tbl = tablesList.find(t => t.id === activeOrderForSelected?.table?.id);
+                                                        if (activeOrderForSelected) {
+                                                            setPrintOrder(activeOrderForSelected);
+                                                            setPrintTable(tbl || null);
+                                                            setTimeout(() => handlePrint("BILL", activeOrderForSelected, tbl || undefined), 100);
+                                                        }
+                                                    }}
+                                                    className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 text-xs font-black uppercase bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white transition-all shadow-sm"
+                                                >
+                                                    <CreditCard size={15} /> Bill
                                                 </button>
                                                 <button
                                                     disabled={!activeOrderForSelected}
@@ -1150,6 +1192,30 @@ export default function KravyPOS() {
                                                                     <span className="text-[11px] font-black italic text-slate-400 dark:text-slate-500">×{it.quantity}</span>
                                                                 </div>
                                                             ))}
+                                                        </div>
+                                                        <div className="flex gap-2 mb-2">
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const tbl = tablesList.find(t => t.id === o.table?.id);
+                                                                    setPrintOrder(o);
+                                                                    setPrintTable(tbl || null);
+                                                                    setTimeout(() => handlePrint("KOT", o, tbl || undefined), 100);
+                                                                }}
+                                                                className="flex-1 h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all"
+                                                            >
+                                                                <Printer size={14} /> KOT
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const tbl = tablesList.find(t => t.id === o.table?.id);
+                                                                    setPrintOrder(o);
+                                                                    setPrintTable(tbl || null);
+                                                                    setTimeout(() => handlePrint("BILL", o, tbl || undefined), 100);
+                                                                }}
+                                                                className="flex-1 h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all"
+                                                            >
+                                                                <CreditCard size={14} /> BILL
+                                                            </button>
                                                         </div>
                                                         <button
                                                             onClick={() => updateOrderStatus(o.id, col.next)}
@@ -1460,7 +1526,31 @@ export default function KravyPOS() {
                                                                 {o.status}
                                                             </span>
                                                         </td>
-                                                        <td className="px-6 py-4 text-right">
+                                                        <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const tbl = tablesList.find(t => t.id === o.table?.id);
+                                                                    setPrintOrder(o);
+                                                                    setPrintTable(tbl || null);
+                                                                    setTimeout(() => handlePrint("KOT", o, tbl || undefined), 100);
+                                                                }}
+                                                                className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-sm"
+                                                                title="Print KOT"
+                                                            >
+                                                                <Printer size={13} />
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const tbl = tablesList.find(t => t.id === o.table?.id);
+                                                                    setPrintOrder(o);
+                                                                    setPrintTable(tbl || null);
+                                                                    setTimeout(() => handlePrint("BILL", o, tbl || undefined), 100);
+                                                                }}
+                                                                className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-sm"
+                                                                title="Print Bill"
+                                                            >
+                                                                <CreditCard size={13} />
+                                                            </button>
                                                             <button 
                                                                 onClick={() => { kravy.click(); setActiveTab("dashboard"); setSelectedTableId(o.table?.id || null); }}
                                                                 className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-sm"
@@ -1627,7 +1717,8 @@ export default function KravyPOS() {
         paymentMethod: string,
         qrCodeUrl: string
     ) {
-        if (!activeOrder || !table) return null;
+        if (!activeOrder) return null;
+        const displayTable = table || { name: activeOrder.table?.name || "Counter", id: "0" };
 
         if (mode === "BILL") {
             return (
@@ -1649,7 +1740,7 @@ export default function KravyPOS() {
                     </div>
 
                     <div className="flex justify-between font-bold text-[8px] border-b border-dashed border-gray-400 pb-1 mb-1">
-                        <span>TABLE: {table?.name}</span>
+                        <span>TABLE: {displayTable.name}</span>
                         <span>{activeOrder ? `#${activeOrder.id.slice(-4).toUpperCase()}` : ''}</span>
                     </div>
 
@@ -1720,7 +1811,7 @@ export default function KravyPOS() {
                     <div className="text-center pb-1 mb-2 border-b border-dashed border-gray-400">
                         <h2 className="text-[11px] font-black uppercase">KITCHEN TOKEN</h2>
                         <div className="my-1 py-1 border-y border-black">
-                            <p className="text-[15px] font-black">TABLE: {table?.name}</p>
+                            <p className="text-[15px] font-black">TABLE: {displayTable.name}</p>
                         </div>
                         <p className="text-[9px] font-bold">ID: {activeOrder ? `#${activeOrder.id.slice(-6).toUpperCase()}` : ''}</p>
                         <p className="text-[10px] font-black italic tracking-widest">{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>

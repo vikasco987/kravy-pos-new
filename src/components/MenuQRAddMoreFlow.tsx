@@ -64,24 +64,24 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
   const [sessionData, setSessionData] = useState<any>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(false);
 
-  // Default mock data (replace with props data in production)
-  const mockOrderData: CaseData = orderData || {
+  // Memoize order data to stabilize dependencies
+  const activeOrderData = React.useMemo(() => orderData || {
     orderId: "#MH2X9K",
     tableId: "T-04",
-    status: "received",
+    status: "received" as OrderStatus,
     items: [
       { name: "Butter Chicken", qty: 1, price: 380 },
       { name: "Garlic Naan", qty: 2, price: 160 },
     ],
     createdAt: "2 min ago",
     currentTotal: 540,
-  };
+  }, [orderData]);
 
   const fetchSessionData = useCallback(async () => {
-    const orderId = mockOrderData.orderId.replace("#", "");
+    const id = activeOrderData.orderId.replace("#", "");
     setIsLoadingSession(true);
     try {
-      const res = await fetch(`/api/public/orders/${orderId}/combined-bill`);
+      const res = await fetch(`/api/public/orders/${id}/combined-bill`);
       if (res.ok) {
         const data = await res.json();
         setSessionData(data);
@@ -91,7 +91,7 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
     } finally {
       setIsLoadingSession(false);
     }
-  }, [mockOrderData.orderId]);
+  }, [activeOrderData.orderId]);
 
   // Fetch full menu on mount if clerkUserId is available
   React.useEffect(() => {
@@ -100,7 +100,7 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
       fetch(`/api/public/menu?clerkId=${clerkUserId}`)
         .then(res => res.json())
         .then(data => {
-          setMenuItems(data);
+          if (Array.isArray(data)) setMenuItems(data);
         })
         .catch(err => {
           console.error("Failed to fetch menu:", err);
@@ -121,48 +121,53 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
   React.useEffect(() => {
     if (caseType === "separate") setCurrentFlow("case2");
     else if (caseType === "round2") setCurrentFlow("case3");
-    else if (orderData?.status) {
-      const s = orderData.status.toUpperCase();
+    else if (activeOrderData?.status) {
+      const s = activeOrderData.status.toUpperCase();
       if (["PENDING", "ACCEPTING", "RECEIVED"].includes(s)) setCurrentFlow("case1");
       else if (["ACCEPTED", "PREPARING", "READY"].includes(s)) setCurrentFlow("case2");
       else if (["SERVED", "COMPLETED"].includes(s)) setCurrentFlow("case3");
     }
-  }, [caseType, orderData]);
+  }, [caseType, activeOrderData]);
 
   const [showCartItems, setShowCartItems] = useState(false);
 
-
-
+  // Helper to update total whenever cartItems changes
+  const calculateTotal = (items: CartItem[]) => {
+    return items.reduce((sum, ci) => sum + ci.price * ci.quantity, 0);
+  };
 
   const handleAddItem = useCallback((item: { id: string; name: string; price: number; veg: boolean; desc: string }) => {
-    const existingItem = cartItems.find((ci) => ci.name === item.name);
+    setCartItems(prev => {
+      const existing = prev.find((ci) => ci.name === item.name);
+      let newItems;
+      if (existing) {
+        newItems = prev.map((ci) => (ci.name === item.name ? { ...ci, quantity: ci.quantity + 1 } : ci));
+      } else {
+        newItems = [...prev, { name: item.name, price: item.price, quantity: 1 }];
+      }
+      setCartTotal(calculateTotal(newItems));
+      return newItems;
+    });
 
-    if (existingItem) {
-      setCartItems(cartItems.map((ci) => (ci.name === item.name ? { ...ci, quantity: ci.quantity + 1 } : ci)));
-    } else {
-      setCartItems([...cartItems, { name: item.name, price: item.price, quantity: 1 }]);
-    }
-
-    const newTotal = cartItems.reduce((sum, ci) => sum + ci.price * ci.quantity, 0) + item.price;
-    setCartTotal(newTotal);
     setShowCart(true);
     toast.success(`${item.name} added!`);
-  }, [cartItems]);
+  }, []);
 
   const handleRemoveItem = useCallback((itemName: string) => {
-    let newItems = [...cartItems];
-    const idx = newItems.findIndex(i => i.name === itemName);
-    if (idx > -1) {
-      if (newItems[idx].quantity > 1) {
-        newItems[idx] = { ...newItems[idx], quantity: newItems[idx].quantity - 1 };
-      } else {
-        newItems.splice(idx, 1);
+    setCartItems(prev => {
+      let newItems = [...prev];
+      const idx = newItems.findIndex(i => i.name === itemName);
+      if (idx > -1) {
+        if (newItems[idx].quantity > 1) {
+          newItems[idx] = { ...newItems[idx], quantity: newItems[idx].quantity - 1 };
+        } else {
+          newItems.splice(idx, 1);
+        }
       }
-    }
-    setCartItems(newItems);
-    const newTotal = newItems.reduce((sum, ci) => sum + ci.price * ci.quantity, 0);
-    setCartTotal(newTotal);
-  }, [cartItems]);
+      setCartTotal(calculateTotal(newItems));
+      return newItems;
+    });
+  }, []);
 
   const handleSubmitOrder = useCallback(async () => {
     if (cartItems.length === 0) {
@@ -174,10 +179,10 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
     setIsSubmitting(true);
 
     try {
+      const orderId = activeOrderData.orderId.replace("#", "");
+      
       if (currentFlow === "case1") {
         // Case 1: Merge items to existing order
-        const orderId = mockOrderData.orderId.replace("#", "");
-
         const response = await fetch(`/api/public/orders`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -187,12 +192,14 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
               name: item.name,
               price: item.price,
               quantity: item.quantity,
+              total: item.price * item.quantity, // Added explicit line total
               addedAt: new Date().toISOString(),
               addedInCase: "merge"
             })),
             total: cartTotal,
             caseType: "merge",
             parentOrderId: orderId,
+            tableId: activeOrderData.tableId // Ensure table info is passed
           }),
         });
 
@@ -201,33 +208,29 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
           throw new Error(error.error || "Failed to merge items");
         }
 
-        const result = await response.json();
         setMergedItems(cartItems.map((ci) => ci.name));
         setConfirmScreen(true);
         setShowCart(false);
-        toast.success(`✅ ${cartItems.length} item(s) merged to order!`);
-
-        console.log("Merge result:", result);
-      } else if (currentFlow === "case2" || currentFlow === "case3") {
+        toast.success(`✅ Items merged to order!`);
+      } else {
         // Case 2 & 3: Create separate / round 2 order
-        const orderId = mockOrderData.orderId.replace("#", "");
-
         const response = await fetch(`/api/public/orders`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             clerkUserId: clerkUserId,
-            tableId: orderData?.tableId,
+            tableId: activeOrderData.tableId,
             items: cartItems.map(item => ({
               name: item.name,
               price: item.price,
               quantity: item.quantity,
+              total: item.price * item.quantity, // Added explicit line total
               addedAt: new Date().toISOString(),
               addedInCase: currentFlow === "case2" ? "separate" : "round2",
             })),
             total: cartTotal,
-            customerName: orderData?.customerName || "Customer",
-            customerPhone: orderData?.customerPhone,
+            customerName: activeOrderData.customerName || "Customer",
+            customerPhone: activeOrderData.customerPhone,
             caseType: currentFlow === "case2" ? "separate" : "round2",
             parentOrderId: orderId,
           }),
@@ -238,8 +241,6 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
           throw new Error(error.error || "Failed to place order");
         }
 
-        const result = await response.json();
-
         if (currentFlow === "case2") {
           setNewOrderItems(cartItems.map((ci) => ci.name));
         } else {
@@ -249,17 +250,16 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
         setConfirmScreen(true);
         setShowCart(false);
         toast.success(currentFlow === "case2" ? "📋 New separate order placed!" : "🎉 Round 2 order placed!");
-        console.log("New order result:", result);
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Failed to submit order";
       setSubmitError(errorMsg);
       toast.error(errorMsg);
-      console.error("Submit order error:", error);
     } finally {
       setIsSubmitting(false);
     }
-  }, [cartItems, currentFlow, mockOrderData]);
+  }, [cartItems, cartTotal, currentFlow, activeOrderData, clerkUserId]);
+
 
   const handleFlowChange = (flow: OrderCase) => {
     setCurrentFlow(flow);

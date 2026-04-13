@@ -59,6 +59,8 @@ export async function POST(req: NextRequest) {
                     total: existing.total + parseFloat(total),
                     isMerged: true,
                     mergedAt: new Date(),
+                    isKotPrinted: false, // Reset so kitchen knows to print new items
+                    isBillPrinted: false, // Reset total has changed
                     paymentMode: paymentMethod || existing.paymentMode,
                     notes: body.notes || existing.notes || null, // ✅ Append or Update
                     preferences: body.preferences || existing.preferences || null // ✅ Update preferences
