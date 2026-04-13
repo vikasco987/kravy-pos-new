@@ -90,8 +90,12 @@ export default function KravyPOS() {
     const [previewZoom, setPreviewZoom] = useState(1);
     const [printOrder, setPrintOrder] = useState<Order | null>(null);
     const [printTable, setPrintTable] = useState<TableStatus | null>(null);
+    
+    // Manual Combination States
+    const [showCombineModal, setShowCombineModal] = useState(false);
+    const [combineSelection, setCombineSelection] = useState<Set<string>>(new Set());
 
-    const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL", customOrder?: Order, customTable?: TableStatus) => {
+    const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL" | "MANUAL_COMBINE", customOrder?: Order, customTable?: TableStatus) => {
         kravy.click();
         
         let targetOrder = customOrder || printOrder || activeOrderForSelected;
@@ -102,7 +106,6 @@ export default function KravyPOS() {
                 const res = await fetch(`/api/public/orders/${targetOrder.id}/combined-bill`);
                 const data = await res.json();
                 if (data.success) {
-                    // Merge items for display/print
                     const mergedItems = data.orders.flatMap((o: any) => o.items);
                     targetOrder = {
                         ...targetOrder,
@@ -119,14 +122,34 @@ export default function KravyPOS() {
                 console.error("Combined bill fetch error:", err);
                 return;
             }
+        } else if (type === "MANUAL_COMBINE") {
+            const selectedOrders = orders.filter(o => combineSelection.has(o.id));
+            if (selectedOrders.length === 0) return;
+            
+            const mergedItems = selectedOrders.flatMap(o => o.items);
+            const subtotal = mergedItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+            const gst = isTaxEnabled ? (subtotal * taxRate) / 100 : 0;
+            const total = subtotal + gst;
+
+            targetOrder = {
+                id: `ManualMerge-${new Date().getTime().toString().slice(-4)}`,
+                items: mergedItems,
+                total: total,
+                table: selectedOrders[0].table,
+                customerName: "Combined Group",
+                createdAt: new Date().toISOString(),
+                status: "ACCEPTED"
+            } as any;
+            setPrintOrder(targetOrder);
+            setPrintTable(targetTable);
         } else {
             if (customOrder) setPrintOrder(customOrder);
             if (customTable) setPrintTable(customTable);
         }
 
-        // Wait a bit for state to update and re-render the hidden printer refs
+        // Wait for state update
         setTimeout(() => {
-            const isBill = type === "BILL" || type === "COMBINED_BILL";
+            const isBill = type === "BILL" || type === "COMBINED_BILL" || type === "MANUAL_COMBINE";
             const targetRef = (showPreview && previewMode === (isBill ? "BILL" : "KOT")) 
                 ? receiptRef.current 
                 : (isBill ? billReceiptRef.current : kotReceiptRef.current);
@@ -168,12 +191,10 @@ export default function KravyPOS() {
             kravy.print();
             window.print();
 
-            // Cleanup
             document.head.removeChild(styleSheet);
             document.body.removeChild(printContainer);
 
-            // Track printing in the DB
-            if (targetOrder) {
+            if (targetOrder && type !== "MANUAL_COMBINE") {
                 const body: any = { orderId: (targetOrder as any).id.includes("Combined") ? customOrder?.id || printOrder?.id : targetOrder.id };
                 if (type === "KOT") body.isKotPrinted = true;
                 if (isBill) body.isBillPrinted = true;
@@ -184,7 +205,7 @@ export default function KravyPOS() {
                     body: JSON.stringify(body)
                 }).then(() => fetchData());
             }
-        }, 300);
+        }, 400);
     };
 
     const fetchData = async () => {
@@ -605,12 +626,12 @@ export default function KravyPOS() {
                                                         {/* COMBINED BILL ACTION */}
                                                         <button 
                                                             onClick={() => {
-                                                                const tbl = tablesList.find(t => t.id === order.table?.id);
-                                                                handlePrint("COMBINED_BILL", order, tbl || undefined);
+                                                                setShowCombineModal(true);
+                                                                setCombineSelection(new Set([order.id]));
                                                             }}
                                                             className="flex items-center justify-center gap-1.5 w-full h-10 rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 text-[10px] font-black uppercase text-indigo-600 hover:bg-indigo-100 transition-all shadow-sm italic"
                                                         >
-                                                            <Layers size={14} /> Combined Bill (All Orders)
+                                                            <Layers size={14} /> Merge & Combine Bill
                                                         </button>
 
                                                         <div className="pt-2 border-t border-slate-100 space-y-1">
@@ -1258,12 +1279,12 @@ export default function KravyPOS() {
                                                             </div>
                                                             <button 
                                                                 onClick={() => {
-                                                                    const tbl = tablesList.find(t => t.id === o.table?.id);
-                                                                    handlePrint("COMBINED_BILL", o, tbl || undefined);
+                                                                    setShowCombineModal(true);
+                                                                    setCombineSelection(new Set([o.id]));
                                                                 }}
                                                                 className="w-full h-10 rounded-xl border-2 border-dashed border-indigo-200 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-900/10 text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1.5 hover:bg-indigo-50 transition-all"
                                                             >
-                                                                <Layers size={14} /> Combined Bill (All Items)
+                                                                <Layers size={14} /> Merge & Combine Bill
                                                             </button>
                                                         </div>
                                                         <button
@@ -1717,6 +1738,90 @@ export default function KravyPOS() {
                                     className="flex-[2] py-3.5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
                                 >
                                     <Printer size={16} /> Print Direct
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* ═══ COMBINATION SELECTION MODAL ═══ */}
+            <AnimatePresence>
+                {showCombineModal && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-xl" 
+                            onClick={() => setShowCombineModal(false)} 
+                        />
+                        
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                            className="relative bg-white dark:bg-slate-900 w-full max-w-[500px] h-[80vh] flex flex-col rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+                        >
+                            <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">Merge Pipelines</h3>
+                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Select orders to combine</p>
+                                </div>
+                                <button onClick={() => setShowCombineModal(false)} className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                                {orders.filter(o => o.status !== "COMPLETED").map(o => (
+                                    <button
+                                        key={o.id}
+                                        onClick={() => {
+                                            setCombineSelection(prev => {
+                                                const next = new Set(prev);
+                                                if (next.has(o.id)) next.delete(o.id);
+                                                else next.add(o.id);
+                                                return next;
+                                            });
+                                        }}
+                                        className={`w-full p-5 rounded-[2rem] border-2 transition-all flex items-center gap-4 text-left ${combineSelection.has(o.id) ? "bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-600 shadow-lg shadow-indigo-600/10 -translate-y-1" : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800"}`}
+                                    >
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${combineSelection.has(o.id) ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>
+                                            {o.table?.name}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-black text-slate-900 dark:text-white uppercase leading-none mb-1">ID: #{o.id.slice(-6).toUpperCase()}</p>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{o.items.length} items</span>
+                                                <span className="w-1 h-1 rounded-full bg-slate-200" />
+                                                <span className="text-[10px] font-black text-emerald-500 italic">₹{o.total}</span>
+                                            </div>
+                                        </div>
+                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${combineSelection.has(o.id) ? "bg-indigo-600 border-indigo-600 text-white" : "border-slate-200 dark:border-slate-700"}`}>
+                                            {combineSelection.has(o.id) && <Check size={14} strokeWidth={3} />}
+                                        </div>
+                                    </button>
+                                ))}
+                                
+                                {orders.filter(o => o.status !== "COMPLETED").length === 0 && (
+                                    <div className="h-full flex flex-col items-center justify-center py-20 opacity-20 text-center">
+                                        <Layers size={48} strokeWidth={1} />
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] mt-6">No Active orders to merge</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+                                <button
+                                    disabled={combineSelection.size < 2}
+                                    onClick={() => {
+                                        setShowCombineModal(false);
+                                        handlePrint("MANUAL_COMBINE");
+                                    }}
+                                    className={`w-full h-14 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl ${combineSelection.size >= 2 ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-slate-900/20 active:scale-95 translate-y-0" : "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed translate-y-2 opacity-50"}`}
+                                >
+                                    <Printer size={18} /> Combine & Print {combineSelection.size > 0 && `(${combineSelection.size})`}
                                 </button>
                             </div>
                         </motion.div>
