@@ -141,20 +141,26 @@ export default function KravyPOS() {
                 status: "ACCEPTED"
             } as any;
             setPrintOrder(targetOrder);
-            setPrintTable(targetTable);
+            setPrintTable(targetTable || (selectedOrders[0].table as any));
         } else {
             if (customOrder) setPrintOrder(customOrder);
             if (customTable) setPrintTable(customTable);
         }
 
         // Wait for state update
+        console.log("Printing Logic Triggered:", type, "Target Order:", targetOrder?.id);
+        
         setTimeout(() => {
             const isBill = type === "BILL" || type === "COMBINED_BILL" || type === "MANUAL_COMBINE";
             const targetRef = (showPreview && previewMode === (isBill ? "BILL" : "KOT")) 
                 ? receiptRef.current 
                 : (isBill ? billReceiptRef.current : kotReceiptRef.current);
             
-            if (!targetRef) return;
+            console.log("Printer Ref Status:", !!targetRef, targetRef?.id);
+            if (!targetRef) {
+                console.error("Print Error: No target ref found for type", type);
+                return;
+            }
             
             const printStyles = `
                 @media print {
