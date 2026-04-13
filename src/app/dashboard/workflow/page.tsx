@@ -638,6 +638,7 @@ export default function KravyPOS() {
                                                         {/* COMBINED BILL ACTION */}
                                                         <button 
                                                             onClick={() => {
+                                                                console.log("[CI] Opening Modal from Detailed View, Order:", order.id);
                                                                 setShowCombineModal(true);
                                                                 setCombineSelection(new Set([order.id]));
                                                             }}
@@ -1291,6 +1292,7 @@ export default function KravyPOS() {
                                                             </div>
                                                             <button 
                                                                 onClick={() => {
+                                                                    console.log("[CI] Opening Modal from Terminal Card, Order:", o.id);
                                                                     setShowCombineModal(true);
                                                                     setCombineSelection(new Set([o.id]));
                                                                 }}
@@ -1760,7 +1762,8 @@ export default function KravyPOS() {
             {/* ═══ COMBINATION SELECTION MODAL ═══ */}
             <AnimatePresence>
                 {showCombineModal && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                        {console.log("[CI] Rendering Combination Modal State: visible")}
                         <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
