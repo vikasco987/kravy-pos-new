@@ -629,8 +629,11 @@ export default function KravyPOS() {
                                                                         <div className={`w-1.5 h-1.5 rounded-full ${it.isVeg === false ? "bg-rose-600" : "bg-emerald-600"}`} />
                                                                     </div>
                                                                     <div className="flex flex-col min-w-0">
-                                                                        <span className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
+                                                                        <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
                                                                             <span className="font-bold">{it.quantity} x</span> {it.name}
+                                                                            {it.isNew && (
+                                                                                <span className="ml-2 bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded tracking-tighter animate-pulse shadow-sm">NEW ITEM</span>
+                                                                            )}
                                                                         </span>
                                                                         {it.variants && it.variants.length > 0 && (
                                                                             <div className="flex flex-wrap gap-1 mt-0.5">
@@ -1187,7 +1190,12 @@ export default function KravyPOS() {
                                                                 <div key={idx} className="flex justify-between items-start gap-4">
                                                                     <div className="flex items-start gap-2 max-w-[80%]">
                                                                         <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${it.isVeg === false ? "bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"}`} />
-                                                                        <span className="text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase leading-snug">{it.name}</span>
+                                                                        <span className="text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase leading-snug">
+                                                                            {it.name}
+                                                                            {it.isNew && (
+                                                                                <span className="ml-2 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full animate-pulse shadow-sm">NEW</span>
+                                                                            )}
+                                                                        </span>
                                                                     </div>
                                                                     <span className="text-[11px] font-black italic text-slate-400 dark:text-slate-500">×{it.quantity}</span>
                                                                 </div>
