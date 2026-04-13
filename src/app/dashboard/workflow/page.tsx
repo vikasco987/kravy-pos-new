@@ -148,7 +148,8 @@ export default function KravyPOS() {
         }
 
         // Wait for state update
-        console.log("Printing Logic Triggered:", type, "Target Order:", targetOrder?.id);
+        console.log(`[PRINT] Starting ${type} flow...`);
+        console.log(`[PRINT] Context: Order=${targetOrder?.id}, Table=${targetTable?.name || "None"}`);
         
         setTimeout(() => {
             const isBill = type === "BILL" || type === "COMBINED_BILL" || type === "MANUAL_COMBINE";
@@ -156,10 +157,15 @@ export default function KravyPOS() {
                 ? receiptRef.current 
                 : (isBill ? billReceiptRef.current : kotReceiptRef.current);
             
-            console.log("Printer Ref Status:", !!targetRef, targetRef?.id);
             if (!targetRef) {
-                console.error("Print Error: No target ref found for type", type);
+                console.error(`[PRINT ERROR] No DOM reference found for ${type}. Check if printer zone is rendered.`);
                 return;
+            }
+
+            console.log(`[PRINT] Template Found. HTML size: ${targetRef.innerHTML.length} chars`);
+            
+            if (targetRef.innerHTML.length < 50) {
+                console.warn(`[PRINT WARNING] Template seems empty or too small. Receipt might be blank.`);
             }
             
             const printStyles = `
