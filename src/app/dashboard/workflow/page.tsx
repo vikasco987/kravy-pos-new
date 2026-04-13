@@ -414,6 +414,93 @@ export default function KravyPOS() {
 
     return (
         <div className="flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-300">
+            {/* ═══ COMBINATION SELECTION MODAL (MOVED TO TOP) ═══ */}
+            <AnimatePresence>
+                {showCombineModal && (
+                    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-xl" 
+                            onClick={() => {
+                                console.log("[CI] Closing Modal via Backdrop");
+                                setShowCombineModal(false);
+                            }} 
+                        />
+                        
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                            className="relative bg-white dark:bg-slate-900 w-full max-w-[500px] h-[80vh] flex flex-col rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+                        >
+                            <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">Merge Pipelines</h3>
+                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Select orders to combine</p>
+                                </div>
+                                <button onClick={() => setShowCombineModal(false)} className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                                {orders.filter(o => o.status !== "COMPLETED").map(o => (
+                                    <button
+                                        key={o.id}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCombineSelection(prev => {
+                                                const next = new Set(prev);
+                                                if (next.has(o.id)) next.delete(o.id);
+                                                else next.add(o.id);
+                                                return next;
+                                            });
+                                        }}
+                                        className={`w-full p-5 rounded-[2rem] border-2 transition-all flex items-center gap-4 text-left ${combineSelection.has(o.id) ? "bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-600 shadow-lg shadow-indigo-600/10 -translate-y-1" : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800"}`}
+                                    >
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${combineSelection.has(o.id) ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>
+                                            {o.table?.name}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-black text-slate-900 dark:text-white uppercase leading-none mb-1">ID: #{o.id.slice(-6).toUpperCase()}</p>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{o.items.length} items</span>
+                                                <span className="w-1 h-1 rounded-full bg-slate-200" />
+                                                <span className="text-[10px] font-black text-emerald-500 italic">₹{o.total}</span>
+                                            </div>
+                                        </div>
+                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${combineSelection.has(o.id) ? "bg-indigo-600 border-indigo-600 text-white" : "border-slate-200 dark:border-slate-700"}`}>
+                                            {combineSelection.has(o.id) && <Check size={14} strokeWidth={3} />}
+                                        </div>
+                                    </button>
+                                ))}
+                                
+                                {orders.filter(o => o.status !== "COMPLETED").length === 0 && (
+                                    <div className="h-full flex flex-col items-center justify-center py-20 opacity-20 text-center">
+                                        <Layers size={48} strokeWidth={1} />
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] mt-6">No Active orders to merge</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+                                <button
+                                    disabled={combineSelection.size < 2}
+                                    onClick={() => {
+                                        setShowCombineModal(false);
+                                        handlePrint("MANUAL_COMBINE");
+                                    }}
+                                    className={`w-full h-14 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl ${combineSelection.size >= 2 ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-slate-900/20 active:scale-95 translate-y-0" : "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed translate-y-2 opacity-50"}`}
+                                >
+                                    <Printer size={18} /> Combine & Print {combineSelection.size > 0 && `(${combineSelection.size})`}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
             <OrderAlertLoop pendingCount={stats.incoming} />
             {/* ── HEADER ── */}
             <header className="flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8 min-h-[64px] lg:h-[64px] shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm z-[50] py-3 lg:py-0 gap-4 lg:gap-8 transition-colors duration-300">
@@ -637,12 +724,13 @@ export default function KravyPOS() {
                                                         
                                                         {/* COMBINED BILL ACTION */}
                                                         <button 
-                                                            onClick={() => {
-                                                                console.log("[CI] Opening Modal from Detailed View, Order:", order.id);
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                alert("[DI] Click registered. Opening Modal.");
                                                                 setShowCombineModal(true);
                                                                 setCombineSelection(new Set([order.id]));
                                                             }}
-                                                            className="flex items-center justify-center gap-1.5 w-full h-10 rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 text-[10px] font-black uppercase text-indigo-600 hover:bg-indigo-100 transition-all shadow-sm italic"
+                                                            className="flex items-center justify-center gap-1.5 w-full h-10 rounded-xl border-2 border-dashed border-indigo-400 bg-indigo-50 text-[10px] font-black uppercase text-indigo-700 hover:bg-indigo-100 transition-all shadow-sm italic"
                                                         >
                                                             <Layers size={14} /> Merge & Combine Bill
                                                         </button>
@@ -1291,12 +1379,13 @@ export default function KravyPOS() {
                                                                 </button>
                                                             </div>
                                                             <button 
-                                                                onClick={() => {
-                                                                    console.log("[CI] Opening Modal from Terminal Card, Order:", o.id);
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    alert("[TC] Click registered. Opening Modal.");
                                                                     setShowCombineModal(true);
                                                                     setCombineSelection(new Set([o.id]));
                                                                 }}
-                                                                className="w-full h-10 rounded-xl border-2 border-dashed border-indigo-200 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-900/10 text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1.5 hover:bg-indigo-50 transition-all"
+                                                                className="w-full h-10 rounded-xl border-2 border-dashed border-indigo-400 dark:border-indigo-900 bg-indigo-50/50 dark:bg-indigo-900/10 text-[10px] font-black uppercase text-indigo-700 dark:text-indigo-400 flex items-center justify-center gap-1.5 hover:bg-indigo-100 transition-all"
                                                             >
                                                                 <Layers size={14} /> Merge & Combine Bill
                                                             </button>
@@ -1759,90 +1848,6 @@ export default function KravyPOS() {
                 )}
             </AnimatePresence>
 
-            {/* ═══ COMBINATION SELECTION MODAL ═══ */}
-            <AnimatePresence>
-                {showCombineModal && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-                        {console.log("[CI] Rendering Combination Modal State: visible")}
-                        <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/80 backdrop-blur-xl" 
-                            onClick={() => setShowCombineModal(false)} 
-                        />
-                        
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 30 }}
-                            className="relative bg-white dark:bg-slate-900 w-full max-w-[500px] h-[80vh] flex flex-col rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
-                        >
-                            <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">Merge Pipelines</h3>
-                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Select orders to combine</p>
-                                </div>
-                                <button onClick={() => setShowCombineModal(false)} className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                                {orders.filter(o => o.status !== "COMPLETED").map(o => (
-                                    <button
-                                        key={o.id}
-                                        onClick={() => {
-                                            setCombineSelection(prev => {
-                                                const next = new Set(prev);
-                                                if (next.has(o.id)) next.delete(o.id);
-                                                else next.add(o.id);
-                                                return next;
-                                            });
-                                        }}
-                                        className={`w-full p-5 rounded-[2rem] border-2 transition-all flex items-center gap-4 text-left ${combineSelection.has(o.id) ? "bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-600 shadow-lg shadow-indigo-600/10 -translate-y-1" : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800"}`}
-                                    >
-                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${combineSelection.has(o.id) ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>
-                                            {o.table?.name}
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-sm font-black text-slate-900 dark:text-white uppercase leading-none mb-1">ID: #{o.id.slice(-6).toUpperCase()}</p>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{o.items.length} items</span>
-                                                <span className="w-1 h-1 rounded-full bg-slate-200" />
-                                                <span className="text-[10px] font-black text-emerald-500 italic">₹{o.total}</span>
-                                            </div>
-                                        </div>
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${combineSelection.has(o.id) ? "bg-indigo-600 border-indigo-600 text-white" : "border-slate-200 dark:border-slate-700"}`}>
-                                            {combineSelection.has(o.id) && <Check size={14} strokeWidth={3} />}
-                                        </div>
-                                    </button>
-                                ))}
-                                
-                                {orders.filter(o => o.status !== "COMPLETED").length === 0 && (
-                                    <div className="h-full flex flex-col items-center justify-center py-20 opacity-20 text-center">
-                                        <Layers size={48} strokeWidth={1} />
-                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] mt-6">No Active orders to merge</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
-                                <button
-                                    disabled={combineSelection.size < 2}
-                                    onClick={() => {
-                                        setShowCombineModal(false);
-                                        handlePrint("MANUAL_COMBINE");
-                                    }}
-                                    className={`w-full h-14 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl ${combineSelection.size >= 2 ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-slate-900/20 active:scale-95 translate-y-0" : "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed translate-y-2 opacity-50"}`}
-                                >
-                                    <Printer size={18} /> Combine & Print {combineSelection.size > 0 && `(${combineSelection.size})`}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
 
             {/* Hidden Printer Zone */}
             <div style={{ position: 'absolute', top: -9999, left: -9999, opacity: 0, pointerEvents: 'none' }}>
