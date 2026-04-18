@@ -387,6 +387,10 @@ model BusinessProfile {
   aiScraperEnabled   Boolean @default(false)
   excelImportEnabled Boolean @default(false)
 
+  // ✅ Public Access Identifiers
+  slug     String? @unique // Readable URL part e.g. "kravy-spice-villa"
+  publicId String? @unique // Unique identifier for public fetching
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

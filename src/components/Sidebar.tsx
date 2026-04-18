@@ -42,6 +42,7 @@ import {
   Search,
   Menu,
   Percent,
+  Rocket,
   X,
   Check,
   AlertCircle,
@@ -113,7 +114,8 @@ import {
   Camera,
   Layers,
   Sparkles,
-  Zap
+  Zap,
+  LayoutDashboard
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { kravy } from "@/lib/sounds";
@@ -180,6 +182,9 @@ const navGroups = [
       { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings", roles: ["ADMIN", "SELLER"] },
       { icon: <Percent size={18} />, label: "Tax Management", href: "/dashboard/settings/tax", badge: "GST", badgeColor: "#F59E0B", roles: ["ADMIN"] },
       { icon: <Lock size={18} />, label: "Access Control", href: "/admin/users", badge: "Roles", badgeColor: "#EF4444", roles: ["ADMIN"] },
+      { icon: <LayoutDashboard size={18} />, label: "System Funnel", href: "/admin/dashboard", roles: ["ADMIN"], badge: "Funnel", badgeColor: "#8B5CF6" },
+      { icon: <TrendingUp size={18} />, label: "Merchant Ecosystem", href: "/admin/merchants", roles: ["ADMIN"], badge: "Report", badgeColor: "#10B981" },
+      { icon: <Rocket size={18} />, label: "Onboard Merchant", href: "/admin/onboarding", roles: ["ADMIN"] },
       { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup", roles: ["ADMIN"] },
       { icon: <Archive size={18} />, label: "Archive & Trash", href: "/dashboard/billing/deleted", roles: ["ADMIN", "SELLER"] },
       { icon: <HelpCircle size={18} />, label: "Help & Support", href: "/dashboard/help" },

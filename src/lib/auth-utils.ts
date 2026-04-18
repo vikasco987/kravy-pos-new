@@ -7,28 +7,39 @@ const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
 
 /**
  * Returns the effective Clerk ID (the Owner's ID) for the current user.
- * Works for both Owners (direct Clerk user) and Staff (referenced via ownerId/businessId).
+ * Works for both Owners (direct Clerk user) and Staff.
+ * Supports Admin Impersonation (View-As) via 'x-impersonate-id' header or search params.
  */
 export async function getEffectiveClerkId(): Promise<string | null> {
-  // 1. Try Clerk Auth (for Owners or Staff created via Clerk)
+  // 1. Get current logged-in user
   const { userId } = await auth();
   
   if (userId) {
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
-      select: { ownerId: true }
+      select: { role: true, ownerId: true }
     });
+
+    // Check for impersonation if user is ADMIN
+    if (user && user.role === "ADMIN") {
+      const headersList = await (await import('next/headers')).headers();
+      const referer = headersList.get('referer') || 'http://localhost';
+      const { searchParams } = new URL(referer);
+      const impersonateId = searchParams.get('asUserId');
+      if (impersonateId) {
+        return impersonateId;
+      }
+    }
+
     return user?.ownerId || userId;
   }
 
   // 2. Try Custom JWT Auth (for Prisma-only Staff)
   const authHeader = (await cookies()).get('staff_token')?.value; 
-  // Note: App and Browser can send token in cookie or Header. You can check both.
-  
   if (authHeader) {
       try {
           const decoded: any = jwt.verify(authHeader, JWT_SECRET);
-          return decoded.businessId; // Decoded businessId is the Seller's Clerk ID
+          return decoded.businessId; 
       } catch (err) {
           return null;
       }

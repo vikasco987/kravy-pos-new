@@ -274,6 +274,7 @@ export default function CheckoutClient() {
     setBillDate(new Date().toLocaleString());
   }, []);
 
+  const [isSaving, setIsSaving] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [menuLoading, setMenuLoading] = useState(true);
 
@@ -541,10 +542,12 @@ export default function CheckoutClient() {
   }, []);
 
   const handleDeposit = async (amount: number) => {
+    if (isSaving) return;
     if (!selectedParty) {
       console.warn("[WALLET] No customer selected for deposit");
       return;
     }
+    setIsSaving(true);
     console.log("[WALLET] Starting Deposit:", { amount, partyId: selectedParty.id, partyName: selectedParty.name });
     try {
       const res = await fetch("/api/wallet", {
@@ -575,6 +578,8 @@ export default function CheckoutClient() {
     } catch (err) {
       console.error("[WALLET] Network/Catch Error:", err);
       toast.error("Network error during deposit");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -728,96 +733,105 @@ export default function CheckoutClient() {
 
   /* ================= SAVE BILL ================= */
   async function saveBill(isHeld: boolean = false) {
+    if (isSaving) return null;
     if (items.length === 0) { alert("No items to save"); return null; }
-
-    // 🛡️ GST VALIDATION SYSTEM
-    if (buyerGSTIN) {
-      const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-      if (!gstinRegex.test(buyerGSTIN)) {
-        alert("Invalid Buyer GSTIN Format (Expected 15 chars, e.g. 07AAAAA0000A1Z5)");
-        return null;
-      }
-    }
-
-    // Recalculate discount ratio for validation
-    const validationDiscountRatio = subtotal > 0 ? (subtotal - discountAmt) / subtotal : 1;
-
-    // Recalculation Check (Compare UI result with calculated result)
-    let reCalcGst = items.reduce((sum, item) => {
-      let rate = 0;
-      if (perProductEnabled && item.gst !== undefined && item.gst !== null) {
-        rate = item.gst;
-      } else if (taxActive) {
-        rate = business?.taxRate ?? 0;
-      }
-
-      // Important: Apply discount ratio here as well
-      const gross = (item.qty * item.rate) * validationDiscountRatio;
-      if (item.taxStatus === "With Tax") return sum + (gross - (gross / (1 + rate / 100)));
-      return sum + ((gross * rate) / 100);
-    }, 0);
-
-    if ((taxActive || perProductEnabled) && Math.abs(reCalcGst - gstAmount) > 1) { // Increased tolerance to 1 for rounding
-      alert(`Safety Check: GST Calculation Mismatch! System: ₹${gstAmount.toFixed(2)}, Calculated: ₹${reCalcGst.toFixed(2)}`);
-      return null;
-    }
-
-    // 👛 WALLET PAYMENT LOGIC
-    if (paymentMode === "Wallet") {
-      if (!selectedParty) {
-        alert("Please select a registered customer to use Wallet payment.");
-        return null;
-      }
-      if ((selectedParty.walletBalance || 0) < finalTotal) {
-        alert(`Insufficient Wallet Balance!\nRequired: ₹${finalTotal.toFixed(2)}\nAvailable: ₹${(selectedParty.walletBalance || 0).toFixed(2)}`);
-        return null;
-      }
-
-      try {
-        const walletRes = await fetch("/api/wallet", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "payment",
-            partyId: selectedParty.id,
-            amount: finalTotal,
-            description: `Order #${billNumber}`
-          })
-        });
-
-        const wData = await walletRes.json();
-
-        if (!walletRes.ok) {
-          alert(wData.error || "Wallet deduction failed");
+    
+    setIsSaving(true);
+    try {
+      // 🛡️ GST VALIDATION SYSTEM
+      if (buyerGSTIN) {
+        const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+        if (!gstinRegex.test(buyerGSTIN)) {
+          alert("Invalid Buyer GSTIN Format (Expected 15 chars, e.g. 07AAAAA0000A1Z5)");
+          setIsSaving(false);
           return null;
         }
-        
-        // Update local state balance
-        if (wData.success) {
-          setSelectedParty({ ...selectedParty, walletBalance: wData.balance });
+      }
+
+      // Recalculate discount ratio for validation
+      const validationDiscountRatio = subtotal > 0 ? (subtotal - discountAmt) / subtotal : 1;
+
+      // Recalculation Check (Compare UI result with calculated result)
+      let reCalcGst = items.reduce((sum, item) => {
+        let rate = 0;
+        if (perProductEnabled && item.gst !== undefined && item.gst !== null) {
+          rate = item.gst;
+        } else if (taxActive) {
+          rate = business?.taxRate ?? 0;
         }
-      } catch (err) {
-        alert("Wallet system connection error");
+
+        // Important: Apply discount ratio here as well
+        const gross = (item.qty * item.rate) * validationDiscountRatio;
+        if (item.taxStatus === "With Tax") return sum + (gross - (gross / (1 + rate / 100)));
+        return sum + ((gross * rate) / 100);
+      }, 0);
+
+      if ((taxActive || perProductEnabled) && Math.abs(reCalcGst - gstAmount) > 1) { // Increased tolerance to 1 for rounding
+        alert(`Safety Check: GST Calculation Mismatch! System: ₹${gstAmount.toFixed(2)}, Calculated: ₹${reCalcGst.toFixed(2)}`);
+        setIsSaving(false);
         return null;
       }
-    }
 
-    const payload = {
-      items, subtotal: Number(totalTaxable.toFixed(2)), tax: gstAmount, total: finalTotal,
-      paymentMode, paymentStatus: isHeld ? "HELD" : paymentStatus,
-      upiTxnRef: paymentMode === "UPI" ? upiTxnRef : null,
-      isHeld, customerName: customerName || "Walk-in Customer",
-      customerPhone: customerPhone || null,
-      customerAddress: customerAddress || null,
-      isKotPrinted: isKotPrinted === true,
-      tableName: "POS",
-      buyerGSTIN: buyerGSTIN || null,
-      placeOfSupply: placeOfSupply || null,
-      discountAmount: discountAmt,
-      discountCode: appliedOffer?.code || null,
-      auditNote, // ✅ SaaS Feature: Audit Log
-    };
-    try {
+      // 👛 WALLET PAYMENT LOGIC
+      if (paymentMode === "Wallet") {
+        if (!selectedParty) {
+          alert("Please select a registered customer to use Wallet payment.");
+          setIsSaving(false);
+          return null;
+        }
+        if ((selectedParty.walletBalance || 0) < finalTotal) {
+          alert(`Insufficient Wallet Balance!\nRequired: ₹${finalTotal.toFixed(2)}\nAvailable: ₹${(selectedParty.walletBalance || 0).toFixed(2)}`);
+          setIsSaving(false);
+          return null;
+        }
+
+        try {
+          const walletRes = await fetch("/api/wallet", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "payment",
+              partyId: selectedParty.id,
+              amount: finalTotal,
+              description: `Order #${billNumber}`
+            })
+          });
+
+          const wData = await walletRes.json();
+
+          if (!walletRes.ok) {
+            alert(wData.error || "Wallet deduction failed");
+            setIsSaving(false);
+            return null;
+          }
+          
+          // Update local state balance
+          if (wData.success) {
+            setSelectedParty({ ...selectedParty, walletBalance: wData.balance });
+          }
+        } catch (err) {
+          alert("Wallet system connection error");
+          setIsSaving(false);
+          return null;
+        }
+      }
+
+      const payload = {
+        items, subtotal: Number(totalTaxable.toFixed(2)), tax: gstAmount, total: finalTotal,
+        paymentMode, paymentStatus: isHeld ? "HELD" : paymentStatus,
+        upiTxnRef: paymentMode === "UPI" ? upiTxnRef : null,
+        isHeld, customerName: customerName || "Walk-in Customer",
+        customerPhone: customerPhone || null,
+        customerAddress: customerAddress || null,
+        isKotPrinted: isKotPrinted === true,
+        tableName: "POS",
+        buyerGSTIN: buyerGSTIN || null,
+        placeOfSupply: placeOfSupply || null,
+        discountAmount: discountAmt,
+        discountCode: appliedOffer?.code || null,
+        auditNote, // ✅ SaaS Feature: Audit Log
+      };
+
       const url = resumeBillId ? `/api/bill-manager/${resumeBillId}` : "/api/bill-manager";
       const method = resumeBillId ? "PUT" : "POST";
       const res = await fetch(url, { 
@@ -826,17 +840,25 @@ export default function CheckoutClient() {
         body: JSON.stringify(payload),
         keepalive: true // Guaranteed delivery even on print reload
       });
-      if (!res.ok) { const err = await res.json(); alert(err.error || "Failed to save bill"); return null; }
+      if (!res.ok) { 
+        const err = await res.json(); 
+        alert(err.error || "Failed to save bill"); 
+        setIsSaving(false);
+        return null; 
+      }
       const data = await res.json();
       // Refresh parties to include any new customer
       fetchParties();
       const savedBill = data.bill ?? data;
       if (savedBill?.id) setLastSavedBillId(savedBill.id);
       if (savedBill?.billNumber) setBillNumber(savedBill.billNumber);
+      
+      setIsSaving(false);
       return savedBill;
     } catch (err) {
       console.error("Save bill error", err);
       alert("Something went wrong");
+      setIsSaving(false);
       return null;
     }
   }
@@ -1666,10 +1688,10 @@ export default function CheckoutClient() {
                   fetchHeldBills();
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
-                disabled={items.length === 0}
+                disabled={items.length === 0 || isSaving}
                 className="flex flex-col items-center justify-center py-2 rounded-xl border border-amber-500/30 text-amber-500 bg-amber-500/5 hover:bg-amber-500/10 disabled:opacity-40 transition-all"
               >
-                <PauseCircle size={14} className="mb-0.5" strokeWidth={3} />
+                {isSaving ? <RefreshCw size={14} className="mb-0.5 animate-spin" /> : <PauseCircle size={14} className="mb-0.5" strokeWidth={3} />}
                 <span className="text-[8px] font-black uppercase">Hold</span>
               </button>
 
@@ -1682,16 +1704,16 @@ export default function CheckoutClient() {
                   resetForm();
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
-                disabled={items.length === 0}
+                disabled={items.length === 0 || isSaving}
                 className="flex flex-col items-center justify-center py-2 rounded-xl border border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] bg-[var(--kravy-bg)] hover:bg-[var(--kravy-surface-hover)] disabled:opacity-40 transition-all font-black"
               >
-                <Save size={14} className="mb-0.5" strokeWidth={3} />
+                {isSaving ? <RefreshCw size={14} className="mb-0.5 animate-spin" /> : <Save size={14} className="mb-0.5" strokeWidth={3} />}
                 <span className="text-[8px] uppercase">Save</span>
               </button>
 
               <button
                 onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
-                disabled={items.length === 0}
+                disabled={items.length === 0 || isSaving}
                 className="flex flex-col items-center justify-center py-2 rounded-xl border border-indigo-500/20 text-indigo-500 bg-indigo-500/5 hover:bg-indigo-500/10 disabled:opacity-40 transition-all font-black"
               >
                 <Eye size={14} className="mb-0.5" strokeWidth={3} />
@@ -1700,7 +1722,7 @@ export default function CheckoutClient() {
 
               <button
                 onClick={() => { kravy.ping(); printKOT(); }}
-                disabled={items.length === 0}
+                disabled={items.length === 0 || isSaving}
                 className="flex flex-col items-center justify-center py-2 rounded-xl border border-orange-500/20 text-orange-500 bg-orange-500/5 hover:bg-orange-500/10 disabled:opacity-40 transition-all font-black"
               >
                 <Printer size={14} className="mb-0.5" strokeWidth={3} />
@@ -1719,13 +1741,14 @@ export default function CheckoutClient() {
                 resetForm();
                 if (resumeBillId) router.replace("/dashboard/billing/checkout");
               }}
-              disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
+              disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl
                 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm
                 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 active:scale-[0.98] transition-all
                 disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-widest"
             >
-              <Printer size={18} strokeWidth={3} /> {business?.enableKOTWithBill ? "KOT & Print Bill" : "Print Bill / Receipt"}
+              {isSaving ? <RefreshCw size={18} className="animate-spin" /> : <Printer size={18} strokeWidth={3} />} 
+              {business?.enableKOTWithBill ? "KOT & Print Bill" : "Print Bill / Receipt"}
             </button>
           </div>
         </div>
@@ -2375,7 +2398,7 @@ export default function CheckoutClient() {
                   kravy.ping();
                   printKOT();
                 }}
-                disabled={items.length === 0}
+                disabled={items.length === 0 || isSaving}
                 className="flex-1 py-3.5 rounded-xl border-2 border-orange-500/40 text-orange-500 font-extrabold text-sm hover:bg-orange-500/5 transition-all flex items-center justify-center gap-2"
               >
                 <Printer size={16} /> KOT
@@ -2395,10 +2418,11 @@ export default function CheckoutClient() {
                   resetForm();
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }}
-                disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid")}
+                disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
                 className="flex-[2] py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Printer size={16} /> {business?.enableKOTWithBill ? "KOT & Bill" : "Print Direct"}
+                {isSaving ? <RefreshCw size={16} className="animate-spin" /> : <Printer size={16} />} 
+                {business?.enableKOTWithBill ? "KOT & Bill" : "Print Direct"}
               </button>
             </div>
           </div>
