@@ -389,7 +389,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { MessageCircle, Printer, Download, ArrowLeft } from "lucide-react";
+import { 
+  MessageCircle, Printer, Download, ArrowLeft, Receipt, 
+  Calendar, Clock, UtensilsCrossed, User, Phone, 
+  CreditCard, CheckCircle2, AlertCircle, IndianRupee 
+} from "lucide-react";
 import { formatWhatsAppNumber } from "@/lib/whatsapp";
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 import type {
@@ -523,58 +527,56 @@ export default function ViewBillPage() {
 
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
-
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-4 sm:p-6 lg:p-10 space-y-8 max-w-5xl mx-auto">
+      
+      {/* ── Status Alerts ── */}
       {bill.isHeld && (
-        <div className="p-3 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded">
-          ⏸ This bill is currently on hold.
-          Unhold the bill to proceed with printing or payment.
+        <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 rounded-3xl shadow-sm animate-pulse">
+          <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+            <Clock size={20} className="animate-spin" />
+          </div>
+          <div>
+            <p className="font-black text-sm uppercase tracking-tight">Bill is on Hold</p>
+            <p className="text-xs font-medium opacity-80">Unhold the bill to proceed with printing or payment.</p>
+          </div>
         </div>
       )}
-      {bill.isHeld && (
-        <div className="bg-yellow-50 text-yellow-700 p-3 rounded">
-          ⏸ This bill is on hold. Resume it to continue.
-        </div>
-      )}
 
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-xl font-semibold">
-            Bill #{bill.billNumber}
-          </h1>
-          <p className="text-sm text-gray-500">
-            {new Date(bill.createdAt).toLocaleString()}
-          </p>
-        </div>
-
-        {/* CUSTOMER DETAILS */}
-        <div className="border rounded-lg p-3 bg-white">
-          <p className="text-sm font-medium mb-1">Customer Details</p>
-
-          <p className="text-sm">
-            <span className="font-medium">Name:</span>{" "}
-            {bill.customerName || "Walk-in Customer"}
-          </p>
-
-          {bill.customerPhone && (
-            <p className="text-sm">
-              <span className="font-medium">Phone:</span>{" "}
-              {bill.customerPhone}
+      {/* ── Page Header ── */}
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-indigo-600 to-indigo-500 flex items-center justify-center shadow-xl shadow-indigo-500/20 flex-shrink-0">
+            <Receipt className="text-white" size={32} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                Bill <span className="text-indigo-600 dark:text-indigo-400">#{bill.billNumber}</span>
+              </h1>
+              <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest ${bill.paymentStatus?.toLowerCase() === 'paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400'}`}>
+                {bill.paymentStatus || 'Pending'}
+              </span>
+            </div>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <Calendar size={14} />
+              {new Date(bill.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+              <span className="opacity-30 mx-1">|</span>
+              <Clock size={14} />
+              {new Date(bill.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
             </p>
-          )}
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
           <button
             onClick={printReceipt}
             disabled={bill.isHeld}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 border px-4 py-2 rounded-xl font-bold bg-[var(--kravy-surface)] text-[var(--kravy-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--kravy-border)] transition-colors"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2.5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 px-6 py-3 rounded-2xl font-black text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-[0.98] disabled:opacity-50"
           >
-            <Printer size={18} />
+            <Printer size={18} className="text-indigo-500" />
             Print
           </button>
-          
+
           {(userRole === "ADMIN" || userRole === "MASTER") && (
             <WhatsAppBillButton 
               billId={id} 
@@ -586,92 +588,179 @@ export default function ViewBillPage() {
           <button
             onClick={() => window.open((bill as any).pdfUrl || `/api/bill-manager/${bill.id}/pdf${bill.clerkUserId ? `?clerkId=${bill.clerkUserId}` : ""}`, "_blank")}
             disabled={bill.isHeld}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 border px-4 py-2 rounded-xl font-bold bg-[var(--kravy-surface)] text-[var(--kravy-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--kravy-border)] transition-colors"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2.5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 px-6 py-3 rounded-2xl font-black text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-[0.98] disabled:opacity-50"
           >
-            <Download size={18} />
+            <Download size={18} className="text-sky-500" />
             PDF
           </button>
 
           <Link
             href="/dashboard/billing"
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 border px-4 py-2 rounded-xl font-bold bg-[var(--kravy-surface)] text-[var(--kravy-text-primary)] hover:bg-[var(--kravy-border)] transition-colors text-center"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-3 rounded-2xl font-black text-sm hover:opacity-90 transition-all shadow-lg shadow-slate-200 dark:shadow-none active:scale-[0.98]"
           >
             <ArrowLeft size={18} />
             Back
           </Link>
         </div>
-      </div>
+      </header>
 
-      {/* BILL DETAILS */}
-      <div className="bg-white border rounded-xl p-6 space-y-4">
-        {/* CUSTOMER */}
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-sm text-gray-500">Customer</p>
-            <p className="font-medium">
-              {bill.customerName ?? "Walk-in Customer"}
-            </p>
-          </div>
-          {(bill as any).buyerGSTIN && (
-            <div className="text-right">
-              <p className="text-sm text-gray-500">GSTIN</p>
-              <p className="font-medium text-indigo-600">
-                {(bill as any).buyerGSTIN}
-              </p>
+      {/* ── Bill Body ── */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Left Column: Items & Details */}
+        <div className="lg:col-span-2 space-y-8">
+          <section className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+              <h2 className="text-sm font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                <UtensilsCrossed size={16} /> Order Summary
+              </h2>
+              <span className="text-xs font-black px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-slate-600 dark:text-slate-400">
+                {billItems.length} Items
+              </span>
             </div>
-          )}
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-50 dark:border-slate-800">
+                    <th className="px-6 py-4 text-left">Product</th>
+                    <th className="px-4 py-4 text-center">Qty</th>
+                    <th className="px-4 py-4 text-right">Price</th>
+                    <th className="px-6 py-4 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                  {billItems.map((item, idx) => (
+                    <tr key={idx} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="font-bold text-slate-800 dark:text-slate-200">{item.name}</p>
+                        {/* If we have category or HSN info we could add it here */}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-black text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                          {item.qty}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-right font-bold text-slate-500 dark:text-slate-400 text-sm">
+                        ₹{item.rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-6 py-4 text-right font-black text-slate-900 dark:text-white">
+                        ₹{(item.qty * item.rate).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-8 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col items-end border-t border-slate-100 dark:border-slate-800">
+              <div className="w-full max-w-[280px] space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="font-bold text-slate-500 dark:text-slate-400">Subtotal</span>
+                  <span className="font-black text-slate-900 dark:text-white">₹{bill.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+                {bill.tax ? (
+                   <div className="flex justify-between items-center text-sm">
+                    <span className="font-bold text-slate-500 dark:text-slate-400">GST / Tax</span>
+                    <span className="font-black text-amber-600 dark:text-amber-400">₹{bill.tax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                ) : null}
+                <div className="h-px bg-slate-200 dark:bg-slate-700 my-2" />
+                <div className="flex justify-between items-center">
+                  <span className="text-base font-black text-slate-900 dark:text-white">Grand Total</span>
+                  <span className="text-xl font-black text-indigo-600 dark:text-indigo-400">₹{bill.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
 
-        {/* ITEMS */}
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="p-3 text-left">Item</th>
-                <th className="p-3 text-right">Qty</th>
-                <th className="p-3 text-right">Rate</th>
-                <th className="p-3 text-right">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {billItems.map((i, idx) => (
-                <tr key={idx} className="border-t">
-                  <td className="p-3">{i.name}</td>
-                  <td className="p-3 text-right">{i.qty}</td>
-                  <td className="p-3 text-right">
-                    ₹{i.rate.toFixed(2)}
-                  </td>
-                  <td className="p-3 text-right">
-                    ₹{(i.qty * i.rate).toFixed(2)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* Right Column: Information Cards */}
+        <div className="space-y-6">
+          {/* Customer Info Card */}
+          <section className="bg-white dark:bg-slate-900 rounded-[32px] p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
+              <User size={80} />
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-5 flex items-center gap-2">
+              <User size={14} className="text-indigo-500" /> Customer Information
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Full Name</p>
+                <p className="text-lg font-black text-slate-800 dark:text-slate-200">{bill.customerName || "Walk-in Customer"}</p>
+              </div>
+              {bill.customerPhone && (
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Phone Number</p>
+                  <p className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Phone size={14} className="text-emerald-500" />
+                    {bill.customerPhone}
+                  </p>
+                </div>
+              )}
+               {(bill as any).buyerGSTIN && (
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">GSTIN Number</p>
+                  <p className="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase">{(bill as any).buyerGSTIN}</p>
+                </div>
+              )}
+            </div>
+          </section>
 
-        {/* TOTALS */}
-        <div className="flex justify-end">
-          <div className="w-full max-w-xs space-y-2 text-sm">
-            <Row label="Subtotal" value={bill.subtotal} />
-            <Row label="Tax" value={bill.tax ?? undefined} />
-            <Row label="Total" value={bill.total} bold />
+          {/* Payment Info Card */}
+          <section className="bg-white dark:bg-slate-900 rounded-[32px] p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
+              <CreditCard size={80} />
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-5 flex items-center gap-2">
+              <CreditCard size={14} className="text-emerald-500" /> Payment Details
+            </h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Payment Mode</p>
+                  <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">{bill.paymentMode || "Cash"}</p>
+                </div>
+                <div className={`p-2 rounded-xl ${bill.paymentStatus?.toLowerCase() === 'paid' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/30'}`}>
+                  {bill.paymentStatus?.toLowerCase() === 'paid' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
+                </div>
+              </div>
+              
+              {bill.upiTxnRef && (
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Transaction ID</p>
+                  <p className="text-xs font-black text-slate-500 dark:text-slate-400 font-mono bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                    {bill.upiTxnRef}
+                  </p>
+                </div>
+              )}
+
+              {bill.tableName && (
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Source / Table</p>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded-lg text-xs font-black uppercase">
+                    <UtensilsCrossed size={12} />
+                    {bill.tableName}
+                  </span>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Quick Info Bar */}
+          <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-[28px] p-6 text-white shadow-lg shadow-indigo-500/30">
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Business Name</p>
+            <p className="text-xl font-black truncate mb-4">{business?.businessName}</p>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <p className="text-[9px] font-bold opacity-60 uppercase tracking-tighter">Total Bill</p>
+                <p className="text-lg font-black tracking-tight">₹{bill.total.toLocaleString()}</p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <IndianRupee size={20} />
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* PAYMENT */}
-        <div className="border-t pt-4 text-sm space-y-1">
-          <p>
-            <b>Payment Mode:</b> {bill.paymentMode}
-          </p>
-          <p>
-            <b>Status:</b> {bill.paymentStatus}
-          </p>
-          {bill.upiTxnRef && (
-            <p>
-              <b>Txn Ref:</b> {bill.upiTxnRef}
-            </p>
-          )}
         </div>
       </div>
 

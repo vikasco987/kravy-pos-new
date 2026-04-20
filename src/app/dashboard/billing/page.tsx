@@ -700,7 +700,21 @@ export default function BillingPage() {
                   )}
 
                   <td style={{ textAlign: "right", paddingRight: "20px" }}>
-                    <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} />
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
+                      <button
+                        onClick={() => window.open(`/dashboard/billing/${bill.id}`, "_blank")}
+                        style={{
+                          width: "34px", height: "34px", borderRadius: "9px",
+                          background: "rgba(99, 102, 241, 0.05)", border: "1px solid rgba(99, 102, 241, 0.1)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          cursor: "pointer", color: "var(--kravy-brand)", transition: "all 0.2s"
+                        }}
+                        title="Quick Reprint"
+                      >
+                        <Printer size={16} />
+                      </button>
+                      <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} />
+                    </div>
                   </td>
                 </motion.tr>
               ))}
@@ -896,10 +910,14 @@ function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; 
   const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/auth/me")
+    fetch("/api/staff/me")
       .then(res => res.json())
-      .then(data => setUserRole(data.role))
-      .catch(err => console.error("Failed to fetch role", err));
+      .then(res => {
+        if (res.success) {
+          setUserRole(res.data.role || res.data.type);
+        }
+      })
+      .catch(err => console.error("Failed to fetch session", err));
   }, []);
 
   const handleWhatsApp = async () => {
@@ -968,10 +986,20 @@ function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; 
       onClick: () => router.push(`/dashboard/billing/${bill.id}`)
     },
     {
-      label: "Print Bill",
+      label: "Reprint Bill",
       icon: <Printer size={14} />,
       color: "var(--kravy-text-muted)",
       onClick: () => window.open(`/dashboard/billing/${bill.id}`, "_blank")
+    },
+    {
+      label: "Edit Bill",
+      icon: <FileText size={14} />,
+      color: "var(--kravy-brand)",
+      onClick: () => {
+        if (confirm("Do you want to edit this bill? This will load it back into the checkout page.")) {
+          router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`);
+        }
+      }
     },
     {
       label: "WhatsApp",

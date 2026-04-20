@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock, Trash2, Play, X, Search, ChevronDown, User, Printer,
   Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus,
-  LayoutGrid, Columns
+  LayoutGrid, Columns, StickyNote
 } from "lucide-react";
 import { calculateDiscount } from "@/lib/discount-utils";
 import { toast } from "sonner";
@@ -172,7 +172,9 @@ export default function CheckoutClient() {
   const [showPreview, setShowPreview] = useState(false);
   const [lastSavedBillId, setLastSavedBillId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const [previewZoom, setPreviewZoom] = useState(1);
+  const [showNotesModal, setShowNotesModal] = useState(false);
   const [quickAddCat, setQuickAddCat] = useState<{ id: string, name: string } | null>(null);
   const [quickAddTaxStatus, setQuickAddTaxStatus] = useState("Without Tax");
   const [quickAddGst, setQuickAddGst] = useState(0);
@@ -184,11 +186,17 @@ export default function CheckoutClient() {
   const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([]);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
+  /* ================= TABLES STATE ================= */
+  const [tables, setTables] = useState<any[]>([]);
+  const [selectedTable, setSelectedTable] = useState<string>("POS");
+  const [showTableSelect, setShowTableSelect] = useState(false);
+
   const resetForm = () => {
     setItems([]);
     setCustomerName("");
     setCustomerPhone("");
     setCustomerAddress("");
+    setOrderNotes("");
     setSelectedParty(null);
     setUpiTxnRef("");
     setPaymentMode("Cash");
@@ -199,6 +207,7 @@ export default function CheckoutClient() {
     setDiscountCode("");
     setDiscountAmt(0);
     setIsKotPrinted(false);
+    setSelectedTable("POS");
     
     // Generate new bill number for next session
     const now = new Date();
@@ -251,15 +260,34 @@ export default function CheckoutClient() {
     }
   }
 
+  async function fetchTables() {
+    try {
+      const res = await fetch("/api/tables");
+      if (res.ok) {
+        const data = await res.json();
+        setTables(data || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch tables:", e);
+    }
+  }
+
   useEffect(() => { 
     fetchHeldBills();
     fetchParties();
+    fetchTables();
     
-    // Fetch User Role
-    fetch("/api/auth/me")
+    // Fetch User/Staff Session
+    fetch("/api/staff/me")
       .then(res => res.json())
-      .then(data => setUserRole(data.role))
-      .catch(err => console.error("Failed to fetch role", err));
+      .then(res => {
+        if (res.success) {
+          const data = res.data;
+          setUserRole(data.role || data.type);
+          setUserPermissions(data.permissions || []);
+        }
+      })
+      .catch(err => console.error("Failed to fetch session", err));
   }, []);
 
   const [billNumber, setBillNumber] = useState("");
@@ -336,6 +364,8 @@ export default function CheckoutClient() {
         setUpiTxnRef(bill.upiTxnRef || "");
         setBuyerGSTIN(bill.buyerGSTIN || "");
         setPlaceOfSupply(bill.placeOfSupply || "");
+        setSelectedTable(bill.tableName || "POS");
+        setOrderNotes(bill.notes || bill.auditNote || "");
       } catch (err) {
         console.error("RESUME BILL ERROR:", err);
       }
@@ -422,6 +452,7 @@ export default function CheckoutClient() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
+  const [orderNotes, setOrderNotes] = useState("");
   const [isKotPrinted, setIsKotPrinted] = useState(false);
   const [buyerGSTIN, setBuyerGSTIN] = useState("");
   const [placeOfSupply, setPlaceOfSupply] = useState("");
@@ -823,8 +854,10 @@ export default function CheckoutClient() {
         isHeld, customerName: customerName || "Walk-in Customer",
         customerPhone: customerPhone || null,
         customerAddress: customerAddress || null,
+        notes: orderNotes,
+        auditNote: orderNotes, // Fallback for schema compatibility
         isKotPrinted: isKotPrinted === true,
-        tableName: "POS",
+        tableName: selectedTable,
         buyerGSTIN: buyerGSTIN || null,
         placeOfSupply: placeOfSupply || null,
         discountAmount: discountAmt,
@@ -1086,6 +1119,9 @@ export default function CheckoutClient() {
   /* ================= UI ================= */
   const totalItems = items.reduce((s, i) => s + i.qty, 0);
 
+  /* ================= PERMISSIONS HELPER ================= */
+  const canEdit = userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("edit") || userPermissions.includes("EDIT_POS");
+
   return (
     <div className="h-[calc(100vh-72px)] bg-[var(--kravy-bg)] flex flex-col overflow-hidden">
 
@@ -1131,13 +1167,15 @@ export default function CheckoutClient() {
                       transition-all placeholder:text-[var(--kravy-text-muted)] font-bold"
                   />
                 </div>
-                <button
-                  onClick={() => setQuickAddCat(categoriesList[0] || { id: "others", name: "Others" })}
-                  className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-all flex items-center justify-center shrink-0"
-                  title="Quick Add Item"
-                >
-                  <Plus size={14} strokeWidth={3} />
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => setQuickAddCat(categoriesList[0] || { id: "others", name: "Others" })}
+                    className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-all flex items-center justify-center shrink-0"
+                    title="Quick Add Item"
+                  >
+                    <Plus size={14} strokeWidth={3} />
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     fetch(`/api/menu/items?t=${Date.now()}`)
@@ -1185,13 +1223,15 @@ export default function CheckoutClient() {
                     {cat}
                   </button>
                 ))}
-                <button
-                  onClick={() => setShowAddCategory(true)}
-                  className="px-2 py-1 rounded-full bg-white border border-[var(--kravy-border)] text-indigo-600 hover:border-indigo-500 transition-all shadow-sm shrink-0"
-                  title="Add Category"
-                >
-                  <Plus size={12} strokeWidth={3} />
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => setShowAddCategory(true)}
+                    className="px-2 py-1 rounded-full bg-white border border-[var(--kravy-border)] text-indigo-600 hover:border-indigo-500 transition-all shadow-sm shrink-0"
+                    title="Add Category"
+                  >
+                    <Plus size={12} strokeWidth={3} />
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -1225,13 +1265,15 @@ export default function CheckoutClient() {
                   </button>
                 ))}
 
-                <button
-                  onClick={() => setShowAddCategory(true)}
-                  className="w-full py-3 rounded-xl border-2 border-dashed border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:text-indigo-500 hover:border-indigo-400/50 transition-all flex flex-col items-center justify-center gap-1"
-                >
-                  <Plus size={14} strokeWidth={3} />
-                  <span className="text-[9px] font-black uppercase tracking-tighter">New Section</span>
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => setShowAddCategory(true)}
+                    className="w-full py-3 rounded-xl border-2 border-dashed border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:text-indigo-500 hover:border-indigo-400/50 transition-all flex flex-col items-center justify-center gap-1"
+                  >
+                    <Plus size={14} strokeWidth={3} />
+                    <span className="text-[9px] font-black uppercase tracking-tighter">New Section</span>
+                  </button>
+                )}
               </div>
             )}
 
@@ -1277,7 +1319,7 @@ export default function CheckoutClient() {
                         {catItems.map(m => (
                           <MenuItemCard key={m.id} m={m} items={items} addToCart={addToCart} reduceFromCart={reduceFromCart} />
                         ))}
-                        <QuickAddCard cat={catObj} onClick={() => { setQuickAddCat(catObj); toast.info(`Quick add to ${catName}`); }} />
+                          {canEdit && <QuickAddCard cat={catObj} onClick={() => { setQuickAddCat(catObj); toast.info(`Quick add to ${catName}`); }} />}
                       </div>
                     </div>
                   );
@@ -1289,7 +1331,8 @@ export default function CheckoutClient() {
                   ))}
                   {!search && activeCategory !== "All" && (() => {
                     const fallbackCat = categoriesList.find(c => c.name.toLowerCase() === activeCategory.toLowerCase()) || { id: "", name: activeCategory };
-                    return <QuickAddCard cat={fallbackCat} onClick={() => setQuickAddCat(fallbackCat)} />;
+                    if (canEdit) return <QuickAddCard cat={fallbackCat} onClick={() => setQuickAddCat(fallbackCat)} />;
+                    return null;
                   })()}
                 </div>
               )}
@@ -1298,6 +1341,7 @@ export default function CheckoutClient() {
         </div>
       </div>
     </div>
+
 
         {/* ══════════════════════════════
             RIGHT — CART / BILLING
@@ -1340,23 +1384,55 @@ export default function CheckoutClient() {
                 </div>
               </div>
 
-              {/* Held Bills Button */}
-              <button
-                onClick={() => { setShowHeldBills(true); fetchHeldBills(); }}
-                className="relative group flex items-center gap-2 px-3 py-2 bg-amber-500/10 text-amber-500
-                  border border-amber-500/25 rounded-xl hover:bg-amber-500/20 transition-all"
-                title="View Held Bills"
-              >
-                <Clock size={16} />
-                <span className="text-xs font-black hidden sm:block">Held</span>
-                {heldBills.length > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[9px] font-black
-                    w-4 h-4 flex items-center justify-center rounded-full border-2 border-[var(--kravy-surface)] shadow">
-                    {heldBills.length}
-                  </span>
-                )}
-              </button>
+              {/* Note & Held Bills Buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowNotesModal(true)}
+                  className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${orderNotes ? "bg-blue-500/10 border-blue-500/25 text-blue-500" : "bg-[var(--kravy-surface)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)]"}`}
+                  title="Add Order Note"
+                >
+                  <StickyNote size={17} className={orderNotes ? "animate-pulse" : ""} />
+                </button>
+
+                <button
+                  onClick={() => { setShowHeldBills(true); fetchHeldBills(); }}
+                  className="relative group flex items-center gap-2 px-3 py-2 bg-amber-500/10 text-amber-500
+                    border border-amber-500/25 rounded-xl hover:bg-amber-500/20 transition-all"
+                  title="View Held Bills"
+                >
+                  <Clock size={16} />
+                  <span className="text-xs font-black hidden sm:block">Held</span>
+                  {heldBills.length > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[9px] font-black
+                      w-4 h-4 flex items-center justify-center rounded-full border-2 border-[var(--kravy-surface)] shadow">
+                      {heldBills.length}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
+          </div>
+
+          {/* Table Selection - NEW SECTION */}
+          <div className="px-4 md:px-5 py-2 border-b border-[var(--kravy-border)] bg-[var(--kravy-brand)]/5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <LayoutGrid size={13} className="text-[var(--kravy-brand)]" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">
+                Assigned Table
+              </span>
+            </div>
+            <select
+              value={selectedTable}
+              onChange={(e) => { kravy.click(); setSelectedTable(e.target.value); }}
+              className="bg-white border border-[var(--kravy-brand)]/20 text-[var(--kravy-brand)]
+                px-3 py-1 rounded-lg text-[11px] font-black outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                transition-all cursor-pointer shadow-sm min-w-[100px]"
+            >
+              <option value="POS">Counter / POS</option>
+              {tables.map((t) => (
+                <option key={t.id} value={t.name}>Table: {t.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Scrollable Middle Content (Customer + Items) */}
@@ -1431,7 +1507,6 @@ export default function CheckoutClient() {
                    </div>
                  )}
 
-                {(business?.collectCustomerAddress || customerAddress) && (
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Address</label>
                     <textarea
@@ -1444,34 +1519,36 @@ export default function CheckoutClient() {
                         focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-medium resize-none"
                     />
                   </div>
+
+                {business?.taxEnabled && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Buyer GSTIN</label>
+                      <input
+                        placeholder="Customer GSTIN"
+                        value={buyerGSTIN}
+                        autoComplete="off"
+                        onChange={(e) => setBuyerGSTIN(e.target.value.toUpperCase())}
+                        className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
+                          p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                          focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] uppercase"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Place of Supply</label>
+                      <input
+                        placeholder="e.g. Haryana"
+                        value={placeOfSupply}
+                        autoComplete="off"
+                        onChange={(e) => setPlaceOfSupply(e.target.value)}
+                        className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
+                          p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                          focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)]"
+                      />
+                    </div>
+                  </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Buyer GSTIN</label>
-                    <input
-                      placeholder="Customer GSTIN"
-                      value={buyerGSTIN}
-                      autoComplete="off"
-                      onChange={(e) => setBuyerGSTIN(e.target.value.toUpperCase())}
-                      className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
-                        p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
-                        focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] uppercase"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Place of Supply</label>
-                    <input
-                      placeholder="e.g. Haryana"
-                      value={placeOfSupply}
-                      autoComplete="off"
-                      onChange={(e) => setPlaceOfSupply(e.target.value)}
-                      className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
-                        p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
-                        focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)]"
-                    />
-                  </div>
-                </div>
 
                 {/* Suggestions Dropdown */}
                 {customerSuggestions.length > 0 && (
@@ -1601,7 +1678,7 @@ export default function CheckoutClient() {
                  Discount
                </button>
             </div>
-            
+
             <div className="flex gap-2">
                {discountMode === 'PROMO' ? (
                  <input 
@@ -1612,13 +1689,23 @@ export default function CheckoutClient() {
                    className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-xl outline-none text-[10px] font-black tracking-widest uppercase"
                  />
                ) : (
-                 <input 
-                   type="number"
-                   placeholder={`ENTER ${customDiscountType === 'PERCENT' ? '%' : 'AMT'}...`}
-                   value={customDiscountValue}
-                   onChange={e => setCustomDiscountValue(e.target.value)}
-                   className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-xl outline-none text-[10px] font-black"
-                 />
+                 <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+                    <select 
+                      value={customDiscountType}
+                      onChange={(e) => { kravy.click(); setCustomDiscountType(e.target.value as 'PERCENT' | 'FLAT'); }}
+                      className="bg-[var(--kravy-surface)] border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-2.5 text-[10px] font-black outline-none cursor-pointer hover:bg-slate-50 transition-colors"
+                    >
+                      <option value="PERCENT">% (Off)</option>
+                      <option value="FLAT">₹ (Fixed)</option>
+                    </select>
+                    <input 
+                      type="number"
+                      placeholder={`Enter ${customDiscountType === 'PERCENT' ? '%' : 'amount'}...`}
+                      value={customDiscountValue}
+                      onChange={e => setCustomDiscountValue(e.target.value)}
+                      className="bg-transparent text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-none outline-none text-[10px] font-black"
+                    />
+                 </div>
                )}
                {discountMode === 'PROMO' ? (
                  <button onClick={appliedOffer ? removeCoupon : handleApplyCoupon} className={`px-3 rounded-xl font-black text-[10px] uppercase transition-all ${appliedOffer ? "bg-rose-500/10 text-rose-500" : "bg-indigo-600 text-white"}`}>
@@ -1778,6 +1865,9 @@ export default function CheckoutClient() {
           <div className="text-center text-[11px] mt-2 font-bold">
             <div>Bill No: {billNumber}</div>
             <div>Date: {billDate} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            {selectedTable !== "POS" && <div className="font-bold text-[12px] mt-1 border border-black px-1 inline-block">TABLE: {selectedTable}</div>}
+            {customerAddress && <div className="mt-1">Customer Addr: {customerAddress}</div>}
+            {placeOfSupply && <div className="mt-0.5">Place of Supply: {placeOfSupply}</div>}
           </div>
           <div className="my-2 border-t-2 border-black" />
           <div className="flex justify-between font-bold text-[11px]">
@@ -1925,10 +2015,15 @@ export default function CheckoutClient() {
           className="hidden print:block font-mono text-[10px] leading-tight"
         >
           <div className="text-center font-black text-[18px] border-b-2 border-black pb-1 mb-2">KOT</div>
-          <div className="flex justify-between text-[13px] font-black mb-2">
+          <div className="flex justify-between text-[13px] font-black mb-1">
             <span>#{billNumber.split('-').pop()}</span>
             <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
+          {selectedTable !== "POS" && (
+            <div className="text-center text-[16px] font-black border-2 border-black py-1 my-1">
+              TABLE: {selectedTable}
+            </div>
+          )}
           <div className="border-t-2 border-black my-1" />
           <div className="flex justify-between font-black text-[13px] mb-1">
             <span>Item</span>
@@ -1945,7 +2040,8 @@ export default function CheckoutClient() {
             {new Date().toLocaleDateString()}
           </div>
         </div>
-      </div>
+      
+
 
       {/* ════════════════════════════════════════════
           HELD BILLS DRAWER
@@ -2018,9 +2114,27 @@ export default function CheckoutClient() {
                         <p className="font-black text-[var(--kravy-text-primary)] text-sm truncate">
                           {bill.customerName || "Walk-in Customer"}
                         </p>
-                        <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-1">
-                          {new Date(bill.createdAt).toLocaleString()}
-                        </p>
+                        {bill.customerPhone && (
+                          <p className="text-[10px] font-bold text-indigo-500 font-mono mt-0.5">
+                            {bill.customerPhone}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-[10px] font-bold text-[var(--kravy-text-muted)]">
+                            {new Date(bill.createdAt).toLocaleString()}
+                          </p>
+                          <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
+                            {bill.tableName || "POS"}
+                          </span>
+                        </div>
+                        {(bill.notes || bill.auditNote) && (
+                          <div className="mt-2 p-2 bg-blue-50/50 border border-blue-100 rounded-lg">
+                            <p className="text-[9px] font-bold text-blue-600 uppercase tracking-tight">Note:</p>
+                            <p className="text-[10px] font-medium text-blue-800 italic line-clamp-2">
+                              {bill.notes || bill.auditNote}
+                            </p>
+                          </div>
+                        )}
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-lg font-black text-[var(--kravy-brand)]">₹{bill.total.toFixed(2)}</p>
@@ -2112,9 +2226,9 @@ export default function CheckoutClient() {
                 <Trash2 size={28} className="text-rose-500" />
               </div>
 
-              <h3 className="text-xl font-black text-[var(--kravy-text-primary)] mb-2">Delete Order?</h3>
+              <h3 className="text-xl font-black text-[var(--kravy-text-primary)] mb-2">Move to Trash?</h3>
               <p className="text-sm text-[var(--kravy-text-muted)] font-medium leading-relaxed mb-6">
-                Yeh order permanently delete ho jaayega.<br />Yeh action undo nahi ho sakta.
+                Yeh order checkout se hat jaayega.<br />Aap ise baad mein "Deleted Bills" mein dekh sakte hain.
               </p>
 
               {/* Bill preview */}
@@ -2271,12 +2385,20 @@ export default function CheckoutClient() {
                   <div className="text-center text-[9px] mt-1">
                     <div>Bill No: {billNumber}</div>
                     <div>Date: {billDate}</div>
+                    {selectedTable !== "POS" && <div className="font-bold text-black mt-0.5">TABLE: {selectedTable}</div>}
                   </div>
                   <div className="my-1 border-t border-dashed border-gray-400" />
-                  {(customerName || customerPhone) && (
+                  {(customerName || customerPhone || customerAddress) && (
                     <div className="text-[9px]">
                       <div>Customer: {customerName || "Walk-in Customer"}</div>
                       {customerPhone && <div>Phone: {customerPhone}</div>}
+                      {customerAddress && <div>Addr: {customerAddress}</div>}
+                      {placeOfSupply && <div>POS: {placeOfSupply}</div>}
+                      {(orderNotes) && (
+                        <div className="mt-1 pt-1 border-t border-dotted border-gray-300 italic text-gray-700">
+                          Note: {orderNotes}
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="my-1 border-t border-dashed border-gray-400" />
@@ -2423,6 +2545,47 @@ export default function CheckoutClient() {
               >
                 {isSaving ? <RefreshCw size={16} className="animate-spin" /> : <Printer size={16} />} 
                 {business?.enableKOTWithBill ? "KOT & Bill" : "Print Direct"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 📝 ORDER NOTES MODAL */}
+      {showNotesModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowNotesModal(false)} />
+          <div className="relative w-full max-w-sm bg-[var(--kravy-surface)] rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-[var(--kravy-border)] flex items-center justify-between bg-blue-500/5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                  <StickyNote size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-[var(--kravy-text-primary)]">Order Remarks</h3>
+                  <p className="text-[9px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-wider">Kitchen Instructions</p>
+                </div>
+              </div>
+              <button onClick={() => setShowNotesModal(false)} className="text-[var(--kravy-text-muted)] hover:text-rose-500 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <textarea
+                autoFocus
+                placeholder="E.g. Extra spicy, No onions, Fast delivery, Handle with care..."
+                value={orderNotes}
+                onChange={(e) => setOrderNotes(e.target.value)}
+                className="w-full min-h-[120px] bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-2xl p-4
+                  text-sm font-bold text-[var(--kravy-text-primary)] outline-none focus:ring-2 focus:ring-blue-500/20
+                  focus:border-blue-500 transition-all placeholder:text-[var(--kravy-text-muted)] resize-none"
+              />
+              <button
+                onClick={() => { kravy.toggle(); setShowNotesModal(false); }}
+                className="w-full py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest
+                  shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                Save Remark
               </button>
             </div>
           </div>
@@ -2623,6 +2786,7 @@ export default function CheckoutClient() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

@@ -68,7 +68,10 @@ export async function PUT(
       upiTxnRef,
       customerName,
       customerPhone,
+      customerAddress,
+      tableName,
       discountCode,
+      isKotPrinted,
     } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -190,9 +193,12 @@ export async function PUT(
         upiTxnRef: finalPaymentMode === "UPI" ? upiTxnRef : null,
         customerName: customerName || null,
         customerPhone: customerPhone || null,
+        customerAddress: customerAddress || null,
         partyId: partyId,
+        tableName: tableName || undefined,
         discountAmount: serverDiscountAmt,
         discountCode: validatedDiscountCode,
+        isKotPrinted: isKotPrinted === true,
         auditNote: body.auditNote || null,
       },
     });
@@ -234,13 +240,18 @@ export async function DELETE(
       return NextResponse.json({ error: "Bill not found" }, { status: 404 });
     }
 
-    // Perform permanent delete as requested by the user
-    // This also fixes the TypeError which was likely linked to the soft-delete snapshot logic
-    await prisma.billManager.delete({
+    // Perform soft delete as requested by the user
+    await prisma.billManager.update({
       where: { id },
+      data: { 
+        isDeleted: true,
+        deletedAt: new Date(),
+        // Store a snapshot for audit purposes if needed
+        deletedSnapshot: JSON.parse(JSON.stringify(bill))
+      }
     });
 
-    return NextResponse.json({ success: true, deletedPermanently: true });
+    return NextResponse.json({ success: true, deleted: true });
   } catch (err) {
     console.error("DELETE BILL ERROR:", err);
     return NextResponse.json(

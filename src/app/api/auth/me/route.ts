@@ -17,6 +17,7 @@ export async function GET() {
         role: true,
         name: true,
         email: true,
+        allowedPaths: true,
       },
     });
 

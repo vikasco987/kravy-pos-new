@@ -182,15 +182,240 @@ const navGroups = [
       { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings", roles: ["ADMIN", "SELLER"] },
       { icon: <Percent size={18} />, label: "Tax Management", href: "/dashboard/settings/tax", badge: "GST", badgeColor: "#F59E0B", roles: ["ADMIN"] },
       { icon: <Lock size={18} />, label: "Access Control", href: "/admin/users", badge: "Roles", badgeColor: "#EF4444", roles: ["ADMIN"] },
-      { icon: <LayoutDashboard size={18} />, label: "System Funnel", href: "/admin/dashboard", roles: ["ADMIN"], badge: "Funnel", badgeColor: "#8B5CF6" },
-      { icon: <TrendingUp size={18} />, label: "Merchant Ecosystem", href: "/admin/merchants", roles: ["ADMIN"], badge: "Report", badgeColor: "#10B981" },
-      { icon: <Rocket size={18} />, label: "Onboard Merchant", href: "/admin/onboarding", roles: ["ADMIN"] },
+      { 
+        icon: <Shield size={18} />, 
+        label: "Manage Platform", 
+        href: "/admin/dashboard", 
+        roles: ["ADMIN"],
+        subItems: [
+          { label: "System Funnel", href: "/admin/dashboard", badge: "Live" },
+          { label: "Merchant Data", href: "/admin/merchants", badge: "Report" },
+          { label: "Onboard Dealer", href: "/admin/onboarding" },
+        ]
+      },
       { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup", roles: ["ADMIN"] },
       { icon: <Archive size={18} />, label: "Archive & Trash", href: "/dashboard/billing/deleted", roles: ["ADMIN", "SELLER"] },
       { icon: <HelpCircle size={18} />, label: "Help & Support", href: "/dashboard/help" },
     ]
   }
 ];
+function SidebarItem({ item, index, isActive, collapsed, isDark, pathname }: any) {
+  const [isOpen, setIsOpen] = useState(isActive);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className="w-full"
+    >
+      <div
+        onClick={() => {
+          if (item.subItems) {
+            setIsOpen(!isOpen);
+            kravy.click();
+          }
+        }}
+      >
+        <Link 
+          href={item.subItems ? "#" : item.href} 
+          style={{ textDecoration: 'none' }} 
+          prefetch={false} 
+          onClick={(e) => { 
+            if(item.subItems) e.preventDefault();
+            if(item.href !== '#' && !item.subItems) kravy.click(); 
+          }}
+        >
+          <motion.div
+            whileHover={{ scale: 1.02, x: 5 }}
+            whileTap={{ scale: 0.98 }}
+            style={{
+              width: "100%", display: "flex", alignItems: "center",
+              gap: "12px", padding: collapsed ? "13px 0" : "11px 12px",
+              justifyContent: collapsed ? "center" : "flex-start",
+              borderRadius: "14px",
+              cursor: item.href === "#" && !item.subItems ? "not-allowed" : "pointer",
+              pointerEvents: item.href === "#" && !item.subItems ? "none" : "auto",
+              opacity: item.href === "#" && !item.subItems ? 0.6 : 1,
+              marginBottom: "3px", transition: "all 0.25s cubic-bezier(.4,0,.2,1)",
+              background: isActive
+                ? "linear-gradient(135deg, rgba(255,107,53,0.22) 0%, rgba(245,158,11,0.08) 100%)"
+                : "transparent",
+              border: isActive
+                ? "1px solid rgba(255,107,53,0.2)"
+                : "1px solid transparent",
+              position: "relative",
+              boxShadow: isActive ? "0 2px 12px rgba(255,107,53,0.12), inset 0 1px 0 rgba(255,255,255,0.06)" : "none",
+            }}
+          >
+            <motion.span
+              animate={{
+                color: isActive ? "#FF6B35" : (isDark ? "rgba(255,255,255,0.38)" : "var(--kravy-text-muted)"),
+                scale: isActive ? 1.1 : 1,
+              }}
+              transition={{ duration: 0.2 }}
+              style={{
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                filter: isActive ? (isDark ? "drop-shadow(0 0 8px rgba(255,107,53,0.6))" : "none") : "none",
+              }}
+            >
+              {item.icon}
+            </motion.span>
+            {!collapsed && (
+              <motion.div
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                transition={{ delay: 0.1 }}
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}
+              >
+                <motion.span
+                  animate={{
+                    fontWeight: isActive ? 700 : 500,
+                    color: isActive
+                      ? (isDark ? "#FFFFFF" : "var(--kravy-orange)")
+                      : (isDark ? "rgba(255,255,255,0.5)" : "var(--kravy-text-secondary)"),
+                  }}
+                  transition={{ duration: 0.2 }}
+                  style={{ flex: 1, textAlign: "left", fontSize: "0.85rem", letterSpacing: "-0.01em" }}
+                >
+                  {item.label}
+                </motion.span>
+                
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  {item.badge && (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.2 }}
+                      style={{
+                        fontSize: "0.55rem", fontWeight: 900, padding: "2px 8px",
+                        borderRadius: "10px", 
+                        background: item.badgeColor || (isActive ? "var(--kravy-orange)" : "var(--kravy-bg-active)"),
+                        color: "#FFFFFF", textTransform: "uppercase",
+                        letterSpacing: "0.5px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                        opacity: 0.9
+                      }}
+                    >
+                      {item.badge}
+                    </motion.span>
+                  )}
+                  {item.subItems && (
+                    <motion.div
+                      animate={{ rotate: isOpen ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <ChevronDown size={14} style={{ opacity: 0.4 }} />
+                    </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+            {isActive && !(item as any).showHorizontalGroup && (
+              <motion.div
+                initial={{ opacity: 0, scaleY: 0 }}
+                animate={{ opacity: 1, scaleY: 1 }}
+                transition={{ delay: 0.3 }}
+                style={{
+                  position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
+                  width: "4px", height: "70%", borderRadius: "2px 0 0 2px",
+                  background: "linear-gradient(#FF6B35, #F59E0B)",
+                  boxShadow: "0 0 12px rgba(255,107,53,0.5)",
+                }}
+              />
+            )}
+          </motion.div>
+        </Link>
+      </div>
+
+      {/* SUB-ITEMS RENDERING */}
+      {!collapsed && item.subItems && (
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              style={{ overflow: "hidden", marginLeft: "28px", borderLeft: "1px solid rgba(255,255,255,0.05)" }}
+            >
+              {item.subItems.map((sub: any) => {
+                const isSubActive = pathname === sub.href;
+                return (
+                  <Link key={sub.label} href={sub.href} style={{ textDecoration: 'none' }} onClick={() => kravy.click()}>
+                    <motion.div
+                      whileHover={{ x: 5 }}
+                      style={{
+                        padding: "8px 12px",
+                        fontSize: "0.78rem",
+                        fontWeight: isSubActive ? 800 : 500,
+                        color: isSubActive ? "#FF6B35" : (isDark ? "rgba(255,255,255,0.4)" : "var(--kravy-text-muted)"),
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        borderRadius: "8px",
+                        margin: "2px 0",
+                        background: isSubActive ? "rgba(255,107,53,0.05)" : "transparent"
+                      }}
+                    >
+                      {sub.label}
+                      {sub.badge && (
+                        <span style={{ fontSize: '0.5rem', opacity: 0.5, border: '1px solid currentColor', padding: '1px 4px', borderRadius: '4px' }}>{sub.badge}</span>
+                      )}
+                    </motion.div>
+                  </Link>
+                )
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
+
+      {(item as any).showHorizontalGroup && !collapsed && (
+        <div style={{ display: 'flex', gap: '8px', padding: '0 12px 12px', marginTop: '-4px' }}>
+          <Link href="/dashboard/combos" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => { kravy.click(); }}>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                padding: '10px',
+                background: pathname === '/dashboard/combos' ? 'rgba(255,107,53,0.15)' : 'rgba(255,255,255,0.03)',
+                borderRadius: '12px',
+                border: `1px solid ${pathname === '/dashboard/combos' ? 'rgba(255,107,53,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <Sparkles size={16} color={pathname === '/dashboard/combos' ? '#FF6B35' : '#64748B'} />
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pathname === '/dashboard/combos' ? '#FF6B35' : '#64748B' }}>COMBOS</span>
+            </motion.div>
+          </Link>
+          <Link href="/dashboard/gallery" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => { kravy.click(); }}>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                padding: '10px',
+                background: pathname === '/dashboard/gallery' ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.03)',
+                borderRadius: '12px',
+                border: `1px solid ${pathname === '/dashboard/gallery' ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <Camera size={16} color={pathname === '/dashboard/gallery' ? '#7C3AED' : '#64748B'} />
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pathname === '/dashboard/gallery' ? '#7C3AED' : '#64748B' }}>GALLERY</span>
+            </motion.div>
+          </Link>
+        </div>
+      )}
+    </motion.div>
+  );
+}
 
 export default function Sidebar() {
   const { collapsed, setCollapsed } = useSidebar();
@@ -535,148 +760,17 @@ export default function Sidebar() {
                   opacity: isDark ? 1 : 0.7,
                 }}>{group.group}</div>
               )}
-              {visibleItems.map((item: any, index) => {
-                const isActive = pathname === item.href;
-              return (
-                <motion.div
-                  key={item.label}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <Link href={item.href} style={{ textDecoration: 'none' }} prefetch={false} onClick={() => { if(item.href !== '#') kravy.click(); }}>
-                    <motion.div
-                      whileHover={{ scale: 1.02, x: 5 }}
-                      whileTap={{ scale: 0.98 }}
-                      style={{
-                        width: "100%", display: "flex", alignItems: "center",
-                        gap: "12px", padding: collapsed ? "13px 0" : "11px 12px",
-                        justifyContent: collapsed ? "center" : "flex-start",
-                        borderRadius: "14px",
-                        cursor: item.href === "#" ? "not-allowed" : "pointer",
-                        pointerEvents: item.href === "#" ? "none" : "auto",
-                        opacity: item.href === "#" ? 0.6 : 1,
-                        marginBottom: "3px", transition: "all 0.25s cubic-bezier(.4,0,.2,1)",
-                        background: isActive
-                          ? "linear-gradient(135deg, rgba(255,107,53,0.22) 0%, rgba(245,158,11,0.08) 100%)"
-                          : "transparent",
-                        border: isActive
-                          ? "1px solid rgba(255,107,53,0.2)"
-                          : "1px solid transparent",
-                        position: "relative",
-                        boxShadow: isActive ? "0 2px 12px rgba(255,107,53,0.12), inset 0 1px 0 rgba(255,255,255,0.06)" : "none",
-                      }}
-                      onHoverStart={() => { }}
-                      onHoverEnd={() => { }}
-                    >
-                      <motion.span
-                        animate={{
-                          color: isActive ? "#FF6B35" : (isDark ? "rgba(255,255,255,0.38)" : "var(--kravy-text-muted)"),
-                          scale: isActive ? 1.1 : 1,
-                        }}
-                        transition={{ duration: 0.2 }}
-                        style={{
-                          flexShrink: 0,
-                          display: "flex",
-                          alignItems: "center",
-                          filter: isActive ? (isDark ? "drop-shadow(0 0 8px rgba(255,107,53,0.6))" : "none") : "none",
-                        }}
-                      >
-                        {item.icon}
-                      </motion.span>
-                      {!collapsed && (
-                        <motion.div
-                          initial={{ opacity: 0, width: 0 }}
-                          animate={{ opacity: 1, width: "auto" }}
-                          transition={{ delay: 0.1 }}
-                          style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                        >
-                          <motion.span
-                            animate={{
-                              fontWeight: isActive ? 700 : 500,
-                              color: isActive
-                                ? (isDark ? "#FFFFFF" : "var(--kravy-orange)")
-                                : (isDark ? "rgba(255,255,255,0.5)" : "var(--kravy-text-secondary)"),
-                            }}
-                            transition={{ duration: 0.2 }}
-                            style={{ flex: 1, textAlign: "left", fontSize: "0.875rem", letterSpacing: "-0.01em" }}
-                          >
-                            {item.label}
-                          </motion.span>
-                          {item.badge && (
-                            <motion.span
-                              initial={{ opacity: 0, scale: 0 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: 0.2 }}
-                              style={{
-                                fontSize: "0.6rem", fontWeight: 700, padding: "3px 8px",
-                                borderRadius: "20px", fontFamily: "monospace",
-                                background: `${item.badgeColor}22`,
-                                color: item.badgeColor,
-                                border: `1px solid ${item.badgeColor}55`,
-                                boxShadow: `0 2px 8px ${item.badgeColor}33`,
-                              }}
-                            >
-                              {item.badge}
-                            </motion.span>
-                          )}
-                        </motion.div>
-                      )}
-                      {isActive && !(item as any).showHorizontalGroup && (
-                        <motion.div
-                          initial={{ opacity: 0, scaleY: 0 }}
-                          animate={{ opacity: 1, scaleY: 1 }}
-                          transition={{ delay: 0.3 }}
-                          style={{
-                            position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
-                            width: "4px", height: "70%", borderRadius: "2px 0 0 2px",
-                            background: "linear-gradient(#FF6B35, #F59E0B)",
-                            boxShadow: "0 0 12px rgba(255,107,53,0.5)",
-                          }}
-                        />
-                      )}
-                    </motion.div>
-                  </Link>
-                  {(item as any).showHorizontalGroup && !collapsed && (
-                    <div style={{ display: 'flex', gap: '8px', padding: '0 12px 12px', marginTop: '-4px' }}>
-                      <Link href="/dashboard/combos" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => kravy.click()}>
-                        <div style={{
-                          background: pathname === '/dashboard/combos' ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.05)",
-                          border: pathname === '/dashboard/combos' ? "1px solid rgba(139,92,246,0.3)" : "1px solid rgba(139,92,246,0.1)",
-                          borderRadius: "8px", padding: "6px 0", textAlign: "center", transition: "all 0.2s",
-                          color: pathname === '/dashboard/combos' ? "#8B5CF6" : (isDark ? "rgba(255,255,255,0.6)" : "var(--kravy-text-secondary)")
-                        }}>
-                          <Sparkles size={14} style={{ margin: "0 auto 4px" }} />
-                          <div style={{ fontSize: "0.55rem", fontWeight: 700, textTransform: 'uppercase' }}>Combos</div>
-                        </div>
-                      </Link>
-                      <Link href="/dashboard/discounts" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => kravy.click()}>
-                        <div style={{
-                          background: pathname === '/dashboard/discounts' ? "rgba(245,158,11,0.15)" : "rgba(245,158,11,0.05)",
-                          border: pathname === '/dashboard/discounts' ? "1px solid rgba(245,158,11,0.3)" : "1px solid rgba(245,158,11,0.1)",
-                          borderRadius: "8px", padding: "6px 0", textAlign: "center", transition: "all 0.2s",
-                          color: pathname === '/dashboard/discounts' ? "#F59E0B" : (isDark ? "rgba(255,255,255,0.6)" : "var(--kravy-text-secondary)")
-                        }}>
-                          <Tag size={14} style={{ margin: "0 auto 4px" }} />
-                          <div style={{ fontSize: "0.55rem", fontWeight: 700, textTransform: 'uppercase' }}>Offers</div>
-                        </div>
-                      </Link>
-                      <Link href="/dashboard/rewards" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => kravy.click()}>
-                        <div style={{
-                          background: pathname === '/dashboard/rewards' ? "rgba(255,107,53,0.15)" : "rgba(255,107,53,0.05)",
-                          border: pathname === '/dashboard/rewards' ? "1px solid rgba(255,107,53,0.3)" : "1px solid rgba(255,107,53,0.1)",
-                          borderRadius: "8px", padding: "6px 0", textAlign: "center", transition: "all 0.2s",
-                          color: pathname === '/dashboard/rewards' ? "#FF6B35" : (isDark ? "rgba(255,255,255,0.6)" : "var(--kravy-text-secondary)")
-                        }}>
-                          <Gift size={14} style={{ margin: "0 auto 4px" }} />
-                          <div style={{ fontSize: "0.55rem", fontWeight: 700, textTransform: 'uppercase' }}>Loyalty</div>
-                        </div>
-                      </Link>
-                    </div>
-                  )}
-                </motion.div>
-              );
-            })}
+              {visibleItems.map((item: any, index) => (
+                <SidebarItem 
+                  key={item.label} 
+                  item={item} 
+                  index={index} 
+                  isActive={pathname === item.href || item.subItems?.some((sub: any) => pathname === sub.href)} 
+                  collapsed={collapsed} 
+                  isDark={isDark} 
+                  pathname={pathname}
+                />
+              ))}
           </div>
         );
       })}
