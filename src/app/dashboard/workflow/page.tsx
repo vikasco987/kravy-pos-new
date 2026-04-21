@@ -189,24 +189,39 @@ export default function KravyPOS() {
 
             const printStyles = `
                 @media print {
-                    @page { size: 58mm auto; margin: 0; }
-                    body * { visibility: hidden !important; }
-                    #print-receipt-container, #print-receipt-container * {
-                        visibility: visible !important;
-                        font-family: 'Courier New', Courier, monospace !important;
+                    html, body { 
+                        height: auto !important; 
+                        overflow: visible !important; 
+                        margin: 0 !important;
+                        padding: 0 !important;
                     }
+                    body > *:not(#print-receipt-container) { display: none !important; }
+                    @page { margin: 0; size: auto; }
                     #print-receipt-container {
                         display: block !important;
-                        width: 58mm !important;
-                        position: absolute !important;
-                        top: 0 !important;
-                        left: 0 !important;
-                        padding: 0 !important;
+                        width: 100% !important;
+                        height: auto !important;
+                        overflow: visible !important;
                         margin: 0 !important;
-                        background: white !important;
-                        color: black !important;
+                        padding: 0 0 120px 0 !important; 
+                        background: #fff !important;
+                        color: #000 !important;
+                        font-family: 'Courier New', Courier, monospace !important;
+                        font-weight: 700 !important;
+                        position: relative !important;
                     }
-                    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                    * { 
+                        color: #000 !important; 
+                        border-color: #000 !important; 
+                        overflow: visible !important;
+                        -webkit-print-color-adjust: exact !important; 
+                        print-color-adjust: exact !important;
+                    }
+                    img { 
+                        filter: grayscale(100%) contrast(300%) !important; 
+                        max-width: 100% !important;
+                        display: block !important;
+                    }
                 }
             `;
 
@@ -216,14 +231,17 @@ export default function KravyPOS() {
 
             const printContainer = document.createElement("div");
             printContainer.id = "print-receipt-container";
+            printContainer.className = "font-mono text-[11px] leading-tight font-bold";
             printContainer.innerHTML = targetRef.innerHTML;
             document.body.appendChild(printContainer);
 
             kravy.print();
             window.print();
 
-            document.head.removeChild(styleSheet);
-            document.body.removeChild(printContainer);
+            setTimeout(() => {
+                if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
+                if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
+            }, 2500);
 
             if (targetOrder && type !== "MANUAL_COMBINE") {
                 const body: any = { orderId: (targetOrder as any).id.includes("Combined") ? customOrder?.id || printOrder?.id : targetOrder.id };
