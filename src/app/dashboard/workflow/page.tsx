@@ -107,12 +107,34 @@ export default function KravyPOS() {
     const [clock, setClock] = useState("");
     const [dateStr, setDateStr] = useState("");
     const [business, setBusiness] = useState<any>(null);
+    
+    useEffect(() => {
+        fetchMenu();
+    }, []);
+
+    const fetchMenu = async () => {
+        try {
+            const res = await fetch("/api/items");
+            if (res.ok) {
+                const data = await res.json();
+                setMenuItems(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch menu:", err);
+        }
+    };
     const [printMode, setPrintMode] = useState<"KOT" | "BILL" | null>(null);
     const [showPreview, setShowPreview] = useState(false);
     const [previewMode, setPreviewMode] = useState<"KOT" | "BILL">("BILL");
     const [previewZoom, setPreviewZoom] = useState(1);
     const [printOrder, setPrintOrder] = useState<Order | null>(null);
     const [printTable, setPrintTable] = useState<TableStatus | null>(null);
+    const [menuItems, setMenuItems] = useState<any[]>([]);
+    const [showAddItemModal, setShowAddItemModal] = useState(false);
+    const [orderToUpdate, setOrderToUpdate] = useState<Order | null>(null);
+    const [itemSearch, setItemSearch] = useState("");
+    const [selectedItemForAdd, setSelectedItemForAdd] = useState<any>(null);
+    const [addQty, setAddQty] = useState(1);
 
     // Manual Combination States
     const [showCombineModal, setShowCombineModal] = useState(false);
@@ -854,6 +876,17 @@ export default function KravyPOS() {
                                                                 <span className="text-sm font-medium text-slate-600 dark:text-slate-400 shrink-0">₹{it.price * it.quantity}</span>
                                                             </div>
                                                         ))}
+                                                        
+                                                        <button 
+                                                            onClick={() => {
+                                                                kravy.click();
+                                                                setOrderToUpdate(order);
+                                                                setShowAddItemModal(true);
+                                                            }}
+                                                            className="flex items-center gap-2 text-[10px] font-black text-indigo-500 hover:text-indigo-600 uppercase tracking-widest mt-2 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-xl border border-indigo-100 dark:border-indigo-800 transition-all active:scale-95"
+                                                        >
+                                                            <Plus size={14} strokeWidth={3} /> Add More Items
+                                                        </button>
 
                                                         {order.notes && (
                                                             <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-2xl flex gap-2.5 items-start">
@@ -1899,6 +1932,76 @@ export default function KravyPOS() {
             </AnimatePresence>
 
 
+            {/* ═══ ADD ITEM MODAL ═══ */}
+            <AnimatePresence>
+                {showAddItemModal && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            onClick={() => setShowAddItemModal(false)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative bg-white dark:bg-slate-900 w-full max-w-[600px] h-[80vh] flex flex-col rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight">Add Items</h3>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Updating Order #{orderToUpdate?.id.slice(-4).toUpperCase()}</p>
+                                </div>
+                                <button onClick={() => setShowAddItemModal(false)} className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all"><X size={20} /></button>
+                            </div>
+
+                            <div className="p-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
+                                <div className="relative">
+                                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search menu items..."
+                                        className="w-full h-12 pl-12 pr-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        value={itemSearch}
+                                        onChange={e => setItemSearch(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                {menuItems
+                                    .filter(it => !itemSearch || it.name.toLowerCase().includes(itemSearch.toLowerCase()))
+                                    .map(it => (
+                                        <div 
+                                            key={it.id} 
+                                            onClick={() => {
+                                                kravy.click();
+                                                addItemToOrder(it);
+                                            }}
+                                            className="p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-between hover:border-indigo-500 hover:shadow-lg transition-all cursor-pointer group"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-3 h-3 border border-slate-300 flex items-center justify-center shrink-0`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${it.isVeg === false ? "bg-rose-600" : "bg-emerald-600"}`} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-black text-slate-900 dark:text-white uppercase leading-none mb-1">{it.name}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">₹{it.price}</p>
+                                                </div>
+                                            </div>
+                                            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                                                <Plus size={20} />
+                                            </div>
+                                        </div>
+                                    ))}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             {/* Hidden Printer Zone */}
             <div style={{ position: 'absolute', top: -9999, left: -9999, opacity: 0, pointerEvents: 'none' }}>
                 <div ref={billReceiptRef} style={{ width: '100%' }}>
@@ -1946,7 +2049,7 @@ export default function KravyPOS() {
 
         if (mode === "BILL") {
             return (
-                <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%' }}>
+                <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '10mm' }}>
                     {/* Header Section */}
                     <div className="text-center mb-3">
                         {business?.logoUrl && (
@@ -1960,16 +2063,16 @@ export default function KravyPOS() {
                                 {business?.businessAddress} {business?.district && `| ${business.district}`}
                             </div>
                         )}
-                        {business?.gstNumber && <div className="text-[10px] font-black border-y-2 border-black py-0.5 mt-1">GSTIN: {business.gstNumber}</div>}
+                        {business?.gstNumber && <div className="text-[10px] font-black border-y border-dotted border-black py-1 mt-1">GSTIN: {business.gstNumber}</div>}
                     </div>
 
                     {/* Order Details Section */}
-                    <div className="flex justify-between text-[11px] font-black uppercase border-b-2 border-black pb-1 mb-1">
+                    <div className="flex justify-between text-[11px] font-black uppercase border-b border-dotted border-black pb-1 mb-1">
                         <span>INV: #{activeOrder?.id.slice(-6).toUpperCase()}</span>
                         <span>{new Date(activeOrder.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
                     </div>
                     <div className="flex justify-between text-[11px] font-black uppercase mb-1">
-                        <span className="border-2 border-black px-1">TABLE: {displayTable.name}</span>
+                        <span className="border border-black px-1">TABLE: {displayTable.name}</span>
                         <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
 
@@ -1981,15 +2084,15 @@ export default function KravyPOS() {
                     )}
 
                     {/* Items Section */}
-                    <div className="flex justify-between font-black text-[11px] uppercase border-y-2 border-black py-1 mt-2 mb-1">
+                    <div className="flex justify-between font-black text-[11px] uppercase border-y border-dotted border-black py-1 mt-1 mb-1">
                         <span className="flex-1">ITEM NAME</span>
                         <span className="w-[8mm] text-center">QTY</span>
                         <span className="w-[15mm] text-right">TOTAL</span>
                     </div>
 
-                    <div className="space-y-1.5 min-h-[40px]">
+                    <div className="space-y-1">
                         {activeOrder?.items.map((it: any, idx: number) => (
-                            <div key={idx} className="flex justify-between text-[11px] font-black uppercase leading-tight border-b border-black pb-1">
+                            <div key={idx} className="flex justify-between text-[11px] font-black uppercase leading-tight border-b border-dotted border-black pb-1">
                                 <div className="flex-1 pr-1">
                                     <div>{it.name}</div>
                                     <div className="text-[9px]">{it.quantity} x {it.price.toFixed(2)}</div>
@@ -2012,7 +2115,7 @@ export default function KravyPOS() {
                                 <span>₹{gst.toFixed(2)}</span>
                             </div>
                         )}
-                        <div className="flex justify-between font-black text-[18px] border-y-[3px] border-black py-2 my-1 uppercase">
+                        <div className="flex justify-between font-black text-[18px] border-y-2 border-dotted border-black py-2 my-1 uppercase">
                             <span>GRAND TOTAL</span>
                             <span>₹{total.toFixed(0)}</span>
                         </div>
@@ -2022,15 +2125,15 @@ export default function KravyPOS() {
                         RUPEES: {numberToWords(total)}
                     </div>
 
-                    <div className="mt-3 text-center">
-                        <div className="inline-block border-2 border-black px-4 py-1 text-[12px] font-black uppercase">
+                    <div className="mt-2 text-center">
+                        <div className="inline-block border border-black px-4 py-1 text-[12px] font-black uppercase">
                             PAID VIA {paymentMethod.toUpperCase()}
                         </div>
                     </div>
 
                     {/* UPI QR Section */}
                     {(business?.upi && business?.upiQrEnabled !== false) && (
-                        <div className="mt-4 text-center border-t-2 border-black pt-3">
+                        <div className="mt-4 text-center border-t border-dotted border-black pt-3">
                             <div className="text-[10px] font-black mb-2 uppercase tracking-[0.2em]">Scan to Pay Instantly</div>
                             <div className="inline-block border-[3px] border-black p-1.5 bg-white rounded-lg">
                                 <img src={qrCodeUrl} alt="UPI QR" className="w-[35mm] h-[35mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
@@ -2040,7 +2143,7 @@ export default function KravyPOS() {
                     )}
 
                     {/* Footer Section */}
-                    <div className="mt-5 text-center border-t-2 border-black pt-3">
+                    <div className="mt-4 text-center border-t border-dotted border-black pt-3">
                         <div className="text-[14px] font-black uppercase italic tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
                         {business?.businessTagLine && <div className="text-[9px] font-black mt-1 uppercase tracking-widest">{business.businessTagLine}</div>}
                         <div className="text-[8px] font-black opacity-40 mt-3 uppercase tracking-[0.3em]">Powered by Kravy AI</div>
@@ -2049,8 +2152,8 @@ export default function KravyPOS() {
             );
         } else { // KOT
             return (
-                <div className="kravy-kot-print text-black font-mono bg-white text-[10px] leading-tight" style={{ width: '100%' }}>
-                    <div className="text-center font-black text-[18px] border-b-2 border-black pb-1 mb-2 uppercase tracking-widest">KITCHEN TOKEN</div>
+                <div className="kravy-kot-print text-black font-mono bg-white text-[10px] leading-tight" style={{ width: '100%', paddingBottom: '10mm' }}>
+                    <div className="text-center font-black text-[18px] border-b border-dotted border-black pb-1 mb-2 uppercase tracking-widest">KITCHEN TOKEN</div>
                     
                     <div className="flex justify-between items-center text-[12px] font-black uppercase mb-1">
                         <span>ID: #{activeOrder.id.slice(-4).toUpperCase()}</span>
@@ -2095,6 +2198,46 @@ export default function KravyPOS() {
                     </div>
                 </div>
             );
+        }
+    }
+
+    async function addItemToOrder(menuItem: any) {
+        if (!orderToUpdate) return;
+        
+        try {
+            const newItem: OrderItem = {
+                itemId: menuItem.id,
+                name: menuItem.name,
+                price: menuItem.price,
+                quantity: 1,
+                isVeg: menuItem.isVeg,
+                isNew: true
+            };
+
+            const updatedItems = [...orderToUpdate.items, newItem];
+            const newTotal = updatedItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+
+            const res = await fetch("/api/orders", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    orderId: orderToUpdate.id,
+                    items: updatedItems,
+                    total: newTotal
+                })
+            });
+
+            if (res.ok) {
+                toast.success(`Added ${menuItem.name} to order`);
+                fetchData(); // Refresh orders
+                setShowAddItemModal(false);
+                setItemSearch("");
+            } else {
+                toast.error("Failed to add item");
+            }
+        } catch (err) {
+            console.error("Add item error:", err);
+            toast.error("An error occurred");
         }
     }
 }

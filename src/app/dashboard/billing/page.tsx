@@ -10,8 +10,9 @@ import {
   Receipt, Plus, Trash2, Eye, Printer, MessageCircle,
   Play, MoreVertical, IndianRupee, Calendar, User, Phone,
   CreditCard, Smartphone, Banknote, Clock, FileText, CheckCircle2, UtensilsCrossed, ChefHat, 
-  ChevronLeft, ChevronRight, Settings2, Check, LayoutGrid, Filter, Search, Wallet
+  ChevronLeft, ChevronRight, Settings2, Check, LayoutGrid, Filter, Search, Wallet, X, ZoomIn, ZoomOut
 } from "lucide-react";
+import { useRef } from "react";
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 import { useAuthContext } from "@/components/AuthContext";
 
@@ -44,6 +45,8 @@ export default function BillingPage() {
   const { user: authUser } = useAuthContext();
   const userRole = authUser?.type || null;
   const userPermissions = authUser?.permissions || [];
+  const billReceiptRef = useRef<HTMLDivElement | null>(null);
+  const [printBill, setPrintBill] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const router = useRouter();
@@ -706,7 +709,10 @@ export default function BillingPage() {
                   <td style={{ textAlign: "right", paddingRight: "20px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
                       <button
-                        onClick={() => window.open(`/dashboard/billing/${bill.id}`, "_blank")}
+                        onClick={() => {
+                          kravy.click();
+                          handlePrint(bill);
+                        }}
                         style={{
                           width: "34px", height: "34px", borderRadius: "9px",
                           background: "rgba(99, 102, 241, 0.05)", border: "1px solid rgba(99, 102, 241, 0.1)",
@@ -717,7 +723,7 @@ export default function BillingPage() {
                       >
                         <Printer size={16} />
                       </button>
-                      <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} userRole={userRole} userPermissions={userPermissions} />
+                      <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} userRole={userRole} userPermissions={userPermissions} onPrint={handlePrint} />
                     </div>
                   </td>
                 </motion.tr>
@@ -844,8 +850,177 @@ export default function BillingPage() {
           ))}
         </div>
       )}
+      {/* Hidden Printer Zone */}
+      <div style={{ position: 'absolute', top: -9999, left: -9999, opacity: 0, pointerEvents: 'none' }}>
+        <div ref={billReceiptRef} style={{ width: '100%' }}>
+            {printBill && business && (
+                getReceiptJSX(business, printBill)
+            )}
+        </div>
+      </div>
     </div>
   );
+
+  function handlePrint(bill: any) {
+    setPrintBill(bill);
+    setTimeout(() => {
+        const content = billReceiptRef.current;
+        if (!content) return;
+        
+        const printWindow = window.open('', '_blank', 'width=300,height=600');
+        if (!printWindow) {
+            alert("Please allow popups for printing");
+            return;
+        }
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Print Receipt</title>
+                    <style>
+                        @page { margin: 0; size: 58mm auto; }
+                        body { margin: 0; padding: 0; width: 58mm; background: white; }
+                        * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+                    </style>
+                </head>
+                <body>
+                    ${content.innerHTML}
+                    <script>
+                        window.onload = () => {
+                            window.print();
+                            setTimeout(() => window.close(), 500);
+                        };
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }, 200);
+  }
+
+  function getReceiptJSX(business: any, bill: any) {
+    const subtotal = bill.subtotal || (bill.total - (bill.tax || 0));
+    const gst = bill.tax || 0;
+    const total = bill.total;
+    const taxEnabled = business.taxEnabled;
+    const taxRate = business.taxRate || 5;
+    
+    const upiLink = business.upi ? `upi://pay?pa=${business.upi}&pn=${encodeURIComponent(business.businessName || "Store")}&am=${total.toFixed(2)}&cu=INR` : "";
+    const qrCodeUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}` : "";
+
+    return (
+        <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '10mm' }}>
+            <div className="text-center mb-3">
+                {business.logoUrl && (
+                    <div className="flex justify-center mb-1">
+                        <img src={business.logoUrl} alt="Logo" className="max-h-[25mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
+                    </div>
+                )}
+                <div className="font-black text-[18px] leading-none uppercase tracking-tight mb-1">{business.businessName || "KRAVY RESTAURANT"}</div>
+                {(business.businessAddress || business.district) && (
+                    <div className="text-[9px] font-black uppercase">
+                        {business.businessAddress} {business.district && `| ${business.district}`}
+                    </div>
+                )}
+                {business.gstNumber && <div className="text-[10px] font-black border-y border-dotted border-black py-1 mt-1">GSTIN: {business.gstNumber}</div>}
+            </div>
+
+            <div className="flex justify-between text-[11px] font-black uppercase border-b border-dotted border-black pb-1 mb-1">
+                <span>INV: #{bill.billNumber || bill.id.slice(-6).toUpperCase()}</span>
+                <span>{new Date(bill.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
+            </div>
+            <div className="flex justify-between text-[11px] font-black uppercase mb-1">
+                <span className="border border-black px-1">TABLE: {bill.tableName || "Counter"}</span>
+                <span>{new Date(bill.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+
+            {(bill.customerName || bill.customerPhone) && (
+                <div className="mb-2 text-[10px] font-black uppercase bg-black text-white px-1 py-0.5">
+                    {bill.customerName && <div className="truncate">CUST: {bill.customerName}</div>}
+                    {bill.customerPhone && <div>PH: {bill.customerPhone}</div>}
+                </div>
+            )}
+
+            <div className="flex justify-between font-black text-[11px] uppercase border-y border-dotted border-black py-1 mt-1 mb-1">
+                <span className="flex-1">ITEM NAME</span>
+                <span className="w-[8mm] text-center">QTY</span>
+                <span className="w-[15mm] text-right">TOTAL</span>
+            </div>
+
+            <div className="space-y-1">
+                {bill.items?.map((it: any, idx: number) => (
+                    <div key={idx} className="flex justify-between text-[11px] font-black uppercase leading-tight border-b border-dotted border-black pb-1">
+                        <div className="flex-1 pr-1">
+                            <div>{it.name}</div>
+                            <div className="text-[9px]">{it.quantity || it.qty} x {(it.price || it.rate).toFixed(2)}</div>
+                        </div>
+                        <span className="w-[8mm] text-center self-center">x{it.quantity || it.qty}</span>
+                        <span className="w-[15mm] text-right self-center">{((it.quantity || it.qty) * (it.price || it.rate)).toFixed(2)}</span>
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-2 pt-1 space-y-1">
+                <div className="flex justify-between text-[11px] font-black">
+                    <span>SUBTOTAL</span>
+                    <span>₹{subtotal.toFixed(2)}</span>
+                </div>
+                {taxEnabled && (
+                    <div className="flex justify-between text-[10px] font-black">
+                        <span>GST ({taxRate}%)</span>
+                        <span>₹{gst.toFixed(2)}</span>
+                    </div>
+                )}
+                <div className="flex justify-between font-black text-[18px] border-y-2 border-dotted border-black py-2 my-1 uppercase">
+                    <span>GRAND TOTAL</span>
+                    <span>₹{total.toFixed(0)}</span>
+                </div>
+            </div>
+
+            <div className="mt-2 text-[8px] font-black uppercase italic">
+                RUPEES: {numberToWords(total)}
+            </div>
+
+            <div className="mt-2 text-center">
+                <div className="inline-block border border-black px-4 py-1 text-[12px] font-black uppercase">
+                    PAID VIA {bill.paymentMode.toUpperCase()}
+                </div>
+            </div>
+
+            {(business.upi && business.upiQrEnabled !== false) && (
+                <div className="mt-4 text-center border-t border-dotted border-black pt-3">
+                    <div className="text-[10px] font-black mb-2 uppercase tracking-[0.2em]">Scan to Pay Instantly</div>
+                    <div className="inline-block border-[3px] border-black p-1.5 bg-white rounded-lg">
+                        <img src={qrCodeUrl} alt="UPI QR" className="w-[35mm] h-[35mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
+                    </div>
+                    <div className="text-[9px] font-black mt-2 tracking-widest">{business.upi}</div>
+                </div>
+            )}
+
+            <div className="mt-4 text-center border-t border-dotted border-black pt-3">
+                <div className="text-[14px] font-black uppercase italic tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
+                {business.businessTagLine && <div className="text-[9px] font-black mt-1 uppercase tracking-widest">{business.businessTagLine}</div>}
+                <div className="text-[8px] font-black opacity-40 mt-3 uppercase tracking-[0.3em]">Powered by Kravy AI</div>
+            </div>
+        </div>
+    );
+  }
+}
+
+function numberToWords(num: number): string {
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const convert = (n: number): string => {
+        if (n < 20) return ones[n];
+        if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+        if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' and ' + convert(n % 100) : '');
+        if (n < 10000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000) : '');
+        return '';
+    };
+    if (num === 0) return 'Zero Only';
+    const integerPart = Math.floor(Math.abs(num));
+    let result = convert(integerPart) + ' Rupees';
+    return result + ' Only';
 }
 
 /* ─── Payment Badge ─── */
@@ -908,13 +1083,14 @@ function StatusBadge({ status, isHeld }: { status: string; isHeld?: boolean }) {
 }
 
 /* ─── Bill Actions ─── */
-function BillActions({ bill, refresh, clerkId, business, userRole, userPermissions }: { 
+function BillActions({ bill, refresh, clerkId, business, userRole, userPermissions, onPrint }: { 
   bill: BillManager; 
   refresh: () => void; 
   clerkId?: string | null; 
   business?: any; 
   userRole: string | null;
   userPermissions: string[];
+  onPrint: (bill: any) => void;
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -990,7 +1166,7 @@ function BillActions({ bill, refresh, clerkId, business, userRole, userPermissio
       label: "Reprint Bill",
       icon: <Printer size={14} />,
       color: "var(--kravy-text-muted)",
-      onClick: () => window.open(`/dashboard/billing/${bill.id}`, "_blank")
+      onClick: () => onPrint(bill)
     },
     ...((userRole === "ADMIN" || userRole === "MASTER" || userPermissions.includes("edit-bill")) ? [{
       label: "Edit Bill",
