@@ -8,6 +8,7 @@ import { useUser, RedirectToSignIn } from "@clerk/nextjs";
 import { OrderNotificationProvider } from "@/components/OrderNotificationProvider";
 import { useAuthContext } from "@/components/AuthContext";
 import { Lock, Loader2 } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export default function ClientLayout({
   children,
@@ -17,6 +18,7 @@ export default function ClientLayout({
   const { collapsed } = useSidebar();
   const { isLoaded: clerkLoaded, isSignedIn } = useUser();
   const { user: authUser, loading: authLoading } = useAuthContext();
+  const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -24,7 +26,7 @@ export default function ClientLayout({
   useEffect(() => {
     setMounted(true);
     const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
+      const mobile = typeof window !== 'undefined' && window.innerWidth < 768;
       setIsMobile(mobile);
       if (mobile) setSidebarOpen(false);
     };
@@ -43,7 +45,6 @@ export default function ClientLayout({
   }
 
   // 2. If NOT Clerk User AND NOT Staff User -> Redirect to Clerk login
-  // Note: authUser will be present if they are logged in via staff session
   if (!isSignedIn && !authUser) {
     return <RedirectToSignIn />;
   }
@@ -51,14 +52,13 @@ export default function ClientLayout({
   // 3. Staff Authorization Check
   if (!isSignedIn && authUser) {
     const permissions = authUser.permissions || [];
-    const path = window.location.pathname;
     
-    if (path.startsWith('/dashboard')) {
-        const isAllowed = permissions.includes("*") || permissions.some((p: string) => path === p || path.startsWith(p + '/'));
+    if (pathname.startsWith('/dashboard')) {
+        const isAllowed = permissions.includes("*") || permissions.some((p: string) => pathname === p || pathname.startsWith(p + '/'));
         
         // Exclude base dashboard from blocking if they have any access
         const hasAnyAccess = permissions.length > 0;
-        const isBaseDashboard = path === "/dashboard";
+        const isBaseDashboard = pathname === "/dashboard";
 
         if (!isAllowed && !(isBaseDashboard && hasAnyAccess)) {
             return (
@@ -69,7 +69,7 @@ export default function ClientLayout({
                         </div>
                         <h2 className="text-xl font-black text-slate-800">Access Denied</h2>
                         <p className="text-slate-500 text-sm mt-2 mb-6">
-                            You don't have permission to access this module ({path}). Contact your manager.
+                            You don't have permission to access this module ({pathname}). Contact your manager.
                         </p>
                         <button 
                             onClick={() => {
