@@ -67,6 +67,25 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]["key"];
 
+const numberToWords = (num: number): string => {
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const convert = (n: number): string => {
+        if (n < 20) return ones[n];
+        if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+        if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' and ' + convert(n % 100) : '');
+        if (n < 100000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000) : '');
+        if (n < 10000000) return convert(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 !== 0 ? ' ' + convert(n % 100000) : '');
+        return convert(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 !== 0 ? ' ' + convert(n % 10000000) : '');
+    };
+    if (num === 0) return 'Zero Only';
+    const integerPart = Math.floor(Math.abs(num));
+    const decimalPart = Math.round((Math.abs(num) - integerPart) * 100);
+    let result = convert(integerPart) + ' Rupees';
+    if (decimalPart > 0) result += ' and ' + convert(decimalPart) + ' Paise';
+    return result + ' Only';
+};
+
 export default function KravyPOS() {
     const receiptRef = useRef<HTMLDivElement | null>(null);
     const billReceiptRef = useRef<HTMLDivElement | null>(null);
@@ -1893,113 +1912,155 @@ export default function KravyPOS() {
 
         if (mode === "BILL") {
             return (
-                <div className="font-mono text-[8px] leading-[1.3] text-black bg-white">
-                    <div className="text-center pb-2 mb-2 border-b border-dashed border-gray-400">
-                        {business?.logoUrl && <img src={business.logoUrl} alt="Logo" className="max-h-[22mm] w-auto object-contain mx-auto mb-1" />}
-                        <h3 className="font-bold text-[11px] uppercase tracking-tight">{business?.businessName || "Kravy Restaurant"}</h3>
-                        {(business?.businessAddress || business?.district) && (
-                            <p className="text-[7px] opacity-80 uppercase leading-none mt-0.5">
-                                {business.businessAddress}{business.district ? `, ${business.district}` : ""}
-                            </p>
+                <div className="font-mono text-[10px] leading-tight text-black bg-white">
+                    <div className="text-center mb-1">
+                        {business?.logoUrl && (
+                            <div className="flex justify-center mb-1">
+                                <img src={business.logoUrl} alt="Logo" className="max-h-[30mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
+                            </div>
                         )}
-                        {business?.gstNumber && <p className="text-[7px] font-bold mt-0.5">GSTIN: {business.gstNumber}</p>}
+                        <div className="font-black text-[15px]">{business?.businessName || "Kravy Restaurant"}</div>
+                        {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
+                            <div className="text-[10px] font-bold">
+                                {business?.businessAddress}
+                                {business?.district && `, ${business.district}`}
+                                {business?.state && `, ${business.state}`}
+                                {business?.pinCode && ` - ${business.pinCode}`}
+                            </div>
+                        )}
+                        {business?.gstNumber && <div className="text-[11px] font-bold">GSTIN: {business.gstNumber}</div>}
+                    </div>
 
-                        <div className="mt-1 flex flex-col items-center text-[7px] opacity-70 italic">
-                            <span>Bill: ORD-{activeOrder?.id.slice(-6).toUpperCase()}</span>
-                            <span>Date: {new Date().toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                    <div className="text-center text-[11px] mt-2 font-bold border-t-2 border-black pt-1">
+                        <div>Bill No: ORD-{activeOrder?.id.slice(-6).toUpperCase()}</div>
+                        <div>Date: {new Date(activeOrder.createdAt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}</div>
+                        {displayTable.name !== "Counter" && (
+                            <div className="font-bold text-[12px] mt-1 border-2 border-black px-1 inline-block uppercase">
+                                TABLE: {displayTable.name}
+                            </div>
+                        )}
+                    </div>
+
+                    {(activeOrder.customerName || activeOrder.customerPhone || activeOrder.notes) && (
+                        <div className="mt-2 text-[11px] font-bold border-t-2 border-black pt-1">
+                            {activeOrder.customerName && <div>Customer: {activeOrder.customerName}</div>}
+                            {activeOrder.customerPhone && <div>Phone: {activeOrder.customerPhone}</div>}
+                            {activeOrder.notes && <div className="mt-0.5 italic text-[10px]">Note: {activeOrder.notes}</div>}
                         </div>
-                    </div>
+                    )}
 
-                    <div className="flex justify-between font-bold text-[8px] border-b border-dashed border-gray-400 pb-1 mb-1">
-                        <span>TABLE: {displayTable.name}</span>
-                        <span>{activeOrder ? `#${activeOrder.id.slice(-4).toUpperCase()}` : ''}</span>
+                    <div className="my-1 border-t-2 border-black" />
+                    <div className="flex justify-between font-bold text-[11px]">
+                        <span className="flex-1 min-w-0 pr-1">Item</span>
+                        <span className="w-[8mm] text-center shrink-0">Qty</span>
+                        <span className="w-[12mm] text-right shrink-0">Rate</span>
+                        <span className="w-[13mm] text-right shrink-0">Total</span>
                     </div>
-
-                    <div className="flex justify-between font-bold text-[7px] mb-1">
-                        <span className="flex-1">ITEM</span>
-                        <span className="w-[6mm] text-center">QTY</span>
-                        <span className="w-[10mm] text-right">RATE</span>
-                        <span className="w-[11mm] text-right">TOTAL</span>
-                    </div>
-                    <div className="border-t border-dashed border-gray-400 my-1" />
-
-                    <div className="space-y-1">
+                    <div className="border-t-2 border-black my-1" />
+                    <div className="space-y-1.5">
                         {activeOrder?.items.map((it: any, idx: number) => (
-                            <div key={idx} className="flex justify-between text-[7.5px] uppercase items-start leading-tight">
-                                <span className="flex-1 pr-1 font-bold">{it.name}</span>
-                                <span className="w-[6mm] text-center font-black">x{it.quantity}</span>
-                                <span className="w-[10mm] text-right">{it.price.toFixed(0)}</span>
-                                <span className="w-[11mm] text-right font-black">{(it.price * it.quantity).toFixed(0)}</span>
+                            <div key={idx} className="mb-1">
+                                <div className="flex justify-between text-[11px] font-bold">
+                                    <span className="flex-1 min-w-0 pr-1 truncate uppercase">{it.name}</span>
+                                    <span className="w-[11mm] text-right shrink-0">{(it.quantity * it.price).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-[10px] font-bold">
+                                    <span>{it.quantity} x {it.price.toFixed(2)}</span>
+                                    {it.instruction && <span className="italic text-[9px] truncate">({it.instruction})</span>}
+                                </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="mt-2 pt-1 border-t border-dashed border-gray-400 space-y-0.5">
-                        <div className="flex justify-between">
+                    <div className="mt-2 pt-1 border-t-2 border-black space-y-1">
+                        <div className="flex justify-between text-[11px] font-bold">
                             <span>Subtotal</span>
-                            <span>₹{subtotal.toFixed(0)}</span>
+                            <span>₹{subtotal.toFixed(2)}</span>
                         </div>
                         {taxEnabled && (
-                            <div className="flex justify-between">
+                            <div className="flex justify-between text-[10px] font-bold">
                                 <span>GST ({taxRate}%)</span>
-                                <span>₹{gst.toFixed(0)}</span>
+                                <span>₹{gst.toFixed(2)}</span>
                             </div>
                         )}
-                        <div className="flex justify-between items-center mt-2 pt-2 border-t-2 border-black">
-                            <span className="text-[9px] font-black uppercase tracking-tight">Amount to Pay</span>
-                            <span className="text-[16px] font-black">₹{total.toFixed(0)}</span>
+                        <div className="border-t-2 border-black my-1" />
+                        <div className="flex justify-between font-black text-[15px] border-b-2 border-black py-1.5 my-1">
+                            <span>GRAND TOTAL</span>
+                            <span>₹{total.toFixed(2)}</span>
                         </div>
                     </div>
 
-                    <div className="mt-3 text-center">
-                        <p className="text-[8px] font-bold mb-1">THANK YOU! VISIT AGAIN</p>
-                        <div className="text-[7px] border border-black px-2 py-0.5 mb-2 inline-block font-black">
-                            PAYMENT: {paymentMethod.toUpperCase()}
-                        </div>
-                        {business?.businessTagLine && <p className="text-[7px] italic opacity-60">{business.businessTagLine}</p>}
+                    <div className="mt-2 text-[10px] italic font-bold">
+                        Amount in Words: {numberToWords(total)}
+                    </div>
+
+                    <div className="mt-3 border-t-2 border-black pt-1 flex justify-between text-[11px] font-bold">
+                        <span>Payment: {paymentMethod.toUpperCase()}</span>
+                        <span>Status: PAID</span>
                     </div>
 
                     {(business?.upi && business?.upiQrEnabled !== false) && (
-                        <div className="mt-4 pt-3 border-t-2 border-dashed border-gray-300 flex flex-col items-center">
-                            <div className="mb-2 flex items-center gap-1.5">
-                                <div className="h-px w-4 bg-gray-300" />
-                                <p className="text-[7px] font-black uppercase tracking-[1.5px]">Scan & Pay</p>
-                                <div className="h-px w-4 bg-gray-300" />
+                        <div className="mt-2 text-center text-[10px] font-bold border-t-2 border-black pt-2">
+                            <div className="font-black">SCAN & PAY</div>
+                            <div className="my-2 text-center">
+                                <div className="inline-block border-2 border-black p-1 bg-white">
+                                    <img src={qrCodeUrl} alt="UPI QR" className="w-[32mm] h-[32mm] object-contain block" style={{ imageRendering: 'pixelated', filter: 'contrast(300%) grayscale(100%)' }} />
+                                </div>
                             </div>
-                            <div className="bg-white p-1.5 border-2 border-black rounded-lg shadow-sm">
-                                <img src={qrCodeUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain block mix-blend-multiply" />
-                            </div>
-                            <p className="text-[6px] mt-2 font-black opacity-80 letter-spacing-widest">UPI ID: {business.upi}</p>
+                            <div className="mb-2">UPI: {business.upi}</div>
                         </div>
                     )}
 
-                    <div className="text-center mt-3 text-[6px] font-bold opacity-20 uppercase tracking-[2px]">Powered by KRAVY</div>
+                    <div className="mt-2 text-center border-t-2 border-black pt-2">
+                        <div className="text-[12px] font-black mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
+                        {business?.businessTagLine && <div className="text-[9px] italic opacity-80">{business.businessTagLine}</div>}
+                    </div>
                 </div>
             );
         } else { // KOT
             return (
-                <div className="kravy-kot-print text-black font-mono bg-white">
-                    <div className="text-center pb-1 mb-2 border-b border-dashed border-gray-400">
-                        <h2 className="text-[11px] font-black uppercase">KITCHEN TOKEN</h2>
-                        <div className="my-1 py-1 border-y border-black">
-                            <p className="text-[15px] font-black">TABLE: {displayTable.name}</p>
-                        </div>
-                        <p className="text-[9px] font-bold">ID: {activeOrder ? `#${activeOrder.id.slice(-6).toUpperCase()}` : ''}</p>
-                        <p className="text-[10px] font-black italic tracking-widest">{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
+                <div className="kravy-kot-print text-black font-mono bg-white text-[10px] leading-tight">
+                    <div className="text-center font-black text-[16px] border-b-2 border-black pb-1 mb-2">KOT</div>
+                    <div className="flex justify-between text-[11px] font-black mb-1">
+                        <span>#{activeOrder.id.slice(-4).toUpperCase()}</span>
+                        <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                    <div className="space-y-4 mt-4">
+                    
+                    <div className="text-center text-[14px] font-black border-2 border-black py-1 my-1 uppercase">
+                        TABLE: {displayTable.name}
+                    </div>
+
+                    {activeOrder.notes && (
+                        <div className="mt-1 mb-2 p-1 border border-dashed border-black text-[10px] font-black italic">
+                            NOTE: {activeOrder.notes}
+                        </div>
+                    )}
+
+                    <div className="border-t-2 border-black my-1" />
+                    <div className="flex justify-between font-black text-[11px] mb-1">
+                        <span>Item</span>
+                        <span>Qty</span>
+                    </div>
+                    <div className="border-t-2 border-black mb-1" />
+                    <div className="space-y-1">
                         {activeOrder?.items.map((it: any, i: number) => (
-                            <div key={i} className="flex justify-between items-start border-b border-dotted border-gray-300 pb-1">
+                            <div key={i} className="flex justify-between items-start border-b border-black pb-1.5 pt-1.5">
                                 <div className="flex-1 pr-2">
-                                    <p className="text-[10px] font-black leading-tight uppercase">{it.name}</p>
-                                    {it.instruction && <p className="text-[8px] italic mt-0.5 font-bold">*** {it.instruction} ***</p>}
+                                    <p className="text-[13px] font-black leading-tight uppercase italic">{it.name}</p>
+                                    {it.instruction && <p className="text-[9px] italic mt-1 font-bold">*** {it.instruction} ***</p>}
+                                    {it.variants && it.variants.length > 0 && (
+                                        <p className="text-[8px] font-bold mt-0.5">
+                                            {it.variants.map((v: any) => v.name).join(', ')}
+                                        </p>
+                                    )}
                                 </div>
-                                <div className="text-[18px] font-black leading-none bg-black text-white px-1.5 py-0.5 rounded-sm">×{it.quantity}</div>
+                                <div className="text-[16px] font-black leading-none bg-black text-white px-1.5 py-1 rounded-sm">x{it.quantity}</div>
                             </div>
                         ))}
                     </div>
                     <div className="text-center mt-6 pt-1 border-t border-dashed border-gray-400">
-                        <p className="text-[7px] font-bold uppercase opacity-50">Industrial Grade KDS</p>
+                        <p className="text-[8px] font-black uppercase opacity-60">Kravy Kitchen System</p>
+                        <p className="text-[7px] mt-0.5">{new Date().toLocaleString()}</p>
                     </div>
                 </div>
             );
