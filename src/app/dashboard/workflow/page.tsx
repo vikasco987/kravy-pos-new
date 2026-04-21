@@ -1963,7 +1963,7 @@ export default function KravyPOS() {
                         <div className="mt-2 text-[11px] font-bold border-t-2 border-black pt-1">
                             {activeOrder.customerName && <div>Customer: {activeOrder.customerName}</div>}
                             {activeOrder.customerPhone && <div>Phone: {activeOrder.customerPhone}</div>}
-                            {activeOrder.notes && <div className="mt-0.5 italic text-[10px]">Note: {activeOrder.notes}</div>}
+                            {activeOrder.notes && <div className="mt-0.5 text-[10px]">Note: {activeOrder.notes}</div>}
                         </div>
                     )}
 
@@ -1984,7 +1984,7 @@ export default function KravyPOS() {
                                 </div>
                                 <div className="flex justify-between text-[10px] font-bold">
                                     <span>{it.quantity} x {it.price.toFixed(2)}</span>
-                                    {it.instruction && <span className="italic text-[9px] truncate">({it.instruction})</span>}
+                                    {it.instruction && <span className="text-[9px] truncate">({it.instruction})</span>}
                                 </div>
                             </div>
                         ))}
@@ -2008,7 +2008,7 @@ export default function KravyPOS() {
                         </div>
                     </div>
 
-                    <div className="mt-2 text-[10px] italic font-bold">
+                    <div className="mt-2 text-[10px] font-bold">
                         Amount in Words: {numberToWords(total)}
                     </div>
 
@@ -2031,7 +2031,7 @@ export default function KravyPOS() {
 
                     <div className="mt-2 text-center border-t-2 border-black pt-2">
                         <div className="text-[12px] font-black mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
-                        {business?.businessTagLine && <div className="text-[9px] italic opacity-80">{business.businessTagLine}</div>}
+                        {business?.businessTagLine && <div className="text-[9px] opacity-80">{business.businessTagLine}</div>}
                     </div>
                 </div>
             );
@@ -2049,7 +2049,7 @@ export default function KravyPOS() {
                     </div>
 
                     {activeOrder.notes && (
-                        <div className="mt-1 mb-2 p-1 border border-dashed border-black text-[10px] font-black italic">
+                        <div className="mt-1 mb-2 p-1 border border-solid border-black text-[10px] font-black">
                             NOTE: {activeOrder.notes}
                         </div>
                     )}
@@ -2064,8 +2064,8 @@ export default function KravyPOS() {
                         {activeOrder?.items.map((it: any, i: number) => (
                             <div key={i} className="flex justify-between items-start border-b border-black pb-1.5 pt-1.5">
                                 <div className="flex-1 pr-2">
-                                    <p className="text-[13px] font-black leading-tight uppercase italic">{it.name}</p>
-                                    {it.instruction && <p className="text-[9px] italic mt-1 font-bold">*** {it.instruction} ***</p>}
+                                    <p className="text-[13px] font-black leading-tight uppercase">{it.name}</p>
+                                    {it.instruction && <p className="text-[9px] mt-1 font-bold">*** {it.instruction} ***</p>}
                                     {it.variants && it.variants.length > 0 && (
                                         <p className="text-[8px] font-bold mt-0.5">
                                             {it.variants.map((v: any) => v.name).join(', ')}
@@ -2076,7 +2076,7 @@ export default function KravyPOS() {
                             </div>
                         ))}
                     </div>
-                    <div className="text-center mt-6 pt-1 border-t border-dashed border-gray-400">
+                    <div className="text-center mt-6 pt-1 border-t border-solid border-gray-400">
                         <p className="text-[8px] font-black uppercase opacity-60">Kravy Kitchen System</p>
                         <p className="text-[7px] mt-0.5">{new Date().toLocaleString()}</p>
                     </div>
