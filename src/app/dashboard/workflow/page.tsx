@@ -1931,93 +1931,103 @@ export default function KravyPOS() {
         if (mode === "BILL") {
             return (
                 <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%' }}>
-                    <div className="text-center mb-2">
+                    {/* Header Section */}
+                    <div className="text-center mb-3">
                         {business?.logoUrl && (
                             <div className="flex justify-center mb-1">
-                                <img src={business.logoUrl} alt="Logo" className="max-h-[30mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
+                                <img src={business.logoUrl} alt="Logo" className="max-h-[25mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
                             </div>
                         )}
-                        <div className="font-black text-[16px] uppercase">{business?.businessName || "Kravy Restaurant"}</div>
+                        <div className="font-black text-[18px] leading-none uppercase tracking-tight mb-1">{business?.businessName || "KRAVY RESTAURANT"}</div>
                         {(business?.businessAddress || business?.district) && (
-                            <div className="text-[9px] font-bold uppercase mt-0.5">
-                                {business?.businessAddress} {business?.district && `, ${business.district}`}
+                            <div className="text-[9px] font-black uppercase">
+                                {business?.businessAddress} {business?.district && `| ${business.district}`}
                             </div>
                         )}
-                        {business?.gstNumber && <div className="text-[10px] font-bold mt-1">GSTIN: {business.gstNumber}</div>}
+                        {business?.gstNumber && <div className="text-[10px] font-black border-y-2 border-black py-0.5 mt-1">GSTIN: {business.gstNumber}</div>}
                     </div>
 
-                    <div className="border-t-2 border-black my-1" />
-                    <div className="flex justify-between text-[11px] font-black uppercase">
-                        <span>Invoice: #{activeOrder?.id.slice(-6).toUpperCase()}</span>
-                        <span>{new Date(activeOrder.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })}</span>
+                    {/* Order Details Section */}
+                    <div className="flex justify-between text-[11px] font-black uppercase border-b-2 border-black pb-1 mb-1">
+                        <span>INV: #{activeOrder?.id.slice(-6).toUpperCase()}</span>
+                        <span>{new Date(activeOrder.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
                     </div>
-                    <div className="flex justify-between text-[11px] font-black uppercase mt-1">
-                        <span>Table: {displayTable.name}</span>
+                    <div className="flex justify-between text-[11px] font-black uppercase mb-1">
+                        <span className="border-2 border-black px-1">TABLE: {displayTable.name}</span>
                         <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                    <div className="border-b-2 border-black my-1" />
 
                     {(activeOrder.customerName || activeOrder.customerPhone) && (
-                        <div className="mb-2 text-[10px] font-bold uppercase">
-                            {activeOrder.customerName && <div>Customer: {activeOrder.customerName}</div>}
-                            {activeOrder.customerPhone && <div>Phone: {activeOrder.customerPhone}</div>}
+                        <div className="mb-2 text-[10px] font-black uppercase bg-black text-white px-1 py-0.5">
+                            {activeOrder.customerName && <div className="truncate">CUST: {activeOrder.customerName}</div>}
+                            {activeOrder.customerPhone && <div>PH: {activeOrder.customerPhone}</div>}
                         </div>
                     )}
 
-                    <div className="flex justify-between font-black text-[11px] uppercase border-b-2 border-black pb-1 mb-1">
-                        <span className="flex-1">Item</span>
-                        <span className="w-[8mm] text-center">Qty</span>
-                        <span className="w-[15mm] text-right">Total</span>
+                    {/* Items Section */}
+                    <div className="flex justify-between font-black text-[11px] uppercase border-y-2 border-black py-1 mt-2 mb-1">
+                        <span className="flex-1">ITEM NAME</span>
+                        <span className="w-[8mm] text-center">QTY</span>
+                        <span className="w-[15mm] text-right">TOTAL</span>
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 min-h-[40px]">
                         {activeOrder?.items.map((it: any, idx: number) => (
-                            <div key={idx} className="flex justify-between text-[11px] font-bold uppercase leading-tight">
-                                <span className="flex-1 pr-1">{it.name}</span>
-                                <span className="w-[8mm] text-center">x{it.quantity}</span>
-                                <span className="w-[15mm] text-right">{(it.quantity * it.price).toFixed(2)}</span>
+                            <div key={idx} className="flex justify-between text-[11px] font-black uppercase leading-tight border-b border-black pb-1">
+                                <div className="flex-1 pr-1">
+                                    <div>{it.name}</div>
+                                    <div className="text-[9px]">{it.quantity} x {it.price.toFixed(2)}</div>
+                                </div>
+                                <span className="w-[8mm] text-center self-center">x{it.quantity}</span>
+                                <span className="w-[15mm] text-right self-center">{(it.quantity * it.price).toFixed(2)}</span>
                             </div>
                         ))}
                     </div>
 
-                    <div className="mt-2 border-t-2 border-black pt-1 space-y-1">
-                        <div className="flex justify-between text-[11px] font-bold">
-                            <span>Subtotal</span>
+                    {/* Totals Section */}
+                    <div className="mt-2 pt-1 space-y-1">
+                        <div className="flex justify-between text-[11px] font-black">
+                            <span>SUBTOTAL</span>
                             <span>₹{subtotal.toFixed(2)}</span>
                         </div>
                         {taxEnabled && (
-                            <div className="flex justify-between text-[10px] font-bold">
+                            <div className="flex justify-between text-[10px] font-black">
                                 <span>GST ({taxRate}%)</span>
                                 <span>₹{gst.toFixed(2)}</span>
                             </div>
                         )}
-                        <div className="flex justify-between font-black text-[16px] border-y-2 border-black py-1.5 my-1 uppercase">
-                            <span>Total</span>
-                            <span>₹{total.toFixed(2)}</span>
+                        <div className="flex justify-between font-black text-[18px] border-y-[3px] border-black py-2 my-1 uppercase">
+                            <span>GRAND TOTAL</span>
+                            <span>₹{total.toFixed(0)}</span>
                         </div>
                     </div>
 
-                    <div className="mt-2 text-[9px] font-bold uppercase">
-                        {numberToWords(total)}
+                    <div className="mt-2 text-[8px] font-black uppercase italic">
+                        RUPEES: {numberToWords(total)}
                     </div>
 
-                    <div className="mt-2 text-center text-[11px] font-black border-2 border-black py-1 uppercase">
-                        Paid via {paymentMethod.toUpperCase()}
+                    <div className="mt-3 text-center">
+                        <div className="inline-block border-2 border-black px-4 py-1 text-[12px] font-black uppercase">
+                            PAID VIA {paymentMethod.toUpperCase()}
+                        </div>
                     </div>
 
+                    {/* UPI QR Section */}
                     {(business?.upi && business?.upiQrEnabled !== false) && (
-                        <div className="mt-3 text-center border-t-2 border-black pt-2">
-                            <div className="text-[10px] font-black mb-1 uppercase tracking-widest">Scan to Pay</div>
-                            <div className="inline-block border-2 border-black p-1 bg-white">
-                                <img src={qrCodeUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
+                        <div className="mt-4 text-center border-t-2 border-black pt-3">
+                            <div className="text-[10px] font-black mb-2 uppercase tracking-[0.2em]">Scan to Pay Instantly</div>
+                            <div className="inline-block border-[3px] border-black p-1.5 bg-white rounded-lg">
+                                <img src={qrCodeUrl} alt="UPI QR" className="w-[35mm] h-[35mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
                             </div>
-                            <div className="text-[8px] font-black mt-1">{business.upi}</div>
+                            <div className="text-[9px] font-black mt-2 tracking-widest">{business.upi}</div>
                         </div>
                     )}
 
-                    <div className="mt-3 text-center border-t-2 border-black pt-2">
-                        <div className="text-[12px] font-black uppercase">Thank You! Visit Again</div>
-                        {business?.businessTagLine && <div className="text-[9px] font-bold mt-0.5">{business.businessTagLine}</div>}
+                    {/* Footer Section */}
+                    <div className="mt-5 text-center border-t-2 border-black pt-3">
+                        <div className="text-[14px] font-black uppercase italic tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
+                        {business?.businessTagLine && <div className="text-[9px] font-black mt-1 uppercase tracking-widest">{business.businessTagLine}</div>}
+                        <div className="text-[8px] font-black opacity-40 mt-3 uppercase tracking-[0.3em]">Powered by Kravy AI</div>
                     </div>
                 </div>
             );
