@@ -487,8 +487,23 @@ export default function CheckoutClient() {
   /* ================= CART STATE ================= */
   const [items, setItems] = useState<BillItem[]>([]);
   const inc = (id: string) => { kravy.click(); setItems((s) => s.map((i) => i.id === id ? { ...i, qty: i.qty + 1 } : i)); };
-  const dec = (id: string) => { kravy.remove(); setItems((s) => s.map((i) => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter((i) => i.qty > 0)); };
-  const remove = (id: string) => { kravy.trash(); setItems((s) => s.filter((i) => i.id !== id)); };
+  const dec = (id: string) => { 
+    const item = items.find(i => i.id === id);
+    if (item && item.qty === 1 && userRole === "STAFF" && !userPermissions.includes("pos-delete-item")) {
+      toast.error("Permission Denied: Cannot delete item from cart.");
+      return;
+    }
+    kravy.remove(); 
+    setItems((s) => s.map((i) => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter((i) => i.qty > 0)); 
+  };
+  const remove = (id: string) => { 
+    if (userRole === "STAFF" && !userPermissions.includes("pos-delete-item")) {
+      toast.error("Permission Denied: Cannot delete item from cart.");
+      return;
+    }
+    kravy.trash(); 
+    setItems((s) => s.filter((i) => i.id !== id)); 
+  };
 
   /* ================= BUSINESS PROFILE ================= */
   const [business, setBusiness] = useState<{
@@ -1661,13 +1676,25 @@ export default function CheckoutClient() {
             {/* 🎟️ DISCOUNT SECTION (Optional / Toggleable if space allows, but here compact) */}
             <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
                <button 
-                onClick={() => setDiscountMode('PROMO')}
+                onClick={() => {
+                  if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
+                    toast.error("Permission Denied: Cannot apply discounts.");
+                    return;
+                  }
+                  setDiscountMode('PROMO');
+                }}
                 className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'PROMO' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
                >
                  Promo
                </button>
                <button 
-                onClick={() => setDiscountMode('INSTANT')}
+                onClick={() => {
+                  if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
+                    toast.error("Permission Denied: Cannot apply discounts.");
+                    return;
+                  }
+                  setDiscountMode('INSTANT');
+                }}
                 className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'INSTANT' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
                >
                  Discount

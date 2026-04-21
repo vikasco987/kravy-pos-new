@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import OrderAlertLoop from "./components/order-alert-loop";
+import { useAuthContext } from "@/components/AuthContext";
 
 // --- TYPES ---
 type OrderItem = {
@@ -98,6 +99,9 @@ export default function KravyPOS() {
     const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
     const [payMethod, setPayMethod] = useState("upi");
     const [tableSearch, setTableSearch] = useState("");
+    const { user: authUser } = useAuthContext();
+    const userRole = authUser?.type || null;
+    const userPermissions = authUser?.permissions || [];
     const [tableFilter, setTableFilter] = useState<"ALL" | "RUNNING" | "READY">("ALL");
     const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
     const [clock, setClock] = useState("");
@@ -309,7 +313,19 @@ export default function KravyPOS() {
         setDateStr(new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }));
     }, []);
 
-    const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    const updateOrderStatus = async (orderId: string, newStatus: Order["status"]) => {
+        // Permission check for Staff
+        if (userRole === "STAFF") {
+            if (newStatus === "READY" && !userPermissions.includes("kit-complete-order")) {
+                toast.error("Permission Denied: Cannot mark order as ready.");
+                return;
+            }
+            if (newStatus === "COMPLETED" && !userPermissions.includes("kit-complete-order")) {
+                toast.error("Permission Denied: Cannot complete order.");
+                return;
+            }
+        }
+
         try {
             // ✅ Sound on Interaction
             kravy.click();

@@ -51,11 +51,24 @@ const ALL_PATHS = [
   { path: "/dashboard/tables", label: "Table Status", icon: <LayoutGrid size={16} /> },
   { path: "/dashboard/billing", label: "Past Bills / History", icon: <Receipt size={16} /> },
   
-  // Bill History Specific Actions
+  // Detailed Action Permissions
+  { path: "header-pos-actions", label: "--- POS Billing Actions ---", icon: <ShoppingCart size={16} />, isHeader: true },
+  { path: "pos-discount", label: "Allow: Apply Discounts", icon: <Percent size={16} /> },
+  { path: "pos-edit-price", label: "Allow: Edit Item Prices", icon: <IndianRupee size={16} /> },
+  { path: "pos-delete-item", label: "Allow: Delete Items from Cart", icon: <Trash2 size={16} /> },
+
   { path: "header-bill-actions", label: "--- Bill History Actions ---", icon: <Receipt size={16} />, isHeader: true },
   { path: "edit-bill", label: "Allow: Edit Past Bills", icon: <Edit3 size={16} /> },
   { path: "delete-bill", label: "Allow: Delete Past Bills", icon: <Trash2 size={16} /> },
   { path: "mark-as-paid", label: "Allow: Change Payment Status", icon: <CheckCircle2 size={16} /> },
+
+  { path: "header-kit-actions", label: "--- Kitchen Actions ---", icon: <Activity size={16} />, isHeader: true },
+  { path: "kit-complete-order", label: "Allow: Mark Order as Ready", icon: <CheckCircle2 size={16} /> },
+  { path: "kit-cancel-order", label: "Allow: Cancel/Remove KOT", icon: <X size={16} /> },
+
+  { path: "header-inv-actions", label: "--- Inventory & Menu Actions ---", icon: <Package size={16} />, isHeader: true },
+  { path: "inv-edit-stock", label: "Allow: Update Stock Levels", icon: <Layers size={16} /> },
+  { path: "menu-delete-item", label: "Allow: Delete Menu Items", icon: <Trash2 size={16} /> },
 
   { path: "/dashboard/menu/view", label: "Browse Products", icon: <UtensilsCrossed size={16} /> },
   { path: "/dashboard/menu-editor", label: "Interactive Editor", icon: <Sparkles size={16} /> },
@@ -478,26 +491,35 @@ export default function StaffManagementPage() {
                     )}
                  </div>
 
-                 <div className="space-y-2 mb-8 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                    {ALL_PATHS.map(item => {
-                       const isActive = selectedStaff.allowedPaths?.includes(item.path);
-                       return (
-                         <button
-                           key={item.path}
-                           onClick={() => handleTogglePath(item.path)}
-                           className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isActive ? 'bg-indigo-600/20 border-indigo-500/50 text-white' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
-                         >
-                           <div className="flex items-center gap-3">
-                             {item.icon}
-                             <span className="text-xs font-bold">{item.label}</span>
-                           </div>
-                           <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${isActive ? 'bg-indigo-500 text-white' : 'border border-slate-700'}`}>
-                              {isActive && <Check size={12} />}
-                           </div>
-                         </button>
-                       );
-                    })}
-                 </div>
+                 <div className="space-y-2 mb-8 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                     {ALL_PATHS.map(item => {
+                        if ((item as any).isHeader) {
+                          return (
+                            <div key={item.path} className="pt-4 pb-1">
+                              <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest text-center">
+                                {item.label}
+                              </p>
+                            </div>
+                          );
+                        }
+                        const isActive = selectedStaff.allowedPaths?.includes(item.path);
+                        return (
+                          <button
+                            key={item.path}
+                            onClick={() => handleTogglePath(item.path)}
+                            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isActive ? 'bg-indigo-600/20 border-indigo-500/50 text-white' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {item.icon}
+                              <span className="text-xs font-bold">{item.label}</span>
+                            </div>
+                            <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${isActive ? 'bg-indigo-500 text-white' : 'border border-slate-700'}`}>
+                               {isActive && <Check size={12} />}
+                            </div>
+                          </button>
+                        );
+                     })}
+                  </div>
 
                  <button
                     onClick={savePermissions}
