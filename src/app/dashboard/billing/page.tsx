@@ -13,6 +13,7 @@ import {
   ChevronLeft, ChevronRight, Settings2, Check, LayoutGrid, Filter, Search, Wallet
 } from "lucide-react";
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
+import { useAuthContext } from "@/components/AuthContext";
 
 type BillManager = {
   id: string;
