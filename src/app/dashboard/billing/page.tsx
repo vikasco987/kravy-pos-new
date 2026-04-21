@@ -43,6 +43,7 @@ export default function BillingPage() {
   const [error, setError] = useState("");
   const { user: authUser } = useAuthContext();
   const userRole = authUser?.type || null;
+  const userPermissions = authUser?.permissions || [];
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const router = useRouter();
@@ -716,7 +717,7 @@ export default function BillingPage() {
                       >
                         <Printer size={16} />
                       </button>
-                      <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} userRole={userRole} />
+                      <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} userRole={userRole} userPermissions={userPermissions} />
                     </div>
                   </td>
                 </motion.tr>
@@ -793,7 +794,7 @@ export default function BillingPage() {
                     {bill.customerName || "Walk-in Customer"}
                   </div>
                 </div>
-                <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} userRole={userRole} />
+                <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} userRole={userRole} userPermissions={userPermissions} />
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
@@ -907,7 +908,14 @@ function StatusBadge({ status, isHeld }: { status: string; isHeld?: boolean }) {
 }
 
 /* ─── Bill Actions ─── */
-function BillActions({ bill, refresh, clerkId, business, userRole }: { bill: BillManager; refresh: () => void; clerkId?: string | null; business?: any; userRole: string | null }) {
+function BillActions({ bill, refresh, clerkId, business, userRole, userPermissions }: { 
+  bill: BillManager; 
+  refresh: () => void; 
+  clerkId?: string | null; 
+  business?: any; 
+  userRole: string | null;
+  userPermissions: string[];
+}) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
@@ -984,7 +992,7 @@ function BillActions({ bill, refresh, clerkId, business, userRole }: { bill: Bil
       color: "var(--kravy-text-muted)",
       onClick: () => window.open(`/dashboard/billing/${bill.id}`, "_blank")
     },
-    {
+    ...((userRole === "ADMIN" || userRole === "MASTER" || userPermissions.includes("edit-bill")) ? [{
       label: "Edit Bill",
       icon: <FileText size={14} />,
       color: "var(--kravy-brand)",
@@ -993,7 +1001,7 @@ function BillActions({ bill, refresh, clerkId, business, userRole }: { bill: Bil
           router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`);
         }
       }
-    },
+    }] : []),
     {
       label: "WhatsApp",
       icon: <MessageCircle size={14} />,
@@ -1006,7 +1014,7 @@ function BillActions({ bill, refresh, clerkId, business, userRole }: { bill: Bil
       color: "rgb(245 158 11)",
       onClick: () => router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`)
     }] : []),
-    {
+    ...((userRole === "ADMIN" || userRole === "MASTER" || userPermissions.includes("mark-as-paid")) ? [{
       label: bill.paymentStatus?.toLowerCase() === "paid" ? "Mark as Pending" : "Mark as Paid",
       icon: <Clock size={14} />,
       color: bill.paymentStatus?.toLowerCase() === "paid" ? "rgb(244 63 94)" : "rgb(16 185 129)",
@@ -1025,8 +1033,8 @@ function BillActions({ bill, refresh, clerkId, business, userRole }: { bill: Bil
           alert("Something went wrong");
         }
       }
-    },
-    {
+    }] : []),
+    ...((userRole === "ADMIN" || userRole === "MASTER" || userPermissions.includes("delete-bill")) ? [{
       label: "Delete",
       icon: <Trash2 size={14} />,
       color: "rgb(244 63 94)",
@@ -1036,7 +1044,7 @@ function BillActions({ bill, refresh, clerkId, business, userRole }: { bill: Bil
         if (res.ok) refresh();
         else alert("Failed to delete bill");
       }
-    }
+    }] : [])
   ];
 
   return (

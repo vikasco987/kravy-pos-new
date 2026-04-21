@@ -50,6 +50,13 @@ const ALL_PATHS = [
   { path: "/dashboard/workflow", label: "Kitchen Workflow", icon: <Activity size={16} /> },
   { path: "/dashboard/tables", label: "Table Status", icon: <LayoutGrid size={16} /> },
   { path: "/dashboard/billing", label: "Past Bills / History", icon: <Receipt size={16} /> },
+  
+  // Bill History Specific Actions
+  { path: "header-bill-actions", label: "--- Bill History Actions ---", icon: <Receipt size={16} />, isHeader: true },
+  { path: "edit-bill", label: "Allow: Edit Past Bills", icon: <Edit3 size={16} /> },
+  { path: "delete-bill", label: "Allow: Delete Past Bills", icon: <Trash2 size={16} /> },
+  { path: "mark-as-paid", label: "Allow: Change Payment Status", icon: <CheckCircle2 size={16} /> },
+
   { path: "/dashboard/menu/view", label: "Browse Products", icon: <UtensilsCrossed size={16} /> },
   { path: "/dashboard/menu-editor", label: "Interactive Editor", icon: <Sparkles size={16} /> },
   { path: "/dashboard/menu/addons", label: "Add-on clusters", icon: <Layers size={16} /> },
