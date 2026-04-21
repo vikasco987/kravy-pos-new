@@ -194,6 +194,7 @@ export default function KravyPOS() {
                         overflow: visible !important; 
                         margin: 0 !important;
                         padding: 0 !important;
+                        background: #fff !important;
                     }
                     body > *:not(#print-receipt-container) { display: none !important; }
                     @page { margin: 0; size: auto; }
@@ -203,17 +204,15 @@ export default function KravyPOS() {
                         height: auto !important;
                         overflow: visible !important;
                         margin: 0 !important;
-                        padding: 0 0 120px 0 !important; 
+                        padding: 10px 0 30px 0 !important; 
                         background: #fff !important;
                         color: #000 !important;
                         font-family: 'Courier New', Courier, monospace !important;
                         font-weight: 700 !important;
-                        position: relative !important;
                     }
                     * { 
                         color: #000 !important; 
                         border-color: #000 !important; 
-                        overflow: visible !important;
                         -webkit-print-color-adjust: exact !important; 
                         print-color-adjust: exact !important;
                     }
@@ -221,6 +220,7 @@ export default function KravyPOS() {
                         filter: grayscale(100%) contrast(300%) !important; 
                         max-width: 100% !important;
                         display: block !important;
+                        margin: 0 auto !important;
                     }
                 }
             `;
@@ -241,7 +241,7 @@ export default function KravyPOS() {
             setTimeout(() => {
                 if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
                 if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
-            }, 2500);
+            }, 1000);
 
             if (targetOrder && type !== "MANUAL_COMBINE") {
                 const body: any = { orderId: (targetOrder as any).id.includes("Combined") ? customOrder?.id || printOrder?.id : targetOrder.id };
@@ -1931,66 +1931,56 @@ export default function KravyPOS() {
         if (mode === "BILL") {
             return (
                 <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%' }}>
-                    <div className="text-center mb-1">
+                    <div className="text-center mb-2">
                         {business?.logoUrl && (
                             <div className="flex justify-center mb-1">
                                 <img src={business.logoUrl} alt="Logo" className="max-h-[30mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
                             </div>
                         )}
-                        <div className="font-black text-[15px]">{business?.businessName || "Kravy Restaurant"}</div>
-                        {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
-                            <div className="text-[10px] font-bold">
-                                {business?.businessAddress}
-                                {business?.district && `, ${business.district}`}
-                                {business?.state && `, ${business.state}`}
-                                {business?.pinCode && ` - ${business.pinCode}`}
+                        <div className="font-black text-[16px] uppercase">{business?.businessName || "Kravy Restaurant"}</div>
+                        {(business?.businessAddress || business?.district) && (
+                            <div className="text-[9px] font-bold uppercase mt-0.5">
+                                {business?.businessAddress} {business?.district && `, ${business.district}`}
                             </div>
                         )}
-                        {business?.gstNumber && <div className="text-[11px] font-bold">GSTIN: {business.gstNumber}</div>}
+                        {business?.gstNumber && <div className="text-[10px] font-bold mt-1">GSTIN: {business.gstNumber}</div>}
                     </div>
 
-                    <div className="text-center text-[11px] mt-2 font-bold border-t-2 border-black pt-1">
-                        <div>Bill No: ORD-{activeOrder?.id.slice(-6).toUpperCase()}</div>
-                        <div>Date: {new Date(activeOrder.createdAt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}</div>
-                        {displayTable.name !== "Counter" && (
-                            <div className="font-bold text-[12px] mt-1 border-2 border-black px-1 inline-block uppercase">
-                                TABLE: {displayTable.name}
-                            </div>
-                        )}
+                    <div className="border-t-2 border-black my-1" />
+                    <div className="flex justify-between text-[11px] font-black uppercase">
+                        <span>Invoice: #{activeOrder?.id.slice(-6).toUpperCase()}</span>
+                        <span>{new Date(activeOrder.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })}</span>
                     </div>
+                    <div className="flex justify-between text-[11px] font-black uppercase mt-1">
+                        <span>Table: {displayTable.name}</span>
+                        <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div className="border-b-2 border-black my-1" />
 
-                    {(activeOrder.customerName || activeOrder.customerPhone || activeOrder.notes) && (
-                        <div className="mt-2 text-[11px] font-bold border-t-2 border-black pt-1">
+                    {(activeOrder.customerName || activeOrder.customerPhone) && (
+                        <div className="mb-2 text-[10px] font-bold uppercase">
                             {activeOrder.customerName && <div>Customer: {activeOrder.customerName}</div>}
                             {activeOrder.customerPhone && <div>Phone: {activeOrder.customerPhone}</div>}
-                            {activeOrder.notes && <div className="mt-0.5 text-[10px]">Note: {activeOrder.notes}</div>}
                         </div>
                     )}
 
-                    <div className="my-1 border-t-2 border-black" />
-                    <div className="flex justify-between font-bold text-[11px]">
-                        <span className="flex-1 min-w-0 pr-1">Item</span>
-                        <span className="w-[8mm] text-center shrink-0">Qty</span>
-                        <span className="w-[12mm] text-right shrink-0">Rate</span>
-                        <span className="w-[13mm] text-right shrink-0">Total</span>
+                    <div className="flex justify-between font-black text-[11px] uppercase border-b-2 border-black pb-1 mb-1">
+                        <span className="flex-1">Item</span>
+                        <span className="w-[8mm] text-center">Qty</span>
+                        <span className="w-[15mm] text-right">Total</span>
                     </div>
-                    <div className="border-t-2 border-black my-1" />
+
                     <div className="space-y-1.5">
                         {activeOrder?.items.map((it: any, idx: number) => (
-                            <div key={idx} className="mb-1">
-                                <div className="flex justify-between text-[11px] font-bold">
-                                    <span className="flex-1 min-w-0 pr-1 truncate uppercase">{it.name}</span>
-                                    <span className="w-auto text-right shrink-0">{(it.quantity * it.price).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-[10px] font-bold">
-                                    <span>{it.quantity} x {it.price.toFixed(2)}</span>
-                                    {it.instruction && <span className="text-[9px] truncate">({it.instruction})</span>}
-                                </div>
+                            <div key={idx} className="flex justify-between text-[11px] font-bold uppercase leading-tight">
+                                <span className="flex-1 pr-1">{it.name}</span>
+                                <span className="w-[8mm] text-center">x{it.quantity}</span>
+                                <span className="w-[15mm] text-right">{(it.quantity * it.price).toFixed(2)}</span>
                             </div>
                         ))}
                     </div>
 
-                    <div className="mt-2 pt-1 border-t-2 border-black space-y-1">
+                    <div className="mt-2 border-t-2 border-black pt-1 space-y-1">
                         <div className="flex justify-between text-[11px] font-bold">
                             <span>Subtotal</span>
                             <span>₹{subtotal.toFixed(2)}</span>
@@ -2001,84 +1991,81 @@ export default function KravyPOS() {
                                 <span>₹{gst.toFixed(2)}</span>
                             </div>
                         )}
-                        <div className="border-t-2 border-black my-1" />
-                        <div className="flex justify-between font-black text-[15px] border-b-2 border-black py-1.5 my-1">
-                            <span>GRAND TOTAL</span>
+                        <div className="flex justify-between font-black text-[16px] border-y-2 border-black py-1.5 my-1 uppercase">
+                            <span>Total</span>
                             <span>₹{total.toFixed(2)}</span>
                         </div>
                     </div>
 
-                    <div className="mt-2 text-[10px] font-bold">
-                        Amount in Words: {numberToWords(total)}
+                    <div className="mt-2 text-[9px] font-bold uppercase">
+                        {numberToWords(total)}
                     </div>
 
-                    <div className="mt-3 border-t-2 border-black pt-1 flex justify-between text-[11px] font-bold">
-                        <span>Payment: {paymentMethod.toUpperCase()}</span>
-                        <span>Status: PAID</span>
+                    <div className="mt-2 text-center text-[11px] font-black border-2 border-black py-1 uppercase">
+                        Paid via {paymentMethod.toUpperCase()}
                     </div>
 
                     {(business?.upi && business?.upiQrEnabled !== false) && (
-                        <div className="mt-2 text-center text-[10px] font-bold border-t-2 border-black pt-2">
-                            <div className="font-black">SCAN & PAY</div>
-                            <div className="my-2 text-center">
-                                <div className="inline-block border-2 border-black p-1 bg-white">
-                                    <img src={qrCodeUrl} alt="UPI QR" className="w-[32mm] h-[32mm] object-contain block" style={{ imageRendering: 'pixelated', filter: 'contrast(300%) grayscale(100%)' }} />
-                                </div>
+                        <div className="mt-3 text-center border-t-2 border-black pt-2">
+                            <div className="text-[10px] font-black mb-1 uppercase tracking-widest">Scan to Pay</div>
+                            <div className="inline-block border-2 border-black p-1 bg-white">
+                                <img src={qrCodeUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
                             </div>
-                            <div className="mb-2">UPI: {business.upi}</div>
+                            <div className="text-[8px] font-black mt-1">{business.upi}</div>
                         </div>
                     )}
 
-                    <div className="mt-2 text-center border-t-2 border-black pt-2">
-                        <div className="text-[12px] font-black mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
-                        {business?.businessTagLine && <div className="text-[9px] opacity-80">{business.businessTagLine}</div>}
+                    <div className="mt-3 text-center border-t-2 border-black pt-2">
+                        <div className="text-[12px] font-black uppercase">Thank You! Visit Again</div>
+                        {business?.businessTagLine && <div className="text-[9px] font-bold mt-0.5">{business.businessTagLine}</div>}
                     </div>
                 </div>
             );
         } else { // KOT
             return (
                 <div className="kravy-kot-print text-black font-mono bg-white text-[10px] leading-tight" style={{ width: '100%' }}>
-                    <div className="text-center font-black text-[16px] border-b-2 border-black pb-1 mb-2">KOT</div>
-                    <div className="flex justify-between text-[11px] font-black mb-1">
-                        <span>#{activeOrder.id.slice(-4).toUpperCase()}</span>
+                    <div className="text-center font-black text-[18px] border-b-2 border-black pb-1 mb-2 uppercase tracking-widest">KITCHEN TOKEN</div>
+                    
+                    <div className="flex justify-between items-center text-[12px] font-black uppercase mb-1">
+                        <span>ID: #{activeOrder.id.slice(-4).toUpperCase()}</span>
                         <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                    
-                    <div className="text-center text-[14px] font-black border-2 border-black py-1 my-1 uppercase">
+
+                    <div className="text-center text-[18px] font-black border-2 border-black py-2 my-2 uppercase bg-white">
                         TABLE: {displayTable.name}
                     </div>
 
                     {activeOrder.notes && (
-                        <div className="mt-1 mb-2 p-1 border border-solid border-black text-[10px] font-black">
-                            NOTE: {activeOrder.notes}
+                        <div className="mt-1 mb-2 p-1 border-2 border-black text-[11px] font-black uppercase">
+                            Note: {activeOrder.notes}
                         </div>
                     )}
 
-                    <div className="border-t-2 border-black my-1" />
-                    <div className="flex justify-between font-black text-[11px] mb-1">
-                        <span>Item</span>
+                    <div className="flex justify-between font-black text-[12px] uppercase border-b-2 border-black pb-1 mb-1">
+                        <span>Item Name</span>
                         <span>Qty</span>
                     </div>
-                    <div className="border-t-2 border-black mb-1" />
-                    <div className="space-y-1">
+
+                    <div className="space-y-2">
                         {activeOrder?.items.map((it: any, i: number) => (
-                            <div key={i} className="flex justify-between items-start border-b border-black pb-1.5 pt-1.5">
+                            <div key={i} className="flex justify-between items-start border-b border-black pb-1 mb-1">
                                 <div className="flex-1 pr-2">
-                                    <p className="text-[13px] font-black leading-tight uppercase">{it.name}</p>
-                                    {it.instruction && <p className="text-[9px] mt-1 font-bold">*** {it.instruction} ***</p>}
+                                    <div className="text-[14px] font-black leading-tight uppercase">{it.name}</div>
+                                    {it.instruction && <div className="text-[10px] font-bold mt-1 uppercase">*** {it.instruction} ***</div>}
                                     {it.variants && it.variants.length > 0 && (
-                                        <p className="text-[8px] font-bold mt-0.5">
-                                            {it.variants.map((v: any) => v.name).join(', ')}
-                                        </p>
+                                        <div className="text-[10px] font-bold mt-0.5 uppercase">
+                                            [{it.variants.map((v: any) => v.name).join(', ')}]
+                                        </div>
                                     )}
                                 </div>
-                                <div className="text-[16px] font-black leading-none bg-black text-white px-1.5 py-1 rounded-sm">x{it.quantity}</div>
+                                <div className="text-[18px] font-black shrink-0 ml-2">x{it.quantity}</div>
                             </div>
                         ))}
                     </div>
-                    <div className="text-center mt-6 pt-1 border-t border-solid border-gray-400">
-                        <p className="text-[8px] font-black uppercase opacity-60">Kravy Kitchen System</p>
-                        <p className="text-[7px] mt-0.5">{new Date().toLocaleString()}</p>
+
+                    <div className="text-center mt-6 pt-1 border-t-2 border-black">
+                        <div className="text-[10px] font-black uppercase tracking-widest">Kravy Kitchen System</div>
+                        <div className="text-[8px] font-bold mt-0.5">{new Date().toLocaleString('en-IN')}</div>
                     </div>
                 </div>
             );
