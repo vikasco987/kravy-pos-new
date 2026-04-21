@@ -40,6 +40,8 @@ export default function BillingPage() {
   const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { user: authUser } = useAuthContext();
+  const userRole = authUser?.type || null;
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const router = useRouter();
@@ -713,7 +715,7 @@ export default function BillingPage() {
                       >
                         <Printer size={16} />
                       </button>
-                      <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} />
+                      <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} userRole={userRole} />
                     </div>
                   </td>
                 </motion.tr>
@@ -781,7 +783,7 @@ export default function BillingPage() {
               className="kravy-card"
               style={{ padding: "16px" }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                 <div>
                   <div style={{ fontFamily: "monospace", fontWeight: 800, color: "var(--kravy-accent)", fontSize: "0.9rem" }}>
                     #{bill.billNumber}
@@ -790,7 +792,7 @@ export default function BillingPage() {
                     {bill.customerName || "Walk-in Customer"}
                   </div>
                 </div>
-                <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} />
+                <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} userRole={userRole} />
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
@@ -904,21 +906,11 @@ function StatusBadge({ status, isHeld }: { status: string; isHeld?: boolean }) {
 }
 
 /* ─── Bill Actions ─── */
-function BillActions({ bill, refresh, clerkId, business }: { bill: BillManager; refresh: () => void; clerkId?: string | null; business?: any }) {
+function BillActions({ bill, refresh, clerkId, business, userRole }: { bill: BillManager; refresh: () => void; clerkId?: string | null; business?: any; userRole: string | null }) {
   const [open, setOpen] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    fetch("/api/staff/me")
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) {
-          setUserRole(res.data.role || res.data.type);
-        }
-      })
-      .catch(err => console.error("Failed to fetch session", err));
-  }, []);
+
 
   const handleWhatsApp = async () => {
     let pdfUrl = bill.pdfUrl;

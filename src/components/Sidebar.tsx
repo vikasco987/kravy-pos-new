@@ -119,6 +119,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { kravy } from "@/lib/sounds";
+import { useAuthContext } from "./AuthContext";
 
 const navGroups = [
   {
@@ -424,31 +425,18 @@ export default function Sidebar() {
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
   const [mounted, setMounted] = useState(false);
-  const [userRole, setUserRole] = useState<string>("USER");
-  const [allowedPaths, setAllowedPaths] = useState<string[]>([]);
-  const [loadingRole, setLoadingRole] = useState(true);
+  const { user: authUser, loading: authLoading } = useAuthContext();
   const [taxEnabled, setTaxEnabled] = useState(false);
   const [aiScraperEnabled, setAiScraperEnabled] = useState(false);
   const [excelImportEnabled, setExcelImportEnabled] = useState(false);
-  const [staffData, setStaffData] = useState<any>(null);
+
+  // Derive from AuthContext
+  const userRole = authUser?.type || "USER";
+  const allowedPaths = authUser?.permissions || [];
+  const loadingRole = authLoading;
 
   useEffect(() => {
     setMounted(true);
-    // Fetch exact database role and allowed paths
-    fetch("/api/user/me")
-      .then(res => res.json())
-      .then(data => {
-        if (data) {
-          if (data.role) setUserRole(data.role);
-          if (data.allowedPaths) setAllowedPaths(data.allowedPaths);
-          setStaffData(data);
-        }
-        setLoadingRole(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoadingRole(false);
-      });
 
     // Fetch profile to check tax status
     fetch("/api/profile")

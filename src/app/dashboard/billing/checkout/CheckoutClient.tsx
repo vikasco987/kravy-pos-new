@@ -12,6 +12,7 @@ import { calculateDiscount } from "@/lib/discount-utils";
 import { toast } from "sonner";
 import { kravy } from "@/lib/sounds";
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
+import { useAuthContext } from "@/components/AuthContext";
 
 /* ================= TYPES ================= */
 
@@ -171,8 +172,10 @@ export default function CheckoutClient() {
   const [heldBillsLoading, setHeldBillsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [lastSavedBillId, setLastSavedBillId] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [userPermissions, setUserPermissions] = useState<string[]>([]);
+  const { user: authUser } = useAuthContext();
+  const userRole = authUser?.type || null;
+  const userPermissions = authUser?.permissions || [];
+  
   const [previewZoom, setPreviewZoom] = useState(1);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [quickAddCat, setQuickAddCat] = useState<{ id: string, name: string } | null>(null);
@@ -276,18 +279,6 @@ export default function CheckoutClient() {
     fetchHeldBills();
     fetchParties();
     fetchTables();
-    
-    // Fetch User/Staff Session
-    fetch("/api/staff/me")
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) {
-          const data = res.data;
-          setUserRole(data.role || data.type);
-          setUserPermissions(data.permissions || []);
-        }
-      })
-      .catch(err => console.error("Failed to fetch session", err));
   }, []);
 
   const [billNumber, setBillNumber] = useState("");
@@ -1120,7 +1111,11 @@ export default function CheckoutClient() {
   const totalItems = items.reduce((s, i) => s + i.qty, 0);
 
   /* ================= PERMISSIONS HELPER ================= */
-  const canEdit = userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("edit") || userPermissions.includes("EDIT_POS");
+  const canEdit = userRole === "ADMIN" || 
+                  userRole === "MASTER" || 
+                  userRole === "SELLER" || 
+                  userPermissions.includes("edit") || 
+                  userPermissions.includes("EDIT_POS");
 
   return (
     <div className="h-[calc(100vh-72px)] bg-[var(--kravy-bg)] flex flex-col overflow-hidden">
@@ -1865,11 +1860,23 @@ export default function CheckoutClient() {
           <div className="text-center text-[11px] mt-2 font-bold">
             <div>Bill No: {billNumber}</div>
             <div>Date: {billDate} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-            {selectedTable !== "POS" && <div className="font-bold text-[12px] mt-1 border border-black px-1 inline-block">TABLE: {selectedTable}</div>}
-            {customerAddress && <div className="mt-1">Customer Addr: {customerAddress}</div>}
-            {placeOfSupply && <div className="mt-0.5">Place of Supply: {placeOfSupply}</div>}
+            {selectedTable !== "POS" && <div className="font-bold text-[12px] mt-1 border-2 border-black px-1 inline-block">TABLE: {selectedTable}</div>}
           </div>
-          <div className="my-2 border-t-2 border-black" />
+
+          {(customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && (
+            <div className="mt-2 text-[11px] font-bold border-t-2 border-black pt-1">
+              {customerName && <div>Customer: {customerName}</div>}
+              {customerPhone && <div>Phone: {customerPhone}</div>}
+              {buyerGSTIN && <div className="uppercase">Buyer GST: {buyerGSTIN}</div>}
+              {customerAddress && <div className="mt-0.5" style={{ wordWrap: 'break-word', whiteSpace: 'pre-wrap' }}>Addr: {customerAddress}</div>}
+              {orderNotes && <div className="mt-0.5 italic text-[10px]">Note: {orderNotes}</div>}
+            </div>
+          )}
+
+          <div className="mt-1 text-center text-[10px] font-bold">
+            {placeOfSupply && <div>Place of Supply: {placeOfSupply}</div>}
+          </div>
+          <div className="my-1 border-t-2 border-black" />
           <div className="flex justify-between font-bold text-[11px]">
             <span className="flex-1 min-w-0 pr-1">Item</span>
             <span className="w-[8mm] text-center shrink-0">Qty</span>
