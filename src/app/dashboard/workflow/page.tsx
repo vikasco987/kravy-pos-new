@@ -1885,7 +1885,7 @@ export default function KravyPOS() {
 
             {/* Hidden Printer Zone */}
             <div style={{ position: 'absolute', top: -9999, left: -9999, opacity: 0, pointerEvents: 'none' }}>
-                <div ref={billReceiptRef} style={{ width: '58mm' }}>
+                <div ref={billReceiptRef} style={{ width: '100%' }}>
                     {(() => {
                         const targetO = printOrder || activeOrderForSelected;
                         const targetT = printTable || selectedTable;
@@ -1896,7 +1896,7 @@ export default function KravyPOS() {
                         return getReceiptJSX("BILL", business, targetO, targetT, sub, isTaxEnabled, taxRate, gst, total, payMethod, qrUrl);
                     })()}
                 </div>
-                <div ref={kotReceiptRef} style={{ width: '58mm' }}>
+                <div ref={kotReceiptRef} style={{ width: '100%' }}>
                     {(() => {
                         const targetO = printOrder || activeOrderForSelected;
                         const targetT = printTable || selectedTable;
@@ -1930,7 +1930,7 @@ export default function KravyPOS() {
 
         if (mode === "BILL") {
             return (
-                <div className="font-mono text-[10px] leading-tight text-black bg-white">
+                <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%' }}>
                     <div className="text-center mb-1">
                         {business?.logoUrl && (
                             <div className="flex justify-center mb-1">
@@ -1980,7 +1980,7 @@ export default function KravyPOS() {
                             <div key={idx} className="mb-1">
                                 <div className="flex justify-between text-[11px] font-bold">
                                     <span className="flex-1 min-w-0 pr-1 truncate uppercase">{it.name}</span>
-                                    <span className="w-[11mm] text-right shrink-0">{(it.quantity * it.price).toFixed(2)}</span>
+                                    <span className="w-auto text-right shrink-0">{(it.quantity * it.price).toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between text-[10px] font-bold">
                                     <span>{it.quantity} x {it.price.toFixed(2)}</span>
@@ -2037,7 +2037,7 @@ export default function KravyPOS() {
             );
         } else { // KOT
             return (
-                <div className="kravy-kot-print text-black font-mono bg-white text-[10px] leading-tight">
+                <div className="kravy-kot-print text-black font-mono bg-white text-[10px] leading-tight" style={{ width: '100%' }}>
                     <div className="text-center font-black text-[16px] border-b-2 border-black pb-1 mb-2">KOT</div>
                     <div className="flex justify-between text-[11px] font-black mb-1">
                         <span>#{activeOrder.id.slice(-4).toUpperCase()}</span>
