@@ -1859,7 +1859,7 @@ export default function CheckoutClient() {
           {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[11px] font-bold">FSSAI: {business.fssaiNumber}</div>}
           <div className="text-center text-[11px] mt-2 font-bold">
             <div>Bill No: {billNumber}</div>
-            <div>Date: {billDate} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            <div>Date: {billDate}</div>
             {selectedTable !== "POS" && <div className="font-bold text-[12px] mt-1 border-2 border-black px-1 inline-block">TABLE: {selectedTable}</div>}
           </div>
 
@@ -1923,11 +1923,6 @@ export default function CheckoutClient() {
               <span>GRAND TOTAL</span>
               <span>₹{finalTotal.toFixed(2)}</span>
             </div>
-            {isKotPrinted && (
-              <div className="mt-1 text-center font-black text-[8px] uppercase tracking-tighter italic">
-                ✓ KOT Printed 👨‍🍳
-              </div>
-            )}
           </div>
 
           {(taxActive || perProductEnabled) && taxBreakup.length > 0 && (
@@ -2021,24 +2016,29 @@ export default function CheckoutClient() {
           ref={kotRef}
           className="hidden print:block font-mono text-[10px] leading-tight"
         >
-          <div className="text-center font-black text-[18px] border-b-2 border-black pb-1 mb-2">KOT</div>
-          <div className="flex justify-between text-[13px] font-black mb-1">
+          <div className="text-center font-black text-[16px] border-b-2 border-black pb-1 mb-2">KOT</div>
+          <div className="flex justify-between text-[11px] font-black mb-1">
             <span>#{billNumber.split('-').pop()}</span>
             <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
           {selectedTable !== "POS" && (
-            <div className="text-center text-[16px] font-black border-2 border-black py-1 my-1">
+            <div className="text-center text-[14px] font-black border-2 border-black py-1 my-1">
               TABLE: {selectedTable}
             </div>
           )}
+          {orderNotes && (
+            <div className="mt-1 mb-2 p-1 border border-dashed border-black text-[10px] font-black italic">
+              NOTE: {orderNotes}
+            </div>
+          )}
           <div className="border-t-2 border-black my-1" />
-          <div className="flex justify-between font-black text-[13px] mb-1">
+          <div className="flex justify-between font-black text-[11px] mb-1">
             <span>Item</span>
             <span>Qty</span>
           </div>
           <div className="border-t-2 border-black mb-1" />
           {items.map((i, idx) => (
-            <div key={idx} className="flex justify-between text-[15px] font-black py-2 border-b border-black italic">
+            <div key={idx} className="flex justify-between text-[13px] font-black py-1.5 border-b border-black italic">
               <span className="flex-1 pr-2">{i.name}</span>
               <span>x{i.qty}</span>
             </div>
