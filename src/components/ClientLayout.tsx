@@ -4,8 +4,10 @@ import { ReactNode, useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { useSidebar } from "@/components/SidebarContext";
-import { useUser, RedirectToSignIn } from "@clerk/nextjs"; // Using useUser instead of SignedIn/SignedOut
+import { useUser, RedirectToSignIn } from "@clerk/nextjs";
 import { OrderNotificationProvider } from "@/components/OrderNotificationProvider";
+import { useAuthContext } from "@/components/AuthContext";
+import { Lock, Loader2 } from "lucide-react";
 
 export default function ClientLayout({
   children,
@@ -13,79 +15,75 @@ export default function ClientLayout({
   children: ReactNode;
 }) {
   const { collapsed } = useSidebar();
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded: clerkLoaded, isSignedIn } = useUser();
+  const { user: authUser, loading: authLoading } = useAuthContext();
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isStaffAuthenticated, setIsStaffAuthenticated] = useState<boolean | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // 1. Check for Staff Token Cookie
-    const staffToken = typeof document !== 'undefined' ? document.cookie.split('; ').find(row => row.startsWith('staff_token=')) : null;
-    setIsStaffAuthenticated(Boolean(staffToken));
-
-    // 2. Mobile Detection Logic
+    setMounted(true);
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      if (mobile) {
-        setSidebarOpen(false);
-      }
+      if (mobile) setSidebarOpen(false);
     };
-
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Show nothing while loading Clerk or checking Staff cookie
-  if (!isLoaded || isStaffAuthenticated === null) {
-    return null; 
+  // 1. Show loader while anything is still loading
+  if (!mounted || !clerkLoaded || authLoading) {
+    return (
+        <div className="h-screen flex items-center justify-center bg-slate-50">
+            <Loader2 className="animate-spin text-indigo-600" size={32} />
+        </div>
+    );
   }
 
-  // If NOT Clerk User AND NOT Staff User -> Redirect to Clerk login
-  if (!isSignedIn && !isStaffAuthenticated) {
+  // 2. If NOT Clerk User AND NOT Staff User -> Redirect to Clerk login
+  // Note: authUser will be present if they are logged in via staff session
+  if (!isSignedIn && !authUser) {
     return <RedirectToSignIn />;
   }
 
-  // Staff Authorization Check (UI side)
-  if (!isSignedIn && isStaffAuthenticated) {
-    try {
-        const staffToken = document.cookie.split('; ').find(row => row.startsWith('staff_token='))?.split('=')[1];
-        if (staffToken) {
-            const payload = JSON.parse(atob(staffToken.split('.')[1]));
-            const permissions = payload.permissions || [];
-            const path = window.location.pathname;
-            
-            if (path.startsWith('/dashboard')) {
-                const isAllowed = permissions.some((p: string) => path === p || path.startsWith(p + '/'));
-                if (!isAllowed) {
-                    return (
-                        <div className="h-screen flex items-center justify-center bg-slate-50">
-                            <div className="text-center p-8 bg-white rounded-3xl shadow-xl border border-slate-200 max-w-sm">
-                                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                    <Lock size={32} />
-                                </div>
-                                <h2 className="text-xl font-black text-slate-800">Access Denied</h2>
-                                <p className="text-slate-500 text-sm mt-2 mb-6">
-                                    You don't have permission to access this module. Contact your manager.
-                                </p>
-                                <button 
-                                    onClick={() => {
-                                        document.cookie = "staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-                                        window.location.href = "/staff/login";
-                                    }}
-                                    className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all"
-                                >
-                                    Log out & Try Again
-                                </button>
-                            </div>
+  // 3. Staff Authorization Check
+  if (!isSignedIn && authUser) {
+    const permissions = authUser.permissions || [];
+    const path = window.location.pathname;
+    
+    if (path.startsWith('/dashboard')) {
+        const isAllowed = permissions.includes("*") || permissions.some((p: string) => path === p || path.startsWith(p + '/'));
+        
+        // Exclude base dashboard from blocking if they have any access
+        const hasAnyAccess = permissions.length > 0;
+        const isBaseDashboard = path === "/dashboard";
+
+        if (!isAllowed && !(isBaseDashboard && hasAnyAccess)) {
+            return (
+                <div className="h-screen flex items-center justify-center bg-slate-50">
+                    <div className="text-center p-8 bg-white rounded-3xl shadow-xl border border-slate-200 max-w-sm">
+                        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <Lock size={32} />
                         </div>
-                    );
-                }
-            }
+                        <h2 className="text-xl font-black text-slate-800">Access Denied</h2>
+                        <p className="text-slate-500 text-sm mt-2 mb-6">
+                            You don't have permission to access this module ({path}). Contact your manager.
+                        </p>
+                        <button 
+                            onClick={() => {
+                                document.cookie = "staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                                window.location.href = "/staff/login";
+                            }}
+                            className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all"
+                        >
+                            Log out & Try Again
+                        </button>
+                    </div>
+                </div>
+            );
         }
-    } catch (e) {
-        console.error("Staff permission check failed", e);
     }
   }
 
