@@ -825,7 +825,7 @@ export default function Sidebar() {
               }}
               whileHover={{ color: "#FF6B35" }}
             >
-              {staffData?.name || user?.fullName || "Admin User"}
+              {authUser?.name || user?.fullName || "Admin User"}
             </motion.div>
             <motion.div
               style={{
