@@ -170,9 +170,9 @@ const navGroups = [
   {
     group: "INSIGHTS",
     items: [
-      { icon: <BarChart3 size={18} />, label: "Revenue Analysis", href: "#", badge: "Soon", badgeColor: "#64748B" },
-      { icon: <PieChart size={18} />, label: "Mode of Payment", href: "#", badge: "Soon", badgeColor: "#64748B" },
-      { icon: <TrendingUp size={18} />, label: "Business Growth", href: "#", badge: "Soon", badgeColor: "#64748B" },
+      { icon: <BarChart3 size={18} />, label: "Revenue Analysis", href: "/dashboard/reports/sales/revenue" },
+      { icon: <PieChart size={18} />, label: "Mode of Payment", href: "/dashboard/reports/payments" },
+      { icon: <TrendingUp size={18} />, label: "Business Growth", href: "/dashboard/reports/performance" },
     ]
   },
   {
