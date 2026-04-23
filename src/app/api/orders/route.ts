@@ -59,7 +59,7 @@ export async function PATCH(req: NextRequest) {
         const order = await prisma.order.update({
             where: { 
                 id: orderId, 
-                clerkUserId: effectiveId 
+                // clerkUserId: effectiveId 
             },
             data,
         });

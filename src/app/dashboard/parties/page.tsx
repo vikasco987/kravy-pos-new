@@ -105,7 +105,6 @@ export default function PartiesPage() {
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [userPrefs, setUserPrefs] = useState<any>({});
 
-  const getBase = () => (typeof window !== "undefined" ? window.location.origin : "");
 
   useEffect(() => {
     setMounted(true);
@@ -255,8 +254,7 @@ export default function PartiesPage() {
         setWalletTransactions(data);
       }
     } catch (err) {
-      console.error("Error fetching wallet history:", err);
-    } finally {
+        } finally {
       setLoadingWallet(false);
     }
   };
@@ -298,31 +296,19 @@ export default function PartiesPage() {
     printWindow.document.write('</body></html>');
     printWindow.document.close();
     
-    setTimeout(() => {
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-    }, 500);
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    }, 100);
   };
 
   // State for dynamic print content
   const [printData, setPrintData] = useState<any>(null);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this customer?")) return;
-    try {
-      const res = await fetch(`/api/parties`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id })
-      });
-      if (res.ok) {
-        setParties(p => p.filter(x => x.id !== id));
-        pushToast("success", "Customer deleted");
-      }
-    } catch (err) {
-      pushToast("error", "Delete failed");
-    }
+    pushToast("error", "Deletion is disabled to maintain data integrity. Please contact administrator.");
   };
 
   const exportCSV = () => {
@@ -503,6 +489,7 @@ export default function PartiesPage() {
                 onEdit={() => { setEditing(p); setModalOpen(true); }}
                 onDelete={() => handleDelete(p.id)}
                 onViewHistory={() => fetchBillHistory(p)}
+                onDeposit={() => { setDepositingParty(p); setDepositOpen(true); }}
               />
             ))}
           </div>
@@ -893,7 +880,13 @@ function StatCard({ icon, label, value, sub }: { icon: any, label: string, value
   );
 }
 
-function CustomerCard({ p, onEdit, onDelete, onViewHistory }: { p: Party, onEdit: () => void, onDelete: () => void, onViewHistory: () => void }) {
+function CustomerCard({ p, onEdit, onDelete, onViewHistory, onDeposit }: { 
+  p: Party, 
+  onEdit: () => void, 
+  onDelete: () => void, 
+  onViewHistory: () => void,
+  onDeposit: () => void 
+}) {
   return (
     <div className="group bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl p-5 shadow-sm hover:shadow-2xl hover:border-[var(--kravy-brand)] transition-all flex flex-col items-center text-center relative overflow-hidden">
       
@@ -935,7 +928,7 @@ function CustomerCard({ p, onEdit, onDelete, onViewHistory }: { p: Party, onEdit
           <HistoryIcon size={12} /> History
         </button>
         <button 
-          onClick={(e) => { e.stopPropagation(); setDepositingParty(p); setDepositOpen(true); }}
+          onClick={(e) => { e.stopPropagation(); onDeposit(); }}
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all shadow-sm"
         >
           <Plus size={12} /> Deposit

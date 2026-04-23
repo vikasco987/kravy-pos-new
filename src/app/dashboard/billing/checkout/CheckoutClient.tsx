@@ -182,13 +182,13 @@ export default function CheckoutClient() {
   const [quickAddTaxStatus, setQuickAddTaxStatus] = useState("Without Tax");
   const [quickAddGst, setQuickAddGst] = useState(0);
   const [showAddCategory, setShowAddCategory] = useState(false);
-  console.log("Check terminal render - quickAddCat:", quickAddCat);
 
   /* ================= PARTIES (CUSTOMERS) STATE ================= */
   const [parties, setParties] = useState<any[]>([]);
   const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([]);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const customerSectionRef = useRef<HTMLDivElement>(null);
+  const checkoutSidebarRef = useRef<HTMLDivElement>(null);
 
   /* ================= TABLES STATE ================= */
   const [tables, setTables] = useState<any[]>([]);
@@ -225,8 +225,9 @@ export default function CheckoutClient() {
     function handleClickOutside(event: MouseEvent) {
       const isOutsideSuggestions = suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node);
       const isOutsideCustomerSection = customerSectionRef.current && !customerSectionRef.current.contains(event.target as Node);
+      const isOutsideSidebar = checkoutSidebarRef.current && !checkoutSidebarRef.current.contains(event.target as Node);
       
-      if (isOutsideSuggestions && isOutsideCustomerSection) {
+      if (isOutsideSuggestions && isOutsideCustomerSection && isOutsideSidebar) {
         setCustomerSuggestions([]);
       }
     }
@@ -1360,7 +1361,9 @@ export default function CheckoutClient() {
         {/* ══════════════════════════════
             RIGHT — CART / BILLING
         ══════════════════════════════ */}
-        <div className="bg-[var(--kravy-surface)] flex flex-col border-l border-[var(--kravy-border)] overflow-hidden min-h-0
+        <div 
+          ref={checkoutSidebarRef}
+          className="bg-[var(--kravy-surface)] flex flex-col border-l border-[var(--kravy-border)] overflow-hidden min-h-0
           fixed bottom-0 left-0 right-0 md:static
           rounded-t-3xl md:rounded-none
           shadow-2xl md:shadow-none
@@ -1505,6 +1508,35 @@ export default function CheckoutClient() {
                       focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-mono"
                   />
                 </div>
+
+                {/* Suggestions Dropdown - MOVED HIGHER */}
+                {customerSuggestions.length > 0 && (
+                  <div 
+                    ref={suggestionsRef}
+                    className="absolute left-4 right-4 bg-[var(--kravy-surface)] border border-[var(--kravy-border-strong)] rounded-2xl shadow-2xl z-[60] mt-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
+                    style={{ top: '115px' }} // Positioned below Name/Phone fields
+                  >
+                    <div className="p-2 border-b border-[var(--kravy-border)] bg-indigo-50/30">
+                      <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Matching Customers</p>
+                    </div>
+                    {customerSuggestions.map((p, idx) => (
+                      <button
+                        key={p.id || idx}
+                        type="button"
+                        onClick={() => selectCustomer(p)}
+                        className="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-[var(--kravy-border)] last:border-0 transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="font-black text-sm text-[var(--kravy-text-primary)]">{p.name}</p>
+                          <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-0.5">{p.phone}</p>
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                          <User size={14} />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
     
                  {selectedParty && (
                    <div className="bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-2xl flex items-center justify-between">
@@ -1567,36 +1599,9 @@ export default function CheckoutClient() {
                     </div>
                   </div>
                 )}
-
-
-                {/* Suggestions Dropdown */}
-                {customerSuggestions.length > 0 && (
-                  <div 
-                    ref={suggestionsRef}
-                    className="absolute left-4 right-4 bg-[var(--kravy-surface)] border border-[var(--kravy-border-strong)] rounded-2xl shadow-2xl z-50 mt-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
-                  >
-                    <div className="p-2 border-b border-[var(--kravy-border)] bg-indigo-50/30">
-                      <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Matching Customers</p>
-                    </div>
-                    {customerSuggestions.map((p, idx) => (
-                      <button
-                        key={p.id || idx}
-                        onClick={() => selectCustomer(p)}
-                        className="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-[var(--kravy-border)] last:border-0 transition-colors flex items-center justify-between"
-                      >
-                        <div>
-                          <p className="font-black text-sm text-[var(--kravy-text-primary)]">{p.name}</p>
-                          <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-0.5">{p.phone}</p>
-                        </div>
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
-                          <User size={14} />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
+
 
             {/* Cart Items List */}
             <div className="flex-1 px-4 md:px-5 py-3 space-y-2">

@@ -36,7 +36,10 @@ import {
   Percent,
   Archive,
   HelpCircle,
-  BarChart3
+  BarChart3,
+  IndianRupee,
+  Edit3,
+  CheckCircle2
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";

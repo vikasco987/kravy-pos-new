@@ -111,6 +111,16 @@ export default function KravyPOS() {
     const [dateStr, setDateStr] = useState("");
     const [business, setBusiness] = useState<any>(null);
     
+    const selectedTable = tablesList.find(t => t.id === selectedTableId);
+    const activeOrderForSelected = orders.find(o => o.id === selectedTable?.activeOrderId);
+
+    // Dynamic Totals Calculation
+    const isTaxEnabled = business?.taxEnabled ?? true;
+    const taxRate = business?.taxRate ?? 5.0;
+    const subtotalCost = activeOrderForSelected?.items.reduce((acc, it) => acc + (it.price * it.quantity), 0) || 0;
+    const calculatedGst = isTaxEnabled ? (subtotalCost * taxRate) / 100 : 0;
+    const grandTotal = subtotalCost + calculatedGst;
+    
     useEffect(() => {
         fetchMenu();
     }, []);
@@ -522,15 +532,6 @@ export default function KravyPOS() {
         }
     };
 
-    const selectedTable = tablesList.find(t => t.id === selectedTableId);
-    const activeOrderForSelected = orders.find(o => o.id === selectedTable?.activeOrderId);
-
-    // Dynamic Totals Calculation
-    const isTaxEnabled = business?.taxEnabled ?? true;
-    const taxRate = business?.taxRate ?? 5.0;
-    const subtotalCost = activeOrderForSelected?.items.reduce((acc, it) => acc + (it.price * it.quantity), 0) || 0;
-    const calculatedGst = isTaxEnabled ? (subtotalCost * taxRate) / 100 : 0;
-    const grandTotal = subtotalCost + calculatedGst;
 
     const upiLink = business?.upi ? `upi://pay?pa=${business.upi}&pn=${encodeURIComponent(business.businessName || "Store")}&am=${grandTotal.toFixed(2)}&cu=INR` : "";
     const qrUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}` : "";

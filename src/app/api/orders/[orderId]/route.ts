@@ -17,7 +17,7 @@ export async function GET(
     const order = await prisma.order.findFirst({
       where: {
         id: orderId,
-        clerkUserId: effectiveId,
+        // clerkUserId: effectiveId,
       },
       include: {
         table: true,
