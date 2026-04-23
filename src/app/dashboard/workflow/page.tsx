@@ -2282,51 +2282,59 @@ export default function KravyPOS() {
             );
         } else { // KOT
             return (
-                <div className="kravy-kot-print text-black font-mono bg-white text-[10px] leading-tight" style={{ width: '100%', paddingBottom: '15mm' }}>
-                    <div className="text-center font-black text-[16px] border-b border-dotted border-black pb-1 mb-2 uppercase tracking-widest">KITCHEN TOKEN</div>
+                <div className="kravy-kot-print text-black font-mono bg-white text-[11px] leading-tight" style={{ width: '100%', paddingBottom: '25mm' }}>
+                    <div className="text-center font-bold text-[18px] border-b-2 border-dashed border-black pb-1 mb-2 uppercase tracking-tighter">*** KOT ***</div>
                     
-                    <div className="flex justify-between items-center text-[11px] font-black uppercase mb-1">
-                        <span>ID: #{activeOrder.id.slice(-4).toUpperCase()}</span>
-                        <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                    <div className="space-y-1 mb-3">
+                        <div className="flex justify-between items-center font-bold text-[12px]">
+                            <span>TOKEN: #{activeOrder.id.slice(-4).toUpperCase()}</span>
+                            <span>{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })}</span>
+                        </div>
+                        <div className="flex justify-between items-center font-bold text-[12px]">
+                            <span>TIME: {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="bg-black text-white px-1">KOT NO: {Math.floor(Date.now() / 1000).toString().slice(-4)}</span>
+                        </div>
                     </div>
 
-                    <div className="text-center text-[16px] font-black border-2 border-dotted border-black py-1.5 my-1 uppercase bg-white">
+                    <div className="text-center text-[20px] font-bold border-2 border-dashed border-black py-2 my-2 uppercase">
                         TABLE: {displayTable.name}
                     </div>
 
                     {activeOrder.notes && (
-                        <div className="mt-1 mb-2 p-1 border border-dotted border-black text-[10px] font-black uppercase">
-                            Note: {activeOrder.notes}
+                        <div className="mt-2 mb-3 p-2 border border-dashed border-black text-[11px] font-bold uppercase italic">
+                            NOTE: {activeOrder.notes}
                         </div>
                     )}
 
-                    <div className="flex justify-between font-black text-[11px] uppercase border-b border-dotted border-black pb-1 mb-1">
-                        <span>Item Name</span>
-                        <span>Qty</span>
+                    <div className="flex justify-between font-bold text-[12px] uppercase border-b-2 border-dashed border-black pb-1 mb-2">
+                        <span>ITEM DESCRIPTION</span>
+                        <span>QTY</span>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                         {activeOrder?.items.map((it: any, i: number) => (
-                            <div key={i} className="flex justify-between items-start border-b border-dotted border-black/20 pb-1 mb-1">
+                            <div key={i} className="flex justify-between items-start border-b border-dotted border-black/30 pb-2">
                                 <div className="flex-1 pr-2">
-                                    <div className="text-[13px] font-black leading-tight uppercase">{it.name}</div>
-                                    {it.instruction && <div className="text-[9px] font-bold mt-1 uppercase opacity-70">*** {it.instruction} ***</div>}
+                                    <div className="text-[14px] font-bold leading-tight uppercase">{it.name}</div>
+                                    {it.instruction && <div className="text-[10px] font-bold mt-1 uppercase">=> {it.instruction}</div>}
                                     {it.variants && it.variants.length > 0 && (
-                                        <div className="text-[9px] font-bold mt-0.5 uppercase opacity-70">
-                                            [{it.variants.map((v: any) => v.name).join(', ')}]
+                                        <div className="text-[10px] font-medium mt-1 uppercase opacity-80">
+                                            ({it.variants.map((v: any) => v.name).join(', ')})
                                         </div>
                                     )}
                                 </div>
-                                <div className="text-[16px] font-black shrink-0 ml-2">x{it.quantity}</div>
+                                <div className="text-[18px] font-bold shrink-0 ml-2">x{it.quantity}</div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="text-center mt-4 pt-1 border-t border-dotted border-black">
-                        <div className="text-[9px] font-black uppercase tracking-widest">Kravy Kitchen System</div>
-                        <div className="text-[7px] font-bold mt-0.5">{new Date().toLocaleString('en-IN')}</div>
-                        {/* Buffer space */}
-                        <div className="h-[5mm]" />
+                    <div className="text-center mt-6 pt-2 border-t-2 border-dashed border-black">
+                        <div className="text-[10px] font-bold uppercase tracking-widest mb-1">Kravy POS System</div>
+                        <div className="text-[8px] font-medium">{new Date().toLocaleString('en-IN')}</div>
+                        {/* Extended buffer for paper tearing */}
+                        <div className="h-[20mm]" />
+                        <div className="text-[8px] opacity-30 italic">... end of token ...</div>
+                        <div className="h-[10mm]" />
                     </div>
                 </div>
             );
