@@ -188,6 +188,7 @@ export default function CheckoutClient() {
   const [parties, setParties] = useState<any[]>([]);
   const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([]);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const customerSectionRef = useRef<HTMLDivElement>(null);
 
   /* ================= TABLES STATE ================= */
   const [tables, setTables] = useState<any[]>([]);
@@ -222,7 +223,10 @@ export default function CheckoutClient() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+      const isOutsideSuggestions = suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node);
+      const isOutsideCustomerSection = customerSectionRef.current && !customerSectionRef.current.contains(event.target as Node);
+      
+      if (isOutsideSuggestions && isOutsideCustomerSection) {
         setCustomerSuggestions([]);
       }
     }
@@ -1471,18 +1475,22 @@ export default function CheckoutClient() {
             </button>
 
             {showCustomer && (
-              <div className="px-4 md:px-5 py-3 space-y-3 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg)]/30 flex-shrink-0 relative focus-within:z-10">
+              <div 
+                ref={customerSectionRef}
+                className="px-4 md:px-5 py-3 space-y-3 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg)]/30 flex-shrink-0 relative focus-within:z-10"
+              >
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Name</label>
-                  <input
-                    placeholder="Customer name"
-                    value={customerName}
-                    autoComplete="off"
-                    onChange={(e) => handleCustomerNameChange(e.target.value)}
-                    className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
-                      p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
-                      focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-medium"
-                  />
+                    <input
+                      placeholder="Customer name"
+                      value={customerName}
+                      autoComplete="off"
+                      onChange={(e) => handleCustomerNameChange(e.target.value)}
+                      onFocus={() => handleCustomerNameChange(customerName)}
+                      className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
+                        p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                        focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-medium"
+                    />
                 </div>
                 <div className="space-y-1 relative">
                   <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-0.5">Phone</label>
@@ -1491,6 +1499,7 @@ export default function CheckoutClient() {
                     value={customerPhone}
                     autoComplete="off"
                     onChange={(e) => handleCustomerPhoneChange(e.target.value)}
+                    onFocus={() => handleCustomerPhoneChange(customerPhone)}
                     className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
                       p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
                       focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-mono"

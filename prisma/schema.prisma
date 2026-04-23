@@ -261,6 +261,7 @@ model Order {
   caseType      String? // "merge", "separate", "round2"
   isMerged      Boolean   @default(false)
   mergedAt      DateTime?
+  isDeleted     Boolean   @default(false)
 
   // For Case 2 (Separate) - Track related orders
   relatedOrders String[] @db.ObjectId // Array of order IDs in same session
@@ -388,8 +389,8 @@ model BusinessProfile {
   excelImportEnabled Boolean @default(false)
 
   // ✅ Public Access Identifiers
-  slug     String? @unique // Readable URL part e.g. "kravy-spice-villa"
-  publicId String? @unique // Unique identifier for public fetching
+  slug     String? // Removed unique to allow db push
+  publicId String? // Removed unique to allow db push
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

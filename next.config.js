@@ -55,7 +55,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   outputFileTracingRoot: process.cwd(),
-  transpilePackages: ["framer-motion"],
+  transpilePackages: ["framer-motion", "recharts", "d3-array", "d3-scale", "victory-vendor", "internmap"],
 };
 
 export default nextConfig;

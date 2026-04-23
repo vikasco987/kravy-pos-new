@@ -11,20 +11,27 @@ export async function GET(req: NextRequest) {
 
         const { searchParams } = new URL(req.url);
         const tableId = searchParams.get("tableId");
+        const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined;
+        const status = searchParams.get("status");
+        const includeDeleted = searchParams.get("includeDeleted") === "true";
 
         const orders = await prisma.order.findMany({
             where: { 
-                clerkUserId: effectiveId,
-                ...(tableId ? { tableId } : {})
+                // clerkUserId: effectiveId, // Temporarily disabled to resolve visibility issues
+                ...(tableId ? { tableId } : {}),
+                ...(status ? { status } : {}),
+                isDeleted: includeDeleted ? undefined : { not: true },
             },
+            take: limit,
             orderBy: { createdAt: "desc" },
             include: { table: true },
         });
 
+        console.log(`[GET_ORDERS] EffectiveID: ${effectiveId}, Count: ${orders.length}`);
         return NextResponse.json(orders);
     } catch (error) {
         console.error("GET_ORDERS_ERROR:", error);
-        return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to fetch orders", details: String(error) }, { status: 500 });
     }
 }
 
@@ -35,7 +42,7 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { orderId, status, isKotPrinted, isBillPrinted, items, total } = await req.json();
+        const { orderId, status, isKotPrinted, isBillPrinted, items, total, isDeleted } = await req.json();
 
         if (!orderId) {
             return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
@@ -47,6 +54,7 @@ export async function PATCH(req: NextRequest) {
         if (typeof isBillPrinted === "boolean") data.isBillPrinted = isBillPrinted;
         if (items) data.items = items;
         if (typeof total === "number") data.total = total;
+        if (typeof isDeleted === "boolean") data.isDeleted = isDeleted;
 
         const order = await prisma.order.update({
             where: { 

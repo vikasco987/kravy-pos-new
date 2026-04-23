@@ -285,8 +285,14 @@ export async function GET(req: NextRequest) {
     const effectiveId = await getEffectiveClerkId();
     if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const { searchParams } = new URL(req.url);
+    const phone = searchParams.get("phone");
+
     const parties = await prisma.party.findMany({
-      where: { createdBy: effectiveId },
+      where: { 
+        createdBy: effectiveId,
+        ...(phone ? { phone: phone.replace(/[\s\-\(\)\+]/g, "").slice(-10) } : {})
+      },
       orderBy: { name: "asc" },
     });
     return NextResponse.json(parties, { status: 200 });

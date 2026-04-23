@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { 
@@ -23,7 +23,8 @@ import {
   X,
   FileText,
   LayoutGrid,
-  List
+  List,
+  Printer
 } from "lucide-react";
 
 type Party = {
@@ -33,6 +34,7 @@ type Party = {
   address?: string;
   dob?: string | null;
   loyaltyPoints?: number;
+  walletBalance?: number;
   [k: string]: any;
 };
 
@@ -62,6 +64,8 @@ function formatDate(d?: string | null) {
 }
 
 export default function PartiesPage() {
+  const receiptRef = React.useRef<HTMLDivElement>(null);
+  const [business, setBusiness] = useState<any>(null);
   const [parties, setParties] = useState<Party[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +91,12 @@ export default function PartiesPage() {
   const [activeTab, setActiveTab] = useState<"bills" | "wallet">("bills");
   const [mounted, setMounted] = useState(false);
 
+  // Deposit Modal State
+  const [depositOpen, setDepositOpen] = useState(false);
+  const [depositingParty, setDepositingParty] = useState<Party | null>(null);
+  const [depositAmount, setDepositAmount] = useState("");
+  const [depositLoading, setDepositLoading] = useState(false);
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 9; // 3x3 grid or 9 rows
@@ -101,7 +111,20 @@ export default function PartiesPage() {
     setMounted(true);
     fetchParties();
     fetchUserPrefs();
+    fetchBusiness();
   }, []);
+
+  async function fetchBusiness() {
+    try {
+      const res = await fetch('/api/business-profile');
+      if (res.ok) {
+        const data = await res.json();
+        setBusiness(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch business profile:", err);
+    }
+  }
 
   useEffect(() => {
     if (modalOpen || historyOpen) {
@@ -238,6 +261,53 @@ export default function PartiesPage() {
     }
   };
 
+  const handlePrint = (type: "BILL" | "DEPOSIT", data: any) => {
+    setPrintData(data);
+    if (!receiptRef.current) return;
+    
+    // Give state time to update the hidden DOM before opening window
+    setTimeout(() => {
+      const printContent = receiptRef.current!.innerHTML;
+      const printWindow = window.open('', '_blank', 'width=600,height=800');
+      if (!printWindow) return;
+
+    const styles = `
+      <style>
+        @media print {
+          @page { margin: 0; }
+          body { margin: 0; padding: 10mm; font-family: monospace; font-size: 10px; }
+          .receipt { width: 80mm; margin: 0 auto; }
+          .border-dotted { border-style: dotted; }
+          .border-b { border-bottom-width: 1px; }
+          .flex { display: flex; }
+          .justify-between { justify-content: space-between; }
+          .text-center { text-align: center; }
+          .font-black { font-weight: 900; }
+          .uppercase { text-transform: uppercase; }
+          .text-xl { font-size: 1.25rem; }
+          .mb-2 { margin-bottom: 0.5rem; }
+          .mt-4 { margin-top: 1rem; }
+        }
+        body { font-family: monospace; padding: 20px; }
+        .receipt { max-width: 400px; margin: 0 auto; border: 1px solid #eee; padding: 20px; }
+      </style>
+    `;
+
+    printWindow.document.write('<html><head><title>Print Receipt</title>' + styles + '</head><body>');
+    printWindow.document.write('<div class="receipt">' + printContent + '</div>');
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  };
+
+  // State for dynamic print content
+  const [printData, setPrintData] = useState<any>(null);
+
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this customer?")) return;
     try {
@@ -267,6 +337,36 @@ export default function PartiesPage() {
     document.body.appendChild(link);
     link.click();
     link.remove();
+  };
+
+  const handleDeposit = async () => {
+    if (!depositingParty || !depositAmount || parseFloat(depositAmount) <= 0) return;
+    setDepositLoading(true);
+    try {
+      const res = await fetch('/api/wallet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'deposit',
+          partyId: depositingParty.id,
+          amount: parseFloat(depositAmount),
+          description: 'Manual Cash Deposit'
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setParties(p => p.map(x => x.id === depositingParty.id ? { ...x, walletBalance: data.balance } : x));
+        pushToast("success", `Deposited ₹${depositAmount} successfully!`);
+        setDepositOpen(false);
+        setDepositAmount("");
+      } else {
+        pushToast("error", "Deposit failed");
+      }
+    } catch (err) {
+      pushToast("error", "Error processing deposit");
+    } finally {
+      setDepositLoading(false);
+    }
   };
 
   if (loading) return (
@@ -573,7 +673,16 @@ export default function PartiesPage() {
                                </div>
                             </div>
                             <div className="flex justify-between items-center pt-2 border-t border-[var(--kravy-border)]">
-                               <span className="text-[10px] font-black text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] px-2 py-0.5 rounded-lg">{bill.paymentMode}</span>
+                               <div className="flex items-center gap-2">
+                                 <span className="text-[10px] font-black text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] px-2 py-0.5 rounded-lg">{bill.paymentMode}</span>
+                                 <button 
+                                  onClick={(e) => { e.stopPropagation(); handlePrint("BILL", bill); }}
+                                  className="p-1.5 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-muted)] rounded-lg hover:text-[var(--kravy-brand)] transition-all"
+                                  title="Reprint Bill"
+                                 >
+                                   <Printer size={12} />
+                                 </button>
+                               </div>
                                <Link 
                                 href={`/dashboard/reports/sales?search=${bill.billNumber}`}
                                 className="text-[10px] font-black text-[var(--kravy-brand)] flex items-center gap-1 hover:underline"
@@ -607,8 +716,16 @@ export default function PartiesPage() {
                                  <div className="text-[10px] font-bold text-[var(--kravy-text-muted)]">{formatDate(tx.createdAt)}</div>
                                </div>
                             </div>
-                            <div className={`font-black text-sm ${tx.type === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                               {tx.type === 'CREDIT' ? '+' : '-'} ₹{tx.amount.toFixed(2)}
+                            <div className="flex flex-col items-end gap-1">
+                              <div className={`font-black text-sm ${tx.type === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                 {tx.type === 'CREDIT' ? '+' : '-'} ₹{tx.amount.toFixed(2)}
+                              </div>
+                              <button 
+                                onClick={() => handlePrint("DEPOSIT", tx)}
+                                className="p-1 text-[var(--kravy-text-muted)] hover:text-amber-500 transition-all"
+                              >
+                                <Printer size={10} />
+                              </button>
                             </div>
                           </div>
                         ))
@@ -663,9 +780,97 @@ export default function PartiesPage() {
                {toast.text}
             </div>
           )}
+
+          {depositOpen && depositingParty && (
+            <Modal 
+              title={`Deposit to ${depositingParty.name}'s Wallet`} 
+              onClose={() => { setDepositOpen(false); setDepositingParty(null); setDepositAmount(""); }}
+            >
+              <div className="space-y-6">
+                <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 p-6 rounded-3xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-black uppercase text-amber-600 tracking-widest">Current Balance</span>
+                    <span className="text-xl font-black text-amber-600">₹{(depositingParty.walletBalance || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="text-[9px] font-bold text-amber-600/70 uppercase leading-relaxed">
+                    Money added here can be used by the customer for future orders via "Wallet" payment mode.
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] ml-2">Deposit Amount (₹)</label>
+                  <input 
+                    type="number"
+                    autoFocus
+                    placeholder="Enter amount (e.g. 500)"
+                    value={depositAmount}
+                    onChange={e => setDepositAmount(e.target.value)}
+                    className="w-full px-5 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none focus:border-amber-500 font-black text-2xl"
+                  />
+                </div>
+
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => { setDepositOpen(false); setDepositingParty(null); setDepositAmount(""); }}
+                    className="flex-1 py-4 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[var(--kravy-bg-2)] transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleDeposit}
+                    disabled={depositLoading || !depositAmount || parseFloat(depositAmount) <= 0}
+                    className="flex-[2] py-4 bg-amber-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:shadow-xl hover:shadow-amber-500/20 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {depositLoading ? "Processing..." : "Confirm Deposit"}
+                  </button>
+                </div>
+              </div>
+            </Modal>
+          )}
         </>,
         document.body
       )}
+
+      {/* Hidden Print Content */}
+      <div className="hidden">
+        <div ref={receiptRef}>
+          <div className="text-center mb-4">
+            <h2 className="text-xl font-black uppercase mb-1">{business?.businessName || "KRAVY RESTAURANT"}</h2>
+            <p className="text-[10px] font-bold uppercase">{business?.businessAddress || ""}</p>
+            <div className="border-b border-dotted border-black my-2" />
+          </div>
+          <div className="mb-4">
+            <div className="flex justify-between font-black uppercase mb-1">
+              <span>Receipt</span>
+              <span>{new Date().toLocaleDateString()}</span>
+            </div>
+            <div className="flex justify-between font-black uppercase">
+              <span>Customer</span>
+              <span>{selectedParty?.name || "Walk-in"}</span>
+            </div>
+          </div>
+          <div className="border-b border-dotted border-black mb-2" />
+          <div className="text-center font-black uppercase mb-4">
+             Transaction Recorded Successfully
+          </div>
+          <div className="border-b border-dotted border-black mb-2" />
+          <div className="flex justify-between font-black text-xl mb-4">
+            <span>Amount</span>
+            <span>₹{(printData?.total || printData?.amount || 0).toFixed(2)}</span>
+          </div>
+          <div className="text-[9px] font-black uppercase mb-1">
+            Mode: {printData?.paymentMode || (printData?.type === 'CREDIT' ? 'CASH/DEPOSIT' : 'WALLET USAGE')}
+          </div>
+          {printData?.billNumber && (
+            <div className="text-[9px] font-black uppercase">
+              Bill No: {printData.billNumber}
+            </div>
+          )}
+          <div className="text-center text-[8px] font-black uppercase tracking-widest mt-8">
+            Thank you for choosing Kravy AI
+          </div>
+        </div>
+      </div>
     </>
   );
 }
@@ -728,6 +933,12 @@ function CustomerCard({ p, onEdit, onDelete, onViewHistory }: { p: Party, onEdit
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[var(--kravy-brand)] hover:text-white transition-all shadow-sm"
         >
           <HistoryIcon size={12} /> History
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); setDepositingParty(p); setDepositOpen(true); }}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all shadow-sm"
+        >
+          <Plus size={12} /> Deposit
         </button>
         <div className="flex gap-1.5">
           <button onClick={onEdit} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hover:text-indigo-500 hover:border-indigo-500 transition-all">
