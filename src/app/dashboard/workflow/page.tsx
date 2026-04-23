@@ -2316,7 +2316,7 @@ export default function KravyPOS() {
                             <div key={i} className="flex justify-between items-start border-b border-dotted border-black/30 pb-2">
                                 <div className="flex-1 pr-2">
                                     <div className="text-[14px] font-bold leading-tight uppercase">{it.name}</div>
-                                    {it.instruction && <div className="text-[10px] font-bold mt-1 uppercase">=> {it.instruction}</div>}
+                                    {it.instruction && <div className="text-[10px] font-bold mt-1 uppercase">{"=>"} {it.instruction}</div>}
                                     {it.variants && it.variants.length > 0 && (
                                         <div className="text-[10px] font-medium mt-1 uppercase opacity-80">
                                             ({it.variants.map((v: any) => v.name).join(', ')})

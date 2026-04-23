@@ -1489,7 +1489,10 @@ export default function CheckoutClient() {
                       value={customerName}
                       autoComplete="off"
                       onChange={(e) => handleCustomerNameChange(e.target.value)}
-                      onFocus={() => handleCustomerNameChange(customerName)}
+                      onFocus={() => {
+                        handleCustomerNameChange(customerName);
+                        setCustomerSuggestions([]);
+                      }}
                       className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
                         p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
                         focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-medium"
@@ -1563,6 +1566,7 @@ export default function CheckoutClient() {
                     <textarea
                       placeholder="Enter customer address..."
                       value={customerAddress}
+                      onFocus={() => setCustomerSuggestions([])}
                       onChange={(e) => setCustomerAddress(e.target.value)}
                       rows={2}
                       className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
