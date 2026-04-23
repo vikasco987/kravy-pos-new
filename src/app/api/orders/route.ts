@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
         const orders = await prisma.order.findMany({
             where: { 
-                // clerkUserId: effectiveId, // Temporarily disabled to resolve visibility issues
+                clerkUserId: effectiveId,
                 ...(tableId ? { tableId } : {}),
                 ...(status ? { status } : {}),
                 isDeleted: includeDeleted ? undefined : { not: true },
@@ -59,7 +59,7 @@ export async function PATCH(req: NextRequest) {
         const order = await prisma.order.update({
             where: { 
                 id: orderId, 
-                // clerkUserId: effectiveId 
+                clerkUserId: effectiveId 
             },
             data,
         });
