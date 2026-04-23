@@ -1884,7 +1884,8 @@ export default function CheckoutClient() {
         <div
           ref={receiptRef}
           data-paper="58"
-          className="hidden print:block receipt font-mono text-[10px] leading-tight"
+          className="hidden print:block receipt font-mono text-[10px] leading-tight text-black"
+          style={{ width: '100%', paddingBottom: '25mm' }}
         >
           {business?.logoUrl && (
             <div className="flex justify-center mb-1">
@@ -2051,45 +2052,70 @@ export default function CheckoutClient() {
               </div>
             </div>
           )}
-          <div className="mt-2 text-center border-t-2 border-black pt-2">
-            <div className="text-[12px] font-black mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
+          <div className="mt-4 text-center border-t border-dashed border-black pt-3">
+            <div className="text-[12px] font-bold mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
+            <div className="h-[15mm]" />
+            <div className="text-[8px] opacity-30 italic">... end of receipt ...</div>
+            <div className="h-[5mm]" />
           </div>
         </div>
 
         {/* ================= PRINT KOT (58mm) ================= */}
         <div
           ref={kotRef}
-          className="hidden print:block font-mono text-[10px] leading-tight"
+          className="hidden print:block font-mono text-[10px] leading-tight text-black"
+          style={{ width: '100%', paddingBottom: '30mm' }}
         >
-          <div className="text-center font-black text-[16px] border-b-2 border-black pb-1 mb-2">KOT</div>
-          <div className="flex justify-between text-[11px] font-black mb-1">
-            <span>#{billNumber.split('-').pop()}</span>
-            <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-          </div>
-          {selectedTable !== "POS" && (
-            <div className="text-center text-[14px] font-black border-2 border-black py-1 my-1">
-              TABLE: {selectedTable}
+          <div className="text-center font-bold text-[14px] border-b border-dashed border-black pb-1 mb-2 uppercase tracking-tighter">*** KOT ***</div>
+          
+          <div className="space-y-0.5 mb-2">
+            <div className="flex justify-between items-center font-bold text-[10px]">
+              <span>ID: #{billNumber.split('-').pop()}</span>
+              <span>{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })}</span>
             </div>
-          )}
+            <div className="flex justify-between items-center font-bold text-[10px]">
+              <span>TIME: {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+              <span>KOT NO: {Math.floor(Date.now() / 1000).toString().slice(-4)}</span>
+            </div>
+          </div>
+
+          <div className="text-center text-[16px] font-bold border border-dashed border-black py-1.5 my-2 uppercase">
+            TABLE: {selectedTable === "POS" ? "QUICK POS" : selectedTable}
+          </div>
+
           {orderNotes && (
-            <div className="mt-1 mb-2 p-1 border border-dashed border-black text-[10px] font-black italic">
+            <div className="mt-1 mb-2 p-1 border border-dashed border-black text-[10px] font-bold uppercase italic">
               NOTE: {orderNotes}
             </div>
           )}
-          <div className="border-t-2 border-black my-1" />
-          <div className="flex justify-between font-black text-[11px] mb-1">
-            <span>Item</span>
-            <span>Qty</span>
+
+          <div className="flex justify-between font-bold text-[10px] uppercase border-b border-dashed border-black pb-0.5 mb-1.5">
+            <span>ITEM DESCRIPTION</span>
+            <span>QTY</span>
           </div>
-          <div className="border-t-2 border-black mb-1" />
-          {items.map((i, idx) => (
-            <div key={idx} className="flex justify-between text-[13px] font-black py-1.5 border-b border-black italic">
-              <span className="flex-1 pr-2">{i.name}</span>
-              <span>x{i.qty}</span>
-            </div>
-          ))}
-          <div className="border-t-2 border-black mt-2 pt-1 text-center text-[11px] font-bold">
-            {new Date().toLocaleDateString()}
+
+          <div className="space-y-2">
+            {items.map((i, idx) => (
+              <div key={idx} className="flex justify-between items-start border-b border-dotted border-black/20 pb-1.5">
+                <div className="flex-1 pr-2">
+                  <div className="text-[12px] font-bold leading-tight uppercase">{i.name}</div>
+                  {i.variants && i.variants.length > 0 && (
+                    <div className="text-[9px] font-medium mt-0.5 uppercase opacity-80">
+                      ({i.variants.map((v: any) => v.name).join(', ')})
+                    </div>
+                  )}
+                </div>
+                <div className="text-[14px] font-bold shrink-0 ml-2">x{i.qty}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-5 pt-1.5 border-t border-dashed border-black">
+            <div className="text-[9px] font-bold uppercase tracking-widest mb-1">Kravy Quick POS</div>
+            <div className="text-[7px] font-medium">{new Date().toLocaleString('en-IN')}</div>
+            <div className="h-[20mm]" />
+            <div className="text-[8px] opacity-30 italic">... end of token ...</div>
+            <div className="h-[10mm]" />
           </div>
         </div>
       
