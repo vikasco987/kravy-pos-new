@@ -300,7 +300,6 @@ export default function CheckoutClient() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [prevWalletBalance, setPrevWalletBalance] = useState<number | null>(null);
-  const [perProductEnabled, setPerProductEnabled] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [menuLoading, setMenuLoading] = useState(true);
 
