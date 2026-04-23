@@ -259,49 +259,52 @@ export default function PartiesPage() {
     }
   };
 
-  const handlePrint = (type: "BILL" | "DEPOSIT", data: any) => {
-    setPrintData(data);
+  const handlePrint = async (type: "BILL" | "DEPOSIT", data: any) => {
+    let fullData = data;
+    
+    // For bills, we need to fetch items if they aren't present
+    if (type === "BILL" && !data.items) {
+      try {
+        const res = await fetch(`/api/bill-manager/${data.id}`);
+        if (res.ok) {
+          const json = await res.json();
+          fullData = json.bill;
+        }
+      } catch (err) {
+        console.error("Failed to fetch full bill details:", err);
+      }
+    }
+
+    setPrintData(fullData);
     if (!receiptRef.current) return;
     
     // Give state time to update the hidden DOM before opening window
     setTimeout(() => {
       const printContent = receiptRef.current!.innerHTML;
-      const printWindow = window.open('', '_blank', 'width=600,height=800');
-      if (!printWindow) return;
+      const printWindow = window.open('', '_blank', 'width=450,height=800');
+      if (!printWindow) {
+        alert("Please allow popups for printing");
+        return;
+      }
 
-    const styles = `
-      <style>
-        @media print {
-          @page { margin: 0; }
-          body { margin: 0; padding: 10mm; font-family: monospace; font-size: 10px; }
-          .receipt { width: 80mm; margin: 0 auto; }
-          .border-dotted { border-style: dotted; }
-          .border-b { border-bottom-width: 1px; }
-          .flex { display: flex; }
-          .justify-between { justify-content: space-between; }
-          .text-center { text-align: center; }
-          .font-black { font-weight: 900; }
-          .uppercase { text-transform: uppercase; }
-          .text-xl { font-size: 1.25rem; }
-          .mb-2 { margin-bottom: 0.5rem; }
-          .mt-4 { margin-top: 1rem; }
-        }
-        body { font-family: monospace; padding: 20px; }
-        .receipt { max-width: 400px; margin: 0 auto; border: 1px solid #eee; padding: 20px; }
-      </style>
-    `;
+      const styles = `
+        <style>
+          @media print {
+            @page { margin: 0; size: 58mm auto; }
+            body { margin: 0; padding: 0; width: 58mm; background: white; font-family: monospace; }
+            * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+          }
+          body { font-family: monospace; padding: 20px; }
+          .receipt { max-width: 400px; margin: 0 auto; border: 1px dashed #ccc; padding: 15px; }
+        </style>
+      `;
 
-    printWindow.document.write('<html><head><title>Print Receipt</title>' + styles + '</head><body>');
-    printWindow.document.write('<div class="receipt">' + printContent + '</div>');
-    printWindow.document.write('</body></html>');
-    printWindow.document.close();
-    
-      setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-      }, 500);
-    }, 100);
+      printWindow.document.write('<html><head><title>Reprint Receipt</title>' + styles + '</head><body>');
+      printWindow.document.write('<div class="receipt">' + printContent + '</div>');
+      printWindow.document.write('<script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); };</script>');
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+    }, 250);
   };
 
   // State for dynamic print content
@@ -819,42 +822,92 @@ export default function PartiesPage() {
       )}
 
       {/* Hidden Print Content */}
+      {/* Hidden Print Content */}
       <div className="hidden">
-        <div ref={receiptRef}>
-          <div className="text-center mb-4">
-            <h2 className="text-xl font-black uppercase mb-1">{business?.businessName || "KRAVY RESTAURANT"}</h2>
-            <p className="text-[10px] font-bold uppercase">{business?.businessAddress || ""}</p>
-            <div className="border-b border-dotted border-black my-2" />
+        <div ref={receiptRef} className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '25mm' }}>
+          <div className="text-center mb-3">
+            <h2 className="text-[14px] font-bold uppercase mb-1">{business?.businessName || "KRAVY RESTAURANT"}</h2>
+            <p className="text-[9px] font-medium uppercase opacity-80">{business?.businessAddress || ""}</p>
+            <div className="border-b border-dashed border-black my-2" />
           </div>
-          <div className="mb-4">
-            <div className="flex justify-between font-black uppercase mb-1">
-              <span>Receipt</span>
-              <span>{new Date().toLocaleDateString()}</span>
-            </div>
-            <div className="flex justify-between font-black uppercase">
+
+          <div className="flex justify-between font-bold uppercase mb-1 text-[11px]">
+            <span>{printData?.billNumber ? "BILL REPRINT" : "TRANSACTION"}</span>
+            <span>{new Date().toLocaleDateString('en-IN')}</span>
+          </div>
+
+          <div className="mb-2 border border-dashed border-black p-1">
+            <div className="flex justify-between font-bold uppercase text-[10px]">
               <span>Customer</span>
               <span>{selectedParty?.name || "Walk-in"}</span>
             </div>
+            {selectedParty?.phone && (
+              <div className="flex justify-between font-bold uppercase text-[9px]">
+                <span>Phone</span>
+                <span>{selectedParty.phone}</span>
+              </div>
+            )}
           </div>
-          <div className="border-b border-dotted border-black mb-2" />
-          <div className="text-center font-black uppercase mb-4">
-             Transaction Recorded Successfully
-          </div>
-          <div className="border-b border-dotted border-black mb-2" />
-          <div className="flex justify-between font-black text-xl mb-4">
-            <span>Amount</span>
-            <span>₹{(printData?.total || printData?.amount || 0).toFixed(2)}</span>
-          </div>
-          <div className="text-[9px] font-black uppercase mb-1">
-            Mode: {printData?.paymentMode || (printData?.type === 'CREDIT' ? 'CASH/DEPOSIT' : 'WALLET USAGE')}
-          </div>
-          {printData?.billNumber && (
-            <div className="text-[9px] font-black uppercase">
-              Bill No: {printData.billNumber}
+
+          <div className="border-b border-dashed border-black mb-2" />
+
+          {printData?.items ? (
+            <>
+              <div className="flex justify-between font-bold text-[10px] uppercase border-b border-dotted border-black/30 pb-1 mb-1">
+                <span className="flex-1 text-left">ITEM</span>
+                <span className="w-[8mm] text-center">QTY</span>
+                <span className="w-[15mm] text-right">TOTAL</span>
+              </div>
+              <div className="space-y-1.5 mb-2">
+                {printData.items.map((it: any, idx: number) => (
+                  <div key={idx} className="flex justify-between text-[11px] font-bold uppercase border-b border-dotted border-black/10 pb-1">
+                    <div className="flex-1 pr-1">
+                      <div>{it.name}</div>
+                      <div className="text-[8px] opacity-60">{it.quantity || it.qty} x {(it.price || it.rate || 0).toFixed(2)}</div>
+                    </div>
+                    <span className="w-[8mm] text-center self-center">x{it.quantity || it.qty}</span>
+                    <span className="w-[15mm] text-right self-center">{((it.quantity || it.qty) * (it.price || it.rate || 0)).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center font-bold uppercase my-4 border-y border-dotted border-black py-3">
+               {printData?.description || "Transaction Recorded"}
             </div>
           )}
-          <div className="text-center text-[8px] font-black uppercase tracking-widest mt-8">
-            Thank you for choosing Kravy AI
+
+          <div className="border-t-2 border-dashed border-black pt-2 space-y-1">
+            <div className="flex justify-between font-bold text-[14px] uppercase">
+              <span>Amount</span>
+              <span>₹{(printData?.total || printData?.amount || 0).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-[10px] font-bold uppercase opacity-80">
+              <span>Payment Mode</span>
+              <span>{printData?.paymentMode || (printData?.type === 'CREDIT' ? 'CASH/DEPOSIT' : 'WALLET USAGE')}</span>
+            </div>
+            {printData?.billNumber && (
+              <div className="flex justify-between text-[10px] font-bold uppercase opacity-80">
+                <span>Bill No</span>
+                <span>#{printData.billNumber}</span>
+              </div>
+            )}
+          </div>
+
+          {selectedParty && (
+            <div className="mt-3 pt-2 border-t border-dotted border-black">
+              <div className="flex justify-between text-[10px] font-bold uppercase">
+                <span>Wallet Balance</span>
+                <span>₹{(selectedParty.walletBalance || 0).toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6 text-center border-t border-dashed border-black pt-4">
+            <div className="text-[12px] font-bold mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
+            <div className="h-[15mm]" />
+            <div className="text-[8px] opacity-30 italic">... end of receipt ...</div>
+            <div className="h-[10mm]" />
           </div>
         </div>
       </div>

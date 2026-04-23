@@ -909,98 +909,99 @@ export default function BillingPage() {
     const qrCodeUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}` : "";
 
     return (
-        <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '10mm' }}>
+        <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '30mm' }}>
             <div className="text-center mb-3">
                 {business.logoUrl && (
                     <div className="flex justify-center mb-1">
-                        <img src={business.logoUrl} alt="Logo" className="max-h-[25mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
+                        <img src={business.logoUrl} alt="Logo" className="max-h-[30mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
                     </div>
                 )}
-                <div className="font-black text-[18px] leading-none uppercase tracking-tight mb-1">{business.businessName || "KRAVY RESTAURANT"}</div>
+                <div className="font-bold text-[16px] uppercase tracking-tighter mb-1">{business.businessName || "KRAVY RESTAURANT"}</div>
                 {(business.businessAddress || business.district) && (
-                    <div className="text-[9px] font-black uppercase">
+                    <div className="text-[8px] font-medium uppercase opacity-80">
                         {business.businessAddress} {business.district && `| ${business.district}`}
                     </div>
                 )}
-                {business.gstNumber && <div className="text-[10px] font-black border-y border-dotted border-black py-1 mt-1">GSTIN: {business.gstNumber}</div>}
+                {business.gstNumber && <div className="text-[9px] font-bold border-y border-dashed border-black py-1 mt-1">GSTIN: {business.gstNumber}</div>}
             </div>
 
-            <div className="flex justify-between text-[11px] font-black uppercase border-b border-dotted border-black pb-1 mb-1">
+            <div className="flex justify-between text-[11px] font-bold uppercase border-b border-dashed border-black pb-1 mb-1">
                 <span>INV: #{bill.billNumber || bill.id.slice(-6).toUpperCase()}</span>
                 <span>{new Date(bill.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
             </div>
-            <div className="flex justify-between text-[11px] font-black uppercase mb-1">
-                <span className="border border-black px-1">TABLE: {bill.tableName || "Counter"}</span>
+            <div className="flex justify-between text-[11px] font-bold uppercase mb-1">
+                <span>TABLE: {bill.tableName || "COUNTER"}</span>
                 <span>{new Date(bill.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
 
             {(bill.customerName || bill.customerPhone) && (
-                <div className="mb-2 text-[10px] font-black uppercase bg-black text-white px-1 py-0.5">
+                <div className="mb-2 text-[10px] font-bold uppercase border border-dashed border-black px-1 py-1">
                     {bill.customerName && <div className="truncate">CUST: {bill.customerName}</div>}
                     {bill.customerPhone && <div>PH: {bill.customerPhone}</div>}
                 </div>
             )}
 
-            <div className="flex justify-between font-black text-[11px] uppercase border-y border-dotted border-black py-1 mt-1 mb-1">
-                <span className="flex-1">ITEM NAME</span>
-                <span className="w-[8mm] text-center">QTY</span>
+            <div className="flex justify-between font-bold text-[10px] uppercase border-y border-dashed border-black py-1 mt-1 mb-1">
+                <span className="flex-1 text-left">ITEM DESCRIPTION</span>
+                <span className="w-[10mm] text-center">QTY</span>
                 <span className="w-[15mm] text-right">TOTAL</span>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
                 {bill.items?.map((it: any, idx: number) => (
-                    <div key={idx} className="flex justify-between text-[11px] font-black uppercase leading-tight border-b border-dotted border-black pb-1">
+                    <div key={idx} className="flex justify-between text-[11px] font-bold uppercase leading-tight border-b border-dotted border-black/20 pb-1.5">
                         <div className="flex-1 pr-1">
-                            <div>{it.name}</div>
-                            <div className="text-[9px]">{it.quantity || it.qty} x {(it.price || it.rate).toFixed(2)}</div>
+                            <div className="text-[12px]">{it.name}</div>
+                            <div className="text-[9px] opacity-70">{it.quantity || it.qty} x {(it.price || it.rate).toFixed(2)}</div>
                         </div>
-                        <span className="w-[8mm] text-center self-center">x{it.quantity || it.qty}</span>
+                        <span className="w-[10mm] text-center self-center">x{it.quantity || it.qty}</span>
                         <span className="w-[15mm] text-right self-center">{((it.quantity || it.qty) * (it.price || it.rate)).toFixed(2)}</span>
                     </div>
                 ))}
             </div>
 
             <div className="mt-2 pt-1 space-y-1">
-                <div className="flex justify-between text-[11px] font-black">
+                <div className="flex justify-between text-[11px] font-bold">
                     <span>SUBTOTAL</span>
                     <span>₹{subtotal.toFixed(2)}</span>
                 </div>
                 {taxEnabled && (
-                    <div className="flex justify-between text-[10px] font-black">
+                    <div className="flex justify-between text-[10px] font-medium">
                         <span>GST ({taxRate}%)</span>
                         <span>₹{gst.toFixed(2)}</span>
                     </div>
                 )}
-                <div className="flex justify-between font-black text-[18px] border-y-2 border-dotted border-black py-2 my-1 uppercase">
+                <div className="flex justify-between font-bold text-[16px] border-y-2 border-dashed border-black py-2 my-1 uppercase">
                     <span>GRAND TOTAL</span>
                     <span>₹{total.toFixed(0)}</span>
                 </div>
             </div>
 
-            <div className="mt-2 text-[8px] font-black uppercase italic">
+            <div className="mt-2 text-[9px] font-bold uppercase italic opacity-80">
                 RUPEES: {numberToWords(total)}
             </div>
 
-            <div className="mt-2 text-center">
-                <div className="inline-block border border-black px-4 py-1 text-[12px] font-black uppercase">
+            <div className="mt-3 text-center">
+                <div className="inline-block border border-dashed border-black px-4 py-1.5 text-[11px] font-bold uppercase">
                     PAID VIA {bill.paymentMode.toUpperCase()}
                 </div>
             </div>
 
             {(business.upi && business.upiQrEnabled !== false) && (
-                <div className="mt-4 text-center border-t border-dotted border-black pt-3">
-                    <div className="text-[10px] font-black mb-2 uppercase tracking-[0.2em]">Scan to Pay Instantly</div>
-                    <div className="inline-block border-[3px] border-black p-1.5 bg-white rounded-lg">
-                        <img src={qrCodeUrl} alt="UPI QR" className="w-[35mm] h-[35mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
+                <div className="mt-5 text-center border-t border-dashed border-black pt-4">
+                    <div className="text-[10px] font-bold mb-2 uppercase tracking-widest">Scan to Pay Instantly</div>
+                    <div className="inline-block border-2 border-black p-1 bg-white rounded-lg">
+                        <img src={qrCodeUrl} alt="UPI QR" className="w-[32mm] h-[32mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
                     </div>
-                    <div className="text-[9px] font-black mt-2 tracking-widest">{business.upi}</div>
+                    <div className="text-[9px] font-bold mt-2 tracking-widest">{business.upi}</div>
                 </div>
             )}
 
-            <div className="mt-4 text-center border-t border-dotted border-black pt-3">
-                <div className="text-[14px] font-black uppercase italic tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
-                {business.businessTagLine && <div className="text-[9px] font-black mt-1 uppercase tracking-widest">{business.businessTagLine}</div>}
-                <div className="text-[8px] font-black opacity-40 mt-3 uppercase tracking-[0.3em]">Powered by Kravy AI</div>
+            <div className="mt-6 text-center border-t border-dashed border-black pt-4">
+                <div className="text-[12px] font-bold mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
+                <div className="h-[15mm]" />
+                <div className="text-[8px] opacity-30 italic">... end of receipt ...</div>
+                <div className="h-[10mm]" />
             </div>
         </div>
     );
