@@ -299,6 +299,8 @@ export default function CheckoutClient() {
   }, []);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [prevWalletBalance, setPrevWalletBalance] = useState<number | null>(null);
+  const [perProductEnabled, setPerProductEnabled] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [menuLoading, setMenuLoading] = useState(true);
 
@@ -1857,16 +1859,23 @@ export default function CheckoutClient() {
               </button>
             </div>
 
-            {/* Print & Finalize - Main CTA */}
             <button
               onClick={async () => {
                 if (!business) { alert("Business profile not loaded yet"); return; }
+                if (paymentMode === "Wallet" && selectedParty) {
+                  setPrevWalletBalance(selectedParty.walletBalance);
+                } else {
+                  setPrevWalletBalance(null);
+                }
                 const bill = await saveBill();
                 if (!bill) return;
                 kravy.payment(); 
-                printReceipt(business?.enableKOTWithBill);
-                resetForm();
-                if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                // Wait slightly for state to settle and DOM to update
+                setTimeout(() => {
+                  printReceipt(business?.enableKOTWithBill);
+                  resetForm();
+                  if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                }, 300);
               }}
               disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl
@@ -2055,16 +2064,19 @@ export default function CheckoutClient() {
           {selectedParty && (
             <div className="mt-2 border-t border-dashed border-black pt-2 text-[10px] font-bold space-y-0.5">
               <div className="flex justify-between uppercase">
-                <span>Customer Wallet</span>
-                <span>₹{selectedParty.walletBalance?.toFixed(2) || "0.00"}</span>
+                <span>Wallet (Opening)</span>
+                <span>₹{(prevWalletBalance ?? selectedParty.walletBalance + (paymentMode === 'Wallet' ? finalTotal : 0)).toFixed(2)}</span>
               </div>
               {paymentMode === "Wallet" ? (
                 <div className="flex justify-between uppercase border-t border-dotted border-black/30 mt-1 pt-1">
-                  <span>Remaining Balance</span>
-                  <span className="bg-black text-white px-1">₹{(selectedParty.walletBalance - finalTotal).toFixed(2)}</span>
+                  <span>New Balance</span>
+                  <span className="bg-black text-white px-1">₹{selectedParty.walletBalance?.toFixed(2)}</span>
                 </div>
               ) : (
-                <div className="text-[8px] opacity-60 italic text-center mt-1">Wallet balance remains unchanged (Paid via {paymentMode})</div>
+                <div className="flex justify-between uppercase opacity-60 text-[8px] mt-1 italic">
+                  <span>Closing Balance</span>
+                  <span>₹{selectedParty.walletBalance?.toFixed(2)}</span>
+                </div>
               )}
             </div>
           )}

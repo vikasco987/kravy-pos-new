@@ -22,6 +22,9 @@ export async function GET(req: NextRequest) {
         clerkUserId: effectiveId,
         isDeleted: false,
       },
+      include: {
+        party: true
+      },
       orderBy: { createdAt: "desc" },
     });
 

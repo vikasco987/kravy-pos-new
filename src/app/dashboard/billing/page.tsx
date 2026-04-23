@@ -987,6 +987,15 @@ export default function BillingPage() {
                 </div>
             </div>
 
+            {bill.party && (
+              <div className="mt-3 pt-2 border-t border-dotted border-black">
+                <div className="flex justify-between text-[10px] font-bold uppercase px-1">
+                  <span>Wallet Balance</span>
+                  <span>₹{bill.party.walletBalance?.toFixed(2) || "0.00"}</span>
+                </div>
+              </div>
+            )}
+
             {(business.upi && business.upiQrEnabled !== false) && (
                 <div className="mt-5 text-center border-t border-dashed border-black pt-4">
                     <div className="text-[10px] font-bold mb-2 uppercase tracking-widest">Scan to Pay Instantly</div>

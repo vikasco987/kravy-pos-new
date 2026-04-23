@@ -23,6 +23,9 @@ export async function GET(
         clerkUserId: effectiveId,
         isDeleted: false,
       },
+      include: {
+        party: true
+      }
     });
 
     if (!bill) {
