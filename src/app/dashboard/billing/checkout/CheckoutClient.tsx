@@ -2052,6 +2052,23 @@ export default function CheckoutClient() {
               </div>
             </div>
           )}
+          {selectedParty && (
+            <div className="mt-2 border-t border-dashed border-black pt-2 text-[10px] font-bold space-y-0.5">
+              <div className="flex justify-between uppercase">
+                <span>Customer Wallet</span>
+                <span>₹{selectedParty.walletBalance?.toFixed(2) || "0.00"}</span>
+              </div>
+              {paymentMode === "Wallet" ? (
+                <div className="flex justify-between uppercase border-t border-dotted border-black/30 mt-1 pt-1">
+                  <span>Remaining Balance</span>
+                  <span className="bg-black text-white px-1">₹{(selectedParty.walletBalance - finalTotal).toFixed(2)}</span>
+                </div>
+              ) : (
+                <div className="text-[8px] opacity-60 italic text-center mt-1">Wallet balance remains unchanged (Paid via {paymentMode})</div>
+              )}
+            </div>
+          )}
+
           <div className="mt-4 text-center border-t border-dashed border-black pt-3">
             <div className="text-[12px] font-bold mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
             <div className="h-[15mm]" />
