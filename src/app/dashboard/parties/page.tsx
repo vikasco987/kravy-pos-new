@@ -116,7 +116,7 @@ export default function PartiesPage() {
 
   async function fetchBusiness() {
     try {
-      const res = await fetch('/api/business-profile');
+      const res = await fetch('/api/profile');
       if (res.ok) {
         const data = await res.json();
         setBusiness(data);
@@ -880,17 +880,20 @@ export default function PartiesPage() {
                 <div className="text-center mb-3">
                   {business?.logoUrl && (
                     <div className="flex justify-center mb-1">
-                      <img src={business.logoUrl} alt="Logo" className="max-h-[25mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
+                      <img src={business.logoUrl} alt="Logo" className="max-h-[30mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
                     </div>
                   )}
-                  <div className="font-black text-[15px] uppercase tracking-tighter mb-1">{business?.businessName || "KRAVY RESTAURANT"}</div>
-                  {(business?.businessAddress || business?.district) && (
-                    <div className="text-[8px] font-bold uppercase leading-tight">
-                      {business.businessAddress}
-                      {business.district && <><br />{business.district}</>}
+                  <div className="text-center font-black text-[15px] uppercase">{business?.businessName}</div>
+                  {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
+                    <div className="text-center text-[10px] font-bold">
+                      {business?.businessAddress}
+                      {business?.district && `, ${business.district}`}
+                      {business?.state && `, ${business.state}`}
+                      {business?.pinCode && ` - ${business.pinCode}`}
                     </div>
                   )}
-                  {business?.gstNumber && <div className="text-[10px] font-bold border-y border-dashed border-black py-1 mt-1.5">GSTIN: {business.gstNumber}</div>}
+                  {business?.gstNumber && <div className="text-center text-[10px] font-bold border-y border-dashed border-black py-1 mt-1.5">GSTIN: {business.gstNumber}</div>}
+                  {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[10px] font-bold">FSSAI: {business.fssaiNumber}</div>}
                 </div>
 
                 <div className="flex justify-between text-[11px] font-bold uppercase border-b-2 border-black pb-1 mb-1">
