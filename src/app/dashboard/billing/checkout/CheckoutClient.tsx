@@ -2066,8 +2066,8 @@ export default function CheckoutClient() {
         <div
           ref={receiptRef}
           data-paper="58"
-          className="hidden print:block receipt font-mono text-[10px] leading-tight text-black"
-          style={{ width: '100%', paddingBottom: '5mm' }}
+          className="hidden print:block receipt font-mono text-[10px] leading-tight text-black bg-white"
+          style={{ width: '100%', padding: '0 2mm', boxSizing: 'border-box' }}
         >
           {business?.logoUrl && (
             <div className="flex justify-center mb-1">
@@ -2083,16 +2083,16 @@ export default function CheckoutClient() {
               {business?.pinCode && ` - ${business.pinCode}`}
             </div>
           )}
-          {business?.gstNumber && <div className="text-center text-[11px] font-bold">GSTIN: {business.gstNumber}</div>}
-          {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[11px] font-bold">FSSAI: {business.fssaiNumber}</div>}
-          <div className="text-center text-[11px] mt-2 font-bold">
+          {business?.gstNumber && <div className="text-center text-[10px] font-bold border-y border-dashed border-black py-1 mt-1.5">GSTIN: {business.gstNumber}</div>}
+          {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[10px] font-bold">FSSAI: {business.fssaiNumber}</div>}
+          <div className="text-center text-[11px] mt-1.5 font-bold">
             <div>Bill No: {billNumber}</div>
             <div>Date: {billDate}</div>
             {selectedTable !== "POS" && <div className="font-bold text-[12px] mt-1 border-2 border-black px-1 inline-block">TABLE: {selectedTable}</div>}
           </div>
 
           {(customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && (
-            <div className="mt-2 text-[11px] font-bold border-t-2 border-black pt-1">
+            <div className="mt-2 text-[10px] font-bold border-t-2 border-dashed border-black pt-1">
               {customerName && <div>Customer: {customerName}</div>}
               {customerPhone && <div>Phone: {customerPhone}</div>}
               {buyerGSTIN && <div className="uppercase">Buyer GST: {buyerGSTIN}</div>}
@@ -2104,14 +2104,13 @@ export default function CheckoutClient() {
           <div className="mt-1 text-center text-[10px] font-bold">
             {placeOfSupply && <div>Place of Supply: {placeOfSupply}</div>}
           </div>
-          <div className="my-1 border-t-2 border-black" />
-          <div className="flex justify-between font-bold text-[11px]">
-            <span className="flex-1 min-w-0 pr-1">Item</span>
+          <div className="my-1 border-t-2 border-dashed border-black" />
+          <div className="flex justify-between font-bold text-[10px] uppercase">
+            <span className="flex-1 min-w-0 pr-1">Item Description</span>
             <span className="w-[8mm] text-center shrink-0">Qty</span>
-            <span className="w-[12mm] text-right shrink-0">Rate</span>
-            <span className="w-[13mm] text-right shrink-0">Total</span>
+            <span className="w-[15mm] text-right shrink-0">Total</span>
           </div>
-          <div className="border-t-2 border-black my-1" />
+          <div className="border-t-2 border-dashed border-black my-1" />
           {items.map((i) => {
             const itemRate = (perProductEnabled && i.gst !== undefined && i.gst !== null) ? i.gst : (taxActive ? globalRate : 0);
             return (
@@ -2146,16 +2145,16 @@ export default function CheckoutClient() {
                 <div className="flex justify-between text-[10px] font-bold"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
               </>
             )}
-            <div className="border-t-2 border-black my-1" />
-            <div className="flex justify-between font-black text-[15px] border-b-2 border-black py-1.5 my-1">
+            <div className="border-t-2 border-dashed border-black my-1" />
+            <div className="flex justify-between font-black text-[18px] border-y-2 border-black py-2.5 my-1.5 uppercase bg-white">
               <span>GRAND TOTAL</span>
-              <span>₹{finalTotal.toFixed(2)}</span>
+              <span>₹{finalTotal.toFixed(0)}</span>
             </div>
           </div>
 
           {(taxActive || perProductEnabled) && taxBreakup.length > 0 && (
             <div className="mt-3">
-              <div className="text-[10px] font-black border-b-2 border-black mb-1 pb-0.5">GST TAX BREAKUP</div>
+              <div className="text-[10px] font-black border-b border-dashed border-black mb-1 pb-0.5">GST TAX BREAKUP</div>
               <table className="w-full text-[10px] border-collapse font-bold">
                 <thead>
                   <tr className="border-b-2 border-black">
@@ -2196,13 +2195,13 @@ export default function CheckoutClient() {
             Amount in Words: {numberToWords(finalTotal)}
           </div>
 
-          <div className="mt-3 border-t-2 border-black pt-1 flex justify-between text-[11px] font-bold">
+          <div className="mt-3 border-t-2 border-dashed border-black pt-1 flex justify-between text-[11px] font-bold">
             <span>Payment: {paymentMode}</span>
             <span>Status: {paymentStatus}</span>
           </div>
           
           {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
-            <div className="mt-2 text-center text-[10px] font-bold border-t-2 border-black pt-2">
+            <div className="mt-2 text-center text-[10px] font-bold border-t border-dashed border-black pt-2">
               {(business?.upi && business?.upiQrEnabled !== false) && (
                 <>
                   <div className="font-black">SCAN & PAY</div>
@@ -2254,11 +2253,11 @@ export default function CheckoutClient() {
             </div>
           )}
 
-          <div className="mt-4 text-center border-t border-dashed border-black pt-3">
-            <div className="text-[12px] font-bold mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
-            <div className="h-[15mm]" />
-            <div className="text-[8px] opacity-30 italic">... end of receipt ...</div>
-            <div className="h-[5mm]" />
+          <div className="mt-5 text-center border-t-2 border-dashed border-black pt-4">
+            <div className="text-[14px] font-black mb-1.5 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
+            <div className="text-[8px] font-bold">Software by Kravy AI</div>
+            <div className="text-[9px] italic tracking-[0.3em]">*** END OF BILL ***</div>
+            <div className="h-[8mm]" />
           </div>
         </div>
 
