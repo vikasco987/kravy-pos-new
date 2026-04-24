@@ -921,7 +921,7 @@ export default function BillingPage() {
         style.id = styleId;
         style.innerHTML = `
           @media print {
-            html, body { height: auto !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; }
+            html, body { height: auto !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
             body > *:not(#${containerId}) { display: none !important; }
             @page { margin: 0; size: 58mm auto; }
             #${containerId} {
