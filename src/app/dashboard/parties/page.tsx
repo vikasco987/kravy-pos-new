@@ -295,11 +295,12 @@ export default function PartiesPage() {
       style.id = styleId;
       style.innerHTML = `
         @media print {
-          html, body { height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+          html, body { height: auto !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; }
           body > *:not(#${containerId}) { display: none !important; }
           @page { margin: 0; size: 58mm auto; }
           #${containerId} {
             display: block !important;
+            height: fit-content !important;
             width: 100% !important;
             padding: 0 !important;
             background: #fff !important;
@@ -842,7 +843,7 @@ export default function PartiesPage() {
 
       {/* Hidden Print Content */}
       <div className="hidden">
-        <div ref={receiptRef} className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '2mm' }}>
+        <div ref={receiptRef} className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%' }}>
           {printData && (() => {
             const isBill = !!printData.billNumber;
             const taxActive = business?.taxEnabled ?? true;

@@ -921,11 +921,12 @@ export default function BillingPage() {
         style.id = styleId;
         style.innerHTML = `
           @media print {
-            html, body { height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+            html, body { height: auto !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; }
             body > *:not(#${containerId}) { display: none !important; }
             @page { margin: 0; size: 58mm auto; }
             #${containerId} {
               display: block !important;
+              height: fit-content !important;
               width: 100% !important;
               padding: 0 !important;
               background: #fff !important;
@@ -987,7 +988,7 @@ export default function BillingPage() {
     const qrCodeUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}` : "";
 
     return (
-        <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '2mm' }}>
+        <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%' }}>
             <div className="text-center mb-3">
                 {business.logoUrl && (
                     <div className="flex justify-center mb-2 bg-white">
@@ -1091,7 +1092,7 @@ export default function BillingPage() {
             {(business.upi && business.upiQrEnabled !== false) && (
                 <div className="mt-6 text-center border-t-2 border-black pt-4">
                     <div className="text-[10px] font-black mb-2 uppercase tracking-[0.2em]">Scan to Pay Instantly</div>
-                    <div className="inline-block border-2 border-black p-1 bg-white rounded-lg shadow-sm">
+                    <div className="inline-block border-2 border-black p-1 bg-white rounded-lg">
                         <img src={qrCodeUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)', backgroundColor: 'white' }} />
                     </div>
                     <div className="text-[10px] font-black mt-2.5 tracking-widest">{business.upi}</div>
