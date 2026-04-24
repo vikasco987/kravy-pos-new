@@ -26,6 +26,7 @@ import {
   List,
   Printer
 } from "lucide-react";
+import { kravy } from "@/lib/sounds";
 
 type Party = {
   id: string;
@@ -305,7 +306,7 @@ export default function PartiesPage() {
             color: #000 !important;
             font-family: 'Courier New', Courier, monospace !important;
           }
-          * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+          * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; box-shadow: none !important; text-shadow: none !important; }
         }
       `;
       document.head.appendChild(style);
@@ -883,7 +884,7 @@ export default function PartiesPage() {
                   )}
                   <div className="font-black text-[15px] uppercase tracking-tighter mb-1">{business?.businessName || "KRAVY RESTAURANT"}</div>
                   {(business?.businessAddress || business?.district) && (
-                    <div className="text-[8px] font-bold uppercase opacity-80 leading-tight">
+                    <div className="text-[8px] font-bold uppercase leading-tight">
                       {business.businessAddress}
                       {business.district && <><br />{business.district}</>}
                     </div>
@@ -920,7 +921,7 @@ export default function PartiesPage() {
                           <div key={idx} className="flex justify-between text-[10px] font-bold uppercase leading-tight border-b border-dotted border-black/20 pb-1">
                             <div className="flex-1 pr-1">
                               <div className="text-[11px]">{it.name}</div>
-                              <div className="text-[8px] opacity-70">
+                              <div className="text-[8px]">
                                 {it.qty || it.quantity} x {(it.rate || it.price).toFixed(2)}
                                 {(taxActive || perProductEnabled) && ` | GST: ${itemTaxRate}%`}
                               </div>
@@ -971,8 +972,8 @@ export default function PartiesPage() {
 
                 <div className="mt-6 text-center border-t-2 border-dashed border-black pt-4">
                     <div className="text-[12px] font-black mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
-                    <div className="text-[7px] font-bold opacity-50">KRAVY POS SYSTEM</div>
-                    <div className="text-[9px] opacity-40 italic tracking-[0.2em]">*** END OF RECEIPT ***</div>
+                    <div className="text-[7px] font-bold">KRAVY POS SYSTEM</div>
+                    <div className="text-[9px] italic tracking-[0.2em]">*** END OF RECEIPT ***</div>
                 </div>
               </div>
             );

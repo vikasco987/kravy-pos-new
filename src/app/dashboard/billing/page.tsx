@@ -15,6 +15,7 @@ import {
 import { useRef } from "react";
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 import { useAuthContext } from "@/components/AuthContext";
+import { kravy } from "@/lib/sounds";
 
 type BillManager = {
   id: string;
@@ -932,7 +933,7 @@ export default function BillingPage() {
               font-family: 'Courier New', Courier, monospace !important;
             }
             img { background: #fff !important; }
-            * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+            * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; box-shadow: none !important; text-shadow: none !important; }
           }
         `;
         document.head.appendChild(style);
@@ -1000,7 +1001,7 @@ export default function BillingPage() {
                 )}
                 <div className="font-bold text-[16px] uppercase tracking-tighter mb-1">{business.businessName || "KRAVY RESTAURANT"}</div>
                 {(business.businessAddress || business.district) && (
-                    <div className="text-[9px] font-bold uppercase opacity-80 leading-tight">
+                    <div className="text-[9px] font-bold uppercase leading-tight">
                         {business.businessAddress}
                         {business.district && <><br />{business.district}</>}
                         {business.pinCode && ` - ${business.pinCode}`}
@@ -1038,7 +1039,7 @@ export default function BillingPage() {
                         <div key={idx} className="flex justify-between text-[11px] font-bold uppercase leading-tight border-b border-dotted border-black/20 pb-1.5">
                             <div className="flex-1 pr-1">
                                 <div className="text-[12px]">{it.name}</div>
-                                <div className="text-[9px] opacity-70">
+                                <div className="text-[9px]">
                                     {it.qty || it.quantity} x {(it.rate || it.price).toFixed(2)}
                                     {(taxActive || perProductEnabled) && ` | GST: ${itemRate}%`}
                                 </div>
@@ -1068,7 +1069,7 @@ export default function BillingPage() {
                 </div>
             </div>
 
-            <div className="mt-2 text-[9px] font-bold uppercase italic opacity-80 leading-tight">
+            <div className="mt-2 text-[9px] font-bold uppercase italic leading-tight">
                 AMOUNT IN WORDS: {numberToWords(finalTotal)}
             </div>
 
@@ -1099,8 +1100,8 @@ export default function BillingPage() {
 
             <div className="mt-8 text-center border-t-2 border-dashed border-black pt-5">
                 <div className="text-[14px] font-black mb-1.5 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
-                <div className="text-[8px] font-bold opacity-60">Software by Kravy AI</div>
-                <div className="text-[9px] opacity-40 italic tracking-[0.3em]">*** END OF BILL ***</div>
+                <div className="text-[8px] font-bold">Software by Kravy AI</div>
+                <div className="text-[9px] italic tracking-[0.3em]">*** END OF BILL ***</div>
             </div>
         </div>
     );
