@@ -973,7 +973,7 @@ export default function PartiesPage() {
 
                 <div className="mt-6 text-center border-t-2 border-dashed border-black pt-4">
                     <div className="text-[12px] font-black mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
-                    <div className="text-[7px] font-bold">KRAVY POS SYSTEM</div>
+                    <div className="text-[8px] font-bold">Software by Kravy</div>
                     <div className="text-[9px] italic tracking-[0.2em]">*** END OF RECEIPT ***</div>
                 </div>
               </div>
