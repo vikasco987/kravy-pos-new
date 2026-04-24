@@ -988,7 +988,7 @@ export default function BillingPage() {
     const qrCodeUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}` : "";
 
     return (
-        <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%' }}>
+        <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '8mm' }}>
             <div className="text-center mb-3">
                 {business.logoUrl && (
                     <div className="flex justify-center mb-2 bg-white">

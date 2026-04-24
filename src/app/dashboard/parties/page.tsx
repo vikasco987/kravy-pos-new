@@ -843,7 +843,7 @@ export default function PartiesPage() {
 
       {/* Hidden Print Content */}
       <div className="hidden">
-        <div ref={receiptRef} className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%' }}>
+        <div ref={receiptRef} className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '8mm' }}>
           {printData && (() => {
             const isBill = !!printData.billNumber;
             const taxActive = business?.taxEnabled ?? true;
