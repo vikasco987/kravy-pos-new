@@ -267,6 +267,22 @@ export default function AddonClustersPage() {
                                  <UtensilsCrossed size={10} />
                                  Deployment Surface
                               </p>
+                              
+                              {/* Categories inheritance (NEW) */}
+                              {group.categoryIds && group.categoryIds.length > 0 && (
+                                <div className="flex flex-wrap gap-2 pl-1 mb-2">
+                                  {group.categoryIds.map((cid: string) => {
+                                    const cat = categories.find(c => c.id === cid);
+                                    if (!cat) return null;
+                                    return (
+                                      <div key={cid} className="text-[0.62rem] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-lg border border-emerald-100/50 dark:border-emerald-800/30 flex items-center gap-1.5 uppercase tracking-wider">
+                                         <LayoutGrid size={10} /> {cat.name}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+
                               <div className="flex flex-wrap gap-2 pl-1">
                                  {group.itemsOnMenu?.slice(0, 4).map((itm: any) => (
                                     <div key={itm.id} className="text-[0.68rem] font-black text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20 px-3 py-1.5 rounded-xl border border-blue-100/50 dark:border-blue-800/30 shadow-sm backdrop-blur-sm">
@@ -278,7 +294,7 @@ export default function AddonClustersPage() {
                                        +{group.itemsOnMenu.length - 4} Assets
                                     </div>
                                  )}
-                                 {(!group.itemsOnMenu || group.itemsOnMenu.length === 0) && (
+                                 {(!group.itemsOnMenu || group.itemsOnMenu.length === 0) && (!group.categoryIds || group.categoryIds.length === 0) && (
                                     <div className="flex items-center gap-2 px-4 py-2 bg-amber-50/50 dark:bg-amber-900/10 rounded-2xl border border-dashed border-amber-100 dark:border-amber-900/30 text-amber-500 dark:text-amber-600 text-[0.7rem] font-black uppercase tracking-widest w-full justify-center underline-offset-4 transition-all">
                                        Ready for Deployment
                                     </div>

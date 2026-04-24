@@ -15,7 +15,8 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
     maxSelection: initialGroup?.maxSelection || 5,
     allowMultipleUnits: initialGroup?.allowMultipleUnits || false,
     items: initialGroup?.items ? JSON.parse(JSON.stringify(initialGroup.items)) : [{ id: Math.random().toString(36).substr(2, 9), name: '', price: 0, foodType: 'veg', isAvailable: true }],
-    itemIds: initialGroup?.itemIds || []
+    itemIds: initialGroup?.itemIds || [],
+    categoryIds: initialGroup?.categoryIds || []
   })
 
   useEffect(() => {
@@ -28,7 +29,8 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
         maxSelection: initialGroup.maxSelection,
         allowMultipleUnits: initialGroup.allowMultipleUnits,
         items: initialGroup.items ? JSON.parse(JSON.stringify(initialGroup.items)) : [],
-        itemIds: initialGroup.itemIds || []
+        itemIds: initialGroup.itemIds || [],
+        categoryIds: initialGroup.categoryIds || []
       })
       setShowForm(true)
     }
@@ -43,7 +45,8 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
       maxSelection: 5,
       allowMultipleUnits: false,
       items: [{ id: Math.random().toString(36).substr(2, 9), name: '', price: 0, foodType: 'veg', isAvailable: true }],
-      itemIds: []
+      itemIds: [],
+      categoryIds: []
     })
     setShowForm(true)
   }
@@ -57,7 +60,8 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
       maxSelection: group.maxSelection,
       allowMultipleUnits: group.allowMultipleUnits,
       items: group.items ? JSON.parse(JSON.stringify(group.items)) : [],
-      itemIds: group.itemIds || []
+      itemIds: group.itemIds || [],
+      categoryIds: group.categoryIds || []
     })
     setShowForm(true)
   }
@@ -72,6 +76,15 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
       update('itemIds', current.filter((id: string) => id !== itemId))
     } else {
       update('itemIds', [...current, itemId])
+    }
+  }
+
+  function toggleCategoryLink(catId: string) {
+    const current = form.categoryIds || []
+    if (current.includes(catId)) {
+      update('categoryIds', current.filter((id: string) => id !== catId))
+    } else {
+      update('categoryIds', [...current, catId])
     }
   }
 
@@ -333,6 +346,42 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
                           </motion.div>
                         ))}
                      </div>
+                  </div>
+
+                  {/* Category Mapping (NEW) */}
+                  <div className="space-y-8 pt-12 border-t border-slate-100 dark:border-slate-800">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
+                         <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/20">
+                               <LayoutGrid size={20} />
+                            </div>
+                            <h4 className={sectionLabelRef}>Category Deployment (All items in category)</h4>
+                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-2">
+                         {categories.map((cat: any) => {
+                            const isLinked = (form.categoryIds || []).includes(cat.id)
+                            return (
+                              <button 
+                                key={cat.id}
+                                type="button"
+                                onClick={() => toggleCategoryLink(cat.id)}
+                                className={`p-4 rounded-3xl border-2 text-left transition-all relative overflow-hidden group ${isLinked ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20 shadow-xl shadow-emerald-500/5' : 'border-slate-50 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-700'}`}
+                              >
+                                 <div className="flex flex-col gap-1 relative z-10">
+                                    <h6 className={`text-[0.9rem] font-black leading-tight ${isLinked ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-900 dark:text-slate-100'}`}>
+                                       {cat.name}
+                                    </h6>
+                                    <span className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest">Category node</span>
+                                 </div>
+                                 <div className={`absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center transition-all ${isLinked ? 'bg-emerald-600 text-white shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-200 dark:text-slate-700'}`}>
+                                    <CheckCircle2 size={14} strokeWidth={3} />
+                                 </div>
+                              </button>
+                            )
+                         })}
+                      </div>
                   </div>
 
                   {/* Surface Mapping (Items select) */}

@@ -33,13 +33,15 @@ export async function POST(req: Request) {
     const user = await prisma.user.findUnique({ where: { clerkId: clerkId } })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    const { items: groupItems, itemIds, ...rest } = body
+    const { items: groupItems, itemIds, categoryIds, ...rest } = body
+    if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const group = await prisma.addonGroup.create({
       data: {
         ...rest,
         items: groupItems,
         itemIds: itemIds || [],
+        categoryIds: categoryIds || [],
         clerkId,
         userId: user.id,
       }
@@ -72,7 +74,7 @@ export async function PUT(req: Request) {
     const body = await req.json()
     const { id, ...data } = body
 
-    const { items: groupItems, itemIds, ...rest } = data
+    const { items: groupItems, itemIds, categoryIds, ...rest } = data
 
     // 1. Get previous state to handle unlinking
     const prevGroup = await prisma.addonGroup.findUnique({
@@ -87,7 +89,8 @@ export async function PUT(req: Request) {
       data: {
         ...rest,
         items: groupItems,
-        itemIds: itemIds || []
+        itemIds: itemIds || [],
+        categoryIds: categoryIds || []
       }
     })
 

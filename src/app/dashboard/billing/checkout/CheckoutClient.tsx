@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock, Trash2, Play, X, Search, ChevronDown, User, Printer,
   Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus,
-  LayoutGrid, Columns, StickyNote
+  LayoutGrid, Columns, StickyNote, Layers
 } from "lucide-react";
 import { calculateDiscount } from "@/lib/discount-utils";
 import { toast } from "sonner";
@@ -389,6 +389,7 @@ export default function CheckoutClient() {
   }, [categoryLayout]);
 
   const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
+  const [addonGroups, setAddonGroups] = useState<any[]>([]);
   
   useEffect(() => {
     async function fetchCats() {
@@ -403,6 +404,21 @@ export default function CheckoutClient() {
       }
     }
     fetchCats();
+  }, []);
+
+  useEffect(() => {
+    async function fetchAddonGroups() {
+      try {
+        const res = await fetch("/api/menu-editor/addon-groups");
+        if (res.ok) {
+          const data = await res.json();
+          setAddonGroups(data || []);
+        }
+      } catch (e) {
+        console.error("Failed to fetch addon groups:", e);
+      }
+    }
+    fetchAddonGroups();
   }, []);
 
   const categories = Array.from(new Set([
@@ -442,6 +458,23 @@ export default function CheckoutClient() {
       else kravy.remove(); // qty decreased
       return prev.map((i) => i.id === itemId ? { ...i, qty: i.qty - 1 } : i).filter((i) => i.qty > 0);
     });
+  }
+
+  function addAddonToCart(addon: any, groupName: string) {
+    kravy.add();
+    setItems((prev) => [
+      ...prev,
+      {
+        id: `addon-${Math.random().toString(36).substr(2, 9)}`,
+        name: `${addon.name} (${groupName})`,
+        qty: 1,
+        rate: addon.price || 0,
+        gst: null,
+        hsnCode: "",
+        taxStatus: "Without Tax"
+      }
+    ]);
+    toast.success(`Added ${addon.name}`);
   }
 
   /* ================= CUSTOMER ================= */
@@ -1331,24 +1364,98 @@ export default function CheckoutClient() {
                           {catItems.length} Items
                         </span>
                       </h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 mb-6">
                         {catItems.map(m => (
                           <MenuItemCard key={m.id} m={m} items={items} addToCart={addToCart} reduceFromCart={reduceFromCart} />
                         ))}
                           {canEdit && <QuickAddCard cat={catObj} onClick={() => { setQuickAddCat(catObj); toast.info(`Quick add to ${catName}`); }} />}
                       </div>
+
+                      {/* Category Addons Section */}
+                      {(() => {
+                        const catAddons = addonGroups.filter(ag => (ag.categoryIds || []).includes(catObj.id));
+                        if (catAddons.length === 0) return null;
+                        return (
+                          <div className="bg-indigo-50/30 dark:bg-indigo-900/10 rounded-2xl p-4 border border-dashed border-indigo-200 dark:border-indigo-900/50">
+                            <div className="flex items-center gap-2 mb-3">
+                               <Layers size={12} className="text-indigo-500" />
+                               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-500">Category Addons (Linked to {catName})</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                               {catAddons.map(ag => (
+                                 <div key={ag.id} className="flex flex-col gap-2">
+                                   <div className="flex flex-wrap gap-1.5">
+                                     {(ag.items as any[])?.map((addon: any, idx: number) => (
+                                       <button
+                                         key={idx}
+                                         onClick={() => addAddonToCart(addon, ag.name)}
+                                         className="bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-800 
+                                           hover:border-indigo-500 hover:shadow-md hover:scale-[1.02] active:scale-95
+                                           rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm transition-all group"
+                                       >
+                                          <Plus size={10} className="text-indigo-400 group-hover:text-indigo-600" />
+                                          <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">{addon.name}</span>
+                                          <span className="text-[9px] font-bold text-indigo-600">₹{addon.price}</span>
+                                       </button>
+                                     ))}
+                                   </div>
+                                 </div>
+                               ))}
+                            </div>
+                          </div>
+                        )
+                      })()}
                     </div>
                   );
                 })
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                  {filteredMenuItems.map((m) => (
-                    <MenuItemCard key={m.id} m={m} items={items} addToCart={addToCart} reduceFromCart={reduceFromCart} />
-                  ))}
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                    {filteredMenuItems.map((m) => (
+                      <MenuItemCard key={m.id} m={m} items={items} addToCart={addToCart} reduceFromCart={reduceFromCart} />
+                    ))}
+                    {!search && activeCategory !== "All" && (() => {
+                      const fallbackCat = categoriesList.find(c => c.name.toLowerCase() === activeCategory.toLowerCase()) || { id: "", name: activeCategory };
+                      if (canEdit) return <QuickAddCard cat={fallbackCat} onClick={() => setQuickAddCat(fallbackCat)} />;
+                      return null;
+                    })()}
+                  </div>
+
+                  {/* Category Addons for single category view */}
                   {!search && activeCategory !== "All" && (() => {
-                    const fallbackCat = categoriesList.find(c => c.name.toLowerCase() === activeCategory.toLowerCase()) || { id: "", name: activeCategory };
-                    if (canEdit) return <QuickAddCard cat={fallbackCat} onClick={() => setQuickAddCat(fallbackCat)} />;
-                    return null;
+                    const currentCat = categoriesList.find(c => c.name.toLowerCase() === activeCategory.toLowerCase());
+                    if (!currentCat) return null;
+                    const catAddons = addonGroups.filter(ag => (ag.categoryIds || []).includes(currentCat.id));
+                    if (catAddons.length === 0) return null;
+                    return (
+                      <div className="bg-indigo-50/30 dark:bg-indigo-900/10 rounded-2xl p-4 border border-dashed border-indigo-200 dark:border-indigo-900/50">
+                        <div className="flex items-center gap-2 mb-3">
+                           <Layers size={12} className="text-indigo-500" />
+                           <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-500">Category Addons ({activeCategory})</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                           {catAddons.map(ag => (
+                             <div key={ag.id} className="flex flex-col gap-2">
+                               <div className="flex flex-wrap gap-1.5">
+                                 {(ag.items as any[])?.map((addon: any, idx: number) => (
+                                   <button
+                                     key={idx}
+                                     onClick={() => addAddonToCart(addon, ag.name)}
+                                     className="bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-800 
+                                       hover:border-indigo-500 hover:shadow-md hover:scale-[1.02] active:scale-95
+                                       rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm transition-all group"
+                                   >
+                                      <Plus size={10} className="text-indigo-400 group-hover:text-indigo-600" />
+                                      <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">{addon.name}</span>
+                                      <span className="text-[9px] font-bold text-indigo-600">₹{addon.price}</span>
+                                   </button>
+                                 ))}
+                               </div>
+                             </div>
+                           ))}
+                        </div>
+                      </div>
+                    )
                   })()}
                 </div>
               )}

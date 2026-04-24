@@ -133,6 +133,9 @@ model AddonGroup {
   allowMultipleUnits Boolean  @default(false)
   items             Json     // List of { name, price, foodType, isAvailable }
 
+  // Relationship to Categories
+  categoryIds       String[] @db.ObjectId
+
   // Many-to-many with items
   itemsOnMenu       Item[]   @relation("ItemToAddonGroups", fields: [itemIds], references: [id])
   itemIds           String[] @db.ObjectId

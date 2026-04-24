@@ -28,6 +28,22 @@ export async function GET(
             },
         });
 
+        const allAddonGroups = await prisma.addonGroup.findMany({
+            where: { clerkId: clerkId }
+        });
+
+        const itemsWithAddons = items.map(item => {
+            const explicitAddons = item.addonGroups || [];
+            const categoryAddons = allAddonGroups.filter(ag => 
+                (ag.categoryIds as string[])?.includes(item.categoryId || "") &&
+                !explicitAddons.some(ea => ea.id === ag.id)
+            );
+            return {
+                ...item,
+                addonGroups: [...explicitAddons, ...categoryAddons]
+            };
+        });
+
         console.log(`[PUBLIC_MENU] Found ${items.length} items for ${clerkId}`);
 
         const profile = await prisma.businessProfile.findUnique({
@@ -46,7 +62,7 @@ export async function GET(
             where: { clerkUserId: clerkId, isActive: true },
         });
 
-        return NextResponse.json({ items, profile, combos, offers, rewards });
+        return NextResponse.json({ items: itemsWithAddons, profile, combos, offers, rewards });
     } catch (error) {
         console.error("PUBLIC_MENU_ERROR:", error);
         return NextResponse.json({ error: "Failed to fetch menu" }, { status: 500 });
