@@ -975,6 +975,8 @@ export default function PartiesPage() {
                     <div className="text-[12px] font-black mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
                     <div className="text-[8px] font-bold">Software by Kravy</div>
                     <div className="text-[9px] italic tracking-[0.2em]">*** END OF RECEIPT ***</div>
+                    <div className="h-[40mm]" />
+                </div>
                 </div>
               </div>
             );

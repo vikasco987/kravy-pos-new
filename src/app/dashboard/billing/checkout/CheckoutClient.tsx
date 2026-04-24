@@ -2257,7 +2257,7 @@ export default function CheckoutClient() {
             <div className="text-[14px] font-black mb-1.5 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
             <div className="text-[8px] font-bold">Software by Kravy</div>
             <div className="text-[9px] italic tracking-[0.3em]">*** END OF BILL ***</div>
-            <div className="h-[8mm]" />
+            <div className="h-[40mm]" />
           </div>
         </div>
 
