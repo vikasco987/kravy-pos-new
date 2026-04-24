@@ -478,19 +478,43 @@ export default function CheckoutClient() {
 
   function addAddonToCart(addon: any, groupName: string) {
     kravy.add();
-    setItems((prev) => [
-      ...prev,
-      {
-        id: `addon-${Math.random().toString(36).substr(2, 9)}`,
-        name: `${addon.name} (${groupName})`,
-        qty: 1,
-        rate: addon.price || 0,
-        gst: null,
-        hsnCode: "",
-        taxStatus: "Without Tax"
+    const fullName = `${addon.name} (${groupName})`;
+    
+    setItems((prev) => {
+      const existing = prev.find(i => i.name === fullName);
+      if (existing) {
+        return prev.map(i => i.name === fullName ? { ...i, qty: i.qty + 1 } : i);
       }
-    ]);
+      return [
+        ...prev,
+        {
+          id: `addon-${Math.random().toString(36).substr(2, 9)}`,
+          name: fullName,
+          qty: 1,
+          rate: addon.price || 0,
+          gst: null,
+          hsnCode: "",
+          taxStatus: "Without Tax"
+        }
+      ];
+    });
     toast.success(`Added ${addon.name}`);
+  }
+
+  function reduceAddonFromCart(addonName: string, groupName: string) {
+    const fullName = `${addonName} (${groupName})`;
+    setItems((prev) => {
+      const existing = prev.find(i => i.name === fullName);
+      if (!existing) return prev;
+      
+      if (existing.qty <= 1) {
+        kravy.trash();
+        return prev.filter(i => i.name !== fullName);
+      } else {
+        kravy.remove();
+        return prev.map(i => i.name === fullName ? { ...i, qty: i.qty - 1 } : i);
+      }
+    });
   }
 
   /* ================= CUSTOMER ================= */
@@ -1446,21 +1470,41 @@ export default function CheckoutClient() {
                                  {catAddons.map(ag => (
                                    <div key={ag.id} className="flex flex-col gap-2">
                                      <div className="flex flex-wrap gap-1.5 items-center">
-                                     {(Array.isArray(ag.items) ? ag.items : []).map((addon: any, idx: number) => (
+                                     {(Array.isArray(ag.items) ? ag.items : []).map((addon: any, idx: number) => {
+                                       const fullName = `${addon.name} (${ag.name})`;
+                                       const inCart = items.find(i => i.name === fullName);
+                                       return (
+                                        <div key={idx} className="relative group/addon">
                                          <button
-                                           key={idx}
                                            onClick={() => addAddonToCart(addon, ag.name)}
-                                           className="flex items-center bg-[#EEEDFE] dark:bg-indigo-950/40 border-[0.5px] border-[#AFA9EC] dark:border-indigo-800 hover:border-indigo-500 hover:shadow-md hover:scale-[1.02] active:scale-95 rounded-full overflow-hidden shadow-sm transition-all group"
+                                           className={`flex items-center border-[0.5px] rounded-full overflow-hidden shadow-sm transition-all group
+                                             ${inCart 
+                                               ? 'bg-indigo-600 border-indigo-700 shadow-indigo-500/20 scale-[1.02]' 
+                                               : 'bg-[#EEEDFE] dark:bg-indigo-950/40 border-[#AFA9EC] dark:border-indigo-800 hover:border-indigo-500 hover:shadow-md hover:scale-[1.02]'
+                                             }`}
                                          >
-                                            <div className="flex items-center gap-1.5 px-3 py-1.5 border-r border-[#AFA9EC]/50 dark:border-indigo-800">
-                                               <Plus size={10} className="text-indigo-500 group-hover:text-indigo-700" />
-                                               <span className="text-[10px] font-black text-indigo-900 dark:text-indigo-100 uppercase tracking-wide">{addon.name}</span>
+                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 border-r ${inCart ? 'border-white/20' : 'border-[#AFA9EC]/50 dark:border-indigo-800'}`}>
+                                               {inCart ? (
+                                                 <span className="text-[9px] font-black bg-white/20 px-1.5 rounded-md text-white mr-1 animate-in zoom-in-50 duration-300">x{inCart.qty}</span>
+                                               ) : (
+                                                 <Plus size={10} className="text-indigo-500 group-hover:text-indigo-700" />
+                                               )}
+                                               <span className={`text-[10px] font-black uppercase tracking-wide ${inCart ? 'text-white' : 'text-indigo-900 dark:text-indigo-100'}`}>{addon.name}</span>
                                             </div>
-                                            <div className="bg-[#E5E3FC] dark:bg-indigo-900/60 px-2.5 py-1.5">
-                                               <span className="text-[9px] font-black text-indigo-700 dark:text-indigo-300 tracking-tighter">₹{addon.price}</span>
+                                            <div className={`px-2.5 py-1.5 ${inCart ? 'bg-indigo-700' : 'bg-[#E5E3FC] dark:bg-indigo-900/60'}`}>
+                                               <span className={`text-[9px] font-black tracking-tighter ${inCart ? 'text-white/90' : 'text-indigo-700 dark:text-indigo-300'}`}>₹{addon.price}</span>
                                             </div>
                                          </button>
-                                       ))}
+                                         {inCart && (
+                                            <button 
+                                              onClick={(e) => { e.stopPropagation(); reduceAddonFromCart(addon.name, ag.name); }}
+                                              className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-rose-600 active:scale-90 transition-all z-10 border border-white dark:border-slate-900"
+                                            >
+                                              <X size={10} strokeWidth={4} />
+                                            </button>
+                                         )}
+                                        </div>
+                                      )})}
                                        {canEdit && <QuickAddAddonChip onClick={() => setQuickAddAddonGroup(ag)} />}
                                      </div>
                                    </div>
@@ -1501,21 +1545,41 @@ export default function CheckoutClient() {
                                {catAddons.map(ag => (
                                  <div key={ag.id} className="flex flex-col gap-2">
                                    <div className="flex flex-wrap gap-1.5 items-center">
-                                     {(Array.isArray(ag.items) ? ag.items : []).map((addon: any, idx: number) => (
-                                       <button
-                                         key={idx}
-                                         onClick={() => addAddonToCart(addon, ag.name)}
-                                         className="flex items-center bg-[#EEEDFE] dark:bg-indigo-950/40 border-[0.5px] border-[#AFA9EC] dark:border-indigo-800 hover:border-indigo-500 hover:shadow-md hover:scale-[1.02] active:scale-95 rounded-full overflow-hidden shadow-sm transition-all group"
-                                       >
-                                          <div className="flex items-center gap-1.5 px-3 py-1.5 border-r border-[#AFA9EC]/50 dark:border-indigo-800">
-                                             <Plus size={10} className="text-indigo-500 group-hover:text-indigo-700" />
-                                             <span className="text-[10px] font-black text-indigo-900 dark:text-indigo-100 uppercase tracking-wide">{addon.name}</span>
-                                          </div>
-                                          <div className="bg-[#E5E3FC] dark:bg-indigo-900/60 px-2.5 py-1.5">
-                                             <span className="text-[9px] font-black text-indigo-700 dark:text-indigo-300 tracking-tighter">₹{addon.price}</span>
-                                          </div>
-                                       </button>
-                                     ))}
+                                     {(Array.isArray(ag.items) ? ag.items : []).map((addon: any, idx: number) => {
+                                       const fullName = `${addon.name} (${ag.name})`;
+                                       const inCart = items.find(i => i.name === fullName);
+                                       return (
+                                        <div key={idx} className="relative group/addon">
+                                         <button
+                                           onClick={() => addAddonToCart(addon, ag.name)}
+                                           className={`flex items-center border-[0.5px] rounded-full overflow-hidden shadow-sm transition-all group
+                                             ${inCart 
+                                               ? 'bg-indigo-600 border-indigo-700 shadow-indigo-500/20 scale-[1.02]' 
+                                               : 'bg-[#EEEDFE] dark:bg-indigo-950/40 border-[#AFA9EC] dark:border-indigo-800 hover:border-indigo-500 hover:shadow-md hover:scale-[1.02]'
+                                             }`}
+                                         >
+                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 border-r ${inCart ? 'border-white/20' : 'border-[#AFA9EC]/50 dark:border-indigo-800'}`}>
+                                               {inCart ? (
+                                                 <span className="text-[9px] font-black bg-white/20 px-1.5 rounded-md text-white mr-1 animate-in zoom-in-50 duration-300">x{inCart.qty}</span>
+                                               ) : (
+                                                 <Plus size={10} className="text-indigo-500 group-hover:text-indigo-700" />
+                                               )}
+                                               <span className={`text-[10px] font-black uppercase tracking-wide ${inCart ? 'text-white' : 'text-indigo-900 dark:text-indigo-100'}`}>{addon.name}</span>
+                                            </div>
+                                            <div className={`px-2.5 py-1.5 ${inCart ? 'bg-indigo-700' : 'bg-[#E5E3FC] dark:bg-indigo-900/60'}`}>
+                                               <span className={`text-[9px] font-black tracking-tighter ${inCart ? 'text-white/90' : 'text-indigo-700 dark:text-indigo-300'}`}>₹{addon.price}</span>
+                                            </div>
+                                         </button>
+                                         {inCart && (
+                                            <button 
+                                              onClick={(e) => { e.stopPropagation(); reduceAddonFromCart(addon.name, ag.name); }}
+                                              className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-rose-600 active:scale-90 transition-all z-10 border border-white dark:border-slate-900"
+                                            >
+                                              <X size={10} strokeWidth={4} />
+                                            </button>
+                                         )}
+                                        </div>
+                                      )})}
                                      {canEdit && <QuickAddAddonChip onClick={() => setQuickAddAddonGroup(ag)} />}
                                    </div>
                                  </div>
