@@ -156,6 +156,20 @@ const QuickAddCard = ({ cat, onClick }: { cat: { id: string, name: string }, onC
   );
 };
 
+const QuickAddAddonChip = ({ onClick }: { onClick: () => void }) => {
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className="flex items-center gap-2 px-4 py-1.5 border border-dashed border-indigo-300 dark:border-indigo-700 
+        bg-indigo-50/20 dark:bg-indigo-900/10 rounded-full text-indigo-400 dark:text-indigo-600
+        hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-500 hover:text-indigo-600 transition-all active:scale-95"
+    >
+       <Plus size={12} strokeWidth={3} />
+       <span className="text-[10px] font-black uppercase tracking-wider">Add new addon</span>
+    </button>
+  );
+};
+
 /* ================= PAGE ================= */
 
 export default function CheckoutClient() {
@@ -179,6 +193,7 @@ export default function CheckoutClient() {
   const [previewZoom, setPreviewZoom] = useState(1);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [quickAddCat, setQuickAddCat] = useState<{ id: string, name: string } | null>(null);
+  const [quickAddAddonGroup, setQuickAddAddonGroup] = useState<any | null>(null);
   const [quickAddTaxStatus, setQuickAddTaxStatus] = useState("Without Tax");
   const [quickAddGst, setQuickAddGst] = useState(0);
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -1133,6 +1148,51 @@ export default function CheckoutClient() {
     })();
   };
 
+  /* ================= QUICK ADD ADDON ================= */
+  const handleQuickAddAddon = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!quickAddAddonGroup) return;
+
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const price = formData.get("price") as string;
+
+    if (!name || !price) {
+      toast.error("Name and price are required");
+      return;
+    }
+
+    const newAddonItem = {
+      id: `it-${Date.now()}`,
+      name,
+      price: Number(price),
+      foodType: "veg"
+    };
+
+    const updatedGroup = {
+      ...quickAddAddonGroup,
+      items: [...(quickAddAddonGroup.items || []), newAddonItem]
+    };
+
+    // Optimistic Update
+    setAddonGroups(prev => prev.map(ag => ag.id === quickAddAddonGroup.id ? updatedGroup : ag));
+    setQuickAddAddonGroup(null);
+    kravy.success();
+    toast.success(`"${name}" addon added to ${quickAddAddonGroup.name}`);
+
+    // Persist to DB
+    try {
+      await fetch(`/api/menu-editor/addon-groups/${quickAddAddonGroup.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedGroup)
+      });
+    } catch (err) {
+      console.error("Failed to persist addon:", err);
+      toast.error("Cloud sync failed for this addon.");
+    }
+  };
+
   const handleQuickAddCategory = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -1384,20 +1444,23 @@ export default function CheckoutClient() {
                             <div className="flex flex-wrap gap-2">
                                {catAddons.map(ag => (
                                  <div key={ag.id} className="flex flex-col gap-2">
-                                   <div className="flex flex-wrap gap-1.5">
+                                   <div className="flex flex-wrap gap-1.5 items-center">
                                      {(ag.items as any[])?.map((addon: any, idx: number) => (
                                        <button
                                          key={idx}
                                          onClick={() => addAddonToCart(addon, ag.name)}
-                                         className="bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-800 
-                                           hover:border-indigo-500 hover:shadow-md hover:scale-[1.02] active:scale-95
-                                           rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm transition-all group"
+                                         className="flex items-center bg-[#EEEDFE] dark:bg-indigo-950/40 border-[0.5px] border-[#AFA9EC] dark:border-indigo-800 hover:border-indigo-500 hover:shadow-md hover:scale-[1.02] active:scale-95 rounded-full overflow-hidden shadow-sm transition-all group"
                                        >
-                                          <Plus size={10} className="text-indigo-400 group-hover:text-indigo-600" />
-                                          <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">{addon.name}</span>
-                                          <span className="text-[9px] font-bold text-indigo-600">₹{addon.price}</span>
+                                          <div className="flex items-center gap-1.5 px-3 py-1.5 border-r border-[#AFA9EC]/50 dark:border-indigo-800">
+                                             <Plus size={10} className="text-indigo-500 group-hover:text-indigo-700" />
+                                             <span className="text-[10px] font-black text-indigo-900 dark:text-indigo-100 uppercase tracking-wide">{addon.name}</span>
+                                          </div>
+                                          <div className="bg-[#E5E3FC] dark:bg-indigo-900/60 px-2.5 py-1.5">
+                                             <span className="text-[9px] font-black text-indigo-700 dark:text-indigo-300 tracking-tighter">₹{addon.price}</span>
+                                          </div>
                                        </button>
                                      ))}
+                                     {canEdit && <QuickAddAddonChip onClick={() => setQuickAddAddonGroup(ag)} />}
                                    </div>
                                  </div>
                                ))}
@@ -1429,32 +1492,29 @@ export default function CheckoutClient() {
                     if (catAddons.length === 0) return null;
                     return (
                       <div className="bg-indigo-50/30 dark:bg-indigo-900/10 rounded-2xl p-4 border border-dashed border-indigo-200 dark:border-indigo-900/50">
-                        <div className="flex items-center gap-2 mb-3">
-                           <Layers size={12} className="text-indigo-500" />
-                           <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-500">Category Addons ({activeCategory})</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                           {catAddons.map(ag => (
+                                                 {catAddons.map(ag => (
                              <div key={ag.id} className="flex flex-col gap-2">
-                               <div className="flex flex-wrap gap-1.5">
+                               <div className="flex flex-wrap gap-1.5 items-center">
                                  {(ag.items as any[])?.map((addon: any, idx: number) => (
-                                   <button
-                                     key={idx}
-                                     onClick={() => addAddonToCart(addon, ag.name)}
-                                     className="bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-800 
-                                       hover:border-indigo-500 hover:shadow-md hover:scale-[1.02] active:scale-95
-                                       rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm transition-all group"
-                                   >
-                                      <Plus size={10} className="text-indigo-400 group-hover:text-indigo-600" />
-                                      <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">{addon.name}</span>
-                                      <span className="text-[9px] font-bold text-indigo-600">₹{addon.price}</span>
-                                   </button>
-                                 ))}
+                                    <button
+                                      key={idx}
+                                      onClick={() => addAddonToCart(addon, ag.name)}
+                                      className="flex items-center bg-[#EEEDFE] dark:bg-indigo-950/40 border-[0.5px] border-[#AFA9EC] dark:border-indigo-800 hover:border-indigo-500 hover:shadow-md hover:scale-[1.02] active:scale-95 rounded-full overflow-hidden shadow-sm transition-all group"
+                                    >
+                                       <div className="flex items-center gap-1.5 px-3 py-1.5 border-r border-[#AFA9EC]/50 dark:border-indigo-800">
+                                          <Plus size={10} className="text-indigo-500 group-hover:text-indigo-700" />
+                                          <span className="text-[10px] font-black text-indigo-900 dark:text-indigo-100 uppercase tracking-wide">{addon.name}</span>
+                                       </div>
+                                       <div className="bg-[#E5E3FC] dark:bg-indigo-900/60 px-2.5 py-1.5">
+                                          <span className="text-[9px] font-black text-indigo-700 dark:text-indigo-300 tracking-tighter">₹{addon.price}</span>
+                                       </div>
+                                    </button>
+                                  ))}
+                                  {canEdit && <QuickAddAddonChip onClick={() => setQuickAddAddonGroup(ag)} />}
                                </div>
                              </div>
                            ))}
                         </div>
-                      </div>
                     )
                   })()}
                 </div>
@@ -2997,6 +3057,75 @@ export default function CheckoutClient() {
               </form>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════
+          QUICK ADD ADDON MODAL
+      ════════════════════════════════════════════ */}
+      {quickAddAddonGroup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => setQuickAddAddonGroup(null)}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+          >
+            <div className="p-8">
+               <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/20">
+                     <Plus size={20} strokeWidth={3} />
+                  </div>
+                  <div>
+                     <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight">Quick Add Addon</h3>
+                     <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Adding to {quickAddAddonGroup.name}</p>
+                  </div>
+               </div>
+
+               <form onSubmit={handleQuickAddAddon} className="space-y-4">
+                  <div className="space-y-1.5">
+                     <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Addon Name</label>
+                     <input 
+                        autoFocus
+                        name="name"
+                        placeholder="e.g. Extra Cheese"
+                        className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all"
+                     />
+                  </div>
+
+                  <div className="space-y-1.5">
+                     <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Price (₹)</label>
+                     <input 
+                        name="price"
+                        type="number"
+                        placeholder="0.00"
+                        className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 text-sm font-black text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all font-mono"
+                     />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-4">
+                     <button 
+                        type="button"
+                        onClick={() => setQuickAddAddonGroup(null)}
+                        className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest text-[0.7rem] hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
+                     >
+                        Abort
+                     </button>
+                     <button 
+                        type="submit"
+                        className="h-12 rounded-2xl bg-indigo-600 text-white font-black uppercase tracking-[0.15em] text-[0.75rem] shadow-xl shadow-indigo-600/20 hover:scale-[1.02] active:scale-95 transition-all"
+                     >
+                        Register Node
+                     </button>
+                  </div>
+               </form>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>

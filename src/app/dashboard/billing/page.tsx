@@ -701,7 +701,25 @@ export default function BillingPage() {
                     <td>
                       <div className="flex flex-col gap-1.5 items-start">
                         <PaymentBadge mode={bill.paymentMode} />
-                        <StatusBadge status={bill.paymentStatus} isHeld={bill.isHeld} />
+                        <div 
+                          onClick={async () => {
+                            if (userRole !== "ADMIN" && userRole !== "MASTER" && userRole !== "SELLER" && !userPermissions.includes("mark-as-paid")) return;
+                            const newStatus = bill.paymentStatus?.toLowerCase() === "paid" ? "Pending" : "Paid";
+                            kravy.click();
+                            try {
+                              const res = await fetch(`/api/bill-manager/${bill.id}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ paymentStatus: newStatus })
+                              });
+                              if (res.ok) fetchBills();
+                            } catch (err) { console.error(err); }
+                          }}
+                          style={{ cursor: (userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("mark-as-paid")) ? "pointer" : "default" }}
+                          title={(userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("mark-as-paid")) ? "Click to toggle status" : ""}
+                        >
+                          <StatusBadge status={bill.paymentStatus} isHeld={bill.isHeld} />
+                        </div>
                       </div>
                     </td>
                   )}
@@ -723,6 +741,27 @@ export default function BillingPage() {
                       >
                         <Printer size={16} />
                       </button>
+
+                      {/* Prominent Edit Button */}
+                      {(userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("edit-bill")) && !bill.isOrder && (
+                        <button
+                          onClick={() => {
+                            if (confirm("Do you want to edit this bill? This will load it back into the checkout page.")) {
+                              router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`);
+                            }
+                          }}
+                          style={{
+                            width: "34px", height: "34px", borderRadius: "9px",
+                            background: "rgba(79, 70, 229, 0.05)", border: "1px solid rgba(79, 70, 229, 0.1)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            cursor: "pointer", color: "var(--kravy-brand)", transition: "all 0.2s"
+                          }}
+                          title="Edit Bill"
+                        >
+                          <FileText size={16} />
+                        </button>
+                      )}
+
                       <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} userRole={userRole} userPermissions={userPermissions} onPrint={handlePrint} />
                     </div>
                   </td>
@@ -899,13 +938,36 @@ export default function BillingPage() {
   }
 
   function getReceiptJSX(business: any, bill: any) {
-    const subtotal = bill.subtotal || (bill.total - (bill.tax || 0));
-    const gst = bill.tax || 0;
-    const total = bill.total;
-    const taxEnabled = business.taxEnabled;
-    const taxRate = business.taxRate || 5;
+    const taxActive = business?.taxEnabled ?? true;
+    const perProductEnabled = business?.perProductTaxEnabled ?? false;
+    const globalRate = business?.taxRate ?? 5.0;
     
-    const upiLink = business.upi ? `upi://pay?pa=${business.upi}&pn=${encodeURIComponent(business.businessName || "Store")}&am=${total.toFixed(2)}&cu=INR` : "";
+    const items = Array.isArray(bill.items) ? bill.items : [];
+    
+    // Recalculate totals and taxes for detailed breakdown
+    let subtotal = 0;
+    let totalTax = 0;
+    const taxMap: Record<number, { taxable: number; tax: number }> = {};
+
+    items.forEach((i: any) => {
+      const qty = i.qty || i.quantity || 1;
+      const rate = i.rate || i.price || 0;
+      const itemTotal = qty * rate;
+      subtotal += itemTotal;
+
+      const itemTaxRate = (perProductEnabled && i.gst !== undefined && i.gst !== null) ? i.gst : (taxActive ? globalRate : 0);
+      if (itemTaxRate > 0) {
+        const taxVal = (itemTotal * itemTaxRate) / 100;
+        totalTax += taxVal;
+        
+        if (!taxMap[itemTaxRate]) taxMap[itemTaxRate] = { taxable: 0, tax: 0 };
+        taxMap[itemTaxRate].taxable += itemTotal;
+        taxMap[itemTaxRate].tax += taxVal;
+      }
+    });
+
+    const finalTotal = bill.total || (subtotal + totalTax);
+    const upiLink = business.upi ? `upi://pay?pa=${business.upi}&pn=${encodeURIComponent(business.businessName || "Store")}&am=${finalTotal.toFixed(2)}&cu=INR` : "";
     const qrCodeUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}` : "";
 
     return (
@@ -918,14 +980,16 @@ export default function BillingPage() {
                 )}
                 <div className="font-bold text-[16px] uppercase tracking-tighter mb-1">{business.businessName || "KRAVY RESTAURANT"}</div>
                 {(business.businessAddress || business.district) && (
-                    <div className="text-[8px] font-medium uppercase opacity-80">
-                        {business.businessAddress} {business.district && `| ${business.district}`}
+                    <div className="text-[9px] font-bold uppercase opacity-80 leading-tight">
+                        {business.businessAddress}
+                        {business.district && <><br />{business.district}</>}
+                        {business.pinCode && ` - ${business.pinCode}`}
                     </div>
                 )}
-                {business.gstNumber && <div className="text-[9px] font-bold border-y border-dashed border-black py-1 mt-1">GSTIN: {business.gstNumber}</div>}
+                {business.gstNumber && <div className="text-[10px] font-bold border-y border-dashed border-black py-1 mt-1.5">GSTIN: {business.gstNumber}</div>}
             </div>
 
-            <div className="flex justify-between text-[11px] font-bold uppercase border-b border-dashed border-black pb-1 mb-1">
+            <div className="flex justify-between text-[11px] font-bold uppercase border-b-2 border-black pb-1 mb-1">
                 <span>INV: #{bill.billNumber || bill.id.slice(-6).toUpperCase()}</span>
                 <span>{new Date(bill.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
             </div>
@@ -935,29 +999,35 @@ export default function BillingPage() {
             </div>
 
             {(bill.customerName || bill.customerPhone) && (
-                <div className="mb-2 text-[10px] font-bold uppercase border border-dashed border-black px-1 py-1">
-                    {bill.customerName && <div className="truncate">CUST: {bill.customerName}</div>}
-                    {bill.customerPhone && <div>PH: {bill.customerPhone}</div>}
+                <div className="mb-2 text-[10px] font-bold uppercase border border-dashed border-black px-1.5 py-1.5 bg-gray-50">
+                    {bill.customerName && <div className="truncate">CUSTOMER: {bill.customerName}</div>}
+                    {bill.customerPhone && <div>PHONE: {bill.customerPhone}</div>}
                 </div>
             )}
 
-            <div className="flex justify-between font-bold text-[10px] uppercase border-y border-dashed border-black py-1 mt-1 mb-1">
+            <div className="flex justify-between font-bold text-[10px] uppercase border-y-2 border-black py-1 mt-1 mb-1">
                 <span className="flex-1 text-left">ITEM DESCRIPTION</span>
                 <span className="w-[10mm] text-center">QTY</span>
                 <span className="w-[15mm] text-right">TOTAL</span>
             </div>
 
             <div className="space-y-2">
-                {bill.items?.map((it: any, idx: number) => (
-                    <div key={idx} className="flex justify-between text-[11px] font-bold uppercase leading-tight border-b border-dotted border-black/20 pb-1.5">
-                        <div className="flex-1 pr-1">
-                            <div className="text-[12px]">{it.name}</div>
-                            <div className="text-[9px] opacity-70">{it.quantity || it.qty} x {(it.price || it.rate).toFixed(2)}</div>
+                {items.map((it: any, idx: number) => {
+                    const itemRate = (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (taxActive ? globalRate : 0);
+                    return (
+                        <div key={idx} className="flex justify-between text-[11px] font-bold uppercase leading-tight border-b border-dotted border-black/20 pb-1.5">
+                            <div className="flex-1 pr-1">
+                                <div className="text-[12px]">{it.name}</div>
+                                <div className="text-[9px] opacity-70">
+                                    {it.qty || it.quantity} x {(it.rate || it.price).toFixed(2)}
+                                    {(taxActive || perProductEnabled) && ` | GST: ${itemRate}%`}
+                                </div>
+                            </div>
+                            <span className="w-[10mm] text-center self-center font-black">x{it.qty || it.quantity}</span>
+                            <span className="w-[15mm] text-right self-center font-black">{((it.qty || it.quantity) * (it.rate || it.price)).toFixed(2)}</span>
                         </div>
-                        <span className="w-[10mm] text-center self-center">x{it.quantity || it.qty}</span>
-                        <span className="w-[15mm] text-right self-center">{((it.quantity || it.qty) * (it.price || it.rate)).toFixed(2)}</span>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             <div className="mt-2 pt-1 space-y-1">
@@ -965,51 +1035,53 @@ export default function BillingPage() {
                     <span>SUBTOTAL</span>
                     <span>₹{subtotal.toFixed(2)}</span>
                 </div>
-                {taxEnabled && (
-                    <div className="flex justify-between text-[10px] font-medium">
-                        <span>GST ({taxRate}%)</span>
-                        <span>₹{gst.toFixed(2)}</span>
+                {Object.entries(taxMap).map(([rate, vals]: any) => (
+                    <div key={rate} className="flex justify-between text-[10px] font-medium italic">
+                        <span>GST ({rate}%) on ₹{vals.taxable.toFixed(2)}</span>
+                        <span>₹{vals.tax.toFixed(2)}</span>
                     </div>
-                )}
-                <div className="flex justify-between font-bold text-[16px] border-y-2 border-dashed border-black py-2 my-1 uppercase">
-                    <span>GRAND TOTAL</span>
-                    <span>₹{total.toFixed(0)}</span>
+                ))}
+                
+                <div className="flex justify-between font-black text-[18px] border-y-2 border-black py-2.5 my-1.5 uppercase bg-gray-50 px-1">
+                    <span>TOTAL</span>
+                    <span>₹{finalTotal.toFixed(0)}</span>
                 </div>
             </div>
 
-            <div className="mt-2 text-[9px] font-bold uppercase italic opacity-80">
-                RUPEES: {numberToWords(total)}
+            <div className="mt-2 text-[9px] font-bold uppercase italic opacity-80 leading-tight">
+                AMOUNT IN WORDS: {numberToWords(finalTotal)}
             </div>
 
-            <div className="mt-3 text-center">
-                <div className="inline-block border border-dashed border-black px-4 py-1.5 text-[11px] font-bold uppercase">
-                    PAID VIA {bill.paymentMode.toUpperCase()}
+            <div className="mt-4 text-center">
+                <div className="inline-block border-2 border-black px-4 py-2 text-[12px] font-black uppercase tracking-wider">
+                    PAID VIA {bill.paymentMode?.toUpperCase() || "CASH"}
                 </div>
             </div>
 
             {bill.party && (
-              <div className="mt-3 pt-2 border-t border-dotted border-black">
-                <div className="flex justify-between text-[10px] font-bold uppercase px-1">
-                  <span>Wallet Balance</span>
+              <div className="mt-4 pt-2 border-t-2 border-dashed border-black">
+                <div className="flex justify-between text-[11px] font-black uppercase px-1">
+                  <span>Party Wallet Balance</span>
                   <span>₹{bill.party.walletBalance?.toFixed(2) || "0.00"}</span>
                 </div>
               </div>
             )}
 
             {(business.upi && business.upiQrEnabled !== false) && (
-                <div className="mt-5 text-center border-t border-dashed border-black pt-4">
-                    <div className="text-[10px] font-bold mb-2 uppercase tracking-widest">Scan to Pay Instantly</div>
-                    <div className="inline-block border-2 border-black p-1 bg-white rounded-lg">
-                        <img src={qrCodeUrl} alt="UPI QR" className="w-[32mm] h-[32mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
+                <div className="mt-6 text-center border-t-2 border-black pt-4">
+                    <div className="text-[10px] font-black mb-2 uppercase tracking-[0.2em]">Scan to Pay Instantly</div>
+                    <div className="inline-block border-2 border-black p-1 bg-white rounded-lg shadow-sm">
+                        <img src={qrCodeUrl} alt="UPI QR" className="w-[35mm] h-[35mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
                     </div>
-                    <div className="text-[9px] font-bold mt-2 tracking-widest">{business.upi}</div>
+                    <div className="text-[10px] font-black mt-2.5 tracking-widest">{business.upi}</div>
                 </div>
             )}
 
-            <div className="mt-6 text-center border-t border-dashed border-black pt-4">
-                <div className="text-[12px] font-bold mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
+            <div className="mt-8 text-center border-t-2 border-dashed border-black pt-5">
+                <div className="text-[14px] font-black mb-1.5 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
+                <div className="text-[8px] font-bold opacity-60">Software by Kravy AI</div>
                 <div className="h-[15mm]" />
-                <div className="text-[8px] opacity-30 italic">... end of receipt ...</div>
+                <div className="text-[9px] opacity-40 italic tracking-[0.3em]">*** END OF BILL ***</div>
                 <div className="h-[10mm]" />
             </div>
         </div>
@@ -1178,7 +1250,7 @@ function BillActions({ bill, refresh, clerkId, business, userRole, userPermissio
       color: "var(--kravy-text-muted)",
       onClick: () => onPrint(bill)
     },
-    ...((userRole === "ADMIN" || userRole === "MASTER" || userPermissions.includes("edit-bill")) ? [{
+    ...((userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("edit-bill")) ? [{
       label: "Edit Bill",
       icon: <FileText size={14} />,
       color: "var(--kravy-brand)",
@@ -1200,7 +1272,7 @@ function BillActions({ bill, refresh, clerkId, business, userRole, userPermissio
       color: "rgb(245 158 11)",
       onClick: () => router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`)
     }] : []),
-    ...((userRole === "ADMIN" || userRole === "MASTER" || userPermissions.includes("mark-as-paid")) ? [{
+    ...((userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("mark-as-paid")) ? [{
       label: bill.paymentStatus?.toLowerCase() === "paid" ? "Mark as Pending" : "Mark as Paid",
       icon: <Clock size={14} />,
       color: bill.paymentStatus?.toLowerCase() === "paid" ? "rgb(244 63 94)" : "rgb(16 185 129)",
@@ -1220,7 +1292,7 @@ function BillActions({ bill, refresh, clerkId, business, userRole, userPermissio
         }
       }
     }] : []),
-    ...((userRole === "ADMIN" || userRole === "MASTER" || userPermissions.includes("delete-bill")) ? [{
+    ...((userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("delete-bill")) ? [{
       label: "Delete",
       icon: <Trash2 size={14} />,
       color: "rgb(244 63 94)",
@@ -1235,7 +1307,7 @@ function BillActions({ bill, refresh, clerkId, business, userRole, userPermissio
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-      {(userRole === "ADMIN" || userRole === "MASTER") && (
+      {(userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER") && (
         <div style={{ width: "160px" }}>
           <WhatsAppBillButton 
             billId={bill.id} 

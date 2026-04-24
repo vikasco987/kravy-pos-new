@@ -276,35 +276,53 @@ export default function PartiesPage() {
     }
 
     setPrintData(fullData);
-    if (!receiptRef.current) return;
     
-    // Give state time to update the hidden DOM before opening window
+    // Use the runPrintJob pattern for perfect styles
     setTimeout(() => {
-      const printContent = receiptRef.current!.innerHTML;
-      const printWindow = window.open('', '_blank', 'width=450,height=800');
-      if (!printWindow) {
-        alert("Please allow popups for printing");
-        return;
-      }
+      const html = receiptRef.current?.innerHTML;
+      if (!html) return;
+      
+      const containerId = "print-container-parties";
+      const styleId = "print-style-parties";
 
-      const styles = `
-        <style>
-          @media print {
-            @page { margin: 0; size: 58mm auto; }
-            body { margin: 0; padding: 0; width: 58mm; background: white; font-family: monospace; }
-            * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+      // Clean existing
+      document.getElementById(containerId)?.remove();
+      document.getElementById(styleId)?.remove();
+
+      // Style
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.innerHTML = `
+        @media print {
+          html, body { height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+          body > *:not(#${containerId}) { display: none !important; }
+          @page { margin: 0; size: 58mm auto; }
+          #${containerId} {
+            display: block !important;
+            width: 100% !important;
+            padding: 0 0 100px 0 !important;
+            background: #fff !important;
+            color: #000 !important;
+            font-family: 'Courier New', Courier, monospace !important;
           }
-          body { font-family: monospace; padding: 20px; }
-          .receipt { max-width: 400px; margin: 0 auto; border: 1px dashed #ccc; padding: 15px; }
-        </style>
+          * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+        }
       `;
+      document.head.appendChild(style);
 
-      printWindow.document.write('<html><head><title>Reprint Receipt</title>' + styles + '</head><body>');
-      printWindow.document.write('<div class="receipt">' + printContent + '</div>');
-      printWindow.document.write('<script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); };</script>');
-      printWindow.document.write('</body></html>');
-      printWindow.document.close();
-    }, 250);
+      // Container
+      const container = document.createElement("div");
+      container.id = containerId;
+      container.innerHTML = html;
+      document.body.appendChild(container);
+
+      window.print();
+
+      setTimeout(() => {
+        container.remove();
+        style.remove();
+      }, 2000);
+    }, 300);
   };
 
   // State for dynamic print content
@@ -822,93 +840,145 @@ export default function PartiesPage() {
       )}
 
       {/* Hidden Print Content */}
-      {/* Hidden Print Content */}
       <div className="hidden">
         <div ref={receiptRef} className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '25mm' }}>
-          <div className="text-center mb-3">
-            <h2 className="text-[14px] font-bold uppercase mb-1">{business?.businessName || "KRAVY RESTAURANT"}</h2>
-            <p className="text-[9px] font-medium uppercase opacity-80">{business?.businessAddress || ""}</p>
-            <div className="border-b border-dashed border-black my-2" />
-          </div>
+          {printData && (() => {
+            const isBill = !!printData.billNumber;
+            const taxActive = business?.taxEnabled ?? true;
+            const perProductEnabled = business?.perProductTaxEnabled ?? false;
+            const globalRate = business?.taxRate ?? 5.0;
+            
+            const items = Array.isArray(printData.items) ? printData.items : [];
+            let subtotal = 0;
+            let totalTax = 0;
+            const taxMap: Record<number, { taxable: number; tax: number }> = {};
 
-          <div className="flex justify-between font-bold uppercase mb-1 text-[11px]">
-            <span>{printData?.billNumber ? "BILL REPRINT" : "TRANSACTION"}</span>
-            <span>{new Date().toLocaleDateString('en-IN')}</span>
-          </div>
+            if (isBill) {
+              items.forEach((i: any) => {
+                const qty = i.qty || i.quantity || 1;
+                const rate = i.rate || i.price || 0;
+                const itemTotal = qty * rate;
+                subtotal += itemTotal;
 
-          <div className="mb-2 border border-dashed border-black p-1">
-            <div className="flex justify-between font-bold uppercase text-[10px]">
-              <span>Customer</span>
-              <span>{selectedParty?.name || "Walk-in"}</span>
-            </div>
-            {selectedParty?.phone && (
-              <div className="flex justify-between font-bold uppercase text-[9px]">
-                <span>Phone</span>
-                <span>{selectedParty.phone}</span>
-              </div>
-            )}
-          </div>
+                const itemTaxRate = (perProductEnabled && i.gst !== undefined && i.gst !== null) ? i.gst : (taxActive ? globalRate : 0);
+                if (itemTaxRate > 0) {
+                  const taxVal = (itemTotal * itemTaxRate) / 100;
+                  totalTax += taxVal;
+                  if (!taxMap[itemTaxRate]) taxMap[itemTaxRate] = { taxable: 0, tax: 0 };
+                  taxMap[itemTaxRate].taxable += itemTotal;
+                  taxMap[itemTaxRate].tax += taxVal;
+                }
+              });
+            }
 
-          <div className="border-b border-dashed border-black mb-2" />
-
-          {printData?.items ? (
-            <>
-              <div className="flex justify-between font-bold text-[10px] uppercase border-b border-dotted border-black/30 pb-1 mb-1">
-                <span className="flex-1 text-left">ITEM</span>
-                <span className="w-[8mm] text-center">QTY</span>
-                <span className="w-[15mm] text-right">TOTAL</span>
-              </div>
-              <div className="space-y-1.5 mb-2">
-                {printData.items.map((it: any, idx: number) => (
-                  <div key={idx} className="flex justify-between text-[11px] font-bold uppercase border-b border-dotted border-black/10 pb-1">
-                    <div className="flex-1 pr-1">
-                      <div>{it.name}</div>
-                      <div className="text-[8px] opacity-60">{it.quantity || it.qty} x {(it.price || it.rate || 0).toFixed(2)}</div>
+            const total = isBill ? (printData.total || (subtotal + totalTax)) : (printData.amount || 0);
+            
+            return (
+              <div style={{ padding: '0 2mm' }}>
+                <div className="text-center mb-3">
+                  {business?.logoUrl && (
+                    <div className="flex justify-center mb-1">
+                      <img src={business.logoUrl} alt="Logo" className="max-h-[25mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
                     </div>
-                    <span className="w-[8mm] text-center self-center">x{it.quantity || it.qty}</span>
-                    <span className="w-[15mm] text-right self-center">{((it.quantity || it.qty) * (it.price || it.rate || 0)).toFixed(2)}</span>
+                  )}
+                  <div className="font-black text-[15px] uppercase tracking-tighter mb-1">{business?.businessName || "KRAVY RESTAURANT"}</div>
+                  {(business?.businessAddress || business?.district) && (
+                    <div className="text-[8px] font-bold uppercase opacity-80 leading-tight">
+                      {business.businessAddress}
+                      {business.district && <><br />{business.district}</>}
+                    </div>
+                  )}
+                  {business?.gstNumber && <div className="text-[10px] font-bold border-y border-dashed border-black py-1 mt-1.5">GSTIN: {business.gstNumber}</div>}
+                </div>
+
+                <div className="flex justify-between text-[11px] font-bold uppercase border-b-2 border-black pb-1 mb-1">
+                  <span>{isBill ? `INV: #${printData.billNumber}` : "WALLET TOPUP"}</span>
+                  <span>{new Date(printData.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
+                </div>
+                
+                <div className="flex justify-between text-[10px] font-bold uppercase mb-1">
+                  <span>DATE: {new Date(printData.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                  {isBill && <span>TABLE: {printData.tableName || "POS"}</span>}
+                </div>
+
+                <div className="mb-2 text-[10px] font-bold uppercase border border-dashed border-black px-1.5 py-1.5 bg-gray-50">
+                  <div className="truncate">CUSTOMER: {selectedParty?.name || printData.customerName || "WALK-IN"}</div>
+                  {(selectedParty?.phone || printData.customerPhone) && <div>PHONE: {selectedParty?.phone || printData.customerPhone}</div>}
+                </div>
+
+                {isBill ? (
+                  <>
+                    <div className="flex justify-between font-bold text-[10px] uppercase border-y-2 border-black py-1 mt-1 mb-1">
+                        <span className="flex-1 text-left">ITEM</span>
+                        <span className="w-[8mm] text-center">QTY</span>
+                        <span className="w-[12mm] text-right">TOTAL</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {items.map((it: any, idx: number) => {
+                        const itemTaxRate = (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (taxActive ? globalRate : 0);
+                        return (
+                          <div key={idx} className="flex justify-between text-[10px] font-bold uppercase leading-tight border-b border-dotted border-black/20 pb-1">
+                            <div className="flex-1 pr-1">
+                              <div className="text-[11px]">{it.name}</div>
+                              <div className="text-[8px] opacity-70">
+                                {it.qty || it.quantity} x {(it.rate || it.price).toFixed(2)}
+                                {(taxActive || perProductEnabled) && ` | GST: ${itemTaxRate}%`}
+                              </div>
+                            </div>
+                            <span className="w-[8mm] text-center self-center">x{it.qty || it.quantity}</span>
+                            <span className="w-[12mm] text-right self-center">{((it.qty || it.quantity) * (it.rate || it.price)).toFixed(2)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-2 pt-1 space-y-1">
+                      <div className="flex justify-between text-[10px] font-bold"><span>SUBTOTAL</span><span>₹{subtotal.toFixed(2)}</span></div>
+                      {Object.entries(taxMap).map(([rate, vals]: any) => (
+                        <div key={rate} className="flex justify-between text-[8px] font-medium italic">
+                          <span>GST ({rate}%) on ₹{vals.taxable.toFixed(2)}</span>
+                          <span>₹{vals.tax.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="py-4 text-center border-y border-dashed border-black">
+                    <div className="text-[12px] font-black uppercase mb-1">DEPOSIT AMOUNT</div>
+                    <div className="text-[24px] font-black">₹{total.toFixed(2)}</div>
+                    <div className="text-[9px] font-bold mt-1">Manual Cash Deposit</div>
                   </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="text-center font-bold uppercase my-4 border-y border-dotted border-black py-3">
-               {printData?.description || "Transaction Recorded"}
-            </div>
-          )}
+                )}
 
-          <div className="border-t-2 border-dashed border-black pt-2 space-y-1">
-            <div className="flex justify-between font-bold text-[14px] uppercase">
-              <span>Amount</span>
-              <span>₹{(printData?.total || printData?.amount || 0).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-[10px] font-bold uppercase opacity-80">
-              <span>Payment Mode</span>
-              <span>{printData?.paymentMode || (printData?.type === 'CREDIT' ? 'CASH/DEPOSIT' : 'WALLET USAGE')}</span>
-            </div>
-            {printData?.billNumber && (
-              <div className="flex justify-between text-[10px] font-bold uppercase opacity-80">
-                <span>Bill No</span>
-                <span>#{printData.billNumber}</span>
-              </div>
-            )}
-          </div>
+                <div className="flex justify-between font-black text-[16px] border-y-2 border-black py-2 my-2 uppercase bg-gray-50 px-1">
+                  <span>{isBill ? "BILL TOTAL" : "NET AMOUNT"}</span>
+                  <span>₹{total.toFixed(2)}</span>
+                </div>
 
-          {selectedParty && (
-            <div className="mt-3 pt-2 border-t border-dotted border-black">
-              <div className="flex justify-between text-[10px] font-bold uppercase">
-                <span>Wallet Balance</span>
-                <span>₹{(selectedParty.walletBalance || 0).toFixed(2)}</span>
-              </div>
-            </div>
-          )}
+                <div className="mt-3 text-center">
+                    <div className="inline-block border-2 border-black px-4 py-1.5 text-[11px] font-black uppercase">
+                        {isBill ? `PAID VIA ${printData.paymentMode?.toUpperCase() || "CASH"}` : "RECEIVED CASH"}
+                    </div>
+                </div>
 
-          <div className="mt-6 text-center border-t border-dashed border-black pt-4">
-            <div className="text-[12px] font-bold mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
-            <div className="h-[15mm]" />
-            <div className="text-[8px] opacity-30 italic">... end of receipt ...</div>
-            <div className="h-[10mm]" />
-          </div>
+                {selectedParty && (
+                  <div className="mt-4 pt-2 border-t-2 border-dashed border-black">
+                    <div className="flex justify-between text-[10px] font-black uppercase px-1">
+                      <span>WALLET BALANCE</span>
+                      <span>₹{(selectedParty.walletBalance || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-6 text-center border-t-2 border-dashed border-black pt-4">
+                    <div className="text-[12px] font-black mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
+                    <div className="text-[7px] font-bold opacity-50">KRAVY POS SYSTEM</div>
+                    <div className="h-[10mm]" />
+                    <div className="text-[8px] opacity-30 italic tracking-[0.2em]">*** END OF RECEIPT ***</div>
+                    <div className="h-[10mm]" />
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </>
