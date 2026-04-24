@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { kravy } from "@/lib/sounds";
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 import { useAuthContext } from "@/components/AuthContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 /* ================= TYPES ================= */
 
