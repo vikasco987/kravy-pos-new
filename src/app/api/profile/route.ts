@@ -58,6 +58,8 @@ export async function POST(request: Request) {
       if (textBody) {
         body = JSON.parse(textBody);
       }
+      console.log("SERVER DEBUG: POST Profile Body keys:", Object.keys(body));
+      console.log("SERVER DEBUG: logo provided:", body.logo ? "YES" : "NO", "logoUrl provided:", body.logoUrl ? "YES" : "NO");
     } catch (e) {
       console.error("Failed to parse profile body:", e);
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -80,6 +82,7 @@ export async function POST(request: Request) {
         profileImageUrl: body.profileImage !== undefined ? body.profileImage : (body.profileImageUrl !== undefined ? body.profileImageUrl : undefined),
         logoUrl: body.logo !== undefined ? body.logo : (body.logoUrl !== undefined ? body.logoUrl : undefined),
         signatureUrl: body.signature !== undefined ? body.signature : (body.signatureUrl !== undefined ? body.signatureUrl : undefined),
+        businessTagLine: body.businessTagline !== undefined ? body.businessTagline : (body.businessTagLine !== undefined ? body.businessTagLine : undefined),
 
         gstNumber: body.gstNumber !== undefined ? body.gstNumber : undefined,
         businessAddress: body.businessAddress !== undefined ? body.businessAddress : undefined,

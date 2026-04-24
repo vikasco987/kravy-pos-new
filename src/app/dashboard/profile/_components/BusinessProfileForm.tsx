@@ -195,32 +195,32 @@ export default function BusinessProfileForm({
       const payload = {
         businessType: values.businessType,
         businessName: values.businessName,
-        businessTagline: values.businessTagline ?? null,
+        businessTagline: values.businessTagline || null,
 
         contactName: values.contactName,
         contactPhone: values.contactPhone,
         contactEmail: values.contactEmail,
 
-        upi: values.upi ?? null,
+        upi: values.upi || null,
 
         profileImage: profileImageUrl,
         logo: logoUrl,
         signature: signatureUrl,
 
-        gstNumber: values.gstNumber ?? null,
-        businessAddress: values.businessAddress ?? null,
+        gstNumber: values.gstNumber || null,
+        businessAddress: values.businessAddress || null,
         state: values.state,
         district: values.district,
-        pinCode: values.pinCode ?? null,
+        pinCode: values.pinCode || null,
         
         upiQrEnabled: values.upiQrEnabled,
         menuLinkEnabled: values.menuLinkEnabled,
         greetingMessage: values.greetingMessage,
         businessNameSize: values.businessNameSize,
-        fssaiNumber: values.fssaiNumber ?? null,
-        fssaiEnabled: values.fssaiEnabled ?? false,
-        hsnEnabled: values.hsnEnabled ?? false,
-        enableMenuQRInBill: values.enableMenuQRInBill ?? false,
+        fssaiNumber: values.fssaiNumber || null,
+        fssaiEnabled: values.fssaiEnabled || false,
+        hsnEnabled: values.hsnEnabled || false,
+        enableMenuQRInBill: values.enableMenuQRInBill || false,
       };
 
       const res = await fetch("/api/profile", {
@@ -229,29 +229,24 @@ export default function BusinessProfileForm({
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-
-
       if (!res.ok) {
-        console.error("Save failed:", data);
-        alert("Failed to save profile");
-        setLoading(false);
+        const errData = await res.json().catch(() => ({}));
+        console.error("Save failed:", errData);
+        alert(`Failed to save profile: ${errData.error || "Unknown Error"}`);
         return;
       }
 
-      // ✅ SUCCESS → GO BACK TO /profile
-      if (!res.ok) {
-        alert("Failed to save profile");
-        return;
-      }
-
+      const savedData = await res.json();
+      console.log("Profile Saved Successfully:", savedData);
+      
+      // ✅ SUCCESS
       if (onSuccess) {
         onSuccess();
       }
 
     } catch (err) {
       console.error("Submit error:", err);
-      alert("Something went wrong");
+      alert("Something went wrong while saving your profile. Please check your connection.");
     } finally {
       setLoading(false);
     }
