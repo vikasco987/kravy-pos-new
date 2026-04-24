@@ -73,6 +73,7 @@ export async function POST(request: Request) {
         contactPersonName: body.contactName !== undefined ? body.contactName : (body.contactPersonName !== undefined ? body.contactPersonName : undefined),
         contactPersonPhone: body.contactPhone !== undefined ? body.contactPhone : (body.contactPersonPhone !== undefined ? body.contactPersonPhone : undefined),
         contactPersonEmail: body.contactEmail !== undefined ? body.contactEmail : (body.contactPersonEmail !== undefined ? body.contactPersonEmail : undefined),
+        businessEmail: body.businessEmail !== undefined ? body.businessEmail : undefined,
 
         upi: body.upi !== undefined ? body.upi : undefined,
 
@@ -116,6 +117,7 @@ export async function POST(request: Request) {
         contactPersonName: body.contactName ?? body.contactPersonName ?? null,
         contactPersonPhone: body.contactPhone ?? body.contactPersonPhone ?? null,
         contactPersonEmail: body.contactEmail ?? body.contactPersonEmail ?? null,
+        businessEmail: body.businessEmail ?? null,
 
         upi: body.upi ?? null,
 

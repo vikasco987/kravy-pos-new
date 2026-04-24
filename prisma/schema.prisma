@@ -347,6 +347,7 @@ model BusinessProfile {
   contactPersonName  String?
   contactPersonPhone String?
   contactPersonEmail String?
+  businessEmail      String?
 
   upi             String?
   upiQrEnabled    Boolean @default(true)
