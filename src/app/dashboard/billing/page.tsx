@@ -926,7 +926,7 @@ export default function BillingPage() {
             #${containerId} {
               display: block !important;
               width: 100% !important;
-              padding: 0 0 20px 0 !important;
+              padding: 0 !important;
               background: #fff !important;
               color: #000 !important;
               font-family: 'Courier New', Courier, monospace !important;
@@ -986,7 +986,7 @@ export default function BillingPage() {
     const qrCodeUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}` : "";
 
     return (
-        <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '10mm' }}>
+        <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '2mm' }}>
             <div className="text-center mb-3">
                 {business.logoUrl && (
                     <div className="flex justify-center mb-2 bg-white">
@@ -1100,9 +1100,7 @@ export default function BillingPage() {
             <div className="mt-8 text-center border-t-2 border-dashed border-black pt-5">
                 <div className="text-[14px] font-black mb-1.5 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
                 <div className="text-[8px] font-bold opacity-60">Software by Kravy AI</div>
-                <div className="h-4" />
                 <div className="text-[9px] opacity-40 italic tracking-[0.3em]">*** END OF BILL ***</div>
-                <div className="h-2" />
             </div>
         </div>
     );

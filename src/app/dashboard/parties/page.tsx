@@ -300,7 +300,7 @@ export default function PartiesPage() {
           #${containerId} {
             display: block !important;
             width: 100% !important;
-            padding: 0 0 20px 0 !important;
+            padding: 0 !important;
             background: #fff !important;
             color: #000 !important;
             font-family: 'Courier New', Courier, monospace !important;
@@ -841,7 +841,7 @@ export default function PartiesPage() {
 
       {/* Hidden Print Content */}
       <div className="hidden">
-        <div ref={receiptRef} className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '10mm' }}>
+        <div ref={receiptRef} className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '2mm' }}>
           {printData && (() => {
             const isBill = !!printData.billNumber;
             const taxActive = business?.taxEnabled ?? true;
@@ -972,9 +972,7 @@ export default function PartiesPage() {
                 <div className="mt-6 text-center border-t-2 border-dashed border-black pt-4">
                     <div className="text-[12px] font-black mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
                     <div className="text-[7px] font-bold opacity-50">KRAVY POS SYSTEM</div>
-                    <div className="h-4" />
                     <div className="text-[9px] opacity-40 italic tracking-[0.2em]">*** END OF RECEIPT ***</div>
-                    <div className="h-2" />
                 </div>
               </div>
             );

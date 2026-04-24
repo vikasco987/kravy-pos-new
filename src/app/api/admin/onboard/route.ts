@@ -138,53 +138,66 @@ export async function POST(req: Request) {
 
         const categoriesMap = new Map<string, string>();
 
+        let successCount = 0;
+        let failCount = 0;
+
         for (const row of dataRows) {
-          const itemName = colMap.name !== -1 ? String(row[colMap.name] || "").trim() : "";
-          if (!itemName || itemName.toLowerCase() === "item name" || itemName.toLowerCase() === "name") continue;
+          try {
+            const itemName = colMap.name !== -1 ? String(row[colMap.name] || "").trim() : "";
+            if (!itemName || itemName.toLowerCase() === "item name" || itemName.toLowerCase() === "name") continue;
 
-          // Price parsing (remove currency symbols/commas)
-          const rawPrice = colMap.price !== -1 ? String(row[colMap.price] || "0") : "0";
-          const itemPrice = parseFloat(rawPrice.replace(/[^\d.-]/g, "")) || 0;
+            // Price parsing (handle commas and currency symbols)
+            const rawPrice = colMap.price !== -1 ? String(row[colMap.price] || "0") : "0";
+            // Remove everything except digits, dots and minus sign
+            const itemPrice = parseFloat(rawPrice.replace(/,/g, "").replace(/[^\d.-]/g, "")) || 0;
 
-          // Category handling
-          let categoryName = colMap.category !== -1 ? String(row[colMap.category] || "General").trim() : "General";
-          if (!categoryName) categoryName = "General";
+            // Category handling
+            let categoryName = colMap.category !== -1 ? String(row[colMap.category] || "General").trim() : "General";
+            if (!categoryName) categoryName = "General";
 
-          if (!categoriesMap.has(categoryName)) {
-            // Find existing or create
-            let cat = await prisma.category.findFirst({
-              where: { name: categoryName, clerkId }
-            });
-            
-            if (!cat) {
-              cat = await prisma.category.create({
-                data: { name: categoryName, clerkId }
+            if (!categoriesMap.has(categoryName)) {
+              let cat = await prisma.category.findFirst({
+                where: { name: categoryName, clerkId }
               });
+              
+              if (!cat) {
+                cat = await prisma.category.create({
+                  data: { name: categoryName, clerkId }
+                });
+              }
+              categoriesMap.set(categoryName, cat.id);
             }
-            categoriesMap.set(categoryName, cat.id);
+
+            const categoryId = categoriesMap.get(categoryName)!;
+
+            await prisma.item.create({
+              data: {
+                name: itemName,
+                description: colMap.description !== -1 ? String(row[colMap.description] || "").trim() : null,
+                price: itemPrice,
+                sellingPrice: itemPrice,
+                imageUrl: colMap.imageUrl !== -1 ? String(row[colMap.imageUrl] || "").trim() : null,
+                categoryId,
+                clerkId,
+                userId: dbUserId,
+                isActive: true
+              }
+            });
+            successCount++;
+          } catch (itemErr) {
+            console.error("ONBOARDING: Failed to import item row:", row, itemErr);
+            failCount++;
           }
-
-          const categoryId = categoriesMap.get(categoryName)!;
-
-          await prisma.item.create({
-            data: {
-              name: itemName,
-              description: colMap.description !== -1 ? String(row[colMap.description] || "").trim() : null,
-              price: itemPrice,
-              sellingPrice: itemPrice,
-              imageUrl: colMap.imageUrl !== -1 ? String(row[colMap.imageUrl] || "").trim() : null,
-              categoryId,
-              clerkId,
-              userId: dbUserId,
-              isActive: true
-            }
-          });
         }
-        console.log(`ONBOARDING: Successfully imported ${dataRows.length} items`);
+        console.log(`ONBOARDING: Processed ${dataRows.length} rows. Success: ${successCount}, Fail: ${failCount}`);
       }
     }
 
-    return NextResponse.json({ success: true, clerkId });
+    return NextResponse.json({ 
+      success: true, 
+      clerkId,
+      message: "Onboarding completed successfully"
+    });
 
   } catch (error: any) {
     console.error("ONBOARDING API ERROR:", error);
