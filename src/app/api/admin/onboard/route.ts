@@ -22,19 +22,51 @@ export async function POST(req: Request) {
     const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
     // 1. Clerk User
-    const clerkUser = await clerk.users.createUser({
-      emailAddress: [email],
-      password: password,
-      firstName: businessName,
-      publicMetadata: { role: "SELLER" }
-    });
+    console.log("ONBOARDING: Checking if user already exists in Clerk:", email);
+    let clerkUser;
+    
+    try {
+      // Check if user already exists in Clerk
+      const existingClerkUsers = await clerk.users.getUserList({ emailAddress: [email] });
+      if (existingClerkUsers.data.length > 0) {
+        console.log("ONBOARDING: User already exists in Clerk. Linking...");
+        clerkUser = existingClerkUsers.data[0];
+      } else {
+        console.log("ONBOARDING: Creating fresh Clerk user for", email);
+        const nameParts = (businessName || "Merchant Owner").split(" ");
+        const fName = nameParts[0];
+        const lName = nameParts.slice(1).join(" ") || "Owner";
+
+        clerkUser = await clerk.users.createUser({
+          emailAddress: [email],
+          password: password,
+          firstName: fName,
+          lastName: lName,
+          publicMetadata: { role: "SELLER" }
+        });
+      }
+    } catch (err: any) {
+      console.error("CLERK API ERROR:", err);
+      if (err.errors) {
+        console.error("CLERK ERROR DETAILS:", JSON.stringify(err.errors, null, 2));
+        const messages = err.errors.map((e: any) => e.longMessage || e.message || "Unknown Clerk error").join(", ");
+        return NextResponse.json({ error: `Clerk Error: ${messages}` }, { status: 422 });
+      }
+      return NextResponse.json({ error: err.message || "Clerk authentication service failure" }, { status: 500 });
+    }
 
     const clerkId = clerkUser.id;
 
     // 2. Prisma User & Profile
-    await prisma.$transaction(async (tx) => {
-      await tx.user.create({
-        data: {
+    const user = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.upsert({
+        where: { clerkId },
+        update: {
+          email,
+          name: businessName,
+          role: "SELLER"
+        },
+        create: {
           clerkId,
           email,
           name: businessName,
@@ -42,37 +74,93 @@ export async function POST(req: Request) {
         }
       });
 
-      await tx.businessProfile.create({
-        data: {
+      await tx.businessProfile.upsert({
+        where: { userId: clerkId },
+        update: {
+          businessName,
+          businessAddress: profileData.businessAddress,
+          businessType: profileData.businessType,
+          contactPersonPhone: profileData.contactPhone,
+        },
+        create: {
           userId: clerkId,
-          ...profileData,
-          businessName
+          businessName,
+          businessAddress: profileData.businessAddress,
+          businessType: profileData.businessType,
+          contactPersonPhone: profileData.contactPhone,
         }
       });
+
+      return u;
     });
+
+    const dbUserId = user.id;
 
     // 3. Process Menu if file exists
     if (menuFile) {
+      console.log("ONBOARDING: Processing menu file...");
       const bytes = await menuFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
       const workbook = xlsx.read(buffer);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows: any[] = xlsx.utils.sheet_to_json(sheet);
+      
+      // Use header: 1 to get raw rows for header detection
+      const allRows: any[][] = xlsx.utils.sheet_to_json(sheet, { header: 1 });
+      
+      if (allRows.length > 0) {
+        // Find header row (scan first 10 rows)
+        let headerIndex = 0;
+        const keywords = ["name", "item", "price", "mrp", "rate", "category", "desc", "nam", "किमत", "मूल्य", "dish"];
+        
+        for (let i = 0; i < Math.min(10, allRows.length); i++) {
+          const row = (allRows[i] || []).map(c => String(c || "").toLowerCase());
+          const matchCount = row.filter(cell => keywords.some(k => cell.includes(k))).length;
+          if (matchCount >= 2) {
+            headerIndex = i;
+            break;
+          }
+        }
 
-      const categoriesMap = new Map<string, string>();
+        const headers = (allRows[headerIndex] || []).map(h => String(h || "").trim());
+        const dataRows = allRows.slice(headerIndex + 1);
 
-      for (const row of rows) {
-          // Flexible mapping: Try multiple common headers
-          const itemName = (row["Item Name"] || row["Name"] || row["item"] || row["DALCHINI — North Indian Restaurant"])?.trim();
-          const itemPrice = parseFloat(row["Price"] || row["price"] || row["Rate"] || row["__EMPTY"] || 0);
-          const categoryName = (row["Category"] || row["category"] || row["__EMPTY_1"] || "General").trim();
+        // Auto-mapping columns
+        const findCol = (regex: RegExp) => headers.findIndex(h => regex.test(h));
+        const colMap = {
+          name: findCol(/name|dish|item|title|उत्पाद|नाम/i),
+          price: findCol(/price|selling|mrp|cost|rate|purchase|मूल्य|कीमत/i),
+          category: findCol(/category|group|type|श्रेणी|वर्ग/i),
+          description: findCol(/desc|info|detail|composition|विवरण/i),
+          imageUrl: findCol(/image|url|photo|img|link|फोटो/i)
+        };
 
-          if (!itemName || itemName === "Item Name") continue;
+        console.log("ONBOARDING: Column Mapping found:", colMap);
+
+        const categoriesMap = new Map<string, string>();
+
+        for (const row of dataRows) {
+          const itemName = colMap.name !== -1 ? String(row[colMap.name] || "").trim() : "";
+          if (!itemName || itemName.toLowerCase() === "item name" || itemName.toLowerCase() === "name") continue;
+
+          // Price parsing (remove currency symbols/commas)
+          const rawPrice = colMap.price !== -1 ? String(row[colMap.price] || "0") : "0";
+          const itemPrice = parseFloat(rawPrice.replace(/[^\d.-]/g, "")) || 0;
+
+          // Category handling
+          let categoryName = colMap.category !== -1 ? String(row[colMap.category] || "General").trim() : "General";
+          if (!categoryName) categoryName = "General";
 
           if (!categoriesMap.has(categoryName)) {
-            const cat = await prisma.category.create({
-              data: { name: categoryName, clerkId }
+            // Find existing or create
+            let cat = await prisma.category.findFirst({
+              where: { name: categoryName, clerkId }
             });
+            
+            if (!cat) {
+              cat = await prisma.category.create({
+                data: { name: categoryName, clerkId }
+              });
+            }
             categoriesMap.set(categoryName, cat.id);
           }
 
@@ -81,12 +169,18 @@ export async function POST(req: Request) {
           await prisma.item.create({
             data: {
               name: itemName,
+              description: colMap.description !== -1 ? String(row[colMap.description] || "").trim() : null,
               price: itemPrice,
+              sellingPrice: itemPrice,
+              imageUrl: colMap.imageUrl !== -1 ? String(row[colMap.imageUrl] || "").trim() : null,
               categoryId,
               clerkId,
+              userId: dbUserId,
               isActive: true
             }
           });
+        }
+        console.log(`ONBOARDING: Successfully imported ${dataRows.length} items`);
       }
     }
 

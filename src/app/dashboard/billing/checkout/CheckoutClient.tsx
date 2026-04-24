@@ -1032,7 +1032,7 @@ export default function CheckoutClient() {
           height: auto !important;
           overflow: visible !important;
           margin: 0 !important;
-          padding: 0 0 120px 0 !important; 
+          padding: 0 0 20px 0 !important; 
           background: #fff !important;
           color: #000 !important;
           font-family: 'Courier New', Courier, monospace !important;
@@ -1169,9 +1169,13 @@ export default function CheckoutClient() {
       foodType: "veg"
     };
 
+    const currentItems = Array.isArray(quickAddAddonGroup.items) 
+      ? quickAddAddonGroup.items 
+      : (typeof quickAddAddonGroup.items === 'string' ? JSON.parse(quickAddAddonGroup.items) : []);
+
     const updatedGroup = {
       ...quickAddAddonGroup,
-      items: [...(quickAddAddonGroup.items || []), newAddonItem]
+      items: [...currentItems, newAddonItem]
     };
 
     // Optimistic Update
@@ -1182,7 +1186,7 @@ export default function CheckoutClient() {
 
     // Persist to DB
     try {
-      await fetch(`/api/menu-editor/addon-groups/${quickAddAddonGroup.id}`, {
+      await fetch(`/api/menu-editor/addon-groups`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedGroup)
@@ -1445,7 +1449,7 @@ export default function CheckoutClient() {
                                {catAddons.map(ag => (
                                  <div key={ag.id} className="flex flex-col gap-2">
                                    <div className="flex flex-wrap gap-1.5 items-center">
-                                     {(ag.items as any[])?.map((addon: any, idx: number) => (
+                                   {(Array.isArray(ag.items) ? ag.items : []).map((addon: any, idx: number) => (
                                        <button
                                          key={idx}
                                          onClick={() => addAddonToCart(addon, ag.name)}
@@ -1484,39 +1488,46 @@ export default function CheckoutClient() {
                     })()}
                   </div>
 
-                  {/* Category Addons for single category view */}
-                  {!search && activeCategory !== "All" && (() => {
-                    const currentCat = categoriesList.find(c => c.name.toLowerCase() === activeCategory.toLowerCase());
-                    if (!currentCat) return null;
-                    const catAddons = addonGroups.filter(ag => (ag.categoryIds || []).includes(currentCat.id));
-                    if (catAddons.length === 0) return null;
-                    return (
-                      <div className="bg-indigo-50/30 dark:bg-indigo-900/10 rounded-2xl p-4 border border-dashed border-indigo-200 dark:border-indigo-900/50">
-                                                 {catAddons.map(ag => (
-                             <div key={ag.id} className="flex flex-col gap-2">
-                               <div className="flex flex-wrap gap-1.5 items-center">
-                                 {(ag.items as any[])?.map((addon: any, idx: number) => (
-                                    <button
-                                      key={idx}
-                                      onClick={() => addAddonToCart(addon, ag.name)}
-                                      className="flex items-center bg-[#EEEDFE] dark:bg-indigo-950/40 border-[0.5px] border-[#AFA9EC] dark:border-indigo-800 hover:border-indigo-500 hover:shadow-md hover:scale-[1.02] active:scale-95 rounded-full overflow-hidden shadow-sm transition-all group"
-                                    >
-                                       <div className="flex items-center gap-1.5 px-3 py-1.5 border-r border-[#AFA9EC]/50 dark:border-indigo-800">
-                                          <Plus size={10} className="text-indigo-500 group-hover:text-indigo-700" />
-                                          <span className="text-[10px] font-black text-indigo-900 dark:text-indigo-100 uppercase tracking-wide">{addon.name}</span>
-                                       </div>
-                                       <div className="bg-[#E5E3FC] dark:bg-indigo-900/60 px-2.5 py-1.5">
-                                          <span className="text-[9px] font-black text-indigo-700 dark:text-indigo-300 tracking-tighter">₹{addon.price}</span>
-                                       </div>
-                                    </button>
-                                  ))}
-                                  {canEdit && <QuickAddAddonChip onClick={() => setQuickAddAddonGroup(ag)} />}
+                    {/* Category Addons Section */}
+                    {(() => {
+                      const currentCat = categoriesList.find(c => c.name.toLowerCase() === activeCategory.toLowerCase());
+                      if (!currentCat) return null;
+                      const catAddons = addonGroups.filter(ag => (ag.categoryIds || []).includes(currentCat.id));
+                      if (catAddons.length === 0) return null;
+                      return (
+                        <div className="bg-indigo-50/30 dark:bg-indigo-900/10 rounded-2xl p-4 border border-dashed border-indigo-200 dark:border-indigo-900/50 mt-6">
+                           <div className="flex items-center gap-2 mb-3">
+                             <Layers size={12} className="text-indigo-500" />
+                             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-500">Addons for {activeCategory}</span>
+                           </div>
+                           <div className="flex flex-wrap gap-4">
+                             {catAddons.map(ag => (
+                               <div key={ag.id} className="flex flex-col gap-2">
+                                 <div className="flex flex-wrap gap-1.5 items-center">
+                                   {(Array.isArray(ag.items) ? ag.items : []).map((addon: any, idx: number) => (
+                                     <button
+                                       key={idx}
+                                       onClick={() => addAddonToCart(addon, ag.name)}
+                                       className="flex items-center bg-[#EEEDFE] dark:bg-indigo-950/40 border-[0.5px] border-[#AFA9EC] dark:border-indigo-800 hover:border-indigo-500 hover:shadow-md hover:scale-[1.02] active:scale-95 rounded-full overflow-hidden shadow-sm transition-all group"
+                                     >
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 border-r border-[#AFA9EC]/50 dark:border-indigo-800">
+                                           <Plus size={10} className="text-indigo-500 group-hover:text-indigo-700" />
+                                           <span className="text-[10px] font-black text-indigo-900 dark:text-indigo-100 uppercase tracking-wide">{addon.name}</span>
+                                        </div>
+                                        <div className="bg-[#E5E3FC] dark:bg-indigo-900/60 px-2.5 py-1.5">
+                                           <span className="text-[9px] font-black text-indigo-700 dark:text-indigo-300 tracking-tighter">₹{addon.price}</span>
+                                        </div>
+                                     </button>
+                                   ))}
+                                   {canEdit && <QuickAddAddonChip onClick={() => setQuickAddAddonGroup(ag)} />}
+                                 </div>
                                </div>
-                             </div>
-                           ))}
+                             ))}
+                           </div>
                         </div>
-                    )
-                  })()}
+                      )
+                    })()}
+                  </div>
                 </div>
               )}
             </div>
@@ -2060,7 +2071,7 @@ export default function CheckoutClient() {
           ref={receiptRef}
           data-paper="58"
           className="hidden print:block receipt font-mono text-[10px] leading-tight text-black"
-          style={{ width: '100%', paddingBottom: '25mm' }}
+          style={{ width: '100%', paddingBottom: '5mm' }}
         >
           {business?.logoUrl && (
             <div className="flex justify-center mb-1">
@@ -3128,6 +3139,7 @@ export default function CheckoutClient() {
           </motion.div>
         </div>
       )}
+    </div>
     </div>
     </div>
   );

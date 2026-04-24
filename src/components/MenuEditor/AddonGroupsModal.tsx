@@ -28,7 +28,7 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
         minSelection: initialGroup.minSelection,
         maxSelection: initialGroup.maxSelection,
         allowMultipleUnits: initialGroup.allowMultipleUnits,
-        items: initialGroup.items ? JSON.parse(JSON.stringify(initialGroup.items)) : [],
+        items: Array.isArray(initialGroup.items) ? JSON.parse(JSON.stringify(initialGroup.items)) : (typeof initialGroup.items === 'string' ? JSON.parse(initialGroup.items) : []),
         itemIds: initialGroup.itemIds || [],
         categoryIds: initialGroup.categoryIds || []
       })
@@ -59,7 +59,7 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
       minSelection: group.minSelection,
       maxSelection: group.maxSelection,
       allowMultipleUnits: group.allowMultipleUnits,
-      items: group.items ? JSON.parse(JSON.stringify(group.items)) : [],
+      items: Array.isArray(group.items) ? JSON.parse(JSON.stringify(group.items)) : (typeof group.items === 'string' ? JSON.parse(group.items) : []),
       itemIds: group.itemIds || [],
       categoryIds: group.categoryIds || []
     })
@@ -94,7 +94,8 @@ export default function AddonGroupsModal({ groups, onSave, onDelete, onClose, in
   }
 
   function addItem() {
-    update('items', [...form.items, { id: Math.random().toString(36).substr(2, 9), name: '', price: 0, foodType: 'veg', isAvailable: true }])
+    const currentItems = Array.isArray(form.items) ? form.items : [];
+    update('items', [...currentItems, { id: Math.random().toString(36).substr(2, 9), name: '', price: 0, foodType: 'veg', isAvailable: true }])
   }
 
   function removeItem(index: number) {

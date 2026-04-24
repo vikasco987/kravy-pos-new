@@ -902,39 +902,54 @@ export default function BillingPage() {
 
   function handlePrint(bill: any) {
     setPrintBill(bill);
+    
+    // Using the runPrintJob pattern to ensure Tailwind styles are preserved
     setTimeout(() => {
         const content = billReceiptRef.current;
         if (!content) return;
         
-        const printWindow = window.open('', '_blank', 'width=300,height=600');
-        if (!printWindow) {
-            alert("Please allow popups for printing");
-            return;
-        }
+        const containerId = "reprint-container";
+        const styleId = "reprint-style";
 
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Print Receipt</title>
-                    <style>
-                        @page { margin: 0; size: 58mm auto; }
-                        body { margin: 0; padding: 0; width: 58mm; background: white; }
-                        * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
-                    </style>
-                </head>
-                <body>
-                    ${content.innerHTML}
-                    <script>
-                        window.onload = () => {
-                            window.print();
-                            setTimeout(() => window.close(), 500);
-                        };
-                    </script>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-    }, 200);
+        // Cleanup
+        document.getElementById(containerId)?.remove();
+        document.getElementById(styleId)?.remove();
+
+        // Style
+        const style = document.createElement("style");
+        style.id = styleId;
+        style.innerHTML = `
+          @media print {
+            html, body { height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+            body > *:not(#${containerId}) { display: none !important; }
+            @page { margin: 0; size: 58mm auto; }
+            #${containerId} {
+              display: block !important;
+              width: 100% !important;
+              padding: 0 0 20px 0 !important;
+              background: #fff !important;
+              color: #000 !important;
+              font-family: 'Courier New', Courier, monospace !important;
+            }
+            img { background: #fff !important; }
+            * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+          }
+        `;
+        document.head.appendChild(style);
+
+        // Container
+        const container = document.createElement("div");
+        container.id = containerId;
+        container.innerHTML = content.innerHTML;
+        document.body.appendChild(container);
+
+        window.print();
+
+        setTimeout(() => {
+          container.remove();
+          style.remove();
+        }, 2000);
+    }, 300);
   }
 
   function getReceiptJSX(business: any, bill: any) {
@@ -971,11 +986,16 @@ export default function BillingPage() {
     const qrCodeUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}` : "";
 
     return (
-        <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '30mm' }}>
+        <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '10mm' }}>
             <div className="text-center mb-3">
                 {business.logoUrl && (
-                    <div className="flex justify-center mb-1">
-                        <img src={business.logoUrl} alt="Logo" className="max-h-[30mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
+                    <div className="flex justify-center mb-2 bg-white">
+                        <img 
+                          src={business.logoUrl} 
+                          alt="Logo" 
+                          className="max-h-[22mm] object-contain" 
+                          style={{ filter: 'contrast(300%) grayscale(100%)', backgroundColor: 'white' }} 
+                        />
                     </div>
                 )}
                 <div className="font-bold text-[16px] uppercase tracking-tighter mb-1">{business.businessName || "KRAVY RESTAURANT"}</div>
@@ -999,7 +1019,7 @@ export default function BillingPage() {
             </div>
 
             {(bill.customerName || bill.customerPhone) && (
-                <div className="mb-2 text-[10px] font-bold uppercase border border-dashed border-black px-1.5 py-1.5 bg-gray-50">
+                <div className="mb-2 text-[10px] font-bold uppercase border border-dashed border-black px-1.5 py-1.5 bg-white">
                     {bill.customerName && <div className="truncate">CUSTOMER: {bill.customerName}</div>}
                     {bill.customerPhone && <div>PHONE: {bill.customerPhone}</div>}
                 </div>
@@ -1042,7 +1062,7 @@ export default function BillingPage() {
                     </div>
                 ))}
                 
-                <div className="flex justify-between font-black text-[18px] border-y-2 border-black py-2.5 my-1.5 uppercase bg-gray-50 px-1">
+                <div className="flex justify-between font-black text-[18px] border-y-2 border-black py-2.5 my-1.5 uppercase bg-white px-1">
                     <span>TOTAL</span>
                     <span>₹{finalTotal.toFixed(0)}</span>
                 </div>
@@ -1071,7 +1091,7 @@ export default function BillingPage() {
                 <div className="mt-6 text-center border-t-2 border-black pt-4">
                     <div className="text-[10px] font-black mb-2 uppercase tracking-[0.2em]">Scan to Pay Instantly</div>
                     <div className="inline-block border-2 border-black p-1 bg-white rounded-lg shadow-sm">
-                        <img src={qrCodeUrl} alt="UPI QR" className="w-[35mm] h-[35mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
+                        <img src={qrCodeUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)', backgroundColor: 'white' }} />
                     </div>
                     <div className="text-[10px] font-black mt-2.5 tracking-widest">{business.upi}</div>
                 </div>
@@ -1080,9 +1100,9 @@ export default function BillingPage() {
             <div className="mt-8 text-center border-t-2 border-dashed border-black pt-5">
                 <div className="text-[14px] font-black mb-1.5 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
                 <div className="text-[8px] font-bold opacity-60">Software by Kravy AI</div>
-                <div className="h-[15mm]" />
+                <div className="h-4" />
                 <div className="text-[9px] opacity-40 italic tracking-[0.3em]">*** END OF BILL ***</div>
-                <div className="h-[10mm]" />
+                <div className="h-2" />
             </div>
         </div>
     );

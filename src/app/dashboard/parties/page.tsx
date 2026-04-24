@@ -300,7 +300,7 @@ export default function PartiesPage() {
           #${containerId} {
             display: block !important;
             width: 100% !important;
-            padding: 0 0 100px 0 !important;
+            padding: 0 0 20px 0 !important;
             background: #fff !important;
             color: #000 !important;
             font-family: 'Courier New', Courier, monospace !important;
@@ -841,7 +841,7 @@ export default function PartiesPage() {
 
       {/* Hidden Print Content */}
       <div className="hidden">
-        <div ref={receiptRef} className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '25mm' }}>
+        <div ref={receiptRef} className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '10mm' }}>
           {printData && (() => {
             const isBill = !!printData.billNumber;
             const taxActive = business?.taxEnabled ?? true;
@@ -901,7 +901,7 @@ export default function PartiesPage() {
                   {isBill && <span>TABLE: {printData.tableName || "POS"}</span>}
                 </div>
 
-                <div className="mb-2 text-[10px] font-bold uppercase border border-dashed border-black px-1.5 py-1.5 bg-gray-50">
+                <div className="mb-2 text-[10px] font-bold uppercase border border-dashed border-black px-1.5 py-1.5 bg-white">
                   <div className="truncate">CUSTOMER: {selectedParty?.name || printData.customerName || "WALK-IN"}</div>
                   {(selectedParty?.phone || printData.customerPhone) && <div>PHONE: {selectedParty?.phone || printData.customerPhone}</div>}
                 </div>
@@ -949,7 +949,7 @@ export default function PartiesPage() {
                   </div>
                 )}
 
-                <div className="flex justify-between font-black text-[16px] border-y-2 border-black py-2 my-2 uppercase bg-gray-50 px-1">
+                <div className="flex justify-between font-black text-[16px] border-y-2 border-black py-2 my-2 uppercase bg-white px-1">
                   <span>{isBill ? "BILL TOTAL" : "NET AMOUNT"}</span>
                   <span>₹{total.toFixed(2)}</span>
                 </div>
@@ -972,9 +972,9 @@ export default function PartiesPage() {
                 <div className="mt-6 text-center border-t-2 border-dashed border-black pt-4">
                     <div className="text-[12px] font-black mb-1 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
                     <div className="text-[7px] font-bold opacity-50">KRAVY POS SYSTEM</div>
-                    <div className="h-[10mm]" />
-                    <div className="text-[8px] opacity-30 italic tracking-[0.2em]">*** END OF RECEIPT ***</div>
-                    <div className="h-[10mm]" />
+                    <div className="h-4" />
+                    <div className="text-[9px] opacity-40 italic tracking-[0.2em]">*** END OF RECEIPT ***</div>
+                    <div className="h-2" />
                 </div>
               </div>
             );
