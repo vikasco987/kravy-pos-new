@@ -391,6 +391,12 @@ model BusinessProfile {
   enableMenuQRInBill   Boolean @default(false)
   aiScraperEnabled   Boolean @default(false)
   excelImportEnabled Boolean @default(false)
+  
+  // ✅ Additional Charges Settings
+  enableDeliveryCharges   Boolean @default(false)
+  deliveryChargeAmount    Float   @default(0)
+  enablePackagingCharges  Boolean @default(false)
+  packagingChargeAmount   Float   @default(0)
 
   // ✅ Public Access Identifiers
   slug     String? // Removed unique to allow db push
@@ -445,6 +451,8 @@ model BillManager {
   discountAmount Float?  @default(0)
   discountCode   String?
   tax            Float?
+  deliveryCharges Float? @default(0)
+  packagingCharges Float? @default(0)
   total          Float
 
   paymentMode   String

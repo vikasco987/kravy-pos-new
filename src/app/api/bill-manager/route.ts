@@ -65,6 +65,8 @@ export async function POST(req: NextRequest) {
       discountCode,
       discountAmount,
       isKotPrinted,
+      deliveryCharges,
+      packagingCharges,
     } = body;
 
     // 🛑 1. ROBUST VALIDATION (Critical Fix for UI Crashes)
@@ -157,7 +159,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt).toFixed(2));
+    const finalDeliveryCharge = Number(deliveryCharges) || 0;
+    const finalPackagingCharge = Number(packagingCharges) || 0;
+
+    const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt + finalDeliveryCharge + finalPackagingCharge).toFixed(2));
 
     // ✅ Generate unique sequential bill number (SV/YYMM/XXXX)
     const nowLocal = new Date();
@@ -241,6 +246,8 @@ export async function POST(req: NextRequest) {
         tableName: tableName || "POS",
         discountAmount: serverDiscountAmt,
         discountCode: validatedDiscountCode,
+        deliveryCharges: finalDeliveryCharge,
+        packagingCharges: finalPackagingCharge,
         auditNote: body.auditNote || null,
         isKotPrinted: isKotPrinted === true,
       },

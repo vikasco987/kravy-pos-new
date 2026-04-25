@@ -75,6 +75,8 @@ export async function PUT(
       tableName,
       discountCode,
       isKotPrinted,
+      deliveryCharges,
+      packagingCharges,
     } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -144,7 +146,10 @@ export async function PUT(
       }
     }
 
-    const finalTotal = Number((finalSubtotal + tax - serverDiscountAmt).toFixed(2));
+    const finalDeliveryCharge = Number(deliveryCharges) || 0;
+    const finalPackagingCharge = Number(packagingCharges) || 0;
+
+    const finalTotal = Number((finalSubtotal + tax - serverDiscountAmt + finalDeliveryCharge + finalPackagingCharge).toFixed(2));
 
     /* ---------- PAYMENT STATUS ---------- */
     let finalPaymentStatus: string;
@@ -201,6 +206,8 @@ export async function PUT(
         tableName: tableName || undefined,
         discountAmount: serverDiscountAmt,
         discountCode: validatedDiscountCode,
+        deliveryCharges: finalDeliveryCharge,
+        packagingCharges: finalPackagingCharge,
         isKotPrinted: isKotPrinted === true,
         auditNote: body.auditNote || null,
       },

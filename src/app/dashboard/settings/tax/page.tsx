@@ -34,6 +34,13 @@ export default function PricingSettingsPage() {
     const [qrMenuPriceInclusive, setQrMenuPriceInclusive] = useState(false);
     const [enableKOTWithBill, setEnableKOTWithBill] = useState(false);
     const [enableMenuQRInBill, setEnableMenuQRInBill] = useState(false);
+    
+    // Additional Charges
+    const [enableDeliveryCharges, setEnableDeliveryCharges] = useState(false);
+    const [deliveryChargeAmount, setDeliveryChargeAmount] = useState(0);
+    const [enablePackagingCharges, setEnablePackagingCharges] = useState(false);
+    const [packagingChargeAmount, setPackagingChargeAmount] = useState(0);
+
     const [taxRate, setTaxRate] = useState(5.0);
     const [businessProfile, setBusinessProfile] = useState<any>(null);
 
@@ -67,6 +74,12 @@ export default function PricingSettingsPage() {
                 setQrMenuPriceInclusive(profileData?.qrMenuPriceInclusive ?? false);
                 setEnableKOTWithBill(profileData?.enableKOTWithBill ?? false);
                 setEnableMenuQRInBill(profileData?.enableMenuQRInBill ?? false);
+                
+                setEnableDeliveryCharges(profileData?.enableDeliveryCharges ?? false);
+                setDeliveryChargeAmount(profileData?.deliveryChargeAmount ?? 0);
+                setEnablePackagingCharges(profileData?.enablePackagingCharges ?? false);
+                setPackagingChargeAmount(profileData?.packagingChargeAmount ?? 0);
+
                 setTaxRate(profileData?.taxRate ?? 5.0);
                 setOffers(Array.isArray(offerData) ? offerData : []);
             } catch {
@@ -90,6 +103,10 @@ export default function PricingSettingsPage() {
                 qrMenuPriceInclusive, 
                 enableKOTWithBill,
                 enableMenuQRInBill,
+                enableDeliveryCharges,
+                deliveryChargeAmount: Number(deliveryChargeAmount),
+                enablePackagingCharges,
+                packagingChargeAmount: Number(packagingChargeAmount),
                 taxRate: Number(taxRate) 
             };
             const res = await fetch("/api/profile", {
@@ -337,7 +354,6 @@ export default function PricingSettingsPage() {
                         </button>
                     </div>
 
-                    {/* Menu QR on Bill Toggle Row */}
                     <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--kravy-border)]">
                         <div className="flex items-center gap-3.5">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${enableMenuQRInBill ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}>
@@ -358,6 +374,80 @@ export default function PricingSettingsPage() {
                                 : <ToggleLeft size={36} className="text-gray-300" />
                             }
                         </button>
+                    </div>
+
+                    {/* Delivery Charges Toggle */}
+                    <div className="px-5 py-4 border-b border-[var(--kravy-border)] space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3.5">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${enableDeliveryCharges ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+                                    <ShieldCheck size={20} />
+                                </div>
+                                <div>
+                                    <div className="font-black text-[0.9rem] text-[var(--kravy-text-primary)]">Enable Delivery Charges</div>
+                                    <div className="text-xs text-[var(--kravy-text-muted)] font-medium">
+                                        Fixed charge added to delivery orders
+                                    </div>
+                                </div>
+                            </div>
+                            <button onClick={() => setEnableDeliveryCharges(!enableDeliveryCharges)} className="shrink-0">
+                                {enableDeliveryCharges
+                                    ? <ToggleRight size={36} className="text-blue-500" />
+                                    : <ToggleLeft size={36} className="text-gray-300" />
+                                }
+                            </button>
+                        </div>
+                        {enableDeliveryCharges && (
+                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="pl-[54px] pr-2 pb-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] mb-1.5 block">Charge Amount (₹)</label>
+                                <div className="relative max-w-[150px]">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)] font-bold text-sm">₹</span>
+                                    <input
+                                        type="number"
+                                        value={deliveryChargeAmount}
+                                        onChange={e => setDeliveryChargeAmount(Number(e.target.value))}
+                                        className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl pl-8 pr-4 py-2 text-sm font-black text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+                    </div>
+
+                    {/* Packaging Charges Toggle */}
+                    <div className="px-5 py-4 border-b border-[var(--kravy-border)] space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3.5">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${enablePackagingCharges ? 'bg-rose-100 text-rose-600' : 'bg-gray-100 text-gray-400'}`}>
+                                    <BadgePercent size={20} />
+                                </div>
+                                <div>
+                                    <div className="font-black text-[0.9rem] text-[var(--kravy-text-primary)]">Enable Packaging Charges</div>
+                                    <div className="text-xs text-[var(--kravy-text-muted)] font-medium">
+                                        Fixed charge for takeaway/delivery orders
+                                    </div>
+                                </div>
+                            </div>
+                            <button onClick={() => setEnablePackagingCharges(!enablePackagingCharges)} className="shrink-0">
+                                {enablePackagingCharges
+                                    ? <ToggleRight size={36} className="text-rose-500" />
+                                    : <ToggleLeft size={36} className="text-gray-300" />
+                                }
+                            </button>
+                        </div>
+                        {enablePackagingCharges && (
+                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="pl-[54px] pr-2 pb-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] mb-1.5 block">Charge Amount (₹)</label>
+                                <div className="relative max-w-[150px]">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)] font-bold text-sm">₹</span>
+                                    <input
+                                        type="number"
+                                        value={packagingChargeAmount}
+                                        onChange={e => setPackagingChargeAmount(Number(e.target.value))}
+                                        className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl pl-8 pr-4 py-2 text-sm font-black text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none"
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
                     </div>
 
                     {/* Preset Rate Chips */}

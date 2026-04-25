@@ -108,6 +108,10 @@ export async function POST(request: Request) {
         qrMenuPriceInclusive: body.qrMenuPriceInclusive !== undefined ? body.qrMenuPriceInclusive : undefined,
         enableKOTWithBill: body.enableKOTWithBill !== undefined ? body.enableKOTWithBill : undefined,
         enableMenuQRInBill: body.enableMenuQRInBill !== undefined ? body.enableMenuQRInBill : undefined,
+        enableDeliveryCharges: body.enableDeliveryCharges !== undefined ? body.enableDeliveryCharges : undefined,
+        deliveryChargeAmount: body.deliveryChargeAmount !== undefined ? body.deliveryChargeAmount : undefined,
+        enablePackagingCharges: body.enablePackagingCharges !== undefined ? body.enablePackagingCharges : undefined,
+        packagingChargeAmount: body.packagingChargeAmount !== undefined ? body.packagingChargeAmount : undefined,
       },
 
       create: {
@@ -151,6 +155,10 @@ export async function POST(request: Request) {
         qrMenuPriceInclusive: body.qrMenuPriceInclusive ?? false,
         enableKOTWithBill: body.enableKOTWithBill ?? false,
         enableMenuQRInBill: body.enableMenuQRInBill ?? false,
+        enableDeliveryCharges: body.enableDeliveryCharges ?? false,
+        deliveryChargeAmount: body.deliveryChargeAmount ?? 0,
+        enablePackagingCharges: body.enablePackagingCharges ?? false,
+        packagingChargeAmount: body.packagingChargeAmount ?? 0,
       },
     });
 

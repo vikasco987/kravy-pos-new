@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock, Trash2, Play, X, Search, ChevronDown, User, Printer,
   Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus,
-  LayoutGrid, Columns, StickyNote, Layers
+  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck
 } from "lucide-react";
 import { calculateDiscount } from "@/lib/discount-utils";
 import { toast } from "sonner";
@@ -209,6 +209,7 @@ export default function CheckoutClient() {
   /* ================= TABLES STATE ================= */
   const [tables, setTables] = useState<any[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>("POS");
+  const [orderType, setOrderType] = useState<"DINING" | "TAKEAWAY" | "DELIVERY">("DINING");
   const [showTableSelect, setShowTableSelect] = useState(false);
 
   const resetForm = () => {
@@ -228,6 +229,7 @@ export default function CheckoutClient() {
     setDiscountAmt(0);
     setIsKotPrinted(false);
     setSelectedTable("POS");
+    setOrderType("DINING");
     
     // Generate new bill number for next session
     const now = new Date();
@@ -377,7 +379,11 @@ export default function CheckoutClient() {
         setUpiTxnRef(bill.upiTxnRef || "");
         setBuyerGSTIN(bill.buyerGSTIN || "");
         setPlaceOfSupply(bill.placeOfSupply || "");
-        setSelectedTable(bill.tableName || "POS");
+        const table = bill.tableName || "POS";
+        setSelectedTable(table);
+        if (table === "TAKEAWAY") setOrderType("TAKEAWAY");
+        else if (table === "DELIVERY") setOrderType("DELIVERY");
+        else setOrderType("DINING");
         setOrderNotes(bill.notes || bill.auditNote || "");
       } catch (err) {
         console.error("RESUME BILL ERROR:", err);
@@ -615,6 +621,10 @@ export default function CheckoutClient() {
     requireCustomerAddress?: boolean;
     enableKOTWithBill?: boolean;
     enableMenuQRInBill?: boolean;
+    enableDeliveryCharges?: boolean;
+    deliveryChargeAmount?: number;
+    enablePackagingCharges?: boolean;
+    packagingChargeAmount?: number;
     userId?: string;
   } | null>(null);
 
@@ -650,6 +660,10 @@ export default function CheckoutClient() {
             requireCustomerAddress: data.requireCustomerAddress ?? false,
             enableKOTWithBill: data.enableKOTWithBill ?? false,
             enableMenuQRInBill: data.enableMenuQRInBill ?? false,
+            enableDeliveryCharges: data.enableDeliveryCharges ?? false,
+            deliveryChargeAmount: data.deliveryChargeAmount ?? 0,
+            enablePackagingCharges: data.enablePackagingCharges ?? false,
+            packagingChargeAmount: data.packagingChargeAmount ?? 0,
             userId: data.userId,
           });
           console.log("DEBUG POS API RESPONSE - enableKOTWithBill:", data.enableKOTWithBill);
@@ -824,9 +838,12 @@ export default function CheckoutClient() {
     setDiscountAmt(0);
   };
 
-  // If items are "With Tax", subtotal already includes tax.
-  // Final total is now simply net taxable + GST
-  const finalTotal = Number((totalTaxable + totalGst).toFixed(2));
+  // Additional Charges Calculation
+  const deliveryCharge = (orderType === "DELIVERY" && business?.enableDeliveryCharges) ? (business?.deliveryChargeAmount || 0) : 0;
+  const packagingCharge = ((orderType === "DELIVERY" || orderType === "TAKEAWAY") && business?.enablePackagingCharges) ? (business?.packagingChargeAmount || 0) : 0;
+
+  // Final total is now simply net taxable + GST + additional charges
+  const finalTotal = Number((totalTaxable + totalGst + deliveryCharge + packagingCharge).toFixed(2));
   const gstAmount = Number(totalGst.toFixed(2));
   
   // 🛡️ SMART AUDIT LOG: Detect if default was used
@@ -952,6 +969,8 @@ export default function CheckoutClient() {
         placeOfSupply: placeOfSupply || null,
         discountAmount: discountAmt,
         discountCode: appliedOffer?.code || null,
+        deliveryCharges: deliveryCharge,
+        packagingCharges: packagingCharge,
         auditNote, // ✅ SaaS Feature: Audit Log
       };
 
@@ -1689,26 +1708,56 @@ export default function CheckoutClient() {
             </div>
           </div>
 
-          {/* Table Selection - NEW SECTION */}
-          <div className="px-4 md:px-5 py-2 border-b border-[var(--kravy-border)] bg-[var(--kravy-brand)]/5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <LayoutGrid size={13} className="text-[var(--kravy-brand)]" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">
-                Assigned Table
-              </span>
-            </div>
-            <select
-              value={selectedTable}
-              onChange={(e) => { kravy.click(); setSelectedTable(e.target.value); }}
-              className="bg-white border border-[var(--kravy-brand)]/20 text-[var(--kravy-brand)]
-                px-3 py-1 rounded-lg text-[11px] font-black outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
-                transition-all cursor-pointer shadow-sm min-w-[100px]"
-            >
-              <option value="POS">Counter / POS</option>
-              {tables.map((t) => (
-                <option key={t.id} value={t.name}>Table: {t.name}</option>
+          {/* Order Type Selection - COMPACT */}
+          <div className="px-4 md:px-5 py-2 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg)]/20">
+            <div className="flex items-center gap-1 p-0.5 bg-[var(--kravy-bg)] rounded-xl border border-[var(--kravy-border)] shadow-inner">
+              {[
+                { id: 'DINING', label: 'Dining', icon: <Utensils size={13} />, activeClass: 'bg-indigo-600 shadow-indigo-500/20' },
+                { id: 'TAKEAWAY', label: 'Takeaway', icon: <ShoppingBag size={13} />, activeClass: 'bg-amber-600 shadow-amber-500/20' },
+                { id: 'DELIVERY', label: 'Delivery', icon: <Truck size={13} />, activeClass: 'bg-rose-600 shadow-rose-500/20' }
+              ].map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => {
+                    kravy.click();
+                    setOrderType(type.id as any);
+                    if (type.id !== 'DINING') {
+                      setSelectedTable(type.id);
+                    } else if (selectedTable === 'TAKEAWAY' || selectedTable === 'DELIVERY') {
+                      setSelectedTable('POS');
+                    }
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all
+                    ${orderType === type.id 
+                      ? `${type.activeClass} text-white shadow-md scale-[1.01]` 
+                      : `text-[var(--kravy-text-muted)] hover:bg-slate-50`}`}
+                >
+                  {type.icon}
+                  {type.label}
+                </button>
               ))}
-            </select>
+            </div>
+            
+            {orderType === 'DINING' && (
+              <div className="mt-2 flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="flex items-center gap-1.5">
+                  <LayoutGrid size={11} className="text-[var(--kravy-brand)]" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Table</span>
+                </div>
+                <select
+                  value={selectedTable === 'TAKEAWAY' || selectedTable === 'DELIVERY' ? 'POS' : selectedTable}
+                  onChange={(e) => { kravy.click(); setSelectedTable(e.target.value); }}
+                  className="bg-white border border-[var(--kravy-brand)]/20 text-[var(--kravy-brand)]
+                    px-2.5 py-1 rounded-md text-[9px] font-black outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
+                    transition-all cursor-pointer shadow-sm min-w-[100px]"
+                >
+                  <option value="POS">POS</option>
+                  {tables.map((t) => (
+                    <option key={t.id} value={t.name}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Scrollable Middle Content (Customer + Items) */}
@@ -1943,6 +1992,8 @@ export default function CheckoutClient() {
                 <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter leading-none">Sub: ₹{subtotal.toFixed(2)}</p>
                 {discountAmt > 0 && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tighter leading-none">Disc: -₹{discountAmt.toFixed(2)}</p>}
                 {(taxActive || perProductEnabled) && <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter leading-none">Tax: ₹{gstAmount.toFixed(2)}</p>}
+                {deliveryCharge > 0 && <p className="text-[10px] font-bold text-blue-500 uppercase tracking-tighter leading-none">Del: ₹{deliveryCharge.toFixed(2)}</p>}
+                {packagingCharge > 0 && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tighter leading-none">Pkg: ₹{packagingCharge.toFixed(2)}</p>}
               </div>
               <div className="text-right shrink-0">
                 <p className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest leading-none mb-0.5">PAYABLE</p>
@@ -2172,7 +2223,14 @@ export default function CheckoutClient() {
           <div className="text-center text-[11px] mt-1.5 font-bold">
             <div>Bill No: {billNumber}</div>
             <div>Date: {billDate}</div>
-            {selectedTable !== "POS" && <div className="font-bold text-[12px] mt-1 border-2 border-black px-1 inline-block">TABLE: {selectedTable}</div>}
+            {selectedTable && (
+              <div className="font-bold text-[11px] mt-1 border border-black px-2 py-0.5 inline-block uppercase tracking-tighter">
+                {selectedTable === "POS" ? "TYPE: DINING / POS" : 
+                 selectedTable === "TAKEAWAY" ? "TYPE: 🛍️ TAKEAWAY" : 
+                 selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
+                 `TYPE: DINING (TABLE: ${selectedTable})`}
+              </div>
+            )}
           </div>
 
           {(customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && (
@@ -2188,24 +2246,22 @@ export default function CheckoutClient() {
           <div className="mt-1 text-center text-[10px] font-bold">
             {placeOfSupply && <div>Place of Supply: {placeOfSupply}</div>}
           </div>
-          <div className="my-1 border-t-2 border-dashed border-black" />
-          <div className="flex justify-between font-bold text-[10px] uppercase">
+          <div className="flex justify-between font-bold text-[9px] uppercase border-y-2 border-dashed border-black py-1 my-1">
             <span className="flex-1 min-w-0 pr-1">Item Description</span>
-            <span className="w-[8mm] text-center shrink-0">Qty</span>
             <span className="w-[15mm] text-right shrink-0">Total</span>
           </div>
           <div className="border-t-2 border-dashed border-black my-1" />
           {items.map((i) => {
             const itemRate = (perProductEnabled && i.gst !== undefined && i.gst !== null) ? i.gst : (taxActive ? globalRate : 0);
             return (
-              <div key={i.id} className="mb-1.5">
-                <div className="flex justify-between text-[11px] font-bold">
-                  <span className="flex-1 min-w-0 pr-1 truncate">{i.name}</span>
-                  <span className="w-[11mm] text-right shrink-0">{(i.qty * i.rate).toFixed(2)}</span>
+              <div key={i.id} className="mb-2 border-b border-dotted border-black/20 pb-1">
+                <div className="flex justify-between items-start text-[11px] font-bold">
+                  <span className="flex-1 min-w-0 pr-2 break-words leading-[1.2]">{i.name}</span>
+                  <span className="w-[16mm] text-right shrink-0">₹{(i.qty * i.rate).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-[10px] font-bold">
-                  <span>{i.qty} x {i.rate.toFixed(2)}</span>
-                  <span>
+                <div className="flex justify-between items-center text-[10px] font-bold opacity-90">
+                  <span>{i.qty} x ₹{i.rate.toFixed(2)}</span>
+                  <span className="text-[9px]">
                     {((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} 
                     {(taxActive || perProductEnabled) ? ` | GST: ${itemRate}%` : ""}
                   </span>
@@ -2229,10 +2285,22 @@ export default function CheckoutClient() {
                 <div className="flex justify-between text-[10px] font-bold"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
               </>
             )}
+            {deliveryCharge > 0 && (
+              <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
+                <span>DELIVERY CHARGES</span>
+                <span>₹{deliveryCharge.toFixed(2)}</span>
+              </div>
+            )}
+            {packagingCharge > 0 && (
+              <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
+                <span>PACKAGING CHARGES</span>
+                <span>₹{packagingCharge.toFixed(2)}</span>
+              </div>
+            )}
             <div className="border-t-2 border-dashed border-black my-1" />
             <div className="flex justify-between font-black text-[18px] border-y-2 border-black py-2.5 my-1.5 uppercase bg-white">
               <span>GRAND TOTAL</span>
-              <span>₹{finalTotal.toFixed(0)}</span>
+              <span>₹{finalTotal.toFixed(2)}</span>
             </div>
           </div>
 
@@ -2364,8 +2432,11 @@ export default function CheckoutClient() {
             </div>
           </div>
 
-          <div className="text-center text-[16px] font-bold border border-dashed border-black py-1.5 my-2 uppercase">
-            TABLE: {selectedTable === "POS" ? "QUICK POS" : selectedTable}
+          <div className="text-center text-[15px] font-bold border border-dashed border-black py-1 my-1.5 uppercase tracking-tighter">
+            {selectedTable === "POS" ? "DINING / POS" : 
+             selectedTable === "TAKEAWAY" ? "🛍️ TAKEAWAY" : 
+             selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
+             `TABLE: ${selectedTable}`}
           </div>
 
           {orderNotes && (
@@ -2382,7 +2453,7 @@ export default function CheckoutClient() {
           <div className="space-y-2">
             {items.map((i, idx) => (
               <div key={idx} className="flex justify-between items-start border-b border-dotted border-black/20 pb-1.5">
-                <div className="flex-1 pr-2">
+                <div className="flex-1 min-w-0 pr-2 break-words">
                   <div className="text-[12px] font-bold leading-tight uppercase">{i.name}</div>
                   {i.variants && i.variants.length > 0 && (
                     <div className="text-[9px] font-medium mt-0.5 uppercase opacity-80">
@@ -2748,7 +2819,14 @@ export default function CheckoutClient() {
                   <div className="text-center text-[9px] mt-1">
                     <div>Bill No: {billNumber}</div>
                     <div>Date: {billDate}</div>
-                    {selectedTable !== "POS" && <div className="font-bold text-black mt-0.5">TABLE: {selectedTable}</div>}
+                    {selectedTable && (
+                      <div className="font-bold text-black mt-0.5 uppercase text-[9px] border border-black px-1 inline-block">
+                        {selectedTable === "POS" ? "TYPE: DINING / POS" : 
+                         selectedTable === "TAKEAWAY" ? "TYPE: 🛍️ TAKEAWAY" : 
+                         selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
+                         `TYPE: DINING (TABLE: ${selectedTable})`}
+                      </div>
+                    )}
                   </div>
                   <div className="my-1 border-t border-dashed border-gray-400" />
                   {(customerName || customerPhone || customerAddress) && (
@@ -2767,9 +2845,9 @@ export default function CheckoutClient() {
                   <div className="my-1 border-t border-dashed border-gray-400" />
                   <div className="my-1 border-t border-dashed border-gray-400" />
                   {items.map((i) => (
-                    <div key={i.id} className="mb-1.5">
-                      <div className="flex justify-between text-[9px] font-bold">
-                        <span className="flex-1 min-w-0 pr-1 truncate">{i.name}</span>
+                    <div key={i.id} className="mb-1.5 border-b border-dotted border-gray-100 pb-1">
+                      <div className="flex justify-between items-start text-[9px] font-bold">
+                        <span className="flex-1 min-w-0 pr-1 break-words">{i.name}</span>
                         <span className="w-[11mm] text-right shrink-0">{(i.qty * i.rate).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-[8px] text-gray-600">
@@ -2793,6 +2871,12 @@ export default function CheckoutClient() {
                         <div className="flex justify-between text-[9px]"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>
                         <div className="flex justify-between text-[9px]"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
                       </>
+                    )}
+                    {deliveryCharge > 0 && (
+                      <div className="flex justify-between text-[9px] font-bold"><span>Delivery</span><span>₹{deliveryCharge.toFixed(2)}</span></div>
+                    )}
+                    {packagingCharge > 0 && (
+                      <div className="flex justify-between text-[9px] font-bold"><span>Packaging</span><span>₹{packagingCharge.toFixed(2)}</span></div>
                     )}
                     <div className="border-t border-dashed border-gray-400 my-1" />
                     <div className="flex justify-between font-bold text-[11px] bg-black text-white px-1 py-0.5">
