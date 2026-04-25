@@ -1186,6 +1186,7 @@ export default function CheckoutClient() {
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
     const price = formData.get("price") as string;
+    const categoryIds = formData.getAll("categoryIds") as string[];
 
     if (!name || !price) {
       toast.error("Name and price are required");
@@ -1205,6 +1206,7 @@ export default function CheckoutClient() {
 
     const updatedGroup = {
       ...quickAddAddonGroup,
+      categoryIds: categoryIds,
       items: [...currentItems, newAddonItem]
     };
 
@@ -3182,6 +3184,24 @@ export default function CheckoutClient() {
                         placeholder="0.00"
                         className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 text-sm font-black text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all font-mono"
                      />
+                  </div>
+
+                  <div className="space-y-1.5 pt-1">
+                     <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Map to Categories</label>
+                     <div className="max-h-28 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl p-3 space-y-2">
+                        {categoriesList.filter(c => c.name !== 'All').map(cat => (
+                           <label key={cat.id} className="flex items-center gap-3 cursor-pointer p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                              <input 
+                                 type="checkbox" 
+                                 name="categoryIds" 
+                                 value={cat.id}
+                                 defaultChecked={(quickAddAddonGroup.categoryIds || []).includes(cat.id)}
+                                 className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                              />
+                              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{cat.name}</span>
+                           </label>
+                        ))}
+                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 pt-4">
