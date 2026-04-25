@@ -1197,73 +1197,33 @@ export default function CheckoutClient() {
       id: `it-${Date.now()}`,
       name,
       price: Number(price),
-      foodType: "veg"
+      foodType: "veg",
+      categoryIds: categoryIds // Add item-level category mapping
     };
 
-    const oldCatIds = [...(quickAddAddonGroup.categoryIds || [])].sort().join(',');
-    const newCatIds = [...categoryIds].sort().join(',');
-    const isCategoryChanged = oldCatIds !== newCatIds;
+    const currentItems = Array.isArray(quickAddAddonGroup.items) 
+      ? quickAddAddonGroup.items 
+      : (typeof quickAddAddonGroup.items === 'string' ? JSON.parse(quickAddAddonGroup.items) : []);
 
-    if (isCategoryChanged) {
-      // Create a NEW AddonGroup to isolate this new addon's category mapping
-      const newGroup = {
-        id: `temp-${Date.now()}`,
-        name: quickAddAddonGroup.name,
-        isCompulsory: quickAddAddonGroup.isCompulsory,
-        minSelection: quickAddAddonGroup.minSelection,
-        maxSelection: quickAddAddonGroup.maxSelection,
-        allowMultipleUnits: quickAddAddonGroup.allowMultipleUnits,
-        categoryIds: categoryIds,
-        itemIds: [],
-        items: [newAddonItem]
-      };
+    const updatedGroup = {
+      ...quickAddAddonGroup,
+      items: [...currentItems, newAddonItem]
+    };
 
-      setAddonGroups(prev => [...prev, newGroup]);
-      setQuickAddAddonGroup(null);
-      kravy.success();
-      toast.success(`"${name}" added to selected categories`);
+    setAddonGroups(prev => prev.map(ag => ag.id === quickAddAddonGroup.id ? updatedGroup : ag));
+    setQuickAddAddonGroup(null);
+    kravy.success();
+    toast.success(`"${name}" addon added to ${quickAddAddonGroup.name}`);
 
-      try {
-        const res = await fetch(`/api/menu-editor/addon-groups`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newGroup)
-        });
-        const savedGroup = await res.json();
-        if (savedGroup && savedGroup.id) {
-           setAddonGroups(prev => prev.map(g => g.id === newGroup.id ? savedGroup : g));
-        }
-      } catch (err) {
-        console.error("Failed to create new addon group:", err);
-        toast.error("Cloud sync failed for this addon.");
-        setAddonGroups(prev => prev.filter(g => g.id !== newGroup.id));
-      }
-    } else {
-      // Keep existing logic if categories are unchanged
-      const currentItems = Array.isArray(quickAddAddonGroup.items) 
-        ? quickAddAddonGroup.items 
-        : (typeof quickAddAddonGroup.items === 'string' ? JSON.parse(quickAddAddonGroup.items) : []);
-
-      const updatedGroup = {
-        ...quickAddAddonGroup,
-        items: [...currentItems, newAddonItem]
-      };
-
-      setAddonGroups(prev => prev.map(ag => ag.id === quickAddAddonGroup.id ? updatedGroup : ag));
-      setQuickAddAddonGroup(null);
-      kravy.success();
-      toast.success(`"${name}" addon added to ${quickAddAddonGroup.name}`);
-
-      try {
-        await fetch(`/api/menu-editor/addon-groups`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedGroup)
-        });
-      } catch (err) {
-        console.error("Failed to persist addon:", err);
-        toast.error("Cloud sync failed for this addon.");
-      }
+    try {
+      await fetch(`/api/menu-editor/addon-groups`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedGroup)
+      });
+    } catch (err) {
+      console.error("Failed to persist addon:", err);
+      toast.error("Cloud sync failed for this addon.");
     }
   };
 
@@ -1515,7 +1475,14 @@ export default function CheckoutClient() {
                                  {catAddons.map(ag => (
                                    <div key={ag.id} className="flex flex-col gap-2">
                                      <div className="flex flex-wrap gap-1.5 items-center">
-                                     {(Array.isArray(ag.items) ? ag.items : []).map((addon: any, idx: number) => {
+                                     {(Array.isArray(ag.items) ? ag.items : [])
+                                       .filter((addon: any) => {
+                                         if (addon.categoryIds && addon.categoryIds.length > 0) {
+                                           return addon.categoryIds.includes(catObj.id);
+                                         }
+                                         return true;
+                                       })
+                                       .map((addon: any, idx: number) => {
                                        const fullName = `${addon.name} (${ag.name} - ${catName})`;
                                        const inCart = items.find(i => i.name === fullName);
                                        return (
@@ -1590,7 +1557,14 @@ export default function CheckoutClient() {
                                {catAddons.map(ag => (
                                  <div key={ag.id} className="flex flex-col gap-2">
                                    <div className="flex flex-wrap gap-1.5 items-center">
-                                     {(Array.isArray(ag.items) ? ag.items : []).map((addon: any, idx: number) => {
+                                     {(Array.isArray(ag.items) ? ag.items : [])
+                                       .filter((addon: any) => {
+                                         if (addon.categoryIds && addon.categoryIds.length > 0) {
+                                           return addon.categoryIds.includes(currentCat.id);
+                                         }
+                                         return true;
+                                       })
+                                       .map((addon: any, idx: number) => {
                                        const fullName = `${addon.name} (${ag.name} - ${activeCategory})`;
                                        const inCart = items.find(i => i.name === fullName);
                                        return (
