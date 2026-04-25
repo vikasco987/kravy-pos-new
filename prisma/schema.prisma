@@ -403,9 +403,9 @@ model BusinessProfile {
   packagingGstEnabled     Boolean @default(false)
   packagingGstRate        Float   @default(0)
 
-  // ✅ Public Access Identifiers
-  slug     String? // Removed unique to allow db push
-  publicId String? // Removed unique to allow db push
+  // ✅ Token Management
+  lastTokenNumber Int      @default(0)
+  lastTokenDate   DateTime @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -466,6 +466,7 @@ model BillManager {
   paymentStatus String
   upiTxnRef     String?
   isHeld        Boolean @default(false)
+  tokenNumber   Int?    // ✅ Daily reset token number
 
   customerName    String?
   customerPhone   String?

@@ -238,6 +238,29 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ✅ TOKEN NUMBER GENERATION (DAILY RESET)
+    let nextToken = 1;
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
+      
+      if (lastTokenDate === today) {
+        nextToken = (profile?.lastTokenNumber || 0) + 1;
+      } else {
+        nextToken = 1;
+      }
+
+      await prisma.businessProfile.update({
+        where: { userId: effectiveId },
+        data: {
+          lastTokenNumber: nextToken,
+          lastTokenDate: new Date()
+        }
+      });
+    } catch (tokenErr) {
+      console.error("TOKEN GENERATION ERROR:", tokenErr);
+    }
+
     const bill = await prisma.billManager.create({
       data: {
         clerkUserId: effectiveId || "Unknown",
@@ -263,6 +286,7 @@ export async function POST(req: NextRequest) {
         packagingGst: serverPackagingGst,
         auditNote: body.auditNote || null,
         isKotPrinted: isKotPrinted === true,
+        tokenNumber: nextToken,
       },
     });
 

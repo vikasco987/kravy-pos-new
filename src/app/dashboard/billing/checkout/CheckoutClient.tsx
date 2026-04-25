@@ -306,6 +306,8 @@ export default function CheckoutClient() {
 
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState("");
+  const [tokenNumber, setTokenNumber] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     // 🏷️ COMPACT INVOICE NUMBER (Max 16 chars for GST Compliance)
@@ -629,6 +631,7 @@ export default function CheckoutClient() {
     packagingChargeAmount?: number;
     packagingGstEnabled?: boolean;
     packagingGstRate?: number;
+    lastTokenNumber?: number;
     userId?: string;
   } | null>(null);
 
@@ -672,6 +675,7 @@ export default function CheckoutClient() {
             packagingChargeAmount: data.packagingChargeAmount ?? 0,
             packagingGstEnabled: data.packagingGstEnabled ?? false,
             packagingGstRate: data.packagingGstRate ?? 0,
+            lastTokenNumber: data.lastTokenNumber ?? 0,
             userId: data.userId,
           });
           console.log("DEBUG POS API RESPONSE - enableKOTWithBill:", data.enableKOTWithBill);
@@ -1019,6 +1023,10 @@ export default function CheckoutClient() {
       const savedBill = data.bill ?? data;
       if (savedBill?.id) setLastSavedBillId(savedBill.id);
       if (savedBill?.billNumber) setBillNumber(savedBill.billNumber);
+      if (savedBill?.tokenNumber) {
+        setTokenNumber(savedBill.tokenNumber);
+        setBusiness(prev => prev ? { ...prev, lastTokenNumber: savedBill.tokenNumber } : prev);
+      }
       
       setIsSaving(false);
       return savedBill;
@@ -1337,6 +1345,12 @@ export default function CheckoutClient() {
                   {categoryLayout === 'horizontal' ? <Columns size={10} /> : <LayoutGrid size={10} />}
                   <span className="hidden sm:inline tracking-widest">{categoryLayout === 'horizontal' ? 'SIDEBAR' : 'CHIPS'}</span>
                 </button>
+                {business && (
+                  <div className="hidden sm:flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-lg">
+                    <Layers size={12} className="text-indigo-500" />
+                    <span className="text-[10px] font-black text-indigo-700 uppercase tracking-tighter">Tokens Today: {business.lastTokenNumber || 0}</span>
+                  </div>
+                )}
               </div>
 
               {/* Combined Search & New Category — COMPACT */}
@@ -2248,6 +2262,12 @@ export default function CheckoutClient() {
           <div className="text-center text-[11px] mt-1.5 font-bold">
             <div>Bill No: {billNumber}</div>
             <div>Date: {billDate}</div>
+            {tokenNumber && (
+              <div className="mt-2 flex flex-col items-center border-2 border-black py-1 px-4 mx-auto w-fit">
+                <div className="text-[10px] font-black uppercase tracking-widest">Token Number</div>
+                <div className="text-[24px] font-black leading-none py-1">#{tokenNumber}</div>
+              </div>
+            )}
             {selectedTable && (
               <div className="font-bold text-[11px] mt-1 border border-black px-2 py-0.5 inline-block uppercase tracking-tighter">
                 {selectedTable === "POS" ? "TYPE: DINING / POS" : 
@@ -2469,8 +2489,14 @@ export default function CheckoutClient() {
             </div>
             <div className="flex justify-between items-center font-bold text-[10px]">
               <span>TIME: {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-              <span>KOT NO: {Math.floor(Date.now() / 1000).toString().slice(-4)}</span>
+              <span>KOT NO: {tokenNumber ? `TOKEN #${tokenNumber}` : Math.floor(Date.now() / 1000).toString().slice(-4)}</span>
             </div>
+            {tokenNumber && (
+              <div className="mt-2 flex flex-col items-center border-2 border-black py-1 px-4 mx-auto w-fit">
+                <div className="text-[10px] font-black uppercase tracking-widest">Order Token</div>
+                <div className="text-[32px] font-black leading-none py-1">#{tokenNumber}</div>
+              </div>
+            )}
           </div>
 
           <div className="text-center text-[15px] font-bold border border-dashed border-black py-1 my-1.5 uppercase tracking-tighter">
@@ -2860,6 +2886,12 @@ export default function CheckoutClient() {
                   <div className="text-center text-[9px] mt-1">
                     <div>Bill No: {billNumber}</div>
                     <div>Date: {billDate}</div>
+                    {tokenNumber && (
+                      <div className="mt-1 flex flex-col items-center border-2 border-black py-1 px-2">
+                        <div className="text-[8px] font-black uppercase">Token Number</div>
+                        <div className="text-[18px] font-black leading-none">#{tokenNumber}</div>
+                      </div>
+                    )}
                     {selectedTable && (
                       <div className="font-bold text-black mt-0.5 uppercase text-[9px] border border-black px-1 inline-block">
                         {selectedTable === "POS" ? "TYPE: DINING / POS" : 
