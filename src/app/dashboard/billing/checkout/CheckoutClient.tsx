@@ -1200,32 +1200,70 @@ export default function CheckoutClient() {
       foodType: "veg"
     };
 
-    const currentItems = Array.isArray(quickAddAddonGroup.items) 
-      ? quickAddAddonGroup.items 
-      : (typeof quickAddAddonGroup.items === 'string' ? JSON.parse(quickAddAddonGroup.items) : []);
+    const oldCatIds = [...(quickAddAddonGroup.categoryIds || [])].sort().join(',');
+    const newCatIds = [...categoryIds].sort().join(',');
+    const isCategoryChanged = oldCatIds !== newCatIds;
 
-    const updatedGroup = {
-      ...quickAddAddonGroup,
-      categoryIds: categoryIds,
-      items: [...currentItems, newAddonItem]
-    };
+    if (isCategoryChanged) {
+      // Create a NEW AddonGroup to isolate this new addon's category mapping
+      const newGroup = {
+        id: `temp-${Date.now()}`,
+        name: quickAddAddonGroup.name,
+        isCompulsory: quickAddAddonGroup.isCompulsory,
+        minSelection: quickAddAddonGroup.minSelection,
+        maxSelection: quickAddAddonGroup.maxSelection,
+        allowMultipleUnits: quickAddAddonGroup.allowMultipleUnits,
+        categoryIds: categoryIds,
+        itemIds: [],
+        items: [newAddonItem]
+      };
 
-    // Optimistic Update
-    setAddonGroups(prev => prev.map(ag => ag.id === quickAddAddonGroup.id ? updatedGroup : ag));
-    setQuickAddAddonGroup(null);
-    kravy.success();
-    toast.success(`"${name}" addon added to ${quickAddAddonGroup.name}`);
+      setAddonGroups(prev => [...prev, newGroup]);
+      setQuickAddAddonGroup(null);
+      kravy.success();
+      toast.success(`"${name}" added to selected categories`);
 
-    // Persist to DB
-    try {
-      await fetch(`/api/menu-editor/addon-groups`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedGroup)
-      });
-    } catch (err) {
-      console.error("Failed to persist addon:", err);
-      toast.error("Cloud sync failed for this addon.");
+      try {
+        const res = await fetch(`/api/menu-editor/addon-groups`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newGroup)
+        });
+        const savedGroup = await res.json();
+        if (savedGroup && savedGroup.id) {
+           setAddonGroups(prev => prev.map(g => g.id === newGroup.id ? savedGroup : g));
+        }
+      } catch (err) {
+        console.error("Failed to create new addon group:", err);
+        toast.error("Cloud sync failed for this addon.");
+        setAddonGroups(prev => prev.filter(g => g.id !== newGroup.id));
+      }
+    } else {
+      // Keep existing logic if categories are unchanged
+      const currentItems = Array.isArray(quickAddAddonGroup.items) 
+        ? quickAddAddonGroup.items 
+        : (typeof quickAddAddonGroup.items === 'string' ? JSON.parse(quickAddAddonGroup.items) : []);
+
+      const updatedGroup = {
+        ...quickAddAddonGroup,
+        items: [...currentItems, newAddonItem]
+      };
+
+      setAddonGroups(prev => prev.map(ag => ag.id === quickAddAddonGroup.id ? updatedGroup : ag));
+      setQuickAddAddonGroup(null);
+      kravy.success();
+      toast.success(`"${name}" addon added to ${quickAddAddonGroup.name}`);
+
+      try {
+        await fetch(`/api/menu-editor/addon-groups`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedGroup)
+        });
+      } catch (err) {
+        console.error("Failed to persist addon:", err);
+        toast.error("Cloud sync failed for this addon.");
+      }
     }
   };
 
