@@ -981,7 +981,6 @@ export default function PartiesPage() {
                     <div className="h-[40mm]" />
                 </div>
                 </div>
-              </div>
             );
           })()}
         </div>
