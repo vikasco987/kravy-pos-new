@@ -318,7 +318,6 @@ export default function CheckoutClient() {
     setBillDate(new Date().toLocaleString());
   }, []);
 
-  const [isSaving, setIsSaving] = useState(false);
   const [prevWalletBalance, setPrevWalletBalance] = useState<number | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [menuLoading, setMenuLoading] = useState(true);
