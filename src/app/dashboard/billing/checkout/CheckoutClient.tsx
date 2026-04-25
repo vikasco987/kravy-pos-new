@@ -476,9 +476,11 @@ export default function CheckoutClient() {
     });
   }
 
-  function addAddonToCart(addon: any, groupName: string) {
+  function addAddonToCart(addon: any, groupName: string, catContext?: string) {
     kravy.add();
-    const fullName = `${addon.name} (${groupName})`;
+    const fullName = catContext 
+      ? `${addon.name} (${groupName} - ${catContext})`
+      : `${addon.name} (${groupName})`;
     
     setItems((prev) => {
       const existing = prev.find(i => i.name === fullName);
@@ -501,8 +503,11 @@ export default function CheckoutClient() {
     toast.success(`Added ${addon.name}`);
   }
 
-  function reduceAddonFromCart(addonName: string, groupName: string) {
-    const fullName = `${addonName} (${groupName})`;
+  function reduceAddonFromCart(addonName: string, groupName: string, catContext?: string) {
+    const fullName = catContext 
+      ? `${addonName} (${groupName} - ${catContext})`
+      : `${addonName} (${groupName})`;
+      
     setItems((prev) => {
       const existing = prev.find(i => i.name === fullName);
       if (!existing) return prev;
@@ -1471,12 +1476,12 @@ export default function CheckoutClient() {
                                    <div key={ag.id} className="flex flex-col gap-2">
                                      <div className="flex flex-wrap gap-1.5 items-center">
                                      {(Array.isArray(ag.items) ? ag.items : []).map((addon: any, idx: number) => {
-                                       const fullName = `${addon.name} (${ag.name})`;
+                                       const fullName = `${addon.name} (${ag.name} - ${catName})`;
                                        const inCart = items.find(i => i.name === fullName);
                                        return (
                                         <div key={idx} className="relative group/addon">
                                          <button
-                                           onClick={() => addAddonToCart(addon, ag.name)}
+                                           onClick={() => addAddonToCart(addon, ag.name, catName)}
                                            className={`flex items-center border-[0.5px] rounded-full overflow-hidden shadow-sm transition-all group
                                              ${inCart 
                                                ? 'bg-indigo-600 border-indigo-700 shadow-indigo-500/20 scale-[1.02]' 
@@ -1497,7 +1502,7 @@ export default function CheckoutClient() {
                                          </button>
                                          {inCart && (
                                             <button 
-                                              onClick={(e) => { e.stopPropagation(); reduceAddonFromCart(addon.name, ag.name); }}
+                                              onClick={(e) => { e.stopPropagation(); reduceAddonFromCart(addon.name, ag.name, catName); }}
                                               className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-rose-600 active:scale-90 transition-all z-10 border border-white dark:border-slate-900"
                                             >
                                               <X size={10} strokeWidth={4} />
@@ -1546,12 +1551,12 @@ export default function CheckoutClient() {
                                  <div key={ag.id} className="flex flex-col gap-2">
                                    <div className="flex flex-wrap gap-1.5 items-center">
                                      {(Array.isArray(ag.items) ? ag.items : []).map((addon: any, idx: number) => {
-                                       const fullName = `${addon.name} (${ag.name})`;
+                                       const fullName = `${addon.name} (${ag.name} - ${activeCategory})`;
                                        const inCart = items.find(i => i.name === fullName);
                                        return (
                                         <div key={idx} className="relative group/addon">
                                          <button
-                                           onClick={() => addAddonToCart(addon, ag.name)}
+                                           onClick={() => addAddonToCart(addon, ag.name, activeCategory)}
                                            className={`flex items-center border-[0.5px] rounded-full overflow-hidden shadow-sm transition-all group
                                              ${inCart 
                                                ? 'bg-indigo-600 border-indigo-700 shadow-indigo-500/20 scale-[1.02]' 
@@ -1572,7 +1577,7 @@ export default function CheckoutClient() {
                                          </button>
                                          {inCart && (
                                             <button 
-                                              onClick={(e) => { e.stopPropagation(); reduceAddonFromCart(addon.name, ag.name); }}
+                                              onClick={(e) => { e.stopPropagation(); reduceAddonFromCart(addon.name, ag.name, activeCategory); }}
                                               className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-rose-600 active:scale-90 transition-all z-10 border border-white dark:border-slate-900"
                                             >
                                               <X size={10} strokeWidth={4} />
