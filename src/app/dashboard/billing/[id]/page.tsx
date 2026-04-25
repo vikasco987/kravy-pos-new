@@ -577,7 +577,7 @@ export default function ViewBillPage() {
             Print
           </button>
 
-          {(userRole === "ADMIN" || userRole === "MASTER") && (
+          {(userRole === "ADMIN" || userRole === "OWNER") && (
             <WhatsAppBillButton 
               billId={id} 
               defaultPhone={bill.customerPhone || ""} 

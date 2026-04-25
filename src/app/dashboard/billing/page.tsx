@@ -1281,12 +1281,12 @@ function BillActions({ bill, refresh, clerkId, business, userRole, userPermissio
         }
       }
     }] : []),
-    {
+    ...((userRole === "ADMIN" || userRole === "OWNER") ? [{
       label: "WhatsApp",
       icon: <MessageCircle size={14} />,
       color: "rgb(37 211 102)",
       onClick: handleWhatsApp
-    },
+    }] : []),
     ...(bill.isHeld ? [{
       label: "Resume Order",
       icon: <Play size={14} />,
@@ -1328,7 +1328,7 @@ function BillActions({ bill, refresh, clerkId, business, userRole, userPermissio
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-      {(userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER") && (
+      {(userRole === "ADMIN" || userRole === "OWNER") && (
         <div style={{ width: "160px" }}>
           <WhatsAppBillButton 
             billId={bill.id} 

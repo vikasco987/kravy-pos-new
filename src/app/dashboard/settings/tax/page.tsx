@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Percent, ChevronLeft, Save, Loader2, Settings2,
-    Tag, CheckCircle2, Info, ToggleLeft, ToggleRight,
+    Tag, CheckCircle2, Circle, Info, ToggleLeft, ToggleRight,
     Gift, Flame, ShieldCheck, BadgePercent, Trash2, Plus,
     PackageOpen, ReceiptText, AlertTriangle, QrCode
 } from "lucide-react";
@@ -41,6 +41,11 @@ export default function PricingSettingsPage() {
     const [enablePackagingCharges, setEnablePackagingCharges] = useState(false);
     const [packagingChargeAmount, setPackagingChargeAmount] = useState(0);
 
+    const [deliveryGstEnabled, setDeliveryGstEnabled] = useState(false);
+    const [deliveryGstRate, setDeliveryGstRate] = useState(0);
+    const [packagingGstEnabled, setPackagingGstEnabled] = useState(false);
+    const [packagingGstRate, setPackagingGstRate] = useState(0);
+
     const [taxRate, setTaxRate] = useState(5.0);
     const [businessProfile, setBusinessProfile] = useState<any>(null);
 
@@ -72,13 +77,15 @@ export default function PricingSettingsPage() {
                 setTaxEnabled(profileData?.taxEnabled ?? true);
                 setPerProductTaxEnabled(profileData?.perProductTaxEnabled ?? false);
                 setQrMenuPriceInclusive(profileData?.qrMenuPriceInclusive ?? false);
-                setEnableKOTWithBill(profileData?.enableKOTWithBill ?? false);
-                setEnableMenuQRInBill(profileData?.enableMenuQRInBill ?? false);
-                
                 setEnableDeliveryCharges(profileData?.enableDeliveryCharges ?? false);
                 setDeliveryChargeAmount(profileData?.deliveryChargeAmount ?? 0);
                 setEnablePackagingCharges(profileData?.enablePackagingCharges ?? false);
                 setPackagingChargeAmount(profileData?.packagingChargeAmount ?? 0);
+
+                setDeliveryGstEnabled(profileData?.deliveryGstEnabled ?? false);
+                setDeliveryGstRate(profileData?.deliveryGstRate ?? 0);
+                setPackagingGstEnabled(profileData?.packagingGstEnabled ?? false);
+                setPackagingGstRate(profileData?.packagingGstRate ?? 0);
 
                 setTaxRate(profileData?.taxRate ?? 5.0);
                 setOffers(Array.isArray(offerData) ? offerData : []);
@@ -101,12 +108,14 @@ export default function PricingSettingsPage() {
                 taxEnabled, 
                 perProductTaxEnabled, 
                 qrMenuPriceInclusive, 
-                enableKOTWithBill,
-                enableMenuQRInBill,
                 enableDeliveryCharges,
                 deliveryChargeAmount: Number(deliveryChargeAmount),
                 enablePackagingCharges,
                 packagingChargeAmount: Number(packagingChargeAmount),
+                deliveryGstEnabled,
+                deliveryGstRate: Number(deliveryGstRate),
+                packagingGstEnabled,
+                packagingGstRate: Number(packagingGstRate),
                 taxRate: Number(taxRate) 
             };
             const res = await fetch("/api/profile", {
@@ -398,16 +407,46 @@ export default function PricingSettingsPage() {
                             </button>
                         </div>
                         {enableDeliveryCharges && (
-                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="pl-[54px] pr-2 pb-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] mb-1.5 block">Charge Amount (₹)</label>
-                                <div className="relative max-w-[150px]">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)] font-bold text-sm">₹</span>
-                                    <input
-                                        type="number"
-                                        value={deliveryChargeAmount}
-                                        onChange={e => setDeliveryChargeAmount(Number(e.target.value))}
-                                        className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl pl-8 pr-4 py-2 text-sm font-black text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
-                                    />
+                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="pl-[54px] pr-2 pb-2 space-y-4">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] mb-1.5 block">Charge Amount (₹)</label>
+                                    <div className="relative max-w-[150px]">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)] font-bold text-sm">₹</span>
+                                        <input
+                                            type="number"
+                                            value={deliveryChargeAmount}
+                                            onChange={e => setDeliveryChargeAmount(Number(e.target.value))}
+                                            className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl pl-8 pr-4 py-2 text-sm font-black text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-3">
+                                        <button 
+                                            onClick={() => setDeliveryGstEnabled(!deliveryGstEnabled)}
+                                            className={`p-1.5 rounded-lg transition-all ${deliveryGstEnabled ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}
+                                        >
+                                            {deliveryGstEnabled ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+                                        </button>
+                                        <div>
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-primary)]">GST on Delivery</div>
+                                            <div className="text-[9px] text-[var(--kravy-text-muted)] font-bold">Calculate tax on charge</div>
+                                        </div>
+                                    </div>
+
+                                    {deliveryGstEnabled && (
+                                        <div className="relative max-w-[100px]">
+                                            <input
+                                                type="number"
+                                                placeholder="GST %"
+                                                value={deliveryGstRate}
+                                                onChange={e => setDeliveryGstRate(Number(e.target.value))}
+                                                className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl px-3 py-1.5 text-xs font-black text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                                            />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[var(--kravy-text-muted)]">%</span>
+                                        </div>
+                                    )}
                                 </div>
                             </motion.div>
                         )}
@@ -435,16 +474,46 @@ export default function PricingSettingsPage() {
                             </button>
                         </div>
                         {enablePackagingCharges && (
-                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="pl-[54px] pr-2 pb-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] mb-1.5 block">Charge Amount (₹)</label>
-                                <div className="relative max-w-[150px]">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)] font-bold text-sm">₹</span>
-                                    <input
-                                        type="number"
-                                        value={packagingChargeAmount}
-                                        onChange={e => setPackagingChargeAmount(Number(e.target.value))}
-                                        className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl pl-8 pr-4 py-2 text-sm font-black text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none"
-                                    />
+                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="pl-[54px] pr-2 pb-2 space-y-4">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] mb-1.5 block">Charge Amount (₹)</label>
+                                    <div className="relative max-w-[150px]">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)] font-bold text-sm">₹</span>
+                                        <input
+                                            type="number"
+                                            value={packagingChargeAmount}
+                                            onChange={e => setPackagingChargeAmount(Number(e.target.value))}
+                                            className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl pl-8 pr-4 py-2 text-sm font-black text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-3">
+                                        <button 
+                                            onClick={() => setPackagingGstEnabled(!packagingGstEnabled)}
+                                            className={`p-1.5 rounded-lg transition-all ${packagingGstEnabled ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}
+                                        >
+                                            {packagingGstEnabled ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+                                        </button>
+                                        <div>
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-primary)]">GST on Packaging</div>
+                                            <div className="text-[9px] text-[var(--kravy-text-muted)] font-bold">Calculate tax on charge</div>
+                                        </div>
+                                    </div>
+
+                                    {packagingGstEnabled && (
+                                        <div className="relative max-w-[100px]">
+                                            <input
+                                                type="number"
+                                                placeholder="GST %"
+                                                value={packagingGstRate}
+                                                onChange={e => setPackagingGstRate(Number(e.target.value))}
+                                                className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl px-3 py-1.5 text-xs font-black text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                                            />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[var(--kravy-text-muted)]">%</span>
+                                        </div>
+                                    )}
                                 </div>
                             </motion.div>
                         )}

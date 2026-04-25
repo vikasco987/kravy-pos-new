@@ -623,8 +623,12 @@ export default function CheckoutClient() {
     enableMenuQRInBill?: boolean;
     enableDeliveryCharges?: boolean;
     deliveryChargeAmount?: number;
+    deliveryGstEnabled?: boolean;
+    deliveryGstRate?: number;
     enablePackagingCharges?: boolean;
     packagingChargeAmount?: number;
+    packagingGstEnabled?: boolean;
+    packagingGstRate?: number;
     userId?: string;
   } | null>(null);
 
@@ -662,8 +666,12 @@ export default function CheckoutClient() {
             enableMenuQRInBill: data.enableMenuQRInBill ?? false,
             enableDeliveryCharges: data.enableDeliveryCharges ?? false,
             deliveryChargeAmount: data.deliveryChargeAmount ?? 0,
+            deliveryGstEnabled: data.deliveryGstEnabled ?? false,
+            deliveryGstRate: data.deliveryGstRate ?? 0,
             enablePackagingCharges: data.enablePackagingCharges ?? false,
             packagingChargeAmount: data.packagingChargeAmount ?? 0,
+            packagingGstEnabled: data.packagingGstEnabled ?? false,
+            packagingGstRate: data.packagingGstRate ?? 0,
             userId: data.userId,
           });
           console.log("DEBUG POS API RESPONSE - enableKOTWithBill:", data.enableKOTWithBill);
@@ -840,11 +848,17 @@ export default function CheckoutClient() {
 
   // Additional Charges Calculation
   const deliveryCharge = (orderType === "DELIVERY" && business?.enableDeliveryCharges) ? (business?.deliveryChargeAmount || 0) : 0;
-  const packagingCharge = ((orderType === "DELIVERY" || orderType === "TAKEAWAY") && business?.enablePackagingCharges) ? (business?.packagingChargeAmount || 0) : 0;
+  const deliveryGst = (deliveryCharge > 0 && business?.deliveryGstEnabled) ? (deliveryCharge * (business?.deliveryGstRate || 0) / 100) : 0;
 
-  // Final total is now simply net taxable + GST + additional charges
-  const finalTotal = Number((totalTaxable + totalGst + deliveryCharge + packagingCharge).toFixed(2));
-  const gstAmount = Number(totalGst.toFixed(2));
+  const packagingCharge = ((orderType === "DELIVERY" || orderType === "TAKEAWAY") && business?.enablePackagingCharges) ? (business?.packagingChargeAmount || 0) : 0;
+  const packagingGst = (packagingCharge > 0 && business?.packagingGstEnabled) ? (packagingCharge * (business?.packagingGstRate || 0) / 100) : 0;
+
+  const totalCharges = deliveryCharge + packagingCharge;
+  const totalChargesGst = deliveryGst + packagingGst;
+
+  // Final total is now simply net taxable + GST + additional charges + tax on charges
+  const finalTotal = Number((totalTaxable + totalGst + totalCharges + totalChargesGst).toFixed(2));
+  const gstAmount = Number((totalGst + totalChargesGst).toFixed(2));
   
   // 🛡️ SMART AUDIT LOG: Detect if default was used
   const hasAuditNotes = items.some(i => perProductEnabled && (i.gst === undefined || i.gst === null || i.gst === 0));
@@ -904,6 +918,9 @@ export default function CheckoutClient() {
         return sum + ((gross * rate) / 100);
       }, 0);
 
+      // ✅ ADDED: Include charges GST in recalculation
+      reCalcGst += (deliveryGst + packagingGst);
+
       if ((taxActive || perProductEnabled) && Math.abs(reCalcGst - gstAmount) > 1) { // Increased tolerance to 1 for rounding
         alert(`Safety Check: GST Calculation Mismatch! System: ₹${gstAmount.toFixed(2)}, Calculated: ₹${reCalcGst.toFixed(2)}`);
         setIsSaving(false);
@@ -955,8 +972,16 @@ export default function CheckoutClient() {
       }
 
       const payload = {
-        items, subtotal: Number(totalTaxable.toFixed(2)), tax: gstAmount, total: finalTotal,
-        paymentMode, paymentStatus: isHeld ? "HELD" : paymentStatus,
+        items, 
+        subtotal: Number(totalTaxable.toFixed(2)), 
+        tax: Number(totalGst.toFixed(2)), 
+        deliveryCharges: deliveryCharge,
+        deliveryGst: deliveryGst,
+        packagingCharges: packagingCharge,
+        packagingGst: packagingGst,
+        total: finalTotal,
+        paymentMode, 
+        paymentStatus: isHeld ? "HELD" : paymentStatus,
         upiTxnRef: paymentMode === "UPI" ? upiTxnRef : null,
         isHeld, customerName: customerName || "Walk-in Customer",
         customerPhone: customerPhone || null,
@@ -2286,16 +2311,32 @@ export default function CheckoutClient() {
               </>
             )}
             {deliveryCharge > 0 && (
-              <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
-                <span>DELIVERY CHARGES</span>
-                <span>₹{deliveryCharge.toFixed(2)}</span>
-              </div>
+              <>
+                <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
+                  <span>DELIVERY CHARGES</span>
+                  <span>₹{deliveryCharge.toFixed(2)}</span>
+                </div>
+                {deliveryGst > 0 && (
+                  <div className="flex justify-between items-center text-[8px] font-bold italic opacity-60">
+                    <span className="pl-2">└ Tax on Delivery ({business?.deliveryGstRate}%)</span>
+                    <span>₹{deliveryGst.toFixed(2)}</span>
+                  </div>
+                )}
+              </>
             )}
             {packagingCharge > 0 && (
-              <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
-                <span>PACKAGING CHARGES</span>
-                <span>₹{packagingCharge.toFixed(2)}</span>
-              </div>
+              <>
+                <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
+                  <span>PACKAGING CHARGES</span>
+                  <span>₹{packagingCharge.toFixed(2)}</span>
+                </div>
+                {packagingGst > 0 && (
+                  <div className="flex justify-between items-center text-[8px] font-bold italic opacity-60">
+                    <span className="pl-2">└ Tax on Packaging ({business?.packagingGstRate}%)</span>
+                    <span>₹{packagingGst.toFixed(2)}</span>
+                  </div>
+                )}
+              </>
             )}
             <div className="border-t-2 border-dashed border-black my-1" />
             <div className="flex justify-between font-black text-[18px] border-y-2 border-black py-2.5 my-1.5 uppercase bg-white">
@@ -2873,10 +2914,26 @@ export default function CheckoutClient() {
                       </>
                     )}
                     {deliveryCharge > 0 && (
-                      <div className="flex justify-between text-[9px] font-bold"><span>Delivery</span><span>₹{deliveryCharge.toFixed(2)}</span></div>
+                      <>
+                        <div className="flex justify-between text-[9px] font-bold"><span>Delivery</span><span>₹{deliveryCharge.toFixed(2)}</span></div>
+                        {deliveryGst > 0 && (
+                          <div className="flex justify-between text-[8px] italic opacity-60 font-bold">
+                            <span className="pl-2">└ Tax ({business?.deliveryGstRate}%)</span>
+                            <span>₹{deliveryGst.toFixed(2)}</span>
+                          </div>
+                        )}
+                      </>
                     )}
                     {packagingCharge > 0 && (
-                      <div className="flex justify-between text-[9px] font-bold"><span>Packaging</span><span>₹{packagingCharge.toFixed(2)}</span></div>
+                      <>
+                        <div className="flex justify-between text-[9px] font-bold"><span>Packaging</span><span>₹{packagingCharge.toFixed(2)}</span></div>
+                        {packagingGst > 0 && (
+                          <div className="flex justify-between text-[8px] italic opacity-60 font-bold">
+                            <span className="pl-2">└ Tax ({business?.packagingGstRate}%)</span>
+                            <span>₹{packagingGst.toFixed(2)}</span>
+                          </div>
+                        )}
+                      </>
                     )}
                     <div className="border-t border-dashed border-gray-400 my-1" />
                     <div className="flex justify-between font-bold text-[11px] bg-black text-white px-1 py-0.5">

@@ -110,8 +110,12 @@ export async function POST(request: Request) {
         enableMenuQRInBill: body.enableMenuQRInBill !== undefined ? body.enableMenuQRInBill : undefined,
         enableDeliveryCharges: body.enableDeliveryCharges !== undefined ? body.enableDeliveryCharges : undefined,
         deliveryChargeAmount: body.deliveryChargeAmount !== undefined ? body.deliveryChargeAmount : undefined,
+        deliveryGstEnabled: body.deliveryGstEnabled !== undefined ? body.deliveryGstEnabled : undefined,
+        deliveryGstRate: body.deliveryGstRate !== undefined ? body.deliveryGstRate : undefined,
         enablePackagingCharges: body.enablePackagingCharges !== undefined ? body.enablePackagingCharges : undefined,
         packagingChargeAmount: body.packagingChargeAmount !== undefined ? body.packagingChargeAmount : undefined,
+        packagingGstEnabled: body.packagingGstEnabled !== undefined ? body.packagingGstEnabled : undefined,
+        packagingGstRate: body.packagingGstRate !== undefined ? body.packagingGstRate : undefined,
       },
 
       create: {
@@ -157,8 +161,12 @@ export async function POST(request: Request) {
         enableMenuQRInBill: body.enableMenuQRInBill ?? false,
         enableDeliveryCharges: body.enableDeliveryCharges ?? false,
         deliveryChargeAmount: body.deliveryChargeAmount ?? 0,
+        deliveryGstEnabled: body.deliveryGstEnabled ?? false,
+        deliveryGstRate: body.deliveryGstRate ?? 0,
         enablePackagingCharges: body.enablePackagingCharges ?? false,
         packagingChargeAmount: body.packagingChargeAmount ?? 0,
+        packagingGstEnabled: body.packagingGstEnabled ?? false,
+        packagingGstRate: body.packagingGstRate ?? 0,
       },
     });
 

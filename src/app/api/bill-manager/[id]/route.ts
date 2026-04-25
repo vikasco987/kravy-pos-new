@@ -149,7 +149,18 @@ export async function PUT(
     const finalDeliveryCharge = Number(deliveryCharges) || 0;
     const finalPackagingCharge = Number(packagingCharges) || 0;
 
-    const finalTotal = Number((finalSubtotal + tax - serverDiscountAmt + finalDeliveryCharge + finalPackagingCharge).toFixed(2));
+    // ✅ RECALCULATE CHARGES GST (SERVER-SIDE)
+    let serverDeliveryGst = 0;
+    if (finalDeliveryCharge > 0 && profile?.deliveryGstEnabled) {
+      serverDeliveryGst = (finalDeliveryCharge * (profile.deliveryGstRate || 0)) / 100;
+    }
+    
+    let serverPackagingGst = 0;
+    if (finalPackagingCharge > 0 && profile?.packagingGstEnabled) {
+      serverPackagingGst = (finalPackagingCharge * (profile.packagingGstRate || 0)) / 100;
+    }
+
+    const finalTotal = Number((finalSubtotal + tax - serverDiscountAmt + finalDeliveryCharge + serverDeliveryGst + finalPackagingCharge + serverPackagingGst).toFixed(2));
 
     /* ---------- PAYMENT STATUS ---------- */
     let finalPaymentStatus: string;
@@ -207,7 +218,9 @@ export async function PUT(
         discountAmount: serverDiscountAmt,
         discountCode: validatedDiscountCode,
         deliveryCharges: finalDeliveryCharge,
+        deliveryGst: serverDeliveryGst,
         packagingCharges: finalPackagingCharge,
+        packagingGst: serverPackagingGst,
         isKotPrinted: isKotPrinted === true,
         auditNote: body.auditNote || null,
       },

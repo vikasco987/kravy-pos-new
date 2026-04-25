@@ -395,8 +395,13 @@ model BusinessProfile {
   // ✅ Additional Charges Settings
   enableDeliveryCharges   Boolean @default(false)
   deliveryChargeAmount    Float   @default(0)
+  deliveryGstEnabled      Boolean @default(false)
+  deliveryGstRate         Float   @default(0)
+
   enablePackagingCharges  Boolean @default(false)
   packagingChargeAmount   Float   @default(0)
+  packagingGstEnabled     Boolean @default(false)
+  packagingGstRate        Float   @default(0)
 
   // ✅ Public Access Identifiers
   slug     String? // Removed unique to allow db push
@@ -450,10 +455,12 @@ model BillManager {
   subtotal       Float
   discountAmount Float?  @default(0)
   discountCode   String?
-  tax            Float?
-  deliveryCharges Float? @default(0)
+  tax              Float?
+  deliveryCharges  Float? @default(0)
+  deliveryGst      Float? @default(0)
   packagingCharges Float? @default(0)
-  total          Float
+  packagingGst     Float? @default(0)
+  total            Float
 
   paymentMode   String
   paymentStatus String
