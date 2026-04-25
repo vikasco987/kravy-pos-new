@@ -17,7 +17,8 @@ import {
   PieChart,
   Grid,
   Check,
-  Settings
+  Settings,
+  LayoutDashboard
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
@@ -144,6 +145,11 @@ export default function GSTReportPage() {
           <p className="text-sm text-[var(--kravy-text-muted)] italic mt-1 uppercase tracking-widest font-black opacity-60">
             Professional Tax Auditing & Filing Reports
           </p>
+          <Link href="/dashboard/reports/gst/dashboard" className="inline-flex items-center gap-2 mt-4 text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 group transition-all">
+            <LayoutDashboard size={14} className="group-hover:rotate-12 transition-transform" /> 
+            View Analytics Dashboard
+            <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
+          </Link>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

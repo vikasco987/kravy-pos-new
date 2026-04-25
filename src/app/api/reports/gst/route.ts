@@ -52,6 +52,8 @@ export async function GET(req: Request) {
     let totalSgstAll = 0;
     let totalIgstAll = 0;
     let totalGstAll = 0;
+    let totalDeliveryGstAll = 0;
+    let totalPackagingGstAll = 0;
 
     bills.forEach((bill) => {
       const dateStr = bill.createdAt.toISOString().split("T")[0];
@@ -122,6 +124,19 @@ export async function GET(req: Request) {
         hsnData.qty += qty;
       });
 
+      // ✅ ADDED: Include Delivery & Packaging GST
+      const dGst = Number(bill.deliveryGst || 0);
+      const pGst = Number(bill.packagingGst || 0);
+      const chargesGst = dGst + pGst;
+
+      if (isInterState) {
+        billIgst += chargesGst;
+      } else {
+        billCgst += chargesGst / 2;
+        billSgst += chargesGst / 2;
+      }
+      billGst += chargesGst;
+
       // GSTR-1 Entry
       gstr1.push({
         billNumber: bill.billNumber,
@@ -136,7 +151,9 @@ export async function GET(req: Request) {
         sgst: Number(billSgst.toFixed(2)),
         igst: Number(billIgst.toFixed(2)),
         totalGst: Number(billGst.toFixed(2)),
-        grandTotal: Number((billTaxable + billGst).toFixed(2)),
+        grandTotal: Number((billTaxable + billGst + Number(bill.deliveryCharges || 0) + Number(bill.packagingCharges || 0)).toFixed(2)),
+        deliveryGst: dGst,
+        packagingGst: pGst,
         rates: Array.from(rates).sort((a,b)=>a-b).join(", ") + "%",
         hsns: Array.from(hsns).join(", ") || "-",
         paymentMode: bill.paymentMode,
@@ -145,22 +162,28 @@ export async function GET(req: Request) {
 
       // Daily Summary
       if (!dailyMap.has(dateStr)) {
-        dailyMap.set(dateStr, { date: dateStr, bills: 0, gross: 0, taxable: 0, cgst: 0, sgst: 0, igst: 0, totalGst: 0 });
+        dailyMap.set(dateStr, { date: dateStr, bills: 0, gross: 0, taxable: 0, cgst: 0, sgst: 0, igst: 0, totalGst: 0, deliveryGst: 0, packagingGst: 0 });
       }
       const dailyData = dailyMap.get(dateStr);
       dailyData.bills += 1;
-      dailyData.gross += (billTaxable + billGst);
+      dailyData.gross += (billTaxable + billGst + Number(bill.deliveryCharges || 0) + Number(bill.packagingCharges || 0));
       dailyData.taxable += billTaxable;
       dailyData.cgst += billCgst;
       dailyData.sgst += billSgst;
       dailyData.igst += billIgst;
       dailyData.totalGst += billGst;
+      dailyData.deliveryGst += dGst;
+      dailyData.packagingGst += pGst;
 
       totalTaxableAll += billTaxable;
       totalCgstAll += billCgst;
       totalSgstAll += billSgst;
       totalIgstAll += billIgst;
       totalGstAll += billGst;
+      
+      // Separate totals for dashboard
+      totalDeliveryGstAll += dGst;
+      totalPackagingGstAll += pGst;
     });
 
     const hsnSummary = Array.from(hsnMap.values()).map(h => ({
@@ -180,6 +203,8 @@ export async function GET(req: Request) {
       sgst: Number(d.sgst.toFixed(2)),
       igst: Number(d.igst.toFixed(2)),
       totalGst: Number(d.totalGst.toFixed(2)),
+      deliveryGst: Number(d.deliveryGst.toFixed(2)),
+      packagingGst: Number(d.packagingGst.toFixed(2)),
     })).sort((a, b) => b.date.localeCompare(a.date));
 
     const gstr3b = {
@@ -188,6 +213,8 @@ export async function GET(req: Request) {
       sgst: Number(totalSgstAll.toFixed(2)),
       igst: Number(totalIgstAll.toFixed(2)),
       totalGst: Number(totalGstAll.toFixed(2)),
+      deliveryGst: Number(totalDeliveryGstAll.toFixed(2)),
+      packagingGst: Number(totalPackagingGstAll.toFixed(2)),
     };
 
     return NextResponse.json({
