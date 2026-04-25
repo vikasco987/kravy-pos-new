@@ -1105,7 +1105,6 @@ export default function BillingPage() {
                 <div className="text-[9px] italic tracking-[0.3em]">*** END OF BILL ***</div>
                 <div className="h-[40mm]" />
             </div>
-            </div>
         </div>
     );
   }
