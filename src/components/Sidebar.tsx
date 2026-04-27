@@ -138,9 +138,9 @@ const navGroups = [
       { icon: <UtensilsCrossed size={18} />, label: "Browse Products", href: "/dashboard/menu/view" },
       { icon: <Sparkles size={18} />, label: "Interactive Editor", href: "/dashboard/menu-editor", badge: "New", badgeColor: "#8B5CF6" },
       { icon: <Layers size={18} />, label: "Add-on clusters", href: "/dashboard/menu/addons", badge: "Setup", badgeColor: "#10B981" },
-      { icon: <Zap size={18} />, label: "AI Menu Scraper", href: "/dashboard/ai-scraper", badge: "AI", badgeColor: "#F59E0B", roles: ["ADMIN"] },
+      { icon: <Zap size={18} />, label: "AI Menu Scraper", href: "/dashboard/ai-scraper", badge: "AI", badgeColor: "#F59E0B", roles: ["ADMIN", "SELLER", "STAFF"] },
       { icon: <PlusCircle size={18} />, label: "Add Single Item", href: "/dashboard/menu/upload" },
-      { icon: <Upload size={18} />, label: "Excel Bulk Import", href: "/dashboard/store-item-upload", badge: "Import", badgeColor: "#FF6B35", roles: ["ADMIN"] },
+      { icon: <Upload size={18} />, label: "Excel Bulk Import", href: "/dashboard/store-item-upload", badge: "Import", badgeColor: "#FF6B35", roles: ["ADMIN", "SELLER", "STAFF"] },
       { icon: <Settings size={18} />, label: "Category & Editor", href: "/dashboard/menu/edit" },
     ]
   },
@@ -148,8 +148,8 @@ const navGroups = [
     group: "RESOURCES",
     items: [
       { icon: <Users size={18} />, label: "Customer Parties", href: "/dashboard/parties" },
-      { icon: <UserPlus size={18} />, label: "Staff Management", href: "/dashboard/staff", roles: ["ADMIN", "SELLER"] },
-      { icon: <Package size={18} />, label: "Inventory Stock", href: "/dashboard/inventory", roles: ["ADMIN", "SELLER"] },
+      { icon: <UserPlus size={18} />, label: "Staff Management", href: "/dashboard/staff", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Package size={18} />, label: "Inventory Stock", href: "/dashboard/inventory", roles: ["ADMIN", "SELLER", "STAFF"] },
       { icon: <QrCode size={18} />, label: "QR Order Terminal", href: "/dashboard/qr-orders", badge: "Scan", badgeColor: "#8B5CF6" },
     ]
   },
@@ -179,9 +179,9 @@ const navGroups = [
 
     group: "ADMINISTRATION",
     items: [
-      { icon: <UserCircle size={18} />, label: "Business Profile", href: "/dashboard/profile", roles: ["ADMIN"] },
-      { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings", roles: ["ADMIN", "SELLER"] },
-      { icon: <Percent size={18} />, label: "Tax Management", href: "/dashboard/settings/tax", badge: "GST", badgeColor: "#F59E0B", roles: ["ADMIN"] },
+      { icon: <UserCircle size={18} />, label: "Business Profile", href: "/dashboard/profile", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Percent size={18} />, label: "Tax Management", href: "/dashboard/settings/tax", badge: "GST", badgeColor: "#F59E0B", roles: ["ADMIN", "SELLER", "STAFF"] },
       { icon: <Lock size={18} />, label: "Access Control", href: "/admin/users", badge: "Roles", badgeColor: "#EF4444", roles: ["ADMIN"] },
       { 
         icon: <Shield size={18} />, 
@@ -194,8 +194,8 @@ const navGroups = [
           { label: "Onboard Dealer", href: "/admin/onboarding" },
         ]
       },
-      { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup", roles: ["ADMIN"] },
-      { icon: <Archive size={18} />, label: "Archive & Trash", href: "/dashboard/billing/deleted", roles: ["ADMIN", "SELLER"] },
+      { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Archive size={18} />, label: "Archive & Trash", href: "/dashboard/billing/deleted", roles: ["ADMIN", "SELLER", "STAFF"] },
       { icon: <HelpCircle size={18} />, label: "Help & Support", href: "/dashboard/help" },
     ]
   }

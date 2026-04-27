@@ -64,6 +64,7 @@ const ALL_PATHS = [
   { path: "edit-bill", label: "Allow: Edit Past Bills", icon: <Edit3 size={16} /> },
   { path: "delete-bill", label: "Allow: Delete Past Bills", icon: <Trash2 size={16} /> },
   { path: "mark-as-paid", label: "Allow: Change Payment Status", icon: <CheckCircle2 size={16} /> },
+  { path: "whatsapp-bill", label: "Allow: WhatsApp Billing", icon: <MessageCircle size={16} /> },
 
   { path: "header-kit-actions", label: "--- Kitchen Actions ---", icon: <Activity size={16} />, isHeader: true },
   { path: "kit-complete-order", label: "Allow: Mark Order as Ready", icon: <CheckCircle2 size={16} /> },

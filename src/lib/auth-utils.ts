@@ -15,10 +15,42 @@ export async function getEffectiveClerkId(): Promise<string | null> {
   const { userId } = await auth();
   
   if (userId) {
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { clerkId: userId },
-      select: { role: true, ownerId: true }
+      select: { id: true, role: true, ownerId: true }
     });
+
+    // CRITICAL: If user is not in DB or has no ownerId, try to sync from Clerk metadata
+    // This fixed the "History not showing" issue for Sellers/Staff logged in via Clerk
+    if (!user || (!user.ownerId && user.role !== "ADMIN")) {
+       try {
+          const { clerkClient } = await import('@clerk/nextjs/server');
+          const client = await clerkClient();
+          const fullUser = await client.users.getUser(userId);
+          const ownerId = (fullUser.publicMetadata?.ownerId as string) || null;
+
+          if (!user) {
+            user = await prisma.user.create({
+              data: {
+                clerkId: userId,
+                email: fullUser.emailAddresses[0].emailAddress,
+                name: `${fullUser.firstName || ""} ${fullUser.lastName || ""}`.trim() || fullUser.username || "Staff Member",
+                role: "USER",
+                ownerId: ownerId,
+              },
+              select: { id: true, role: true, ownerId: true }
+            });
+          } else if (ownerId && !user.ownerId) {
+            user = await prisma.user.update({
+              where: { clerkId: userId },
+              data: { ownerId: ownerId },
+              select: { id: true, role: true, ownerId: true }
+            });
+          }
+       } catch (err) {
+          console.error("Auth sync error:", err);
+       }
+    }
 
     // Check for impersonation if user is ADMIN
     if (user && user.role === "ADMIN") {

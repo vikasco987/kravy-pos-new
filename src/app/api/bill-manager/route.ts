@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
       isKotPrinted,
       deliveryCharges,
       packagingCharges,
+      serviceCharge,
     } = body;
 
     // 🛑 1. ROBUST VALIDATION (Critical Fix for UI Crashes)
@@ -161,6 +162,7 @@ export async function POST(req: NextRequest) {
 
     const finalDeliveryCharge = Number(deliveryCharges) || 0;
     const finalPackagingCharge = Number(packagingCharges) || 0;
+    const finalServiceCharge = Number(serviceCharge) || 0;
 
     // ✅ RECALCULATE CHARGES GST (SERVER-SIDE)
     let serverDeliveryGst = 0;
@@ -173,7 +175,7 @@ export async function POST(req: NextRequest) {
       serverPackagingGst = (finalPackagingCharge * (profile.packagingGstRate || 0)) / 100;
     }
 
-    const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt + finalDeliveryCharge + serverDeliveryGst + finalPackagingCharge + serverPackagingGst).toFixed(2));
+    const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt + finalDeliveryCharge + serverDeliveryGst + finalPackagingCharge + serverPackagingGst + finalServiceCharge).toFixed(2));
 
     // ✅ Generate unique sequential bill number (SV/YYMM/XXXX)
     const nowLocal = new Date();
@@ -284,6 +286,7 @@ export async function POST(req: NextRequest) {
         deliveryGst: serverDeliveryGst,
         packagingCharges: finalPackagingCharge,
         packagingGst: serverPackagingGst,
+        serviceCharge: finalServiceCharge,
         auditNote: body.auditNote || null,
         isKotPrinted: isKotPrinted === true,
         tokenNumber: nextToken,

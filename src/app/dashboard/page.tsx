@@ -9,7 +9,7 @@ import TopItems from "./components/top-items";
 import DateFilter from "./components/date-filter";
 import PaymentModeChart from "./components/payment-mode-chart";
 import DashboardSoundAlerts from "./components/dashboard-sound-alerts";
-import { Sparkles, Tag, Fingerprint, Copy, ShieldCheck, Zap, Smartphone } from "lucide-react";
+import { Sparkles, Tag, Fingerprint, Copy, ShieldCheck, Zap, Smartphone, Ticket, ArrowRight, FileText, Grid } from "lucide-react";
 import CopyButton from "./components/copy-button";
 
 export const revalidate = 0;
@@ -370,102 +370,83 @@ export default async function DashboardPage({
         range={range}
       />
 
-      {/* ── API & SCRAPER INTEGRATION (Admin Central) ── */}
-      <div style={{
-        background: "var(--kravy-surface)",
-        border: "1px solid var(--kravy-border)",
-        borderRadius: "28px",
-        padding: "24px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "20px",
-        position: "relative",
-        overflow: "hidden"
-      }}>
-        <div style={{
-          position: "absolute",
-          top: "-20px",
-          right: "-20px",
-          width: "140px",
-          height: "140px",
-          background: "radial-gradient(circle, rgba(99, 102, 241, 0.1), transparent)",
-          borderRadius: "50%",
-          filter: "blur(30px)"
-        }} />
-
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{
-            width: "36px",
-            height: "36px",
-            background: "var(--kravy-surface)",
-            border: "1px solid var(--kravy-border)",
-            borderRadius: "12px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "var(--kravy-brand)"
-          }}>
-            <Smartphone size={20} />
+      {/* ── Store Management & Quick Actions ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <a 
+          href="/dashboard/reports/tokens"
+          className="bg-white border border-[var(--kravy-border)] rounded-[24px] p-6 flex flex-col gap-4 hover:shadow-xl transition-all hover:-translate-y-1 group"
+        >
+          <div className="flex justify-between items-start">
+            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+              <Ticket size={24} />
+            </div>
+            <div className="bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-1 rounded-md uppercase">Daily Logs</div>
           </div>
           <div>
-            <h2 style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)", letterSpacing: "-0.5px" }}>
-              API & External Integration
-            </h2>
-            <p style={{ fontSize: "0.68rem", color: "var(--kravy-text-muted)", fontFamily: "monospace", textTransform: "uppercase" }}>
-              Automate your menu enrichment & scraping
-            </p>
+            <h3 className="font-black text-slate-900 text-lg">Token History</h3>
+            <p className="text-[11px] text-slate-500 font-bold uppercase mt-1">Check daily token printing count</p>
           </div>
-        </div>
+          <div className="mt-2 flex items-center text-emerald-600 font-black text-xs gap-2">
+            View Reports <ArrowRight size={14} />
+          </div>
+        </a>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Admin Clerk ID", value: effectiveId, icon: <Fingerprint size={14} />, color: "#6366F1" },
-            { label: "Scraper Secret", value: "********", type: "secret", icon: <ShieldCheck size={14} />, color: "#10B981" },
-            { label: "Menu Fetch Endpoint", value: `/api/external/menu/${effectiveId}`, icon: <Copy size={14} />, color: "#F59E0B" },
-            { label: "API Base URL", value: "billing.kravy.in", icon: <Copy size={14} />, color: "#8B5CF6" }
-          ].map((item, idx) => (
-            <div key={idx} style={{
-              background: "var(--kravy-surface)",
-              border: "1px solid var(--kravy-border)",
-              borderRadius: "18px",
-              padding: "16px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)"
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: item.color }}>{item.icon}</span>
-                <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                  {item.label}
-                </span>
-              </div>
-              <div style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "space-between",
-                background: "var(--kravy-bg-2)",
-                padding: "8px 12px",
-                borderRadius: "10px",
-                border: "1px solid var(--kravy-border)"
-              }}>
-                <span style={{ 
-                  fontSize: "0.72rem", 
-                  fontWeight: 900, 
-                  color: "var(--kravy-text-primary)",
-                  fontFamily: "monospace",
-                  maxWidth: "140px",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap"
-                }}>
-                  {item.value}
-                </span>
-                <CopyButton text={item.value === "********" ? "kravy_scraper_secret_2026" : (item.value.startsWith("/") ? `https://billing.kravy.in${item.value}` : item.value)} />
-              </div>
+        <a 
+          href="/dashboard/reports/gst"
+          className="bg-white border border-[var(--kravy-border)] rounded-[24px] p-6 flex flex-col gap-4 hover:shadow-xl transition-all hover:-translate-y-1 group"
+        >
+          <div className="flex justify-between items-start">
+            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+              <FileText size={24} />
             </div>
-          ))}
-        </div>
+            <div className="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2 py-1 rounded-md uppercase">Tax Center</div>
+          </div>
+          <div>
+            <h3 className="font-black text-slate-900 text-lg">GST Reports</h3>
+            <p className="text-[11px] text-slate-500 font-bold uppercase mt-1">GSTR-1, 3B and HSN Summaries</p>
+          </div>
+          <div className="mt-2 flex items-center text-indigo-600 font-black text-xs gap-2">
+            Audit Center <ArrowRight size={14} />
+          </div>
+        </a>
+
+        <a 
+          href="/dashboard/parties"
+          className="bg-white border border-[var(--kravy-border)] rounded-[24px] p-6 flex flex-col gap-4 hover:shadow-xl transition-all hover:-translate-y-1 group"
+        >
+          <div className="flex justify-between items-start">
+            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+              <Fingerprint size={24} />
+            </div>
+            <div className="bg-amber-50 text-amber-700 text-[10px] font-black px-2 py-1 rounded-md uppercase">CRM</div>
+          </div>
+          <div>
+            <h3 className="font-black text-slate-900 text-lg">Customers</h3>
+            <p className="text-[11px] text-slate-500 font-bold uppercase mt-1">Manage parties and wallet balances</p>
+          </div>
+          <div className="mt-2 flex items-center text-amber-600 font-black text-xs gap-2">
+            Open CRM <ArrowRight size={14} />
+          </div>
+        </a>
+
+        <a 
+          href="/dashboard/tables"
+          className="bg-white border border-[var(--kravy-border)] rounded-[24px] p-6 flex flex-col gap-4 hover:shadow-xl transition-all hover:-translate-y-1 group"
+        >
+          <div className="flex justify-between items-start">
+            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+              <Grid size={24} />
+            </div>
+            <div className="bg-rose-50 text-rose-700 text-[10px] font-black px-2 py-1 rounded-md uppercase">Layout</div>
+          </div>
+          <div>
+            <h3 className="font-black text-slate-900 text-lg">Tables & Area</h3>
+            <p className="text-[11px] text-slate-500 font-bold uppercase mt-1">Manage your dining floor layout</p>
+          </div>
+          <div className="mt-2 flex items-center text-rose-600 font-black text-xs gap-2">
+            Manage Floor <ArrowRight size={14} />
+          </div>
+        </a>
       </div>
 
       {/* ── Charts Row ── */}

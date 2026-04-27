@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock, Trash2, Play, X, Search, ChevronDown, User, Printer,
   Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus,
-  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck
+  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck, Star, Zap
 } from "lucide-react";
 import { calculateDiscount } from "@/lib/discount-utils";
 import { toast } from "sonner";
@@ -211,6 +211,8 @@ export default function CheckoutClient() {
   const [selectedTable, setSelectedTable] = useState<string>("POS");
   const [orderType, setOrderType] = useState<"DINING" | "TAKEAWAY" | "DELIVERY">("DINING");
   const [showTableSelect, setShowTableSelect] = useState(false);
+  const [serviceCharge, setServiceCharge] = useState<number>(0);
+  const [manualDeliveryCharge, setManualDeliveryCharge] = useState<number>(0);
 
   const resetForm = () => {
     setItems([]);
@@ -228,6 +230,9 @@ export default function CheckoutClient() {
     setDiscountCode("");
     setDiscountAmt(0);
     setIsKotPrinted(false);
+    setTokenNumber(null);
+    setServiceCharge(0);
+    setManualDeliveryCharge(0);
     setSelectedTable("POS");
     setOrderType("DINING");
     
@@ -743,7 +748,7 @@ export default function CheckoutClient() {
   const [discountAmt, setDiscountAmt] = useState(0);
   const [customDiscountValue, setCustomDiscountValue] = useState(""); 
   const [customDiscountType, setCustomDiscountType] = useState<'PERCENT' | 'FLAT'>('FLAT');
-  const [discountMode, setDiscountMode] = useState<'PROMO' | 'INSTANT'>('PROMO');
+  const [discountMode, setDiscountMode] = useState<'PROMO' | 'INSTANT' | 'CHARGES'>('PROMO');
 
   // Recalculate discount whenever items or applied offer change
   useEffect(() => {
@@ -850,13 +855,13 @@ export default function CheckoutClient() {
   };
 
   // Additional Charges Calculation
-  const deliveryCharge = (orderType === "DELIVERY" && business?.enableDeliveryCharges) ? (business?.deliveryChargeAmount || 0) : 0;
+  const deliveryCharge = manualDeliveryCharge || ((orderType === "DELIVERY" && business?.enableDeliveryCharges) ? (business?.deliveryChargeAmount || 0) : 0);
   const deliveryGst = (deliveryCharge > 0 && business?.deliveryGstEnabled) ? (deliveryCharge * (business?.deliveryGstRate || 0) / 100) : 0;
 
   const packagingCharge = ((orderType === "DELIVERY" || orderType === "TAKEAWAY") && business?.enablePackagingCharges) ? (business?.packagingChargeAmount || 0) : 0;
   const packagingGst = (packagingCharge > 0 && business?.packagingGstEnabled) ? (packagingCharge * (business?.packagingGstRate || 0) / 100) : 0;
 
-  const totalCharges = deliveryCharge + packagingCharge;
+  const totalCharges = deliveryCharge + packagingCharge + serviceCharge;
   const totalChargesGst = deliveryGst + packagingGst;
 
   // Final total is now simply net taxable + GST + additional charges + tax on charges
@@ -912,7 +917,7 @@ export default function CheckoutClient() {
         if (perProductEnabled && item.gst !== undefined && item.gst !== null) {
           rate = item.gst;
         } else if (taxActive) {
-          rate = business?.taxRate ?? 0;
+          rate = globalRate;
         }
 
         // Important: Apply discount ratio here as well
@@ -999,6 +1004,7 @@ export default function CheckoutClient() {
         discountCode: appliedOffer?.code || null,
         deliveryCharges: deliveryCharge,
         packagingCharges: packagingCharge,
+        serviceCharge: serviceCharge,
         auditNote, // ✅ SaaS Feature: Audit Log
       };
 
@@ -1956,67 +1962,88 @@ export default function CheckoutClient() {
             {/* Cart Items List */}
             <div className="flex-1 px-4 md:px-5 py-3 space-y-2">
               {items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center py-8 opacity-40">
-                  <div className="text-4xl mb-3">🛒</div>
-                  <p className="font-bold text-[var(--kravy-text-primary)] text-sm">Cart is empty</p>
-                  <p className="text-xs text-[var(--kravy-text-muted)] mt-1">Tap any menu item to add</p>
+                <div className="flex flex-col items-center justify-center h-full text-center py-10">
+                  <div className="w-20 h-20 rounded-[32px] bg-[var(--kravy-brand)]/5 flex items-center justify-center mb-6 animate-pulse">
+                    <ShoppingBag size={40} className="text-[var(--kravy-brand)]/20" />
+                  </div>
+                  <p className="font-black text-[var(--kravy-text-primary)] text-sm tracking-tight">Cart is empty</p>
+                  <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-1 max-w-[180px] mx-auto uppercase tracking-widest leading-relaxed">
+                    Select items from the menu to start a new billing session
+                  </p>
+                  
+                  {/* Quick Insights (Placeholder for density) */}
+                  <div className="mt-10 grid grid-cols-2 gap-3 w-full">
+                    <div className="bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl p-3 text-left">
+                       <p className="text-[8px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.1em] mb-1">Today's Sales</p>
+                       <p className="text-sm font-black text-[var(--kravy-text-primary)] tracking-tighter">₹{subtotal.toFixed(0)}+</p>
+                    </div>
+                    <div className="bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl p-3 text-left">
+                       <p className="text-[8px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.1em] mb-1">Active KOTs</p>
+                       <p className="text-sm font-black text-[var(--kravy-text-primary)] tracking-tighter">Running</p>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                items.map((i) => (
-                  <div
-                    key={i.id}
-                    className="flex items-center gap-3 py-2.5 px-3 rounded-xl
-                      bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
-                      hover:border-[var(--kravy-border)]/80 transition-all group shrink-0"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-[var(--kravy-text-primary)] truncate text-sm">{i.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-xs font-black text-emerald-600">
-                          {i.qty} × ₹{i.rate.toFixed(2)}
-                        </p>
-                        {perProductEnabled && (i.gst === undefined || i.gst === null) && (
-                          <span className="text-[8px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter border border-amber-200/50 shadow-sm animate-pulse-slow">
-                            Profile Default GST Applied ({globalRate}%)
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Qty Controls */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <button
-                        onClick={() => dec(i.id)}
-                        className="w-7 h-7 rounded-lg border border-[var(--kravy-border)] bg-[var(--kravy-surface)]
-                          text-[var(--kravy-text-secondary)] font-black text-base flex items-center justify-center
-                          hover:bg-rose-50 hover:border-rose-200 hover:text-rose-500 transition-all"
-                      >
-                        −
-                      </button>
-                      <span className="w-6 text-center font-black text-sm text-[var(--kravy-text-primary)]">{i.qty}</span>
-                      <button
-                        onClick={() => inc(i.id)}
-                        className="w-7 h-7 rounded-lg border border-[var(--kravy-border)] bg-[var(--kravy-surface)]
-                          text-[var(--kravy-text-secondary)] font-black text-base flex items-center justify-center
-                          hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-500 transition-all"
-                      >
-                        +
-                      </button>
-                    </div>
-
-                    <span className="font-black text-[var(--kravy-text-primary)] text-sm min-w-[52px] text-right flex-shrink-0">
-                      ₹{(i.qty * i.rate).toFixed(2)}
-                    </span>
-
-                    <button
-                      onClick={() => remove(i.id)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center
-                        text-[var(--kravy-text-muted)] hover:bg-rose-50 hover:text-rose-500 transition-all flex-shrink-0"
+                <>
+                  {items.map((i) => (
+                    <div
+                      key={i.id}
+                      className="flex items-center gap-3 py-2.5 px-3 rounded-xl
+                        bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
+                        hover:border-[var(--kravy-brand)]/30 transition-all group shrink-0 shadow-sm"
                     >
-                      <X size={13} />
-                    </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-[var(--kravy-text-primary)] truncate text-sm">{i.name}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-xs font-black text-[var(--kravy-brand)]">
+                            {i.qty} × ₹{i.rate.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Qty Controls */}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => dec(i.id)}
+                          className="w-7 h-7 rounded-lg border border-[var(--kravy-border)] bg-[var(--kravy-surface)]
+                            text-[var(--kravy-text-secondary)] font-black text-base flex items-center justify-center
+                            hover:bg-rose-50 hover:border-rose-200 hover:text-rose-500 transition-all"
+                        >
+                          −
+                        </button>
+                        <span className="w-6 text-center font-black text-sm text-[var(--kravy-text-primary)]">{i.qty}</span>
+                        <button
+                          onClick={() => inc(i.id)}
+                          className="w-7 h-7 rounded-lg border border-[var(--kravy-border)] bg-[var(--kravy-surface)]
+                            text-[var(--kravy-text-secondary)] font-black text-base flex items-center justify-center
+                            hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-500 transition-all"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <span className="font-black text-[var(--kravy-text-primary)] text-sm min-w-[52px] text-right flex-shrink-0">
+                        ₹{(i.qty * i.rate).toFixed(2)}
+                      </span>
+
+                      <button
+                        onClick={() => remove(i.id)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center
+                          text-[var(--kravy-text-muted)] hover:bg-rose-50 hover:text-rose-500 transition-all flex-shrink-0"
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {/* Subtle Density Filler at bottom of list */}
+                  <div className="pt-4 pb-2 text-center">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-50 dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">
+                       <Zap size={10} className="text-amber-500" />
+                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Kravy Smart Terminal Active</span>
+                    </div>
                   </div>
-                ))
+                </>
               )}
             </div>
           </div>
@@ -2039,69 +2066,109 @@ export default function CheckoutClient() {
               </div>
             </div>
 
-            {/* 🎟️ DISCOUNT SECTION (Optional / Toggleable if space allows, but here compact) */}
-            <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
-               <button 
-                onClick={() => {
-                  if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
-                    toast.error("Permission Denied: Cannot apply discounts.");
-                    return;
-                  }
-                  setDiscountMode('PROMO');
-                }}
-                className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'PROMO' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
-               >
-                 Promo
-               </button>
-               <button 
-                onClick={() => {
-                  if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
-                    toast.error("Permission Denied: Cannot apply discounts.");
-                    return;
-                  }
-                  setDiscountMode('INSTANT');
-                }}
-                className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'INSTANT' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
-               >
-                 Discount
-               </button>
-            </div>
+            {/* 🎟️ ADJUSTMENTS SECTION (Discount / Charges) */}
+            <div className="space-y-1.5">
+              <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
+                 <button 
+                  onClick={() => {
+                    if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
+                      toast.error("Permission Denied: Cannot apply discounts.");
+                      return;
+                    }
+                    setDiscountMode('PROMO');
+                  }}
+                  className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'PROMO' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+                 >
+                   Promo
+                 </button>
+                 <button 
+                  onClick={() => {
+                    if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
+                      toast.error("Permission Denied: Cannot apply discounts.");
+                      return;
+                    }
+                    setDiscountMode('INSTANT');
+                  }}
+                  className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'INSTANT' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+                 >
+                   Discount
+                 </button>
+                 <button 
+                  onClick={() => setDiscountMode('CHARGES')}
+                  className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'CHARGES' ? 'bg-indigo-600 text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+                 >
+                   Charges
+                 </button>
+              </div>
 
-            <div className="flex gap-2">
-               {discountMode === 'PROMO' ? (
-                 <input 
-                   placeholder="PROMO CODE..."
-                   value={discountCode}
-                   onChange={e => setDiscountCode(e.target.value.toUpperCase())}
-                   disabled={!!appliedOffer}
-                   className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-xl outline-none text-[10px] font-black tracking-widest uppercase"
-                 />
-               ) : (
-                 <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
-                    <select 
-                      value={customDiscountType}
-                      onChange={(e) => { kravy.click(); setCustomDiscountType(e.target.value as 'PERCENT' | 'FLAT'); }}
-                      className="bg-[var(--kravy-surface)] border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-2.5 text-[10px] font-black outline-none cursor-pointer hover:bg-slate-50 transition-colors"
-                    >
-                      <option value="PERCENT">% (Off)</option>
-                      <option value="FLAT">₹ (Fixed)</option>
-                    </select>
+              {discountMode === 'CHARGES' ? (
+                <div className="flex gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="flex-1 flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                    <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
+                      <Truck size={10} className="text-slate-500" />
+                    </div>
                     <input 
                       type="number"
-                      placeholder={`Enter ${customDiscountType === 'PERCENT' ? '%' : 'amount'}...`}
-                      value={customDiscountValue}
-                      onChange={e => setCustomDiscountValue(e.target.value)}
-                      className="bg-transparent text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-none outline-none text-[10px] font-black"
+                      placeholder="Delivery..."
+                      value={manualDeliveryCharge || ""}
+                      onChange={e => setManualDeliveryCharge(Number(e.target.value))}
+                      className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
                     />
-                 </div>
-               )}
-               {discountMode === 'PROMO' ? (
-                 <button onClick={appliedOffer ? removeCoupon : handleApplyCoupon} className={`px-3 rounded-xl font-black text-[10px] uppercase transition-all ${appliedOffer ? "bg-rose-500/10 text-rose-500" : "bg-indigo-600 text-white"}`}>
-                   {appliedOffer ? "Clear" : "Apply"}
-                 </button>
-               ) : (customDiscountValue || appliedOffer) && (
-                 <button onClick={() => { setCustomDiscountValue(""); setAppliedOffer(null); setDiscountCode(""); }} className="bg-rose-500/10 text-rose-500 px-3 rounded-xl font-black text-[10px] uppercase">✕</button>
-               )}
+                  </div>
+                  <div className="flex-1 flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                    <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
+                      <Star size={10} className="text-slate-500" />
+                    </div>
+                    <input 
+                      type="number"
+                      placeholder="Service..."
+                      value={serviceCharge || ""}
+                      onChange={e => setServiceCharge(Number(e.target.value))}
+                      className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                   {discountMode === 'PROMO' ? (
+                     <input 
+                       placeholder="PROMO CODE..."
+                       value={discountCode}
+                       onChange={e => setDiscountCode(e.target.value.toUpperCase())}
+                       disabled={!!appliedOffer}
+                       className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-xl outline-none text-[10px] font-black tracking-widest uppercase"
+                     />
+                   ) : (
+                     <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                        <select 
+                          value={customDiscountType}
+                          onChange={(e) => { kravy.click(); setCustomDiscountType(e.target.value as 'PERCENT' | 'FLAT'); }}
+                          className="bg-slate-100 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-2.5 text-[10px] font-black outline-none cursor-pointer"
+                        >
+                          <option value="PERCENT">%</option>
+                          <option value="FLAT">₹</option>
+                        </select>
+                        <input 
+                          type="number"
+                          placeholder="Amount..."
+                          value={customDiscountValue}
+                          onChange={e => setCustomDiscountValue(e.target.value)}
+                          className="bg-transparent text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 outline-none text-[10px] font-black"
+                        />
+                     </div>
+                   )}
+                   <button 
+                     onClick={appliedOffer || (discountMode === 'INSTANT' && customDiscountValue) ? removeCoupon : handleApplyCoupon}
+                     className={`px-4 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm ${
+                       appliedOffer || (discountMode === 'INSTANT' && customDiscountValue) 
+                       ? "bg-rose-500 text-white" 
+                       : "bg-[var(--kravy-brand)] text-white"
+                     }`}
+                   >
+                     {appliedOffer || (discountMode === 'INSTANT' && customDiscountValue) ? "Clear" : "Apply"}
+                   </button>
+                </div>
+              )}
             </div>
 
             {/* Payment Method - Compact Rows */}
@@ -2207,7 +2274,6 @@ export default function CheckoutClient() {
 
             <button
               onClick={async () => {
-                if (!business) { alert("Business profile not loaded yet"); return; }
                 if (paymentMode === "Wallet" && selectedParty) {
                   setPrevWalletBalance(selectedParty.walletBalance);
                 } else {
@@ -2223,7 +2289,7 @@ export default function CheckoutClient() {
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }, 300);
               }}
-              disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
+              disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl
                 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm
                 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 active:scale-[0.98] transition-all
@@ -2234,6 +2300,7 @@ export default function CheckoutClient() {
             </button>
           </div>
         </div>
+      </div>
 
         {/* ================= PRINT RECEIPT (58mm) ================= */}
         <div
@@ -2263,8 +2330,8 @@ export default function CheckoutClient() {
             <div>Date: {billDate}</div>
             {tokenNumber && (
               <div className="mt-2 flex flex-col items-center border-2 border-black py-1 px-4 mx-auto w-fit">
-                <div className="text-[10px] font-black uppercase tracking-widest">Token Number</div>
-                <div className="text-[24px] font-black leading-none py-1">#{tokenNumber}</div>
+                <div className="text-[9px] font-black uppercase tracking-widest">Token Number</div>
+                <div className="text-[18px] font-black leading-none py-1">#{tokenNumber}</div>
               </div>
             )}
             {selectedTable && (
@@ -2356,6 +2423,12 @@ export default function CheckoutClient() {
                   </div>
                 )}
               </>
+            )}
+            {serviceCharge > 0 && (
+              <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
+                <span>SERVICE CHARGE</span>
+                <span>₹{serviceCharge.toFixed(2)}</span>
+              </div>
             )}
             <div className="border-t-2 border-dashed border-black my-1" />
             <div className="flex justify-between font-black text-[18px] border-y-2 border-black py-2.5 my-1.5 uppercase bg-white">
@@ -2476,10 +2549,10 @@ export default function CheckoutClient() {
         {/* ================= PRINT KOT (58mm) ================= */}
         <div
           ref={kotRef}
-          className="hidden print:block font-mono text-[10px] leading-tight text-black"
-          style={{ width: '100%', paddingBottom: '30mm' }}
+          className="hidden print:block font-mono text-[9px] leading-tight text-black"
+          style={{ width: '100%', paddingBottom: '10mm' }}
         >
-          <div className="text-center font-bold text-[14px] border-b border-dashed border-black pb-1 mb-2 uppercase tracking-tighter">*** KOT ***</div>
+          <div className="text-center font-bold text-[11px] border-b border-dashed border-black pb-1 mb-1.5 uppercase tracking-tighter">*** KOT ***</div>
           
           <div className="space-y-0.5 mb-2">
             <div className="flex justify-between items-center font-bold text-[10px]">
@@ -2491,14 +2564,14 @@ export default function CheckoutClient() {
               <span>KOT NO: {tokenNumber ? `TOKEN #${tokenNumber}` : Math.floor(Date.now() / 1000).toString().slice(-4)}</span>
             </div>
             {tokenNumber && (
-              <div className="mt-2 flex flex-col items-center border-2 border-black py-1 px-4 mx-auto w-fit">
-                <div className="text-[10px] font-black uppercase tracking-widest">Order Token</div>
-                <div className="text-[32px] font-black leading-none py-1">#{tokenNumber}</div>
+              <div className="mt-1 flex flex-col items-center border border-black py-0.5 px-3 mx-auto w-fit">
+                <div className="text-[8px] font-black uppercase tracking-widest">Order Token</div>
+                <div className="text-[18px] font-black leading-none py-0.5">#{tokenNumber}</div>
               </div>
             )}
           </div>
 
-          <div className="text-center text-[15px] font-bold border border-dashed border-black py-1 my-1.5 uppercase tracking-tighter">
+          <div className="text-center text-[12px] font-bold border border-dashed border-black py-0.5 my-1 uppercase tracking-tighter">
             {selectedTable === "POS" ? "DINING / POS" : 
              selectedTable === "TAKEAWAY" ? "🛍️ TAKEAWAY" : 
              selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
@@ -2516,18 +2589,18 @@ export default function CheckoutClient() {
             <span>QTY</span>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {items.map((i, idx) => (
-              <div key={idx} className="flex justify-between items-start border-b border-dotted border-black/20 pb-1.5">
+              <div key={idx} className="flex justify-between items-start border-b border-dotted border-black/10 pb-1">
                 <div className="flex-1 min-w-0 pr-2 break-words">
-                  <div className="text-[12px] font-bold leading-tight uppercase">{i.name}</div>
+                  <div className="text-[10px] font-bold leading-tight uppercase">{i.name}</div>
                   {i.variants && i.variants.length > 0 && (
-                    <div className="text-[9px] font-medium mt-0.5 uppercase opacity-80">
+                    <div className="text-[8px] font-medium mt-0.5 uppercase opacity-80">
                       ({i.variants.map((v: any) => v.name).join(', ')})
                     </div>
                   )}
                 </div>
-                <div className="text-[14px] font-bold shrink-0 ml-2">x{i.qty}</div>
+                <div className="text-[11px] font-bold shrink-0 ml-2">x{i.qty}</div>
               </div>
             ))}
           </div>
@@ -2885,10 +2958,13 @@ export default function CheckoutClient() {
                   <div className="text-center text-[9px] mt-1">
                     <div>Bill No: {billNumber}</div>
                     <div>Date: {billDate}</div>
-                    {tokenNumber && (
+                    {(tokenNumber || business?.lastTokenNumber !== undefined) && (
                       <div className="mt-1 flex flex-col items-center border-2 border-black py-1 px-2">
-                        <div className="text-[8px] font-black uppercase">Token Number</div>
-                        <div className="text-[18px] font-black leading-none">#{tokenNumber}</div>
+                        <div className="text-[7px] font-black uppercase">Token Number</div>
+                        <div className="text-[14px] font-black leading-none">
+                          #{tokenNumber || (business?.lastTokenNumber || 0) + 1}
+                        </div>
+                        {!tokenNumber && <div className="text-[5px] italic opacity-50 uppercase tracking-tighter">Draft Preview</div>}
                       </div>
                     )}
                     {selectedTable && (
@@ -3041,7 +3117,7 @@ export default function CheckoutClient() {
                 >
                   Close
                 </button>
-                {lastSavedBillId && (userRole === "ADMIN" || userRole === "MASTER") && (
+                {lastSavedBillId && (userRole === "ADMIN" || userRole === "MASTER" || (userRole !== "SELLER" && userPermissions.includes("whatsapp-bill"))) && (
                   <div className="flex-[2]">
                     <WhatsAppBillButton 
                       billId={lastSavedBillId} 
@@ -3408,7 +3484,6 @@ export default function CheckoutClient() {
           </motion.div>
         </div>
       )}
-    </div>
     </div>
   );
 }

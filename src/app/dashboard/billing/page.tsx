@@ -439,7 +439,7 @@ export default function BillingPage() {
 
       {/* ── Desktop Table ── */}
       {!loading && filteredBills.length > 0 && (
-        <div className="kravy-card hidden md:block" style={{ overflowX: "auto", padding: 0 }}>
+        <div className="kravy-card hidden md:block" style={{ overflowX: "auto", padding: 0, minHeight: "450px" }}>
           <table className="kravy-table" style={{ minWidth: "1200px", borderCollapse: "separate", borderSpacing: 0 }}>
             <thead>
               <tr style={{ background: "rgba(0,0,0,0.02)" }}>
@@ -601,6 +601,8 @@ export default function BillingPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: idx * 0.03 }}
+                  style={{ position: "relative", zIndex: 1 }}
+                  whileHover={{ zIndex: 50 }}
                 >
                   {/* S.No */}
                   {visibleCols.sno && (
@@ -1281,7 +1283,7 @@ function BillActions({ bill, refresh, clerkId, business, userRole, userPermissio
         }
       }
     }] : []),
-    ...((userRole === "ADMIN" || userRole === "OWNER") ? [{
+    ...((userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("whatsapp-bill")) ? [{
       label: "WhatsApp",
       icon: <MessageCircle size={14} />,
       color: "rgb(37 211 102)",
@@ -1328,7 +1330,7 @@ function BillActions({ bill, refresh, clerkId, business, userRole, userPermissio
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-      {(userRole === "ADMIN" || userRole === "OWNER") && (
+      {(userRole === "ADMIN" || userRole === "MASTER") && (
         <div style={{ width: "160px" }}>
           <WhatsAppBillButton 
             billId={bill.id} 
