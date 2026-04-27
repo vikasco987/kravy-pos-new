@@ -1116,15 +1116,17 @@ export default function CheckoutClient() {
         #${containerId} {
           display: block !important;
           width: 100% !important;
+          max-width: 80mm !important;
           height: auto !important;
           overflow: visible !important;
-          margin: 0 !important;
-          padding: 0 0 20px 0 !important; 
+          margin: 0 auto !important;
+          padding: 2mm 6% 20px 6% !important; 
           background: #fff !important;
           color: #000 !important;
           font-family: 'Courier New', Courier, monospace !important;
           font-weight: 700 !important;
           position: relative !important;
+          box-sizing: border-box !important;
         }
         * { 
           color: #000 !important; 
@@ -2307,7 +2309,7 @@ export default function CheckoutClient() {
           ref={receiptRef}
           data-paper="58"
           className="hidden print:block receipt font-mono text-[10px] leading-tight text-black bg-white"
-          style={{ width: '100%', padding: '0 2mm', boxSizing: 'border-box' }}
+          style={{ width: '100%', maxWidth: '80mm', padding: '0 6%', margin: '0 auto', boxSizing: 'border-box' }}
         >
           {business?.logoUrl && (
             <div className="flex justify-center mb-1">

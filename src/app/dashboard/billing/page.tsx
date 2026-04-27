@@ -729,42 +729,6 @@ export default function BillingPage() {
 
                   <td style={{ textAlign: "right", paddingRight: "20px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
-                      <button
-                        onClick={() => {
-                          kravy.click();
-                          handlePrint(bill);
-                        }}
-                        style={{
-                          width: "34px", height: "34px", borderRadius: "9px",
-                          background: "rgba(99, 102, 241, 0.05)", border: "1px solid rgba(99, 102, 241, 0.1)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          cursor: "pointer", color: "var(--kravy-brand)", transition: "all 0.2s"
-                        }}
-                        title="Quick Reprint"
-                      >
-                        <Printer size={16} />
-                      </button>
-
-                      {/* Prominent Edit Button */}
-                      {(userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("edit-bill")) && !bill.isOrder && (
-                        <button
-                          onClick={() => {
-                            if (confirm("Do you want to edit this bill? This will load it back into the checkout page.")) {
-                              router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`);
-                            }
-                          }}
-                          style={{
-                            width: "34px", height: "34px", borderRadius: "9px",
-                            background: "rgba(79, 70, 229, 0.05)", border: "1px solid rgba(79, 70, 229, 0.1)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            cursor: "pointer", color: "var(--kravy-brand)", transition: "all 0.2s"
-                          }}
-                          title="Edit Bill"
-                        >
-                          <FileText size={16} />
-                        </button>
-                      )}
-
                       <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} userRole={userRole} userPermissions={userPermissions} onPrint={handlePrint} />
                     </div>
                   </td>
@@ -930,10 +894,13 @@ export default function BillingPage() {
               display: block !important;
               height: fit-content !important;
               width: 100% !important;
-              padding: 0 !important;
+              max-width: 80mm !important;
+              padding: 2mm 6% 20px 6% !important;
+              margin: 0 auto !important;
               background: #fff !important;
               color: #000 !important;
               font-family: 'Courier New', Courier, monospace !important;
+              box-sizing: border-box !important;
             }
             img { background: #fff !important; }
             * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; box-shadow: none !important; text-shadow: none !important; }
