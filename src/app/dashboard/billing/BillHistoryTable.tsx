@@ -138,7 +138,7 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions }: any
       >
         <Smartphone size={12} /> WhatsApp
       </button>
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative", display: "inline-block" }}>
         <button onClick={() => setShowMenu(!showMenu)} style={{ width: "30px", height: "30px", borderRadius: "8px", border: "1px solid #E5E7EB", background: "white", color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><MoreVertical size={14} /></button>
         {showMenu && (
           <>
@@ -285,7 +285,7 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
                       ) : <span style={{ color: "#D1D5DB" }}>—</span>}
                     </td>
                   )}
-                  <td style={{ textAlign: "right", paddingRight: "20px" }}>
+                  <td style={{ textAlign: "right", paddingRight: "60px" }}>
                     <BillActions bill={bill} refresh={refresh} business={business} userRole={userRole} userPermissions={userPermissions} />
                   </td>
                 </tr>

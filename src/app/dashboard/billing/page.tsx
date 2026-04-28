@@ -165,7 +165,7 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, onPri
         <Smartphone size={16} /> WhatsApp
       </button>
 
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative", display: "inline-block" }}>
         <button 
           onClick={() => setShowMenu(!showMenu)}
           style={{
