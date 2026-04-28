@@ -41,7 +41,7 @@ type Order = {
     parentOrderId?: string;
     isMerged?: boolean;
     isKotPrinted?: boolean;
-    isBillPrinted?: boolean;
+    customerAddress?: string;
     updatedAt: string;
     notes?: string;
     preferences?: {
@@ -903,9 +903,9 @@ export default function KravyPOS() {
                                                             </div>
                                                             <p className="text-[10px] font-bold text-slate-500">{order.customerPhone || "No contact"}</p>
                                                             <p className="text-[10px] text-slate-400 leading-tight">1st order</p>
-                                                            {(order as any).address && (
-                                                                <p className="text-[10px] font-medium text-slate-600 leading-tight border-l-2 border-slate-200 pl-2 mt-2">
-                                                                    {(order as any).address}
+                                                            {order.customerAddress && (
+                                                                <p className="text-[10px] font-bold text-blue-600 leading-tight border-l-2 border-blue-200 pl-2 mt-2 bg-blue-50/50 py-1">
+                                                                    <MapPin size={10} className="inline mr-1" /> {order.customerAddress}
                                                                 </p>
                                                             )}
                                                         </div>
@@ -2199,10 +2199,11 @@ export default function KravyPOS() {
                         <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
 
-                    {(activeOrder.customerName || activeOrder.customerPhone) && (
+                    {(activeOrder.customerName || activeOrder.customerPhone || activeOrder.customerAddress) && (
                         <div className="mb-1 text-[9px] font-black uppercase border-y border-dotted border-black py-0.5">
                             {activeOrder.customerName && <div className="truncate">CUST: {activeOrder.customerName}</div>}
                             {activeOrder.customerPhone && <div>PH: {activeOrder.customerPhone}</div>}
+                            {activeOrder.customerAddress && <div className="mt-0.5" style={{ whiteSpace: 'pre-wrap' }}>ADDR: {activeOrder.customerAddress}</div>}
                         </div>
                     )}
 
@@ -2299,6 +2300,12 @@ export default function KravyPOS() {
                     <div className="text-center text-[16px] font-bold border border-dashed border-black py-1 my-2 uppercase">
                         TABLE: {displayTable.name}
                     </div>
+
+                    {activeOrder.customerAddress && (
+                        <div className="mt-1 mb-2 p-1 border border-dashed border-black text-[10px] font-bold uppercase">
+                            DELIVERY ADDR: {activeOrder.customerAddress}
+                        </div>
+                    )}
 
                     {activeOrder.notes && (
                         <div className="mt-1 mb-2 p-1 border border-dashed border-black text-[10px] font-bold uppercase italic">

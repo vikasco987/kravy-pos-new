@@ -213,6 +213,7 @@ export default function CheckoutClient() {
   const [showTableSelect, setShowTableSelect] = useState(false);
   const [serviceCharge, setServiceCharge] = useState<number>(0);
   const [manualDeliveryCharge, setManualDeliveryCharge] = useState<number>(0);
+  const [manualPackagingCharge, setManualPackagingCharge] = useState<number>(0);
 
   const resetForm = () => {
     setItems([]);
@@ -233,6 +234,7 @@ export default function CheckoutClient() {
     setTokenNumber(null);
     setServiceCharge(0);
     setManualDeliveryCharge(0);
+    setManualPackagingCharge(0);
     setSelectedTable("POS");
     setOrderType("DINING");
     
@@ -391,6 +393,9 @@ export default function CheckoutClient() {
         else if (table === "DELIVERY") setOrderType("DELIVERY");
         else setOrderType("DINING");
         setOrderNotes(bill.notes || bill.auditNote || "");
+        setServiceCharge(bill.serviceCharge || 0);
+        setManualDeliveryCharge(bill.deliveryCharges || 0);
+        setManualPackagingCharge(bill.packagingCharges || 0);
       } catch (err) {
         console.error("RESUME BILL ERROR:", err);
       }
@@ -858,7 +863,7 @@ export default function CheckoutClient() {
   const deliveryCharge = manualDeliveryCharge || ((orderType === "DELIVERY" && business?.enableDeliveryCharges) ? (business?.deliveryChargeAmount || 0) : 0);
   const deliveryGst = (deliveryCharge > 0 && business?.deliveryGstEnabled) ? (deliveryCharge * (business?.deliveryGstRate || 0) / 100) : 0;
 
-  const packagingCharge = ((orderType === "DELIVERY" || orderType === "TAKEAWAY") && business?.enablePackagingCharges) ? (business?.packagingChargeAmount || 0) : 0;
+  const packagingCharge = manualPackagingCharge || (((orderType === "DELIVERY" || orderType === "TAKEAWAY") && business?.enablePackagingCharges) ? (business?.packagingChargeAmount || 0) : 0);
   const packagingGst = (packagingCharge > 0 && business?.packagingGstEnabled) ? (packagingCharge * (business?.packagingGstRate || 0) / 100) : 0;
 
   const totalCharges = deliveryCharge + packagingCharge + serviceCharge;
@@ -2104,8 +2109,8 @@ export default function CheckoutClient() {
               </div>
 
               {discountMode === 'CHARGES' ? (
-                <div className="flex gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <div className="flex-1 flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                <div className="grid grid-cols-3 gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
                     <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
                       <Truck size={10} className="text-slate-500" />
                     </div>
@@ -2117,7 +2122,19 @@ export default function CheckoutClient() {
                       className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
                     />
                   </div>
-                  <div className="flex-1 flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                  <div className="flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                    <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
+                      <ShoppingBag size={10} className="text-slate-500" />
+                    </div>
+                    <input 
+                      type="number"
+                      placeholder="Package..."
+                      value={manualPackagingCharge || ""}
+                      onChange={e => setManualPackagingCharge(Number(e.target.value))}
+                      className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
+                    />
+                  </div>
+                  <div className="flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
                     <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
                       <Star size={10} className="text-slate-500" />
                     </div>

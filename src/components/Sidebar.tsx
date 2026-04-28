@@ -393,6 +393,25 @@ function SidebarItem({ item, index, isActive, collapsed, isDark, pathname }: any
               <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pathname === '/dashboard/combos' ? '#FF6B35' : '#64748B' }}>COMBOS</span>
             </motion.div>
           </Link>
+          <Link href="/dashboard/offers" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => { kravy.click(); }}>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                padding: '10px',
+                background: pathname === '/dashboard/offers' ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)',
+                borderRadius: '12px',
+                border: `1px solid ${pathname === '/dashboard/offers' ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <Percent size={16} color={pathname === '/dashboard/offers' ? '#10B981' : '#64748B'} />
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pathname === '/dashboard/offers' ? '#10B981' : '#64748B' }}>OFFERS</span>
+            </motion.div>
+          </Link>
           <Link href="/dashboard/gallery" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => { kravy.click(); }}>
             <motion.div
               whileHover={{ scale: 1.02 }}

@@ -301,7 +301,12 @@ export async function PATCH(
     }
 
     const { id } = await context.params;
-    const body = await req.json();
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch (e) {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
 
     const allowedUpdates = [
       "paymentStatus",

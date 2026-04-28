@@ -8,6 +8,9 @@ import RecentBills from "./components/recent-bills";
 import TopItems from "./components/top-items";
 import DateFilter from "./components/date-filter";
 import PaymentModeChart from "./components/payment-mode-chart";
+import OrderTypeChart from "./components/order-type-chart";
+import PeakHoursChart from "./components/peak-hours-chart";
+import WeeklyRevenueChart from "./components/weekly-revenue-chart";
 import DashboardSoundAlerts from "./components/dashboard-sound-alerts";
 import { Sparkles, Tag, Fingerprint, Copy, ShieldCheck, Zap, Smartphone, Ticket, ArrowRight, FileText, Grid } from "lucide-react";
 import CopyButton from "./components/copy-button";
@@ -110,20 +113,29 @@ export default async function DashboardPage({
       bills: chartMap[date].bills,
     }));
 
-  const recentBills = bills.slice(0, 5).map((bill: any) => ({
+  const recentBills = bills.slice(0, 10).map((bill: any) => ({
+    id: bill.id,
     billNumber: bill.billNumber,
     customerName: bill.customerName ?? undefined,
+    customerPhone: bill.customerPhone ?? undefined,
     paymentMode: bill.paymentMode,
     total: bill.total,
-    createdAt: bill.createdAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+    createdAt: bill.createdAt.toISOString(),
+    items: bill.items,
+    tokenNumber: bill.tokenNumber,
+    tableName: bill.tableName,
+    isOrder: bill.isOrder,
+    orderStatus: bill.orderStatus,
   }));
 
   const deletedBills = deletedBillsData.map((bill: any) => ({
+    id: bill.id,
     billNumber: bill.billNumber,
     customerName: bill.customerName,
     paymentMode: bill.paymentMode,
     total: bill.total,
-    createdAt: bill.createdAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
+    createdAt: bill.createdAt.toISOString(),
+    items: bill.items,
   }));
 
   const itemMap: Record<string, { totalSold: number; totalRevenue: number }> = {};
@@ -248,6 +260,60 @@ export default async function DashboardPage({
 
   const peakDayEntry = Object.entries(dayNameMap).sort((a,b) => b[1] - a[1])[0];
   const peakDayName = peakDayEntry[1] > 0 ? peakDayEntry[0] : "No data";
+
+  // ── Calculate Order Type Breakdown ──
+  const orderTypeBreakdown = {
+    DELIVERY: { count: 0, total: 0 },
+    TAKEAWAY: { count: 0, total: 0 },
+    DINEIN: { count: 0, total: 0 },
+  };
+
+  bills.forEach((bill: any) => {
+    const type = bill.tableName || "POS";
+    if (type === "DELIVERY") {
+      orderTypeBreakdown.DELIVERY.count++;
+      orderTypeBreakdown.DELIVERY.total += bill.total;
+    } else if (type === "TAKEAWAY") {
+      orderTypeBreakdown.TAKEAWAY.count++;
+      orderTypeBreakdown.TAKEAWAY.total += bill.total;
+    } else {
+      orderTypeBreakdown.DINEIN.count++;
+      orderTypeBreakdown.DINEIN.total += bill.total;
+    }
+  });
+
+  // ── Calculate Peak Hours Time Series ──
+  const peakHoursData = Array.from({ length: 15 }, (_, i) => {
+    const hour = i + 9; // 9 AM to 11 PM
+    const count = hourMap[hour] || 0;
+    return {
+      hour,
+      count,
+      label: `${hour % 12 || 12}${hour >= 12 ? 'pm' : 'am'}`
+    };
+  });
+
+  // ── Calculate Weekly Revenue (Last 7 Days) ──
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    d.setHours(0,0,0,0);
+    return d;
+  });
+
+  const weeklyData = last7Days.map(date => {
+    const dayBills = allBills.filter(b => {
+      const bDate = new Date(b.createdAt);
+      return bDate.getDate() === date.getDate() && 
+             bDate.getMonth() === date.getMonth() && 
+             bDate.getFullYear() === date.getFullYear();
+    });
+    return {
+      day: date.toLocaleDateString('en-IN', { weekday: 'short' }),
+      revenue: dayBills.reduce((s, b) => s + b.total, 0),
+      orders: dayBills.length
+    };
+  });
 
   // ── Fetch Live Orders (QR Orders) ──
   const liveOrders = await prisma.order.findMany({
@@ -458,6 +524,17 @@ export default async function DashboardPage({
           paymentSplit={{ Cash: cash, UPI: upi }} 
           range={range}
         />
+      </div>
+
+      {/* ── New Breakdown Charts Row ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <OrderTypeChart data={orderTypeBreakdown} />
+        <PeakHoursChart data={peakHoursData} />
+      </div>
+
+      {/* ── Weekly Revenue Chart Row ── */}
+      <div className="grid grid-cols-1 gap-5">
+        <WeeklyRevenueChart data={weeklyData} />
       </div>
 
       {/* ── Bills Row ── */}

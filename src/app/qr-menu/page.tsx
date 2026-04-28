@@ -15,7 +15,9 @@ import {
     CheckCircle,
     IndianRupee,
     Utensils,
-    Leaf
+    Leaf,
+    MapPin,
+    Locate
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -61,6 +63,8 @@ function QRMenuContent() {
     const [placingOrder, setPlacingOrder] = useState(false);
     const [customerName, setCustomerName] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
+    const [customerAddress, setCustomerAddress] = useState("");
+    const [isLocating, setIsLocating] = useState(false);
 
     useEffect(() => {
         if (clerkId) {
@@ -148,6 +152,7 @@ function QRMenuContent() {
         setPlacingOrder(true);
         try {
             const orderData = {
+                clerkUserId: clerkId,
                 tableId,
                 tableName,
                 items: cart.map(item => ({
@@ -160,7 +165,8 @@ function QRMenuContent() {
                 })),
                 total: getTotalPrice(),
                 customerName: customerName.trim(),
-                customerPhone: customerPhone.trim() || undefined
+                customerPhone: customerPhone.trim() || undefined,
+                customerAddress: customerAddress.trim() || undefined
             };
 
             const response = await fetch('/api/public/orders', {
@@ -175,6 +181,7 @@ function QRMenuContent() {
                 setCart([]);
                 setCustomerName("");
                 setCustomerPhone("");
+                setCustomerAddress("");
                 // Redirect to order tracking
                 window.location.href = `/order-tracking/${order.id}`;
             } else {
@@ -185,6 +192,42 @@ function QRMenuContent() {
         } finally {
             setPlacingOrder(false);
         }
+    };
+
+    const getCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            toast.error("Geolocation is not supported by your browser");
+            return;
+        }
+
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const { latitude, longitude } = position.coords;
+                    const googleMapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+                    );
+                    const data = await response.json();
+                    if (data.display_name) {
+                        setCustomerAddress(`${data.display_name}\n📍 Live Location: ${googleMapsUrl}`);
+                        toast.success("Location & Map Link updated!");
+                    } else {
+                        setCustomerAddress(`Coordinates: ${latitude}, ${longitude}\n📍 Live Location: ${googleMapsUrl}`);
+                        toast.info("Coordinates & Map Link added");
+                    }
+                } catch (error) {
+                    toast.error("Failed to get address");
+                } finally {
+                    setIsLocating(false);
+                }
+            },
+            (error) => {
+                toast.error("Please enable location access");
+                setIsLocating(false);
+            }
+        );
     };
 
     const filteredItems = selectedCategory === "All" 
@@ -349,8 +392,37 @@ function QRMenuContent() {
                                             value={customerPhone}
                                             onChange={(e) => setCustomerPhone(e.target.value)}
                                             placeholder="Enter phone number"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                                         />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Delivery Address (Optional)
+                                            </label>
+                                            <button 
+                                                onClick={getCurrentLocation}
+                                                disabled={isLocating}
+                                                className="text-[10px] font-black text-orange-600 flex items-center gap-1 hover:bg-orange-50 px-2 py-1 rounded-md transition-colors"
+                                            >
+                                                {isLocating ? (
+                                                    <div className="w-3 h-3 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                    <Locate size={12} />
+                                                )}
+                                                {isLocating ? "Locating..." : "USE CURRENT LOCATION"}
+                                            </button>
+                                        </div>
+                                        <div className="relative">
+                                            <textarea
+                                                value={customerAddress}
+                                                onChange={(e) => setCustomerAddress(e.target.value)}
+                                                placeholder="Enter delivery address"
+                                                rows={2}
+                                                className="w-full px-3 py-2 pl-9 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                                            />
+                                            <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                        </div>
                                     </div>
                                 </div>
 

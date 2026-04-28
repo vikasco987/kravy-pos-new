@@ -38,7 +38,8 @@ import {
     Check,
     UtensilsCrossed,
     FileText,
-    Utensils
+    Utensils,
+    Locate
 } from "lucide-react";
 import { saveOrderLocally } from "@/lib/orderStorage";
 import ActiveOrderBanner from "@/components/ActiveOrderBanner";
@@ -180,6 +181,7 @@ function PublicMenu() {
     const [customerPhone, setCustomerPhone] = useState("");
     const [customerName, setCustomerName] = useState("");
     const [customerAddress, setCustomerAddress] = useState("");
+    const [isLocating, setIsLocating] = useState(false);
     const [loyaltyPoints, setLoyaltyPoints] = useState(0);
     const [paymentMethod, setPaymentMethod] = useState("UPI / QR");
 
@@ -204,6 +206,42 @@ function PublicMenu() {
     const [reviewSubmitting, setReviewSubmitting] = useState(false);
     const [helpfulReviews, setHelpfulReviews] = useState<Record<string, boolean>>({});
     const [reviewFilter, setReviewFilter] = useState<number | null>(null);
+
+    const getCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            toast.error("Geolocation is not supported by your browser");
+            return;
+        }
+
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const { latitude, longitude } = position.coords;
+                    const googleMapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+                    );
+                    const data = await response.json();
+                    if (data.display_name) {
+                        setCustomerAddress(`${data.display_name}\n📍 Live Location: ${googleMapsUrl}`);
+                        toast.success("Location & Map Link updated!");
+                    } else {
+                        setCustomerAddress(`Coordinates: ${latitude}, ${longitude}\n📍 Live Location: ${googleMapsUrl}`);
+                        toast.info("Coordinates & Map Link added");
+                    }
+                } catch (error) {
+                    toast.error("Failed to get address");
+                } finally {
+                    setIsLocating(false);
+                }
+            },
+            (error) => {
+                toast.error("Please enable location access");
+                setIsLocating(false);
+            }
+        );
+    };
 
     // Gallery State
     type GalleryImg = { id: string; imageUrl: string; category: string; caption: string | null; };
@@ -2088,16 +2126,35 @@ function PublicMenu() {
                                             </div>
                                         )}
 
-                                        {profile?.collectCustomerAddress && (
-                                            <div className="relative">
-                                                <textarea
-                                                    value={customerAddress}
-                                                    onChange={(e) => setCustomerAddress(e.target.value)}
-                                                    placeholder={`Complete Address${profile?.requireCustomerAddress ? ' *' : ' (Optional)'}`}
-                                                    rows={2}
-                                                    className="w-full bg-[#F4F4F4] border border-[#EBEBEB] rounded-xl px-4 py-3.5 text-sm font-bold outline-none border-none shadow-sm resize-none"
-                                                />
-                                                <MapPin size={16} className="absolute right-4 top-4 text-gray-300" />
+                                        {(profile?.collectCustomerAddress || true) && (
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between px-1">
+                                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                                        Delivery Address
+                                                    </label>
+                                                    <button 
+                                                        onClick={getCurrentLocation}
+                                                        disabled={isLocating}
+                                                        className="text-[9px] font-black text-[#E23744] flex items-center gap-1 hover:bg-red-50 px-2 py-1 rounded-md transition-colors"
+                                                    >
+                                                        {isLocating ? (
+                                                            <div className="w-2.5 h-2.5 border-2 border-[#E23744] border-t-transparent rounded-full animate-spin" />
+                                                        ) : (
+                                                            <Locate size={10} />
+                                                        )}
+                                                        {isLocating ? "LOCATING..." : "USE CURRENT LOCATION"}
+                                                    </button>
+                                                </div>
+                                                <div className="relative">
+                                                    <textarea
+                                                        value={customerAddress}
+                                                        onChange={(e) => setCustomerAddress(e.target.value)}
+                                                        placeholder={`Complete Address${profile?.requireCustomerAddress ? ' *' : ' (Optional)'}`}
+                                                        rows={2}
+                                                        className="w-full bg-[#F4F4F4] border border-[#EBEBEB] rounded-xl px-4 py-3.5 pl-10 text-sm font-bold outline-none border-none shadow-sm resize-none"
+                                                    />
+                                                    <MapPin size={16} className="absolute left-4 top-4 text-gray-300" />
+                                                </div>
                                             </div>
                                         )}
                                     </div>

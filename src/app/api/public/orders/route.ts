@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { clerkUserId, tableId, items, total, customerName, customerPhone, caseType, parentOrderId, paymentMethod } = body;
+        const { clerkUserId, tableId, items, total, customerName, customerPhone, customerAddress, caseType, parentOrderId, paymentMethod } = body;
 
         if (!clerkUserId || !items || !total) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -66,7 +66,8 @@ export async function POST(req: NextRequest) {
                     isBillPrinted: false, // Reset total has changed
                     paymentMode: paymentMethod || existing.paymentMode,
                     notes: body.notes || existing.notes || null, // ✅ Append or Update
-                    preferences: body.preferences || existing.preferences || null // ✅ Update preferences
+                    preferences: body.preferences || existing.preferences || null, // ✅ Update preferences
+                    customerAddress: customerAddress || existing.customerAddress // ✅ Update address if provided
                 },
                 include: { table: true },
             });
@@ -105,6 +106,7 @@ export async function POST(req: NextRequest) {
                 caseType: caseType || "new",
                 parentOrderId: parentOrderId || null,
                 paymentMode: paymentMethod || "UPI / QR",
+                customerAddress,
                 notes: body.notes || null, // ✅ NEW
                 preferences: body.preferences || null // ✅ NEW
             },

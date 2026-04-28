@@ -491,7 +491,7 @@ export default function ViewBillPage() {
 
     // 3. Prepare Items Summary
     const itemsList = billItems
-      .map((i) => `• ${i.name} ×${i.qty} – ₹${(i.qty * i.rate).toFixed(2)}`)
+      .map((i) => `• ${i.name} ×${i.qty} – ₹${(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}`)
       .join("\n");
 
     const phone = formatWhatsAppNumber(bill.customerPhone);
@@ -896,10 +896,10 @@ export default function ViewBillPage() {
                 {i.qty}
               </span>
               <span className="w-[9mm] text-right">
-                {i.rate.toFixed(0)}
+                {Number(i.rate ?? 0).toFixed(0)}
               </span>
               <span className="w-[11mm] text-right">
-                {(i.qty * i.rate).toFixed(0)}
+                {(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(0)}
               </span>
             </div>
           );
@@ -984,6 +984,28 @@ export default function ViewBillPage() {
             </div>
           );
         })()}
+
+        {/* CHARGES BREAKDOWN */}
+        <div className="space-y-0.5 mt-1">
+          {Number(bill.deliveryCharges ?? 0) > 0 && (
+            <div className="flex justify-between text-[10px] font-medium text-gray-700">
+              <span>Delivery Charges</span>
+              <span>₹{Number(bill.deliveryCharges).toFixed(2)}</span>
+            </div>
+          )}
+          {Number(bill.packagingCharges ?? 0) > 0 && (
+            <div className="flex justify-between text-[10px] font-medium text-gray-700">
+              <span>Packaging Charges</span>
+              <span>₹{Number(bill.packagingCharges).toFixed(2)}</span>
+            </div>
+          )}
+          {Number(bill.serviceCharge ?? 0) > 0 && (
+            <div className="flex justify-between text-[10px] font-medium text-gray-700">
+              <span>Service Charge</span>
+              <span>₹{Number(bill.serviceCharge).toFixed(2)}</span>
+            </div>
+          )}
+        </div>
 
         <div className="border-t border-dashed my-1" />
 

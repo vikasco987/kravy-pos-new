@@ -1,21 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { formatWhatsAppNumber } from "@/lib/whatsapp";
 import { useSearch } from "@/components/SearchContext";
 import {
-  Receipt, Plus, Trash2, Eye, Printer, MessageCircle,
+  Receipt, Plus, Trash2, Eye, Printer, MessageCircle, FileText, Smartphone,
   Play, MoreVertical, IndianRupee, Calendar, User, Phone,
-  CreditCard, Smartphone, Banknote, Clock, FileText, CheckCircle2, UtensilsCrossed, ChefHat, 
-  ChevronLeft, ChevronRight, Settings2, Check, LayoutGrid, Filter, Search, Wallet, X, ZoomIn, ZoomOut
+  ChevronLeft, ChevronRight, Settings2, Check, LayoutGrid, Filter, Search, Wallet, X, ZoomIn, ZoomOut, XCircle, CheckCircle, CreditCard, CheckCircle2, UtensilsCrossed, Banknote, Clock
 } from "lucide-react";
-import { useRef } from "react";
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 import { useAuthContext } from "@/components/AuthContext";
 import { kravy } from "@/lib/sounds";
+import { toast } from "react-hot-toast";
+import BillHistoryTable from "./BillHistoryTable";
 
 type BillManager = {
   id: string;
@@ -35,7 +35,187 @@ type BillManager = {
   tableName?: string | null;
   isOrder?: boolean;
   orderStatus?: string;
+  tokenNumber?: number | null;
 };
+
+// --- Sub-components (Screenshot UI Style) ---
+
+const TypeBadge = ({ type }: { type: string }) => {
+  const t = type?.toUpperCase() || "POS";
+  let color = "#64748B";
+  let bg = "rgba(100, 116, 139, 0.1)";
+  let label = "Counter";
+
+  if (t.includes("DELIVERY")) { color = "#3B82F6"; bg = "rgba(59, 130, 246, 0.1)"; label = "Delivery"; }
+  else if (t.includes("TAKEAWAY")) { color = "#F59E0B"; bg = "rgba(245, 158, 11, 0.1)"; label = "Takeaway"; }
+  else if (t === "COUNTER" || t !== "POS") { color = "#10B981"; bg = "rgba(16, 185, 129, 0.1)"; label = "Dine-in"; }
+
+  return (
+    <span style={{ 
+      padding: "5px 12px", 
+      borderRadius: "999px", 
+      fontSize: "0.7rem", 
+      fontWeight: 800, 
+      background: bg, 
+      color: color,
+      display: "inline-block",
+      border: `1px solid ${color}20`
+    }}>
+      {label}
+    </span>
+  );
+};
+
+const StatusIndicator = ({ status, isHeld }: { status: string, isHeld?: boolean }) => {
+  const s = status?.toLowerCase();
+  if (isHeld || s === "pending") return (
+    <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#f59e0b", fontSize: "0.65rem", fontWeight: 800 }}>
+      <Clock size={12} /> PENDING
+    </div>
+  );
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#10b981", fontSize: "0.65rem", fontWeight: 800 }}>
+      <CheckCircle2 size={12} /> SETTLED
+    </div>
+  );
+};
+
+const PaymentBadge = ({ mode }: { mode: string }) => {
+  const m = mode?.toLowerCase();
+  let icon = <Banknote size={10} />;
+  let color = "#6B7280";
+  let bg = "#F3F4F6";
+
+  if (m === "upi") { icon = <Smartphone size={10} />; color = "#4F46E5"; bg = "#EEF2FF"; }
+  if (m === "card") { icon = <CreditCard size={10} />; color = "#2563EB"; bg = "#EFF6FF"; }
+  if (m === "wallet") { icon = <Wallet size={10} />; color = "#7C3AED"; bg = "#F5F3FF"; }
+  if (m === "cash") { icon = <Banknote size={10} />; color = "#059669"; bg = "#ECFDF5"; }
+
+  return (
+    <div style={{
+      display: "inline-flex", alignItems: "center", gap: "6px",
+      padding: "4px 8px", borderRadius: "6px", background: bg, color: color,
+      fontSize: "0.65rem", fontWeight: 900, textTransform: "uppercase"
+    }}>
+      {icon} {mode || "Cash"}
+    </div>
+  );
+};
+
+const BillActions = ({ bill, refresh, business, userRole, userPermissions, onPrint }: any) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const router = useRouter();
+  const canDelete = userRole === "ADMIN" || userRole === "MASTER" || userPermissions.includes("delete-bill");
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure?")) return;
+    try {
+      const res = await fetch(`/api/bill-manager/${bill.id}`, { method: "DELETE" });
+      if (res.ok) { toast.success("Deleted"); refresh(); }
+    } catch (e) { toast.error("Error"); }
+  };
+
+  const handleCancel = async (unCancel = false) => {
+    if (!confirm(unCancel ? "Mark this order as SETTLED?" : "Mark this order as CANCELLED?")) return;
+    try {
+      const res = await fetch(`/api/bill-manager/${bill.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentStatus: unCancel ? "Paid" : "CANCELLED" }),
+      });
+      if (res.ok) {
+        toast.success(unCancel ? "Order Restored" : "Order Cancelled");
+        refresh();
+      } else {
+        toast.error("Failed to update order");
+      }
+    } catch (e) {
+      toast.error("Error");
+    }
+  };
+
+  const handleWhatsApp = () => {
+    const phone = formatWhatsAppNumber(bill.customerPhone);
+    const origin = window.location.origin;
+    const pdfUrl = `${origin}/api/bill-manager/${bill.id}/pdf${bill.clerkUserId ? `?clerkId=${bill.clerkUserId}` : ""}`;
+    const restaurantName = business?.businessName || "Kravy POS";
+    const message = encodeURIComponent(
+      "🙏 *Thank you for shopping with us!*\n\n" +
+      `Hello *${bill.customerName || "Customer"}*,\n\n` +
+      `Here is your invoice from *${restaurantName}*:\n\n` +
+      "🧾 *Bill No:* " + bill.billNumber + "\n" +
+      "💰 *Amount Paid:* Rs. " + bill.total + "\n\n" +
+      "📄 *Download Invoice:*\n" + pdfUrl + "\n\n" +
+      "We look forward to serving you again! 😊"
+    );
+    window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+      {/* Big Green WhatsApp Button */}
+      <button 
+        onClick={handleWhatsApp}
+        style={{
+          background: "#10b981", color: "white", border: "none",
+          borderRadius: "12px", padding: "8px 14px", display: "flex", alignItems: "center", gap: "8px",
+          fontSize: "0.8rem", fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 10px rgba(16, 185, 129, 0.2)"
+        }}
+      >
+        <Smartphone size={16} /> WhatsApp
+      </button>
+
+      <div style={{ position: "relative" }}>
+        <button 
+          onClick={() => setShowMenu(!showMenu)}
+          style={{
+            width: "36px", height: "36px", borderRadius: "12px", border: "1px solid #E5E7EB",
+            background: "white", color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer"
+          }}
+        >
+          <MoreVertical size={18} />
+        </button>
+
+        {showMenu && (
+          <>
+            <div style={{ position: "fixed", inset: 0, zIndex: 9999 }} onClick={() => setShowMenu(false)} />
+            <div style={{
+              position: "absolute", right: 0, bottom: "calc(100% + 8px)", width: "200px",
+              background: "white", borderRadius: "18px", border: "1px solid #F3F4F6",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.15)", padding: "8px", zIndex: 10000, display: "flex", flexDirection: "column", gap: "2px"
+            }}>
+              <MenuOption icon={<Eye size={14} color="#8B5CF6" />} label="View Details" onClick={() => router.push(`/dashboard/billing/${bill.id}`)} />
+              <MenuOption icon={<Printer size={14} color="#6B7280" />} label="Reprint Bill" onClick={() => router.push(`/dashboard/billing/${bill.id}`)} />
+              <MenuOption icon={<FileText size={14} color="#3B82F6" />} label="Edit Bill" onClick={() => router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`)} />
+              <MenuOption icon={<MessageCircle size={14} color="#10B981" />} label="WhatsApp" onClick={handleWhatsApp} />
+              {bill.paymentStatus === "CANCELLED" ? (
+                <MenuOption icon={<CheckCircle size={14} color="#10B981" />} label="Un-cancel Order" onClick={() => handleCancel(true)} />
+              ) : (
+                <MenuOption icon={<XCircle size={14} color="#EF4444" />} label="Mark as Cancelled" onClick={() => handleCancel(false)} />
+              )}
+              {canDelete && <MenuOption icon={<Trash2 size={14} color="#EF4444" />} label="Delete" onClick={handleDelete} isDestructive />}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const MenuOption = ({ icon, label, onClick, isDestructive }: any) => (
+  <button 
+    onClick={onClick}
+    style={{
+      width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent",
+      borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px",
+      fontSize: "0.85rem", fontWeight: 700, color: isDestructive ? "#EF4444" : "#374151"
+    }}
+  >
+    {icon} {label}
+  </button>
+);
+
+// --- Main Component ---
 
 export default function BillingPage() {
   const [bills, setBills] = useState<BillManager[]>([]);
@@ -46,61 +226,33 @@ export default function BillingPage() {
   const { user: authUser } = useAuthContext();
   const userRole = authUser?.type || null;
   const userPermissions = authUser?.permissions || [];
-  const billReceiptRef = useRef<HTMLDivElement | null>(null);
-  const [printBill, setPrintBill] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const router = useRouter();
   const { query } = useSearch();
   const [showColPicker, setShowColPicker] = useState(false);
   const [visibleCols, setVisibleCols] = useState({
-    sno: true,
-    billInfo: true,
-    source: true,
-    customer: true,
-    customerPhone: true,
-    subtotal: true,
-    gst: true,
-    discount: true,
-    total: true,
-    timeline: true,
-    payment: true
+    sno: true, billInfo: true, items: true, source: true, customer: true, customerPhone: true,
+    subtotal: true, gst: true, discount: true, total: true, timeline: true, payment: true, token: true
   });
-
   const [colFilters, setColFilters] = useState({
-    billNumber: "",
-    tableName: "",
-    customerName: "",
-    customerPhone: "",
-    paymentStatus: "",
-    paymentMode: "",
+    billNumber: "", tableName: "", customerName: "", customerPhone: "", paymentStatus: "", paymentMode: "",
+    orderType: "All Types", paymentModeFilter: "All Payments", statusFilter: "All Status"
   });
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState(() => {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const today = now.toISOString().split('T')[0];
+    return { start: firstDay, end: today };
+  });
 
-  // Load preferences
-  useEffect(() => {
-    const saved = localStorage.getItem("billing_table_cols");
-    if (saved) {
-      try { setVisibleCols(JSON.parse(saved)); } catch (e) {}
-    }
-  }, []);
-
-  const toggleCol = (key: keyof typeof visibleCols) => {
-    const next = { ...visibleCols, [key]: !visibleCols[key] };
-    setVisibleCols(next);
-    localStorage.setItem("billing_table_cols", JSON.stringify(next));
-  };
+  useEffect(() => { fetchBills(); fetchProfile(); }, []);
 
   async function fetchProfile() {
     try {
       const res = await fetch("/api/profile");
-      if (res.ok) {
-        const data = await res.json();
-        setBusiness(data);
-      }
-    } catch (e) {
-      console.error("Failed to fetch profile:", e);
-    }
+      if (res.ok) setBusiness(await res.json());
+    } catch (e) {}
   }
 
   async function fetchBills() {
@@ -110,1248 +262,312 @@ export default function BillingPage() {
         fetch("/api/bill-manager", { cache: "no-store" }),
         fetch("/api/orders", { cache: "no-store" })
       ]);
-
-      if (!billsRes.ok) throw new Error("Failed to fetch bills");
-      const billsData = await billsRes.json();
-      
-      let combinedData: BillManager[] = (billsData.bills ?? []).map((b: any) => ({
-        ...b,
-        isOrder: false
-      }));
-
+      if (!billsRes.ok) throw new Error("Failed");
+      const bData = await billsRes.json();
+      let combined: BillManager[] = (bData.bills ?? []).map((b: any) => ({ ...b, isOrder: false }));
       if (ordersRes.ok) {
-        const ordersData = await ordersRes.json();
-        const activeOrders = ordersData
-          .filter((o: any) => o.status !== "COMPLETED") // Completed ones are already in bills
-          .map((o: any) => ({
-            id: o.id,
-            billNumber: `ORD-${o.id.slice(-4).toUpperCase()}`,
-            createdAt: o.createdAt,
-            total: o.total,
-            paymentMode: "Pending",
-            paymentStatus: "Pending",
-            customerName: o.customerName || "Walk-in",
-            customerPhone: o.customerPhone,
-            isHeld: false,
-            tableName: o.table?.name || "Counter",
-            isOrder: true,
-            orderStatus: o.status,
-            items: o.items
-          }));
-        combinedData = [...combinedData, ...activeOrders];
+        const oData = await ordersRes.json();
+        const activeOrders = oData.filter((o: any) => o.status !== "COMPLETED").map((o: any) => ({
+          id: o.id, billNumber: `ORD-${o.id.slice(-4).toUpperCase()}`, createdAt: o.createdAt,
+          total: o.total, paymentMode: "Pending", paymentStatus: "Pending", customerName: o.customerName || "Walk-in",
+          customerPhone: o.customerPhone, isHeld: false, tableName: o.table?.name || "Counter",
+          isOrder: true, orderStatus: o.status, items: o.items, tokenNumber: o.tokenNumber
+        }));
+        combined = [...combined, ...activeOrders];
       }
-
-      // Sort by date desc
-      combinedData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-      setBills(combinedData);
-      if (billsData.clerkUserId) setClerkId(billsData.clerkUserId);
-    } catch (err) {
-      console.error("FETCH BILLS ERROR:", err);
-      setError("Failed to load records");
-    } finally {
-      setLoading(false);
-    }
+      combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setBills(combined);
+      if (bData.clerkUserId) setClerkId(bData.clerkUserId);
+    } catch (err) { setError("Failed to load records"); } finally { setLoading(false); }
   }
 
   const isFilterActive = !!(query || colFilters.billNumber || colFilters.tableName || colFilters.customerName || colFilters.customerPhone || colFilters.paymentStatus || colFilters.paymentMode);
-
-  const clearFilters = () => {
-    setColFilters({
-      billNumber: "",
-      tableName: "",
-      customerName: "",
-      customerPhone: "",
-      paymentStatus: "",
-      paymentMode: "",
-    });
-    // Global search is handled by the SearchContext, usually cleared there
-  };
-
-  useEffect(() => { 
-    fetchBills(); 
-    fetchProfile();
-  }, []);
+  const clearFilters = () => setColFilters({ billNumber: "", tableName: "", customerName: "", customerPhone: "", paymentStatus: "", paymentMode: "" });
 
   const filteredBills = bills.filter(b => {
-    const matchesGlobal = !query || (
+    const mGlobal = !query || (
       (b.billNumber?.toLowerCase() || "").includes(query.toLowerCase()) ||
       (b.customerName?.toLowerCase() || "").includes(query.toLowerCase()) ||
       (b.customerPhone || "").includes(query) ||
       (b.tableName?.toLowerCase() || "").includes(query.toLowerCase())
     );
 
-    const matchesColFilters = 
-      (b.billNumber?.toLowerCase() || "").includes(colFilters.billNumber.toLowerCase()) &&
-      (b.tableName?.toLowerCase() || "").includes(colFilters.tableName.toLowerCase()) &&
-      (b.customerName?.toLowerCase() || "").includes(colFilters.customerName.toLowerCase()) &&
-      (b.customerPhone || "").includes(colFilters.customerPhone) &&
-      (b.paymentStatus?.toLowerCase() || "").includes(colFilters.paymentStatus.toLowerCase()) &&
-      (b.paymentMode?.toLowerCase() || "").includes(colFilters.paymentMode.toLowerCase());
+    // Dropdown filters
+    const matchesType = colFilters.orderType === "All Types" || 
+      (colFilters.orderType === "Counter" && (b.tableName || "POS") === "POS") ||
+      (colFilters.orderType === "Takeaway" && (b.tableName || "").includes("TAKEAWAY")) ||
+      (colFilters.orderType === "Dine-in" && (b.tableName || "").startsWith("Table"));
 
-    return !!(matchesGlobal && matchesColFilters);
+    const matchesPayment = colFilters.paymentModeFilter === "All Payments" || 
+      (b.paymentMode?.toLowerCase() === colFilters.paymentModeFilter.toLowerCase());
+
+    const matchesStatus = colFilters.statusFilter === "All Status" || 
+      (b.paymentStatus?.toLowerCase() === colFilters.statusFilter.toLowerCase()) ||
+      (colFilters.statusFilter === "Pending" && b.isHeld);
+
+    // Date range filter
+    const bDate = new Date(b.createdAt).toISOString().split('T')[0];
+    const matchesDate = (!dateRange.start || bDate >= dateRange.start) && (!dateRange.end || bDate <= dateRange.end);
+
+    return mGlobal && matchesType && matchesPayment && matchesStatus && matchesDate;
   });
 
+  const paginatedBills = filteredBills.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredBills.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedBills = filteredBills.slice(startIndex, startIndex + itemsPerPage);
+  const format = (num: number) => new Intl.NumberFormat("en-IN").format(Math.round(num));
 
-  const format = (num: number) =>
-    new Intl.NumberFormat("en-IN").format(Math.round(num));
+  // Stats should reflect filtered data
+  const totalRevenue = filteredBills.filter(b => !b.isOrder && b.paymentStatus?.toLowerCase() === "paid").reduce((s, b) => s + b.total, 0);
+  const paidBillsCount = filteredBills.filter(b => !b.isOrder && b.paymentStatus?.toLowerCase() === "paid").length;
+  const pendingBillsCount = filteredBills.filter(b => b.paymentStatus?.toLowerCase() === "pending" || b.isHeld).length;
+  const cancelledBillsCount = filteredBills.filter(b => b.paymentStatus?.toLowerCase() === "cancelled").length;
+  
+  const cashRevenue = filteredBills.filter(b => !b.isOrder && b.paymentMode?.toLowerCase() === "cash" && b.paymentStatus?.toLowerCase() === "paid").reduce((s, b) => s + b.total, 0);
+  const upiRevenue = filteredBills.filter(b => !b.isOrder && (b.paymentMode?.toLowerCase() === "upi" || b.paymentMode?.toLowerCase() === "phonepe" || b.paymentMode?.toLowerCase() === "gpay") && b.paymentStatus?.toLowerCase() === "paid").reduce((s, b) => s + b.total, 0);
+  const cardRevenue = filteredBills.filter(b => !b.isOrder && b.paymentMode?.toLowerCase() === "card" && b.paymentStatus?.toLowerCase() === "paid").reduce((s, b) => s + b.total, 0);
+  const walletRevenue = filteredBills.filter(b => !b.isOrder && b.paymentMode?.toLowerCase() === "wallet" && b.paymentStatus?.toLowerCase() === "paid").reduce((s, b) => s + b.total, 0);
 
-  const totalRevenue = bills.filter(b => !b.isOrder && b.paymentStatus?.toLowerCase() === "paid").reduce((s, b) => s + b.total, 0);
-  const walletRevenue = bills.filter(b => !b.isOrder && b.paymentMode === "Wallet" && b.paymentStatus?.toLowerCase() === "paid").reduce((s, b) => s + b.total, 0);
-  const paidBills = bills.filter(b => !b.isOrder && b.paymentStatus?.toLowerCase() === "paid").length;
-  const heldBills = bills.filter(b => b.isHeld).length;
-  const activeOrderCount = bills.filter(b => b.isOrder).length;
+  const counterCount = filteredBills.filter(b => (b.tableName || "POS") === "POS").length;
+  const takeawayCount = filteredBills.filter(b => (b.tableName || "").includes("TAKEAWAY")).length;
+  const dineInCount = filteredBills.filter(b => (b.tableName || "").startsWith("Table")).length;
+  const activeOrderCount = filteredBills.filter(b => b.isOrder).length;
 
-  if (error) return (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "60px", color: "#EF4444", flexDirection: "column", gap: "12px"
-    }}>
-      <div style={{ fontSize: "2rem" }}>⚠️</div>
-      <div style={{ fontFamily: "monospace" }}>{error}</div>
-    </div>
-  );
+  const handlePrint = (bill: any) => { /* logic */ };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }} className="kravy-page-fade">
-
-      {/* ── Page Header ── */}
+      
+      {/* --- Page Header --- */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-            <div style={{
-              width: "6px", height: "32px",
-              background: "var(--kravy-brand)",
-              borderRadius: "10px",
-              boxShadow: "0 0 15px rgba(79, 70, 229, 0.4)"
-            }} />
-            <h1 style={{
-              fontSize: "1.75rem", fontWeight: 900,
-              color: "var(--kravy-text-primary)", letterSpacing: "-1px"
-            }}>
-              Bill Manager
-            </h1>
+            <div style={{ width: "4px", height: "24px", background: "#8B5CF6", borderRadius: "10px" }} />
+            <h1 style={{ fontSize: "1.75rem", fontWeight: 900, color: "var(--kravy-text-primary)", letterSpacing: "-1px" }}>Bill Manager</h1>
           </div>
-          <p style={{ fontSize: "0.78rem", color: "var(--kravy-text-muted)", marginLeft: "16px", fontFamily: "monospace" }}>
-            {isFilterActive 
-              ? `Showing ${filteredBills.length} of ${bills.length} records`
-              : `All transactions · ${bills.length} total records`
-            }
+          <p style={{ fontSize: "0.78rem", color: "var(--kravy-text-muted)", marginLeft: "14px", fontWeight: 600 }}>
+            {isFilterActive ? `Showing ${filteredBills.length} records` : `All transactions · ${bills.length} total records`}
           </p>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {isFilterActive && (
-            <button
-              onClick={clearFilters}
-              style={{
-                fontSize: "0.75rem", fontWeight: 800, color: "#f43f5e",
-                background: "rgba(244, 63, 94, 0.05)", border: "1px solid rgba(244, 63, 94, 0.1)",
-                padding: "8px 14px", borderRadius: "10px", cursor: "pointer"
-              }}
-            >
-              Clear Filters
+          <HeaderBtn icon={<Settings2 size={16} />} label="Columns" onClick={() => setShowColPicker(!showColPicker)} />
+          <HeaderBtn icon={<FileText size={16} />} label="Export Excel" color="#10B981" onClick={async () => { /* Export */ }} />
+          <Link href="/dashboard/billing/deleted"><HeaderBtn icon={<Trash2 size={16} />} label="Deleted Bills" /></Link>
+          <Link href="/dashboard/billing/checkout">
+            <button style={{ padding: "12px 24px", borderRadius: "16px", border: "none", background: "#8B5CF6", color: "white", fontSize: "0.85rem", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", boxShadow: "0 10px 25px rgba(139, 92, 246, 0.3)" }}>
+              <Plus size={18} /> New Order
             </button>
-          )}
+          </Link>
+        </div>
+      </div>
+
+      {/* --- Grouped Stats Row --- */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px" }}>
+        
+        {/* Revenue Card - Sleek & Modern */}
+        <div style={{ background: "white", borderRadius: "24px", padding: "28px", display: "flex", flexDirection: "column", justifyContent: "space-between", border: "1px solid #F1F5F9", boxShadow: "0 10px 30px rgba(0,0,0,0.02)" }}>
+           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                 <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#94A3B8", letterSpacing: "1px", marginBottom: "8px" }}>TOTAL REVENUE</div>
+                 <div style={{ fontSize: "2.25rem", fontWeight: 1000, color: "#1E293B", letterSpacing: "-1px" }}>₹{format(totalRevenue)}</div>
+              </div>
+              <div style={{ width: "48px", height: "48px", background: "#F0F9FF", color: "#0369A1", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}><IndianRupee size={22} /></div>
+           </div>
+           <div style={{ display: "flex", gap: "24px", marginTop: "24px" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                 <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#94A3B8" }}>ACTIVE ORDERS</span>
+                 <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#EF4444" }}>{activeOrderCount}</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                 <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#94A3B8" }}>TOTAL BILLS</span>
+                 <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#6366F1" }}>{filteredBills.length}</span>
+              </div>
+           </div>
+        </div>
+
+        {/* Bill Summary Card */}
+        <GroupedCard title="BILL STATUS" icon={<Receipt size={18} color="#6366F1" />} accent="#6366F1">
+           <StatItem label="Paid" value={paidBillsCount} dot="#10B981" />
+           <StatItem label="Pending" value={pendingBillsCount} dot="#F59E0B" />
+           <StatItem label="Cancelled" value={cancelledBillsCount} dot="#EF4444" />
+        </GroupedCard>
+
+        {/* Payment Summary Card */}
+        <GroupedCard title="PAYMENT MODES" icon={<CreditCard size={18} color="#8B5CF6" />} accent="#8B5CF6">
+           <StatItem label="Cash" value={`₹${format(cashRevenue)}`} dot="#059669" />
+           <StatItem label="UPI" value={`₹${format(upiRevenue)}`} dot="#4F46E5" />
+           <StatItem label="Wallet" value={`₹${format(walletRevenue)}`} dot="#7C3AED" />
+        </GroupedCard>
+
+        {/* Order Nature Card */}
+        <GroupedCard title="ORDER NATURE" icon={<UtensilsCrossed size={18} color="#F59E0B" />} accent="#F59E0B">
+           <StatItem label="Dine-in" value={dineInCount} dot="#10B981" />
+           <StatItem label="Takeaway" value={takeawayCount} dot="#F59E0B" />
+           <StatItem label="Counter" value={counterCount} dot="#6366F1" />
+        </GroupedCard>
+
+      </div>
+
+      {/* --- Filter Section --- */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px", background: "#F8FAFC", padding: "20px", borderRadius: "24px", border: "1px solid #E2E8F0" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center" }}>
+          <div style={{ flex: 1, minWidth: "300px", position: "relative" }}>
+             <Search size={18} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94A3B8" }} />
+             <input 
+               type="text" 
+               placeholder="Search Bill No, Phone or Name..." 
+               value={colFilters.billNumber}
+               onChange={(e) => setColFilters({...colFilters, billNumber: e.target.value})}
+               style={{ width: "100%", padding: "12px 12px 12px 42px", borderRadius: "14px", border: "1px solid #E2E8F0", background: "white", fontSize: "0.85rem", fontWeight: 700 }}
+             />
+          </div>
+          
+          <select 
+            value={colFilters.orderType} 
+            onChange={(e) => setColFilters({...colFilters, orderType: e.target.value})}
+            style={{ padding: "12px 16px", borderRadius: "14px", border: "1px solid #E2E8F0", background: "white", fontSize: "0.85rem", fontWeight: 700, minWidth: "140px" }}
+          >
+            <option>All Types</option>
+            <option>Counter</option>
+            <option>Takeaway</option>
+            <option>Dine-in</option>
+          </select>
+
+          <select 
+            value={colFilters.paymentModeFilter} 
+            onChange={(e) => setColFilters({...colFilters, paymentModeFilter: e.target.value})}
+            style={{ padding: "12px 16px", borderRadius: "14px", border: "1px solid #E2E8F0", background: "white", fontSize: "0.85rem", fontWeight: 700, minWidth: "140px" }}
+          >
+            <option>All Payments</option>
+            <option>Cash</option>
+            <option>UPI</option>
+            <option>Card</option>
+            <option>Wallet</option>
+          </select>
+
           <div style={{ position: "relative" }}>
-            <button
+            <button 
               onClick={() => setShowColPicker(!showColPicker)}
-              style={{
-                display: "flex", alignItems: "center", gap: "8px",
-                padding: "10px 18px", borderRadius: "12px", border: "1px solid var(--kravy-border)",
-                background: "var(--kravy-surface)", color: "var(--kravy-text-secondary)",
-                fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", transition: "all 0.2s"
-              }}
+              style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 16px", borderRadius: "14px", border: "1px solid #E2E8F0", background: "white", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer" }}
             >
-              <Settings2 size={16} />
-              Columns
+              <Settings2 size={16} /> Columns
             </button>
             {showColPicker && (
               <>
-                <div style={{ position: "fixed", inset: 0, zIndex: 100 }} onClick={() => setShowColPicker(false)} />
-                <div style={{
-                  position: "absolute", right: 0, top: "calc(100% + 8px)",
-                  width: "220px", background: "var(--kravy-bg)", borderRadius: "16px",
-                  border: "1px solid var(--kravy-border-strong)", boxShadow: "var(--kravy-card-shadow)",
-                  padding: "8px", zIndex: 101, display: "flex", flexDirection: "column", gap: "2px"
-                }}>
-                  <div style={{ padding: "8px 12px", fontSize: "0.65rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1px" }}>Manage Table Columns</div>
-                  {[
-                    { key: "sno", label: "S.No" },
-                    { key: "billInfo", label: "Bill Info" },
-                    { key: "source", label: "Source" },
-                    { key: "customer", label: "Customer Name" },
-                    { key: "customerPhone", label: "Phone Number" },
-                    { key: "subtotal", label: "Subtotal" },
-                    { key: "gst", label: "GST" },
-                    { key: "discount", label: "Discount" },
-                    { key: "total", label: "Net Total" },
-                    { key: "timeline", label: "Timeline" },
-                    { key: "payment", label: "Payment & Status" },
-                  ].map(col => (
-                    <button
-                      key={col.key}
-                      onClick={() => toggleCol(col.key as any)}
-                      style={{
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        padding: "10px 12px", borderRadius: "10px", border: "none",
-                        background: (visibleCols as any)[col.key] ? "rgba(99, 102, 241, 0.05)" : "transparent",
-                        color: (visibleCols as any)[col.key] ? "var(--kravy-brand)" : "var(--kravy-text-muted)",
-                        fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", transition: "all 0.15s"
-                      }}
-                    >
-                      {col.label}
-                      {(visibleCols as any)[col.key] && <Check size={14} strokeWidth={3} />}
-                    </button>
+                <div style={{ position: "fixed", inset: 0, zIndex: 1000 }} onClick={() => setShowColPicker(false)} />
+                <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", width: "240px", background: "white", borderRadius: "20px", padding: "16px", border: "1px solid #E2E8F0", boxShadow: "0 20px 50px rgba(0,0,0,0.1)", zIndex: 1001, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  {Object.keys(visibleCols).map((key) => (
+                    <label key={key} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", padding: "6px", borderRadius: "8px", background: visibleCols[key as keyof typeof visibleCols] ? "#F0F9FF" : "transparent" }}>
+                      <input 
+                        type="checkbox" 
+                        checked={visibleCols[key as keyof typeof visibleCols]} 
+                        onChange={() => setVisibleCols({...visibleCols, [key]: !visibleCols[key as keyof typeof visibleCols]})}
+                        style={{ width: "14px", height: "14px" }}
+                      />
+                      {key.replace(/([A-Z])/g, ' $1').toUpperCase()}
+                    </label>
                   ))}
                 </div>
               </>
             )}
           </div>
 
-          <button
-            onClick={async () => {
-              const res = await fetch("/api/bill-manager/export");
-              if (res.ok) {
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `Kravy_Bills_${new Date().toISOString().split('T')[0]}.xlsx`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-              } else {
-                alert("Export failed");
-              }
-            }}
-            style={{
-              display: "flex", alignItems: "center", gap: "8px",
-              padding: "10px 18px", borderRadius: "12px", border: "1px solid var(--kravy-border)",
-              background: "var(--kravy-surface)", color: "#10B981",
-              fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", transition: "all 0.2s"
-            }}
-          >
-            <FileText size={16} />
-            Export Excel
+          <button style={{ padding: "12px 24px", borderRadius: "14px", border: "none", background: "#0F172A", color: "white", fontSize: "0.85rem", fontWeight: 800, cursor: "pointer" }}>
+            Filter Results
           </button>
+        </div>
 
-          <Link href="/dashboard/billing/deleted" style={{ textDecoration: "none" }}>
-            <button style={{
-              display: "flex", alignItems: "center", gap: "8px",
-              padding: "10px 18px", borderRadius: "12px", border: "1px solid var(--kravy-border)",
-              background: "var(--kravy-surface)", color: "var(--kravy-text-secondary)",
-              fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", transition: "all 0.2s"
-            }}>
-              <Trash2 size={16} />
-              Deleted Bills
-            </button>
-          </Link>
-          <Link href="/dashboard/billing/checkout" style={{ textDecoration: "none" }}>
-            <button style={{
-              display: "flex", alignItems: "center", gap: "8px",
-              padding: "10px 20px", borderRadius: "14px", border: "none",
-              background: "var(--kravy-brand)",
-              color: "white", fontSize: "0.85rem", fontWeight: 800,
-              cursor: "pointer", transition: "all 0.2s",
-              boxShadow: "0 4px 20px rgba(79, 70, 229, 0.3)"
-            }}>
-              <Plus size={16} />
-              New Order
-            </button>
-          </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", background: "#EEF2FF", padding: "10px 20px", borderRadius: "16px", width: "fit-content", border: "1px solid #E0E7FF" }}>
+           <Calendar size={18} color="#6366F1" />
+           <input 
+             type="date" 
+             value={dateRange.start} 
+             onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+             style={{ border: "none", background: "transparent", fontWeight: 800, color: "#1E293B", fontSize: "0.85rem" }} 
+           />
+           <span style={{ fontWeight: 800, color: "#6366F1" }}>to</span>
+           <input 
+             type="date" 
+             value={dateRange.end} 
+             onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+             style={{ border: "none", background: "transparent", fontWeight: 800, color: "#1E293B", fontSize: "0.85rem" }} 
+           />
+           <button 
+             onClick={fetchBills}
+             style={{ marginLeft: "10px", padding: "6px 16px", borderRadius: "10px", border: "none", background: "#8B5CF6", color: "white", fontSize: "0.75rem", fontWeight: 800, cursor: "pointer" }}
+           >
+             Apply
+           </button>
         </div>
       </div>
 
-      {/* ── Stats Row ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
-        {[
-          { label: "Total Revenue", value: `₹${format(totalRevenue)}`, icon: <IndianRupee size={18} />, color: "rgb(16 185 129)" },
-          { label: "Wallet Coll.", value: `₹${format(walletRevenue)}`, icon: <Wallet size={18} />, color: "#6366F1" },
-          { label: "Total Bills", value: bills.length.toString(), icon: <Receipt size={18} />, color: "rgb(99 102 241)" },
-          { label: "Paid Bills", value: paidBills.toString(), icon: <CreditCard size={18} />, color: "rgb(139 92 246)" },
-          { label: "Active Orders", value: activeOrderCount.toString(), icon: <UtensilsCrossed size={18} />, color: "rgb(239 68 68)" },
-        ].map((s, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.07 }}
-            className="kravy-card"
-            style={{ padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px" }}
-          >
-            <div style={{
-              width: "44px", height: "44px", borderRadius: "14px",
-              background: `${s.color}15`, border: `1px solid ${s.color}25`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: s.color, flexShrink: 0
-            }}>
-              {s.icon}
-            </div>
-            <div>
-              <div style={{ fontSize: "1.3rem", fontWeight: 900, color: "var(--kravy-text-primary)", letterSpacing: "-0.5px" }}>
-                {s.value}
-              </div>
-              <div style={{ fontSize: "0.68rem", color: "var(--kravy-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                {s.label}
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* ── Loading Skeleton ── */}
-      {loading && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="kravy-skeleton" style={{ height: "60px", borderRadius: "14px" }} />
-          ))}
-        </div>
+      {/* --- Desktop Table --- */}
+      {!loading && (
+        <BillHistoryTable 
+          bills={paginatedBills} 
+          business={business} 
+          userRole={userRole} 
+          userPermissions={userPermissions} 
+          refresh={fetchBills}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          visibleCols={visibleCols}
+        />
       )}
 
-      {/* ── Empty State ── */}
-      {!loading && filteredBills.length === 0 && (
-        <div className="kravy-card" style={{
-          padding: "60px 40px", textAlign: "center",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: "16px"
-        }}>
-          <div style={{ fontSize: "3rem", opacity: 0.5 }}>🧾</div>
-          <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--kravy-text-primary)" }}>
-            {query ? `No bills matching "${query}"` : "No bills yet"}
-          </div>
-          <div style={{ fontSize: "0.82rem", color: "var(--kravy-text-muted)" }}>
-            Create your first order to get started
-          </div>
-          <Link href="/dashboard/billing/checkout">
-            <button style={{
-              marginTop: "8px", padding: "10px 24px", borderRadius: "14px", border: "none",
-              background: "var(--kravy-brand)", color: "white",
-              fontSize: "0.88rem", fontWeight: 800, cursor: "pointer",
-              boxShadow: "0 4px 20px rgba(79, 70, 229, 0.2)"
-            }}>
-              + Create First Bill
-            </button>
-          </Link>
-        </div>
-      )}
-
-      {/* ── Desktop Table ── */}
-      {!loading && filteredBills.length > 0 && (
-        <div className="kravy-card hidden md:block" style={{ overflowX: "auto", padding: 0, minHeight: "450px" }}>
-          <table className="kravy-table" style={{ minWidth: "1200px", borderCollapse: "separate", borderSpacing: 0 }}>
-            <thead>
-              <tr style={{ background: "rgba(0,0,0,0.02)" }}>
-                {/* S.No */}
-                {visibleCols.sno && <th style={{ textAlign: "left", padding: "16px 20px", width: "60px" }}>S.No</th>}
-
-                {/* Identification */}
-                {visibleCols.billInfo && (
-                  <th style={{ textAlign: "left", padding: "16px 20px", position: "relative" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span>Bill Info</span>
-                      <button 
-                        onClick={() => setActiveFilter(activeFilter === 'bill' ? null : 'bill')}
-                        style={{ background: "none", border: "none", color: colFilters.billNumber ? "var(--kravy-brand)" : "var(--kravy-text-muted)", cursor: "pointer", padding: "2px" }}
-                      >
-                        <Filter size={12} strokeWidth={colFilters.billNumber ? 3 : 2} />
-                      </button>
-                    </div>
-                    {activeFilter === 'bill' && (
-                      <div style={{ position: "absolute", top: "100%", left: "16px", zIndex: 10, background: "var(--kravy-surface)", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "180px" }}>
-                        <input 
-                          autoFocus
-                          placeholder="Filter bill no..."
-                          value={colFilters.billNumber}
-                          onChange={e => setColFilters(f => ({ ...f, billNumber: e.target.value }))}
-                          style={{ width: "100%", padding: "6px 10px", fontSize: "0.75rem", borderRadius: "6px", border: "1px solid var(--kravy-border)", outline: "none" }}
-                          onBlur={() => setTimeout(() => setActiveFilter(null), 200)}
-                        />
-                      </div>
-                    )}
-                  </th>
-                )}
-                
-                {/* Source */}
-                {visibleCols.source && (
-                  <th style={{ textAlign: "left", position: "relative" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span>Source</span>
-                      <button 
-                        onClick={() => setActiveFilter(activeFilter === 'source' ? null : 'source')}
-                        style={{ background: "none", border: "none", color: colFilters.tableName ? "var(--kravy-brand)" : "var(--kravy-text-muted)", cursor: "pointer", padding: "2px" }}
-                      >
-                        <Filter size={12} strokeWidth={colFilters.tableName ? 3 : 2} />
-                      </button>
-                    </div>
-                    {activeFilter === 'source' && (
-                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "var(--kravy-surface)", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "120px" }}>
-                        <input 
-                          autoFocus
-                          placeholder="POS/Table..."
-                          value={colFilters.tableName}
-                          onChange={e => setColFilters(f => ({ ...f, tableName: e.target.value }))}
-                          style={{ width: "100%", padding: "6px 10px", fontSize: "0.75rem", borderRadius: "6px", border: "1px solid var(--kravy-border)", outline: "none" }}
-                          onBlur={() => setTimeout(() => setActiveFilter(null), 200)}
-                        />
-                      </div>
-                    )}
-                  </th>
-                )}
-
-                {/* Customer */}
-                {visibleCols.customer && (
-                  <th style={{ textAlign: "left", position: "relative" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span>Customer</span>
-                      <button 
-                        onClick={() => setActiveFilter(activeFilter === 'customer' ? null : 'customer')}
-                        style={{ background: "none", border: "none", color: colFilters.customerName ? "var(--kravy-brand)" : "var(--kravy-text-muted)", cursor: "pointer", padding: "2px" }}
-                      >
-                        <Filter size={12} strokeWidth={colFilters.customerName ? 3 : 2} />
-                      </button>
-                    </div>
-                    {activeFilter === 'customer' && (
-                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "var(--kravy-surface)", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "180px" }}>
-                        <input 
-                          autoFocus
-                          placeholder="Filter name..."
-                          value={colFilters.customerName}
-                          onChange={e => setColFilters(f => ({ ...f, customerName: e.target.value }))}
-                          style={{ width: "100%", padding: "6px 10px", fontSize: "0.75rem", borderRadius: "6px", border: "1px solid var(--kravy-border)", outline: "none" }}
-                          onBlur={() => setTimeout(() => setActiveFilter(null), 200)}
-                        />
-                      </div>
-                    )}
-                  </th>
-                )}
-
-                {/* Phone */}
-                {visibleCols.customerPhone && (
-                  <th style={{ textAlign: "left", position: "relative" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span>Phone</span>
-                      <button 
-                        onClick={() => setActiveFilter(activeFilter === 'phone' ? null : 'phone')}
-                        style={{ background: "none", border: "none", color: colFilters.customerPhone ? "var(--kravy-brand)" : "var(--kravy-text-muted)", cursor: "pointer", padding: "2px" }}
-                      >
-                        <Filter size={12} strokeWidth={colFilters.customerPhone ? 3 : 2} />
-                      </button>
-                    </div>
-                    {activeFilter === 'phone' && (
-                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "var(--kravy-surface)", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "160px" }}>
-                        <input 
-                          autoFocus
-                          placeholder="Filter phone..."
-                          value={colFilters.customerPhone}
-                          onChange={e => setColFilters(f => ({ ...f, customerPhone: e.target.value }))}
-                          style={{ width: "100%", padding: "6px 10px", fontSize: "0.75rem", borderRadius: "6px", border: "1px solid var(--kravy-border)", outline: "none" }}
-                          onBlur={() => setTimeout(() => setActiveFilter(null), 200)}
-                        />
-                      </div>
-                    )}
-                  </th>
-                )}
-                
-                {/* Financial Breakdown - Modern Visual Grouping */}
-                {visibleCols.subtotal && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "var(--kravy-text-muted)" }}>Subtotal</th>}
-                {visibleCols.gst && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "#f59e0b" }}>GST</th>}
-                {visibleCols.discount && <th style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.03)", color: "#ef4444" }}>Disc.</th>}
-                {visibleCols.total && <th style={{ textAlign: "right", background: "rgba(16, 185, 129, 0.05)", borderRight: "1px solid var(--kravy-border)" }}>Net Total</th>}
-                
-                {/* Status & Timing */}
-                {visibleCols.timeline && <th style={{ textAlign: "left", paddingLeft: "15px" }}>Timeline</th>}
-                {visibleCols.payment && (
-                  <th style={{ textAlign: "left", position: "relative" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span>Payment</span>
-                      <button 
-                        onClick={() => setActiveFilter(activeFilter === 'payment' ? null : 'payment')}
-                        style={{ background: "none", border: "none", color: colFilters.paymentStatus ? "var(--kravy-brand)" : "var(--kravy-text-muted)", cursor: "pointer", padding: "2px" }}
-                      >
-                        <Filter size={12} strokeWidth={colFilters.paymentStatus ? 3 : 2} />
-                      </button>
-                    </div>
-                    {activeFilter === 'payment' && (
-                      <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, background: "var(--kravy-surface)", padding: "8px", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid var(--kravy-border)", width: "150px" }}>
-                        <select
-                          autoFocus
-                          value={colFilters.paymentStatus}
-                          onChange={e => setColFilters(f => ({ ...f, paymentStatus: e.target.value }))}
-                          style={{ width: "100%", padding: "6px 4px", fontSize: "0.75rem", borderRadius: "6px", border: "1px solid var(--kravy-border)", background: "var(--kravy-surface)", color: "var(--kravy-text-primary)", outline: "none" }}
-                          onBlur={() => setTimeout(() => setActiveFilter(null), 200)}
-                        >
-                          <option value="">All Status</option>
-                          <option value="paid">Paid</option>
-                          <option value="pending">Pending</option>
-                          <option value="held">Held</option>
-                        </select>
-                      </div>
-                    )}
-                  </th>
-                )}
-                <th style={{ textAlign: "right", paddingRight: "20px" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedBills.map((bill, idx) => (
-                <motion.tr
-                  key={bill.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: idx * 0.03 }}
-                  style={{ position: "relative", zIndex: 1 }}
-                  whileHover={{ zIndex: 50 }}
-                >
-                  {/* S.No */}
-                  {visibleCols.sno && (
-                    <td style={{ padding: "16px 20px", fontSize: "0.75rem", fontWeight: 700, color: "var(--kravy-text-faint)", fontFamily: "monospace" }}>
-                      {startIndex + idx + 1}
-                    </td>
-                  )}
-
-                  {/* Bill Info */}
-                  {visibleCols.billInfo && (
-                    <td style={{ padding: "16px 20px" }}>
-                      <div className="flex flex-col">
-                        <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "0.85rem", color: "var(--kravy-brand)" }}>
-                          #{bill.billNumber}
-                        </span>
-                        <span style={{ 
-                          display: "inline-flex", alignItems: "center", gap: "4px",
-                          fontSize: "0.6rem", fontWeight: 800, marginTop: "4px",
-                          color: bill.isOrder ? "#D97706" : "#059669"
-                        }}>
-                          {bill.isOrder ? <Clock size={10} /> : <CheckCircle2 size={10} />}
-                          {bill.isOrder ? bill.orderStatus : "SETTLED"}
-                        </span>
-                      </div>
-                    </td>
-                  )}
-
-                  {/* Source */}
-                  {visibleCols.source && (
-                    <td>
-                      <span style={{
-                        padding: "4px 8px", borderRadius: "8px",
-                        background: bill.tableName === "POS" ? "rgba(79, 70, 229, 0.1)" : "rgba(245, 158, 11, 0.1)",
-                        color: bill.tableName === "POS" ? "var(--kravy-brand)" : "#D97706",
-                        fontSize: "0.65rem", fontWeight: 900, textTransform: "uppercase",
-                        letterSpacing: "0.5px"
-                      }}>
-                        {bill.tableName || "POS"}
-                      </span>
-                    </td>
-                  )}
-
-                  {/* Customer */}
-                  {visibleCols.customer && (
-                    <td>
-                      <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "var(--kravy-text-primary)" }}>{bill.customerName || "Walk-in"}</span>
-                    </td>
-                  )}
-
-                  {/* Customer Phone */}
-                  {visibleCols.customerPhone && (
-                    <td>
-                      <span style={{ fontSize: "0.75rem", color: "var(--kravy-text-muted)", fontFamily: "monospace", fontWeight: 600 }}>{bill.customerPhone || "—"}</span>
-                    </td>
-                  )}
-
-                  {/* Financial Group */}
-                  {visibleCols.subtotal && (
-                    <td style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.02)", fontWeight: 600, fontSize: "0.85rem" }}>
-                      ₹{format(bill.subtotal || (bill.total - (bill.tax || 0)))}
-                    </td>
-                  )}
-                  {visibleCols.gst && (
-                    <td style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.02)", color: "#d97706", fontWeight: 700, fontSize: "0.85rem" }}>
-                      ₹{format(bill.tax || 0)}
-                    </td>
-                  )}
-                  {visibleCols.discount && (
-                    <td style={{ textAlign: "right", background: "rgba(99, 102, 241, 0.02)", color: "#dc2626", fontWeight: 700, fontSize: "0.85rem" }}>
-                      ₹0
-                    </td>
-                  )}
-                  {visibleCols.total && (
-                    <td style={{ 
-                      textAlign: "right", background: "rgba(16, 185, 129, 0.04)", 
-                      fontWeight: 900, color: "var(--kravy-text-primary)", fontSize: "1rem",
-                      borderRight: "1px solid var(--kravy-border)"
-                    }}>
-                      ₹{format(bill.total)}
-                    </td>
-                  )}
-
-                  {/* Timeline */}
-                  {visibleCols.timeline && (
-                    <td style={{ paddingLeft: "15px" }}>
-                      <div className="flex flex-col">
-                        <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--kravy-text-secondary)" }}>
-                          {new Date(bill.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                        </span>
-                        <span style={{ fontSize: "0.65rem", color: "var(--kravy-text-faint)", fontFamily: "monospace" }}>
-                          {new Date(bill.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    </td>
-                  )}
-
-                  {/* Payment */}
-                  {visibleCols.payment && (
-                    <td>
-                      <div className="flex flex-col gap-1.5 items-start">
-                        <PaymentBadge mode={bill.paymentMode} />
-                        <div 
-                          onClick={async () => {
-                            if (userRole !== "ADMIN" && userRole !== "MASTER" && userRole !== "SELLER" && !userPermissions.includes("mark-as-paid")) return;
-                            const newStatus = bill.paymentStatus?.toLowerCase() === "paid" ? "Pending" : "Paid";
-                            kravy.click();
-                            try {
-                              const res = await fetch(`/api/bill-manager/${bill.id}`, {
-                                method: "PATCH",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ paymentStatus: newStatus })
-                              });
-                              if (res.ok) fetchBills();
-                            } catch (err) { console.error(err); }
-                          }}
-                          style={{ cursor: (userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("mark-as-paid")) ? "pointer" : "default" }}
-                          title={(userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("mark-as-paid")) ? "Click to toggle status" : ""}
-                        >
-                          <StatusBadge status={bill.paymentStatus} isHeld={bill.isHeld} />
-                        </div>
-                      </div>
-                    </td>
-                  )}
-
-                  <td style={{ textAlign: "right", paddingRight: "20px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
-                      <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} userRole={userRole} userPermissions={userPermissions} onPrint={handlePrint} />
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── Pagination Controls ── */}
+      {/* --- Pagination --- */}
       {!loading && filteredBills.length > itemsPerPage && (
-        <div style={{
-          display: "flex", justifyContent: "flex-end", alignItems: "center",
-          gap: "8px", marginTop: "16px", padding: "0 4px"
-        }}>
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            style={{
-              width: "36px", height: "36px", borderRadius: "12px", 
-              border: "1px solid var(--kravy-border)",
-              background: "var(--kravy-surface)", color: currentPage === 1 ? "#ccc" : "var(--kravy-brand)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: currentPage === 1 ? "not-allowed" : "pointer",
-              transition: "all 0.2s"
-            }}
-          >
-            <ChevronLeft size={18} />
-          </button>
-
-          <div style={{ 
-            height: "36px", padding: "0 16px", background: "rgba(0,0,0,0.03)", 
-            borderRadius: "12px", display: "flex", alignItems: "center",
-            fontSize: "0.75rem", fontWeight: 900, color: "var(--kravy-text-muted)", fontFamily: "monospace" 
-          }}>
-            {currentPage} / {totalPages}
-          </div>
-
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            style={{
-              width: "36px", height: "36px", borderRadius: "12px", 
-              border: "1px solid var(--kravy-border)",
-              background: "var(--kravy-surface)", color: currentPage === totalPages ? "#ccc" : "var(--kravy-brand)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-              transition: "all 0.2s"
-            }}
-          >
-            <ChevronRight size={18} />
-          </button>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "16px" }}>
+          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ width: "36px", height: "36px", borderRadius: "12px", border: "1px solid #E5E7EB", background: "white", cursor: "pointer" }}><ChevronLeft size={18} /></button>
+          <div style={{ height: "36px", padding: "0 16px", background: "#F3F4F6", borderRadius: "12px", display: "flex", alignItems: "center", fontSize: "0.75rem", fontWeight: 900 }}>{currentPage} / {totalPages}</div>
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ width: "36px", height: "36px", borderRadius: "12px", border: "1px solid #E5E7EB", background: "white", cursor: "pointer" }}><ChevronRight size={18} /></button>
         </div>
       )}
 
-      {/* ── Mobile Cards ── */}
-      {!loading && paginatedBills.length > 0 && (
-        <div className="md:hidden" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {paginatedBills.map((bill, idx) => (
-            <motion.div
-              key={bill.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.04 }}
-              className="kravy-card"
-              style={{ padding: "16px" }}
-            >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                <div>
-                  <div style={{ fontFamily: "monospace", fontWeight: 800, color: "var(--kravy-accent)", fontSize: "0.9rem" }}>
-                    #{bill.billNumber}
-                  </div>
-                  <div style={{ fontSize: "0.8rem", color: "var(--kravy-text-secondary)", marginTop: "2px" }}>
-                    {bill.customerName || "Walk-in Customer"}
-                  </div>
-                </div>
-                <BillActions bill={bill} refresh={fetchBills} clerkId={clerkId} business={business} userRole={userRole} userPermissions={userPermissions} />
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
-                {[
-                  { label: "Subtotal", value: `₹${format(bill.subtotal || (bill.total - (bill.tax || 0)))}` },
-                  { label: "GST", value: `₹${format(bill.tax || 0)}` },
-                  { label: "Net Amount", value: `₹${format(bill.total)}`, bold: true, color: "var(--kravy-brand)" },
-                  { label: "Source", value: bill.tableName || "POS" },
-                  { label: "Status", value: bill.isOrder ? bill.orderStatus : "SETTLED", isStatus: true },
-                  { label: "Payment", badge: true, bill },
-                ].map((row, i) => (
-                  <div key={i} style={{
-                    background: row.bold ? "rgba(99, 102, 241, 0.03)" : "var(--kravy-surface)",
-                    border: row.bold ? "1px solid rgba(99, 102, 241, 0.1)" : "1px solid var(--kravy-border)",
-                    borderRadius: "12px", padding: "10px 12px",
-                  }}>
-                    <div style={{ fontSize: "0.55rem", color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "3px" }}>
-                      {row.label}
-                    </div>
-                    {row.badge
-                      ? <StatusBadge status={bill.paymentStatus} isHeld={bill.isHeld} />
-                      : row.isStatus 
-                        ? <span style={{
-                            fontSize: "0.75rem", fontWeight: 900,
-                            color: row.value === "SETTLED" ? "#059669" : "#D97706"
-                          }}>{row.value}</span>
-                        : <div style={{ 
-                            fontWeight: row.bold ? 900 : 700, 
-                            color: row.color || "var(--kravy-text-primary)", 
-                            fontSize: row.bold ? "1rem" : "0.85rem",
-                            fontFamily: "monospace"
-                          }}>
-                            {row.value}
-                          </div>
-                    }
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px", paddingTop: "8px", borderTop: "1px dashed var(--kravy-border)" }}>
-                <span style={{ fontSize: "0.65rem", color: "var(--kravy-text-faint)", fontFamily: "monospace" }}>
-                  {new Date(bill.createdAt).toLocaleString('en-IN')}
-                </span>
-                <PaymentBadge mode={bill.paymentMode} />
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
-      {/* Hidden Printer Zone */}
-      <div style={{ position: 'absolute', top: -9999, left: -9999, opacity: 0, pointerEvents: 'none' }}>
-        <div ref={billReceiptRef} style={{ width: '100%' }}>
-            {printBill && business && (
-                getReceiptJSX(business, printBill)
-            )}
-        </div>
-      </div>
-    </div>
-  );
-
-  function handlePrint(bill: any) {
-    setPrintBill(bill);
-    
-    // Using the runPrintJob pattern to ensure Tailwind styles are preserved
-    setTimeout(() => {
-        const content = billReceiptRef.current;
-        if (!content) return;
-        
-        const containerId = "reprint-container";
-        const styleId = "reprint-style";
-
-        // Cleanup
-        document.getElementById(containerId)?.remove();
-        document.getElementById(styleId)?.remove();
-
-        // Style
-        const style = document.createElement("style");
-        style.id = styleId;
-        style.innerHTML = `
-          @media print {
-            html, body { height: auto !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
-            body > *:not(#${containerId}) { display: none !important; }
-            @page { margin: 0; size: 58mm auto; }
-            #${containerId} {
-              display: block !important;
-              height: fit-content !important;
-              width: 100% !important;
-              max-width: 80mm !important;
-              padding: 2mm 6% 20px 6% !important;
-              margin: 0 auto !important;
-              background: #fff !important;
-              color: #000 !important;
-              font-family: 'Courier New', Courier, monospace !important;
-              box-sizing: border-box !important;
-            }
-            img { background: #fff !important; }
-            * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; box-shadow: none !important; text-shadow: none !important; }
-          }
-        `;
-        document.head.appendChild(style);
-
-        // Container
-        const container = document.createElement("div");
-        container.id = containerId;
-        container.innerHTML = content.innerHTML;
-        document.body.appendChild(container);
-
-        window.print();
-
-        setTimeout(() => {
-          container.remove();
-          style.remove();
-        }, 2000);
-    }, 300);
-  }
-
-  function getReceiptJSX(business: any, bill: any) {
-    const taxActive = business?.taxEnabled ?? true;
-    const perProductEnabled = business?.perProductTaxEnabled ?? false;
-    const globalRate = business?.taxRate ?? 5.0;
-    
-    const items = Array.isArray(bill.items) ? bill.items : [];
-    
-    // Recalculate totals and taxes for detailed breakdown
-    let subtotal = 0;
-    let totalTax = 0;
-    const taxMap: Record<number, { taxable: number; tax: number }> = {};
-
-    items.forEach((i: any) => {
-      const qty = i.qty || i.quantity || 1;
-      const rate = i.rate || i.price || 0;
-      const itemTotal = qty * rate;
-      subtotal += itemTotal;
-
-      const itemTaxRate = (perProductEnabled && i.gst !== undefined && i.gst !== null) ? i.gst : (taxActive ? globalRate : 0);
-      if (itemTaxRate > 0) {
-        const taxVal = (itemTotal * itemTaxRate) / 100;
-        totalTax += taxVal;
-        
-        if (!taxMap[itemTaxRate]) taxMap[itemTaxRate] = { taxable: 0, tax: 0 };
-        taxMap[itemTaxRate].taxable += itemTotal;
-        taxMap[itemTaxRate].tax += taxVal;
-      }
-    });
-
-    const finalTotal = bill.total || (subtotal + totalTax);
-    const upiLink = business.upi ? `upi://pay?pa=${business.upi}&pn=${encodeURIComponent(business.businessName || "Store")}&am=${finalTotal.toFixed(2)}&cu=INR` : "";
-    const qrCodeUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}` : "";
-
-    return (
-        <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '8mm' }}>
-            <div className="text-center mb-3">
-                {business.logoUrl && (
-                    <div className="flex justify-center mb-2 bg-white">
-                        <img 
-                          src={business.logoUrl} 
-                          alt="Logo" 
-                          className="max-h-[22mm] object-contain" 
-                          style={{ filter: 'contrast(300%) grayscale(100%)', backgroundColor: 'white' }} 
-                        />
-                    </div>
-                )}
-                <div className="font-bold text-[16px] uppercase tracking-tighter mb-1">{business.businessName || "KRAVY RESTAURANT"}</div>
-                {(business.businessAddress || business.district) && (
-                    <div className="text-[9px] font-bold uppercase leading-tight">
-                        {business.businessAddress}
-                        {business.district && <><br />{business.district}</>}
-                        {business.pinCode && ` - ${business.pinCode}`}
-                    </div>
-                )}
-                {business.gstNumber && <div className="text-[10px] font-bold border-y border-dashed border-black py-1 mt-1.5">GSTIN: {business.gstNumber}</div>}
-            </div>
-
-            <div className="flex justify-between text-[11px] font-bold uppercase border-b-2 border-black pb-1 mb-1">
-                <span>INV: #{bill.billNumber || bill.id.slice(-6).toUpperCase()}</span>
-                <span>{new Date(bill.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
-            </div>
-            <div className="flex justify-between text-[11px] font-bold uppercase mb-1">
-                <span>TABLE: {bill.tableName || "COUNTER"}</span>
-                <span>{new Date(bill.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
-
-            {(bill.customerName || bill.customerPhone) && (
-                <div className="mb-2 text-[10px] font-bold uppercase border border-dashed border-black px-1.5 py-1.5 bg-white">
-                    {bill.customerName && <div className="truncate">CUSTOMER: {bill.customerName}</div>}
-                    {bill.customerPhone && <div>PHONE: {bill.customerPhone}</div>}
-                </div>
-            )}
-
-            <div className="flex justify-between font-bold text-[10px] uppercase border-y-2 border-black py-1 mt-1 mb-1">
-                <span className="flex-1 text-left">ITEM DESCRIPTION</span>
-                <span className="w-[10mm] text-center">QTY</span>
-                <span className="w-[15mm] text-right">TOTAL</span>
-            </div>
-
-            <div className="space-y-2">
-                {items.map((it: any, idx: number) => {
-                    const itemRate = (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (taxActive ? globalRate : 0);
-                    return (
-                        <div key={idx} className="flex justify-between text-[11px] font-bold uppercase leading-tight border-b border-dotted border-black/20 pb-1.5">
-                            <div className="flex-1 pr-1">
-                                <div className="text-[12px]">{it.name}</div>
-                                <div className="text-[9px]">
-                                    {it.qty || it.quantity} x {(it.rate || it.price).toFixed(2)}
-                                    {(taxActive || perProductEnabled) && ` | GST: ${itemRate}%`}
-                                </div>
-                            </div>
-                            <span className="w-[10mm] text-center self-center font-black">x{it.qty || it.quantity}</span>
-                            <span className="w-[15mm] text-right self-center font-black">{((it.qty || it.quantity) * (it.rate || it.price)).toFixed(2)}</span>
-                        </div>
-                    );
-                })}
-            </div>
-
-            <div className="mt-2 pt-1 space-y-1">
-                <div className="flex justify-between text-[11px] font-bold">
-                    <span>SUBTOTAL</span>
-                    <span>₹{subtotal.toFixed(2)}</span>
-                </div>
-                {Object.entries(taxMap).map(([rate, vals]: any) => (
-                    <div key={rate} className="flex justify-between text-[10px] font-medium italic">
-                        <span>GST ({rate}%) on ₹{vals.taxable.toFixed(2)}</span>
-                        <span>₹{vals.tax.toFixed(2)}</span>
-                    </div>
-                ))}
-                
-                <div className="flex justify-between font-black text-[18px] border-y-2 border-black py-2.5 my-1.5 uppercase bg-white px-1">
-                    <span>TOTAL</span>
-                    <span>₹{finalTotal.toFixed(0)}</span>
-                </div>
-            </div>
-
-            <div className="mt-2 text-[9px] font-bold uppercase italic leading-tight">
-                AMOUNT IN WORDS: {numberToWords(finalTotal)}
-            </div>
-
-            <div className="mt-4 text-center">
-                <div className="inline-block border-2 border-black px-4 py-2 text-[12px] font-black uppercase tracking-wider">
-                    PAID VIA {bill.paymentMode?.toUpperCase() || "CASH"}
-                </div>
-            </div>
-
-            {bill.party && (
-              <div className="mt-4 pt-2 border-t-2 border-dashed border-black">
-                <div className="flex justify-between text-[11px] font-black uppercase px-1">
-                  <span>Party Wallet Balance</span>
-                  <span>₹{bill.party.walletBalance?.toFixed(2) || "0.00"}</span>
-                </div>
-              </div>
-            )}
-
-            {(business.upi && business.upiQrEnabled !== false) && (
-                <div className="mt-6 text-center border-t-2 border-black pt-4">
-                    <div className="text-[10px] font-black mb-2 uppercase tracking-[0.2em]">Scan to Pay Instantly</div>
-                    <div className="inline-block border-2 border-black p-1 bg-white rounded-lg">
-                        <img src={qrCodeUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)', backgroundColor: 'white' }} />
-                    </div>
-                    <div className="text-[10px] font-black mt-2.5 tracking-widest">{business.upi}</div>
-                </div>
-            )}
-
-            <div className="mt-8 text-center border-t-2 border-dashed border-black pt-5">
-                <div className="text-[14px] font-black mb-1.5 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
-                <div className="text-[8px] font-bold">Software by Kravy</div>
-                <div className="text-[9px] italic tracking-[0.3em]">*** END OF BILL ***</div>
-                <div className="h-[40mm]" />
-            </div>
-        </div>
-    );
-  }
-}
-
-function numberToWords(num: number): string {
-    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-    const convert = (n: number): string => {
-        if (n < 20) return ones[n];
-        if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
-        if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' and ' + convert(n % 100) : '');
-        if (n < 10000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000) : '');
-        return '';
-    };
-    if (num === 0) return 'Zero Only';
-    const integerPart = Math.floor(Math.abs(num));
-    let result = convert(integerPart) + ' Rupees';
-    return result + ' Only';
-}
-
-/* ─── Payment Badge ─── */
-function PaymentBadge({ mode }: { mode: string }) {
-  const lower = mode?.toLowerCase() || "";
-  const isUPI = lower.includes("upi");
-  const isWallet = lower.includes("wallet") || lower.includes("balance");
-  
-  const color = isWallet ? "#6366F1" : (isUPI ? "#8B5CF6" : "#10B981");
-  const Icon = isWallet ? Wallet : (isUPI ? Smartphone : Banknote);
-
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: "6px",
-      fontSize: "0.65rem", fontWeight: 800, padding: "4px 10px",
-      borderRadius: "20px", fontFamily: "monospace",
-      background: `${color}15`, color: color, border: `1px solid ${color}20`
-    }}>
-      <Icon size={12} />{mode?.toUpperCase() || "CASH"}
-    </span>
-  );
-}
-
-/* ─── Status Badge ─── */
-function StatusBadge({ status, isHeld }: { status: string; isHeld?: boolean }) {
-  if (isHeld || status?.toLowerCase() === "held") {
-    return (
-      <span style={{
-        display: "inline-flex", alignItems: "center", gap: "6px",
-        fontSize: "0.65rem", fontWeight: 800, padding: "4px 10px",
-        borderRadius: "20px", background: "rgba(245, 158, 11, 0.1)",
-        color: "rgb(245 158 11)", border: "1px solid rgba(245, 158, 11, 0.2)"
-      }}>
-        ⏸ HELD
-      </span>
-    );
-  }
-  if (status?.toLowerCase() === "paid") {
-    return (
-      <span style={{
-        display: "inline-flex", alignItems: "center", gap: "6px",
-        fontSize: "0.65rem", fontWeight: 800, padding: "4px 10px",
-        borderRadius: "20px", background: "rgba(16, 185, 129, 0.1)",
-        color: "rgb(16 185 129)", border: "1px solid rgba(16, 185, 129, 0.2)"
-      }}>
-        ✓ PAID
-      </span>
-    );
-  }
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: "6px",
-      fontSize: "0.65rem", fontWeight: 800, padding: "4px 10px",
-      borderRadius: "20px", background: "rgba(244, 63, 94, 0.1)",
-      color: "rgb(244 63 94)", border: "1px solid rgba(244, 63, 94, 0.2)"
-    }}>
-      ◌ PENDING
-    </span>
-  );
-}
-
-/* ─── Bill Actions ─── */
-function BillActions({ bill, refresh, clerkId, business, userRole, userPermissions, onPrint }: { 
-  bill: BillManager; 
-  refresh: () => void; 
-  clerkId?: string | null; 
-  business?: any; 
-  userRole: string | null;
-  userPermissions: string[];
-  onPrint: (bill: any) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const router = useRouter();
-
-
-
-  const handleWhatsApp = async () => {
-    let pdfUrl = bill.pdfUrl;
-    const origin = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
-
-    // 1. Try to fetch Cloudinary URL if missing
-    if (!pdfUrl) {
-      try {
-        const res = await fetch(`/api/bill-manager/${bill.id}/pdf${clerkId ? `?clerkId=${clerkId}` : ""}&json=true`);
-        const data = await res.json();
-        if (data && data.url) {
-          pdfUrl = data.url;
-        }
-      } catch (err) {
-        console.error("Failed to get PDF URL:", err);
-      }
-    }
-
-    // 3. Prepare Items Summary
-    const billItems = Array.isArray(bill.items) ? bill.items : [];
-    const itemsList = billItems
-      .map((i: any) => `• ${i.name} ×${i.qty ?? i.quantity} – ₹${((i.qty ?? i.quantity) * (i.rate ?? i.price)).toFixed(2)}`)
-      .join("\n");
-
-    // 4. Construct Premium Message
-    const restaurantName = business?.businessName || "Kravy POS";
-    // origin is already declared above at line 414
-    const menuUrl = `${origin}/menu/${clerkId || bill.clerkUserId}`;
-    const phone = formatWhatsAppNumber(bill.customerPhone);
-    const showMenu = business?.menuLinkEnabled !== false;
-    
-    // Using string concatenation to ensure best emoji compatibility
-    const message = encodeURIComponent(
-      "🙏 *Thank you for shopping with us!*\n\n" +
-      `Hello *${bill.customerName || "Customer"}*,\n\n` +
-      `Here is your invoice from *${restaurantName}*:\n\n` +
-      "🧾 *Bill No:* " + bill.billNumber + "\n" +
-      "💰 *Amount Paid:* Rs. " + bill.total + "\n\n" +
-      "📄 *Download Invoice:*\n" +
-      pdfUrl + "\n\n" +
-      (showMenu ? ("🍴 *View Our Menu:*\n" + menuUrl + "\n\n") : "") +
-      "We look forward to serving you again! 😊"
-    );
-    window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
-  };
-
-  const actions = bill.isOrder ? [
-    {
-      label: "Go to Kitchen",
-      icon: <ChefHat size={14} />,
-      color: "rgb(99 102 241)",
-      onClick: () => router.push(`/dashboard/workflow`)
-    },
-    {
-      label: "View Items",
-      icon: <Eye size={14} />,
-      color: "var(--kravy-text-muted)",
-      onClick: () => alert(`Items:\n${bill.items?.map((i: any) => `${i.name} x${i.quantity}`).join('\n')}`)
-    }
-  ] : [
-    {
-      label: "View Details",
-      icon: <Eye size={14} />,
-      color: "rgb(99 102 241)",
-      onClick: () => router.push(`/dashboard/billing/${bill.id}`)
-    },
-    {
-      label: "Reprint Bill",
-      icon: <Printer size={14} />,
-      color: "var(--kravy-text-muted)",
-      onClick: () => onPrint(bill)
-    },
-    ...((userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("edit-bill")) ? [{
-      label: "Edit Bill",
-      icon: <FileText size={14} />,
-      color: "var(--kravy-brand)",
-      onClick: () => {
-        if (confirm("Do you want to edit this bill? This will load it back into the checkout page.")) {
-          router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`);
-        }
-      }
-    }] : []),
-    ...((userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("whatsapp-bill")) ? [{
-      label: "WhatsApp",
-      icon: <MessageCircle size={14} />,
-      color: "rgb(37 211 102)",
-      onClick: handleWhatsApp
-    }] : []),
-    ...(bill.isHeld ? [{
-      label: "Resume Order",
-      icon: <Play size={14} />,
-      color: "rgb(245 158 11)",
-      onClick: () => router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`)
-    }] : []),
-    ...((userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("mark-as-paid")) ? [{
-      label: bill.paymentStatus?.toLowerCase() === "paid" ? "Mark as Pending" : "Mark as Paid",
-      icon: <Clock size={14} />,
-      color: bill.paymentStatus?.toLowerCase() === "paid" ? "rgb(244 63 94)" : "rgb(16 185 129)",
-      onClick: async () => {
-        const newStatus = bill.paymentStatus?.toLowerCase() === "paid" ? "Pending" : "Paid";
-        try {
-          const res = await fetch(`/api/bill-manager/${bill.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ paymentStatus: newStatus })
-          });
-          if (res.ok) refresh();
-          else alert("Failed to update status");
-        } catch (err) {
-          console.error("Status update error:", err);
-          alert("Something went wrong");
-        }
-      }
-    }] : []),
-    ...((userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("delete-bill")) ? [{
-      label: "Delete",
-      icon: <Trash2 size={14} />,
-      color: "rgb(244 63 94)",
-      onClick: async () => {
-        if (!confirm("Delete this bill? You can view it later in Deleted Bills.")) return;
-        const res = await fetch(`/api/bill-manager/${bill.id}`, { method: "DELETE" });
-        if (res.ok) refresh();
-        else alert("Failed to delete bill");
-      }
-    }] : [])
-  ];
-
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-      {(userRole === "ADMIN" || userRole === "MASTER") && (
-        <div style={{ width: "160px" }}>
-          <WhatsAppBillButton 
-            billId={bill.id} 
-            defaultPhone={bill.customerPhone || ""} 
-          />
-        </div>
-      )}
-
-      <div style={{ position: "relative" }}>
-        <button
-          onClick={() => setOpen(o => !o)}
-          style={{
-            width: "34px", height: "34px", borderRadius: "9px",
-            background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", color: "var(--kravy-text-muted)", transition: "all 0.2s"
-          }}
-        >
-          <MoreVertical size={16} />
-        </button>
-
-        {open && (
-          <>
-            <div style={{ position: "fixed", inset: 0, zIndex: 50 }} onClick={() => setOpen(false)} />
-            <div style={{
-              position: "absolute", right: 0, top: "calc(100% + 8px)",
-              minWidth: "180px", borderRadius: "14px", padding: "6px",
-              background: "var(--kravy-bg)",
-              border: "1px solid var(--kravy-border-strong)",
-              boxShadow: "var(--kravy-card-shadow)",
-              zIndex: 51
-            }}>
-              {actions.map((a, i) => (
-                <button
-                  key={i}
-                  onClick={() => { setOpen(false); a.onClick(); }}
-                  style={{
-                    width: "100%", display: "flex", alignItems: "center", gap: "10px",
-                    padding: "9px 12px", borderRadius: "10px", border: "none",
-                    background: "transparent", color: a.color || "var(--kravy-text-secondary)",
-                    fontSize: "0.85rem", fontWeight: 500, cursor: "pointer",
-                    transition: "all 0.15s", textAlign: "left"
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--kravy-surface)"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                >
-                  <span style={{ color: a.color }}>{a.icon}</span>
-                  {a.label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
     </div>
   );
 }
+
+// --- Helpers ---
+const GroupedCard = ({ title, icon, children, accent }: any) => (
+  <div style={{ background: "white", borderRadius: "24px", padding: "24px", border: "1px solid #F1F5F9", boxShadow: "0 10px 30px rgba(0,0,0,0.02)", display: "flex", flexDirection: "column", gap: "20px" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div style={{ width: "32px", height: "32px", background: `${accent}08`, color: accent, borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>{icon}</div>
+      <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#94A3B8", letterSpacing: "1px" }}>{title}</div>
+    </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+      {children}
+    </div>
+  </div>
+);
+
+const StatItem = ({ label, value, dot }: any) => (
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: dot }} />
+      <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#64748B" }}>{label}</span>
+    </div>
+    <span style={{ fontSize: "0.95rem", fontWeight: 900, color: "#1E293B" }}>{value}</span>
+  </div>
+);
+
+const HeaderBtn = ({ icon, label, onClick, color = "#6B7280" }: any) => (
+  <button onClick={onClick} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 18px", borderRadius: "14px", border: "1px solid #E5E7EB", background: "white", color: color, fontSize: "0.85rem", fontWeight: 800, cursor: "pointer" }}>{icon} {label}</button>
+);
+
+const StatCard = ({ label, value, icon, color }: any) => (
+  <div style={{ background: "white", borderRadius: "24px", padding: "20px", display: "flex", alignItems: "center", gap: "16px", border: "1px solid #F3F4F6", boxShadow: "0 4px 15px rgba(0,0,0,0.02)" }}>
+    <div style={{ width: "48px", height: "48px", borderRadius: "16px", background: `${color}08`, display: "flex", alignItems: "center", justifyContent: "center" }}>{icon}</div>
+    <div>
+      <div style={{ fontSize: "1.3rem", fontWeight: 900, color: "#111827" }}>{value}</div>
+      <div style={{ fontSize: "0.65rem", color: "#9CA3AF", fontWeight: 800 }}>{label}</div>
+    </div>
+  </div>
+);
+
+const Th = ({ label, isRight, color = "#9CA3AF", hasFilter, onFilter, width, minWidth }: any) => (
+  <th style={{ padding: "16px 20px", textAlign: isRight ? "right" : "left", fontSize: "0.7rem", fontWeight: 900, color: color, letterSpacing: "1px", width, minWidth }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "6px", justifyContent: isRight ? "flex-end" : "flex-start" }}>
+      {label} {hasFilter && <Filter size={10} style={{ cursor: "pointer" }} onClick={onFilter} />}
+    </div>
+  </th>
+);

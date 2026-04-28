@@ -42,6 +42,7 @@ interface Order {
     status: string;
     customerName: string;
     customerPhone?: string;
+    customerAddress?: string;
     clerkUserId: string;
     table?: {
         name: string;
@@ -413,6 +414,23 @@ export default function OrderTrackingPage() {
                             <div className="text-[0.7rem] font-[700] text-[#696969] mt-0.5">{formatDate(order.createdAt)}</div>
                         </div>
                     </div>
+
+                    {/* ── DELIVERY ADDRESS ── */}
+                    {order.customerAddress && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white rounded-[2rem] p-5 shadow-sm border border-[#EBEBEB] flex items-start gap-4"
+                        >
+                            <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
+                                <MapPin size={20} className="text-orange-500" />
+                            </div>
+                            <div className="flex-1">
+                                <div className="text-[0.65rem] font-[800] text-[#ABABAB] uppercase tracking-wider mb-1 text-left">Delivery Address</div>
+                                <div className="text-[0.85rem] font-[900] text-left leading-snug">{order.customerAddress}</div>
+                            </div>
+                        </motion.div>
+                    )}
 
                     {/* Finish Action */}
                     {order.status === 'COMPLETED' && (

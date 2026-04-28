@@ -100,11 +100,11 @@ export default function OffersPage() {
 
     const fetchMenu = async () => {
         try {
-            const res = await fetch("/api/menu");
+            const res = await fetch("/api/items");
             const data = await res.json();
             setMenuItems(data.items || data);
         } catch (error) {
-            console.error("Failed to load menu items");
+            console.error("Failed to load menu items:", error);
         }
     };
 
