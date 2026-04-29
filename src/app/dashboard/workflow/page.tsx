@@ -13,6 +13,16 @@ import {
     Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut, Phone, MessageSquare
 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { 
+    DndContext, 
+    useSensor, 
+    useSensors, 
+    PointerSensor, 
+    DragEndEvent,
+    useDraggable,
+    useDroppable
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import OrderAlertLoop from "./components/order-alert-loop";
 import { useAuthContext } from "@/components/AuthContext";
 
@@ -86,6 +96,34 @@ const numberToWords = (num: number): string => {
     let result = convert(integerPart) + ' Rupees';
     if (decimalPart > 0) result += ' and ' + convert(decimalPart) + ' Paise';
     return result + ' Only';
+};
+
+// --- DND HELPERS ---
+const DraggableOrderCard = ({ children, id, order }: any) => {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+        id: id,
+        data: { order }
+    });
+    const style = {
+        transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 999 : 1,
+        position: 'relative' as any,
+    };
+    return (
+        <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="touch-none">
+            {children}
+        </div>
+    );
+};
+
+const DroppableColumn = ({ children, id, className, isOverStyle }: any) => {
+    const { setNodeRef, isOver } = useDroppable({ id });
+    return (
+        <div ref={setNodeRef} className={`${className} ${isOver ? isOverStyle : ""}`}>
+            {children}
+        </div>
+    );
 };
 
 export default function KravyPOS() {
@@ -303,16 +341,85 @@ export default function KravyPOS() {
                 const body: any = { orderId: (targetOrder as any).id.includes("Combined") ? customOrder?.id || printOrder?.id : targetOrder.id };
                 const autoBoth = isBill && business?.enableKOTWithBill && type !== "MANUAL_COMBINE" && type !== "COMBINED_BILL";
 
-                if (type === "KOT" || autoBoth) body.isKotPrinted = true;
-                if (isBill || autoBoth) body.isBillPrinted = true;
+                if (type === "KOT" || autoBoth) {
+                    body.isKotPrinted = true;
+                    // Auto transition PENDING/ACCEPTED -> PREPARING
+                    if (targetOrder.status === "PENDING" || targetOrder.status === "ACCEPTED") {
+                        body.status = "PREPARING";
+                    }
+                }
+                if (isBill || autoBoth) {
+                    body.isBillPrinted = true;
+                    // Auto transition READY -> COMPLETED
+                    if (targetOrder.status === "READY") {
+                        body.status = "COMPLETED";
+                    }
+                }
 
                 fetch("/api/orders", {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(body)
-                }).then(() => fetchData());
+                }).then(() => {
+                    if (body.status === "COMPLETED") {
+                        handleCheckout(body.orderId, true);
+                    } else {
+                        fetchData();
+                    }
+                });
             }
         }, 400);
+    };
+
+    const handleSaveAction = async (type: "KOT" | "BILL", order: Order) => {
+        kravy.click();
+        const body: any = { orderId: order.id };
+        if (type === "KOT") {
+            body.isKotPrinted = true;
+            if (order.status === "PENDING" || order.status === "ACCEPTED") body.status = "PREPARING";
+        } else {
+            body.isBillPrinted = true;
+            if (order.status === "READY") body.status = "COMPLETED";
+        }
+
+        try {
+            const res = await fetch("/api/orders", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+            if (res.ok) {
+                toast.success(`Order ${type} Saved & Updated`);
+                if (body.status === "COMPLETED") {
+                    await handleCheckout(order.id, true);
+                } else {
+                    fetchData();
+                }
+            }
+        } catch (err) {
+            toast.error("Failed to save action");
+        }
+    };
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        })
+    );
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over) return;
+
+        const orderId = active.id as string;
+        const newStatus = over.id as Order["status"];
+        const order = orders.find(o => o.id === orderId);
+
+        if (order && order.status !== newStatus) {
+            updateOrderStatus(orderId, newStatus);
+        }
     };
 
     const fetchData = async () => {
@@ -845,43 +952,37 @@ export default function KravyPOS() {
                                                             <p className="text-sm font-bold text-slate-900 dark:text-white">ID: {order.id.slice(-4).toUpperCase()}</p>
                                                         </div>
 
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => {
-                                                                    const tbl = tablesList.find(t => t.id === order.table?.id);
-                                                                    setPrintOrder(order);
-                                                                    setPrintTable(tbl || null);
-                                                                    setPreviewMode("KOT");
-                                                                    setShowPreview(true);
-                                                                }}
-                                                                className="flex-1 h-8 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-1.5"
-                                                                title="Preview KOT"
-                                                            >
-                                                                <Eye size={12} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => {
-                                                                    const tbl = tablesList.find(t => t.id === order.table?.id);
-                                                                    setPrintOrder(order);
-                                                                    setPrintTable(tbl || null);
-                                                                    // Short delay to ensure refs are updated with the selected order
-                                                                    setTimeout(() => handlePrint("KOT", order, tbl || undefined), 100);
-                                                                }}
-                                                                className="flex-[3] h-8 rounded border border-blue-600 bg-white text-[10px] font-black uppercase text-blue-600 flex items-center justify-center gap-1.5 hover:bg-blue-50 transition-all font-mono"
-                                                            >
-                                                                <Printer size={12} /> KOT Token
-                                                            </button>
-                                                            <button
-                                                                onClick={() => {
-                                                                    const tbl = tablesList.find(t => t.id === order.table?.id);
-                                                                    setPrintOrder(order);
-                                                                    setPrintTable(tbl || null);
-                                                                    setTimeout(() => handlePrint("BILL", order, tbl || undefined), 100);
-                                                                }}
-                                                                className="flex-[2] h-8 rounded border border-emerald-600 bg-white text-[10px] font-black uppercase text-emerald-600 flex items-center justify-center gap-1.5 hover:bg-emerald-50 transition-all font-mono"
-                                                            >
-                                                                <CreditCard size={12} /> Bill
-                                                            </button>
+                                                        <div className="flex flex-col gap-1.5">
+                                                            <div className="flex gap-2">
+                                                                <div className="flex-1 flex flex-col gap-1">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const tbl = tablesList.find(t => t.id === order.table?.id);
+                                                                            setPrintOrder(order);
+                                                                            setPrintTable(tbl || null);
+                                                                            setTimeout(() => handlePrint("KOT", order, tbl || undefined), 100);
+                                                                        }}
+                                                                        className="w-full h-8 rounded border border-blue-600 bg-white text-[10px] font-black uppercase text-blue-600 flex items-center justify-center gap-1.5 hover:bg-blue-50 transition-all font-mono"
+                                                                    >
+                                                                        <Printer size={12} /> KOT
+                                                                    </button>
+                                                                    <button onClick={() => handleSaveAction("KOT", order)} className="text-[7px] font-black uppercase text-indigo-500 hover:underline tracking-tighter text-center">Save KOT</button>
+                                                                </div>
+                                                                <div className="flex-1 flex flex-col gap-1">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const tbl = tablesList.find(t => t.id === order.table?.id);
+                                                                            setPrintOrder(order);
+                                                                            setPrintTable(tbl || null);
+                                                                            setTimeout(() => handlePrint("BILL", order, tbl || undefined), 100);
+                                                                        }}
+                                                                        className="w-full h-8 rounded border border-emerald-600 bg-white text-[10px] font-black uppercase text-emerald-600 flex items-center justify-center gap-1.5 hover:bg-emerald-50 transition-all font-mono"
+                                                                    >
+                                                                        <CreditCard size={12} /> Bill
+                                                                    </button>
+                                                                    <button onClick={() => handleSaveAction("BILL", order)} className="text-[7px] font-black uppercase text-emerald-500 hover:underline tracking-tighter text-center">Save Bill</button>
+                                                                </div>
+                                                            </div>
                                                         </div>
 
                                                         {/* COMBINED BILL ACTION */}
@@ -1375,32 +1476,38 @@ export default function KravyPOS() {
                                                 >
                                                     <Eye size={15} />
                                                 </button>
-                                                <button
-                                                    onClick={() => {
-                                                        const tbl = tablesList.find(t => t.id === activeOrderForSelected?.table?.id);
-                                                        if (activeOrderForSelected) {
-                                                            setPrintOrder(activeOrderForSelected);
-                                                            setPrintTable(tbl || null);
-                                                            setTimeout(() => handlePrint("KOT", activeOrderForSelected, tbl || undefined), 100);
-                                                        }
-                                                    }}
-                                                    className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 text-xs font-black uppercase bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white transition-all shadow-sm"
-                                                >
-                                                    <Printer size={15} /> KOT
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        const tbl = tablesList.find(t => t.id === activeOrderForSelected?.table?.id);
-                                                        if (activeOrderForSelected) {
-                                                            setPrintOrder(activeOrderForSelected);
-                                                            setPrintTable(tbl || null);
-                                                            setTimeout(() => handlePrint("BILL", activeOrderForSelected, tbl || undefined), 100);
-                                                        }
-                                                    }}
-                                                    className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 text-xs font-black uppercase bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white transition-all shadow-sm"
-                                                >
-                                                    <CreditCard size={15} /> Bill
-                                                </button>
+                                                <div className="flex-1 flex flex-col gap-1.5">
+                                                    <button
+                                                        onClick={() => {
+                                                            const tbl = tablesList.find(t => t.id === activeOrderForSelected?.table?.id);
+                                                            if (activeOrderForSelected) {
+                                                                setPrintOrder(activeOrderForSelected);
+                                                                setPrintTable(tbl || null);
+                                                                setTimeout(() => handlePrint("KOT", activeOrderForSelected, tbl || undefined), 100);
+                                                            }
+                                                        }}
+                                                        className="w-full h-12 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white transition-all shadow-sm"
+                                                    >
+                                                        <Printer size={15} /> KOT
+                                                    </button>
+                                                    <button onClick={() => activeOrderForSelected && handleSaveAction("KOT", activeOrderForSelected)} className="text-[7px] font-black uppercase text-indigo-500 hover:underline tracking-tighter text-center">Save KOT</button>
+                                                </div>
+                                                <div className="flex-1 flex flex-col gap-1.5">
+                                                    <button
+                                                        onClick={() => {
+                                                            const tbl = tablesList.find(t => t.id === activeOrderForSelected?.table?.id);
+                                                            if (activeOrderForSelected) {
+                                                                setPrintOrder(activeOrderForSelected);
+                                                                setPrintTable(tbl || null);
+                                                                setTimeout(() => handlePrint("BILL", activeOrderForSelected, tbl || undefined), 100);
+                                                            }
+                                                        }}
+                                                        className="w-full h-12 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white transition-all shadow-sm"
+                                                    >
+                                                        <CreditCard size={15} /> Bill
+                                                    </button>
+                                                    <button onClick={() => activeOrderForSelected && handleSaveAction("BILL", activeOrderForSelected)} className="text-[7px] font-black uppercase text-emerald-500 hover:underline tracking-tighter text-center">Save Bill</button>
+                                                </div>
                                                 <button
                                                     disabled={!activeOrderForSelected}
                                                     onClick={() => {
@@ -1460,31 +1567,38 @@ export default function KravyPOS() {
                                 </div>
                             </div>
 
-                            <div className="flex-1 flex flex-col md:flex-row gap-5 overflow-x-auto pb-6 no-scrollbar w-full md:justify-center items-center md:items-start px-4">
-                                {[
-                                    { status: "PENDING", title: "Accept Order", emoji: "🛎️", next: "ACCEPTED", btnLabel: "Accept Order", color: "rose", bg: "bg-rose-500" },
-                                    { status: "ACCEPTED", title: "New Orders", emoji: "🔔", next: "PREPARING", btnLabel: "Start Cooking", color: "blue", bg: "bg-blue-500" },
-                                    { status: "PREPARING", title: "In Preparation", emoji: "🍳", next: "READY", btnLabel: "Mark Ready", color: "amber", bg: "bg-amber-500" },
-                                    { status: "READY", title: "Ready to Serve", emoji: "✅", next: "COMPLETED", btnLabel: "Handed Over", color: "emerald", bg: "bg-emerald-500" },
-                                ].map(col => {
-                                    const colOrders = orders.filter(o => o.status === col.status && !o.isDeleted);
-                                    return (
-                                        <div key={col.status} className={`flex-shrink-0 w-full max-w-[340px] md:w-[320px] h-fit md:h-full flex flex-col bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-sm transition-colors duration-300`}>
-                                            <div className="p-6 flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
-                                                <div className="flex items-center gap-2.5">
-                                                    <span className="text-xl leading-none">{col.emoji}</span>
-                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">{col.title}</span>
-                                                </div>
-                                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black text-white shadow-lg ${col.bg}`}>{colOrders.length}</span>
-                                            </div>
-                                            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
-                                                {colOrders.map(o => (
-                                                    <motion.div
-                                                        key={o.id}
-                                                        initial={{ opacity: 0, scale: 0.96 }}
-                                                        animate={{ opacity: 1, scale: 1 }}
-                                                        className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-5 shadow-sm hover:shadow-md transition-all active:scale-98"
-                                                    >
+                            <div className="flex-1 w-full overflow-x-auto pb-6 no-scrollbar px-4">
+                                <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                                    <div className="flex flex-col md:flex-row gap-5 md:justify-center items-center md:items-start min-w-max h-full">
+                                        {[
+                                            { status: "PENDING", title: "Accept Order", emoji: "🛎️", next: "ACCEPTED", btnLabel: "Accept Order", color: "rose", bg: "bg-rose-500" },
+                                            { status: "ACCEPTED", title: "New Orders", emoji: "🔔", next: "PREPARING", btnLabel: "Start Cooking", color: "blue", bg: "bg-blue-500" },
+                                            { status: "PREPARING", title: "In Preparation", emoji: "🍳", next: "READY", btnLabel: "Mark Ready", color: "amber", bg: "bg-amber-500" },
+                                            { status: "READY", title: "Ready to Serve", emoji: "✅", next: "COMPLETED", btnLabel: "Handed Over", color: "emerald", bg: "bg-emerald-500" },
+                                        ].map(col => {
+                                            const colOrders = orders.filter(o => o.status === col.status && !o.isDeleted);
+                                            return (
+                                                <DroppableColumn 
+                                                    key={col.status} 
+                                                    id={col.status} 
+                                                    className="flex-shrink-0 w-full max-w-[340px] md:w-[320px] h-fit md:h-full flex flex-col bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-sm transition-colors duration-300"
+                                                    isOverStyle="ring-4 ring-indigo-500/20 bg-indigo-50/30"
+                                                >
+                                                    <div className="p-6 flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <span className="text-xl leading-none">{col.emoji}</span>
+                                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">{col.title}</span>
+                                                        </div>
+                                                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black text-white shadow-lg ${col.bg}`}>{colOrders.length}</span>
+                                                    </div>
+                                                    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+                                                        {colOrders.map(o => (
+                                                            <DraggableOrderCard key={o.id} id={o.id} order={o}>
+                                                                <motion.div
+                                                                    initial={{ opacity: 0, scale: 0.96 }}
+                                                                    animate={{ opacity: 1, scale: 1 }}
+                                                                    className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-5 shadow-sm hover:shadow-md transition-all active:scale-98"
+                                                                >
                                                         <div className="flex items-center justify-between mb-5">
                                                             <div className="flex items-center gap-3">
                                                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black italic shadow-inner ${col.status === 'PENDING' ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-500' : col.status === 'ACCEPTED' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-500' : col.status === 'PREPARING' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-500' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500'}`}>{o.table?.name}</div>
@@ -1527,28 +1641,36 @@ export default function KravyPOS() {
                                                         </div>
                                                         <div className="flex flex-col gap-2 mb-2">
                                                             <div className="flex gap-2">
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const tbl = tablesList.find(t => t.id === o.table?.id);
-                                                                        setPrintOrder(o);
-                                                                        setPrintTable(tbl || null);
-                                                                        setTimeout(() => handlePrint("KOT", o, tbl || undefined), 100);
-                                                                    }}
-                                                                    className="flex-1 h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all"
-                                                                >
-                                                                    <Printer size={14} /> KOT
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const tbl = tablesList.find(t => t.id === o.table?.id);
-                                                                        setPrintOrder(o);
-                                                                        setPrintTable(tbl || null);
-                                                                        setTimeout(() => handlePrint("BILL", o, tbl || undefined), 100);
-                                                                    }}
-                                                                    className="flex-1 h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all"
-                                                                >
-                                                                    <CreditCard size={14} /> BILL
-                                                                </button>
+                                                                <div className="flex-1 flex flex-col gap-1.5">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            const tbl = tablesList.find(t => t.id === o.table?.id);
+                                                                            setPrintOrder(o);
+                                                                            setPrintTable(tbl || null);
+                                                                            setTimeout(() => handlePrint("KOT", o, tbl || undefined), 100);
+                                                                        }}
+                                                                        className="w-full h-11 rounded-xl border-2 border-indigo-100 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-900/10 text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1.5 hover:bg-indigo-50 transition-all shadow-sm"
+                                                                    >
+                                                                        <Printer size={14} /> KOT
+                                                                    </button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleSaveAction("KOT", o); }} className="text-[8px] font-black uppercase text-indigo-500 hover:underline tracking-tighter text-center">Save KOT</button>
+                                                                </div>
+                                                                <div className="flex-1 flex flex-col gap-1.5">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            const tbl = tablesList.find(t => t.id === o.table?.id);
+                                                                            setPrintOrder(o);
+                                                                            setPrintTable(tbl || null);
+                                                                            setTimeout(() => handlePrint("BILL", o, tbl || undefined), 100);
+                                                                        }}
+                                                                        className="w-full h-11 rounded-xl border-2 border-emerald-100 dark:border-emerald-900 bg-emerald-50/30 dark:bg-emerald-900/10 text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1.5 hover:bg-emerald-50 transition-all shadow-sm"
+                                                                    >
+                                                                        <CreditCard size={14} /> BILL
+                                                                    </button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleSaveAction("BILL", o); }} className="text-[8px] font-black uppercase text-emerald-500 hover:underline tracking-tighter text-center">Save Bill</button>
+                                                                </div>
                                                             </div>
                                                             <button
                                                                 onClick={(e) => {
@@ -1563,23 +1685,26 @@ export default function KravyPOS() {
                                                             </button>
                                                         </div>
                                                         <button
-                                                            onClick={() => updateOrderStatus(o.id, col.next)}
+                                                            onClick={(e) => { e.stopPropagation(); updateOrderStatus(o.id, col.next); }}
                                                             className={`w-full h-11 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-lg active:scale-95 ${col.status === 'PENDING' ? 'bg-rose-500 text-white shadow-rose-500/10' : col.status === 'ACCEPTED' ? 'bg-blue-500 text-white shadow-blue-500/10' : col.status === 'PREPARING' ? 'bg-amber-500 text-white shadow-amber-500/10' : 'bg-emerald-900 text-white shadow-emerald-900/10'}`}
                                                         >
                                                             {col.btnLabel}
                                                         </button>
-                                                    </motion.div>
-                                                ))}
-                                                {colOrders.length === 0 && (
-                                                    <div className="flex flex-col items-center justify-center py-20 opacity-20 text-center">
-                                                        <ChefHat size={48} strokeWidth={0.8} />
-                                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] mt-6">Chill Mode 😌</p>
+                                                                </motion.div>
+                                                            </DraggableOrderCard>
+                                                        ))}
+                                                        {colOrders.length === 0 && (
+                                                            <div className="flex flex-col items-center justify-center py-20 opacity-20 text-center">
+                                                                <ChefHat size={48} strokeWidth={0.8} />
+                                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] mt-6">Chill Mode 😌</p>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                                </DroppableColumn>
+                                            );
+                                        })}
+                                    </div>
+                                </DndContext>
                             </div>
                         </motion.div>
                     )}
