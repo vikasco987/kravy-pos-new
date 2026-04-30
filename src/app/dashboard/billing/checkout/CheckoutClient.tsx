@@ -2003,7 +2003,7 @@ export default function CheckoutClient() {
                         <p className="font-bold text-[var(--kravy-text-primary)] truncate text-sm">{i.name}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <p className="text-xs font-black text-[var(--kravy-brand)]">
-                            {i.qty} × ₹{i.rate.toFixed(2)}
+                            {i.qty} × ₹{Number(i.rate ?? 0).toFixed(2)}
                           </p>
                           {(taxActive || perProductEnabled) && (
                             <span className="text-[8px] font-black px-1.5 py-0.5 bg-[var(--kravy-brand)]/5 text-[var(--kravy-brand)] border border-[var(--kravy-brand)]/10 rounded-md uppercase tracking-tighter">
@@ -2035,7 +2035,7 @@ export default function CheckoutClient() {
                       </div>
 
                       <span className="font-black text-[var(--kravy-text-primary)] text-sm min-w-[52px] text-right flex-shrink-0">
-                        ₹{(i.qty * i.rate).toFixed(2)}
+                        ₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}
                       </span>
 
                       <button
@@ -2408,10 +2408,10 @@ export default function CheckoutClient() {
               <div key={i.id} className="mb-2 border-b border-dotted border-black/20 pb-1">
                 <div className="flex justify-between items-start text-[11px] font-bold">
                   <span className="flex-1 min-w-0 pr-2 break-words leading-[1.2]">{i.name}</span>
-                  <span className="w-[16mm] text-right shrink-0">₹{(i.qty * i.rate).toFixed(2)}</span>
+                  <span className="w-[16mm] text-right shrink-0">₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center text-[10px] font-bold opacity-90">
-                  <span>{i.qty} x ₹{i.rate.toFixed(2)}</span>
+                  <span>{i.qty} x ₹{Number(i.rate ?? 0).toFixed(2)}</span>
                   <span className="text-[9px]">
                     {((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} 
                     {(taxActive || perProductEnabled) ? ` | GST: ${itemRate}%` : ""}
@@ -3036,10 +3036,10 @@ export default function CheckoutClient() {
                     <div key={i.id} className="mb-1.5 border-b border-dotted border-gray-100 pb-1">
                       <div className="flex justify-between items-start text-[9px] font-bold">
                         <span className="flex-1 min-w-0 pr-1 break-words">{i.name}</span>
-                        <span className="w-[11mm] text-right shrink-0">{(i.qty * i.rate).toFixed(2)}</span>
+                        <span className="w-[11mm] text-right shrink-0">{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-[8px] text-gray-600">
-                        <span>{i.qty} x {i.rate.toFixed(2)}</span>
+                        <span>{i.qty} x {Number(i.rate ?? 0).toFixed(2)}</span>
                         <span>{((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} {(taxActive || perProductEnabled) ? `| GST: ${i.gst || 0}%` : ""}</span>
                       </div>
                     </div>

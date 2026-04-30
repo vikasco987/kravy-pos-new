@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 /* ======================================================
-   GET → View / Resume bill
+   GET → View / Resume bill OR order
 ====================================================== */
 export async function GET(
   req: NextRequest,
@@ -17,7 +17,8 @@ export async function GET(
 
     const { id } = await context.params;
 
-    const bill = await prisma.billManager.findFirst({
+    // 1. Try finding in BillManager
+    let bill = await prisma.billManager.findFirst({
       where: {
         id,
         clerkUserId: effectiveId,
@@ -27,6 +28,37 @@ export async function GET(
         party: true
       }
     });
+
+    // 2. Try finding in Order if not found in BillManager
+    if (!bill) {
+      const order = await prisma.order.findFirst({
+        where: {
+          id,
+          clerkUserId: effectiveId,
+          isDeleted: false,
+        },
+        include: {
+          table: true
+        }
+      });
+
+      if (order) {
+        // Map Order to Bill-like structure
+        bill = {
+          ...order,
+          billNumber: `ORD-${order.id.slice(-4).toUpperCase()}`,
+          tableName: order.table?.name || "Counter",
+          items: (order.items as any[]).map(it => ({
+            ...it,
+            id: it.itemId || it.id,
+            rate: it.rate ?? it.price ?? 0, // Handle missing rate
+          })),
+          auditNote: order.notes || "",
+          paymentMode: order.paymentMode || "Cash",
+          paymentStatus: order.status === "COMPLETED" ? "Paid" : "Pending",
+        } as any;
+      }
+    }
 
     if (!bill) {
       return NextResponse.json({ error: "Bill not found" }, { status: 404 });
