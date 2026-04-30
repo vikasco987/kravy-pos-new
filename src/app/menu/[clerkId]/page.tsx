@@ -485,32 +485,65 @@ function PublicMenu() {
     }), [profile]);
 
     const itemTax = useMemo(() => {
-        return Object.entries(cart).reduce((sum, [id, qty]) => {
+        if (!taxEnabled) return 0;
+        
+        let total = 0;
+        
+        // 1. Simple Cart Items
+        Object.entries(cart).forEach(([id, qty]) => {
             const item = items.find(i => i.id === id);
-            if (!item || !taxEnabled) return sum;
+            if (!item) return;
 
             let rate = globalRate;
-            if (perProductEnabled && item.gst !== undefined && item.gst !== null && item.gst > 0) {
+            if (perProductEnabled && item.gst !== undefined && item.gst !== null) {
                 rate = item.gst;
             }
 
             const price = (item.sellingPrice || item.price || 0);
-            if (isInclusive) {
-                const lineTotal = price * qty;
-                return sum + (lineTotal * (1 - 1 / (1 + rate / 100)));
+            const lineTotal = price * qty;
+            
+            // Item's own tax status takes priority if perProductEnabled is on
+            const itemIsInclusive = (perProductEnabled && item.taxStatus) 
+                ? (item.taxStatus === "With Tax") 
+                : isInclusive;
+
+            if (itemIsInclusive) {
+                total += (lineTotal * (1 - 1 / (1 + rate / 100)));
             } else {
-                return sum + Math.round((price * qty) * rate / 100);
+                total += (lineTotal * rate / 100);
             }
-        }, 0);
-    }, [cart, items, taxEnabled, globalRate, perProductEnabled, isInclusive]);
+        });
+
+        // 2. Variant Cart Items
+        variantCart.forEach((vit) => {
+            const item = items.find(i => i.id === vit.id);
+            let rate = globalRate;
+            if (perProductEnabled && item?.gst !== undefined && item?.gst !== null) {
+                rate = item.gst;
+            }
+
+            const lineTotal = vit.totalPrice * vit.qty;
+            const itemIsInclusive = (perProductEnabled && item?.taxStatus) 
+                ? (item.taxStatus === "With Tax") 
+                : isInclusive;
+
+            if (itemIsInclusive) {
+                total += (lineTotal * (1 - 1 / (1 + rate / 100)));
+            } else {
+                total += (lineTotal * rate / 100);
+            }
+        });
+
+        return total;
+    }, [cart, variantCart, items, taxEnabled, globalRate, perProductEnabled, isInclusive]);
 
     const comboTax = useMemo(() => {
+        if (!taxEnabled) return 0;
         return combosCart.reduce((sum, c) => {
-            if (!taxEnabled) return sum;
             if (isInclusive) {
                 return sum + (c.price * (1 - 1 / (1 + globalRate / 100)));
             }
-            return sum + Math.round(c.price * globalRate / 100);
+            return sum + (c.price * globalRate / 100);
         }, 0);
     }, [combosCart, taxEnabled, isInclusive, globalRate]);
 
@@ -706,19 +739,26 @@ function PublicMenu() {
                         quantity: qty,
                         total: (item?.sellingPrice || item?.price || 0) * qty,
                         instruction: instructions[id],
-                        isVeg: item?.isVeg
+                        isVeg: item?.isVeg,
+                        taxStatus: item?.taxStatus || (isInclusive ? "With Tax" : "Without Tax"),
+                        gst: (perProductEnabled && item?.gst !== undefined && item?.gst !== null) ? item.gst : globalRate
                     };
                 });
 
-            const variantOrderItems = variantCart.map((vit) => ({
-                itemId: vit.id,
-                name: vit.name,
-                price: vit.totalPrice,
-                quantity: vit.qty,
-                total: vit.totalPrice * vit.qty,
-                variants: vit.variants,
-                isVeg: vit.isVeg
-            }));
+            const variantOrderItems = variantCart.map((vit) => {
+                const item = items.find(i => i.id === vit.id);
+                return {
+                    itemId: vit.id,
+                    name: vit.name,
+                    price: vit.totalPrice,
+                    quantity: vit.qty,
+                    total: vit.totalPrice * vit.qty,
+                    variants: vit.variants,
+                    isVeg: vit.isVeg,
+                    taxStatus: item?.taxStatus || (isInclusive ? "With Tax" : "Without Tax"),
+                    gst: (perProductEnabled && item?.gst !== undefined && item?.gst !== null) ? item.gst : globalRate
+                };
+            });
 
             const comboOrderItems = combosCart.map((combo) => ({
                 itemId: combo.id,
@@ -2169,8 +2209,11 @@ function PublicMenu() {
                                     </div>
                                     {taxEnabled && tax > 0 && (
                                         <div className="flex justify-between text-[0.8rem] text-[#696969] font-bold">
-                                            <span>{isInclusive ? "GST Content" : `GST (${globalRate}%)`}</span>
-                                            <span>{isInclusive ? "" : "+"}₹{tax.toFixed(0)}</span>
+                                            <div className="flex flex-col">
+                                                <span>{isInclusive ? "GST Content" : "GST"}</span>
+                                                <span className="text-[10px] text-[#ABABAB] font-normal">Calculated @ {globalRate}%</span>
+                                            </div>
+                                            <span>{isInclusive ? "" : "+"}₹{tax.toFixed(2)}</span>
                                         </div>
                                     )}
                                     {loyaltyDisc > 0 && <div className="flex justify-between text-[0.8rem] text-[#D4A353] font-bold"><span>👑 Loyalty Discount</span><span>−₹{loyaltyDisc}</span></div>}

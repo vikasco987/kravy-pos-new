@@ -131,11 +131,21 @@ function QRMenuContent() {
         });
     };
 
+    const getTax = () => {
+        // Simple implementation for legacy page
+        const taxRate = 5; // Fallback
+        return cart.reduce((tax, item) => {
+            const price = item.sellingPrice || item.price || 0;
+            return tax + (price * item.quantity * taxRate / 100);
+        }, 0);
+    };
+
     const getTotalPrice = () => {
-        return cart.reduce((total, item) => {
+        const subtotal = cart.reduce((total, item) => {
             const price = item.sellingPrice || item.price || 0;
             return total + (price * item.quantity);
         }, 0);
+        return subtotal + getTax();
     };
 
     const placeOrder = async () => {

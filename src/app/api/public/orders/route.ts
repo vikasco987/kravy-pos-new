@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         const isInclusive = profile?.qrMenuPriceInclusive ?? false;
         const enrichedRequestItems = items.map((i: any) => ({ 
             ...i, 
-            taxStatus: isInclusive ? "With Tax" : "Without Tax" 
+            taxStatus: i.taxStatus || (isInclusive ? "With Tax" : "Without Tax") 
         }));
 
         // Case 1: MERGE INTO EXISTING ORDER
