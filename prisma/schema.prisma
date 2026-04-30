@@ -408,6 +408,7 @@ model BusinessProfile {
   lastTokenDate   DateTime?
 
   createdAt DateTime @default(now())
+  syncQuickPosWithKitchen Boolean @default(false)
   updatedAt DateTime @updatedAt
 }
 

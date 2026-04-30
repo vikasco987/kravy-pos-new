@@ -7,7 +7,7 @@ import {
     Percent, ChevronLeft, Save, Loader2, Settings2,
     Tag, CheckCircle2, Circle, Info, ToggleLeft, ToggleRight,
     Gift, Flame, ShieldCheck, BadgePercent, Trash2, Plus,
-    PackageOpen, ReceiptText, AlertTriangle, QrCode
+    PackageOpen, ReceiptText, AlertTriangle, QrCode, UtensilsCrossed
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { kravy } from "@/lib/sounds";
@@ -34,6 +34,7 @@ export default function PricingSettingsPage() {
     const [qrMenuPriceInclusive, setQrMenuPriceInclusive] = useState(false);
     const [enableKOTWithBill, setEnableKOTWithBill] = useState(false);
     const [enableMenuQRInBill, setEnableMenuQRInBill] = useState(false);
+    const [syncQuickPosWithKitchen, setSyncQuickPosWithKitchen] = useState(false);
     
     // Additional Charges
     const [enableDeliveryCharges, setEnableDeliveryCharges] = useState(false);
@@ -86,6 +87,7 @@ export default function PricingSettingsPage() {
                 setDeliveryGstRate(profileData?.deliveryGstRate ?? 0);
                 setPackagingGstEnabled(profileData?.packagingGstEnabled ?? false);
                 setPackagingGstRate(profileData?.packagingGstRate ?? 0);
+                setSyncQuickPosWithKitchen(profileData?.syncQuickPosWithKitchen ?? false);
 
                 setTaxRate(profileData?.taxRate ?? 5.0);
                 setOffers(Array.isArray(offerData) ? offerData : []);
@@ -116,6 +118,7 @@ export default function PricingSettingsPage() {
                 deliveryGstRate: Number(deliveryGstRate),
                 packagingGstEnabled,
                 packagingGstRate: Number(packagingGstRate),
+                syncQuickPosWithKitchen,
                 taxRate: Number(taxRate) 
             };
             const res = await fetch("/api/profile", {
@@ -380,6 +383,28 @@ export default function PricingSettingsPage() {
                         <button onClick={() => handleToggleMenuQR(!enableMenuQRInBill)} className="shrink-0">
                             {enableMenuQRInBill
                                 ? <ToggleRight size={36} className="text-indigo-500" />
+                                : <ToggleLeft size={36} className="text-gray-300" />
+                            }
+                        </button>
+                    </div>
+
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--kravy-border)]">
+                        <div className="flex items-center gap-3.5">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${syncQuickPosWithKitchen ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-400'}`}>
+                                <UtensilsCrossed size={20} />
+                            </div>
+                            <div>
+                                <div className="font-black text-[0.9rem] text-[var(--kravy-text-primary)]">Sync Quick POS with Kitchen</div>
+                                <div className="text-xs text-[var(--kravy-text-muted)] font-medium">
+                                    {syncQuickPosWithKitchen 
+                                        ? "POS orders auto-sent to Kitchen workflow" 
+                                        : "Standard POS (no kitchen sync)"}
+                                </div>
+                            </div>
+                        </div>
+                        <button onClick={() => setSyncQuickPosWithKitchen(!syncQuickPosWithKitchen)} className="shrink-0">
+                            {syncQuickPosWithKitchen
+                                ? <ToggleRight size={36} className="text-orange-500" />
                                 : <ToggleLeft size={36} className="text-gray-300" />
                             }
                         </button>

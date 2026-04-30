@@ -17,7 +17,7 @@ const TypeBadge = ({ type }: { type: string }) => {
   const t = type?.toUpperCase() || "POS";
   let color = "#64748B";
   let bg = "rgba(100, 116, 139, 0.1)";
-  let label = "Counter";
+  let label = "Dine-in";
 
   if (t.includes("DELIVERY")) { color = "#3B82F6"; bg = "rgba(59, 130, 246, 0.1)"; label = "Delivery"; }
   else if (t.includes("TAKEAWAY")) { color = "#F59E0B"; bg = "rgba(245, 158, 11, 0.1)"; label = "Takeaway"; }
@@ -300,7 +300,7 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
                         color: (bill.tableName || "POS") === "POS" ? "#6366F1" : "#D97706", 
                         fontSize: "0.65rem", fontWeight: 900, textTransform: "uppercase", border: "1px solid currentColor"
                       }}>
-                        {bill.tableName || "POS"}
+                        {(bill.tableName || "POS") === "POS" ? "Counter" : bill.tableName}
                       </span>
                     </td>
                   )}
@@ -428,15 +428,17 @@ const numberToWords = (num: number): string => {
   const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
   const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
   
-  const convert = (n: number): string => {
+  const convert = (n: number, depth = 0): string => {
+    if (depth > 10) return "";
     if (n < 20) return ones[n];
     if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
-    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' and ' + convert(n % 100) : '');
-    if (n < 100000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000) : '');
-    if (n < 10000000) return convert(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 !== 0 ? ' ' + convert(n % 100000) : '');
-    return convert(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 !== 0 ? ' ' + convert(n % 10000000) : '');
+    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' and ' + convert(n % 100, depth + 1) : '');
+    if (n < 100000) return convert(Math.floor(n / 1000), depth + 1) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000, depth + 1) : '');
+    if (n < 10000000) return convert(Math.floor(n / 100000), depth + 1) + ' Lakh' + (n % 100000 !== 0 ? ' ' + convert(n % 100000, depth + 1) : '');
+    return convert(Math.floor(n / 10000000), depth + 1) + ' Crore' + (n % 10000000 !== 0 ? ' ' + convert(n % 10000000, depth + 1) : '');
   };
 
+  if (isNaN(num) || !isFinite(num)) return '';
   if (num === 0) return 'Zero Only';
   const integerPart = Math.floor(Math.abs(num));
   const decimalPart = Math.round((Math.abs(num) - integerPart) * 100);

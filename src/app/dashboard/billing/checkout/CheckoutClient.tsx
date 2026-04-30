@@ -47,15 +47,17 @@ const numberToWords = (num: number): string => {
   const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
   const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
   
-  const convert = (n: number): string => {
+  const convert = (n: number, depth = 0): string => {
+    if (depth > 10) return "";
     if (n < 20) return ones[n];
     if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
-    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' and ' + convert(n % 100) : '');
-    if (n < 100000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000) : '');
-    if (n < 10000000) return convert(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 !== 0 ? ' ' + convert(n % 100000) : '');
-    return convert(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 !== 0 ? ' ' + convert(n % 10000000) : '');
+    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' and ' + convert(n % 100, depth + 1) : '');
+    if (n < 100000) return convert(Math.floor(n / 1000), depth + 1) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000, depth + 1) : '');
+    if (n < 10000000) return convert(Math.floor(n / 100000), depth + 1) + ' Lakh' + (n % 100000 !== 0 ? ' ' + convert(n % 100000, depth + 1) : '');
+    return convert(Math.floor(n / 10000000), depth + 1) + ' Crore' + (n % 10000000 !== 0 ? ' ' + convert(n % 10000000, depth + 1) : '');
   };
 
+  if (isNaN(num) || !isFinite(num)) return '';
   if (num === 0) return 'Zero Only';
   const integerPart = Math.floor(Math.abs(num));
   const decimalPart = Math.round((Math.abs(num) - integerPart) * 100);
@@ -180,6 +182,7 @@ export default function CheckoutClient() {
   const searchParams = useSearchParams();
   const resumeBillId = searchParams.get("resumeBillId");
   const [activeBillId, setActiveBillId] = useState<string | null>(null);
+  const [syncedOrderId, setSyncedOrderId] = useState<string | null>(null);
 
   /* ================= HELD BILLS & PREVIEW STATE ================= */
   const [heldBills, setHeldBills] = useState<any[]>([]);
@@ -244,6 +247,7 @@ export default function CheckoutClient() {
     const rand = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
     setBillNumber(`SV-${dateStr}-${rand}`);
     setBillDate(now.toLocaleString());
+    setSyncedOrderId(null);
   };
 
   useEffect(() => {
@@ -642,6 +646,7 @@ export default function CheckoutClient() {
     packagingGstRate?: number;
     lastTokenNumber?: number;
     userId?: string;
+    syncQuickPosWithKitchen?: boolean;
   } | null>(null);
 
   console.log("DEBUG POS RENDER - business.enableKOTWithBill:", business?.enableKOTWithBill);
@@ -686,6 +691,7 @@ export default function CheckoutClient() {
             packagingGstRate: data.packagingGstRate ?? 0,
             lastTokenNumber: data.lastTokenNumber ?? 0,
             userId: data.userId,
+            syncQuickPosWithKitchen: data.syncQuickPosWithKitchen ?? false,
           });
           console.log("DEBUG POS API RESPONSE - enableKOTWithBill:", data.enableKOTWithBill);
           console.log("DEBUG POS API FULL DATA:", data);
@@ -1095,6 +1101,51 @@ export default function CheckoutClient() {
 
   const printKOT = () => {
     if (kotRef.current) runPrintJob("kot", kotRef.current.innerHTML);
+  };
+
+  const handlePrintKOT = async () => {
+    kravy.ping(); 
+    printKOT();
+    setIsKotPrinted(true);
+
+    if (business?.syncQuickPosWithKitchen) {
+      try {
+        const orderData = {
+          orderId: syncedOrderId || undefined,
+          tableId: selectedTable !== "POS" ? tables.find(t => t.name === selectedTable)?.id : null,
+          items: items.map(it => ({
+            name: it.name,
+            price: it.rate,
+            quantity: it.qty,
+            itemId: it.id,
+            addedAt: new Date().toISOString(),
+            taxStatus: it.taxStatus || "Without Tax",
+            gst: it.gst ?? 0
+          })),
+          total: finalTotal,
+          status: "PREPARING",
+          customerName: customerName,
+          customerPhone: customerPhone,
+          customerAddress: customerAddress,
+          notes: orderNotes,
+          isKotPrinted: true
+        };
+
+        const res = await fetch("/api/orders", {
+          method: syncedOrderId ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderData)
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (!syncedOrderId) setSyncedOrderId(data.id);
+          toast.success("Order synced with Kitchen Workflow");
+        }
+      } catch (err) {
+        console.error("Sync error", err);
+      }
+    }
   };
 
   const runPrintJob = (type: "kot" | "bill", html: string, callback?: () => void) => {
@@ -1802,7 +1853,7 @@ export default function CheckoutClient() {
                     px-2.5 py-1 rounded-md text-[9px] font-black outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
                     transition-all cursor-pointer shadow-sm min-w-[100px]"
                 >
-                  <option value="POS">POS</option>
+                  <option value="POS">Counter</option>
                   {tables.map((t) => (
                     <option key={t.id} value={t.name}>{t.name}</option>
                   ))}
@@ -2303,7 +2354,7 @@ export default function CheckoutClient() {
               </button>
 
               <button
-                onClick={() => { kravy.ping(); printKOT(); }}
+                onClick={handlePrintKOT}
                 disabled={items.length === 0 || isSaving}
                 className="flex flex-col items-center justify-center py-2 rounded-xl border border-orange-500/20 text-orange-500 bg-orange-500/5 hover:bg-orange-500/10 disabled:opacity-40 transition-all font-black"
               >
@@ -2376,7 +2427,7 @@ export default function CheckoutClient() {
             )}
             {selectedTable && (
               <div className="font-bold text-[11px] mt-1 border border-black px-2 py-0.5 inline-block uppercase tracking-tighter">
-                {selectedTable === "POS" ? "TYPE: DINING / POS" : 
+                {selectedTable === "POS" ? "TYPE: DINING / COUNTER" : 
                  selectedTable === "TAKEAWAY" ? "TYPE: 🛍️ TAKEAWAY" : 
                  selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
                  `TYPE: DINING (TABLE: ${selectedTable})`}
@@ -2612,7 +2663,7 @@ export default function CheckoutClient() {
           </div>
 
           <div className="text-center text-[12px] font-bold border border-dashed border-black py-0.5 my-1 uppercase tracking-tighter">
-            {selectedTable === "POS" ? "DINING / POS" : 
+            {selectedTable === "POS" ? "DINING / COUNTER" : 
              selectedTable === "TAKEAWAY" ? "🛍️ TAKEAWAY" : 
              selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
              `TABLE: ${selectedTable}`}
@@ -2646,7 +2697,7 @@ export default function CheckoutClient() {
           </div>
 
           <div className="text-center mt-5 pt-1.5 border-t border-dashed border-black">
-            <div className="text-[9px] font-bold uppercase tracking-widest mb-1">Kravy Quick POS</div>
+            <div className="text-[9px] font-bold uppercase tracking-widest mb-1">Kravy Counter</div>
             <div className="text-[7px] font-medium">{new Date().toLocaleString('en-IN')}</div>
             <div className="h-[20mm]" />
             <div className="text-[8px] opacity-30 italic">... end of token ...</div>
@@ -3009,7 +3060,7 @@ export default function CheckoutClient() {
                     )}
                     {selectedTable && (
                       <div className="font-bold text-black mt-0.5 uppercase text-[9px] border border-black px-1 inline-block">
-                        {selectedTable === "POS" ? "TYPE: DINING / POS" : 
+                        {selectedTable === "POS" ? "TYPE: DINING / COUNTER" : 
                          selectedTable === "TAKEAWAY" ? "TYPE: 🛍️ TAKEAWAY" : 
                          selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
                          `TYPE: DINING (TABLE: ${selectedTable})`}

@@ -118,6 +118,7 @@ export async function POST(request: Request) {
         packagingChargeAmount: body.packagingChargeAmount !== undefined ? body.packagingChargeAmount : undefined,
         packagingGstEnabled: body.packagingGstEnabled !== undefined ? body.packagingGstEnabled : undefined,
         packagingGstRate: body.packagingGstRate !== undefined ? body.packagingGstRate : undefined,
+        syncQuickPosWithKitchen: body.syncQuickPosWithKitchen !== undefined ? body.syncQuickPosWithKitchen : undefined,
       },
 
       create: {
@@ -169,6 +170,7 @@ export async function POST(request: Request) {
         packagingChargeAmount: body.packagingChargeAmount ?? 0,
         packagingGstEnabled: body.packagingGstEnabled ?? false,
         packagingGstRate: body.packagingGstRate ?? 0,
+        syncQuickPosWithKitchen: body.syncQuickPosWithKitchen ?? false,
       },
     });
 

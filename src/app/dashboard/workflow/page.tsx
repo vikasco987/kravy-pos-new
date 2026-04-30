@@ -36,6 +36,8 @@ type OrderItem = {
     isNew?: boolean;
     instruction?: string;
     variants?: any[];
+    taxStatus?: string;
+    gst?: number;
 };
 
 type Order = {
@@ -96,6 +98,28 @@ const numberToWords = (num: number): string => {
     let result = convert(integerPart) + ' Rupees';
     if (decimalPart > 0) result += ' and ' + convert(decimalPart) + ' Paise';
     return result + ' Only';
+};
+
+const calculateOrderTotals = (items: OrderItem[], isTaxEnabled: boolean, globalRate: number, perProductEnabled: boolean) => {
+    let subtotal = 0;
+    let gst = 0;
+
+    items.forEach(it => {
+        const gross = it.price * it.quantity;
+        const rate = (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (isTaxEnabled ? globalRate : 0);
+        const ts = it.taxStatus || "Without Tax";
+
+        if (ts === "With Tax") {
+            const base = gross / (1 + rate / 100);
+            subtotal += base;
+            gst += (gross - base);
+        } else {
+            subtotal += gross;
+            gst += (gross * rate) / 100;
+        }
+    });
+
+    return { subtotal, gst, total: subtotal + gst };
 };
 
 // --- DND HELPERS ---
@@ -247,7 +271,7 @@ export default function KravyPOS() {
 
             const mergedItems = selectedOrders.flatMap(o => o.items);
             const subtotal = mergedItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
-            const gst = isTaxEnabled ? (subtotal * taxRate) / 100 : 0;
+            const gst = isTaxEnabled ? (subtotal * globalRate) / 100 : 0;
             const total = subtotal + gst;
 
             targetOrder = {
@@ -595,9 +619,7 @@ export default function KravyPOS() {
         const order = orders.find(o => o.id === targetOrderId);
         if (!order) return;
 
-        const orderSubtotal = order.items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
-        const orderGst = isTaxEnabled ? (orderSubtotal * taxRate) / 100 : 0;
-        const orderTotal = orderSubtotal + orderGst;
+        const { subtotal: orderSubtotal, gst: orderGst, total: orderTotal } = calculateOrderTotals(order.items, isTaxEnabled, globalRate, perProductEnabled);
 
         try {
             if (payMethod === "wallet") {
@@ -630,7 +652,9 @@ export default function KravyPOS() {
                     name: it.name,
                     price: it.price,
                     quantity: it.quantity,
-                    total: it.price * it.quantity
+                    total: it.price * it.quantity,
+                    taxStatus: it.taxStatus || "Without Tax",
+                    gst: (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (isTaxEnabled ? globalRate : 0)
                 })),
                 subtotal: orderSubtotal,
                 total: orderTotal,
@@ -2154,9 +2178,7 @@ export default function KravyPOS() {
                                         const targetO = printOrder || activeOrderForSelected;
                                         const targetT = printTable || selectedTable;
                                         if (!targetO || !targetT) return null;
-                                        const sub = targetO.items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
-                                        const gst = isTaxEnabled ? (sub * taxRate) / 100 : 0;
-                                        const total = sub + gst;
+                                        const { sub, gst, total } = calculateOrderTotals(targetO.items, isTaxEnabled, globalRate, perProductEnabled);
 
                                         return getReceiptJSX(
                                             previewMode,
@@ -2165,7 +2187,7 @@ export default function KravyPOS() {
                                             targetT,
                                             sub,
                                             isTaxEnabled,
-                                            taxRate,
+                                            globalRate,
                                             gst,
                                             total,
                                             payMethod,
@@ -2276,13 +2298,11 @@ export default function KravyPOS() {
                         const targetO = printOrder || activeOrderForSelected;
                         const targetT = printTable || selectedTable;
                         if (!targetO || !targetT) return null;
-                        const sub = targetO.items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
-                        const gst = isTaxEnabled ? (sub * taxRate) / 100 : 0;
-                        const total = sub + gst;
+                        const { sub, gst, total } = calculateOrderTotals(targetO.items, isTaxEnabled, globalRate, perProductEnabled);
                         const predictedBalance = (payMethod.toLowerCase() === "wallet" && selectedParty) 
                             ? (selectedParty.walletBalance - total) 
                             : selectedParty?.walletBalance;
-                        return getReceiptJSX("BILL", business, targetO, targetT, sub, isTaxEnabled, taxRate, gst, total, payMethod, qrUrl, predictedBalance);
+                        return getReceiptJSX("BILL", business, targetO, targetT, sub, isTaxEnabled, globalRate, gst, total, payMethod, qrUrl, predictedBalance);
                     })()}
                 </div>
                 <div ref={kotReceiptRef} style={{ width: '100%' }}>
@@ -2290,10 +2310,8 @@ export default function KravyPOS() {
                         const targetO = printOrder || activeOrderForSelected;
                         const targetT = printTable || selectedTable;
                         if (!targetO || !targetT) return null;
-                        const sub = targetO.items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
-                        const gst = isTaxEnabled ? (sub * taxRate) / 100 : 0;
-                        const total = sub + gst;
-                        return getReceiptJSX("KOT", business, targetO, targetT, sub, isTaxEnabled, taxRate, gst, total, payMethod, qrUrl);
+                        const { sub, gst, total } = calculateOrderTotals(targetO.items, isTaxEnabled, globalRate, perProductEnabled);
+                        return getReceiptJSX("KOT", business, targetO, targetT, sub, isTaxEnabled, globalRate, gst, total, payMethod, qrUrl);
                     })()}
                 </div>
             </div>
@@ -2308,7 +2326,7 @@ export default function KravyPOS() {
         table: TableStatus | null | undefined,
         subtotal: number,
         taxEnabled: boolean,
-        taxRate: number,
+        globalRate: number,
         gst: number,
         total: number,
         paymentMethod: string,
@@ -2383,7 +2401,7 @@ export default function KravyPOS() {
                         </div>
                         {taxEnabled && (
                             <div className="flex justify-between text-[9px] font-black">
-                                <span>GST ({taxRate}%)</span>
+                                <span>GST ({globalRate}%)</span>
                                 <span>₹{gst.toFixed(2)}</span>
                             </div>
                         )}
@@ -2506,11 +2524,13 @@ export default function KravyPOS() {
                 price: menuItem.price,
                 quantity: 1,
                 isVeg: menuItem.isVeg,
-                isNew: true
+                isNew: true,
+                taxStatus: menuItem.taxStatus || "Without Tax",
+                gst: menuItem.gst ?? 0
             };
 
             const updatedItems = [...orderToUpdate.items, newItem];
-            const newTotal = updatedItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+            const { total: newTotal } = calculateOrderTotals(updatedItems, isTaxEnabled, globalRate, perProductEnabled);
 
             const res = await fetch("/api/orders", {
                 method: "PATCH",

@@ -56,9 +56,9 @@ export async function GET() {
           "/dashboard/settings", 
           "/dashboard/settings/tax",
           "/dashboard/billing/deleted",
-          "/dashboard/reports/sales/daily",
           "/dashboard/reports/gst",
-          "/dashboard/ai-scraper"
+          "/dashboard/ai-scraper",
+          "/dashboard/settings/advanced"
         ];
       } else {
         finalAllowed = [
@@ -82,7 +82,7 @@ export async function GET() {
       "Menu & Items Permissions": ["/dashboard/menu/view", "/dashboard/menu-editor", "/dashboard/menu/addons", "/dashboard/menu/upload", "/dashboard/store-item-upload", "/dashboard/menu/edit", "/dashboard/inventory"],
       "AI Intelligence Tools": ["/dashboard/ai-scraper"],
       "Report Permissions": ["/dashboard/reports/sales/daily", "/dashboard/reports/gst"],
-      "Settings Permissions": ["/dashboard/profile", "/dashboard/settings", "/dashboard/settings/tax", "/dashboard/staff"]
+      "Settings Permissions": ["/dashboard/profile", "/dashboard/settings", "/dashboard/settings/tax", "/dashboard/staff", "/dashboard/settings/advanced"]
     };
 
     // Include original permissions (for mobile app logic) AND expand them (for website sidebar)

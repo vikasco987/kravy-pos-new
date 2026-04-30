@@ -154,6 +154,33 @@ export default function AdvancedSettingsPage() {
           </button>
         </div>
 
+        {/* Sync Quick POS with Kitchen Control */}
+        <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] p-8 shadow-xl flex flex-col md:flex-row items-center gap-8 group">
+          <div className="w-20 h-20 rounded-3xl bg-indigo-100 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+            <Settings size={40} />
+          </div>
+          <div className="flex-1 space-y-2">
+            <h3 className="text-xl font-black text-[var(--kravy-text-primary)] flex items-center gap-2">
+              Sync Quick POS with Kitchen
+              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Workflow</span>
+            </h3>
+            <p className="text-sm text-[var(--kravy-text-muted)] font-medium max-w-md leading-relaxed">
+              Automatically send Quick POS orders to Kitchen Workflow (Live Tracking) when KOT is printed.
+            </p>
+          </div>
+          <button
+            onClick={() => handleSave({ syncQuickPosWithKitchen: !profile.syncQuickPosWithKitchen })}
+            disabled={saving}
+            className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
+              profile.syncQuickPosWithKitchen 
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
+                : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+            }`}
+          >
+            {profile.syncQuickPosWithKitchen ? 'Enabled' : 'Disabled'}
+          </button>
+        </div>
+
         {/* Informational Card */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
            <div className="bg-slate-50 dark:bg-slate-900/40 p-6 rounded-[28px] border border-slate-200 dark:border-slate-800">

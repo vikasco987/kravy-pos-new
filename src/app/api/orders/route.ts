@@ -73,3 +73,41 @@ export async function PATCH(req: NextRequest) {
         }, { status: 500 });
     }
 }
+export async function POST(req: NextRequest) {
+    try {
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const body = await req.json();
+        const { tableId, items, total, customerName, customerPhone, customerAddress, status, notes, preferences, isKotPrinted } = body;
+
+        if (!items || total === undefined) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+
+        const order = await prisma.order.create({
+            data: {
+                clerkUserId: effectiveId,
+                tableId: tableId || null,
+                items,
+                total: parseFloat(total),
+                status: status || "PENDING",
+                customerName: customerName || null,
+                customerPhone: customerPhone || null,
+                customerAddress: customerAddress || null,
+                notes: notes || null,
+                preferences: preferences || null,
+                isKotPrinted: isKotPrinted || false,
+                isBillPrinted: false,
+            },
+            include: { table: true },
+        });
+
+        return NextResponse.json(order);
+    } catch (error) {
+        console.error("POST_ORDER_ERROR:", error);
+        return NextResponse.json({ error: "Failed to create order", details: String(error) }, { status: 500 });
+    }
+}

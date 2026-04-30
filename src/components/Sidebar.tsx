@@ -181,6 +181,7 @@ const navGroups = [
     items: [
       { icon: <UserCircle size={18} />, label: "Business Profile", href: "/dashboard/profile", roles: ["ADMIN", "SELLER", "STAFF"] },
       { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Zap size={18} />, label: "Advanced Controls", href: "/dashboard/settings/advanced", roles: ["ADMIN", "SELLER", "STAFF"], badge: "Setup", badgeColor: "#8B5CF6" },
       { icon: <Percent size={18} />, label: "Tax Management", href: "/dashboard/settings/tax", badge: "GST", badgeColor: "#F59E0B", roles: ["ADMIN", "SELLER", "STAFF"] },
       { icon: <Lock size={18} />, label: "Access Control", href: "/admin/users", badge: "Roles", badgeColor: "#EF4444", roles: ["ADMIN"] },
       { 
