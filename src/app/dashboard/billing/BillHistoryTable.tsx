@@ -78,7 +78,11 @@ const PaymentBadge = ({ mode, status }: { mode: string, status: string }) => {
 };
 
 const MenuOption = ({ icon, label, onClick, isDestructive }: any) => (
-  <button onClick={onClick} style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", fontWeight: 700, color: isDestructive ? "#EF4444" : "#374151" }}>
+  <button 
+    type="button"
+    onClick={(e) => { e.stopPropagation(); onClick(e); }} 
+    style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", fontWeight: 700, color: isDestructive ? "#EF4444" : "#374151" }}
+  >
     {icon} {label}
   </button>
 );
@@ -98,7 +102,7 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
     if (!confirm("Are you sure?")) return;
     try {
       const res = await fetch(`/api/bill-manager/${bill.id}`, { method: "DELETE" });
-      if (res.ok) { toast.success("Deleted"); refresh(); }
+      if (res.ok) { toast.success("Deleted"); refresh(true); }
     } catch (e) { toast.error("Error"); }
   };
 
@@ -111,7 +115,7 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentStatus: status }),
       });
-      if (res.ok) { toast.success(`Updated to ${label}`); refresh(); }
+      if (res.ok) { toast.success(`Updated to ${label}`); refresh(true); }
       else { toast.error("Failed to update"); }
     } catch (e) { toast.error("Error"); }
   };

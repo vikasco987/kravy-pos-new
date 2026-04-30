@@ -255,9 +255,9 @@ export default function BillingPage() {
     } catch (e) {}
   }
 
-  async function fetchBills() {
+  async function fetchBills(silent = false) {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const [billsRes, ordersRes, profileRes] = await Promise.all([
         fetch("/api/bill-manager", { cache: "no-store" }),
         fetch("/api/orders", { cache: "no-store" }),
@@ -321,7 +321,7 @@ export default function BillingPage() {
       combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setBills(combined);
       if (bData.clerkUserId) setClerkId(bData.clerkUserId);
-    } catch (err) { setError("Failed to load records"); } finally { setLoading(false); }
+    } catch (err) { setError("Failed to load records"); } finally { if (!silent) setLoading(false); }
   }
 
   const isFilterActive = !!(query || colFilters.billNumber || colFilters.tableName || colFilters.customerName || colFilters.customerPhone || colFilters.paymentStatus || colFilters.paymentMode);
