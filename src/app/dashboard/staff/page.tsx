@@ -39,7 +39,8 @@ import {
   BarChart3,
   IndianRupee,
   Edit3,
-  CheckCircle2
+  CheckCircle2,
+  MessageCircle
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
