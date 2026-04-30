@@ -154,10 +154,33 @@ export default function KravyPOS() {
 
     // Dynamic Totals Calculation
     const isTaxEnabled = business?.taxEnabled ?? true;
-    const taxRate = business?.taxRate ?? 5.0;
-    const subtotalCost = activeOrderForSelected?.items.reduce((acc, it) => acc + (it.price * it.quantity), 0) || 0;
-    const calculatedGst = isTaxEnabled ? (subtotalCost * taxRate) / 100 : 0;
-    const grandTotal = subtotalCost + calculatedGst;
+    const globalRate = business?.taxRate ?? 5.0;
+    const perProductEnabled = business?.perProductTaxEnabled ?? false;
+
+    let subtotalCost = 0;
+    let calculatedGst = 0;
+    let grandTotal = 0;
+
+    if (activeOrderForSelected) {
+        activeOrderForSelected.items.forEach((it: any) => {
+            const q = Number(it.quantity || 0);
+            const p = Number(it.price || 0);
+            const lineTotal = q * p;
+            const rate = (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (isTaxEnabled ? globalRate : 0);
+
+            if (it.taxStatus === "With Tax") {
+                const taxable = lineTotal / (1 + rate / 100);
+                calculatedGst += (lineTotal - taxable);
+                subtotalCost += taxable;
+                grandTotal += lineTotal;
+            } else {
+                const gst = (lineTotal * rate / 100);
+                calculatedGst += gst;
+                subtotalCost += lineTotal;
+                grandTotal += (lineTotal + gst);
+            }
+        });
+    }
     
     useEffect(() => {
         fetchMenu();

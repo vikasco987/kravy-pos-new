@@ -258,21 +258,64 @@ export default function BillingPage() {
   async function fetchBills() {
     try {
       setLoading(true);
-      const [billsRes, ordersRes] = await Promise.all([
+      const [billsRes, ordersRes, profileRes] = await Promise.all([
         fetch("/api/bill-manager", { cache: "no-store" }),
-        fetch("/api/orders", { cache: "no-store" })
+        fetch("/api/orders", { cache: "no-store" }),
+        fetch("/api/profile", { cache: "no-store" })
       ]);
+      
+      const prof = profileRes.ok ? await profileRes.json() : business;
+      if (prof) setBusiness(prof);
+
       if (!billsRes.ok) throw new Error("Failed");
       const bData = await billsRes.json();
       let combined: BillManager[] = (bData.bills ?? []).map((b: any) => ({ ...b, isOrder: false }));
+      
       if (ordersRes.ok) {
         const oData = await ordersRes.json();
-        const activeOrders = oData.filter((o: any) => o.status !== "COMPLETED").map((o: any) => ({
-          id: o.id, billNumber: `ORD-${o.id.slice(-4).toUpperCase()}`, createdAt: o.createdAt,
-          total: o.total, paymentMode: "Pending", paymentStatus: "Pending", customerName: o.customerName || "Walk-in",
-          customerPhone: o.customerPhone, isHeld: false, tableName: o.table?.name || "Counter",
-          isOrder: true, orderStatus: o.status, items: o.items, tokenNumber: o.tokenNumber
-        }));
+        const globalRate = prof?.taxRate ?? 5;
+        const taxActive = prof?.taxEnabled ?? true;
+
+        const activeOrders = oData.filter((o: any) => o.status !== "COMPLETED").map((o: any) => {
+          const items = Array.isArray(o.items) ? o.items : [];
+          let calcTax = 0;
+          let calcSubtotal = 0;
+
+          items.forEach((it: any) => {
+            const q = Number(it.quantity || it.qty || 0);
+            const p = Number(it.price || it.rate || 0);
+            const lineTotal = q * p;
+            const rate = it.gst ?? (taxActive ? globalRate : 0);
+            
+            if (it.taxStatus === "With Tax") {
+              const taxable = lineTotal / (1 + rate / 100);
+              calcTax += (lineTotal - taxable);
+              calcSubtotal += taxable;
+            } else {
+              calcTax += (lineTotal * rate / 100);
+              calcSubtotal += lineTotal;
+            }
+          });
+
+          return {
+            id: o.id, 
+            billNumber: `ORD-${o.id.slice(-4).toUpperCase()}`, 
+            createdAt: o.createdAt,
+            total: o.total, 
+            subtotal: calcSubtotal,
+            tax: calcTax,
+            paymentMode: "Pending", 
+            paymentStatus: "Pending", 
+            customerName: o.customerName || "Walk-in",
+            customerPhone: o.customerPhone, 
+            isHeld: false, 
+            tableName: o.table?.name || "Counter",
+            isOrder: true, 
+            orderStatus: o.status, 
+            items: o.items, 
+            tokenNumber: o.tokenNumber
+          };
+        });
         combined = [...combined, ...activeOrders];
       }
       combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
