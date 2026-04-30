@@ -2005,6 +2005,11 @@ export default function CheckoutClient() {
                           <p className="text-xs font-black text-[var(--kravy-brand)]">
                             {i.qty} × ₹{i.rate.toFixed(2)}
                           </p>
+                          {(taxActive || perProductEnabled) && (
+                            <span className="text-[8px] font-black px-1.5 py-0.5 bg-[var(--kravy-brand)]/5 text-[var(--kravy-brand)] border border-[var(--kravy-brand)]/10 rounded-md uppercase tracking-tighter">
+                              GST: {(perProductEnabled && i.gst !== null) ? i.gst : globalRate}%
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -2059,6 +2064,22 @@ export default function CheckoutClient() {
           <div className="border-t border-[var(--kravy-border)] px-4 md:px-5 py-2.5 bg-[var(--kravy-surface)] space-y-2.5 shrink-0 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
 
             {/* Totals - Dynamic Height */}
+            <div className="space-y-0.5">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">
+                  <span>Items Base</span>
+                  <span>₹{totalTaxable.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-emerald-600">
+                  <span>GST Total {(taxActive || perProductEnabled) ? `(Active)` : `(Disabled)`}</span>
+                  <span>+ ₹{gstAmount.toFixed(2)}</span>
+                </div>
+                {(deliveryCharge > 0 || packagingCharge > 0 || serviceCharge > 0) && (
+                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-blue-600">
+                    <span>Other Charges</span>
+                    <span>+ ₹{(totalCharges + totalChargesGst).toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
             <div className="flex justify-between items-center border-b border-dashed border-[var(--kravy-border)] pb-2 gap-4">
               <div className="flex flex-wrap gap-x-3 gap-y-0.5 flex-1">
                 <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter leading-none">Sub: ₹{subtotal.toFixed(2)}</p>

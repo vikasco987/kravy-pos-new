@@ -48,7 +48,7 @@ export default function InventoryPage() {
     sellingPrice: 0,
     barcode: "",
     taxStatus: "Without Tax",
-    gst: 0,
+    gst: null as number | null,
     hsnCode: "",
   });
 
@@ -120,7 +120,7 @@ export default function InventoryPage() {
       sellingPrice: item.sellingPrice || 0,
       barcode: item.barcode || "",
       taxStatus: item.taxStatus || "Without Tax",
-      gst: item.gst || 0,
+      gst: item.gst ?? null,
       hsnCode: item.hsnCode || "",
     });
     setIsModalOpen(true);
@@ -225,7 +225,7 @@ export default function InventoryPage() {
             onClick={() => {
               setEditingItem(null);
               setFormData({
-                name: "", categoryId: "", currentStock: 0, reorderLevel: 0, openingStock: 0, unit: "pcs", price: 0, sellingPrice: 0, barcode: "", taxStatus: "Without Tax", gst: 0, hsnCode: ""
+                name: "", categoryId: "", currentStock: 0, reorderLevel: 0, openingStock: 0, unit: "pcs", price: 0, sellingPrice: 0, barcode: "", taxStatus: "Without Tax", gst: null, hsnCode: ""
               });
               setIsModalOpen(true);
             }}

@@ -25,6 +25,8 @@ export async function GET(request: Request) {
     });
 
     console.log("SERVER DEBUG: GET Profile for", effectiveId, 
+      "taxEnabled:", profile?.taxEnabled,
+      "taxRate:", profile?.taxRate,
       "enableKOTWithBill:", profile?.enableKOTWithBill,
       "enableMenuQRInBill:", profile?.enableMenuQRInBill
     );

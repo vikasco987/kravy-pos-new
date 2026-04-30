@@ -390,7 +390,7 @@ export async function POST(req: Request) {
         upsellText: body.upsellText || null,
         hsnCode: body.hsnCode || null,
         taxStatus: body.taxStatus || "Without Tax",
-        gst: body.gst != null ? Number(body.gst) : 0,
+        gst: body.gst !== undefined && body.gst !== null ? Number(body.gst) : null,
         openingStock: body.openingStock != null ? Number(body.openingStock) : 0,
         currentStock: body.currentStock != null ? Number(body.currentStock) : 0,
         reorderLevel: body.reorderLevel != null ? Number(body.reorderLevel) : 0,
@@ -440,7 +440,7 @@ export async function PUT(req: Request) {
           isNew: body.isNew !== undefined ? Boolean(body.isNew) : undefined,
           categoryId: (categoryId === "uncategorised" || categoryId === "__uncategorised__") ? null : categoryId ?? undefined,
           taxStatus: body.taxStatus !== undefined ? body.taxStatus : undefined,
-          gst: body.gst !== undefined ? Number(body.gst) : undefined,
+          gst: body.gst !== undefined ? (body.gst !== null ? Number(body.gst) : null) : undefined,
           isActive: body.isActive !== undefined ? Boolean(body.isActive) : undefined,
         }
       });
@@ -495,7 +495,7 @@ export async function PUT(req: Request) {
         upsellText: body.upsellText !== undefined ? body.upsellText : undefined,
         hsnCode: body.hsnCode !== undefined ? body.hsnCode : undefined,
         taxStatus: body.taxStatus !== undefined ? body.taxStatus : undefined,
-        gst: body.gst !== undefined ? Number(body.gst) : undefined,
+        gst: body.gst !== undefined ? (body.gst !== null ? Number(body.gst) : null) : undefined,
         openingStock: body.openingStock !== undefined ? Number(body.openingStock) : undefined,
         currentStock: body.currentStock !== undefined ? Number(body.currentStock) : undefined,
         reorderLevel: body.reorderLevel !== undefined ? Number(body.reorderLevel) : undefined,
