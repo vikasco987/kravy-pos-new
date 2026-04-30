@@ -105,7 +105,7 @@ const PaymentBadge = ({ mode }: { mode: string }) => {
 const BillActions = ({ bill, refresh, business, userRole, userPermissions, onPrint }: any) => {
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
-  const canDelete = userRole === "ADMIN" || userRole === "MASTER" || userPermissions.includes("delete-bill");
+  const canDelete = userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("delete-bill");
 
   const handleDelete = async () => {
     if (!confirm("Are you sure?")) return;

@@ -37,8 +37,8 @@ export default function RootLayout({
   children: ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}>
+    <html lang="en" className={`${inter.variable} h-full`}>
+      <body className="h-full" style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}>
         <Providers>
           <Suspense fallback={null}>
             <TopProgressBar />
