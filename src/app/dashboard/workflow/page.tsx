@@ -866,9 +866,9 @@ export default function KravyPOS() {
                             exit={{ opacity: 0 }}
                             className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 transition-colors duration-300"
                         >
-                            {/* Live Orders Sub-Header */}
-                            <div className="bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 px-4 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-40">
-                                <div className="flex gap-2 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-2xl shadow-inner border border-slate-200/50 dark:border-slate-700/50 overflow-x-auto w-full md:w-auto no-scrollbar">
+                            {/* 💎 Premium Sub-Header */}
+                            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50 px-6 md:px-10 py-5 flex flex-col md:flex-row items-center justify-between gap-6 sticky top-0 z-40">
+                                <div className="flex gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/50 rounded-[1.5rem] shadow-inner border border-slate-200/40 dark:border-slate-700/40 overflow-x-auto w-full md:w-auto no-scrollbar">
                                     {(["PREPARING", "READY", "COMPLETED"] as const).map(tab => {
                                         const count = tab === "PREPARING"
                                             ? orders.filter(o => ["PENDING", "ACCEPTED", "PREPARING"].includes(o.status) && !o.isDeleted).length
@@ -877,43 +877,46 @@ export default function KravyPOS() {
                                                 : orders.filter(o => o.status === "COMPLETED" && !o.isDeleted).length;
 
                                         const isActive = liveOrderTab === tab;
-                                        const label = tab === "PREPARING" ? "Preparing" : tab === "READY" ? "Ready" : "Past Bills";
+                                        const label = tab === "PREPARING" ? "Processing" : tab === "READY" ? "Ready" : "Settled";
 
                                         return (
                                             <button
                                                 key={tab}
                                                 onClick={() => { kravy.click(); setLiveOrderTab(tab); }}
-                                                className={`px-5 py-2.5 rounded-[0.85rem] text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap ${isActive
-                                                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-md border border-slate-200/50 dark:border-slate-800"
-                                                    : "bg-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                                className={`px-6 py-2.5 rounded-[1.1rem] text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-3 whitespace-nowrap ${isActive
+                                                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xl shadow-slate-900/5 border border-slate-200/50 dark:border-slate-800"
+                                                    : "bg-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                                                     }`}
                                             >
-                                                {label} <span className={`px-2 py-0.5 rounded-full text-[10px] ${isActive ? "bg-[#111827] dark:bg-white text-white dark:text-slate-900 shadow-sm" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400"}`}>{count}</span>
+                                                {label} 
+                                                <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black ${isActive ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900" : "bg-slate-200 dark:bg-slate-700 text-slate-500"}`}>
+                                                    {count}
+                                                </span>
                                             </button>
                                         );
                                     })}
                                 </div>
 
-                                <div className="flex items-center gap-3 w-full md:w-auto">
-                                    <div className="relative flex-1 md:w-80">
-                                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <div className="flex items-center gap-4 w-full md:w-auto">
+                                    <div className="relative flex-1 md:w-[400px] group">
+                                        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
                                         <input
                                             type="text"
-                                            placeholder="Search Order ID..."
-                                            className="w-full h-12 pl-11 pr-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all placeholder:text-slate-400 font-bold shadow-sm"
+                                            placeholder="Search active orders..."
+                                            className="w-full h-14 pl-12 pr-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[1.5rem] text-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all placeholder:text-slate-400 font-bold shadow-sm"
                                             value={liveOrderSearch}
                                             onChange={e => setLiveOrderSearch(e.target.value)}
                                         />
                                     </div>
-                                    <button onClick={() => { kravy.click(); fetchData(); }} className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center hover:text-[#111827] dark:hover:text-white transition-all shadow-sm active:scale-95 shrink-0">
-                                        <RotateCcw size={18} strokeWidth={2.5} />
+                                    <button onClick={() => { kravy.click(); fetchData(); }} className="w-14 h-14 rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90 group">
+                                        <RotateCcw size={20} className="group-active:rotate-180 transition-transform duration-500" />
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Orders Grid */}
-                            <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50/50 dark:bg-[#0B1120]">
-                                <div className="max-w-[1400px] mx-auto space-y-6">
+                            {/* 🏗️ Optimized Grid Panel */}
+                            <div className="flex-1 overflow-y-auto p-6 md:p-10 no-scrollbar">
+                                <div className="max-w-[1500px] mx-auto space-y-8">
                                     {orders
                                         .filter(o => {
                                             const statusMatch = liveOrderTab === "PREPARING"
@@ -926,178 +929,171 @@ export default function KravyPOS() {
                                         .map((order, idx) => (
                                             <motion.div
                                                 key={order.id}
-                                                initial={{ opacity: 0, y: 20 }}
+                                                initial={{ opacity: 0, y: 30 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: idx * 0.05 }}
-                                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-slate-700 transition-all group overflow-hidden flex flex-col xl:flex-row relative"
+                                                transition={{ delay: idx * 0.08 }}
+                                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] hover:border-slate-300 dark:hover:border-slate-700 transition-all group overflow-hidden flex flex-col xl:flex-row relative"
                                             >
-                                                {/* Status Indicator Bar */}
-                                                <div className={`h-2 xl:h-auto xl:w-3 shrink-0 ${order.status === 'PENDING' ? 'bg-[#FF0055]' : order.status === 'ACCEPTED' ? 'bg-indigo-500' : order.status === 'PREPARING' ? 'bg-amber-500' : order.status === 'READY' ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                                                {/* ✨ High-Contrast Status Edge */}
+                                                <div className={`h-2 xl:h-auto xl:w-4 shrink-0 ${order.status === 'PENDING' ? 'bg-[#FF0055] shadow-[0_0_20px_rgba(255,0,85,0.4)]' : order.status === 'ACCEPTED' ? 'bg-indigo-600 shadow-[0_0_20px_rgba(79,70,229,0.4)]' : order.status === 'PREPARING' ? 'bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.4)]' : order.status === 'READY' ? 'bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]' : 'bg-slate-300'}`} />
 
-                                                {/* Left Panel: Header & Customer Info */}
-                                                <div className="xl:w-[360px] p-6 lg:p-8 border-b xl:border-b-0 xl:border-r border-slate-100 dark:border-slate-800 flex flex-col bg-slate-50/30 dark:bg-slate-900/30 relative">
-                                                    <div className="absolute top-6 right-6 px-3 py-1 bg-[#111827] text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-sm">
-                                                        {order.caseType || "DINE-IN"}
-                                                    </div>
-                                                    
-                                                    <div className="flex items-center gap-4 mb-8 mt-2">
-                                                        <div className="w-16 h-16 rounded-[1.5rem] bg-white border border-slate-200 shadow-sm flex items-center justify-center text-2xl font-black text-[#111827]">
-                                                            {order.table?.name?.substring(0, 2) || "T1"}
+                                                {/* 📦 Left Panel: Header & Session Info */}
+                                                <div className="xl:w-[400px] p-8 lg:p-10 border-b xl:border-b-0 xl:border-r border-slate-100 dark:border-slate-800 flex flex-col bg-slate-50/50 dark:bg-slate-900/50 relative">
+                                                    <div className="flex items-center justify-between mb-10">
+                                                        <div className="flex items-center gap-5">
+                                                            <div className="w-20 h-20 rounded-[2rem] bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-2xl flex items-center justify-center text-3xl font-black italic tracking-tighter">
+                                                                {order.table?.name?.substring(0, 2) || "T1"}
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-none tracking-tighter uppercase italic">{order.table?.name || "Counter"}</h3>
+                                                                <p className="text-[10px] font-black text-slate-400 mt-2 uppercase tracking-[0.2em] opacity-60">Session #{order.id.slice(-6).toUpperCase()}</p>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <h3 className="text-xl font-black text-slate-900 dark:text-white leading-none tracking-tight">{order.table?.name || "Counter"}</h3>
-                                                            <p className="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest">ID: #{order.id.slice(-6).toUpperCase()}</p>
+                                                        <div className="px-4 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-slate-900/10">
+                                                            {order.caseType || "DINE-IN"}
                                                         </div>
                                                     </div>
 
-                                                    <div className="space-y-4 mb-6">
-                                                        <div className="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm">
-                                                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                                                                <User size={16} className="text-blue-500" />
+                                                    <div className="space-y-5 flex-1">
+                                                        <div className="flex items-center gap-4 p-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[1.75rem] shadow-sm">
+                                                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                                                                <User size={20} className="text-indigo-600 dark:text-indigo-400" />
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <p className="text-xs font-black text-slate-900 dark:text-white uppercase truncate leading-none">{order.customerName || "Walk-in Guest"}</p>
-                                                                <p className="text-[10px] font-bold text-slate-500 mt-1.5">{order.customerPhone || "No Phone Provided"}</p>
+                                                                <p className="text-[15px] font-black text-slate-900 dark:text-white truncate leading-none uppercase">{order.customerName || "Walk-in Guest"}</p>
+                                                                <p className="text-[11px] font-bold text-slate-400 mt-2 tracking-tight">{order.customerPhone || "No Linked Profile"}</p>
                                                             </div>
                                                         </div>
                                                         
-                                                        <div className="grid grid-cols-2 gap-3">
+                                                        <div className="grid grid-cols-2 gap-4">
                                                             <button
                                                                 onClick={() => {
                                                                     const tbl = tablesList.find(t => t.id === order.table?.id);
-                                                                    setPrintOrder(order);
-                                                                    setPrintTable(tbl || null);
+                                                                    setPrintOrder(order); setPrintTable(tbl || null);
                                                                     setTimeout(() => handlePrint("KOT", order, tbl || undefined), 100);
                                                                 }}
-                                                                className="flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl bg-indigo-50 border border-indigo-100 text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:bg-indigo-100 transition-all shadow-sm"
+                                                                className="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm group"
                                                             >
-                                                                <Printer size={16} /> KOT
+                                                                <Printer size={18} className="group-hover:scale-110 transition-transform" /> KOT
                                                             </button>
                                                             <button
                                                                 onClick={() => {
                                                                     const tbl = tablesList.find(t => t.id === order.table?.id);
-                                                                    setPrintOrder(order);
-                                                                    setPrintTable(tbl || null);
+                                                                    setPrintOrder(order); setPrintTable(tbl || null);
                                                                     setTimeout(() => handlePrint("BILL", order, tbl || undefined), 100);
                                                                 }}
-                                                                className="flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl bg-emerald-50 border border-emerald-100 text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:bg-emerald-100 transition-all shadow-sm"
+                                                                className="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm group"
                                                             >
-                                                                <CreditCard size={16} /> Bill
+                                                                <CreditCard size={18} className="group-hover:scale-110 transition-transform" /> Bill
                                                             </button>
                                                         </div>
                                                     </div>
 
-                                                    <div className="mt-auto pt-5 border-t border-slate-200">
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                                                            <Clock size={14} /> Placed at {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
+                                                    <div className="mt-10 flex items-center justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                                                        <span className="flex items-center gap-2"><Clock size={16} /> {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        <span className="opacity-30">|</span>
+                                                        <span>{order.items.length} Items</span>
                                                     </div>
                                                 </div>
 
-                                                {/* Center Panel: Items List */}
-                                                <div className="flex-1 p-6 lg:p-8 flex flex-col border-b xl:border-b-0 xl:border-r border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 min-w-0">
-                                                    <div className="flex justify-between items-center mb-6">
-                                                        <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Order Details</h4>
-                                                        <div className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border ${order.preferences?.dontSendCutlery ? "bg-rose-50 border-rose-100 text-rose-600" : "bg-emerald-50 border-emerald-100 text-emerald-600"}`}>
-                                                            {order.preferences?.dontSendCutlery ? <><AlertTriangle size={12} /> No Cutlery</> : <><CheckCircle2 size={12} /> Add Cutlery</>}
+                                                {/* 🍲 Center Panel: Items Breakdown */}
+                                                <div className="flex-1 p-8 lg:p-10 flex flex-col border-b xl:border-b-0 xl:border-r border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 min-w-0">
+                                                    <div className="flex justify-between items-center mb-8">
+                                                        <h4 className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em]">Kitchen Orders</h4>
+                                                        <div className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.1em] flex items-center gap-2 border ${order.preferences?.dontSendCutlery ? "bg-rose-50 border-rose-100 text-rose-600" : "bg-emerald-50 border-emerald-100 text-emerald-600"}`}>
+                                                            {order.preferences?.dontSendCutlery ? <><AlertTriangle size={12} /> No Cutlery Requested</> : <><CheckCircle2 size={12} /> Standard Cutlery</>}
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex-1 space-y-3 max-h-[300px] overflow-y-auto no-scrollbar pr-2 mb-6">
+                                                    <div className="flex-1 space-y-4 max-h-[400px] overflow-y-auto no-scrollbar pr-2 mb-8">
                                                         {order.items.map((it, i) => (
-                                                            <div key={i} className="flex items-start justify-between p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-colors">
-                                                                <div className="flex items-start gap-4">
-                                                                    <div className={`mt-1 flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 ${it.isVeg === false ? "border-rose-200 bg-rose-50" : "border-emerald-200 bg-emerald-50"}`}>
-                                                                        <div className={`w-2 h-2 rounded-full ${it.isVeg === false ? "bg-rose-500" : "bg-emerald-500"}`} />
+                                                            <div key={i} className="flex items-center justify-between p-5 rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100/50 dark:border-slate-800 transition-all hover:bg-slate-50 dark:hover:bg-slate-800">
+                                                                <div className="flex items-center gap-5">
+                                                                    <div className={`flex items-center justify-center w-6 h-6 rounded-lg border-2 shrink-0 ${it.isVeg === false ? "border-rose-200 bg-rose-50" : "border-emerald-200 bg-emerald-50"}`}>
+                                                                        <div className={`w-2 h-2 rounded-sm ${it.isVeg === false ? "bg-rose-500" : "bg-emerald-500"}`} />
                                                                     </div>
                                                                     <div>
-                                                                        <div className="text-[15px] font-black text-slate-800 dark:text-slate-100 leading-tight">
-                                                                            <span className="text-slate-400 font-black">{it.quantity} × </span>
-                                                                            {it.name}
+                                                                        <div className="text-[16px] font-black text-slate-800 dark:text-slate-100 leading-none mb-2">
+                                                                            <span className="text-slate-400 font-bold mr-1">x{it.quantity}</span> {it.name}
                                                                         </div>
                                                                         {it.variants && it.variants.length > 0 && (
-                                                                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                                                            <div className="flex flex-wrap gap-1.5">
                                                                                 {it.variants.map((v: any, idx: number) => (
-                                                                                    <span key={idx} className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-md text-[9px] font-bold uppercase tracking-wider">
+                                                                                    <span key={idx} className="px-2 py-0.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 rounded-md text-[8px] font-black uppercase tracking-widest">
                                                                                         {v.option}
                                                                                     </span>
                                                                                 ))}
                                                                             </div>
                                                                         )}
-                                                                        {it.instruction && <p className="text-[10px] font-bold text-[#FF0055] mt-1.5 uppercase tracking-widest">{it.instruction}</p>}
+                                                                        {it.instruction && <p className="text-[9px] font-black text-rose-500 mt-2 uppercase tracking-widest italic leading-none">Note: "{it.instruction}"</p>}
                                                                     </div>
                                                                 </div>
-                                                                <span className="text-[15px] font-black text-slate-900 dark:text-white mt-0.5 shrink-0">₹{it.price * it.quantity}</span>
+                                                                <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter">₹{it.price * it.quantity}</span>
                                                             </div>
                                                         ))}
                                                     </div>
 
                                                     <button
                                                         onClick={() => { kravy.click(); setOrderToUpdate(order); setShowAddItemModal(true); }}
-                                                        className="mt-auto w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                                        className="mt-auto w-full flex items-center justify-center gap-3 py-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all active:scale-98"
                                                     >
-                                                        <Plus size={16} strokeWidth={3} /> Add More Items
+                                                        <Plus size={18} strokeWidth={3} /> Modify Order contents
                                                     </button>
                                                 </div>
 
-                                                {/* Right Panel: Payment & Action */}
-                                                <div className="xl:w-[380px] p-6 lg:p-8 flex flex-col justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                                                {/* 💳 Right Panel: Settlement & Action */}
+                                                <div className="xl:w-[420px] p-8 lg:p-10 flex flex-col justify-between bg-slate-50 dark:bg-slate-950/50">
                                                     <div>
-                                                        <div className="flex items-center justify-between mb-6">
+                                                        <div className="flex items-center justify-between mb-8">
                                                             <div className="flex items-center gap-2">
-                                                                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border shadow-sm ${order.isBillPrinted ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-rose-50 border-rose-200 text-rose-600"}`}>
-                                                                    {order.isBillPrinted ? "PAID" : "UNPAID"}
+                                                                <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm border ${order.isBillPrinted ? "bg-emerald-500 text-white border-emerald-400" : "bg-rose-500 text-white border-rose-400"}`}>
+                                                                    {order.isBillPrinted ? "SETTLED" : "PENDING BILL"}
                                                                 </span>
-                                                                {(order as any).paymentMode && (
-                                                                    <span className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 text-[9px] font-black uppercase tracking-widest shadow-sm">
-                                                                        {(order as any).paymentMode}
-                                                                    </span>
-                                                                )}
                                                             </div>
-                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Amount</span>
+                                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Total Receivable</span>
                                                         </div>
-                                                        <div className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter mb-8 flex items-baseline gap-1">
-                                                            <span className="text-slate-300 text-3xl font-bold">₹</span>{order.total}
+                                                        <div className="text-6xl font-black text-slate-900 dark:text-white tracking-tighter mb-10 flex items-baseline gap-2">
+                                                            <span className="text-slate-300 dark:text-slate-700 text-4xl font-bold">₹</span>{order.total}
                                                         </div>
 
                                                         {order.notes && (
-                                                            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3 mb-6 shadow-sm">
-                                                                <MessageSquare size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                                                            <div className="p-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-[2rem] flex items-start gap-4 mb-8 shadow-sm">
+                                                                <MessageSquare size={20} className="text-amber-500 shrink-0 mt-1" />
                                                                 <div>
-                                                                    <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Kitchen Note</p>
-                                                                    <p className="text-xs font-bold text-amber-900 leading-snug">"{order.notes}"</p>
+                                                                    <p className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1.5">Staff Instruction</p>
+                                                                    <p className="text-sm font-bold text-amber-900 dark:text-amber-200 leading-snug">"{order.notes}"</p>
                                                                 </div>
                                                             </div>
                                                         )}
                                                     </div>
 
-                                                    <div className="mt-auto space-y-3">
+                                                    <div className="mt-auto space-y-4">
                                                         <motion.button
-                                                            whileHover={{ scale: 1.02 }}
-                                                            whileTap={{ scale: 0.95 }}
+                                                            whileHover={{ scale: 1.02, y: -4 }}
+                                                            whileTap={{ scale: 0.96 }}
                                                             disabled={updatingOrders.has(order.id)}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                const nextStatus = order.status === "PENDING" ? "ACCEPTED" : order.status === "ACCEPTED" ? "PREPARING" : order.status === "PREPARING" ? "READY" : "COMPLETED";
-                                                                updateOrderStatus(order.id, nextStatus);
+                                                                const nextStatusMap: any = { "PENDING": "ACCEPTED", "ACCEPTED": "PREPARING", "PREPARING": "READY", "READY": "COMPLETED" };
+                                                                updateOrderStatus(order.id, nextStatusMap[order.status]);
                                                             }}
-                                                            className={`w-full h-16 rounded-[1.25rem] text-sm font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-3 shadow-xl ${updatingOrders.has(order.id)
+                                                            className={`w-full h-20 rounded-[2rem] text-xs font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-4 shadow-2xl ${updatingOrders.has(order.id)
                                                                 ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                                                                : order.status === 'PENDING' ? "bg-[#FF0055] text-white shadow-[#FF0055]/30 hover:shadow-[#FF0055]/40"
-                                                                : order.status === 'ACCEPTED' ? "bg-indigo-600 text-white shadow-indigo-600/30 hover:shadow-indigo-600/40"
-                                                                : order.status === 'PREPARING' ? "bg-amber-500 text-white shadow-amber-500/30 hover:shadow-amber-500/40"
-                                                                : "bg-emerald-500 text-white shadow-emerald-500/30 hover:shadow-emerald-500/40"
+                                                                : order.status === 'PENDING' ? "bg-[#FF0055] text-white shadow-[#FF0055]/30"
+                                                                : order.status === 'ACCEPTED' ? "bg-indigo-600 text-white shadow-indigo-600/30"
+                                                                : order.status === 'PREPARING' ? "bg-amber-500 text-white shadow-amber-500/30"
+                                                                : "bg-emerald-600 text-white shadow-emerald-600/30"
                                                                 }`}
                                                         >
                                                             {updatingOrders.has(order.id) ? (
-                                                                <RotateCcw className="animate-spin" size={20} />
+                                                                <RotateCcw className="animate-spin" size={24} />
                                                             ) : (
                                                                 <>
-                                                                    {order.status === 'PENDING' && <><Check size={20} strokeWidth={3} /> Accept Order</>}
-                                                                    {order.status === 'ACCEPTED' && <><Flame size={20} /> Start Cooking</>}
-                                                                    {order.status === 'PREPARING' && <><Bell size={20} /> Mark as Ready</>}
-                                                                    {order.status === 'READY' && <><CheckCircle2 size={20} /> Handover to Server</>}
-                                                                    {order.status === 'COMPLETED' && 'Done'}
+                                                                    {order.status === 'PENDING' && <><Check size={24} strokeWidth={4} /> Accept Order</>}
+                                                                    {order.status === 'ACCEPTED' && <><Flame size={24} /> Start Cooking</>}
+                                                                    {order.status === 'PREPARING' && <><Bell size={24} /> Mark as Ready</>}
+                                                                    {order.status === 'READY' && <><CheckCircle2 size={24} /> Push to Settlement</>}
+                                                                    {order.status === 'COMPLETED' && 'Settled'}
                                                                 </>
                                                             )}
                                                         </motion.button>
@@ -1108,9 +1104,9 @@ export default function KravyPOS() {
                                                                 setShowCombineModal(true);
                                                                 setCombineSelection(new Set([order.id]));
                                                             }}
-                                                            className="w-full h-14 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"
+                                                            className="w-full h-14 rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-3 shadow-sm active:scale-95"
                                                         >
-                                                            <Layers size={16} /> Merge & Combine Bill
+                                                            <Layers size={18} /> Merge & Combine Bill
                                                         </button>
                                                     </div>
                                                 </div>
