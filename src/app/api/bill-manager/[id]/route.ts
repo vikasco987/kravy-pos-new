@@ -240,11 +240,11 @@ export async function PUT(
 }
 
 /* ======================================================
-   DELETE → Soft delete bill + snapshot
+   DELETE → Soft delete bill OR order
 ====================================================== */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const effectiveId = await getEffectiveClerkId();
@@ -252,9 +252,9 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await params;
+    const { id } = await context.params;
 
-    // Find the bill first to verify ownership and check if it's held
+    // 1. Try finding in BillManager
     const bill = await prisma.billManager.findFirst({
       where: {
         id,
@@ -262,26 +262,42 @@ export async function DELETE(
       },
     });
 
-    if (!bill) {
-      return NextResponse.json({ error: "Bill not found" }, { status: 404 });
+    if (bill) {
+      await prisma.billManager.update({
+        where: { id },
+        data: { 
+          isDeleted: true,
+          deletedAt: new Date(),
+          deletedSnapshot: JSON.parse(JSON.stringify(bill))
+        }
+      });
+      return NextResponse.json({ success: true, type: "bill" });
     }
 
-    // Perform soft delete as requested by the user
-    await prisma.billManager.update({
-      where: { id },
-      data: { 
-        isDeleted: true,
-        deletedAt: new Date(),
-        // Store a snapshot for audit purposes if needed
-        deletedSnapshot: JSON.parse(JSON.stringify(bill))
+    // 2. Try finding in Order (for QR orders)
+    const order = await prisma.order.findFirst({
+      where: {
+        id,
+        clerkUserId: effectiveId,
       }
     });
 
-    return NextResponse.json({ success: true, deleted: true });
+    if (order) {
+      await prisma.order.update({
+        where: { id },
+        data: { 
+          isDeleted: true,
+          updatedAt: new Date()
+        }
+      });
+      return NextResponse.json({ success: true, type: "order" });
+    }
+
+    return NextResponse.json({ error: "Record not found" }, { status: 404 });
   } catch (err) {
-    console.error("DELETE BILL ERROR:", err);
+    console.error("DELETE ERROR:", err);
     return NextResponse.json(
-      { error: "Failed to delete bill permanently" },
+      { error: "Failed to delete record" },
       { status: 500 }
     );
   }

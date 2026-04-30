@@ -14,7 +14,7 @@ export async function POST(
 
     const { id } = await context.params;
 
-    // 🔎 Find deleted bill
+    // 1. Try finding in BillManager
     const bill = await prisma.billManager.findFirst({
       where: {
         id,
@@ -23,24 +23,42 @@ export async function POST(
       },
     });
 
-    if (!bill) {
-      return NextResponse.json(
-        { error: "Deleted bill not found" },
-        { status: 404 }
-      );
+    if (bill) {
+      await prisma.billManager.update({
+        where: { id },
+        data: {
+          isDeleted: false,
+          deletedAt: null,
+          deletedSnapshot: null,
+        },
+      });
+      return NextResponse.json({ success: true, type: "bill" });
     }
 
-    // ♻️ RESTORE BILL
-    await prisma.billManager.update({
-      where: { id },
-      data: {
-        isDeleted: false,
-        deletedAt: null,
-        deletedSnapshot: null,
-      },
+    // 2. Try finding in Order
+    const order = await prisma.order.findFirst({
+      where: {
+        id,
+        clerkUserId: effectiveId,
+        isDeleted: true,
+      }
     });
 
-    return NextResponse.json({ success: true });
+    if (order) {
+      await prisma.order.update({
+        where: { id },
+        data: {
+          isDeleted: false,
+          updatedAt: new Date()
+        }
+      });
+      return NextResponse.json({ success: true, type: "order" });
+    }
+
+    return NextResponse.json(
+      { error: "Deleted record not found" },
+      { status: 404 }
+    );
   } catch (err) {
     console.error("RESTORE BILL ERROR:", err);
     return NextResponse.json(
