@@ -2178,14 +2178,14 @@ export default function KravyPOS() {
                                         const targetO = printOrder || activeOrderForSelected;
                                         const targetT = printTable || selectedTable;
                                         if (!targetO || !targetT) return null;
-                                        const { sub, gst, total } = calculateOrderTotals(targetO.items, isTaxEnabled, globalRate, perProductEnabled);
+                                        const { subtotal, gst, total } = calculateOrderTotals(targetO.items, isTaxEnabled, globalRate, perProductEnabled);
 
                                         return getReceiptJSX(
                                             previewMode,
                                             business,
                                             targetO,
                                             targetT,
-                                            sub,
+                                            subtotal,
                                             isTaxEnabled,
                                             globalRate,
                                             gst,
@@ -2298,11 +2298,11 @@ export default function KravyPOS() {
                         const targetO = printOrder || activeOrderForSelected;
                         const targetT = printTable || selectedTable;
                         if (!targetO || !targetT) return null;
-                        const { sub, gst, total } = calculateOrderTotals(targetO.items, isTaxEnabled, globalRate, perProductEnabled);
+                        const { subtotal, gst, total } = calculateOrderTotals(targetO.items, isTaxEnabled, globalRate, perProductEnabled);
                         const predictedBalance = (payMethod.toLowerCase() === "wallet" && selectedParty) 
                             ? (selectedParty.walletBalance - total) 
                             : selectedParty?.walletBalance;
-                        return getReceiptJSX("BILL", business, targetO, targetT, sub, isTaxEnabled, globalRate, gst, total, payMethod, qrUrl, predictedBalance);
+                        return getReceiptJSX("BILL", business, targetO, targetT, subtotal, isTaxEnabled, globalRate, gst, total, payMethod, qrUrl, predictedBalance);
                     })()}
                 </div>
                 <div ref={kotReceiptRef} style={{ width: '100%' }}>
@@ -2310,8 +2310,8 @@ export default function KravyPOS() {
                         const targetO = printOrder || activeOrderForSelected;
                         const targetT = printTable || selectedTable;
                         if (!targetO || !targetT) return null;
-                        const { sub, gst, total } = calculateOrderTotals(targetO.items, isTaxEnabled, globalRate, perProductEnabled);
-                        return getReceiptJSX("KOT", business, targetO, targetT, sub, isTaxEnabled, globalRate, gst, total, payMethod, qrUrl);
+                        const { subtotal, gst, total } = calculateOrderTotals(targetO.items, isTaxEnabled, globalRate, perProductEnabled);
+                        return getReceiptJSX("KOT", business, targetO, targetT, subtotal, isTaxEnabled, globalRate, gst, total, payMethod, qrUrl);
                     })()}
                 </div>
             </div>
