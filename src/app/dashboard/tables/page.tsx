@@ -100,7 +100,10 @@ export default function TablesPage() {
       });
       if (!res.ok) throw new Error(await res.text());
       const t: TableRecord = await res.json();
-      setTables((prev) => [...prev, t]);
+      setTables((prev) => {
+        if (prev.some(table => table.id === t.id)) return prev;
+        return [...prev, t];
+      });
       setNewName("");
       kravy.success();
       toast.success(`Table "${t.name}" created!`);
