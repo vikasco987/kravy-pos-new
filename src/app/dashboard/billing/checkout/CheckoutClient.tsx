@@ -130,7 +130,7 @@ const MenuItemCard = ({ m, items, addToCart, reduceFromCart }: {
         </div>
         <p className={`text-[11px] md:text-xs font-bold leading-snug line-clamp-2 transition-colors
           ${inCart ? "text-[var(--kravy-brand)]" : "text-[var(--kravy-text-primary)] group-hover:text-[var(--kravy-brand)]"}`}>
-          {m.name.replace(/\s?\((V|NV)\)/gi, "").trim()}
+          {m.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
         </p>
         <div className="flex items-center justify-between gap-1">
           <p className="text-xs md:text-sm font-black text-emerald-500 whitespace-nowrap">
