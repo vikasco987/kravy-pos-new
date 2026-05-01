@@ -1335,8 +1335,8 @@ function PublicMenu() {
                                         >
                                           {/* Item Details (Left) */}
                                           <div className="flex-1 min-w-0">
-                                              <div className={`w-[15px] h-[15px] border-[1.5px] rounded-sm flex items-center justify-center mb-1.5 ${item.isVeg && !item.name.includes("(NV)") ? "border-green-600" : (item.isEgg || item.name.includes("(E)")) ? "border-amber-500" : "border-red-600"}`}>
-                                                  <div className={`w-[7px] h-[7px] rounded-full ${item.isVeg && !item.name.includes("(NV)") ? "bg-green-600" : (item.isEgg || item.name.includes("(E)")) ? "bg-amber-500" : "bg-red-600"}`} />
+                                              <div className={`w-[15px] h-[15px] border-[1.5px] rounded-sm flex items-center justify-center mb-1.5 ${item.isVeg && !item.name.includes("(NV)") && !item.name.toLowerCase().includes("egg") ? "border-green-600" : (item.isEgg || item.name.toLowerCase().includes("egg") || item.name.includes("(E)")) ? "border-amber-500" : "border-red-600"}`}>
+                                                  <div className={`w-[7px] h-[7px] rounded-full ${item.isVeg && !item.name.includes("(NV)") && !item.name.toLowerCase().includes("egg") ? "bg-green-600" : (item.isEgg || item.name.toLowerCase().includes("egg") || item.name.includes("(E)")) ? "bg-amber-500" : "bg-red-600"}`} />
                                               </div>
                                               
                                               <div className="mb-1">
