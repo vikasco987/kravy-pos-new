@@ -371,6 +371,8 @@ export default function StoreItemPage() {
         clerkId: userId ?? null,
         imageUrl: mapping.imageUrl ? String(row[mapping.imageUrl] || "").trim() || null : null,
         isActive: true,
+        isVeg: !/\b(nv|egg|chicken|mutton|fish|meat|pork|beef|non-veg|nonveg)\b/i.test(name) && !name.includes("(NV)"),
+        isEgg: /\b(egg)\b/i.test(name),
         zones: mapping.zones ? String(row[mapping.zones] || "").split(",").map(z => z.trim().toUpperCase()).filter(Boolean) : [],
       });
 

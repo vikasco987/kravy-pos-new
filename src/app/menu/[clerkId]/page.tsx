@@ -1335,13 +1335,13 @@ function PublicMenu() {
                                         >
                                           {/* Item Details (Left) */}
                                           <div className="flex-1 min-w-0">
-                                              <div className={`w-[15px] h-[15px] border-[1.5px] rounded-sm flex items-center justify-center mb-1.5 ${item.isVeg ? "border-green-600" : item.isEgg ? "border-amber-500" : "border-red-600"}`}>
-                                                  <div className={`w-[7px] h-[7px] rounded-full ${item.isVeg ? "bg-green-600" : item.isEgg ? "bg-amber-500" : "bg-red-600"}`} />
+                                              <div className={`w-[15px] h-[15px] border-[1.5px] rounded-sm flex items-center justify-center mb-1.5 ${item.isVeg && !item.name.includes("(NV)") ? "border-green-600" : (item.isEgg || item.name.includes("(E)")) ? "border-amber-500" : "border-red-600"}`}>
+                                                  <div className={`w-[7px] h-[7px] rounded-full ${item.isVeg && !item.name.includes("(NV)") ? "bg-green-600" : (item.isEgg || item.name.includes("(E)")) ? "bg-amber-500" : "bg-red-600"}`} />
                                               </div>
                                               
                                               <div className="mb-1">
                                                 <h3 className="text-[1.05rem] font-[800] text-gray-800 leading-tight mb-0.5 flex items-center gap-1.5">
-                                                    {(activeLang === "hi" && item.hiName ? item.hiName : item.name).replace(/\s?\((V|NV|R|E)\)/gi, "").trim()}
+                                                    {(activeLang === "hi" && item.hiName ? item.hiName : item.name).replace(/\s?\((V|NV)\)/gi, "").trim()}
                                                 </h3>
                                               </div>
 
