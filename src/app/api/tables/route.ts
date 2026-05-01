@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         const table = await prisma.table.create({
             data: {
                 name: name.trim(),
-                zone: zone || "Default",
+                zone: (zone || "Default").trim().toUpperCase(),
                 clerkUserId: effectiveId,
             },
         });
@@ -73,7 +73,7 @@ export async function PUT(req: NextRequest) {
             where: { id, clerkUserId: effectiveId },
             data: {
                 name: name ?? undefined,
-                zone: zone ?? undefined,
+                zone: zone ? zone.trim().toUpperCase() : undefined,
             },
         });
 

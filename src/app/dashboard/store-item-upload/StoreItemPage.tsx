@@ -371,7 +371,7 @@ export default function StoreItemPage() {
         clerkId: userId ?? null,
         imageUrl: mapping.imageUrl ? String(row[mapping.imageUrl] || "").trim() || null : null,
         isActive: true,
-        zones: mapping.zones ? String(row[mapping.zones] || "").split(",").map(z => z.trim()).filter(Boolean) : [],
+        zones: mapping.zones ? String(row[mapping.zones] || "").split(",").map(z => z.trim().toUpperCase()).filter(Boolean) : [],
       });
 
       if (i % Math.max(1, Math.floor(total / 20)) === 0) {

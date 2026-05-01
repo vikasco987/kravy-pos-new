@@ -173,7 +173,7 @@ export async function POST(req: Request) {
 
             // Zone handling
             const zoneRaw = colMap.zones !== -1 ? String(row[colMap.zones] || "").trim() : "";
-            const zones = zoneRaw ? zoneRaw.split(",").map(z => z.trim()).filter(Boolean) : [];
+            const zones = zoneRaw ? zoneRaw.split(",").map(z => z.trim().toUpperCase()).filter(Boolean) : [];
 
             await prisma.item.create({
               data: {

@@ -44,16 +44,12 @@ export async function GET(
                 // Construct a robust OR filter for items in this zone + global items
                 const zoneFilters: any[] = [
                     { zones: { has: zone } },
-                    { zones: { isEmpty: true } }
+                    { zones: { has: zone.toUpperCase() } },
+                    { zones: { has: zone.toLowerCase() } },
+                    { zones: { has: zone.charAt(0).toUpperCase() + zone.slice(1).toLowerCase() } }, // Capitalized
+                    { zones: { isEmpty: true } },
+                    { zones: null }
                 ];
-
-                // If the zone is "Default" (case-insensitive check), be extra inclusive
-                if (zone.toLowerCase() === "default") {
-                    zoneFilters.push({ zones: { has: "Default" } });
-                    zoneFilters.push({ zones: { has: "default" } });
-                    // Also include items where the zones field might be null/missing in MongoDB
-                    zoneFilters.push({ zones: null });
-                }
 
                 query.OR = zoneFilters;
             }
