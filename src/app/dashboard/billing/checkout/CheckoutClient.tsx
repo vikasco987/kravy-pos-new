@@ -33,6 +33,8 @@ type MenuItem = {
   hsnCode?: string;
   taxStatus?: string;
   zones?: string[];
+  isVeg?: boolean;
+  isEgg?: boolean;
 };
 
 type BillItem = {
@@ -123,9 +125,12 @@ const MenuItemCard = ({ m, items, addToCart, reduceFromCart }: {
       </div>
 
       <div className="p-2.5 md:p-3 flex flex-col gap-1.5 flex-shrink-0">
+        <div className={`w-[14px] h-[14px] border-[1.5px] rounded-sm flex items-center justify-center ${m.isVeg && !m.name.includes("(NV)") && !m.name.toLowerCase().includes("egg") ? "border-green-600" : (m.isEgg || m.name.toLowerCase().includes("egg") || m.name.includes("(E)")) ? "border-amber-500" : "border-red-600"}`}>
+            <div className={`w-[6px] h-[6px] rounded-full ${m.isVeg && !m.name.includes("(NV)") && !m.name.toLowerCase().includes("egg") ? "bg-green-600" : (m.isEgg || m.name.toLowerCase().includes("egg") || m.name.includes("(E)")) ? "bg-amber-500" : "bg-red-600"}`} />
+        </div>
         <p className={`text-[11px] md:text-xs font-bold leading-snug line-clamp-2 transition-colors
           ${inCart ? "text-[var(--kravy-brand)]" : "text-[var(--kravy-text-primary)] group-hover:text-[var(--kravy-brand)]"}`}>
-          {m.name}
+          {m.name.replace(/\s?\((V|NV)\)/gi, "").trim()}
         </p>
         <div className="flex items-center justify-between gap-1">
           <p className="text-xs md:text-sm font-black text-emerald-500 whitespace-nowrap">
