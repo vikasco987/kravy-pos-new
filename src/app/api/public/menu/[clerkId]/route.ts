@@ -31,29 +31,31 @@ export async function GET(
                 where: {
                     clerkUserId: clerkId,
                     OR: [
-                        { id: tableId.length === 24 ? tableId : undefined }, // Check if it looks like a Mongo ID
+                        { id: tableId.length === 24 ? tableId : undefined },
+                        { id: tableId },
                         { name: tableId }
                     ].filter(Boolean) as any
                 }
             });
 
-            if (table && table.zone) {
-                const zone = table.zone.toUpperCase();
-                console.log(`[PUBLIC_MENU] Table Zone: ${zone}`);
+            if (table) {
+                const zone = table.zone ? table.zone.toUpperCase() : "DEFAULT";
+                console.log(`[PUBLIC_MENU] Table: ${table.name}, Zone: ${zone}`);
                 
-                // If the table is "DEFAULT", we show ALL items by default, 
-                // but we let the user filter in the UI if they want.
-                // For other zones (like AC), we restrict.
+                // If NOT Default, we filter items to show only this zone + global items
                 if (zone !== "DEFAULT") {
-                    const zoneFilters: any[] = [
+                    query.OR = [
                         { zones: { has: zone } },
                         { zones: { has: zone.toLowerCase() } },
                         { zones: { has: zone.charAt(0).toUpperCase() + zone.slice(1).toLowerCase() } },
                         { zones: { isEmpty: true } },
+                        { zones: { equals: [] } },
                         { zones: null }
                     ];
-                    query.OR = zoneFilters;
                 }
+                // If Default, we don't add OR filter so it shows everything (requested behavior)
+            } else {
+                console.warn(`[PUBLIC_MENU] Table not found for ID/Name: ${tableId}`);
             }
         }
 
