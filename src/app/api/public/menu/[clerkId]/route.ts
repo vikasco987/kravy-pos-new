@@ -49,8 +49,7 @@ export async function GET(
                         { zones: { has: zone.toLowerCase() } },
                         { zones: { has: zone.charAt(0).toUpperCase() + zone.slice(1).toLowerCase() } },
                         { zones: { isEmpty: true } },
-                        { zones: { equals: [] } },
-                        { zones: null }
+                        { zones: { equals: [] } }
                     ];
                 }
                 // If Default, we don't add OR filter so it shows everything (requested behavior)
