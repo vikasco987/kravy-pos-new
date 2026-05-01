@@ -76,10 +76,12 @@ export async function POST(req: NextRequest) {
 
         // Resolve table name to real table ID
         let realTableId = null;
+        let tableRecord = null;
+
         if (tableId) {
             const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(tableId);
             
-            const tableRecord = await prisma.table.findFirst({
+            tableRecord = await prisma.table.findFirst({
                 where: {
                     OR: [
                         ...(isValidObjectId ? [{ id: tableId }] : []),
@@ -108,7 +110,8 @@ export async function POST(req: NextRequest) {
                 paymentMode: paymentMethod || "UPI / QR",
                 customerAddress,
                 notes: body.notes || null, // ✅ NEW
-                preferences: body.preferences || null // ✅ NEW
+                preferences: body.preferences || null, // ✅ NEW
+                zoneName: tableRecord?.zone || null // ✅ Multi-zone support
             },
             include: {
                 table: true,

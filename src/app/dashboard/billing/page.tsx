@@ -36,6 +36,7 @@ type BillManager = {
   isOrder?: boolean;
   orderStatus?: string;
   tokenNumber?: number | null;
+  zoneName?: string | null;
 };
 
 // --- Sub-components (Screenshot UI Style) ---
@@ -282,7 +283,35 @@ export default function BillingPage() {
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <HeaderBtn icon={<Settings2 size={16} />} label="Columns" onClick={() => setShowColPicker(!showColPicker)} />
-          <HeaderBtn icon={<FileText size={16} />} label="Export Excel" color="#10B981" onClick={async () => { /* Export */ }} />
+          <HeaderBtn icon={<FileText size={16} />} label="Export Excel" color="#10B981" onClick={async () => {
+             try {
+                const XLSX = await import("xlsx");
+                const exportData = filteredBills.map((b, idx) => ({
+                   "S.No": idx + 1,
+                   "Date": new Date(b.createdAt).toLocaleDateString('en-IN'),
+                   "Time": new Date(b.createdAt).toLocaleTimeString('en-IN'),
+                   "Bill Number": b.billNumber,
+                   "Type": (b.tableName || "POS") === "POS" ? "Counter" : "Dine-in",
+                   "Table": b.tableName === "POS" ? "Counter" : b.tableName,
+                   "Zone": b.zoneName || "Default",
+                   "Customer": b.customerName || "Walk-in",
+                   "Phone": b.customerPhone || "—",
+                   "Subtotal": b.subtotal || b.total,
+                   "GST": b.tax || 0,
+                   "Total": b.total,
+                   "Payment Mode": b.paymentMode,
+                   "Status": b.paymentStatus
+                }));
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Bills");
+                XLSX.writeFile(wb, `Kravy_Bills_${new Date().toISOString().split('T')[0]}.xlsx`);
+                toast.success("Excel Exported!");
+             } catch (e) {
+                toast.error("Export failed");
+                console.error(e);
+             }
+          }} />
           <Link href="/dashboard/billing/deleted"><HeaderBtn icon={<Trash2 size={16} />} label="Deleted Bills" /></Link>
           <Link href="/dashboard/billing/checkout">
             <button style={{ padding: "12px 24px", borderRadius: "16px", border: "none", background: "#8B5CF6", color: "white", fontSize: "0.85rem", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", boxShadow: "0 10px 25px rgba(139, 92, 246, 0.3)" }}>

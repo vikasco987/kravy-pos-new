@@ -215,6 +215,7 @@ export async function PUT(req: Request) {
         imageUrl: item.imageUrl ?? null,
         image: item.imageUrl ?? null,
         isActive: item.isActive ?? true,
+        zones: Array.isArray(item.zones) ? item.zones : [],
 
         // 🔐 ROLE RULE
         clerkId: isAdmin

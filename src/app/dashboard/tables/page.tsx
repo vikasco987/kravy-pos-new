@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import QRCode from "react-qr-code";
 import {
   QrCode, Plus, Trash2, Download, Copy, Eye,
-  Table as TableIcon, Search, RefreshCw, X
+  Table as TableIcon, Search, RefreshCw, X, Edit, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { kravy } from "@/lib/sounds";
@@ -14,6 +14,7 @@ import { kravy } from "@/lib/sounds";
 interface TableRecord {
   id: string;
   name: string;
+  zone: string;
   qrUrl?: string;
 }
 
@@ -22,23 +23,58 @@ export default function TablesPage() {
   const [tables, setTables] = useState<TableRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState("");
-  const [search, setSearch] = useState("");
+  const [newZone, setNewZone] = useState("Default");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [previewTable, setPreviewTable] = useState<TableRecord | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [multiZoneEnabled, setMultiZoneEnabled] = useState(false);
+  const [editingTable, setEditingTable] = useState<TableRecord | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editZone, setEditZone] = useState("");
+  const [search, setSearch] = useState("");
 
   const getBase = () => (typeof window !== "undefined" ? window.location.origin : "");
 
   const generateTableUrl = (id: string, name: string) =>
     `${getBase()}/menu/${user?.id}?tableId=${encodeURIComponent(id)}&tableName=${encodeURIComponent(name)}`;
 
+  const [availableZones, setAvailableZones] = useState<string[]>(["Default"]);
+
   const fetchTables = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${getBase()}/api/tables`);
-      if (!res.ok) throw new Error("could not load");
-      const data: TableRecord[] = await res.json();
+      const [tableRes, profileRes, itemsRes] = await Promise.all([
+        fetch(`${getBase()}/api/tables`),
+        fetch(`${getBase()}/api/profile`),
+        fetch(`${getBase()}/api/menu/items`)
+      ]);
+      
+      if (!tableRes.ok) throw new Error("could not load tables");
+      const data: TableRecord[] = await tableRes.json();
       setTables(data);
+
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        setMultiZoneEnabled(profile.multiZoneMenuEnabled);
+      }
+
+      // Extract unique zones from tables AND items
+      const tableZones = data.map(t => t.zone).filter(Boolean);
+      let itemZones: string[] = [];
+      if (itemsRes.ok) {
+        const itemsData = await itemsRes.json();
+        if (Array.isArray(itemsData)) {
+          itemsData.forEach(item => {
+            if (Array.isArray(item.zones)) {
+              itemZones.push(...item.zones);
+            }
+          });
+        }
+      }
+      
+      const allUniqueZones = Array.from(new Set([...tableZones, ...itemZones, "Default", "AC", "Non AC"]));
+      setAvailableZones(allUniqueZones.sort());
+
     } catch (e) {
       console.error(e);
       kravy.error();
@@ -54,7 +90,7 @@ export default function TablesPage() {
       const res = await fetch(`/api/tables`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName.trim() }),
+        body: JSON.stringify({ name: newName.trim(), zone: newZone }),
       });
       if (!res.ok) throw new Error(await res.text());
       const t: TableRecord = await res.json();
@@ -66,6 +102,27 @@ export default function TablesPage() {
       console.error(err);
       kravy.error();
       toast.error("Failed to create table");
+    }
+  };
+
+  const updateTable = async () => {
+    if (!editingTable || !editName.trim()) return;
+    try {
+      const res = await fetch(`/api/tables`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editingTable.id, name: editName.trim(), zone: editZone }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const updated = await res.json();
+      setTables(prev => prev.map(t => t.id === updated.id ? updated : t));
+      setEditingTable(null);
+      kravy.success();
+      toast.success("Table updated");
+    } catch (err) {
+      console.error(err);
+      kravy.error();
+      toast.error("Update failed");
     }
   };
 
@@ -209,35 +266,61 @@ export default function TablesPage() {
           </div>
 
           <div className="p-5">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <TableIcon
-                  size={15}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)]"
-                />
-                <input
-                  type="text"
-                  placeholder="Table name — e.g. T-01, VIP-1, Balcony, Rooftop…"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") createTable(); }}
-                  className="w-full pl-10 pr-4 py-3 bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
-                    text-[var(--kravy-text-primary)] rounded-xl text-sm font-medium outline-none
-                    focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)]
-                    transition-all placeholder:text-[var(--kravy-text-muted)]"
-                />
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <TableIcon
+                    size={15}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)]"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Table name — e.g. T-01, VIP-1, Balcony, Rooftop…"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") createTable(); }}
+                    className="w-full pl-10 pr-4 py-3 bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
+                      text-[var(--kravy-text-primary)] rounded-xl text-sm font-medium outline-none
+                      focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)]
+                      transition-all placeholder:text-[var(--kravy-text-muted)]"
+                  />
+                </div>
+                {multiZoneEnabled && (
+                  <div className="relative w-full sm:w-48">
+                    <Layers
+                      size={15}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)]"
+                    />
+                    <input
+                      type="text"
+                      list="zones-list"
+                      placeholder="Zone (e.g. Rooftop)"
+                      value={newZone}
+                      onChange={(e) => setNewZone(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
+                        text-[var(--kravy-text-primary)] rounded-xl text-sm font-medium outline-none
+                        focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)]
+                        transition-all placeholder:text-[var(--kravy-text-muted)]"
+                    />
+                    <datalist id="zones-list">
+                      {availableZones.map(z => (
+                        <option key={z} value={z} />
+                      ))}
+                    </datalist>
+                  </div>
+                )}
+                <button
+                  onClick={createTable}
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl
+                    bg-[var(--kravy-brand)] text-white font-black text-sm
+                    hover:bg-indigo-700 active:scale-[0.97]
+                    shadow-md shadow-indigo-500/25 transition-all
+                    whitespace-nowrap flex-shrink-0"
+                >
+                  <Plus size={16} />
+                  Add Table
+                </button>
               </div>
-              <button
-                onClick={createTable}
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl
-                  bg-[var(--kravy-brand)] text-white font-black text-sm
-                  hover:bg-indigo-700 active:scale-[0.97]
-                  shadow-md shadow-indigo-500/25 transition-all
-                  whitespace-nowrap flex-shrink-0"
-              >
-                <Plus size={16} />
-                Add Table
-              </button>
             </div>
 
             {/* Quick tips */}
@@ -344,9 +427,16 @@ export default function TablesPage() {
                       {table.name}
                     </h3>
                   </div>
-                  <div className="w-9 h-9 rounded-xl bg-[var(--kravy-brand)]/8 border border-[var(--kravy-brand)]/15
-                    flex items-center justify-center flex-shrink-0">
-                    <QrCode size={16} className="text-[var(--kravy-brand)]" />
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--kravy-brand)]/8 border border-[var(--kravy-brand)]/15
+                      flex items-center justify-center flex-shrink-0">
+                      <QrCode size={16} className="text-[var(--kravy-brand)]" />
+                    </div>
+                    {multiZoneEnabled && table.zone && (
+                      <span className="text-[9px] font-black bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-md uppercase tracking-tighter">
+                        {table.zone}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -401,12 +491,26 @@ export default function TablesPage() {
                     Download
                   </button>
 
-                  {/* Preview */}
+                  {/* Edit */}
                   <button
-                    onClick={() => window.open(generateTableUrl(table.id, table.name), "_blank")}
+                    onClick={() => {
+                      setEditingTable(table);
+                      setEditName(table.name);
+                      setEditZone(table.zone || "Default");
+                    }}
                     className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl
                       bg-[var(--kravy-brand)]/8 border border-[var(--kravy-brand)]/20
                       text-[var(--kravy-brand)] font-black text-xs
+                      hover:bg-[var(--kravy-brand)] hover:text-white transition-all"
+                  >
+                    <Edit size={12} />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => window.open(generateTableUrl(table.id, table.name), "_blank")}
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl
+                      border border-[var(--kravy-border)] bg-[var(--kravy-bg)]
+                      text-[var(--kravy-text-secondary)] font-black text-xs
                       hover:bg-[var(--kravy-brand)] hover:text-white transition-all"
                   >
                     <Eye size={12} />
@@ -457,6 +561,62 @@ export default function TablesPage() {
           </div>
         )}
       </div>
+
+      {/* ══════════════════════════════════════
+          EDIT TABLE MODAL
+      ══════════════════════════════════════ */}
+      {editingTable && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setEditingTable(null)} />
+          <div className="relative w-full max-w-md bg-[var(--kravy-surface)] rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-[var(--kravy-border)] flex items-center justify-between bg-[var(--kravy-bg)]/40">
+              <div className="flex items-center gap-2">
+                <Edit size={16} className="text-[var(--kravy-brand)]" />
+                <span className="text-sm font-black text-[var(--kravy-text-primary)]">Edit Table</span>
+              </div>
+              <button onClick={() => setEditingTable(null)} className="text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest px-1">Table Name</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-4 py-3 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] outline-none focus:border-[var(--kravy-brand)] transition-all"
+                />
+              </div>
+              {multiZoneEnabled && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest px-1">Zone</label>
+                  <input
+                    type="text"
+                    value={editZone}
+                    onChange={(e) => setEditZone(e.target.value)}
+                    className="w-full px-4 py-3 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] outline-none focus:border-[var(--kravy-brand)] transition-all"
+                  />
+                </div>
+              )}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setEditingTable(null)}
+                  className="flex-1 py-3.5 rounded-2xl bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] font-black text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={updateTable}
+                  className="flex-1 py-3.5 rounded-2xl bg-[var(--kravy-brand)] text-white font-black text-sm shadow-lg shadow-indigo-500/20"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ══════════════════════════════════════
           DELETE CONFIRM MODAL

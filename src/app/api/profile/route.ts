@@ -28,7 +28,8 @@ export async function GET(request: Request) {
       "taxEnabled:", profile?.taxEnabled,
       "taxRate:", profile?.taxRate,
       "enableKOTWithBill:", profile?.enableKOTWithBill,
-      "enableMenuQRInBill:", profile?.enableMenuQRInBill
+      "enableMenuQRInBill:", profile?.enableMenuQRInBill,
+      "multiZoneMenuEnabled:", profile?.multiZoneMenuEnabled
     );
     return NextResponse.json(profile, { status: 200 });
   } catch (error) {
@@ -119,6 +120,7 @@ export async function POST(request: Request) {
         packagingGstEnabled: body.packagingGstEnabled !== undefined ? body.packagingGstEnabled : undefined,
         packagingGstRate: body.packagingGstRate !== undefined ? body.packagingGstRate : undefined,
         syncQuickPosWithKitchen: body.syncQuickPosWithKitchen !== undefined ? body.syncQuickPosWithKitchen : undefined,
+        multiZoneMenuEnabled: body.multiZoneMenuEnabled !== undefined ? body.multiZoneMenuEnabled : undefined,
       },
 
       create: {
@@ -171,6 +173,7 @@ export async function POST(request: Request) {
         packagingGstEnabled: body.packagingGstEnabled ?? false,
         packagingGstRate: body.packagingGstRate ?? 0,
         syncQuickPosWithKitchen: body.syncQuickPosWithKitchen ?? false,
+        multiZoneMenuEnabled: body.multiZoneMenuEnabled ?? false,
       },
     });
 

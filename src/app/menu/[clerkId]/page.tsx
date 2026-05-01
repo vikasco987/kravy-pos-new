@@ -359,7 +359,7 @@ function PublicMenu() {
         async function fetchData() {
             try {
                 const [menuRes, reviewsRes] = await Promise.all([
-                    fetch(`/api/public/menu/${clerkId}`),
+                    fetch(`/api/public/menu/${clerkId}?tableId=${tableId}`),
                     fetch(`/api/public/reviews?clerkUserId=${clerkId}`)
                 ]);
 

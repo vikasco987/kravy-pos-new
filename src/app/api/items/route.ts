@@ -396,6 +396,7 @@ export async function POST(req: Request) {
         reorderLevel: body.reorderLevel != null ? Number(body.reorderLevel) : 0,
         variants: body.variants || null,
         addonGroupIds: body.addonGroupIds || [],
+        zones: body.zones || [],
       },
       include: {
         category: true,
@@ -442,6 +443,7 @@ export async function PUT(req: Request) {
           taxStatus: body.taxStatus !== undefined ? body.taxStatus : undefined,
           gst: body.gst !== undefined ? (body.gst !== null ? Number(body.gst) : null) : undefined,
           isActive: body.isActive !== undefined ? Boolean(body.isActive) : undefined,
+          zones: body.zones !== undefined ? body.zones : undefined,
         }
       });
       return NextResponse.json({ success: true, count: ids.length });
@@ -502,6 +504,7 @@ export async function PUT(req: Request) {
         variants: body.variants !== undefined ? body.variants : undefined,
         addonGroupIds: body.addonGroupIds !== undefined ? body.addonGroupIds : undefined,
         isActive: body.isActive !== undefined ? Boolean(body.isActive) : undefined,
+        zones: body.zones !== undefined ? body.zones : undefined,
       },
       include: {
         category: true,

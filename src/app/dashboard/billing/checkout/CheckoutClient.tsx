@@ -14,6 +14,7 @@ import { kravy } from "@/lib/sounds";
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 import { useAuthContext } from "@/components/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMemo } from "react";
 
 /* ================= TYPES ================= */
 
@@ -31,6 +32,7 @@ type MenuItem = {
   gst?: number;
   hsnCode?: string;
   taxStatus?: string;
+  zones?: string[];
 };
 
 type BillItem = {
@@ -176,6 +178,68 @@ const QuickAddAddonChip = ({ onClick }: { onClick: () => void }) => {
 /* ================= PAGE ================= */
 
 export default function CheckoutClient() {
+  /* ================= BUSINESS PROFILE ================= */
+  const [business, setBusiness] = useState<{
+    businessName: string;
+    businessTagLine?: string;
+    gstNumber?: string;
+    businessAddress?: string;
+    district?: string;
+    state?: string;
+    pinCode?: string;
+    upi?: string;
+    logoUrl?: string;
+    taxEnabled?: boolean;
+    taxRate?: number;
+    upiQrEnabled?: boolean;
+    fssaiNumber?: string;
+    fssaiEnabled?: boolean;
+    hsnEnabled?: boolean;
+    perProductTaxEnabled?: boolean;
+    collectCustomerName?: boolean;
+    requireCustomerName?: boolean;
+    collectCustomerPhone?: boolean;
+    requireCustomerPhone?: boolean;
+    collectCustomerAddress?: boolean;
+    requireCustomerAddress?: boolean;
+    enableKOTWithBill?: boolean;
+    enableMenuQRInBill?: boolean;
+    enableDeliveryCharges?: boolean;
+    deliveryChargeAmount?: number;
+    deliveryGstEnabled?: boolean;
+    deliveryGstRate?: number;
+    enablePackagingCharges?: boolean;
+    packagingChargeAmount?: number;
+    packagingGstEnabled?: boolean;
+    packagingGstRate?: number;
+    lastTokenNumber?: number;
+    userId?: string;
+    syncQuickPosWithKitchen?: boolean;
+    multiZoneMenuEnabled?: boolean;
+  } | null>(null);
+
+  /* ================= CATEGORY + SEARCH ================= */
+  const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [activeZone, setActiveZone] = useState<string>("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryLayout, setCategoryLayout] = useState<'horizontal' | 'vertical'>('horizontal');
+
+  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
+  const [availableZones, setAvailableZones] = useState<string[]>([]);
+  const [addonGroups, setAddonGroups] = useState<any[]>([]);
+
+  // Load layout preference
+  useEffect(() => {
+    const saved = localStorage.getItem('pos_category_layout');
+    if (saved === 'vertical' || saved === 'horizontal') {
+      setCategoryLayout(saved);
+    }
+  }, []);
+
+  // Save layout preference
+  useEffect(() => {
+    localStorage.setItem('pos_category_layout', categoryLayout);
+  }, [categoryLayout]);
   const receiptRef = useRef<HTMLDivElement | null>(null);
   const kotRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
@@ -366,6 +430,13 @@ export default function CheckoutClient() {
     fetchMenu();
   }, []);
 
+  // Compute available zones only from items that have them (to hide empty zones)
+  useEffect(() => {
+    const itemZones = menuItems.flatMap(i => i.zones || []).filter(Boolean);
+    const uniqueZones = Array.from(new Set(itemZones));
+    setAvailableZones(uniqueZones.sort());
+  }, [menuItems]);
+
   useEffect(() => {
     if (!resumeBillId) return;
     async function loadHeldBill() {
@@ -407,26 +478,7 @@ export default function CheckoutClient() {
     loadHeldBill();
   }, [resumeBillId]);
 
-  /* ================= CATEGORY + SEARCH ================= */
-  const [activeCategory, setActiveCategory] = useState<string>("All");
-  const [search, setSearch] = useState("");
-  const [categoryLayout, setCategoryLayout] = useState<'horizontal' | 'vertical'>('horizontal');
 
-  // Load layout preference
-  useEffect(() => {
-    const saved = localStorage.getItem('pos_category_layout');
-    if (saved === 'vertical' || saved === 'horizontal') {
-      setCategoryLayout(saved);
-    }
-  }, []);
-
-  // Save layout preference
-  useEffect(() => {
-    localStorage.setItem('pos_category_layout', categoryLayout);
-  }, [categoryLayout]);
-
-  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
-  const [addonGroups, setAddonGroups] = useState<any[]>([]);
   
   useEffect(() => {
     async function fetchCats() {
@@ -458,14 +510,41 @@ export default function CheckoutClient() {
     fetchAddonGroups();
   }, []);
 
-  const categories = Array.from(new Set([
-    ...categoriesList.map(c => c.name),
-    ...menuItems.map((i) => i.category?.name || "Others")
-  ])).filter(Boolean);
+  // Only show categories that have items in them (respecting zone filter)
+  const categories = useMemo(() => {
+    // 1. Get items that match the current zone filter
+    const itemsInZone = menuItems.filter(i => {
+      if (activeZone === "All") return true;
+      const hasSelectedZone = i.zones?.includes(activeZone);
+      const isGlobal = !i.zones || i.zones.length === 0;
+      return hasSelectedZone || isGlobal;
+    });
 
-  const filteredMenuItems = menuItems
-    .filter((i) => activeCategory === "All" ? true : i.category?.name === activeCategory)
-    .filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));
+    // 2. Extract unique categories from those items
+    const catNames = itemsInZone.map(i => i.category?.name || "Others");
+    return Array.from(new Set(catNames)).filter(Boolean).sort();
+  }, [menuItems, activeZone]);
+
+  const filteredMenuItems = useMemo(() => {
+    return menuItems
+      .filter((i) => activeCategory === "All" ? true : i.category?.name === activeCategory)
+      .filter((i) => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .filter((i) => {
+        // 1. Zone filter from manual selector
+        if (activeZone !== "All") {
+          const hasSelectedZone = i.zones?.includes(activeZone);
+          const isGlobal = !i.zones || i.zones.length === 0;
+          if (!hasSelectedZone && !isGlobal) return false;
+        }
+
+        // 2. Auto-filter if a table is selected (legacy support for QR sync)
+        if (!business?.multiZoneMenuEnabled || !selectedTable || ["POS", "TAKEAWAY", "DELIVERY"].includes(selectedTable)) return true;
+        const tableObj = tables.find(t => t.name === selectedTable);
+        const zone = tableObj?.zone || "Default";
+        // If item has no zones, it's global. Otherwise, it must match the table's zone.
+        return !i.zones || i.zones.length === 0 || i.zones.includes(zone);
+      });
+  }, [menuItems, activeCategory, searchQuery, business, selectedTable, tables, activeZone]);
 
   /* ================= CART ================= */
   function addToCart(item: MenuItem) {
@@ -610,44 +689,7 @@ export default function CheckoutClient() {
     setItems((s) => s.filter((i) => i.id !== id)); 
   };
 
-  /* ================= BUSINESS PROFILE ================= */
-  const [business, setBusiness] = useState<{
-    businessName: string;
-    businessTagLine?: string;
-    gstNumber?: string;
-    businessAddress?: string;
-    district?: string;
-    state?: string;
-    pinCode?: string;
-    upi?: string;
-    logoUrl?: string;
-    taxEnabled?: boolean;
-    taxRate?: number;
-    upiQrEnabled?: boolean;
-    fssaiNumber?: string;
-    fssaiEnabled?: boolean;
-    hsnEnabled?: boolean;
-    perProductTaxEnabled?: boolean;
-    collectCustomerName?: boolean;
-    requireCustomerName?: boolean;
-    collectCustomerPhone?: boolean;
-    requireCustomerPhone?: boolean;
-    collectCustomerAddress?: boolean;
-    requireCustomerAddress?: boolean;
-    enableKOTWithBill?: boolean;
-    enableMenuQRInBill?: boolean;
-    enableDeliveryCharges?: boolean;
-    deliveryChargeAmount?: number;
-    deliveryGstEnabled?: boolean;
-    deliveryGstRate?: number;
-    enablePackagingCharges?: boolean;
-    packagingChargeAmount?: number;
-    packagingGstEnabled?: boolean;
-    packagingGstRate?: number;
-    lastTokenNumber?: number;
-    userId?: string;
-    syncQuickPosWithKitchen?: boolean;
-  } | null>(null);
+
 
   console.log("DEBUG POS RENDER - business.enableKOTWithBill:", business?.enableKOTWithBill);
 
@@ -692,6 +734,7 @@ export default function CheckoutClient() {
             lastTokenNumber: data.lastTokenNumber ?? 0,
             userId: data.userId,
             syncQuickPosWithKitchen: data.syncQuickPosWithKitchen ?? false,
+            multiZoneMenuEnabled: data.multiZoneMenuEnabled ?? false,
           });
           console.log("DEBUG POS API RESPONSE - enableKOTWithBill:", data.enableKOTWithBill);
           console.log("DEBUG POS API FULL DATA:", data);
@@ -1009,6 +1052,7 @@ export default function CheckoutClient() {
         auditNote: orderNotes, // Fallback for schema compatibility
         isKotPrinted: isKotPrinted === true,
         tableName: selectedTable,
+        zoneName: selectedTable !== "POS" ? tables.find(t => t.name === selectedTable)?.zone : null,
         buyerGSTIN: buyerGSTIN || null,
         placeOfSupply: placeOfSupply || null,
         discountAmount: discountAmt,
@@ -1409,9 +1453,39 @@ export default function CheckoutClient() {
                   <span className="hidden sm:inline tracking-widest">{categoryLayout === 'horizontal' ? 'SIDEBAR' : 'CHIPS'}</span>
                 </button>
                 {business && (
-                  <div className="hidden sm:flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-lg">
+                  <div className="hidden lg:flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-lg shrink-0">
                     <Layers size={12} className="text-indigo-500" />
-                    <span className="text-[10px] font-black text-indigo-700 uppercase tracking-tighter">Tokens Today: {business.lastTokenNumber || 0}</span>
+                    <span className="text-[10px] font-black text-indigo-700 uppercase tracking-tighter whitespace-nowrap">Tokens: {business.lastTokenNumber || 0}</span>
+                  </div>
+                )}
+
+                {/* Compact Zone Dropdown */}
+                {business?.multiZoneMenuEnabled && availableZones.length > 0 && (
+                  <div className="relative group/zone ml-1">
+                    <button className="h-8 px-3 rounded-lg border border-[var(--kravy-border)] bg-white hover:border-indigo-500 transition-all flex items-center gap-2 shadow-sm">
+                      <Layers size={12} className="text-indigo-500" />
+                      <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tight truncate max-w-[80px]">
+                        {activeZone === "All" ? "Global" : activeZone}
+                      </span>
+                      <ChevronDown size={10} className="text-indigo-400" />
+                    </button>
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-[var(--kravy-border)] rounded-xl shadow-2xl p-1 z-50 opacity-0 invisible group-hover/zone:opacity-100 group-hover/zone:visible transition-all">
+                       <button
+                         onClick={() => { kravy.click(); setActiveZone("All"); }}
+                         className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all mb-0.5 last:mb-0 ${activeZone === "All" ? "bg-indigo-600 text-white" : "hover:bg-indigo-50 text-slate-600"}`}
+                       >
+                         All Items (Global)
+                       </button>
+                       {availableZones.map(zone => (
+                         <button
+                           key={zone}
+                           onClick={() => { kravy.click(); setActiveZone(zone); }}
+                           className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all mb-0.5 last:mb-0 ${activeZone === zone ? "bg-indigo-600 text-white" : "hover:bg-indigo-50 text-slate-600"}`}
+                         >
+                           {zone}
+                         </button>
+                       ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1423,8 +1497,8 @@ export default function CheckoutClient() {
                   <input
                     type="text"
                     placeholder="Search menu…"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)]
                       h-8 pl-8 pr-3 rounded-lg text-xs outline-none
                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500
@@ -1560,7 +1634,7 @@ export default function CheckoutClient() {
               </div>
             ) : (
               <div className="min-h-0 flex-1 overflow-y-auto px-4 md:px-5 py-4 scrollbar-hide">
-                {activeCategory === "All" && !search ? (
+                {activeCategory === "All" && !searchQuery ? (
                   categories.map(catName => {
                     const catItems = menuItems.filter(i => (i.category?.name || "Others") === catName);
                     if (catItems.length === 0) return null;
@@ -1655,7 +1729,7 @@ export default function CheckoutClient() {
                       {filteredMenuItems.map((m) => (
                         <MenuItemCard key={m.id} m={m} items={items} addToCart={addToCart} reduceFromCart={reduceFromCart} />
                       ))}
-                      {!search && activeCategory !== "All" && (() => {
+                      {!searchQuery && activeCategory !== "All" && (() => {
                         const fallbackCat = categoriesList.find(c => c.name.toLowerCase() === activeCategory.toLowerCase()) || { id: "", name: activeCategory };
                         if (canEdit) return <QuickAddCard cat={fallbackCat} onClick={() => setQuickAddCat(fallbackCat)} />;
                         return null;

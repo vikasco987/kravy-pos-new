@@ -21,6 +21,7 @@ type InventoryItem = {
   taxStatus?: string;
   gst?: number;
   hsnCode?: string;
+  zones: string[];
 };
 
 export default function InventoryPage() {
@@ -50,6 +51,7 @@ export default function InventoryPage() {
     taxStatus: "Without Tax",
     gst: null as number | null,
     hsnCode: "",
+    zones: [] as string[],
   });
 
   const [taxEnabled, setTaxEnabled] = useState(true);
@@ -122,6 +124,7 @@ export default function InventoryPage() {
       taxStatus: item.taxStatus || "Without Tax",
       gst: item.gst ?? null,
       hsnCode: item.hsnCode || "",
+      zones: item.zones || [],
     });
     setIsModalOpen(true);
   };
@@ -225,7 +228,7 @@ export default function InventoryPage() {
             onClick={() => {
               setEditingItem(null);
               setFormData({
-                name: "", categoryId: "", currentStock: 0, reorderLevel: 0, openingStock: 0, unit: "pcs", price: 0, sellingPrice: 0, barcode: "", taxStatus: "Without Tax", gst: null, hsnCode: ""
+                name: "", categoryId: "", currentStock: 0, reorderLevel: 0, openingStock: 0, unit: "pcs", price: 0, sellingPrice: 0, barcode: "", taxStatus: "Without Tax", gst: null, hsnCode: "", zones: []
               });
               setIsModalOpen(true);
             }}
@@ -386,7 +389,18 @@ export default function InventoryPage() {
                           </div>
                           <div>
                             <div className="text-sm font-bold text-[var(--kravy-text-primary)] leading-tight">{item.name}</div>
-                            <div className="text-[10px] font-bold text-[var(--kravy-text-faint)] mt-0.5">ID: {item.id.slice(-8).toUpperCase()} · {item.unit}</div>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                               <div className="text-[10px] font-bold text-[var(--kravy-text-faint)]">ID: {item.id.slice(-8).toUpperCase()} · {item.unit}</div>
+                               {item.zones && item.zones.length > 0 && (
+                                 <div className="flex gap-1 ml-2">
+                                   {item.zones.map(z => (
+                                     <span key={z} className="text-[8px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-md font-black uppercase tracking-tighter">
+                                       {z}
+                                     </span>
+                                   ))}
+                                 </div>
+                               )}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -636,7 +650,26 @@ export default function InventoryPage() {
                     </div>
                   </div>
                 )}
-
+                {/* Zone Settings */}
+                <div className="space-y-4 pt-4 border-t border-[var(--kravy-border)]">
+                  <div className="flex items-center gap-2 mb-2">
+                     <Layers size={14} className="text-emerald-600" />
+                     <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Zone Visibility</h4>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest px-1">Active Zones (Comma separated)</label>
+                    <input
+                      type="text"
+                      className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl px-4 py-3 text-sm font-bold text-[var(--kravy-text-primary)] outline-none focus:border-[var(--kravy-brand)] transition-all shadow-inner shadow-black/5"
+                      placeholder="e.g. Default, Rooftop, Poolside"
+                      value={formData.zones.join(", ")}
+                      onChange={(e) => setFormData({...formData, zones: e.target.value.split(",").map(z => z.trim()).filter(z => z !== "")})}
+                    />
+                    <p className="text-[9px] text-[var(--kravy-text-muted)] font-medium px-1">
+                      Leave empty to show in all zones if Multi-Zone is disabled, or just "Default" for main menu.
+                    </p>
+                  </div>
+                </div>
                 <div className="mt-8 flex gap-3">
                   <button
                     type="button"

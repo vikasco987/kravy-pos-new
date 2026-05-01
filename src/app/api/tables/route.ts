@@ -24,13 +24,14 @@ export async function POST(req: NextRequest) {
         const effectiveId = await getEffectiveClerkId();
         if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-        const { name } = await req.json();
+        const { name, zone } = await req.json();
         if (!name) return NextResponse.json({ error: "Table name is required" }, { status: 400 });
 
         // create the record first so we know the generated id
         const table = await prisma.table.create({
             data: {
                 name,
+                zone: zone || "Default",
                 clerkUserId: effectiveId,
             },
         });
@@ -49,6 +50,31 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error("CREATE_TABLE_ERROR:", error);
         return NextResponse.json({ error: "Failed to create table" }, { status: 500 });
+    }
+}
+
+export async function PUT(req: NextRequest) {
+    try {
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const body = await req.json();
+        const { id, name, zone } = body;
+
+        if (!id) return NextResponse.json({ error: "Table ID required" }, { status: 400 });
+
+        const updated = await prisma.table.update({
+            where: { id, clerkUserId: effectiveId },
+            data: {
+                name: name ?? undefined,
+                zone: zone ?? undefined,
+            },
+        });
+
+        return NextResponse.json(updated);
+    } catch (error) {
+        console.error("UPDATE_TABLE_ERROR:", error);
+        return NextResponse.json({ error: "Failed to update table" }, { status: 500 });
     }
 }
 

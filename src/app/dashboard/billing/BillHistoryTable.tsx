@@ -302,6 +302,17 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
                       }}>
                         {(bill.tableName || "POS") === "POS" ? "Counter" : bill.tableName}
                       </span>
+                      {bill.zoneName && (
+                        <span style={{ 
+                          marginLeft: "6px",
+                          padding: "4px 8px", borderRadius: "6px", 
+                          background: "rgba(168, 85, 247, 0.1)", 
+                          color: "#A855F7", 
+                          fontSize: "0.6rem", fontWeight: 900, textTransform: "uppercase", border: "1px solid currentColor"
+                        }}>
+                          {bill.zoneName}
+                        </span>
+                      )}
                     </td>
                   )}
                   {visibleCols.items && (

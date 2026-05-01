@@ -72,6 +72,7 @@ export async function POST(req: Request) {
         image: item.imageUrl ?? null,
         categoryId: item.categoryId ?? null,
         isActive: item.isActive ?? true,
+        zones: item.zones || [],
       })),
     });
 

@@ -28,6 +28,7 @@ type StoreItem = {
   clerkId: string | null;
   imageUrl: string | null;
   isActive: boolean;
+  zones?: string[];
 };
 
 /* =============================
@@ -64,9 +65,15 @@ export default function StoreItemPage() {
     price: "",
     category: "",
     description: "",
-    imageUrl: ""
+    imageUrl: "",
+    zones: ""
   });
   const [showErrorsOnly, setShowErrorsOnly] = useState(false);
+  const [multiZoneMenuEnabled, setMultiZoneMenuEnabled] = useState(false);
+  const [availableZones, setAvailableZones] = useState<string[]>(["Default"]);
+  const [bulkZone, setBulkZone] = useState("");
+  const [showZoneDropdown, setShowZoneDropdown] = useState(false);
+  const [zoneSearch, setZoneSearch] = useState("");
 
 
   /* =============================
@@ -82,6 +89,26 @@ export default function StoreItemPage() {
       .then(r => r.json())
       .then(data => Array.isArray(data) ? setClerks(data) : setClerks([]))
       .catch(() => setClerks([]));
+
+    fetch("/api/profile")
+      .then(r => r.json())
+      .then(data => {
+        console.log("DEBUG: StoreItemPage profile data:", data);
+        if (data && data.multiZoneMenuEnabled !== undefined) {
+          setMultiZoneMenuEnabled(!!data.multiZoneMenuEnabled);
+        }
+      })
+      .catch((err) => console.error("DEBUG: StoreItemPage profile fetch error:", err));
+
+    fetch("/api/tables")
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const zones = Array.from(new Set(data.map((t: any) => t.zone || "Default")));
+          setAvailableZones(zones);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   /* =============================
@@ -97,14 +124,18 @@ export default function StoreItemPage() {
   /* =============================
      DUPLICATE & VALIDATION
   ============================= */
-  const duplicateNames = useMemo(() => {
-    const names = items.map(i => i.name.trim().toLowerCase());
-    return names.filter((n, i) => names.indexOf(n) !== i);
+  const duplicateKeys = useMemo(() => {
+    const keys = items.map(i => {
+      const name = i.name.trim().toLowerCase();
+      const zones = (i.zones || []).slice().sort().join(",");
+      return `${name}|${zones}`;
+    });
+    return keys.filter((k, i) => keys.indexOf(k) !== i);
   }, [items]);
 
   const hasErrors =
     items.some(i => !i.name.trim() || i.price == null || i.price <= 0) ||
-    duplicateNames.length > 0;
+    duplicateKeys.length > 0;
 
   /* =============================
      FETCH EXISTING ITEMS
@@ -131,6 +162,7 @@ export default function StoreItemPage() {
           clerkId: i.clerkId ?? null,
           imageUrl: i.imageUrl ?? null,
           isActive: i.isActive ?? true,
+          zones: i.zones || [],
         }))
       );
 
@@ -216,7 +248,8 @@ export default function StoreItemPage() {
                 price: headers.find(h => /price|selling|mrp|cost|rate|मूल्य|कीमत/i.test(String(h))) || "",
                 category: headers.find(h => /category|group|type|श्रेणी|वर्ग/i.test(String(h))) || "",
                 description: headers.find(h => /desc|info|detail|composition|विवरण/i.test(String(h))) || "",
-                imageUrl: headers.find(h => /image|url|photo|img|link|फोटो/i.test(String(h))) || ""
+                imageUrl: headers.find(h => /image|url|photo|img|link|फोटो/i.test(String(h))) || "",
+                zones: headers.find(h => /zone|area|section|location|स्थान/i.test(String(h))) || ""
               });
               setMappingOpen(true);
             }
@@ -267,7 +300,8 @@ export default function StoreItemPage() {
           price: headers.find(h => /price|selling|mrp|cost|rate|मूल्य|कीमत/i.test(String(h))) || "",
           category: headers.find(h => /category|group|type|श्रेणी|वर्ग/i.test(String(h))) || "",
           description: headers.find(h => /desc|info|detail|composition|विवरण/i.test(String(h))) || "",
-          imageUrl: headers.find(h => /image|url|photo|img|link|फोटो/i.test(String(h))) || ""
+          imageUrl: headers.find(h => /image|url|photo|img|link|फोटो/i.test(String(h))) || "",
+          zones: headers.find(h => /zone|area|section|location|स्थान/i.test(String(h))) || ""
         });
         setMappingOpen(true);
         setUploadProgress(100);
@@ -337,6 +371,7 @@ export default function StoreItemPage() {
         clerkId: userId ?? null,
         imageUrl: mapping.imageUrl ? String(row[mapping.imageUrl] || "").trim() || null : null,
         isActive: true,
+        zones: mapping.zones ? String(row[mapping.zones] || "").split(",").map(z => z.trim()).filter(Boolean) : [],
       });
 
       if (i % Math.max(1, Math.floor(total / 20)) === 0) {
@@ -401,6 +436,7 @@ export default function StoreItemPage() {
         clerkId: userId ?? null,
         imageUrl: null,
         isActive: true,
+        zones: [],
       },
     ]);
 
@@ -503,7 +539,10 @@ export default function StoreItemPage() {
   const isRowInvalid = (item: StoreItem) => {
     const nameMissing = !item.name.trim();
     const priceInvalid = item.price == null || item.price <= 0;
-    const isDuplicate = item.name.trim() && duplicateNames.includes(item.name.trim().toLowerCase());
+    const name = item.name.trim().toLowerCase();
+    const zones = (item.zones || []).slice().sort().join(",");
+    const key = `${name}|${zones}`;
+    const isDuplicate = item.name.trim() && duplicateKeys.includes(key);
     
     return nameMissing || priceInvalid || !!isDuplicate;
   };
@@ -581,7 +620,7 @@ export default function StoreItemPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { label: "Total Rows", value: items.length, icon: "📋", color: "text-indigo-600", bg: "bg-indigo-50" },
-          { label: "Duplicates", value: duplicateNames.length, icon: "⚠️", color: duplicateNames.length > 0 ? "text-rose-600" : "text-emerald-600", bg: duplicateNames.length > 0 ? "bg-rose-50" : "bg-emerald-50" },
+          { label: "Duplicates", value: duplicateKeys.length, icon: "⚠️", color: duplicateKeys.length > 0 ? "text-rose-600" : "text-emerald-600", bg: duplicateKeys.length > 0 ? "bg-rose-50" : "bg-emerald-50" },
           { label: "Mode", value: mode.toUpperCase(), icon: "⚡", color: "text-amber-600", bg: "bg-amber-50" },
           { label: "Status", value: hasErrors ? "Invalid" : "Ready", icon: "💎", color: hasErrors ? "text-rose-600" : "text-emerald-600", bg: hasErrors ? "bg-rose-50" : "bg-emerald-50" }
         ].map((stat) => (
@@ -674,8 +713,45 @@ export default function StoreItemPage() {
                 <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Dish Image</th>
                 <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Dish Context</th>
                 <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Composition</th>
-                <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Selling Price</th>
+                 <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Selling Price</th>
                 <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Category</th>
+                {multiZoneMenuEnabled && (
+                  <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left relative">
+                    Zones
+                    <div className="mt-2 relative">
+                      <input
+                        className="w-full bg-white border border-gray-100 rounded-2xl px-4 py-3 text-xs font-bold text-gray-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-gray-300 shadow-sm"
+                        placeholder="Assign to all..."
+                        value={zoneSearch}
+                        onFocus={() => setShowZoneDropdown(true)}
+                        onChange={(e) => setZoneSearch(e.target.value)}
+                      />
+                      {showZoneDropdown && (
+                        <div className="absolute z-[100] mt-2 right-0 w-[240px] max-h-72 overflow-auto bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] p-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                          {availableZones.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).map((z) => (
+                            <div
+                              key={z}
+                              className="px-5 py-4 text-xs font-bold text-gray-700 dark:text-slate-300 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all mb-1 last:mb-0"
+                              onClick={() => {
+                                setBulkZone(z);
+                                setItems((prev) =>
+                                  prev.map((it) => ({
+                                    ...it,
+                                    zones: [z],
+                                  }))
+                                );
+                                setShowZoneDropdown(false);
+                                setZoneSearch(z);
+                              }}
+                            >
+                              <span className="text-[13px] font-black">{z}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </th>
+                )}
                 <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left relative">
                   Global Clerk
                   <div className="mt-2 relative">
@@ -687,7 +763,7 @@ export default function StoreItemPage() {
                       onChange={(e) => setClerkSearch(e.target.value)}
                     />
                     {showClerkDropdown && (
-                      <div className="absolute z-50 mt-2 w-full max-h-72 overflow-auto bg-white border border-gray-100 rounded-3xl shadow-2xl p-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                      <div className="absolute z-[100] mt-2 right-0 w-[240px] max-h-72 overflow-auto bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] p-2 animate-in fade-in slide-in-from-top-4 duration-500">
                         {filteredClerks.map((c) => (
                           <div
                             key={c.clerkId}
@@ -894,6 +970,31 @@ export default function StoreItemPage() {
                     </div>
                   </td>
 
+                  {/* ZONES INPUT */}
+                  {multiZoneMenuEnabled && (
+                    <td className="py-8 px-8 align-top">
+                      <div className="flex flex-col gap-2">
+                        <input
+                          className="bg-gray-50/50 dark:bg-slate-800/50 border-2 border-gray-50 dark:border-slate-800 rounded-2xl px-4 py-3 w-full text-xs font-bold text-gray-800 dark:text-white outline-none focus:border-indigo-400 transition-all shadow-sm placeholder:text-gray-300"
+                          placeholder="e.g. Default, Rooftop"
+                          list="item-zones-list"
+                          value={item.zones?.join(", ") || ""}
+                          onChange={(e) => {
+                            const val = e.target.value.split(",").map(z => z.trim()).filter(Boolean);
+                            setItems(prev =>
+                              prev.map((it) =>
+                                it === item ? { ...it, zones: val } : it
+                              )
+                            )
+                          }}
+                        />
+                        <datalist id="item-zones-list">
+                          {availableZones.map(z => <option key={z} value={z} />)}
+                        </datalist>
+                      </div>
+                    </td>
+                  )}
+
                   {/* CLERK SELECT */}
                   <td className="py-8 px-8 align-top">
                     <div className="relative">
@@ -1037,7 +1138,8 @@ export default function StoreItemPage() {
                   { key: "price", label: "Selling Price", icon: "💰", required: true },
                   { key: "category", label: "Category", icon: "🏷️", required: false },
                   { key: "imageUrl", label: "Image URL", icon: "🖼️", required: false },
-                ].map((field) => (
+                  ...(multiZoneMenuEnabled ? [{ key: "zones", label: "Zones (Comma Separated)", icon: "📍", required: false }] : [])
+                ].map((field: any) => (
                   <div key={field.key} className="flex items-center gap-6 p-4 rounded-3xl bg-gray-50/50 border border-gray-100/50">
                     <div className="w-14 h-14 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-2xl shadow-sm">
                       {field.icon}

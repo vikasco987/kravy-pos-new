@@ -13,7 +13,8 @@ import {
   Lock,
   Eye,
   Settings,
-  Sparkles
+  Sparkles,
+  Layers,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -178,6 +179,33 @@ export default function AdvancedSettingsPage() {
             }`}
           >
             {profile.syncQuickPosWithKitchen ? 'Enabled' : 'Disabled'}
+          </button>
+        </div>
+
+        {/* Multi-Zone Menu Control */}
+        <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] p-8 shadow-xl flex flex-col md:flex-row items-center gap-8 group">
+          <div className="w-20 h-20 rounded-3xl bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+            <Layers size={40} />
+          </div>
+          <div className="flex-1 space-y-2">
+            <h3 className="text-xl font-black text-[var(--kravy-text-primary)] flex items-center gap-2">
+              Multi-Zone Menu
+              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">New</span>
+            </h3>
+            <p className="text-sm text-[var(--kravy-text-muted)] font-medium max-w-md leading-relaxed">
+              Define multiple zones (e.g., Rooftop, Bar, Poolside) and show different menu items based on where the customer is sitting.
+            </p>
+          </div>
+          <button
+            onClick={() => handleSave({ multiZoneMenuEnabled: !profile.multiZoneMenuEnabled })}
+            disabled={saving}
+            className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
+              profile.multiZoneMenuEnabled 
+                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' 
+                : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+            }`}
+          >
+            {profile.multiZoneMenuEnabled ? 'Enabled' : 'Disabled'}
           </button>
         </div>
 
