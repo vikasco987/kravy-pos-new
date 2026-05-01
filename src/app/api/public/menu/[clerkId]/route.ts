@@ -21,52 +21,44 @@ export async function GET(
             where: { userId: clerkId },
         });
 
-        const query: any = {
-            clerkId: clerkId,
-        };
-
-        // Multi-zone filtering logic
-        if (profile?.multiZoneMenuEnabled && tableId && tableId !== "Counter") {
-            const table = await prisma.table.findFirst({
-                where: {
-                    clerkUserId: clerkId,
-                    OR: [
-                        { id: tableId.length === 24 ? tableId : undefined },
-                        { id: tableId },
-                        { name: tableId }
-                    ].filter(Boolean) as any
-                }
-            });
-
-            if (table) {
-                const zone = table.zone ? table.zone.toUpperCase() : "DEFAULT";
-                console.log(`[PUBLIC_MENU] Table: ${table.name}, Zone: ${zone}`);
-                
-                // If NOT Default, we filter items to show only this zone + global items
-                if (zone !== "DEFAULT") {
-                    query.OR = [
-                        { zones: { has: zone } },
-                        { zones: { has: zone.toLowerCase() } },
-                        { zones: { has: zone.charAt(0).toUpperCase() + zone.slice(1).toLowerCase() } },
-                        { zones: { isEmpty: true } },
-                        { zones: { equals: [] } }
-                    ];
-                }
-                // If Default, we don't add OR filter so it shows everything (requested behavior)
-            } else {
-                console.warn(`[PUBLIC_MENU] Table not found for ID/Name: ${tableId}`);
+        const table = tableId ? await prisma.table.findFirst({
+            where: {
+                clerkUserId: clerkId,
+                OR: [
+                    { id: tableId.length === 24 ? tableId : undefined },
+                    { id: tableId },
+                    { name: tableId }
+                ].filter(Boolean) as any
             }
-        }
+        }) : null;
 
-        const items = await prisma.item.findMany({
-            where: query,
-            orderBy: {
-                name: "asc",
-            },
+        const tableZone = table?.zone?.toUpperCase() || "DEFAULT";
+        console.log(`[PUBLIC_MENU] Table: ${table?.name || "None"}, Zone: ${tableZone}`);
+
+        const rawItems = await prisma.item.findMany({
+            where: { clerkId: clerkId },
+            orderBy: { name: "asc" },
             include: {
                 category: true,
-                addonGroups: true, // Fetch global customizations
+                addonGroups: true,
             },
+        });
+
+        console.log(`[PUBLIC_MENU] Raw items fetched: ${rawItems.length}`);
+
+        // Filter in memory for reliability
+        const items = rawItems.filter(item => {
+            // If table is DEFAULT or Counter, show everything
+            if (tableZone === "DEFAULT" || tableId === "Counter" || !profile?.multiZoneMenuEnabled) {
+                return true;
+            }
+
+            // Otherwise, show items that match this zone OR are global (no zones assigned)
+            const itemZones = (item.zones || []).map(z => z.toUpperCase());
+            const isGlobal = itemZones.length === 0;
+            const matchesZone = itemZones.includes(tableZone);
+
+            return isGlobal || matchesZone;
         });
 
         const allAddonGroups = await prisma.addonGroup.findMany({
@@ -85,7 +77,7 @@ export async function GET(
             };
         });
 
-        console.log(`[PUBLIC_MENU] Found ${items.length} items for ${clerkId}`);
+        console.log(`[PUBLIC_MENU] Final filtered items: ${itemsWithAddons.length}`);
 
         const combos = await prisma.combo.findMany({
             where: { clerkUserId: clerkId, isActive: true },
