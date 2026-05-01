@@ -1340,8 +1340,8 @@ function PublicMenu() {
                                               </div>
                                               
                                               <div className="mb-1">
-                                                <h3 className="text-[1.05rem] font-[800] text-gray-800 leading-tight mb-0.5">
-                                                    {activeLang === "hi" && item.hiName ? item.hiName : item.name}
+                                                <h3 className="text-[1.05rem] font-[800] text-gray-800 leading-tight mb-0.5 flex items-center gap-1.5">
+                                                    {(activeLang === "hi" && item.hiName ? item.hiName : item.name).replace(/\s?\((V|NV|R|E)\)/gi, "").trim()}
                                                 </h3>
                                               </div>
 
