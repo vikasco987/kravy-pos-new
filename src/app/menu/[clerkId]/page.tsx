@@ -1343,6 +1343,13 @@ function PublicMenu() {
                                                 <h3 className="text-[1.05rem] font-[800] text-gray-800 leading-tight mb-0.5 flex items-center gap-1.5">
                                                     {(activeLang === "hi" && item.hiName ? item.hiName : item.name).replace(/\s?\((V|NV|R)\)/gi, "").trim()}
                                                 </h3>
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <div className="flex items-center gap-0.5 bg-green-700 text-white px-1.5 py-0.5 rounded text-[0.65rem] font-bold">
+                                                        <span>{item.rating || (4 + Math.random()).toFixed(1)}</span>
+                                                        <Star size={10} fill="white" />
+                                                    </div>
+                                                    <span className="text-[0.65rem] text-gray-400 font-bold">(20+)</span>
+                                                </div>
                                               </div>
 
                                               <div className="flex items-center gap-2 mb-2">
