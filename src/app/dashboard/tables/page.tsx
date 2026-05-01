@@ -84,8 +84,14 @@ export default function TablesPage() {
     }
   };
 
+  const [isCreating, setIsCreating] = useState(false);
   const createTable = async () => {
-    if (!newName.trim()) { kravy.error(); toast.error("Please enter a table name"); return; }
+    if (!newName.trim() || isCreating) { 
+      if (!newName.trim()) { kravy.error(); toast.error("Please enter a table name"); }
+      return; 
+    }
+    
+    setIsCreating(true);
     try {
       const res = await fetch(`/api/tables`, {
         method: "POST",
@@ -102,6 +108,8 @@ export default function TablesPage() {
       console.error(err);
       kravy.error();
       toast.error("Failed to create table");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -311,14 +319,15 @@ export default function TablesPage() {
                 )}
                 <button
                   onClick={createTable}
+                  disabled={isCreating}
                   className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl
                     bg-[var(--kravy-brand)] text-white font-black text-sm
                     hover:bg-indigo-700 active:scale-[0.97]
                     shadow-md shadow-indigo-500/25 transition-all
-                    whitespace-nowrap flex-shrink-0"
+                    whitespace-nowrap flex-shrink-0 disabled:opacity-50"
                 >
-                  <Plus size={16} />
-                  Add Table
+                  {isCreating ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />}
+                  {isCreating ? "Creating..." : "Add Table"}
                 </button>
               </div>
             </div>

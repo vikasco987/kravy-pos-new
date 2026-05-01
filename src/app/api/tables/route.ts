@@ -27,10 +27,16 @@ export async function POST(req: NextRequest) {
         const { name, zone } = await req.json();
         if (!name) return NextResponse.json({ error: "Table name is required" }, { status: 400 });
 
+        // Check if table with same name already exists
+        const existingTable = await prisma.table.findFirst({
+            where: { clerkUserId: effectiveId, name: name.trim() }
+        });
+        if (existingTable) return NextResponse.json(existingTable);
+
         // create the record first so we know the generated id
         const table = await prisma.table.create({
             data: {
-                name,
+                name: name.trim(),
                 zone: zone || "Default",
                 clerkUserId: effectiveId,
             },

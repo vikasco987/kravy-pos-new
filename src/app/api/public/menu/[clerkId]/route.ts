@@ -38,12 +38,24 @@ export async function GET(
             });
 
             if (table && table.zone) {
-                console.log(`[PUBLIC_MENU] Filtering for Zone: ${table.zone}`);
-                query.OR = [
-                    { zones: { has: table.zone } },
-                    // Items with no zones are visible in ALL zones (Global Items)
+                const zone = table.zone;
+                console.log(`[PUBLIC_MENU] Filtering for Zone: ${zone}`);
+                
+                // Construct a robust OR filter for items in this zone + global items
+                const zoneFilters: any[] = [
+                    { zones: { has: zone } },
                     { zones: { isEmpty: true } }
                 ];
+
+                // If the zone is "Default" (case-insensitive check), be extra inclusive
+                if (zone.toLowerCase() === "default") {
+                    zoneFilters.push({ zones: { has: "Default" } });
+                    zoneFilters.push({ zones: { has: "default" } });
+                    // Also include items where the zones field might be null/missing in MongoDB
+                    zoneFilters.push({ zones: null });
+                }
+
+                query.OR = zoneFilters;
             }
         }
 
