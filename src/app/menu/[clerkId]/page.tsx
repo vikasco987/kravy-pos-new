@@ -76,6 +76,9 @@ type MenuItem = {
     addonGroups?: any[] | null;
     tags?: string[];
     zones?: string[];
+    _count?: {
+        reviews: number;
+    };
 };
 
 /* hide placeholder for missing images */
@@ -1343,17 +1346,17 @@ function PublicMenu() {
                                                 <h3 className="text-[1.05rem] font-[800] text-gray-800 leading-tight mb-0.5 flex items-center gap-1.5">
                                                     {(activeLang === "hi" && item.hiName ? item.hiName : item.name).replace(/\s?\((V|NV|R)\)/gi, "").trim()}
                                                 </h3>
-                                                {item.rating && (
+                                                {item._count && item._count.reviews > 0 && (
                                                     <div className="flex items-center gap-2 mt-1.5">
                                                         <div className="flex items-center gap-1 bg-gradient-to-r from-green-700 to-emerald-600 text-white px-1.5 py-0.5 rounded shadow-sm">
                                                             <span className="text-[0.7rem] font-[900] tracking-tighter">
-                                                                {item.rating.toFixed(1)}
+                                                                {(item.rating || 4.5).toFixed(1)}
                                                             </span>
                                                             <Star size={9} fill="white" className="mb-0.5" />
                                                         </div>
                                                         <div className="w-[3px] h-[3px] rounded-full bg-gray-300" />
                                                         <span className="text-[0.7rem] text-gray-400 font-[800] lowercase tracking-tight">
-                                                            {20 + (item.name.length * 3)} reviews
+                                                            {item._count.reviews} {item._count.reviews === 1 ? 'review' : 'reviews'}
                                                         </span>
                                                     </div>
                                                 )}
@@ -2841,16 +2844,20 @@ function PublicMenu() {
                                         </h2>
                                     </div>
 
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="flex items-center gap-0.5">
-                                            {[1,2,3,4,5].map(s => <Star key={s} size={14} className={s <= (selectedMenuItem.rating || 5) ? "text-amber-400" : "text-gray-200"} fill={s <= (selectedMenuItem.rating || 5) ? "currentColor" : "none"} />)}
+                                    {(selectedMenuItem as any)._count?.reviews > 0 && (
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="flex items-center gap-0.5">
+                                                {[1,2,3,4,5].map(s => <Star key={s} size={14} className={s <= (selectedMenuItem.rating || 5) ? "text-amber-400" : "text-gray-200"} fill={s <= (selectedMenuItem.rating || 5) ? "currentColor" : "none"} />)}
+                                            </div>
+                                            <div className="w-[1px] h-3 bg-gray-200" />
+                                            <div className="h-2 w-20 bg-green-100 rounded-full overflow-hidden">
+                                                <div className="h-full bg-green-500 w-[85%] rounded-full" />
+                                            </div>
+                                            <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">
+                                                {(selectedMenuItem as any)._count.reviews} { (selectedMenuItem as any)._count.reviews === 1 ? 'Review' : 'Reviews' }
+                                            </span>
                                         </div>
-                                        <div className="w-[1px] h-3 bg-gray-200" />
-                                        <div className="h-2 w-20 bg-green-100 rounded-full overflow-hidden">
-                                            <div className="h-full bg-green-500 w-[85%] rounded-full" />
-                                        </div>
-                                        <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">Highly Popular</span>
-                                    </div>
+                                    )}
 
                                     {selectedMenuItem.description && (
                                         <div className="space-y-4">

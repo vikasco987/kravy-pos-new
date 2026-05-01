@@ -41,6 +41,9 @@ export async function GET(
             include: {
                 category: true,
                 addonGroups: true,
+                _count: {
+                    select: { reviews: true }
+                }
             },
         });
 
