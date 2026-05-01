@@ -1343,17 +1343,20 @@ function PublicMenu() {
                                                 <h3 className="text-[1.05rem] font-[800] text-gray-800 leading-tight mb-0.5 flex items-center gap-1.5">
                                                     {(activeLang === "hi" && item.hiName ? item.hiName : item.name).replace(/\s?\((V|NV|R)\)/gi, "").trim()}
                                                 </h3>
-                                                <div className="flex items-center gap-2 mt-1.5">
-                                                    <div className="flex items-center gap-1 bg-gradient-to-r from-green-700 to-emerald-600 text-white px-2 py-0.5 rounded shadow-sm">
-                                                        <span className="text-[0.7rem] font-[900] tracking-tighter">
-                                                            {item.rating || (4.2 + (item.name.length % 8) / 10).toFixed(1)}
+                                                {item.rating && (
+                                                    <div className="flex items-center gap-2 mt-1.5">
+                                                        <div className="flex items-center gap-1 bg-gradient-to-r from-green-700 to-emerald-600 text-white px-1.5 py-0.5 rounded shadow-sm">
+                                                            <span className="text-[0.7rem] font-[900] tracking-tighter">
+                                                                {item.rating.toFixed(1)}
+                                                            </span>
+                                                            <Star size={9} fill="white" className="mb-0.5" />
+                                                        </div>
+                                                        <div className="w-[3px] h-[3px] rounded-full bg-gray-300" />
+                                                        <span className="text-[0.7rem] text-gray-400 font-[800] lowercase tracking-tight">
+                                                            {20 + (item.name.length * 3)} reviews
                                                         </span>
-                                                        <Star size={9} fill="white" className="mb-0.5" />
                                                     </div>
-                                                    <span className="text-[0.7rem] text-gray-400 font-[800] lowercase tracking-tight">
-                                                        ({20 + (item.name.length * 3)} reviews)
-                                                    </span>
-                                                </div>
+                                                )}
                                               </div>
 
                                               <div className="flex items-center gap-2 mb-2">
