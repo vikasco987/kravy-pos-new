@@ -38,20 +38,22 @@ export async function GET(
             });
 
             if (table && table.zone) {
-                const zone = table.zone;
-                console.log(`[PUBLIC_MENU] Filtering for Zone: ${zone}`);
+                const zone = table.zone.toUpperCase();
+                console.log(`[PUBLIC_MENU] Table Zone: ${zone}`);
                 
-                // Construct a robust OR filter for items in this zone + global items
-                const zoneFilters: any[] = [
-                    { zones: { has: zone } },
-                    { zones: { has: zone.toUpperCase() } },
-                    { zones: { has: zone.toLowerCase() } },
-                    { zones: { has: zone.charAt(0).toUpperCase() + zone.slice(1).toLowerCase() } }, // Capitalized
-                    { zones: { isEmpty: true } },
-                    { zones: null }
-                ];
-
-                query.OR = zoneFilters;
+                // If the table is "DEFAULT", we show ALL items by default, 
+                // but we let the user filter in the UI if they want.
+                // For other zones (like AC), we restrict.
+                if (zone !== "DEFAULT") {
+                    const zoneFilters: any[] = [
+                        { zones: { has: zone } },
+                        { zones: { has: zone.toLowerCase() } },
+                        { zones: { has: zone.charAt(0).toUpperCase() + zone.slice(1).toLowerCase() } },
+                        { zones: { isEmpty: true } },
+                        { zones: null }
+                    ];
+                    query.OR = zoneFilters;
+                }
             }
         }
 

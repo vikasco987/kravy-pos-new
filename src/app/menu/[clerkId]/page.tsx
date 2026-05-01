@@ -74,6 +74,8 @@ type MenuItem = {
     ico?: string;
     variants?: any[] | null;
     addonGroups?: any[] | null;
+    tags?: string[];
+    zones?: string[];
 };
 
 /* hide placeholder for missing images */
@@ -176,6 +178,7 @@ function PublicMenu() {
     const [orderNote, setOrderNote] = useState("");
     const [showNoteSheet, setShowNoteSheet] = useState(false);
     const [dontSendCutlery, setDontSendCutlery] = useState(false);
+    const [activeZoneFilter, setActiveZoneFilter] = useState("ALL");
 
     // User Data
     const [customerPhone, setCustomerPhone] = useState("");
@@ -449,14 +452,31 @@ function PublicMenu() {
     const categories = categoriesInfo.names;
     const categoryIcons = categoriesInfo.mapping;
 
+    const availableZones = useMemo(() => {
+        const zones = new Set<string>();
+        items.forEach(it => {
+            if (Array.isArray(it.zones)) {
+                it.zones.forEach(z => zones.add(z.toUpperCase()));
+            }
+        });
+        return Array.from(zones).sort();
+    }, [items]);
+
     const filteredItems = useMemo(() => {
         return items.filter(it => {
             const matchVeg = vegOnly ? it.isVeg : true;
             const matchSearch = (it.name.toLowerCase().includes(searchQ.toLowerCase())) ||
                 (it.hiName?.includes(searchQ));
-            return matchVeg && matchSearch;
+            
+            // Zone Filter Logic
+            let matchZone = true;
+            if (activeZoneFilter !== "ALL") {
+                matchZone = Array.isArray(it.zones) && it.zones.some(z => z.toUpperCase() === activeZoneFilter);
+            }
+
+            return matchVeg && matchSearch && matchZone;
         });
-    }, [items, vegOnly, searchQ]);
+    }, [items, vegOnly, searchQ, activeZoneFilter]);
 
     const categorized = useMemo(() => {
         const groups: Record<string, any[]> = {};
@@ -1222,29 +1242,51 @@ function PublicMenu() {
                                 </div>
                             </div>
 
-                            {/* VEG TOGGLE */}
-                            <div className="bg-white px-3.5 py-2.5 flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2.5">
-                                    <div
-                                        onClick={() => setVegOnly(!vegOnly)}
-                                        className={`w-10 h-[22px] rounded-full relative cursor-pointer transition-colors ${vegOnly ? "bg-[#22C55E]" : "bg-[#EBEBEB]"}`}
-                                    >
-                                        <div className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow-md transition-all ${vegOnly ? "left-[19px]" : "left-0.5"}`} />
+                            {/* VEG TOGGLE & ZONE FILTER */}
+                            <div className="bg-white px-3.5 py-2.5 flex flex-col gap-3 mb-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5">
+                                        <div
+                                            onClick={() => setVegOnly(!vegOnly)}
+                                            className={`w-10 h-[22px] rounded-full relative cursor-pointer transition-colors ${vegOnly ? "bg-[#22C55E]" : "bg-[#EBEBEB]"}`}
+                                        >
+                                            <div className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow-md transition-all ${vegOnly ? "left-[19px]" : "left-0.5"}`} />
+                                        </div>
+                                        <span className="text-[0.8rem] font-[700]">Veg Only</span>
                                     </div>
-                                    <span className="text-[0.8rem] font-[700]">Veg Only</span>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-1 text-[0.7rem] font-[700] text-[#696969]">
+                                            <div className="w-[13px] h-[13px] border-[1.5px] border-[#22C55E] flex items-center justify-center rounded-sm">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
+                                            </div> Veg
+                                        </div>
+                                        <div className="flex items-center gap-1 text-[0.7rem] font-[700] text-[#696969]">
+                                            <div className="w-[13px] h-[13px] border-[1.5px] border-[#E23744] flex items-center justify-center rounded-sm">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#E23744]" />
+                                            </div> Non-veg
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-1 text-[0.7rem] font-[700] text-[#696969]">
-                                        <div className="w-[13px] h-[13px] border-[1.5px] border-[#22C55E] flex items-center justify-center rounded-sm">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
-                                        </div> Veg
+
+                                {availableZones.length > 0 && (
+                                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                                        <button
+                                            onClick={() => setActiveZoneFilter("ALL")}
+                                            className={`px-3 py-1.5 rounded-lg text-[0.65rem] font-black uppercase tracking-wider transition-all border ${activeZoneFilter === "ALL" ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100" : "bg-gray-50 border-[#EBEBEB] text-gray-500"}`}
+                                        >
+                                            All Zones
+                                        </button>
+                                        {availableZones.map(zone => (
+                                            <button
+                                                key={zone}
+                                                onClick={() => setActiveZoneFilter(zone)}
+                                                className={`px-3 py-1.5 rounded-lg text-[0.65rem] font-black uppercase tracking-wider transition-all border whitespace-nowrap ${activeZoneFilter === zone ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100" : "bg-gray-50 border-[#EBEBEB] text-gray-500"}`}
+                                            >
+                                                {zone}
+                                            </button>
+                                        ))}
                                     </div>
-                                    <div className="flex items-center gap-1 text-[0.7rem] font-[700] text-[#696969]">
-                                        <div className="w-[13px] h-[13px] border-[1.5px] border-[#E23744] flex items-center justify-center rounded-sm">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[#E23744]" />
-                                        </div> Non-veg
-                                    </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* CAT TABS (STIKY) */}
@@ -1319,6 +1361,11 @@ function PublicMenu() {
                                               <div className="flex flex-wrap gap-2 mb-4">
                                                 {item.isBestseller && <span className="bg-red-50 text-red-600 text-[0.6rem] font-[800] px-2 py-0.5 rounded shadow-sm">NOT ELIGIBLE FOR COUPONS</span>}
                                                 {item.isRecommended && <span className="bg-green-50 text-green-600 text-[0.6rem] font-[800] px-2 py-0.5 rounded shadow-sm">STAY SAFE</span>}
+                                                {item.zones && item.zones.length > 0 && item.zones.map(z => (
+                                                    <span key={z} className="bg-indigo-50 text-indigo-600 text-[0.6rem] font-[900] px-2 py-0.5 rounded shadow-sm uppercase tracking-tighter">
+                                                        📍 {z}
+                                                    </span>
+                                                ))}
                                               </div>
 
                                               {/* Action Area Spacer */}
