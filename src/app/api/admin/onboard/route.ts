@@ -131,7 +131,8 @@ export async function POST(req: Request) {
           price: findCol(/price|selling|mrp|cost|rate|purchase|मूल्य|कीमत/i),
           category: findCol(/category|group|type|श्रेणी|वर्ग/i),
           description: findCol(/desc|info|detail|composition|विवरण/i),
-          imageUrl: findCol(/image|url|photo|img|link|फोटो/i)
+          imageUrl: findCol(/image|url|photo|img|link|फोटो/i),
+          zones: findCol(/zone|area|section|location|स्थान/i)
         };
 
         console.log("ONBOARDING: Column Mapping found:", colMap);
@@ -170,6 +171,10 @@ export async function POST(req: Request) {
 
             const categoryId = categoriesMap.get(categoryName)!;
 
+            // Zone handling
+            const zoneRaw = colMap.zones !== -1 ? String(row[colMap.zones] || "").trim() : "";
+            const zones = zoneRaw ? zoneRaw.split(",").map(z => z.trim()).filter(Boolean) : [];
+
             await prisma.item.create({
               data: {
                 name: itemName,
@@ -180,7 +185,8 @@ export async function POST(req: Request) {
                 categoryId,
                 clerkId,
                 userId: dbUserId,
-                isActive: true
+                isActive: true,
+                zones: zones
               }
             });
             successCount++;
