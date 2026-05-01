@@ -1168,7 +1168,7 @@ function PublicMenu() {
 
                                                 <div className="p-3">
                                                     <div className="flex items-start justify-between mb-1">
-                                                        <h4 className="text-[0.88rem] font-black text-gray-800 truncate flex-1">{combo.name}</h4>
+                                                        <h4 className="text-[0.88rem] font-black text-gray-800 truncate flex-1">{combo.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}</h4>
                                                     </div>
                                                     <div className="flex flex-wrap gap-1 mt-2">
                                                         {combo.selections.slice(0, 3).map((s, idx) => (
@@ -1963,7 +1963,7 @@ function PublicMenu() {
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
                                                 <Sparkles size={16} className="text-indigo-500" />
-                                                <div className="font-[800] text-[0.88rem] text-indigo-700">{combo.name}</div>
+                                                <div className="font-[800] text-[0.88rem] text-indigo-700">{combo.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}</div>
                                             </div>
                                             <button
                                                 onClick={() => {
@@ -1995,7 +1995,7 @@ function PublicMenu() {
                                             <div className={`w-1.5 h-1.5 rounded-full ${vit.isVeg ? "bg-[#22C55E]" : vit.isEgg ? "bg-[#F59E0B]" : "bg-[#E23744]"}`} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="font-[800] text-[0.92rem] text-gray-900 truncate">{vit.name}</div>
+                                            <div className="font-[800] text-[0.92rem] text-gray-900 truncate">{vit.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}</div>
                                             <div className="flex flex-wrap gap-1 mt-1">
                                                 {vit.variants.map((v: any, idx: number) => (
                                                     <span key={idx} className="text-[0.62rem] font-[800] text-gray-400 capitalize whitespace-nowrap">
@@ -2033,7 +2033,7 @@ function PublicMenu() {
                                                     <div className={`w-1.5 h-1.5 rounded-full ${item.isVeg ? "bg-[#22C55E]" : item.isEgg ? "bg-[#F59E0B]" : "bg-[#E23744]"}`} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="font-[800] text-[0.92rem] text-gray-900 truncate">{item.name}</div>
+                                                    <div className="font-[800] text-[0.92rem] text-gray-900 truncate">{item.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}</div>
                                                     <div className="text-[0.65rem] font-black text-gray-400 uppercase tracking-widest mt-0.5">₹{item.sellingPrice || item.price}</div>
                                                 </div>
                                                 <div className="flex items-center bg-[#FFF2F3] border border-[#ffecf0] rounded-xl h-[34px] w-[90px] shadow-sm">
@@ -2097,7 +2097,7 @@ function PublicMenu() {
                                                         </div>
                                                     </div>
                                                 )}
-                                                <div className="text-[0.75rem] font-black text-gray-800 truncate mb-1">{it.name}</div>
+                                                <div className="text-[0.75rem] font-black text-gray-800 truncate mb-1">{it.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}</div>
                                                 <div className="flex items-center justify-between gap-1 mt-2">
                                                     <span className="text-[0.78rem] font-black text-gray-900">₹{it.sellingPrice || it.price}</span>
                                                     <button 
@@ -2335,7 +2335,7 @@ function PublicMenu() {
                                 <div className="space-y-2">
                                     {lastOrderItems.map((item, idx) => (
                                         <div key={idx} className="flex justify-between items-center">
-                                            <span className="text-[0.8rem] font-bold text-[#333]">{item.name} × {item.quantity}</span>
+                                            <span className="text-[0.8rem] font-bold text-[#333]">{item.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()} × {item.quantity}</span>
                                             <span className="text-[0.8rem] text-[#666]">₹{item.total || (item.price * item.quantity)}</span>
                                         </div>
                                     ))}
@@ -2640,7 +2640,9 @@ function PublicMenu() {
                                             </div>
                                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Curating Selections</span>
                                         </div>
-                                        <h3 className="text-2xl font-black text-gray-900 leading-tight mb-2">{customizingItem.name}</h3>
+                                        <h3 className="text-2xl font-black text-gray-900 leading-tight mb-2">
+                                            {(activeLang === "hi" && customizingItem.hiName ? customizingItem.hiName : customizingItem.name).replace(/\s?\((V|NV|R)\)/gi, "").trim()}
+                                        </h3>
                                         <p className="text-[0.78rem] text-gray-500 font-bold leading-relaxed line-clamp-3 opacity-90">{customizingItem.description}</p>
                                     </div>
 
@@ -2835,7 +2837,7 @@ function PublicMenu() {
                                     
                                     <div className="flex items-start justify-between gap-4 mb-4">
                                         <h2 className="text-[1.5rem] font-black text-gray-900 leading-[1.1]">
-                                            {activeLang === "hi" && selectedMenuItem.hiName ? selectedMenuItem.hiName : selectedMenuItem.name}
+                                            {(activeLang === "hi" && selectedMenuItem.hiName ? selectedMenuItem.hiName : selectedMenuItem.name).replace(/\s?\((V|NV|R)\)/gi, "").trim()}
                                         </h2>
                                     </div>
 
