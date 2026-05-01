@@ -1636,7 +1636,7 @@ export default function CheckoutClient() {
               <div className="min-h-0 flex-1 overflow-y-auto px-4 md:px-5 py-4 scrollbar-hide">
                 {activeCategory === "All" && !searchQuery ? (
                   categories.map(catName => {
-                    const catItems = menuItems.filter(i => (i.category?.name || "Others") === catName);
+                    const catItems = filteredMenuItems.filter(i => (i.category?.name || "Others") === catName);
                     if (catItems.length === 0) return null;
                     const catObj = categoriesList.find(c => c.name === catName) || { id: "others", name: catName };
 
