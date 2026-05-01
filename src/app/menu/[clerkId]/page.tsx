@@ -1361,11 +1361,6 @@ function PublicMenu() {
                                               <div className="flex flex-wrap gap-2 mb-4">
                                                 {item.isBestseller && <span className="bg-red-50 text-red-600 text-[0.6rem] font-[800] px-2 py-0.5 rounded shadow-sm">NOT ELIGIBLE FOR COUPONS</span>}
                                                 {item.isRecommended && <span className="bg-green-50 text-green-600 text-[0.6rem] font-[800] px-2 py-0.5 rounded shadow-sm">STAY SAFE</span>}
-                                                {item.zones && item.zones.length > 0 && item.zones.map(z => (
-                                                    <span key={z} className="bg-indigo-50 text-indigo-600 text-[0.6rem] font-[900] px-2 py-0.5 rounded shadow-sm uppercase tracking-tighter">
-                                                        📍 {z}
-                                                    </span>
-                                                ))}
                                               </div>
 
                                               {/* Action Area Spacer */}
