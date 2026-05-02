@@ -134,13 +134,26 @@ export async function PUT(
     const globalGstRate = isTaxEnabled ? (profile?.taxRate ?? 0) : 0;
     const perProductEnabled = profile?.perProductTaxEnabled ?? false;
 
-    // ✅ RECALCULATE EVERYTHING ON SERVER (SECURITY)
+    // ✅ FETCH LATEST PRICES FROM DB (SECURITY)
+    const itemIds = items.map((it: any) => it.id).filter(Boolean);
+    const dbItems = await prisma.item.findMany({
+      where: { 
+        id: { in: itemIds },
+        clerkId: effectiveId 
+      }
+    });
+
     let calcSubtotal = 0;
     let totalTax = 0;
 
     items.forEach((item: any) => {
+      const dbItem = dbItems.find(it => it.id === item.id);
       const qty = Number(item.qty || item.quantity) || 0;
-      const rate = Number(item.rate || item.price) || 0;
+      
+      // Use DB price if available, otherwise fallback to client price
+      const dbPrice = dbItem ? Number(dbItem.sellingPrice ?? dbItem.price) : Number(item.rate || item.price || 0);
+      const rate = dbPrice;
+
       const itemGstRate = (perProductEnabled && item.gst !== undefined && item.gst !== null) 
         ? Number(item.gst) 
         : globalGstRate;
@@ -158,6 +171,9 @@ export async function PUT(
         calcSubtotal += gross;
         totalTax += gst;
       }
+
+      // Update item rate in array
+      item.rate = rate;
     });
 
     const finalSubtotal = Number(calcSubtotal.toFixed(2));

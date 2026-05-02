@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { kravy } from "@/lib/sounds";
 import {
     LayoutDashboard, ChefHat, MapPin, CreditCard,
@@ -150,7 +152,8 @@ const DroppableColumn = ({ children, id, className, isOverStyle }: any) => {
     );
 };
 
-export default function KravyPOS() {
+function KravyPOS() {
+    const router = useRouter();
     const receiptRef = useRef<HTMLDivElement | null>(null);
     const billReceiptRef = useRef<HTMLDivElement | null>(null);
     const kotReceiptRef = useRef<HTMLDivElement | null>(null);
@@ -160,8 +163,10 @@ export default function KravyPOS() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [tablesList, setTablesList] = useState<TableStatus[]>([]);
     const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+    const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
     const [payMethod, setPayMethod] = useState("upi");
     const [tableSearch, setTableSearch] = useState("");
+    const searchParams = useSearchParams();
     const { user: authUser } = useAuthContext();
     const userRole = authUser?.type || null;
     const userPermissions = authUser?.permissions || [];
@@ -174,7 +179,8 @@ export default function KravyPOS() {
     const [business, setBusiness] = useState<any>(null);
     
     const selectedTable = tablesList.find(t => t.id === selectedTableId);
-    const activeOrderForSelected = orders.find(o => o.id === selectedTable?.activeOrderId);
+    const tableOrders = selectedTable ? orders.filter(o => o.table?.id === selectedTable.id && o.status !== "COMPLETED" && !o.isDeleted) : [];
+    const activeOrderForSelected = orders.find(o => o.id === (selectedOrderId || selectedTable?.activeOrderId));
 
     // Dynamic Totals Calculation
     const isTaxEnabled = business?.taxEnabled ?? true;
@@ -208,7 +214,17 @@ export default function KravyPOS() {
     
     useEffect(() => {
         fetchMenu();
-    }, []);
+        fetchData(); // Fetch fresh orders immediately when params change
+        const tableId = searchParams.get("tableId");
+        const orderId = searchParams.get("orderId");
+        if (tableId) {
+            setSelectedTableId(tableId);
+            setActiveTab("dashboard");
+        }
+        if (orderId) {
+            setSelectedOrderId(orderId);
+        }
+    }, [searchParams]);
 
     const fetchMenu = async () => {
         try {
@@ -455,6 +471,75 @@ export default function KravyPOS() {
             },
         })
     );
+
+    const handleUpdateItemQty = async (orderId: string, itemIndex: number, newQty: number) => {
+        if (newQty < 1) return;
+        const order = orders.find(o => o.id === orderId);
+        if (!order) return;
+
+        const newItems = [...order.items];
+        newItems[itemIndex].quantity = newQty;
+
+        // Recalculate total for this order
+        const newTotal = newItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+        const finalTotal = isTaxEnabled ? newTotal + (newTotal * globalRate / 100) : newTotal;
+
+        try {
+            const res = await fetch("/api/orders", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    orderId, 
+                    items: newItems,
+                    total: Number(finalTotal.toFixed(2))
+                })
+            });
+            if (res.ok) {
+                fetchData();
+            }
+        } catch (err) {
+            toast.error("Failed to update quantity");
+        }
+    };
+
+    const handleRemoveItem = async (orderId: string, itemIndex: number) => {
+        const order = orders.find(o => o.id === orderId);
+        if (!order) return;
+
+        if (order.items.length === 1) {
+            if (confirm("This is the last item. Delete the whole order?")) {
+                const res = await fetch("/api/orders", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ orderId, isDeleted: true })
+                });
+                if (res.ok) fetchData();
+            }
+            return;
+        }
+
+        const newItems = order.items.filter((_, idx) => idx !== itemIndex);
+        const newTotal = newItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+        const finalTotal = isTaxEnabled ? newTotal + (newTotal * globalRate / 100) : newTotal;
+
+        try {
+            const res = await fetch("/api/orders", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    orderId, 
+                    items: newItems,
+                    total: Number(finalTotal.toFixed(2))
+                })
+            });
+            if (res.ok) {
+                toast.success("Item removed");
+                fetchData();
+            }
+        } catch (err) {
+            toast.error("Failed to remove item");
+        }
+    };
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -1316,7 +1401,11 @@ export default function KravyPOS() {
                                                 <motion.button
                                                     layout
                                                     key={t.id}
-                                                    onClick={() => { kravy.click(); setSelectedTableId(t.id); }}
+                                                    onClick={() => { 
+                                                        kravy.click(); 
+                                                        setSelectedTableId(t.id); 
+                                                        setSelectedOrderId(null); 
+                                                    }}
                                                     className={`relative group h-24 flex flex-col items-center justify-center gap-2 rounded-2xl transition-all ${isActive ? "z-10" : ""}`}
                                                     whileHover={{ y: -2 }}
                                                     whileTap={{ scale: 0.96 }}
@@ -1432,12 +1521,43 @@ export default function KravyPOS() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <button className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 border border-slate-100 dark:border-slate-800 flex items-center justify-center transition-all"><MoreHorizontal size={18} /></button>
-                                                <button className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 border border-slate-100 dark:border-slate-800 flex items-center justify-center transition-all"><Edit3 size={16} /></button>
+                                                <button 
+                                                    onClick={() => {
+                                                        kravy.click();
+                                                        router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}&returnTo=/dashboard/workflow`);
+                                                    }}
+                                                    className="h-10 px-4 rounded-xl bg-indigo-500 text-white text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-indigo-500/10 hover:scale-105 active:scale-95 transition-all"
+                                                >
+                                                    <Plus size={14} /> New Order
+                                                </button>
                                                 <div className="w-px h-8 bg-slate-100 dark:bg-slate-800 mx-1" />
-                                                <button className="h-10 px-4 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-slate-900/10 hover:scale-105 active:scale-95 transition-all"><Plus size={14} /> Add Item</button>
+                                                <button 
+                                                    onClick={() => {
+                                                        kravy.click();
+                                                        const passOrderId = activeOrderForSelected?.id || selectedTable?.activeOrderId;
+                                                        router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}${passOrderId ? `&orderId=${passOrderId}` : ""}&returnTo=/dashboard/workflow`);
+                                                    }}
+                                                    className="h-10 px-4 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-slate-900/10 hover:scale-105 active:scale-95 transition-all"
+                                                >
+                                                    <Plus size={14} /> Add Item
+                                                </button>
                                             </div>
                                         </div>
+
+                                        {/* Multi-Order Selection (if table has multiple orders) */}
+                                        {selectedTable && tableOrders.length > 1 && (
+                                            <div className="px-6 py-3 border-b border-slate-50 dark:border-slate-800 flex gap-2 overflow-x-auto scrollbar-hide bg-slate-50/30">
+                                                {tableOrders.map(o => (
+                                                    <button 
+                                                        key={o.id}
+                                                        onClick={() => { kravy.click(); setSelectedOrderId(o.id); }}
+                                                        className={`shrink-0 px-4 py-2.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${activeOrderForSelected?.id === o.id ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 shadow-lg shadow-slate-900/10" : "bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-800 hover:border-slate-300"}`}
+                                                    >
+                                                        <User size={12} /> {o.customerName || `Order #${o.id.slice(-4)}`}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
 
                                         {/* Items */}
                                         <div className="flex-1 overflow-y-auto px-6 py-4 scrollbar-hide">
@@ -1469,12 +1589,27 @@ export default function KravyPOS() {
                                                             </div>
                                                             <div className="flex items-center gap-6">
                                                                 <div className="flex items-center gap-3 bg-white border border-slate-100 rounded-xl p-1 shadow-sm">
-                                                                    <button className="w-6 h-6 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors font-bold">−</button>
+                                                                    <button 
+                                                                        onClick={() => handleUpdateItemQty(activeOrderForSelected.id, idx, item.quantity - 1)}
+                                                                        className="w-6 h-6 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors font-bold"
+                                                                    >
+                                                                        −
+                                                                    </button>
                                                                     <span className="w-4 text-center text-xs font-black italic">x{item.quantity}</span>
-                                                                    <button className="w-6 h-6 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors font-bold">+</button>
+                                                                    <button 
+                                                                        onClick={() => handleUpdateItemQty(activeOrderForSelected.id, idx, item.quantity + 1)}
+                                                                        className="w-6 h-6 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors font-bold"
+                                                                    >
+                                                                        +
+                                                                    </button>
                                                                 </div>
                                                                 <span className="w-16 text-right text-sm font-black italic text-slate-900">₹{item.price * item.quantity}</span>
-                                                                <button className="w-8 h-8 rounded-lg flex items-center justify-center text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                                                                <button 
+                                                                    onClick={() => handleRemoveItem(activeOrderForSelected.id, idx)}
+                                                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
                                                             </div>
                                                         </motion.div>
                                                     ))}
@@ -1585,10 +1720,9 @@ export default function KravyPOS() {
                                         <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em]">Click any table to view active orders</p>
                                     </div>
                                 )}
-                            </div>
-                        </motion.div>
-                    )}
-
+                             </div>
+                         </motion.div>
+                     )}
                     {/* ── KITCHEN (KDS) TAB ── */}
                     {activeTab === "kitchen" && (
                         <motion.div
@@ -2555,4 +2689,11 @@ export default function KravyPOS() {
             toast.error("An error occurred");
         }
     }
+}
+export default function WorkflowPage() {
+    return (
+        <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center font-black uppercase tracking-[0.2em] animate-pulse">Loading Workflow...</div>}>
+            <KravyPOS />
+        </Suspense>
+    );
 }

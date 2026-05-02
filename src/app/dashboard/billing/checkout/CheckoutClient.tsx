@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Clock, Trash2, Play, X, Search, ChevronDown, User, Printer,
+  Clock, Trash2, Play, X, Search, ChevronDown, User, Printer, ArrowLeft,
   Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus,
   LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck, Star, Zap
 } from "lucide-react";
@@ -46,6 +46,15 @@ type BillItem = {
   hsnCode?: string;
   taxStatus?: string;
 };
+
+function normalizeMenuItems(data: any[]): MenuItem[] {
+  return (data || []).map((it: any) => {
+    const sPrice = Number(it.sellingPrice);
+    const bPrice = Number(it.price);
+    const finalPrice = !isNaN(sPrice) && it.sellingPrice !== null ? sPrice : !isNaN(bPrice) ? bPrice : 0;
+    return { ...it, price: finalPrice, gst: it.gst, hsnCode: it.hsnCode, taxStatus: it.taxStatus };
+  });
+}
 
 const numberToWords = (num: number): string => {
   const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
@@ -260,6 +269,7 @@ export default function CheckoutClient() {
   const [showPreview, setShowPreview] = useState(false);
   const [lastSavedBillId, setLastSavedBillId] = useState<string | null>(null);
   const { user: authUser } = useAuthContext();
+  const menuCacheKey = `kravy_menu_${business?.userId || authUser?.businessId || authUser?.id || "default"}`;
   const userRole = authUser?.type || null;
   const userPermissions = authUser?.permissions || [];
   
@@ -402,38 +412,79 @@ export default function CheckoutClient() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [menuLoading, setMenuLoading] = useState(true);
 
+  // Consolidated initialization fetch with Caching
   useEffect(() => {
-    async function fetchMenu() {
-      try {
-        const res = await fetch(`/api/menu/items?t=${Date.now()}`, { cache: "no-store" });
-        if (!res.ok) return;
-        const data = await res.json();
-        const mapped = (data || []).map((it: any) => {
-          const sPrice = Number(it.sellingPrice);
-          const bPrice = Number(it.price);
-          const finalPrice = (!isNaN(sPrice) && it.sellingPrice !== null) ? sPrice : (!isNaN(bPrice) ? bPrice : 0);
-          return { ...it, price: finalPrice, gst: it.gst, hsnCode: it.hsnCode, taxStatus: it.taxStatus };
-        });
-        setMenuItems(mapped);
+    async function initPos() {
+      // 1. Try to load from Cache first for instant UI
+      const cachedMenu = localStorage.getItem(menuCacheKey);
+      if (cachedMenu) {
+        try {
+          const parsed = JSON.parse(cachedMenu);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMenuItems(parsed);
+            setMenuLoading(false); // Hide spinner immediately
+          }
+        } catch (e) { console.error("Cache parse error", e); }
+      }
 
-        // Update categoriesList with any missing categories found in menu items
-        setCategoriesList(prev => {
-           const newList = [...prev];
-           mapped.forEach((it: any) => {
-             if (it.category && !newList.find(c => c.id === it.category.id)) {
-               newList.push({ id: it.category.id, name: it.category.name });
-             }
-           });
-           return newList;
-        });
+      try {
+        // 2. Parallel fetch for latest data
+        const [itemsRes, catsRes, addonsRes] = await Promise.all([
+          fetch(`/api/menu/items?t=${Date.now()}`, { cache: "no-store" }),
+          fetch("/api/categories"),
+          fetch("/api/menu-editor/addon-groups")
+        ]);
+
+        let finalItems: MenuItem[] = [];
+
+        // Process items
+        if (itemsRes.ok) {
+          const data = await itemsRes.json();
+          const mapped = normalizeMenuItems(data || []);
+          finalItems = mapped;
+          setMenuItems(mapped);
+          
+          // Save to cache for next time
+          localStorage.setItem(menuCacheKey, JSON.stringify(mapped));
+
+          // Auto-derive categories
+          setCategoriesList(prev => {
+             const newList = [...prev];
+             mapped.forEach((it: any) => {
+               if (it.category && !newList.find(c => c.id === it.category.id)) {
+                 newList.push({ id: it.category.id, name: it.category.name });
+               }
+             });
+             return newList;
+          });
+        }
+
+        // Process categories
+        if (catsRes.ok) {
+          const data = await catsRes.json();
+          setCategoriesList(prev => {
+            const merged = [...prev];
+            data.forEach((c: any) => {
+              if (!merged.find(m => m.id === c.id)) merged.push(c);
+            });
+            return merged;
+          });
+        }
+
+        // Process addons
+        if (addonsRes.ok) {
+          const data = await addonsRes.json();
+          setAddonGroups(data || []);
+        }
+
       } catch (err) {
-        console.error("Menu fetch failed", err);
+        console.error("POS INIT ERROR:", err);
       } finally {
         setMenuLoading(false);
       }
     }
-    fetchMenu();
-  }, []);
+    initPos();
+  }, [menuCacheKey]);
 
   // Compute available zones only from items that have them (to hide empty zones)
   useEffect(() => {
@@ -483,52 +534,88 @@ export default function CheckoutClient() {
     loadHeldBill();
   }, [resumeBillId]);
 
-
-  
   useEffect(() => {
-    async function fetchCats() {
-      try {
-        const res = await fetch("/api/categories");
-        if (res.ok) {
+    const tableId = searchParams.get("tableId");
+    const tableName = searchParams.get("tableName");
+    const orderId = searchParams.get("orderId");
+    const returnTo = searchParams.get("returnTo");
+
+    if (tableName) {
+      setSelectedTable(tableName);
+      setOrderType("DINING");
+    }
+
+    if (orderId) {
+      async function loadActiveOrder() {
+        try {
+          const res = await fetch(`/api/orders/${orderId}`);
+          if (!res.ok) return;
           const data = await res.json();
-          setCategoriesList(data || []);
+          const order = data.order;
+          if (!order) return;
+          
+          setSyncedOrderId(order.id);
+          setItems(order.items.map((i: any) => ({
+            id: i.itemId || i.id,
+            name: i.name,
+            qty: i.quantity || i.qty,
+            rate: i.price || i.rate,
+            gst: i.gst,
+            taxStatus: i.taxStatus || "Without Tax"
+          })));
+          setCustomerName(order.customerName || "");
+          setCustomerPhone(order.customerPhone || "");
+          setOrderNotes(order.notes || "");
+        } catch (err) {
+          console.error("LOAD ORDER ERROR:", err);
         }
-      } catch (e) {
-        console.error("Failed to fetch categories:", e);
+      }
+      loadActiveOrder();
+    }
+  }, [searchParams]);
+
+  // Sync activeZone with selectedTable's zone
+  useEffect(() => {
+    if (business?.multiZoneMenuEnabled && selectedTable && tables.length > 0) {
+      if (["POS", "TAKEAWAY", "DELIVERY"].includes(selectedTable)) {
+        if (activeZone !== "All") setActiveZone("All");
+      } else {
+        const tableObj = tables.find(t => t.name === selectedTable);
+        const tZone = tableObj?.zone;
+        if (tZone && tZone.toUpperCase() !== "DEFAULT" && activeZone === "All") {
+          setActiveZone(tZone);
+        }
       }
     }
-    fetchCats();
-  }, []);
-
-  useEffect(() => {
-    async function fetchAddonGroups() {
-      try {
-        const res = await fetch("/api/menu-editor/addon-groups");
-        if (res.ok) {
-          const data = await res.json();
-          setAddonGroups(data || []);
-        }
-      } catch (e) {
-        console.error("Failed to fetch addon groups:", e);
-      }
-    }
-    fetchAddonGroups();
-  }, []);
+  }, [selectedTable, tables, business?.multiZoneMenuEnabled]);
 
   // Only show categories that have items in them (respecting zone filter)
   const categories = useMemo(() => {
-    // 1. Get items that match the current zone filter
     const itemsInZone = menuItems.filter(i => {
-      if (activeZone === "All") return true;
-      const hasSelectedZone = i.zones?.includes(activeZone);
-      const isGlobal = !i.zones || i.zones.length === 0;
-      return hasSelectedZone || isGlobal;
+      // Manual Zone Filter
+      if (activeZone !== "All") {
+        const hasSelectedZone = i.zones?.includes(activeZone);
+        const isGlobal = !i.zones || i.zones.length === 0;
+        if (!hasSelectedZone && !isGlobal) return false;
+      }
+
+      // Auto Table Zone Filter
+      if (business?.multiZoneMenuEnabled && selectedTable && !["POS", "TAKEAWAY", "DELIVERY"].includes(selectedTable) && tables.length > 0) {
+        const tableObj = tables.find(t => t.name === selectedTable);
+        if (tableObj && tableObj.zone && tableObj.zone.toUpperCase() !== "DEFAULT") {
+          const zone = tableObj.zone;
+          const hasTableZone = i.zones?.includes(zone);
+          const isGlobal = !i.zones || i.zones.length === 0;
+          if (!hasTableZone && !isGlobal) return false;
+        }
+      }
+
+      return true;
     });
 
-    // 2. Extract unique categories from those items
     const catNames = itemsInZone.map(i => i.category?.name || "Others");
     return Array.from(new Set(catNames)).filter(Boolean).sort();
-  }, [menuItems, activeZone]);
+  }, [menuItems, activeZone, selectedTable, tables, business?.multiZoneMenuEnabled]);
 
   const filteredMenuItems = useMemo(() => {
     return menuItems
@@ -542,11 +629,14 @@ export default function CheckoutClient() {
           if (!hasSelectedZone && !isGlobal) return false;
         }
 
-        // 2. Auto-filter if a table is selected (legacy support for QR sync)
+        // 2. Auto-filter if a table is selected
         if (!business?.multiZoneMenuEnabled || !selectedTable || ["POS", "TAKEAWAY", "DELIVERY"].includes(selectedTable)) return true;
+        if (tables.length === 0) return true;
+
         const tableObj = tables.find(t => t.name === selectedTable);
-        const zone = tableObj?.zone || "Default";
-        // If item has no zones, it's global. Otherwise, it must match the table's zone.
+        if (!tableObj || !tableObj.zone || tableObj.zone.toUpperCase() === "DEFAULT") return true;
+
+        const zone = tableObj.zone;
         return !i.zones || i.zones.length === 0 || i.zones.includes(zone);
       });
   }, [menuItems, activeCategory, searchQuery, business, selectedTable, tables, activeZone]);
@@ -1086,6 +1176,26 @@ export default function CheckoutClient() {
       // Refresh parties to include any new customer
       fetchParties();
       const savedBill = data.bill ?? data;
+      if (Array.isArray(savedBill?.items)) {
+        const serverItems = savedBill.items.map((i: any) => ({
+          id: i.id,
+          name: i.name,
+          qty: i.qty,
+          rate: i.rate,
+          gst: i.gst,
+          hsnCode: i.hsnCode,
+          taxStatus: i.taxStatus || "Without Tax",
+        }));
+        const pricesChanged = serverItems.some((serverItem: BillItem) => {
+          const localItem = items.find((item) => item.id === serverItem.id);
+          return localItem && localItem.rate !== serverItem.rate;
+        });
+
+        if (pricesChanged) {
+          setItems(serverItems);
+          toast.info("Latest menu price applied before saving");
+        }
+      }
       if (savedBill?.id) setLastSavedBillId(savedBill.id);
       if (savedBill?.billNumber) setBillNumber(savedBill.billNumber);
       if (savedBill?.tokenNumber) {
@@ -1153,12 +1263,15 @@ export default function CheckoutClient() {
   };
 
   const handlePrintKOT = async () => {
-    kravy.ping(); 
-    printKOT();
-    setIsKotPrinted(true);
+    if (isSaving || items.length === 0) return;
+    setIsSaving(true);
 
-    if (business?.syncQuickPosWithKitchen) {
-      try {
+    try {
+      kravy.ping(); 
+      printKOT();
+      setIsKotPrinted(true);
+
+      if (business?.syncQuickPosWithKitchen) {
         const orderData = {
           orderId: syncedOrderId || undefined,
           tableId: selectedTable !== "POS" ? tables.find(t => t.name === selectedTable)?.id : null,
@@ -1190,9 +1303,42 @@ export default function CheckoutClient() {
           const data = await res.json();
           if (!syncedOrderId) setSyncedOrderId(data.id);
           toast.success("Order synced with Kitchen Workflow");
+          
+          const returnTo = searchParams.get("returnTo");
+          if (returnTo) {
+            setTimeout(() => {
+              try {
+                // Construct the return URL with table and order context
+                const url = new URL(returnTo, window.location.origin);
+                const tableId = searchParams.get("tableId");
+                const currentOrderId = data.id || syncedOrderId;
+                
+                if (tableId) url.searchParams.set("tableId", tableId);
+                if (currentOrderId) url.searchParams.set("orderId", currentOrderId);
+                
+                router.push(url.pathname + url.search);
+              } catch (e) {
+                // Fallback to simple string concat if URL construction fails
+                const separator = returnTo.includes("?") ? "&" : "?";
+                const tableId = searchParams.get("tableId");
+                const currentOrderId = data.id || syncedOrderId;
+                let finalPath = returnTo;
+                if (tableId) finalPath += `${separator}tableId=${tableId}`;
+                if (currentOrderId) finalPath += `${finalPath.includes("?") ? "&" : "?"}orderId=${currentOrderId}`;
+                router.push(finalPath);
+              }
+            }, 200);
+            return; 
+          }
         }
-      } catch (err) {
-        console.error("Sync error", err);
+      }
+    } catch (err) {
+      console.error("Sync error", err);
+      toast.error("Failed to sync with kitchen");
+    } finally {
+      // If we are not redirecting, reset isSaving
+      if (!searchParams.get("returnTo")) {
+        setIsSaving(false);
       }
     }
   };
@@ -1446,6 +1592,14 @@ export default function CheckoutClient() {
           <div className="bg-[var(--kravy-surface)] border-b border-[var(--kravy-border)] px-4 md:px-6 py-3 flex-shrink-0 sticky top-0 z-20 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 min-w-0">
+                {searchParams.get("returnTo") && (
+                  <button 
+                    onClick={() => { kravy.click(); router.push(searchParams.get("returnTo")!); }}
+                    className="h-8 px-3 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-all flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider shrink-0 shadow-sm"
+                  >
+                    <ArrowLeft size={14} strokeWidth={3} /> Back
+                  </button>
+                )}
                 <h2 className="text-sm md:text-base font-black text-[var(--kravy-text-primary)] tracking-tight whitespace-nowrap">
                   Browse Products
                 </h2>
@@ -1521,18 +1675,17 @@ export default function CheckoutClient() {
                 )}
                 <button
                   onClick={() => {
-                    fetch(`/api/menu/items?t=${Date.now()}`)
+                    setMenuLoading(true);
+                    fetch(`/api/menu/items?t=${Date.now()}`, { cache: "no-store" })
                       .then(r => r.json())
                       .then(data => {
-                        const mapped = (data || []).map((it: any) => {
-                          const sPrice = Number(it.sellingPrice);
-                          const bPrice = Number(it.price);
-                          const finalPrice = (!isNaN(sPrice) && it.sellingPrice !== null) ? sPrice : (!isNaN(bPrice) ? bPrice : 0);
-                          return { ...it, price: finalPrice };
-                        });
+                        const mapped = normalizeMenuItems(data || []);
                         setMenuItems(mapped);
+                        localStorage.setItem(menuCacheKey, JSON.stringify(mapped));
                         toast.success("Catalog Updated");
-                      });
+                      })
+                      .catch(() => toast.error("Catalog sync failed"))
+                      .finally(() => setMenuLoading(false));
                   }}
                   className="h-8 w-8 rounded-lg border border-[var(--kravy-border)] hover:bg-indigo-50 hover:text-indigo-600 transition-all bg-[var(--kravy-bg)] flex items-center justify-center shrink-0"
                   title="Refresh Menu"

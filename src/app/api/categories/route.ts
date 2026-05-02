@@ -14,8 +14,7 @@ export async function GET() {
       where: {
         OR: [
           { clerkId: effectiveId },
-          { clerkId: null },
-          { items: { some: { clerkId: effectiveId } } }
+          { clerkId: null }
         ],
       },
       select: { id: true, name: true },
