@@ -199,7 +199,12 @@ model User {
   id      String @id @default(auto()) @map("_id") @db.ObjectId
   name    String
   email   String @unique
-  clerkId String @unique
+  clerkId String? @unique
+  phone   String? // ✅ Custom Auth Support (Manual unique check in API)
+  password String?         // ✅ Hashed Password
+  isVerified Boolean @default(false) // ✅ OTP Verification Status
+  otpCode   String?        // ✅ 6-digit OTP
+  otpExpiry DateTime?      // ✅ OTP Expiry Time
   role    Role   @default(SELLER)
 
   items    Item[]
@@ -282,6 +287,7 @@ model Order {
   notes       String? // ✅ Global order instructions
   preferences Json?   // ✅ Added for preferences like { dontSendCutlery: true }
   zoneName    String? // ✅ Multi-zone menu support: Track which zone this order came from
+  tokenNumber Int?    // ✅ Sequential token number (Daily reset)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -409,6 +415,9 @@ model BusinessProfile {
   // ✅ Token Management
   lastTokenNumber Int?      @default(0)
   lastTokenDate   DateTime?
+  // ✅ Authentication Settings
+  enableClerkAuth  Boolean @default(true)
+  enableCustomAuth Boolean @default(false)
 
   createdAt DateTime @default(now())
   syncQuickPosWithKitchen Boolean @default(false)

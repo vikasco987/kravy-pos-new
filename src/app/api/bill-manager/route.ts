@@ -260,11 +260,15 @@ export async function POST(req: NextRequest) {
     // ✅ TOKEN NUMBER GENERATION (DAILY RESET)
     let nextToken = 1;
     try {
+      // Re-fetch profile to get latest lastTokenNumber (prevent race condition)
+      const latestProfile = await prisma.businessProfile.findUnique({
+        where: { userId: effectiveId },
+      });
       const today = new Date().toISOString().split('T')[0];
-      const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
+      const lastTokenDate = latestProfile?.lastTokenDate ? new Date(latestProfile.lastTokenDate).toISOString().split('T')[0] : "";
       
       if (lastTokenDate === today) {
-        nextToken = (profile?.lastTokenNumber || 0) + 1;
+        nextToken = (latestProfile?.lastTokenNumber || 0) + 1;
       } else {
         nextToken = 1;
       }

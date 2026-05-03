@@ -127,9 +127,11 @@ const navGroups = [
     items: [
       { icon: <Home size={18} />, label: "Store Dashboard", href: "/dashboard", badge: "Live", badgeColor: "#10B981" },
       { icon: <ShoppingCart size={18} />, label: "Quick POS Billing", href: "/dashboard/billing/checkout", badge: "Fast", badgeColor: "#FF6B35" },
-      { icon: <Activity size={18} />, label: "Kitchen Workflow", href: "/dashboard/workflow", badge: "Queue", badgeColor: "#EF4444" },
+      { icon: <Activity size={18} />, label: "Kitchen Workflow", href: "/dashboard/workflow?tab=track", badge: "Queue", badgeColor: "#EF4444" },
+      { icon: <LayoutDashboard size={18} />, label: "POS Terminal", href: "/dashboard/workflow?tab=dashboard", badge: "Live", badgeColor: "#10B981" },
       { icon: <LayoutGrid size={18} />, label: "Table Status", href: "/dashboard/tables" },
       { icon: <Receipt size={18} />, label: "Past Bills / History", href: "/dashboard/billing" },
+      { icon: <Zap size={18} />, label: "Go to Billing Panel", href: "https://billing.kravy.in", badge: "Live", badgeColor: "#10B981", external: true },
     ]
   },
   {
@@ -732,7 +734,8 @@ export default function Sidebar() {
 
             // 2. Explicit Path-based Access (from DB allowedPaths)
             // If the current user has this specific path in their allowed list, grant access
-            if (allowedPaths.includes("*") || allowedPaths.includes(item.href)) return true;
+            const baseHref = item.href.split("?")[0];
+            if (allowedPaths.includes("*") || allowedPaths.includes(item.href) || allowedPaths.includes(baseHref)) return true;
 
             // 3. Application-wide Feature Flags (Controlled by profile settings)
             if (item.label === "GST Reports" && !taxEnabled) return false;
@@ -880,9 +883,10 @@ export default function Sidebar() {
                 whileTap={{ scale: 0.9 }}
                 onClick={() => {
                    kravy.close();
-                   // Clear staff cookie
+                   // Clear all possible auth cookies
                    document.cookie = "staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-                   // Hard refresh to clear Clerk state and go home
+                   document.cookie = "kravy_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                   // Hard refresh to clear state and go home
                    window.location.href = "/";
                 }}
                 style={{

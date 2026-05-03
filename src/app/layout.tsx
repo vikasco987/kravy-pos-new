@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 import TopProgressBar from "@/components/TopProgressBar";
 import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -44,6 +45,7 @@ export default function RootLayout({
             <TopProgressBar />
           </Suspense>
           {children}
+          <Toaster richColors position="top-right" />
         </Providers>
       </body>
     </html>

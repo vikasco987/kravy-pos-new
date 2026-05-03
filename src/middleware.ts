@@ -29,54 +29,60 @@ const isPublicRoute = createRouteMatcher([
   "/track",
   "/api/public/(.*)",
   "/api/external/(.*)",
+  "/auth/custom(.*)", // Added
+  "/api/auth/(.*)",   // Added
   "/sign-in(.*)",
   "/sign-up(.*)",
-  "/staff/login", // Added
-  "/api/staff/login", // Added
+  "/staff/login",
+  "/api/staff/login",
   "/"
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
   const { userId } = await auth();
   const staffToken = request.cookies.get("staff_token")?.value;
+  const customToken = request.cookies.get("kravy_auth_token")?.value;
 
-  // 1. Redirect Clerk users away from sign-in pages if they are already logged in
+  // 1. Redirect to dashboard if already logged in (for auth pages)
+  if ((userId || customToken) && request.nextUrl.pathname.startsWith('/auth/custom')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
   if (userId && (request.nextUrl.pathname.startsWith('/sign-in') || request.nextUrl.pathname.startsWith('/sign-up'))) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // 2. Allow access for Staff who have our JWT
+  // 2. Allow access for Custom Auth Users
+  if (customToken) {
+    return NextResponse.next();
+  }
+
+  // 3. Allow access for Staff
   if (staffToken) {
     try {
-      // Decode JWT payload (standard base64 decode for Edge compatibility)
       const payloadBase64 = staffToken.split('.')[1];
       const payload = JSON.parse(atob(payloadBase64));
       const permissions = payload.permissions || [];
       const path = request.nextUrl.pathname;
 
-      // If accessing dashboard, check if the path (or a parent path) is allowed
       if (path.startsWith('/dashboard')) {
         const isAllowed = permissions.some((p: string) => path === p || path.startsWith(p + '/'));
-        
         if (!isAllowed) {
-           console.log(`[AUTH] Staff ${payload.name} denied access to ${path}`);
-           // Redirect to staff login if not allowed
            return NextResponse.redirect(new URL('/staff/login?error=denied', request.url));
         }
       }
       return NextResponse.next();
     } catch (e) {
-      console.error("[AUTH] Staff token decode failed", e);
       return NextResponse.redirect(new URL('/staff/login?error=invalid_session', request.url));
     }
   }
 
-  // 3. Allow Public Routes
+  // 4. Allow Public Routes
   if (isPublicRoute(request)) {
     return NextResponse.next();
   }
 
-  // 4. Protect all other routes via Clerk
+  // 5. Protect all other routes via Clerk
   await auth.protect();
 });
 

@@ -180,7 +180,9 @@ export default function BusinessProfile({
           fssaiNumber: data.fssaiNumber,
           fssaiEnabled: data.fssaiEnabled,
           enableMenuQRInBill: data.enableMenuQRInBill,
-          userId: data.userId, // Added userId
+          enableClerkAuth: data.enableClerkAuth,
+          enableCustomAuth: data.enableCustomAuth,
+          userId: data.userId, 
         }}
         onCancel={() => setEditMode(false)}
         onSuccess={() => {

@@ -121,6 +121,8 @@ export async function POST(request: Request) {
         packagingGstRate: body.packagingGstRate !== undefined ? body.packagingGstRate : undefined,
         syncQuickPosWithKitchen: body.syncQuickPosWithKitchen !== undefined ? body.syncQuickPosWithKitchen : undefined,
         multiZoneMenuEnabled: body.multiZoneMenuEnabled !== undefined ? body.multiZoneMenuEnabled : undefined,
+        enableClerkAuth: body.enableClerkAuth !== undefined ? body.enableClerkAuth : undefined,
+        enableCustomAuth: body.enableCustomAuth !== undefined ? body.enableCustomAuth : undefined,
       },
 
       create: {
@@ -174,15 +176,17 @@ export async function POST(request: Request) {
         packagingGstRate: body.packagingGstRate ?? 0,
         syncQuickPosWithKitchen: body.syncQuickPosWithKitchen ?? false,
         multiZoneMenuEnabled: body.multiZoneMenuEnabled ?? false,
+        enableClerkAuth: body.enableClerkAuth ?? true,
+        enableCustomAuth: body.enableCustomAuth ?? false,
       },
     });
 
     console.log("SERVER DEBUG: POST Profile Saved - enableKOTWithBill:", profile.enableKOTWithBill);
     return NextResponse.json(profile, { status: 200 });
   } catch (error) {
-    console.error("POST /api/profile error:", error);
+    console.error("POST /api/profile error DETAILS:", error);
     return NextResponse.json(
-      { error: "Failed to save profile" },
+      { error: "Failed to save profile", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

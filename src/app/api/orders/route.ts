@@ -87,6 +87,41 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
+        // ✅ 1. FETCH PROFILE FOR TOKEN GENERATION
+        const profile = await prisma.businessProfile.findUnique({
+            where: { userId: effectiveId },
+        });
+
+        // ✅ 2. TOKEN NUMBER GENERATION (DAILY RESET)
+        let nextToken = 1;
+        try {
+            // Re-fetch profile to get latest lastTokenNumber (prevent race condition)
+            const latestProfile = await prisma.businessProfile.findUnique({
+                where: { userId: effectiveId },
+            });
+            const today = new Date().toISOString().split('T')[0];
+            const lastTokenDate = latestProfile?.lastTokenDate ? new Date(latestProfile.lastTokenDate).toISOString().split('T')[0] : "";
+            
+            if (lastTokenDate === today) {
+                nextToken = (latestProfile?.lastTokenNumber || 0) + 1;
+            } else {
+                nextToken = 1;
+            }
+
+            // Sync with BusinessProfile
+            await prisma.businessProfile.update({
+                where: { userId: effectiveId },
+                data: {
+                    lastTokenNumber: nextToken,
+                    lastTokenDate: new Date()
+                }
+            });
+        } catch (tokenErr) {
+            console.error("ORDER_TOKEN_GENERATION_ERROR:", tokenErr);
+            // Fallback to 1 if profile update fails
+        }
+
+        // ✅ 3. CREATE ORDER WITH PERSISTENT TOKEN
         const order = await prisma.order.create({
             data: {
                 clerkUserId: effectiveId,
@@ -101,6 +136,7 @@ export async function POST(req: NextRequest) {
                 preferences: preferences || null,
                 isKotPrinted: isKotPrinted || false,
                 isBillPrinted: false,
+                tokenNumber: nextToken, // 🔒 Saved permanently
             },
             include: { table: true },
         });

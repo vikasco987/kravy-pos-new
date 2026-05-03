@@ -49,15 +49,75 @@ export default async function DashboardPage({
   const previousStart = new Date(startDate);
   previousStart.setDate(previousStart.getDate() - range);
 
-  const [allBills, previousBills, deletedBillsData, activeCombosCount, activeOffersCount] = await Promise.all([
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    d.setHours(0,0,0,0);
+    return d;
+  });
+
+  const last7Start = last7Days[0];
+
+  const [
+    bills,
+    currentStats,
+    previousStats,
+    deletedBillsData,
+    activeCombosCount,
+    activeOffersCount,
+    daySaleStats,
+    weekSaleStats,
+    monthSaleStats,
+    weeklyBills,
+    preRangeCustomerBills,
+    activeOrderCount,
+    completedTodayCount
+  ] = await Promise.all([
     prisma.billManager.findMany({
       where: {
         clerkUserId: effectiveId,
         isDeleted: false,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
       },
       orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        billNumber: true,
+        customerName: true,
+        customerPhone: true,
+        paymentMode: true,
+        total: true,
+        createdAt: true,
+        items: true,
+        tokenNumber: true,
+        tableName: true,
+      },
     }),
-    prisma.billManager.findMany({
+    prisma.billManager.aggregate({
+      where: {
+        clerkUserId: effectiveId,
+        isDeleted: false,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      _sum: { total: true },
+      _count: { _all: true },
+    }),
+    prisma.billManager.aggregate({
       where: {
         clerkUserId: effectiveId,
         isDeleted: false,
@@ -66,23 +126,59 @@ export default async function DashboardPage({
           lt: startDate,
         },
       },
+      _sum: { total: true },
     }),
     prisma.billManager.findMany({
       where: { clerkUserId: effectiveId, isDeleted: true },
       orderBy: { deletedAt: "desc" },
       take: 5,
+      select: {
+        id: true,
+        billNumber: true,
+        customerName: true,
+        paymentMode: true,
+        total: true,
+        createdAt: true,
+        items: true,
+      },
     }),
     prisma.combo.count({ where: { clerkUserId: effectiveId, isActive: true } }),
-    prisma.offer.count({ where: { clerkUserId: effectiveId, isActive: true } })
+    prisma.offer.count({ where: { clerkUserId: effectiveId, isActive: true } }),
+    prisma.billManager.aggregate({
+      where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startOfDay } },
+      _sum: { total: true },
+    }),
+    prisma.billManager.aggregate({
+      where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startOfWeek } },
+      _sum: { total: true },
+    }),
+    prisma.billManager.aggregate({
+      where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startOfMonth } },
+      _sum: { total: true },
+    }),
+    prisma.billManager.findMany({
+      where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: last7Start } },
+      select: { total: true, createdAt: true },
+    }),
+    prisma.billManager.findMany({
+      where: {
+        clerkUserId: effectiveId,
+        isDeleted: false,
+        createdAt: { lt: startDate },
+        customerPhone: { not: null },
+      },
+      select: { customerPhone: true },
+    }),
+    prisma.order.count({
+      where: { clerkUserId: effectiveId, status: { not: "COMPLETED" } }
+    }),
+    prisma.billManager.count({
+      where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startOfDay } }
+    }),
   ]);
 
-  // ── Filter bills for the selected RANGE (for charts/revenue/recent) ──
-  const bills = allBills.filter(b => 
-    new Date(b.createdAt) >= startDate && new Date(b.createdAt) <= endDate
-  );
-
-  const totalRevenue = bills.reduce((sum: number, b: any) => sum + b.total, 0);
-  const totalBills = bills.length;
+  const totalRevenue = currentStats._sum.total || 0;
+  const totalBills = currentStats._count._all;
 
   let cash = 0;
   let upi = 0;
@@ -93,7 +189,7 @@ export default async function DashboardPage({
     if (mode.includes("upi")) upi += bill.total;
   });
 
-  const previousRevenue = previousBills.reduce((sum: number, b: any) => sum + b.total, 0);
+  const previousRevenue = previousStats._sum.total || 0;
   const growth = previousRevenue === 0 ? 100 : ((totalRevenue - previousRevenue) / previousRevenue) * 100;
 
   // Chart Mapping
@@ -181,32 +277,14 @@ export default async function DashboardPage({
   const format = (num: number) => new Intl.NumberFormat("en-IN").format(Math.round(num));
 
   // ── Calculate Day, Week, and Month Sales ──
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
-  startOfWeek.setHours(0, 0, 0, 0);
-
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  const daySale = allBills
-    .filter((b: any) => new Date(b.createdAt) >= startOfDay)
-    .reduce((s: number, b: any) => s + b.total, 0);
-
-  const weekSale = allBills
-    .filter((b: any) => new Date(b.createdAt) >= startOfWeek)
-    .reduce((s: number, b: any) => s + b.total, 0);
-
-  const monthSale = allBills
-    .filter((b: any) => new Date(b.createdAt) >= startOfMonth)
-    .reduce((s: number, b: any) => s + b.total, 0);
+  const daySale = daySaleStats._sum.total || 0;
+  const weekSale = weekSaleStats._sum.total || 0;
+  const monthSale = monthSaleStats._sum.total || 0;
 
   // ── Calculate Dynamic Customer Stats (New vs Repeat for the selected RANGE) ──
   const currentRangeBills = bills;
-  const preRangeBills = allBills.filter(b => new Date(b.createdAt) < startDate);
 
-  const preRangePhones = new Set(preRangeBills.map(b => b.customerPhone).filter(Boolean));
+  const preRangePhones = new Set(preRangeCustomerBills.map(b => b.customerPhone).filter(Boolean));
   const currentRangeIdentifiableBills = currentRangeBills.filter(b => b.customerPhone);
   const currentRangeUniquePhones = new Set(currentRangeIdentifiableBills.map(b => b.customerPhone));
   const currentRangeAnonymousCount = currentRangeBills.filter(b => !b.customerPhone).length;
@@ -251,9 +329,7 @@ export default async function DashboardPage({
     'Sunday': 0, 'Monday': 0, 'Tuesday': 0, 'Wednesday': 0, 'Thursday': 0, 'Friday': 0, 'Saturday': 0 
   };
   
-  // Use last 30 days for a better matrix
-  const last30DaysBills = allBills.filter(b => new Date(b.createdAt) >= startDate);
-  last30DaysBills.forEach(b => {
+  bills.forEach(b => {
     const dayName = new Date(b.createdAt).toLocaleDateString('en-IN', { weekday: 'long' });
     dayNameMap[dayName] = (dayNameMap[dayName] || 0) + b.total;
   });
@@ -293,16 +369,8 @@ export default async function DashboardPage({
     };
   });
 
-  // ── Calculate Weekly Revenue (Last 7 Days) ──
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    d.setHours(0,0,0,0);
-    return d;
-  });
-
   const weeklyData = last7Days.map(date => {
-    const dayBills = allBills.filter(b => {
+    const dayBills = weeklyBills.filter(b => {
       const bDate = new Date(b.createdAt);
       return bDate.getDate() === date.getDate() && 
              bDate.getMonth() === date.getMonth() && 
@@ -314,14 +382,6 @@ export default async function DashboardPage({
       orders: dayBills.length
     };
   });
-
-  // ── Fetch Live Orders (QR Orders) ──
-  const liveOrders = await prisma.order.findMany({
-    where: { clerkUserId: effectiveId, status: { not: "COMPLETED" } }
-  });
-
-  const activeOrderCount = liveOrders.length;
-  const completedTodayCount = allBills.filter(b => b.createdAt >= startOfDay).length;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>

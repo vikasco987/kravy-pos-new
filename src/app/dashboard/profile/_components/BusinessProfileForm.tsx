@@ -49,6 +49,8 @@ const schema = z.object({
   fssaiEnabled: z.boolean().optional(),
   hsnEnabled: z.boolean().optional(),
   enableMenuQRInBill: z.boolean().optional(),
+  enableClerkAuth: z.boolean().optional(),
+  enableCustomAuth: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -221,6 +223,8 @@ export default function BusinessProfileForm({
         fssaiEnabled: values.fssaiEnabled || false,
         hsnEnabled: values.hsnEnabled || false,
         enableMenuQRInBill: values.enableMenuQRInBill || false,
+        enableClerkAuth: values.enableClerkAuth,
+        enableCustomAuth: values.enableCustomAuth,
       };
 
       const res = await fetch("/api/profile", {
@@ -483,6 +487,33 @@ export default function BusinessProfileForm({
             </div>
           </label>
         </div>
+      </Section>
+
+      {/* AUTHENTICATION SETTINGS */}
+      <Section title="Authentication Settings">
+        <label className="flex items-center gap-3 cursor-pointer bg-[var(--kravy-bg-2)] p-4 rounded-xl border border-[var(--kravy-border)] hover:border-indigo-500/50 transition-colors">
+          <input 
+            type="checkbox" 
+            {...register("enableClerkAuth")} 
+            className="w-5 h-5 rounded min-w-[20px] accent-blue-500"
+          />
+          <div>
+            <p className="text-sm font-bold text-[var(--kravy-text-primary)]">Enable Clerk Authentication</p>
+            <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Use Clerk for enterprise-grade login and security</p>
+          </div>
+        </label>
+
+        <label className="flex items-center gap-3 cursor-pointer bg-[var(--kravy-bg-2)] p-4 rounded-xl border border-[var(--kravy-border)] hover:border-indigo-500/50 transition-colors">
+          <input 
+            type="checkbox" 
+            {...register("enableCustomAuth")} 
+            className="w-5 h-5 rounded min-w-[20px] accent-emerald-500"
+          />
+          <div>
+            <p className="text-sm font-bold text-[var(--kravy-text-primary)]">Enable Custom OTP Authentication</p>
+            <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Allow users to sign up using Phone/Email with OTP</p>
+          </div>
+        </label>
       </Section>
 
       {/* MEDIA */}

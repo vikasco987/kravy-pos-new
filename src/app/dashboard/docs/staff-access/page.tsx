@@ -24,12 +24,12 @@ import {
   HelpCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useUser } from "@clerk/nextjs";
+import { useAuthContext } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function StaffAccessDocsPage() {
-  const { user } = useUser();
+  const { user, loading: authLoading } = useAuthContext();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 

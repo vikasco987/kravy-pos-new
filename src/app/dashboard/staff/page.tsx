@@ -45,7 +45,7 @@ import {
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useAuthContext } from "@/components/AuthContext";
 
 const ALL_PATHS = [
   { path: "/dashboard", label: "Store Dashboard", icon: <LayoutGrid size={16} /> },
@@ -113,7 +113,7 @@ type StaffMember = {
 
 export default function StaffManagementPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user } = useAuthContext();
   const [isAdmin, setIsAdmin] = useState(false);
   const [canManage, setCanManage] = useState(false);
   const [staff, setStaff] = useState<StaffMember[]>([]);

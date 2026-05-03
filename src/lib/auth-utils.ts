@@ -66,12 +66,15 @@ export async function getEffectiveClerkId(): Promise<string | null> {
     return user?.ownerId || userId;
   }
 
-  // 2. Try Custom JWT Auth (for Prisma-only Staff)
-  const authHeader = (await cookies()).get('staff_token')?.value; 
-  if (authHeader) {
+  // 2. Try Custom JWT Auth (Legacy Staff OR New Custom User)
+  const cookieStore = await cookies();
+  const token = cookieStore.get('kravy_auth_token')?.value || cookieStore.get('staff_token')?.value;
+
+  if (token) {
       try {
-          const decoded: any = jwt.verify(authHeader, JWT_SECRET);
-          return decoded.businessId; 
+          const decoded: any = jwt.verify(token, JWT_SECRET);
+          // For new custom auth, we use 'clerkId' or 'businessId'
+          return decoded.clerkId || decoded.businessId || decoded.userId; 
       } catch (err) {
           return null;
       }
@@ -82,12 +85,12 @@ export async function getEffectiveClerkId(): Promise<string | null> {
 
 export type AuthUser = {
     id: string;
-    type: 'ADMIN' | 'SELLER' | 'STAFF' | 'OWNER'; // Added OWNER just in case
+    type: 'ADMIN' | 'SELLER' | 'STAFF' | 'OWNER' | 'USER'; 
     businessId: string;
     permissions: string[];
     name?: string;
     email?: string;
-    role?: string; // Original DB role
+    role?: string; 
 }
 
 /**
@@ -95,16 +98,15 @@ export type AuthUser = {
  */
 export async function getAuthUser(): Promise<AuthUser | null> {
     // 1. Check Clerk (Owner or Clerk-linked Staff)
-    const { userId } = await auth();
-    if (userId) {
-        // Find user in DB to see if they are a legacy staff or the owner
-        const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    const { userId: clerkUserId } = await auth();
+    if (clerkUserId) {
+        const user = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
         if (user) {
             return {
                 id: user.id,
                 type: (user.ownerId ? 'STAFF' : (user.role as any)) || 'OWNER',
-                businessId: user.ownerId || user.clerkId,
-                permissions: user.allowedPaths, // We use allowedPaths as permissions for legacy staff
+                businessId: user.ownerId || user.clerkId || "",
+                permissions: user.allowedPaths, 
                 name: user.name,
                 email: user.email,
                 role: user.role
@@ -112,20 +114,23 @@ export async function getAuthUser(): Promise<AuthUser | null> {
         }
     }
 
-    // 2. Check Custom JWT (Staff)
-    // Checking both cookie and header for maximum compatibility (App vs Browser)
-    const token = (await cookies()).get('staff_token')?.value;
+    // 2. Check Custom JWT (New Auth OR Legacy Staff)
+    const cookieStore = await cookies();
+    const token = cookieStore.get('kravy_auth_token')?.value || cookieStore.get('staff_token')?.value;
 
     if (token) {
         try {
             const decoded: any = jwt.verify(token, JWT_SECRET);
+            
+            // Handle both new 'kravy_auth_token' and legacy 'staff_token' structures
             return {
-                id: decoded.staffId,
-                type: 'STAFF',
-                businessId: decoded.businessId,
-                permissions: decoded.permissions,
+                id: decoded.userId || decoded.staffId,
+                type: decoded.role || 'STAFF',
+                businessId: decoded.clerkId || decoded.businessId || "",
+                permissions: decoded.permissions || [],
                 name: decoded.name,
-                email: decoded.email
+                email: decoded.email,
+                role: decoded.role
             };
         } catch (err) {
             return null;

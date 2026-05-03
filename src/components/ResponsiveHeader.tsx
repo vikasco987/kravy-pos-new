@@ -10,8 +10,12 @@ import { useUser, SignOutButton } from "@clerk/nextjs";
 import { FiSearch } from "react-icons/fi";
 import { HiOutlineMoon, HiOutlineSun } from "react-icons/hi";
 
+import { useAuthContext } from "./AuthContext";
+import { kravy } from "@/lib/sounds";
+
 export default function ResponsiveHeader() {
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded: clerkLoaded, isSignedIn: clerkSignedIn, user: clerkUser } = useUser();
+  const { user: authUser, loading: authLoading } = useAuthContext();
   const pathname = usePathname();
 
   const [mounted, setMounted] = useState(false);
@@ -62,16 +66,43 @@ export default function ResponsiveHeader() {
     }
   };
 
-  // compute display name and email once (safe for SSR)
-  const displayName =
-    isLoaded && isSignedIn
-      ? user?.fullName || `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() || user?.primaryEmailAddress?.emailAddress || "User"
-      : "Guest";
+  // compute display name and email
+  const isSignedIn = clerkSignedIn || !!authUser;
+  const isLoaded = clerkLoaded && !authLoading;
 
-  const profileEmail =
-    isLoaded && isSignedIn
-      ? user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses?.[0]?.emailAddress ?? ""
-      : "";
+  const displayName = authUser?.name 
+    || clerkUser?.fullName 
+    || `${clerkUser?.firstName ?? ""} ${clerkUser?.lastName ?? ""}`.trim() 
+    || clerkUser?.primaryEmailAddress?.emailAddress 
+    || (isSignedIn ? "User" : "Guest");
+
+  const profileEmail = authUser?.email 
+    || clerkUser?.primaryEmailAddress?.emailAddress 
+    || clerkUser?.emailAddresses?.[0]?.emailAddress 
+    || "";
+
+  const handleLogout = async () => {
+    kravy.close();
+    try {
+      // 1. Call server-side logout to clear HttpOnly cookies
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Logout API failed:", err);
+    }
+    
+    // 2. Clear all local/session storage just in case
+    if (typeof window !== "undefined") {
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // 3. Fallback: Clear custom auth cookies (only works if not HttpOnly)
+      document.cookie = "kravy_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      
+      // 4. Redirect to home and force a reload
+      window.location.replace("/");
+    }
+  };
 
   const profileMenu = (
     <div className="w-56 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-lg overflow-hidden">
@@ -81,12 +112,21 @@ export default function ResponsiveHeader() {
       </div>
 
       <div className="flex flex-col">
-        <Link href="/profile" className="px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700">My Profile</Link>
-        <Link href="/settings" className="px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700">Settings</Link>
+        <Link href="/dashboard/profile" className="px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700">My Profile</Link>
+        <Link href="/dashboard/settings" className="px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700">Settings</Link>
         <div className="px-4 py-2">
-          <SignOutButton>
-            <button className="w-full text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 px-0 py-2">Sign out</button>
-          </SignOutButton>
+          {clerkSignedIn ? (
+            <SignOutButton>
+              <button className="w-full text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 px-0 py-2">Sign out</button>
+            </SignOutButton>
+          ) : (
+            <button 
+              onClick={handleLogout}
+              className="w-full text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 px-0 py-2 text-rose-500 font-semibold"
+            >
+              Sign out
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -161,12 +201,11 @@ export default function ResponsiveHeader() {
                   aria-expanded={open}
                   className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
-                  <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                    {isLoaded && isSignedIn && user?.imageUrl ? (
-                      // use plain img to avoid next/image domain config here
-                      <img src={user.imageUrl} alt={displayName} className="w-full h-full object-cover rounded-full" />
+                  <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border border-slate-300 dark:border-slate-600">
+                    {clerkUser?.imageUrl ? (
+                      <img src={clerkUser.imageUrl} alt={displayName} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-sm font-semibold dark:text-white">{(isLoaded && isSignedIn && displayName.charAt(0)) || "U"}</span>
+                      <span className="text-sm font-semibold dark:text-white uppercase">{displayName.charAt(0)}</span>
                     )}
                   </div>
                   <span className="hidden lg:block text-sm">{isLoaded && isSignedIn ? displayName : "Guest"}</span>

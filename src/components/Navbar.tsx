@@ -3,12 +3,10 @@
 import { useEffect, useState } from "react";
 import { useSidebar } from "./SidebarContext";
 import {
-  SignedIn,
-  SignedOut,
   UserButton,
-  SignInButton,
   useUser
 } from "@clerk/nextjs";
+import { useAuthContext } from "@/components/AuthContext";
 import { useSearch } from "@/components/SearchContext";
 import { useTheme } from "@/components/ThemeProvider";
 import { Search, Bell, MapPin, Menu, X, Sun, Moon, Monitor, Volume2, Package, Receipt, Users, ArrowRight, Loader2, XCircle, LogOut } from "lucide-react";
@@ -24,7 +22,12 @@ interface NavbarProps {
 }
 
 export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = false }: NavbarProps) {
-  const { user } = useUser();
+  const { user: clerkUser } = useUser();
+  const { user: customUser, loading: authLoading } = useAuthContext();
+  
+  // Effective user for display
+  const user = customUser || clerkUser;
+  
   const { query, setQuery } = useSearch();
   const { collapsed } = useSidebar();
   const { resolvedTheme, theme, setTheme } = useTheme();
@@ -151,7 +154,7 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
             }}>
-              {user?.firstName || "User"}
+              {(user as any)?.name || (user as any)?.firstName || "User"}
             </span>
             <span style={{ fontSize: isMobile ? "1.1rem" : "1.25rem", marginLeft: "2px" }}>👋</span>
           </div>
@@ -457,7 +460,7 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
                       {opt.icon}
                       {opt.label}
                       {theme === opt.key && (
-                        <span style={{ marginLeft: "auto", fontSize: "0.7rem" }}>\u2713</span>
+                        <span style={{ marginLeft: "auto", fontSize: "0.7rem" }}>✓</span>
                       )}
                     </button>
                   ))}
@@ -495,10 +498,10 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
             }} />
           </div>
 
-          {/* \uD83D\uDD0A Sound Test Button — Click to test audio */}
+          {/* 🔊 Sound Test Button — Click to test audio */}
           <button
             onClick={() => kravy.orderBell()}
-            title="Test Sound \uD83D\uDD0A"
+            title="Test Sound 🔊"
             style={{
               width: isMobile ? "38px" : "40px",
               height: isMobile ? "38px" : "40px",
@@ -524,52 +527,47 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
               borderLeft: "1px solid var(--kravy-border)",
               marginLeft: "4px"
             }}>
-              {/* Check for Clerk or Staff session */}
-              {user ? (
+              {clerkUser ? (
                 <UserButton afterSignOutUrl="/" />
-              ) : (
-                // If not clerk, check if staff via cookie
-                typeof document !== 'undefined' && document.cookie.includes('staff_token=') ? (
-                  <div className="flex items-center gap-3">
-                    <div style={{
-                      width: "32px", height: "32px", borderRadius: "10px",
-                      background: "rgba(16, 185, 129, 0.1)",
-                      border: "1px solid rgba(16, 185, 129, 0.2)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "#10B981"
-                    }}>
-                      <Users size={16} />
-                    </div>
-                    {/* Logout Button for Staff */}
-                    <button 
-                      onClick={() => {
-                        kravy.close();
-                        document.cookie = "staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-                        window.location.href = "/";
-                      }}
-                      className="group flex items-center justify-center p-2 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-500 transition-all active:scale-95"
-                      title="Logout Staff"
-                    >
-                      <LogOut size={16} />
-                    </button>
+              ) : customUser ? (
+                <div className="flex items-center gap-3">
+                  <div style={{
+                    width: "32px", height: "32px", borderRadius: "10px",
+                    background: "rgba(16, 185, 129, 0.1)",
+                    border: "1px solid rgba(16, 185, 129, 0.2)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#10B981"
+                  }}>
+                    <Users size={16} />
                   </div>
-                ) : (
-                  <SignedOut>
-                    <SignInButton mode="modal">
-                      <button style={{
-                        background: "var(--kravy-brand)",
-                        color: "white",
-                        border: "none",
-                        padding: "8px 16px",
-                        borderRadius: "10px",
-                        fontWeight: 700,
-                        fontSize: "0.85rem",
-                        cursor: "pointer",
-                        boxShadow: "0 4px 12px rgba(255,107,53,0.2)"
-                      }}>Sign In</button>
-                    </SignInButton>
-                  </SignedOut>
-                )
+                  {/* Logout Button for Custom Session */}
+                  <button 
+                    onClick={() => {
+                      kravy.close();
+                      document.cookie = "kravy_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                      document.cookie = "staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                      window.location.href = "/";
+                    }}
+                    className="group flex items-center justify-center p-2 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-500 transition-all active:scale-95"
+                    title="Logout"
+                  >
+                    <LogOut size={16} />
+                  </button>
+                </div>
+              ) : (
+                <Link href="/">
+                  <button style={{
+                    background: "var(--kravy-brand)",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: "10px",
+                    fontWeight: 700,
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    boxShadow: "0 4px 12px rgba(255,107,53,0.2)"
+                  }}>Sign In</button>
+                </Link>
               )}
             </div>
           )}

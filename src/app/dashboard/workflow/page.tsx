@@ -24,6 +24,8 @@ import {
     useDraggable,
     useDroppable
 } from '@dnd-kit/core';
+import PrintTemplates from "@/components/printing/PrintTemplates";
+import BillPreview from "@/components/printing/BillPreview";
 import { CSS } from '@dnd-kit/utilities';
 import OrderAlertLoop from "./components/order-alert-loop";
 import { useAuthContext } from "@/components/AuthContext";
@@ -71,6 +73,54 @@ type TableStatus = {
     activeOrderId?: string;
     status: "FREE" | "PENDING" | "ACCEPTED" | "PREPARING" | "READY";
     activeCount: number;
+    startTime?: string;
+};
+
+const TableTimer = ({ startTime, className = "" }: { startTime?: string, className?: string }) => {
+    const [elapsed, setElapsed] = useState("");
+
+    useEffect(() => {
+        if (!startTime) {
+            setElapsed("");
+            return;
+        }
+
+        const update = () => {
+            const now = new Date();
+            const start = new Date(startTime);
+            const diff = Math.floor((now.getTime() - start.getTime()) / 1000);
+            
+            if (diff < 0) {
+                setElapsed("0s");
+                return;
+            }
+
+            const secs = diff % 60;
+            const mins = Math.floor(diff / 60);
+            const hrs = Math.floor(mins / 60);
+            
+            if (hrs > 0) {
+                setElapsed(`${hrs}h ${mins % 60}m`);
+            } else if (mins > 0) {
+                setElapsed(`${mins}m ${secs}s`);
+            } else {
+                setElapsed(`${secs}s`);
+            }
+        };
+
+        update();
+        const interval = setInterval(update, 1000);
+        return () => clearInterval(interval);
+    }, [startTime]);
+
+    if (!startTime) return null;
+
+    return (
+        <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-slate-900/5 dark:bg-white/5 border border-slate-900/5 dark:border-white/5 text-[8px] font-mono font-bold text-slate-500 dark:text-slate-400 ${className}`}>
+            <Clock size={8} strokeWidth={3} className="opacity-70" />
+            {elapsed}
+        </span>
+    );
 };
 
 const TABS = [
@@ -102,12 +152,14 @@ const numberToWords = (num: number): string => {
     return result + ' Only';
 };
 
-const calculateOrderTotals = (items: OrderItem[], isTaxEnabled: boolean, globalRate: number, perProductEnabled: boolean) => {
+const calculateOrderTotals = (items: any[], isTaxEnabled: boolean, globalRate: number, perProductEnabled: boolean) => {
     let subtotal = 0;
     let gst = 0;
 
     items.forEach(it => {
-        const gross = it.price * it.quantity;
+        const q = Number(it.qty || it.quantity || 0);
+        const p = Number(it.rate || it.price || 0);
+        const gross = q * p;
         const rate = (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (isTaxEnabled ? globalRate : 0);
         const ts = it.taxStatus || "Without Tax";
 
@@ -154,7 +206,6 @@ const DroppableColumn = ({ children, id, className, isOverStyle }: any) => {
 
 function KravyPOS() {
     const router = useRouter();
-    const receiptRef = useRef<HTMLDivElement | null>(null);
     const billReceiptRef = useRef<HTMLDivElement | null>(null);
     const kotReceiptRef = useRef<HTMLDivElement | null>(null);
     const [activeTab, setActiveTab] = useState<TabKey>("live-orders");
@@ -217,10 +268,15 @@ function KravyPOS() {
         fetchData(); // Fetch fresh orders immediately when params change
         const tableId = searchParams.get("tableId");
         const orderId = searchParams.get("orderId");
-        if (tableId) {
+        const tab = searchParams.get("tab") as TabKey;
+
+        if (tab) {
+            setActiveTab(tab);
+        } else if (tableId) {
             setSelectedTableId(tableId);
             setActiveTab("dashboard");
         }
+
         if (orderId) {
             setSelectedOrderId(orderId);
         }
@@ -327,9 +383,7 @@ function KravyPOS() {
                 `;
                 console.log("[PRINT] Combined KOT + Bill triggered via Auto-Both setting");
             } else {
-                const targetRef = (showPreview && previewMode === (isBill ? "BILL" : "KOT"))
-                    ? receiptRef.current
-                    : (isBill ? billReceiptRef.current : kotReceiptRef.current);
+                const targetRef = isBill ? billReceiptRef.current : kotReceiptRef.current;
                 
                 if (!targetRef) {
                     console.error(`[PRINT ERROR] No DOM reference found for ${type}. Check if printer zone is rendered.`);
@@ -566,7 +620,11 @@ function KravyPOS() {
                 setOrders(ordersData);
                 const processed = rawTables.map((t: any) => {
                     const tableOrders = ordersData.filter(o => o.table?.id === t.id && o.status !== "COMPLETED" && !o.isDeleted);
-                    const liveOrder = tableOrders[0]; // Primary display order
+                    // Sort to find the oldest order (when they started dining)
+                    const sorted = [...tableOrders].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                    const firstOrder = sorted[0];
+                    const liveOrder = tableOrders[0]; 
+                    
                     let status: "FREE" | "PENDING" | "ACCEPTED" | "PREPARING" | "READY" = "FREE";
                     if (liveOrder) {
                         if (liveOrder.status === "PENDING") status = "PENDING";
@@ -574,7 +632,15 @@ function KravyPOS() {
                         else if (liveOrder.status === "PREPARING") status = "PREPARING";
                         else if (liveOrder.status === "READY") status = "READY";
                     }
-                    return { id: t.id, name: t.name, isOccupied: !!liveOrder, activeOrderId: liveOrder?.id, status, activeCount: tableOrders.length };
+                    return { 
+                        id: t.id, 
+                        name: t.name, 
+                        isOccupied: !!liveOrder, 
+                        activeOrderId: liveOrder?.id, 
+                        status, 
+                        activeCount: tableOrders.length,
+                        startTime: firstOrder?.createdAt
+                    };
                 });
                 setTablesList(processed);
             }
@@ -929,34 +995,36 @@ function KravyPOS() {
                     </div>
                 </div>
 
-                {/* Navigation Tabs (Scrollable on mobile) */}
-                <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar w-full lg:w-auto justify-start lg:justify-center -mx-4 px-4 lg:mx-0 lg:px-0">
-                    {TABS.map(t => {
-                        const Icon = t.icon;
-                        const isActive = activeTab === t.key;
-                        let badgeCount = 0;
-                        if (t.key === "live-orders") badgeCount = stats.pending + stats.running;
-                        if (t.key === "kitchen") badgeCount = stats.pending + stats.running;
-                        if (t.key === "payment") badgeCount = stats.ready;
+                {/* Navigation Tabs (Scrollable on mobile) - Hidden in Terminal Mode */}
+                {activeTab !== "dashboard" && (
+                    <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar w-full lg:w-auto justify-start lg:justify-center -mx-4 px-4 lg:mx-0 lg:px-0">
+                        {TABS.map(t => {
+                            const Icon = t.icon;
+                            const isActive = activeTab === t.key;
+                            let badgeCount = 0;
+                            if (t.key === "live-orders") badgeCount = stats.pending + stats.running;
+                            if (t.key === "kitchen") badgeCount = stats.pending + stats.running;
+                            if (t.key === "payment") badgeCount = stats.ready;
 
-                        return (
-                            <button
-                                key={t.key}
-                                onClick={() => { kravy.click(); setActiveTab(t.key); }}
-                                className={`relative flex items-center gap-2 px-3 lg:px-4 py-2 rounded-xl text-[11px] lg:text-xs font-bold transition-all whitespace-nowrap ${isActive ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}
-                            >
-                                <Icon size={14} />
-                                <span>{t.label}</span>
-                                {badgeCount > 0 && (
-                                    <span className={`w-4 h-4 flex items-center justify-center rounded-full text-[9px] font-bold text-white shadow-sm ${t.key === "payment" ? "bg-blue-500" : "bg-rose-500"}`}>
-                                        {badgeCount}
-                                    </span>
-                                )}
-                                {isActive && <motion.div layoutId="nav-ind" className="absolute -bottom-[21px] lg:-bottom-[17px] left-3 right-3 h-0.5 bg-slate-900 dark:bg-white rounded-t-full" />}
-                            </button>
-                        );
-                    })}
-                </nav>
+                            return (
+                                <button
+                                    key={t.key}
+                                    onClick={() => { kravy.click(); setActiveTab(t.key); }}
+                                    className={`relative flex items-center gap-2 px-3 lg:px-4 py-2 rounded-xl text-[11px] lg:text-xs font-bold transition-all whitespace-nowrap ${isActive ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}
+                                >
+                                    <Icon size={14} />
+                                    <span>{t.label}</span>
+                                    {badgeCount > 0 && (
+                                        <span className={`w-4 h-4 flex items-center justify-center rounded-full text-[9px] font-bold text-white shadow-sm ${t.key === "payment" ? "bg-blue-500" : "bg-rose-500"}`}>
+                                            {badgeCount}
+                                        </span>
+                                    )}
+                                    {isActive && <motion.div layoutId="nav-ind" className="absolute -bottom-[21px] lg:-bottom-[17px] left-3 right-3 h-0.5 bg-slate-900 dark:bg-white rounded-t-full" />}
+                                </button>
+                            );
+                        })}
+                    </nav>
+                )}
 
                 {/* Right Controls (Hidden on mobile stats, shown buttons on desktop) */}
                 <div className="hidden lg:flex items-center gap-6">
@@ -1011,7 +1079,7 @@ function KravyPOS() {
                                                 : orders.filter(o => o.status === "COMPLETED" && !o.isDeleted).length;
 
                                         const isActive = liveOrderTab === tab;
-                                        const label = tab === "PREPARING" ? "Preparing" : tab === "READY" ? "Ready" : "Picked up";
+                                        const label = tab === "PREPARING" ? "Preparing" : tab === "READY" ? "Ready" : "Served";
 
                                         return (
                                             <button
@@ -1106,7 +1174,8 @@ function KravyPOS() {
                                                                             const tbl = tablesList.find(t => t.id === order.table?.id);
                                                                             setPrintOrder(order);
                                                                             setPrintTable(tbl || null);
-                                                                            setTimeout(() => handlePrint("BILL", order, tbl || undefined), 100);
+                                                                            setPreviewMode("BILL");
+                                                                            setShowPreview(true);
                                                                         }}
                                                                         className="w-full h-8 rounded border border-emerald-600 bg-white text-[10px] font-black uppercase text-emerald-600 flex items-center justify-center gap-1.5 hover:bg-emerald-50 transition-all font-mono"
                                                                     >
@@ -1425,10 +1494,15 @@ function KravyPOS() {
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <span className={`text-[8px] font-black uppercase tracking-widest flex items-center gap-1 ${cfg.text}`}>
-                                                        <span className={`w-1 h-1 rounded-full ${cfg.dot}`} />
-                                                        {cfg.label}
-                                                    </span>
+                                                    <div className="flex flex-col items-center gap-1 mt-1">
+                                                        <span className={`text-[8px] font-black uppercase tracking-widest flex items-center gap-1 ${cfg.text}`}>
+                                                            <span className={`w-1 h-1 rounded-full ${cfg.dot}`} />
+                                                            {cfg.label}
+                                                        </span>
+                                                        {t.startTime && (
+                                                            <TableTimer startTime={t.startTime} />
+                                                        )}
+                                                    </div>
                                                     {t.isOccupied && <span className="absolute inset-0 rounded-2xl ring-4 ring-slate-900/5 animate-pulse" />}
                                                 </motion.button>
                                             );
@@ -1511,6 +1585,14 @@ function KravyPOS() {
                                                         <span className="flex items-center gap-1"><User size={11} /> 4 Guests</span>
                                                         <span className="w-1 h-1 rounded-full bg-slate-200" />
                                                         <span className="flex items-center gap-1"><ShieldCheck size={11} /> Rahul S.</span>
+                                                        {(activeOrderForSelected?.createdAt || selectedTable?.startTime) && (
+                                                            <div className="flex items-center gap-1.5 ml-1 pl-3 border-l border-slate-100 dark:border-slate-800">
+                                                                <TableTimer startTime={activeOrderForSelected?.createdAt || selectedTable.startTime} className="!bg-emerald-500/10 !text-emerald-600 !border-emerald-500/20 !px-2" />
+                                                                <span className="text-[9px] font-black text-slate-300 uppercase tracking-wider">
+                                                                    Since {new Date(activeOrderForSelected?.createdAt || selectedTable.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                         {activeOrderForSelected && (
                                                             <>
                                                                 <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-700" />
@@ -1535,6 +1617,11 @@ function KravyPOS() {
                                                     onClick={() => {
                                                         kravy.click();
                                                         const passOrderId = activeOrderForSelected?.id || selectedTable?.activeOrderId;
+                                                        if (passOrderId && activeOrderForSelected) {
+                                                            try {
+                                                                sessionStorage.setItem(`kravy_checkout_order_${passOrderId}`, JSON.stringify(activeOrderForSelected));
+                                                            } catch {}
+                                                        }
                                                         router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}${passOrderId ? `&orderId=${passOrderId}` : ""}&returnTo=/dashboard/workflow`);
                                                     }}
                                                     className="h-10 px-4 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-slate-900/10 hover:scale-105 active:scale-95 transition-all"
@@ -1551,9 +1638,17 @@ function KravyPOS() {
                                                     <button 
                                                         key={o.id}
                                                         onClick={() => { kravy.click(); setSelectedOrderId(o.id); }}
-                                                        className={`shrink-0 px-4 py-2.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${activeOrderForSelected?.id === o.id ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 shadow-lg shadow-slate-900/10" : "bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-800 hover:border-slate-300"}`}
+                                                        className={`shrink-0 px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-3 ${activeOrderForSelected?.id === o.id ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 shadow-lg shadow-slate-900/10" : "bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-800 hover:border-slate-300"}`}
                                                     >
-                                                        <User size={12} /> {o.customerName || `Order #${o.id.slice(-4)}`}
+                                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${activeOrderForSelected?.id === o.id ? "bg-white/10" : "bg-slate-50 dark:bg-slate-700"}`}>
+                                                            <User size={14} className={activeOrderForSelected?.id === o.id ? "text-white dark:text-slate-900" : "text-slate-400"} />
+                                                        </div>
+                                                        <div className="flex flex-col items-start gap-0.5">
+                                                            <span className="leading-none">{o.customerName || `Order #${o.id.slice(-4).toUpperCase()}`}</span>
+                                                            <div className="flex items-center gap-1.5 opacity-60">
+                                                                <TableTimer startTime={o.createdAt} className="!bg-transparent !p-0 !border-none !text-[8px] !font-black !text-inherit" />
+                                                            </div>
+                                                        </div>
                                                     </button>
                                                 ))}
                                             </div>
@@ -1798,7 +1893,7 @@ function KravyPOS() {
                                                                         )}
                                                                     </div>
                                                                     <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter mt-1 flex items-center gap-1">
-                                                                        <Clock size={8} /> 5m ago
+                                                                        <TableTimer startTime={o.createdAt} />
                                                                     </p>
                                                                 </div>
                                                             </div>
@@ -2040,7 +2135,7 @@ function KravyPOS() {
                                                 onClick={() => handleCheckout(activeOrderForSelected.id)}
                                                 className="flex-[2.5] h-20 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[1.8rem] flex items-center justify-center gap-4 text-base font-black uppercase tracking-[0.15em] shadow-2xl shadow-slate-900/40 active:scale-95 transition-all hover:bg-slate-800 dark:hover:bg-slate-100"
                                             >
-                                                Finalize Settlement <ArrowRight size={20} />
+                                                Print Payment Receipt <ArrowRight size={20} />
                                             </button>
                                         </div>
                                     </div>
@@ -2259,100 +2354,6 @@ function KravyPOS() {
                 </AnimatePresence>
             </main>
 
-            {/* ═══ PREVIEW MODAL ═══ */}
-            <AnimatePresence>
-                {showPreview && selectedTable && activeOrderForSelected && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/80 backdrop-blur-md"
-                            onClick={() => setShowPreview(false)}
-                        />
-
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative bg-white dark:bg-slate-900 w-full max-w-[500px] h-[90vh] flex flex-col rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
-                        >
-                            {/* Header */}
-                            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0">
-                                <div>
-                                    <h3 className="text-sm font-black text-slate-900 dark:text-white">{previewMode === "BILL" ? "Bill Preview" : "KOT Preview"}</h3>
-                                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">Check before printing</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => setPreviewZoom(z => Math.max(0.5, z - 0.1))} className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"><ZoomOut size={14} /></button>
-                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 w-9 text-center">{(previewZoom * 100).toFixed(0)}%</span>
-                                    <button onClick={() => setPreviewZoom(z => Math.min(2, z + 0.1))} className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"><ZoomIn size={14} /></button>
-                                    <div className="w-px h-5 bg-slate-100 dark:bg-slate-800 mx-1" />
-                                    <button onClick={() => setShowPreview(false)} className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all">
-                                        <X size={16} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Preview Area */}
-                            <div className="flex-1 overflow-auto bg-slate-200/80 dark:bg-zinc-900 p-8 flex flex-col items-center shadow-inner">
-                                <motion.div
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    ref={receiptRef}
-                                    className="bg-white text-black p-6 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] origin-top transition-all duration-300 mx-auto ring-1 ring-black/5"
-                                    style={{
-                                        width: '58mm',
-                                        minHeight: '100px',
-                                        transform: `scale(${previewZoom * 1.5})`,
-                                        marginBottom: `${previewZoom * 120}px`
-                                    }}
-                                >
-                                    {(() => {
-                                        const targetO = printOrder || activeOrderForSelected;
-                                        const targetT = printTable || selectedTable;
-                                        if (!targetO || !targetT) return null;
-                                        const { subtotal, gst, total } = calculateOrderTotals(targetO.items, isTaxEnabled, globalRate, perProductEnabled);
-
-                                        return getReceiptJSX(
-                                            previewMode,
-                                            business,
-                                            targetO,
-                                            targetT,
-                                            subtotal,
-                                            isTaxEnabled,
-                                            globalRate,
-                                            gst,
-                                            total,
-                                            payMethod,
-                                            qrUrl
-                                        );
-                                    })()}
-                                </motion.div>
-                            </div>
-
-                            {/* Footer */}
-                            <div className="px-5 py-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex gap-3 shrink-0">
-                                <button
-                                    onClick={() => setShowPreview(false)}
-                                    className="flex-1 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 font-bold text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-                                >
-                                    Close
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        handlePrint(previewMode);
-                                        setShowPreview(false);
-                                    }}
-                                    className="flex-[2] py-3.5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                                >
-                                    <Printer size={16} /> Print Direct
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
 
 
             {/* ═══ ADD ITEM MODAL ═══ */}
@@ -2425,228 +2426,107 @@ function KravyPOS() {
                 )}
             </AnimatePresence>
 
-            {/* Hidden Printer Zone */}
-            <div style={{ position: 'absolute', top: -9999, left: -9999, opacity: 0, pointerEvents: 'none' }}>
-                <div ref={billReceiptRef} style={{ width: '100%' }}>
-                    {(() => {
-                        const targetO = printOrder || activeOrderForSelected;
-                        const targetT = printTable || selectedTable;
-                        if (!targetO || !targetT) return null;
-                        const { subtotal, gst, total } = calculateOrderTotals(targetO.items, isTaxEnabled, globalRate, perProductEnabled);
-                        const predictedBalance = (payMethod.toLowerCase() === "wallet" && selectedParty) 
-                            ? (selectedParty.walletBalance - total) 
-                            : selectedParty?.walletBalance;
-                        return getReceiptJSX("BILL", business, targetO, targetT, subtotal, isTaxEnabled, globalRate, gst, total, payMethod, qrUrl, predictedBalance);
-                    })()}
-                </div>
-                <div ref={kotReceiptRef} style={{ width: '100%' }}>
-                    {(() => {
-                        const targetO = printOrder || activeOrderForSelected;
-                        const targetT = printTable || selectedTable;
-                        if (!targetO || !targetT) return null;
-                        const { subtotal, gst, total } = calculateOrderTotals(targetO.items, isTaxEnabled, globalRate, perProductEnabled);
-                        return getReceiptJSX("KOT", business, targetO, targetT, subtotal, isTaxEnabled, globalRate, gst, total, payMethod, qrUrl);
-                    })()}
-                </div>
-            </div>
 
+            {/* Modular Shared Templates for Thermal Printing */}
+            <PrintTemplates
+                receiptRef={billReceiptRef}
+                kotRef={kotReceiptRef}
+                business={business}
+                billNumber={printOrder?.id ? `SV/${new Date(printOrder.createdAt || Date.now()).getFullYear().toString().slice(-2)}${(new Date(printOrder.createdAt || Date.now()).getMonth() + 1).toString().padStart(2, '0')}/${(parseInt(printOrder.id.slice(-4), 16) % 10000).toString().padStart(4, '0')}` : "DRAFT"}
+                billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}
+                tokenNumber={printOrder?.tokenNumber ? printOrder.tokenNumber.toString() : (printOrder?.id ? (parseInt(printOrder.id.slice(-4), 16) % 1000).toString().padStart(3, '0') : "001")}
+                selectedTable={printOrder?.table?.name || "Counter"}
+                customerName={printOrder?.customerName?.trim() || "Walk-in Customer"}
+                customerPhone={printOrder?.customerPhone || ""}
+                customerAddress={printOrder?.customerAddress || ""}
+                orderNotes={printOrder?.notes || ""}
+                buyerGSTIN=""
+                placeOfSupply=""
+                items={printOrder?.items.map(it => ({
+                    name: it.name,
+                    qty: it.quantity,
+                    rate: it.price,
+                    gst: it.gst
+                })) || []}
+                subtotal={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
+                discountAmt={0}
+                appliedOffer={null}
+                taxActive={isTaxEnabled}
+                perProductEnabled={perProductEnabled}
+                globalRate={globalRate}
+                totalTaxable={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
+                totalGst={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).gst : 0}
+                taxBreakup={[]}
+                deliveryCharge={0}
+                deliveryGst={0}
+                packagingCharge={0}
+                packagingGst={0}
+                serviceCharge={0}
+                finalTotal={printOrder?.total || 0}
+                paymentMode={payMethod || "Cash"}
+                paymentStatus="Paid"
+                upiTxnRef=""
+                qrUrl={qrUrl}
+                prevWalletBalance={null}
+                selectedParty={null}
+                numberToWords={numberToWords}
+            />
+
+            {/* Modular Bill Preview Modal */}
+            <BillPreview 
+                showPreview={showPreview}
+                setShowPreview={setShowPreview}
+                previewZoom={previewZoom}
+                setPreviewZoom={setPreviewZoom}
+                business={business}
+                billNumber={printOrder?.id ? `SV/${new Date(printOrder.createdAt || Date.now()).getFullYear().toString().slice(-2)}${(new Date(printOrder.createdAt || Date.now()).getMonth() + 1).toString().padStart(2, '0')}/${(parseInt(printOrder.id.slice(-4), 16) % 10000).toString().padStart(4, '0')}` : "DRAFT"}
+                billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}
+                tokenNumber={printOrder?.tokenNumber ? printOrder.tokenNumber.toString() : (printOrder?.id ? (parseInt(printOrder.id.slice(-4), 16) % 1000).toString().padStart(3, '0') : "001")}
+                selectedTable={printOrder?.table?.name || "Counter"}
+                customerName={printOrder?.customerName?.trim() || "Walk-in Customer"}
+                customerPhone={printOrder?.customerPhone || ""}
+                customerAddress={printOrder?.customerAddress || ""}
+                orderNotes={printOrder?.notes || ""}
+                placeOfSupply=""
+                items={printOrder?.items.map((it: any) => ({
+                    name: it.name,
+                    qty: Number(it.qty || it.quantity || 0),
+                    rate: Number(it.rate || it.price || 0),
+                    gst: it.gst || 0,
+                    taxStatus: it.taxStatus || "Without Tax"
+                })) || []}
+                subtotal={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
+                discountAmt={0}
+                appliedOffer={null}
+                taxActive={isTaxEnabled}
+                perProductEnabled={perProductEnabled}
+                totalTaxable={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
+                totalGst={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).gst : 0}
+                taxBreakup={[]}
+                deliveryCharge={0}
+                deliveryGst={0}
+                packagingCharge={0}
+                packagingGst={0}
+                finalTotal={printOrder?.total || 0}
+                paymentMode={payMethod || "Cash"}
+                paymentStatus="Paid"
+                qrUrl={qrUrl}
+                numberToWords={numberToWords}
+                kravy={kravy}
+                // Actions - Adapting for workflow
+                printKOT={() => handlePrint("KOT", printOrder || undefined)}
+                printReceipt={(enableKOT) => handlePrint("BILL", printOrder || undefined)}
+                saveBill={async () => printOrder} // Order is already saved in database
+                resetForm={() => setShowPreview(false)}
+                isSaving={false}
+                lastSavedBillId={printOrder?.id || null}
+                userRole={userRole || "ADMIN"}
+                userPermissions={userPermissions || []}
+                resumeBillId={null}
+                router={router}
+            />
         </div>
     );
-
-    function getReceiptJSX(
-        mode: "BILL" | "KOT",
-        business: any,
-        activeOrder: Order | null | undefined,
-        table: TableStatus | null | undefined,
-        subtotal: number,
-        taxEnabled: boolean,
-        globalRate: number,
-        gst: number,
-        total: number,
-        paymentMethod: string,
-        qrCodeUrl: string,
-        remainingBalance?: number
-    ) {
-        if (!activeOrder) return null;
-        const displayTable = table || { name: activeOrder.table?.name || "Counter", id: "0" };
-
-        if (mode === "BILL") {
-            return (
-                <div className="font-mono text-[10px] leading-tight text-black bg-white" style={{ width: '100%', paddingBottom: '15mm' }}>
-                    {/* Header Section */}
-                    <div className="text-center mb-2">
-                        {business?.logoUrl && (
-                            <div className="flex justify-center mb-1">
-                                <img src={business.logoUrl} alt="Logo" className="max-h-[20mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
-                            </div>
-                        )}
-                        <div className="font-black text-[16px] leading-none uppercase tracking-tight mb-1">{business?.businessName || "KRAVY RESTAURANT"}</div>
-                        {(business?.businessAddress || business?.district) && (
-                            <div className="text-[8px] font-black uppercase">
-                                {business?.businessAddress} {business?.district && `| ${business.district}`}
-                            </div>
-                        )}
-                        {business?.gstNumber && <div className="text-[9px] font-black border-y border-dotted border-black py-1 mt-1">GSTIN: {business.gstNumber}</div>}
-                    </div>
-
-                    {/* Order Details Section */}
-                    <div className="flex justify-between text-[10px] font-black uppercase border-b border-dotted border-black pb-1 mb-1">
-                        <span>INV: #{activeOrder?.id.slice(-6).toUpperCase()}</span>
-                        <span>{new Date(activeOrder.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
-                    </div>
-                    <div className="flex justify-between text-[10px] font-black uppercase mb-1">
-                        <span className="border border-black border-dotted px-1">TABLE: {displayTable.name}</span>
-                        <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-
-                    {(activeOrder.customerName || activeOrder.customerPhone || activeOrder.customerAddress) && (
-                        <div className="mb-1 text-[9px] font-black uppercase border-y border-dotted border-black py-0.5">
-                            {activeOrder.customerName && <div className="truncate">CUST: {activeOrder.customerName}</div>}
-                            {activeOrder.customerPhone && <div>PH: {activeOrder.customerPhone}</div>}
-                            {activeOrder.customerAddress && <div className="mt-0.5" style={{ whiteSpace: 'pre-wrap' }}>ADDR: {activeOrder.customerAddress}</div>}
-                        </div>
-                    )}
-
-                    {/* Items Section */}
-                    <div className="flex justify-between font-black text-[10px] uppercase border-b border-dotted border-black py-1 mt-1 mb-1">
-                        <span className="flex-1">ITEM NAME</span>
-                        <span className="w-[8mm] text-center">QTY</span>
-                        <span className="w-[15mm] text-right">TOTAL</span>
-                    </div>
-
-                    <div className="space-y-1">
-                        {activeOrder?.items.map((it: any, idx: number) => (
-                            <div key={idx} className="flex justify-between text-[10px] font-black uppercase leading-tight border-b border-dotted border-black/20 pb-0.5">
-                                <div className="flex-1 pr-1">
-                                    <div className="truncate">{it.name}</div>
-                                    <div className="text-[8px] opacity-70">{it.quantity} x {it.price.toFixed(2)}</div>
-                                </div>
-                                <span className="w-[8mm] text-center self-start pt-0.5">x{it.quantity}</span>
-                                <span className="w-[15mm] text-right self-start pt-0.5">{(it.quantity * it.price).toFixed(2)}</span>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Totals Section */}
-                    <div className="mt-1 pt-1 space-y-0.5">
-                        <div className="flex justify-between text-[10px] font-black">
-                            <span>SUBTOTAL</span>
-                            <span>₹{subtotal.toFixed(2)}</span>
-                        </div>
-                        {taxEnabled && (
-                            <div className="flex justify-between text-[9px] font-black">
-                                <span>GST ({globalRate}%)</span>
-                                <span>₹{gst.toFixed(2)}</span>
-                            </div>
-                        )}
-                        <div className="flex justify-between font-black text-[16px] border-y-2 border-dotted border-black py-1.5 my-1 uppercase">
-                            <span>GRAND TOTAL</span>
-                            <span>₹{total.toFixed(0)}</span>
-                        </div>
-                    </div>
-
-                    <div className="mt-1 text-[8px] font-black uppercase italic leading-none">
-                        RUPEES: {numberToWords(total)}
-                    </div>
-
-                    <div className="mt-3 text-center">
-                        <div className="inline-block border border-dotted border-black px-4 py-1 text-[11px] font-black uppercase">
-                            PAID VIA {paymentMethod.toUpperCase()}
-                        </div>
-                        {paymentMethod.toLowerCase() === "wallet" && remainingBalance !== undefined && (
-                            <div className="mt-1 text-[10px] font-black uppercase border-t border-dotted border-black pt-1">
-                                Remaining Balance: ₹{remainingBalance.toFixed(2)}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* UPI QR Section */}
-                    {(business?.upi && business?.upiQrEnabled !== false) && (
-                        <div className="mt-3 text-center border-t border-dotted border-black pt-2">
-                            <div className="text-[9px] font-black mb-1.5 uppercase tracking-[0.2em]">Scan to Pay Instantly</div>
-                            <div className="inline-block border-2 border-dotted border-black p-1 bg-white rounded">
-                                <img src={qrCodeUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain" style={{ filter: 'contrast(400%) grayscale(100%)' }} />
-                            </div>
-                            <div className="text-[8px] font-black mt-1 tracking-widest">{business.upi}</div>
-                        </div>
-                    )}
-
-                    {/* Footer Section */}
-                    <div className="mt-3 text-center border-t border-dotted border-black pt-2">
-                        <div className="text-[12px] font-black uppercase italic tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
-                        {business?.businessTagLine && <div className="text-[8px] font-black mt-0.5 uppercase tracking-widest">{business.businessTagLine}</div>}
-                        <div className="text-[7px] font-black opacity-30 mt-2 uppercase tracking-[0.3em]">Powered by Kravy AI</div>
-                        {/* Buffer space to prevent cutting */}
-                        <div className="h-[5mm]" />
-                    </div>
-                </div>
-            );
-        } else { // KOT
-            return (
-                <div className="kravy-kot-print text-black font-mono bg-white text-[10px] leading-tight" style={{ width: '100%', paddingBottom: '25mm' }}>
-                    <div className="text-center font-bold text-[14px] border-b border-dashed border-black pb-1 mb-2 uppercase tracking-tighter">*** KOT ***</div>
-                    
-                    <div className="space-y-0.5 mb-2">
-                        <div className="flex justify-between items-center font-bold text-[10px]">
-                            <span>TOKEN: #{activeOrder.id.slice(-4).toUpperCase()}</span>
-                            <span>{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })}</span>
-                        </div>
-                        <div className="flex justify-between items-center font-bold text-[10px]">
-                            <span>TIME: {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-                            <span>KOT NO: {Math.floor(Date.now() / 1000).toString().slice(-4)}</span>
-                        </div>
-                    </div>
-
-                    <div className="text-center text-[16px] font-bold border border-dashed border-black py-1 my-2 uppercase">
-                        TABLE: {displayTable.name}
-                    </div>
-
-                    {activeOrder.customerAddress && (
-                        <div className="mt-1 mb-2 p-1 border border-dashed border-black text-[10px] font-bold uppercase">
-                            DELIVERY ADDR: {activeOrder.customerAddress}
-                        </div>
-                    )}
-
-                    {activeOrder.notes && (
-                        <div className="mt-1 mb-2 p-1 border border-dashed border-black text-[10px] font-bold uppercase italic">
-                            NOTE: {activeOrder.notes}
-                        </div>
-                    )}
-
-                    <div className="flex justify-between font-bold text-[10px] uppercase border-b border-dashed border-black pb-0.5 mb-1.5">
-                        <span>ITEM DESCRIPTION</span>
-                        <span>QTY</span>
-                    </div>
-
-                    <div className="space-y-2">
-                        {activeOrder?.items.map((it: any, i: number) => (
-                            <div key={i} className="flex justify-between items-start border-b border-dotted border-black/20 pb-1.5">
-                                <div className="flex-1 pr-2">
-                                    <div className="text-[12px] font-bold leading-tight uppercase">{it.name}</div>
-                                    {it.instruction && <div className="text-[9px] font-bold mt-0.5 uppercase">{"=>"} {it.instruction}</div>}
-                                    {it.variants && it.variants.length > 0 && (
-                                        <div className="text-[9px] font-medium mt-0.5 uppercase opacity-80">
-                                            ({it.variants.map((v: any) => v.name).join(', ')})
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="text-[14px] font-bold shrink-0 ml-2">x{it.quantity}</div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="text-center mt-5 pt-1.5 border-t border-dashed border-black">
-                        <div className="text-[9px] font-bold uppercase tracking-widest mb-1">Kravy POS System</div>
-                        <div className="text-[7px] font-medium">{new Date().toLocaleString('en-IN')}</div>
-                        {/* Extended buffer for paper tearing */}
-                        <div className="h-[20mm]" />
-                        <div className="text-[7px] opacity-30 italic">... end of token ...</div>
-                        <div className="h-[10mm]" />
-                    </div>
-                </div>
-            );
-        }
-    }
 
     async function addItemToOrder(menuItem: any) {
         if (!orderToUpdate) return;

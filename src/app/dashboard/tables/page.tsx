@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useAuthContext } from "@/components/AuthContext";
 import { toast } from "sonner";
 import QRCode from "react-qr-code";
 import {
@@ -19,7 +19,7 @@ interface TableRecord {
 }
 
 export default function TablesPage() {
-  const { user, isLoaded } = useUser();
+  const { user, loading: authLoading } = useAuthContext();
   const [tables, setTables] = useState<TableRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState("");
@@ -36,7 +36,7 @@ export default function TablesPage() {
   const getBase = () => (typeof window !== "undefined" ? window.location.origin : "");
 
   const generateTableUrl = (id: string, name: string) =>
-    `${getBase()}/menu/${user?.id}?tableId=${encodeURIComponent(id)}&tableName=${encodeURIComponent(name)}`;
+    `${getBase()}/menu/${user?.businessId || user?.id}?tableId=${encodeURIComponent(id)}&tableName=${encodeURIComponent(name)}`;
 
   const [availableZones, setAvailableZones] = useState<string[]>(["Default"]);
 
@@ -55,7 +55,9 @@ export default function TablesPage() {
 
       if (profileRes.ok) {
         const profile = await profileRes.json();
-        setMultiZoneEnabled(profile.multiZoneMenuEnabled);
+        if (profile) {
+          setMultiZoneEnabled(profile.multiZoneMenuEnabled);
+        }
       }
 
       // Extract unique zones from tables AND items
@@ -202,7 +204,7 @@ export default function TablesPage() {
     t.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (!isLoaded) return (
+  if (authLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--kravy-bg)]">
       <div className="flex flex-col items-center gap-4">
         <div className="w-10 h-10 rounded-full border-4 border-[var(--kravy-brand)]/20 border-t-[var(--kravy-brand)] animate-spin" />
@@ -213,7 +215,7 @@ export default function TablesPage() {
 
   if (!user) return (
     <div className="min-h-screen flex items-center justify-center">
-      <p className="text-rose-500 font-bold">Not signed in</p>
+      <p className="text-rose-500 font-bold">Please log in to manage tables</p>
     </div>
   );
 

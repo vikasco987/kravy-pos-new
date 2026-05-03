@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { kravy } from "@/lib/sounds";
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 import { useAuthContext } from "@/components/AuthContext";
+import PrintTemplates from "@/components/printing/PrintTemplates";
+import BillPreview from "@/components/printing/BillPreview";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo } from "react";
 
@@ -416,7 +418,15 @@ export default function CheckoutClient() {
   useEffect(() => {
     async function initPos() {
       // 1. Try to load from Cache first for instant UI
-      const cachedMenu = localStorage.getItem(menuCacheKey);
+      const cachedMenu =
+        localStorage.getItem(menuCacheKey) ||
+        localStorage.getItem("kravy_menu_default") ||
+        Object.keys(localStorage)
+          .find((key) => key.startsWith("kravy_menu_") && localStorage.getItem(key))
+          ?.split("\n")
+          .map((key) => localStorage.getItem(key))[0] ||
+        null;
+
       if (cachedMenu) {
         try {
           const parsed = JSON.parse(cachedMenu);
@@ -430,7 +440,7 @@ export default function CheckoutClient() {
       try {
         // 2. Parallel fetch for latest data
         const [itemsRes, catsRes, addonsRes] = await Promise.all([
-          fetch(`/api/menu/items?t=${Date.now()}`, { cache: "no-store" }),
+          fetch("/api/menu/items"),
           fetch("/api/categories"),
           fetch("/api/menu-editor/addon-groups")
         ]);
@@ -1271,7 +1281,8 @@ export default function CheckoutClient() {
       printKOT();
       setIsKotPrinted(true);
 
-      if (business?.syncQuickPosWithKitchen) {
+      // ✅ ALWAYS sync and redirect if returnTo is present (it implies a table order from Terminal)
+      if (business?.syncQuickPosWithKitchen || searchParams.get("returnTo")) {
         const orderData = {
           orderId: syncedOrderId || undefined,
           tableId: selectedTable !== "POS" ? tables.find(t => t.name === selectedTable)?.id : null,
@@ -1308,7 +1319,6 @@ export default function CheckoutClient() {
           if (returnTo) {
             setTimeout(() => {
               try {
-                // Construct the return URL with table and order context
                 const url = new URL(returnTo, window.location.origin);
                 const tableId = searchParams.get("tableId");
                 const currentOrderId = data.id || syncedOrderId;
@@ -1318,7 +1328,6 @@ export default function CheckoutClient() {
                 
                 router.push(url.pathname + url.search);
               } catch (e) {
-                // Fallback to simple string concat if URL construction fails
                 const separator = returnTo.includes("?") ? "&" : "?";
                 const tableId = searchParams.get("tableId");
                 const currentOrderId = data.id || syncedOrderId;
@@ -1330,16 +1339,20 @@ export default function CheckoutClient() {
             }, 200);
             return; 
           }
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          console.error("Sync failed:", errData);
+          toast.error(errData.error || "Failed to sync with kitchen. Redirection aborted.");
         }
       }
     } catch (err) {
       console.error("Sync error", err);
       toast.error("Failed to sync with kitchen");
     } finally {
-      // If we are not redirecting, reset isSaving
-      if (!searchParams.get("returnTo")) {
-        setIsSaving(false);
-      }
+      // ALWAYS reset isSaving after the process is done, 
+      // UNLESS we are specifically waiting for a router.push to complete 
+      // (even then, it's safer to reset it after a delay or if redirect is not imminent)
+      setIsSaving(false);
     }
   };
 
@@ -2625,317 +2638,45 @@ export default function CheckoutClient() {
         </div>
       </div>
 
-        {/* ================= PRINT RECEIPT (58mm) ================= */}
-        <div
-          ref={receiptRef}
-          data-paper="58"
-          className="hidden print:block receipt font-mono text-[10px] leading-tight text-black bg-white"
-          style={{ width: '100%', maxWidth: '80mm', padding: '0 6%', margin: '0 auto', boxSizing: 'border-box' }}
-        >
-          {business?.logoUrl && (
-            <div className="flex justify-center mb-1">
-              <img src={business.logoUrl} alt="Logo" className="max-h-[30mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
-            </div>
-          )}
-          <div className="text-center font-black text-[15px]">{business?.businessName}</div>
-          {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
-            <div className="text-center text-[10px] font-bold">
-              {business?.businessAddress}
-              {business?.district && `, ${business.district}`}
-              {business?.state && `, ${business.state}`}
-              {business?.pinCode && ` - ${business.pinCode}`}
-            </div>
-          )}
-          {business?.gstNumber && <div className="text-center text-[10px] font-bold border-y border-dashed border-black py-1 mt-1.5">GSTIN: {business.gstNumber}</div>}
-          {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[10px] font-bold">FSSAI: {business.fssaiNumber}</div>}
-          <div className="text-center text-[11px] mt-1.5 font-bold">
-            <div>Bill No: {billNumber}</div>
-            <div>Date: {billDate}</div>
-            {tokenNumber && (
-              <div className="mt-2 flex flex-col items-center border-2 border-black py-1 px-4 mx-auto w-fit">
-                <div className="text-[9px] font-black uppercase tracking-widest">Token Number</div>
-                <div className="text-[18px] font-black leading-none py-1">#{tokenNumber}</div>
-              </div>
-            )}
-            {selectedTable && (
-              <div className="font-bold text-[11px] mt-1 border border-black px-2 py-0.5 inline-block uppercase tracking-tighter">
-                {selectedTable === "POS" ? "TYPE: DINING / COUNTER" : 
-                 selectedTable === "TAKEAWAY" ? "TYPE: 🛍️ TAKEAWAY" : 
-                 selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
-                 `TYPE: DINING (TABLE: ${selectedTable})`}
-              </div>
-            )}
-          </div>
+        <PrintTemplates 
+          receiptRef={receiptRef}
+          kotRef={kotRef}
+          business={business}
+          billNumber={billNumber}
+          billDate={billDate}
+          tokenNumber={tokenNumber}
+          selectedTable={selectedTable}
+          customerName={customerName}
+          customerPhone={customerPhone}
+          customerAddress={customerAddress}
+          orderNotes={orderNotes}
+          buyerGSTIN={buyerGSTIN}
+          placeOfSupply={placeOfSupply}
+          items={items}
+          subtotal={subtotal}
+          discountAmt={discountAmt}
+          appliedOffer={appliedOffer}
+          taxActive={taxActive}
+          perProductEnabled={perProductEnabled}
+          globalRate={globalRate}
+          totalTaxable={totalTaxable}
+          totalGst={totalGst}
+          taxBreakup={taxBreakup}
+          deliveryCharge={deliveryCharge}
+          deliveryGst={deliveryGst}
+          packagingCharge={packagingCharge}
+          packagingGst={packagingGst}
+          serviceCharge={serviceCharge}
+          finalTotal={finalTotal}
+          paymentMode={paymentMode}
+          paymentStatus={paymentStatus}
+          upiTxnRef={upiTxnRef}
+          qrUrl={qrUrl}
+          prevWalletBalance={prevWalletBalance}
+          selectedParty={selectedParty}
+          numberToWords={numberToWords}
+        />
 
-          {(customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && (
-            <div className="mt-2 text-[10px] font-bold border-t-2 border-dashed border-black pt-1">
-              {customerName && <div>Customer: {customerName}</div>}
-              {customerPhone && <div>Phone: {customerPhone}</div>}
-              {buyerGSTIN && <div className="uppercase">Buyer GST: {buyerGSTIN}</div>}
-              {customerAddress && <div className="mt-0.5" style={{ wordWrap: 'break-word', whiteSpace: 'pre-wrap' }}>Addr: {customerAddress}</div>}
-              {orderNotes && <div className="mt-0.5 italic text-[10px]">Note: {orderNotes}</div>}
-            </div>
-          )}
-
-          <div className="mt-1 text-center text-[10px] font-bold">
-            {placeOfSupply && <div>Place of Supply: {placeOfSupply}</div>}
-          </div>
-          <div className="flex justify-between font-bold text-[9px] uppercase border-y-2 border-dashed border-black py-1 my-1">
-            <span className="flex-1 min-w-0 pr-1">Item Description</span>
-            <span className="w-[15mm] text-right shrink-0">Total</span>
-          </div>
-          <div className="border-t-2 border-dashed border-black my-1" />
-          {items.map((i) => {
-            const itemRate = (perProductEnabled && i.gst !== undefined && i.gst !== null) ? i.gst : (taxActive ? globalRate : 0);
-            return (
-              <div key={i.id} className="mb-2 border-b border-dotted border-black/20 pb-1">
-                <div className="flex justify-between items-start text-[11px] font-bold">
-                  <span className="flex-1 min-w-0 pr-2 break-words leading-[1.2]">{i.name}</span>
-                  <span className="w-[16mm] text-right shrink-0">₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center text-[10px] font-bold opacity-90">
-                  <span>{i.qty} x ₹{Number(i.rate ?? 0).toFixed(2)}</span>
-                  <span className="text-[9px]">
-                    {((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} 
-                    {(taxActive || perProductEnabled) ? ` | GST: ${itemRate}%` : ""}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-          <div className="my-1 border-t-2 border-black" />
-          
-          <div className="space-y-1">
-            <div className="flex justify-between text-[11px] font-bold"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
-            {discountAmt > 0 && (
-              <div className="flex justify-between text-[11px] font-bold italic">
-                <span>Discount ({appliedOffer?.code})</span>
-                <span>- ₹{discountAmt.toFixed(2)}</span>
-              </div>
-            )}
-            {(taxActive || perProductEnabled) && (
-              <>
-                <div className="flex justify-between text-[10px] font-bold"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>
-                <div className="flex justify-between text-[10px] font-bold"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
-              </>
-            )}
-            {deliveryCharge > 0 && (
-              <>
-                <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
-                  <span>DELIVERY CHARGES</span>
-                  <span>₹{deliveryCharge.toFixed(2)}</span>
-                </div>
-                {deliveryGst > 0 && (
-                  <div className="flex justify-between items-center text-[8px] font-bold italic opacity-60">
-                    <span className="pl-2">└ Tax on Delivery ({business?.deliveryGstRate}%)</span>
-                    <span>₹{deliveryGst.toFixed(2)}</span>
-                  </div>
-                )}
-              </>
-            )}
-            {packagingCharge > 0 && (
-              <>
-                <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
-                  <span>PACKAGING CHARGES</span>
-                  <span>₹{packagingCharge.toFixed(2)}</span>
-                </div>
-                {packagingGst > 0 && (
-                  <div className="flex justify-between items-center text-[8px] font-bold italic opacity-60">
-                    <span className="pl-2">└ Tax on Packaging ({business?.packagingGstRate}%)</span>
-                    <span>₹{packagingGst.toFixed(2)}</span>
-                  </div>
-                )}
-              </>
-            )}
-            {serviceCharge > 0 && (
-              <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
-                <span>SERVICE CHARGE</span>
-                <span>₹{serviceCharge.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="border-t-2 border-dashed border-black my-1" />
-            <div className="flex justify-between font-black text-[18px] border-y-2 border-black py-2.5 my-1.5 uppercase bg-white">
-              <span>GRAND TOTAL</span>
-              <span>₹{finalTotal.toFixed(2)}</span>
-            </div>
-          </div>
-
-          {(taxActive || perProductEnabled) && taxBreakup.length > 0 && (
-            <div className="mt-3">
-              <div className="text-[10px] font-black border-b border-dashed border-black mb-1 pb-0.5">GST TAX BREAKUP</div>
-              <table className="w-full text-[10px] border-collapse font-bold">
-                <thead>
-                  <tr className="border-b-2 border-black">
-                    <th className="text-left font-bold">Rate</th>
-                    <th className="text-right font-bold">Taxable</th>
-                    {taxBreakup.some(g => g.igst > 0) ? (
-                      <th className="text-right font-bold">IGST</th>
-                    ) : (
-                      <>
-                        <th className="text-right font-bold">CGST</th>
-                        <th className="text-right font-bold">SGST</th>
-                      </>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {taxBreakup.map((g, idx) => (
-                    <tr key={idx}>
-                      <td className="text-left">{g.rate}%</td>
-                      <td className="text-right">{g.taxable.toFixed(2)}</td>
-                      {g.igst > 0 ? (
-                        <td className="text-right">{g.igst.toFixed(2)}</td>
-                      ) : (
-                        <>
-                          <td className="text-right">{g.cgst.toFixed(2)}</td>
-                          <td className="text-right">{g.sgst.toFixed(2)}</td>
-                        </>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="border-t-2 border-black mt-1" />
-            </div>
-          )}
-
-          <div className="mt-2 text-[10px] italic font-bold">
-            Amount in Words: {numberToWords(finalTotal)}
-          </div>
-
-          <div className="mt-3 border-t-2 border-dashed border-black pt-1 flex justify-between text-[11px] font-bold">
-            <span>Payment: {paymentMode}</span>
-            <span>Status: {paymentStatus}</span>
-          </div>
-          
-          {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
-            <div className="mt-2 text-center text-[10px] font-bold border-t border-dashed border-black pt-2">
-              {(business?.upi && business?.upiQrEnabled !== false) && (
-                <>
-                  <div className="font-black">SCAN & PAY</div>
-                  <div className="my-2 text-center">
-                    <div className="inline-block border-2 border-black p-1 bg-white">
-                      <img src={qrUrl} alt="UPI QR" className="w-[32mm] h-[32mm] object-contain block" style={{ imageRendering: 'pixelated', filter: 'contrast(300%) grayscale(100%)' }} />
-                    </div>
-                  </div>
-                  <div className="mb-2">UPI: {business.upi}</div>
-                </>
-              )}
-              {paymentMode === "UPI" && (
-                <div className="text-center text-[10px]">Txn Ref: {upiTxnRef || "Pending"}</div>
-              )}
-            </div>
-          )}
-          {business?.enableMenuQRInBill && (
-            <div className="mt-2 text-center border-t-2 border-black pt-2">
-              <div className="text-[11px] font-black mb-1 uppercase tracking-tighter">Scan to View Digital Menu</div>
-              <div className="my-2 text-center">
-                <div className="inline-block border-2 border-black p-1 bg-white">
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/menu/${business?.userId}`)}`} 
-                    alt="Menu QR" 
-                    className="w-[32mm] h-[32mm] object-contain block mx-auto" 
-                    style={{ imageRendering: 'pixelated', filter: 'contrast(300%) grayscale(100%)' }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-          {selectedParty && (
-            <div className="mt-2 border-t border-dashed border-black pt-2 text-[10px] font-bold space-y-0.5">
-              <div className="flex justify-between uppercase">
-                <span>Wallet (Opening)</span>
-                <span>₹{(prevWalletBalance ?? selectedParty.walletBalance + (paymentMode === 'Wallet' ? finalTotal : 0)).toFixed(2)}</span>
-              </div>
-              {paymentMode === "Wallet" ? (
-                <div className="flex justify-between uppercase border-t border-dotted border-black/30 mt-1 pt-1">
-                  <span>New Balance</span>
-                  <span className="bg-black text-white px-1">₹{selectedParty.walletBalance?.toFixed(2)}</span>
-                </div>
-              ) : (
-                <div className="flex justify-between uppercase opacity-60 text-[8px] mt-1 italic">
-                  <span>Closing Balance</span>
-                  <span>₹{selectedParty.walletBalance?.toFixed(2)}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="mt-5 text-center border-t-2 border-dashed border-black pt-4">
-            <div className="text-[14px] font-black mb-1.5 uppercase tracking-tighter">THANK YOU 🙏 VISIT AGAIN</div>
-            <div className="text-[8px] font-bold">Software by Kravy</div>
-            <div className="text-[9px] italic tracking-[0.3em]">*** END OF BILL ***</div>
-            <div className="h-[40mm]" />
-          </div>
-        </div>
-
-        {/* ================= PRINT KOT (58mm) ================= */}
-        <div
-          ref={kotRef}
-          className="hidden print:block font-mono text-[9px] leading-tight text-black"
-          style={{ width: '100%', paddingBottom: '10mm' }}
-        >
-          <div className="text-center font-bold text-[11px] border-b border-dashed border-black pb-1 mb-1.5 uppercase tracking-tighter">*** KOT ***</div>
-          
-          <div className="space-y-0.5 mb-2">
-            <div className="flex justify-between items-center font-bold text-[10px]">
-              <span>ID: #{billNumber.split('-').pop()}</span>
-              <span>{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })}</span>
-            </div>
-            <div className="flex justify-between items-center font-bold text-[10px]">
-              <span>TIME: {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-              <span>KOT NO: {tokenNumber ? `TOKEN #${tokenNumber}` : Math.floor(Date.now() / 1000).toString().slice(-4)}</span>
-            </div>
-            {tokenNumber && (
-              <div className="mt-1 flex flex-col items-center border border-black py-0.5 px-3 mx-auto w-fit">
-                <div className="text-[8px] font-black uppercase tracking-widest">Order Token</div>
-                <div className="text-[18px] font-black leading-none py-0.5">#{tokenNumber}</div>
-              </div>
-            )}
-          </div>
-
-          <div className="text-center text-[12px] font-bold border border-dashed border-black py-0.5 my-1 uppercase tracking-tighter">
-            {selectedTable === "POS" ? "DINING / COUNTER" : 
-             selectedTable === "TAKEAWAY" ? "🛍️ TAKEAWAY" : 
-             selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
-             `TABLE: ${selectedTable}`}
-          </div>
-
-          {orderNotes && (
-            <div className="mt-1 mb-2 p-1 border border-dashed border-black text-[10px] font-bold uppercase italic">
-              NOTE: {orderNotes}
-            </div>
-          )}
-
-          <div className="flex justify-between font-bold text-[10px] uppercase border-b border-dashed border-black pb-0.5 mb-1.5">
-            <span>ITEM DESCRIPTION</span>
-            <span>QTY</span>
-          </div>
-
-          <div className="space-y-1.5">
-            {items.map((i, idx) => (
-              <div key={idx} className="flex justify-between items-start border-b border-dotted border-black/10 pb-1">
-                <div className="flex-1 min-w-0 pr-2 break-words">
-                  <div className="text-[10px] font-bold leading-tight uppercase">{i.name}</div>
-                  {i.variants && i.variants.length > 0 && (
-                    <div className="text-[8px] font-medium mt-0.5 uppercase opacity-80">
-                      ({i.variants.map((v: any) => v.name).join(', ')})
-                    </div>
-                  )}
-                </div>
-                <div className="text-[11px] font-bold shrink-0 ml-2">x{i.qty}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-5 pt-1.5 border-t border-dashed border-black">
-            <div className="text-[9px] font-bold uppercase tracking-widest mb-1">Kravy Counter</div>
-            <div className="text-[7px] font-medium">{new Date().toLocaleString('en-IN')}</div>
-            <div className="h-[20mm]" />
-            <div className="text-[8px] opacity-30 italic">... end of token ...</div>
-            <div className="h-[10mm]" />
-          </div>
-        </div>
       
 
 
@@ -3223,267 +2964,52 @@ export default function CheckoutClient() {
         </div>
       )}
 
-      {/* ════════════════════════════════════════════
-          BILL PREVIEW MODAL
-      ════════════════════════════════════════════ */}
-      {showPreview && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/20" onClick={() => setShowPreview(false)} />
-          
-          <div className="relative bg-[var(--kravy-bg)] w-full max-w-[500px] h-[90vh] flex flex-col rounded-3xl shadow-2xl border border-[var(--kravy-border)] overflow-hidden animate-in zoom-in-95 duration-200">
-            
-            {/* Header */}
-            <div className="px-5 py-4 border-b border-[var(--kravy-border)] bg-[var(--kravy-surface)] flex items-center justify-between shrink-0">
-              <div>
-                <h3 className="text-sm font-black text-[var(--kravy-text-primary)]">Bill Preview</h3>
-                <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-wider mt-0.5">Check before printing</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setPreviewZoom(z => Math.max(0.5, z - 0.1))} className="w-8 h-8 rounded-lg bg-[var(--kravy-bg)] border border-[var(--kravy-border)] flex items-center justify-center text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)] transition-colors"><ZoomOut size={14} /></button>
-                <span className="text-xs font-bold text-[var(--kravy-text-secondary)] w-9 text-center">{(previewZoom * 100).toFixed(0)}%</span>
-                <button onClick={() => setPreviewZoom(z => Math.min(2, z + 0.1))} className="w-8 h-8 rounded-lg bg-[var(--kravy-bg)] border border-[var(--kravy-border)] flex items-center justify-center text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)] transition-colors"><ZoomIn size={14} /></button>
-                <div className="w-px h-5 bg-[var(--kravy-border)] mx-1" />
-                <button onClick={() => { kravy.close(); setShowPreview(false); }} className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all">
-                  <X size={16} />
-                </button>
-              </div>
-            </div>
 
-            {/* Preview Area (Rendered like paper) */}
-            <div className="flex-1 overflow-auto bg-[#E5E5E5] dark:bg-[#1A1A1A] p-6 flex flex-col items-center justify-start">
-              <div 
-                className="bg-white text-black p-4 shadow-xl transition-transform origin-top mx-auto"
-                style={{ 
-                  width: '58mm', 
-                  minHeight: '100px',
-                  transform: `scale(${previewZoom * 1.5})`, // 1.5x base scale so it's readable on screen
-                  marginBottom: `${previewZoom * 100}px` // extra space for transform
-                }}
-              >
-                {/* Clone of receiptRef content but visible */}
-                <div className="font-mono text-[10px] leading-tight">
-                  {business?.logoUrl && (
-                    <div className="flex justify-center mb-1">
-                      <img src={business?.logoUrl} alt="Logo" className="max-h-[28mm] object-contain" />
-                    </div>
-                  )}
-                  <div className="text-center font-bold text-[12px]">{business?.businessName}</div>
-                  {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
-                    <div className="text-center text-[9px]">
-                      {business?.businessAddress}
-                      {business?.district && `, ${business.district}`}
-                      {business?.state && `, ${business.state}`}
-                      {business?.pinCode && ` - ${business.pinCode}`}
-                    </div>
-                  )}
-                  {business?.gstNumber && <div className="text-center text-[9px]">GSTIN: {business.gstNumber}</div>}
-                  {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[9px]">FSSAI: {business.fssaiNumber}</div>}
-                  <div className="text-center text-[9px] mt-1">
-                    <div>Bill No: {billNumber}</div>
-                    <div>Date: {billDate}</div>
-                    {(tokenNumber || business?.lastTokenNumber !== undefined) && (
-                      <div className="mt-1 flex flex-col items-center border-2 border-black py-1 px-2">
-                        <div className="text-[7px] font-black uppercase">Token Number</div>
-                        <div className="text-[14px] font-black leading-none">
-                          #{tokenNumber || (business?.lastTokenNumber || 0) + 1}
-                        </div>
-                        {!tokenNumber && <div className="text-[5px] italic opacity-50 uppercase tracking-tighter">Draft Preview</div>}
-                      </div>
-                    )}
-                    {selectedTable && (
-                      <div className="font-bold text-black mt-0.5 uppercase text-[9px] border border-black px-1 inline-block">
-                        {selectedTable === "POS" ? "TYPE: DINING / COUNTER" : 
-                         selectedTable === "TAKEAWAY" ? "TYPE: 🛍️ TAKEAWAY" : 
-                         selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
-                         `TYPE: DINING (TABLE: ${selectedTable})`}
-                      </div>
-                    )}
-                  </div>
-                  <div className="my-1 border-t border-dashed border-gray-400" />
-                  {(customerName || customerPhone || customerAddress) && (
-                    <div className="text-[9px]">
-                      <div>Customer: {customerName || "Walk-in Customer"}</div>
-                      {customerPhone && <div>Phone: {customerPhone}</div>}
-                      {customerAddress && <div>Addr: {customerAddress}</div>}
-                      {placeOfSupply && <div>POS: {placeOfSupply}</div>}
-                      {(orderNotes) && (
-                        <div className="mt-1 pt-1 border-t border-dotted border-gray-300 italic text-gray-700">
-                          Note: {orderNotes}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <div className="my-1 border-t border-dashed border-gray-400" />
-                  <div className="my-1 border-t border-dashed border-gray-400" />
-                  {items.map((i) => (
-                    <div key={i.id} className="mb-1.5 border-b border-dotted border-gray-100 pb-1">
-                      <div className="flex justify-between items-start text-[9px] font-bold">
-                        <span className="flex-1 min-w-0 pr-1 break-words">{i.name}</span>
-                        <span className="w-[11mm] text-right shrink-0">{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-[8px] text-gray-600">
-                        <span>{i.qty} x {Number(i.rate ?? 0).toFixed(2)}</span>
-                        <span>{((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} {(taxActive || perProductEnabled) ? `| GST: ${i.gst || 0}%` : ""}</span>
-                      </div>
-                    </div>
-                  ))}
-                  <div className="my-1 border-t border-dashed border-gray-400" />
-                  
-                  <div className="space-y-0.5">
-                      <div className="flex justify-between text-[9px]"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
-                      {discountAmt > 0 && (
-                        <div className="flex justify-between text-[9px] text-rose-600 font-bold italic">
-                          <span>Discount ({appliedOffer?.code})</span>
-                          <span>- ₹{discountAmt.toFixed(2)}</span>
-                        </div>
-                      )}
-                    {(taxActive || perProductEnabled) && (
-                      <>
-                        <div className="flex justify-between text-[9px]"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-[9px]"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
-                      </>
-                    )}
-                    {deliveryCharge > 0 && (
-                      <>
-                        <div className="flex justify-between text-[9px] font-bold"><span>Delivery</span><span>₹{deliveryCharge.toFixed(2)}</span></div>
-                        {deliveryGst > 0 && (
-                          <div className="flex justify-between text-[8px] italic opacity-60 font-bold">
-                            <span className="pl-2">└ Tax ({business?.deliveryGstRate}%)</span>
-                            <span>₹{deliveryGst.toFixed(2)}</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    {packagingCharge > 0 && (
-                      <>
-                        <div className="flex justify-between text-[9px] font-bold"><span>Packaging</span><span>₹{packagingCharge.toFixed(2)}</span></div>
-                        {packagingGst > 0 && (
-                          <div className="flex justify-between text-[8px] italic opacity-60 font-bold">
-                            <span className="pl-2">└ Tax ({business?.packagingGstRate}%)</span>
-                            <span>₹{packagingGst.toFixed(2)}</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    <div className="border-t border-dashed border-gray-400 my-1" />
-                    <div className="flex justify-between font-bold text-[11px] bg-black text-white px-1 py-0.5">
-                      <span>GRAND TOTAL</span>
-                      <span>₹{finalTotal.toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  {(taxActive || perProductEnabled) && taxBreakup.length > 0 && (
-                    <div className="mt-3">
-                      <div className="text-[8px] font-bold border-b border-dashed border-gray-400 mb-1 pb-0.5">GST TAX BREAKUP</div>
-                      <table className="w-full text-[8px] border-collapse">
-                        <thead>
-                          <tr className="border-b border-dashed border-gray-400">
-                            <th className="text-left font-bold">Rate</th>
-                            <th className="text-right font-bold">Taxable</th>
-                            <th className="text-right font-bold">CGST</th>
-                            <th className="text-right font-bold">SGST</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {taxBreakup.map((g, idx) => (
-                            <tr key={idx}>
-                              <td className="text-left">{g.rate}%</td>
-                              <td className="text-right">{g.taxable.toFixed(2)}</td>
-                              <td className="text-right">{g.cgst.toFixed(2)}</td>
-                              <td className="text-right">{g.sgst.toFixed(2)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <div className="border-t border-dashed border-gray-400 mt-1" />
-                    </div>
-                  )}
-
-                  <div className="mt-2 text-[8px] italic font-medium">
-                    Amount in Words: {numberToWords(finalTotal)}
-                  </div>
-
-                  <div className="mt-3 border-t border-dashed border-gray-400 pt-1 flex justify-between text-[8px]">
-                    <span>Payment: {paymentMode}</span>
-                    <span>Status: {paymentStatus}</span>
-                  </div>
-                  
-                  {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
-                    <div className="mt-2 text-center text-[9px] font-bold border-t border-dashed border-gray-400 pt-2">
-                      {(business?.upi && business?.upiQrEnabled !== false) && (
-                        <>
-                          <div>Scan & Pay</div>
-                          <div className="my-1.5 text-center">
-                            <div className="inline-block border border-gray-300 p-1 rounded-md bg-white">
-                              <img src={qrUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain block mix-blend-multiply" />
-                            </div>
-                          </div>
-                          <div className="mb-2">UPI: {business.upi}</div>
-                        </>
-                      )}
-                      {paymentMode === "UPI" && (
-                        <div className="text-center text-[9px]">Txn Ref: {upiTxnRef || "Pending"}</div>
-                      )}
-                    </div>
-                  )}
-                  {business?.businessTagLine && <div className="text-center text-[9px] mt-1 italic opacity-80">{business.businessTagLine}</div>}
-                  <div className="text-center font-bold text-[11px] mt-2">THANK YOU 🙏 VISIT AGAIN</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="px-5 py-4 border-t border-[var(--kravy-border)] bg-[var(--kravy-surface)] shrink-0 flex flex-col gap-3">
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { kravy.close(); setShowPreview(false); }}
-                  className="flex-1 py-3.5 rounded-xl border border-[var(--kravy-border)] font-bold text-sm text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-bg)] transition-all"
-                >
-                  Close
-                </button>
-                {lastSavedBillId && (userRole === "ADMIN" || userRole === "MASTER" || (userRole !== "SELLER" && userPermissions.includes("whatsapp-bill"))) && (
-                  <div className="flex-[2]">
-                    <WhatsAppBillButton 
-                      billId={lastSavedBillId} 
-                      defaultPhone={customerPhone} 
-                    />
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  kravy.ping();
-                  printKOT();
-                }}
-                disabled={items.length === 0 || isSaving}
-                className="flex-1 py-3.5 rounded-xl border-2 border-orange-500/40 text-orange-500 font-extrabold text-sm hover:bg-orange-500/5 transition-all flex items-center justify-center gap-2"
-              >
-                <Printer size={16} /> KOT
-              </button>
-              <button
-                onClick={async () => {
-                  if (!business) { alert("Business profile not loaded yet"); return; }
-                  
-                  // 🔥 SAVE AND WAIT
-                  const bill = await saveBill();
-                  if (!bill) return;
-
-                  kravy.payment(); 
-                  printReceipt(business?.enableKOTWithBill);
-                  setShowPreview(false);
-                  
-                  resetForm();
-                  if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                }}
-                disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
-                className="flex-[2] py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving ? <RefreshCw size={16} className="animate-spin" /> : <Printer size={16} />} 
-                {business?.enableKOTWithBill ? "KOT & Bill" : "Print Direct"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <BillPreview 
+        showPreview={showPreview}
+        setShowPreview={setShowPreview}
+        previewZoom={previewZoom}
+        setPreviewZoom={setPreviewZoom}
+        business={business}
+        billNumber={billNumber}
+        billDate={billDate}
+        tokenNumber={tokenNumber}
+        selectedTable={selectedTable}
+        customerName={customerName}
+        customerPhone={customerPhone}
+        customerAddress={customerAddress}
+        orderNotes={orderNotes}
+        placeOfSupply={placeOfSupply}
+        items={items}
+        subtotal={subtotal}
+        discountAmt={discountAmt}
+        appliedOffer={appliedOffer}
+        taxActive={taxActive}
+        perProductEnabled={perProductEnabled}
+        totalTaxable={totalTaxable}
+        totalGst={totalGst}
+        taxBreakup={taxBreakup}
+        deliveryCharge={deliveryCharge}
+        deliveryGst={deliveryGst}
+        packagingCharge={packagingCharge}
+        packagingGst={packagingGst}
+        finalTotal={finalTotal}
+        paymentMode={paymentMode}
+        paymentStatus={paymentStatus}
+        qrUrl={qrUrl}
+        numberToWords={numberToWords}
+        kravy={kravy}
+        printKOT={printKOT}
+        printReceipt={printReceipt}
+        saveBill={saveBill}
+        resetForm={resetForm}
+        isSaving={isSaving}
+        lastSavedBillId={lastSavedBillId}
+        userRole={userRole}
+        userPermissions={userPermissions}
+        resumeBillId={resumeBillId}
+        router={router}
+      />
 
       {/* 📝 ORDER NOTES MODAL */}
       {showNotesModal && (

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useUser } from '@clerk/nextjs'
+import { useAuthContext } from '@/components/AuthContext'
 import { 
   Zap, 
   Search, 
@@ -15,7 +15,7 @@ import {
 import { toast } from 'react-hot-toast'
 
 export default function AIScraperPage() {
-  const { user } = useUser()
+  const { user } = useAuthContext()
   const clerkId = user?.id
   const [data, setData] = useState<{ pending: any[], completed: any[], stats: any } | null>(null)
   const [loading, setLoading] = useState(true)

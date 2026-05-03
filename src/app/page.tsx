@@ -212,23 +212,35 @@ export default async function HomePage() {
           <SignedOut>
             <div className="flex flex-col gap-2.5">
 
-              {/* Owner Sign In */}
-              <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-                <button className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-slate-900 text-white text-[14.5px] font-semibold transition-all duration-200 hover:bg-slate-800 hover:shadow-[0_10px_28px_-8px_rgba(15,23,42,0.4)] hover:-translate-y-px active:translate-y-0 focus:outline-none group">
-                  <svg style={{ width: 17, height: 17 }} className="text-white/50 group-hover:text-white/80 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  Sign in as Owner
+              {/* Owner Sign In (Clerk) - Only show if enabled */}
+              {process.env.NEXT_PUBLIC_ENABLE_CLERK !== "false" && (
+                <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+                  <button className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-slate-900 text-white text-[14.5px] font-semibold transition-all duration-200 hover:bg-slate-800 hover:shadow-[0_10px_28px_-8px_rgba(15,23,42,0.4)] hover:-translate-y-px active:translate-y-0 focus:outline-none group">
+                    <svg style={{ width: 17, height: 17 }} className="text-white/50 group-hover:text-white/80 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Sign in as Owner
+                  </button>
+                </SignInButton>
+              )}
+
+              {/* Custom Login (Email/Phone) - New! */}
+              <Link href="/auth/custom?mode=login" className="w-full">
+                <button className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-700 text-[14.5px] font-semibold transition-all duration-200 hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-700 hover:shadow-[0_6px_18px_-8px_rgba(79,70,229,0.3)] hover:-translate-y-px active:translate-y-0 focus:outline-none group">
+                   <svg style={{ width: 17, height: 17 }} className="text-slate-400 group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  Login with Phone / Email
                 </button>
-              </SignInButton>
+              </Link>
 
               {/* Staff Login */}
               <Link href="/staff/login" className="w-full">
-                <button className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 text-[14.5px] font-semibold transition-all duration-200 hover:bg-white hover:border-indigo-200 hover:text-indigo-700 hover:shadow-[0_6px_18px_-8px_rgba(79,70,229,0.3)] hover:-translate-y-px active:translate-y-0 focus:outline-none group">
-                  <svg style={{ width: 17, height: 17 }} className="text-slate-400 group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <button className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-500 text-[13px] font-semibold transition-all duration-200 hover:bg-white hover:text-slate-700 hover:-translate-y-px active:translate-y-0 focus:outline-none group">
+                  <svg style={{ width: 15, height: 15 }} className="text-slate-300 group-hover:text-slate-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  Staff Member Access
+                  Legacy Staff Portal
                 </button>
               </Link>
 
@@ -239,18 +251,27 @@ export default async function HomePage() {
                 <div className="flex-1 h-px bg-slate-100" />
               </div>
 
-              {/* Sign Up */}
-              <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
+              {/* Custom Sign Up (New!) */}
+              <Link href="/auth/custom?mode=register" className="w-full">
                 <button
                   className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl text-white text-[14.5px] font-semibold transition-all duration-200 hover:-translate-y-px hover:shadow-[0_10px_28px_-8px_rgba(79,70,229,0.5)] active:translate-y-0 focus:outline-none group"
                   style={{ background: "linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)" }}
                 >
                   <svg style={{ width: 17, height: 17 }} className="text-white/60 group-hover:text-white/90 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                   </svg>
                   Create Free Account
                 </button>
-              </SignUpButton>
+              </Link>
+
+              {/* Clerk Sign Up - Only show if enabled */}
+              {process.env.NEXT_PUBLIC_ENABLE_CLERK !== "false" && (
+                <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
+                  <button className="w-full mt-1 text-[12px] text-slate-400 font-medium hover:text-indigo-600 transition-colors">
+                    Or sign up with Google / Socials
+                  </button>
+                </SignUpButton>
+              )}
 
             </div>
           </SignedOut>

@@ -16,11 +16,11 @@ import {
   Zap,
   Percent
 } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { useAuthContext } from "@/components/AuthContext";
 import Link from "next/link";
 
 export default function HelpPage() {
-  const { user } = useUser();
+  const { user, loading: authLoading } = useAuthContext();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
