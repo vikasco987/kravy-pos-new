@@ -1325,24 +1325,27 @@ export default function CheckoutClient() {
           if (returnTo) {
             setTimeout(() => {
               try {
-                const url = new URL(returnTo, window.location.origin);
+                // Determine the correct order ID for redirection
+                const currentOrderId = data.id || syncedOrderId || data._id;
                 const tableId = searchParams.get("tableId");
-                const currentOrderId = data.id || syncedOrderId;
                 
-                if (tableId) url.searchParams.set("tableId", tableId);
-                if (currentOrderId) url.searchParams.set("orderId", currentOrderId);
-                
-                router.push(url.pathname + url.search);
-              } catch (e) {
-                const separator = returnTo.includes("?") ? "&" : "?";
-                const tableId = searchParams.get("tableId");
-                const currentOrderId = data.id || syncedOrderId;
+                // Build the final redirect URL
                 let finalPath = returnTo;
+                const separator = finalPath.includes("?") ? "&" : "?";
+                
                 if (tableId) finalPath += `${separator}tableId=${tableId}`;
                 if (currentOrderId) finalPath += `${finalPath.includes("?") ? "&" : "?"}orderId=${currentOrderId}`;
+                
+                // Also carry over the table name if present
+                const tableName = searchParams.get("tableName");
+                if (tableName) finalPath += `${finalPath.includes("?") ? "&" : "?"}tableName=${tableName}`;
+
                 router.push(finalPath);
+              } catch (e) {
+                console.error("Redirect logic failed, using fallback", e);
+                router.push(returnTo);
               }
-            }, 200);
+            }, 50);
             return; 
           }
         } else {
