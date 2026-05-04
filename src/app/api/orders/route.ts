@@ -56,6 +56,41 @@ export async function PATCH(req: NextRequest) {
         if (typeof total === "number") data.total = total;
         if (typeof isDeleted === "boolean") data.isDeleted = isDeleted;
 
+        // ✅ TOKEN NUMBER GENERATION FOR ADD-ON KOTs
+        if (isKotPrinted) {
+            let nextToken = 1;
+            try {
+                const profile = await prisma.businessProfile.findUnique({
+                    where: { userId: effectiveId },
+                });
+                const today = new Date().toISOString().split('T')[0];
+                const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
+                
+                if (lastTokenDate === today) {
+                    nextToken = (profile?.lastTokenNumber || 0) + 1;
+                } else {
+                    nextToken = 1;
+                }
+
+                await prisma.businessProfile.update({
+                    where: { userId: effectiveId },
+                    data: {
+                        lastTokenNumber: nextToken,
+                        lastTokenDate: new Date()
+                    }
+                });
+
+                // Fetch current kotNumbers to append
+                const currentOrder = await prisma.order.findUnique({ where: { id: orderId } });
+                const existingKotNumbers = Array.isArray(currentOrder?.kotNumbers) ? currentOrder.kotNumbers : (currentOrder?.tokenNumber ? [currentOrder.tokenNumber] : []);
+                
+                data.tokenNumber = nextToken; // Update latest for legacy
+                data.kotNumbers = [...existingKotNumbers, nextToken];
+            } catch (tokenErr) {
+                console.error("PATCH_ORDER_TOKEN_ERROR:", tokenErr);
+            }
+        }
+
         const order = await prisma.order.update({
             where: { 
                 id: orderId, 
@@ -136,7 +171,8 @@ export async function POST(req: NextRequest) {
                 preferences: preferences || null,
                 isKotPrinted: isKotPrinted || false,
                 isBillPrinted: false,
-                tokenNumber: nextToken, // 🔒 Saved permanently
+                tokenNumber: nextToken, // Legacy
+                kotNumbers: [nextToken], // Store as first KOT/Token number
             },
             include: { table: true },
         });

@@ -316,6 +316,7 @@ export default function CheckoutClient() {
     setDiscountAmt(0);
     setIsKotPrinted(false);
     setTokenNumber(null);
+    setKotNumbers([]);
     setServiceCharge(0);
     setManualDeliveryCharge(0);
     setManualPackagingCharge(0);
@@ -399,6 +400,7 @@ export default function CheckoutClient() {
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState("");
   const [tokenNumber, setTokenNumber] = useState<number | null>(null);
+  const [kotNumbers, setKotNumbers] = useState<number[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -576,6 +578,7 @@ export default function CheckoutClient() {
           setCustomerName(order.customerName || "");
           setCustomerPhone(order.customerPhone || "");
           setOrderNotes(order.notes || "");
+          setKotNumbers(order.kotNumbers || (order.tokenNumber ? [order.tokenNumber] : []));
         } catch (err) {
           console.error("LOAD ORDER ERROR:", err);
         }
@@ -1167,6 +1170,7 @@ export default function CheckoutClient() {
         packagingCharges: packagingCharge,
         serviceCharge: serviceCharge,
         auditNote, // ✅ SaaS Feature: Audit Log
+        kotNumbers,
       };
 
       const url = resumeBillId ? `/api/bill-manager/${resumeBillId}` : "/api/bill-manager";
@@ -1303,7 +1307,8 @@ export default function CheckoutClient() {
           customerPhone: customerPhone,
           customerAddress: customerAddress,
           notes: orderNotes,
-          isKotPrinted: true
+          isKotPrinted: true,
+          kotNumbers: kotNumbers,
         };
 
         const res = await fetch("/api/orders", {
@@ -2674,6 +2679,7 @@ export default function CheckoutClient() {
           paymentStatus={paymentStatus}
           upiTxnRef={upiTxnRef}
           qrUrl={qrUrl}
+          kotNumbers={kotNumbers}
           prevWalletBalance={prevWalletBalance}
           selectedParty={selectedParty}
           numberToWords={numberToWords}

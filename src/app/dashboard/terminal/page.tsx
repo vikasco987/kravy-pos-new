@@ -1518,6 +1518,7 @@ function KravyPOS() {
                 paymentStatus="Paid"
                 upiTxnRef=""
                 qrUrl={qrUrl}
+                kotNumbers={printOrder?.kotNumbers || []}
                 prevWalletBalance={null}
                 selectedParty={null}
                 numberToWords={numberToWords}

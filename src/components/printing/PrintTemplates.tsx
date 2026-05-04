@@ -37,6 +37,7 @@ interface PrintTemplatesProps {
   qrUrl: string;
   prevWalletBalance: number | null;
   selectedParty: any;
+  kotNumbers: number[];
   numberToWords: (num: number) => string;
 }
 
@@ -47,7 +48,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
     items, subtotal, discountAmt, appliedOffer, taxActive, perProductEnabled,
     globalRate, totalTaxable, totalGst, taxBreakup, deliveryCharge, deliveryGst,
     packagingCharge, packagingGst, serviceCharge, finalTotal, paymentMode,
-    paymentStatus, upiTxnRef, qrUrl, prevWalletBalance, selectedParty, numberToWords
+    paymentStatus, upiTxnRef, qrUrl, prevWalletBalance, selectedParty, numberToWords, kotNumbers
   } = props;
 
   return (
@@ -78,7 +79,12 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         <div className="text-center text-[11px] mt-1.5 font-bold">
           <div>Bill No: {billNumber}</div>
           <div>Date: {billDate}</div>
-          {tokenNumber && (
+          {(kotNumbers && kotNumbers.length > 0) ? (
+            <div className="mt-2 flex flex-col items-center border-2 border-black py-1 px-4 mx-auto w-fit">
+              <div className="text-[9px] font-black uppercase tracking-widest">Token Numbers</div>
+              <div className="text-[14px] font-black leading-none py-1">{kotNumbers.join(', ')}</div>
+            </div>
+          ) : tokenNumber && (
             <div className="mt-2 flex flex-col items-center border-2 border-black py-1 px-4 mx-auto w-fit">
               <div className="text-[9px] font-black uppercase tracking-widest">Token Number</div>
               <div className="text-[18px] font-black leading-none py-1">#{tokenNumber}</div>
@@ -311,8 +317,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
              `TABLE: ${selectedTable}`}
           </div>
           <div className="text-right leading-none">
-            <div className="text-[9px] uppercase opacity-70">Token</div>
-            <div className="text-[18px]">#{tokenNumber || "NEW"}</div>
+            <div className="text-[10px] font-black uppercase opacity-60">Token Number</div>
+            <div className="text-[18px]">#{kotNumbers && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : tokenNumber || "NEW"}</div>
           </div>
         </div>
 

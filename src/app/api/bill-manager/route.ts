@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
       deliveryCharges,
       packagingCharges,
       serviceCharge,
+      kotNumbers,
     } = body;
 
     // 🛑 1. ROBUST VALIDATION (Critical Fix for UI Crashes)
@@ -316,6 +317,7 @@ export async function POST(req: NextRequest) {
         auditNote: body.auditNote || null,
         isKotPrinted: isKotPrinted === true,
         tokenNumber: nextToken,
+        kotNumbers: kotNumbers || [],
       },
     });
 

@@ -331,7 +331,12 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
                   {visibleCols.payment && <td><PaymentBadge mode={bill.paymentMode} status={bill.paymentStatus} /></td>}
                   {visibleCols.token && (
                     <td>
-                      {bill.tokenNumber ? (
+                      {(bill.kotNumbers && bill.kotNumbers.length > 0) ? (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", background: "#F1F5F9", padding: "4px 8px", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
+                          <span style={{ fontSize: "0.55rem", fontWeight: 900, color: "#64748B" }}>TOKENS</span>
+                          <span style={{ fontSize: "0.75rem", fontWeight: 950, color: "#6366F1", fontFamily: "monospace", lineHeight: 1 }}>{bill.kotNumbers.join(', ')}</span>
+                        </div>
+                      ) : bill.tokenNumber ? (
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", background: "#F1F5F9", padding: "4px 8px", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
                           <span style={{ fontSize: "0.55rem", fontWeight: 900, color: "#64748B" }}>TOKEN</span>
                           <span style={{ fontSize: "0.9rem", fontWeight: 950, color: "#6366F1", fontFamily: "monospace", lineHeight: 1 }}>{String(bill.tokenNumber).padStart(2, '0')}</span>
