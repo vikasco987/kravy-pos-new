@@ -1376,10 +1376,9 @@ function KravyPOS() {
                                                 <button
                                                     disabled={!activeOrderForSelected}
                                                     onClick={() => {
+                                                        if (!activeOrderForSelected || !selectedTable) return;
                                                         kravy.payment();
-                                                        setPrintOrder(activeOrderForSelected);
-                                                        setPreviewMode("BILL");
-                                                        setShowPreview(true);
+                                                        router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}&orderId=${activeOrderForSelected.id}&returnTo=/dashboard/terminal`);
                                                     }}
                                                     className="flex-[2.5] h-14 rounded-2xl flex items-center justify-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-900/20 active:scale-95 transition-all hover:bg-slate-800 dark:hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
