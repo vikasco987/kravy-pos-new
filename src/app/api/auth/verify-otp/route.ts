@@ -3,9 +3,8 @@ import prisma from "@/lib/prisma";
 import { Resend } from "resend";
 import { getWelcomeEmailTemplate } from "@/lib/mail-templates";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: NextRequest) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     const { email, otp } = await req.json();
 
