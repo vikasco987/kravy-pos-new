@@ -605,21 +605,21 @@ export default function CheckoutClient() {
   // Only show categories that have items in them (respecting zone filter)
   const categories = useMemo(() => {
     const itemsInZone = menuItems.filter(i => {
-      // Manual Zone Filter
+      // 1. Manual Zone Filter (Highest Priority)
       if (activeZone !== "All") {
         const hasSelectedZone = i.zones?.includes(activeZone);
         const isGlobal = !i.zones || i.zones.length === 0;
-        if (!hasSelectedZone && !isGlobal) return false;
+        return hasSelectedZone || isGlobal;
       }
 
-      // Auto Table Zone Filter
+      // 2. Auto Table Zone Filter (Only if manual filter is "All")
       if (business?.multiZoneMenuEnabled && selectedTable && !["POS", "TAKEAWAY", "DELIVERY"].includes(selectedTable) && tables.length > 0) {
         const tableObj = tables.find(t => t.name === selectedTable);
         if (tableObj && tableObj.zone && tableObj.zone.toUpperCase() !== "DEFAULT") {
           const zone = tableObj.zone;
           const hasTableZone = i.zones?.includes(zone);
           const isGlobal = !i.zones || i.zones.length === 0;
-          if (!hasTableZone && !isGlobal) return false;
+          return hasTableZone || isGlobal;
         }
       }
 
@@ -635,14 +635,14 @@ export default function CheckoutClient() {
       .filter((i) => activeCategory === "All" ? true : i.category?.name === activeCategory)
       .filter((i) => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
       .filter((i) => {
-        // 1. Zone filter from manual selector
+        // 1. Manual Zone Filter (Highest Priority)
         if (activeZone !== "All") {
           const hasSelectedZone = i.zones?.includes(activeZone);
           const isGlobal = !i.zones || i.zones.length === 0;
-          if (!hasSelectedZone && !isGlobal) return false;
+          return hasSelectedZone || isGlobal;
         }
 
-        // 2. Auto-filter if a table is selected
+        // 2. Auto-filter if a table is selected (Only if manual filter is "All")
         if (!business?.multiZoneMenuEnabled || !selectedTable || ["POS", "TAKEAWAY", "DELIVERY"].includes(selectedTable)) return true;
         if (tables.length === 0) return true;
 
