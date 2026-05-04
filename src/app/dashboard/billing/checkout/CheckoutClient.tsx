@@ -1346,9 +1346,15 @@ export default function CheckoutClient() {
             return; 
           }
         } else {
-          const errData = await res.json().catch(() => ({}));
-          console.error("Sync failed:", errData);
-          toast.error(errData.error || "Failed to sync with kitchen. Redirection aborted.");
+          const rawText = await res.text();
+          let errData: any = {};
+          try {
+            errData = JSON.parse(rawText);
+          } catch (e) {
+            errData = { error: "Server returned non-JSON error", raw: rawText.slice(0, 200) };
+          }
+          console.error("Sync failed:", res.status, errData);
+          toast.error(errData.error || `Sync error (Status ${res.status})`);
         }
       }
     } catch (err) {

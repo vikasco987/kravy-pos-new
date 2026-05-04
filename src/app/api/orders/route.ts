@@ -112,11 +112,12 @@ export async function PATCH(req: NextRequest) {
         });
 
         return NextResponse.json(order);
-    } catch (error) {
+    } catch (error: any) {
         console.error("PATCH_ORDER_ERROR:", error);
         return NextResponse.json({ 
             error: "Failed to update order",
-            details: error instanceof Error ? error.message : "Unknown error" 
+            details: error?.message || String(error),
+            code: error?.code || "UNKNOWN"
         }, { status: 500 });
     }
 }
@@ -190,8 +191,12 @@ export async function POST(req: NextRequest) {
         });
 
         return NextResponse.json(order);
-    } catch (error) {
+    } catch (error: any) {
         console.error("POST_ORDER_ERROR:", error);
-        return NextResponse.json({ error: "Failed to create order", details: String(error) }, { status: 500 });
+        return NextResponse.json({ 
+            error: "Failed to create order", 
+            details: error?.message || String(error),
+            code: error?.code || "UNKNOWN"
+        }, { status: 500 });
     }
 }
