@@ -1981,7 +1981,7 @@ function KravyPOS() {
                     {/* ── CASHIER / BILLING TAB ── */}
                     {activeTab === "payment" && (
                         <motion.div
-                            key="payment"
+                            key="payment-kitchen"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
