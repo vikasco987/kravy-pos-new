@@ -570,10 +570,11 @@ export default function CheckoutClient() {
           setItems(order.items.map((i: any) => ({
             id: i.itemId || i.id,
             name: i.name,
-            qty: i.quantity || i.qty,
-            rate: i.price || i.rate,
+            qty: Number(i.quantity || i.qty || 0),
+            rate: Number(i.price || i.rate || 0),
             gst: i.gst,
-            taxStatus: i.taxStatus || "Without Tax"
+            taxStatus: i.taxStatus || "Without Tax",
+            isNew: false // Important: Existing items are not 'new' for the next KOT
           })));
           setCustomerName(order.customerName || "");
           setCustomerPhone(order.customerPhone || "");
@@ -660,7 +661,7 @@ export default function CheckoutClient() {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
         kravy.click(); // item already in cart — just increase qty
-        return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
+        return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1, isNew: true } : i);
       }
       kravy.add(); // new item added — bigger pop sound
       return [...prev, { 
@@ -1281,33 +1282,36 @@ export default function CheckoutClient() {
     setIsSaving(true);
 
     try {
-      kravy.ping(); 
+      kravy.ping();
       printKOT();
       setIsKotPrinted(true);
 
-      // ✅ ALWAYS sync and redirect if returnTo is present (it implies a table order from Terminal)
+      // Sync and Redirect Logic
       if (business?.syncQuickPosWithKitchen || searchParams.get("returnTo")) {
         const orderData = {
           orderId: syncedOrderId || undefined,
           tableId: selectedTable !== "POS" ? tables.find(t => t.name === selectedTable)?.id : null,
           items: items.map(it => ({
+            itemId: it.id, // Use consistent ID
             name: it.name,
-            price: it.rate,
-            quantity: it.qty,
-            itemId: it.id,
+            price: Number(it.rate || 0),
+            quantity: Number(it.qty || 0),
+            rate: Number(it.rate || 0), // Include both for compatibility
+            qty: Number(it.qty || 0),
             addedAt: new Date().toISOString(),
             taxStatus: it.taxStatus || "Without Tax",
             gst: it.gst ?? 0,
-            isNew: it.isNew
+            isNew: !!it.isNew,
+            variants: (it as any).variants || [],
+            kotNumber: (it as any).kotNumber
           })),
-          total: finalTotal,
+          total: Number(finalTotal.toFixed(2)),
           status: "PREPARING",
           customerName: customerName,
           customerPhone: customerPhone,
           customerAddress: customerAddress,
           notes: orderNotes,
           isKotPrinted: true,
-          kotNumbers: kotNumbers,
         };
 
         const res = await fetch("/api/orders", {
@@ -1318,55 +1322,36 @@ export default function CheckoutClient() {
 
         if (res.ok) {
           const data = await res.json();
-          if (!syncedOrderId) setSyncedOrderId(data.id);
-          toast.success("Order synced with Kitchen Workflow");
-          
+          if (!syncedOrderId) setSyncedOrderId(data.id || data._id);
+          toast.success("KOT Printed & Order Synced! ✅");
+
           const returnTo = searchParams.get("returnTo");
           if (returnTo) {
             setTimeout(() => {
-              try {
-                // Determine the correct order ID for redirection
-                const currentOrderId = data.id || syncedOrderId || data._id;
-                const tableId = searchParams.get("tableId");
-                
-                // Build the final redirect URL
-                let finalPath = returnTo;
-                const separator = finalPath.includes("?") ? "&" : "?";
-                
-                if (tableId) finalPath += `${separator}tableId=${tableId}`;
-                if (currentOrderId) finalPath += `${finalPath.includes("?") ? "&" : "?"}orderId=${currentOrderId}`;
-                
-                // Also carry over the table name if present
-                const tableName = searchParams.get("tableName");
-                if (tableName) finalPath += `${finalPath.includes("?") ? "&" : "?"}tableName=${tableName}`;
+              const currentOrderId = data.id || syncedOrderId || data._id;
+              const tableId = searchParams.get("tableId");
+              const tableName = searchParams.get("tableName");
+              
+              const query = new URLSearchParams();
+              if (tableId) query.set("tableId", tableId);
+              if (tableName) query.set("tableName", tableName);
+              if (currentOrderId) query.set("orderId", currentOrderId);
+              query.set("refresh", Date.now().toString());
 
-                router.push(finalPath);
-              } catch (e) {
-                console.error("Redirect logic failed, using fallback", e);
-                router.push(returnTo);
-              }
-            }, 50);
-            return; 
+              router.push(`/dashboard/terminal?${query.toString()}`);
+            }, 100);
+            return;
           }
         } else {
-          const rawText = await res.text();
-          let errData: any = {};
-          try {
-            errData = JSON.parse(rawText);
-          } catch (e) {
-            errData = { error: "Server returned non-JSON error", raw: rawText.slice(0, 200) };
-          }
-          console.error("Sync failed:", res.status, errData);
-          toast.error(errData.error || `Sync error (Status ${res.status})`);
+          const errData = await res.json().catch(() => ({}));
+          console.error("SYNC_ERROR:", errData);
+          toast.error(`Sync Failed: ${errData.error || "Unknown Error"}. Please try again.`);
         }
       }
-    } catch (err) {
-      console.error("Sync error", err);
-      toast.error("Failed to sync with kitchen");
+    } catch (err: any) {
+      console.error("KOT_PRINT_CRITICAL_ERROR:", err);
+      toast.error(`Critical Error: ${err.message || "Failed to sync with kitchen"}`);
     } finally {
-      // ALWAYS reset isSaving after the process is done, 
-      // UNLESS we are specifically waiting for a router.push to complete 
-      // (even then, it's safer to reset it after a delay or if redirect is not imminent)
       setIsSaving(false);
     }
   };

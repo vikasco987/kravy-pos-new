@@ -33,6 +33,9 @@ type OrderItem = {
     name: string;
     price: number;
     quantity: number;
+    qty?: number;
+    price: number;
+    rate?: number;
     isVeg?: boolean;
     isNew?: boolean;
     instruction?: string;
@@ -147,8 +150,8 @@ const calculateOrderTotals = (items: any[], isTaxEnabled: boolean, globalRate: n
     let gst = 0;
 
     items.forEach(it => {
-        const q = Number(it.qty || it.quantity || 0);
-        const p = Number(it.rate || it.price || 0);
+        const q = Number(it.quantity || it.qty || 0);
+        const p = Number(it.price || it.rate || 0);
         const gross = q * p;
         const rate = (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (isTaxEnabled ? globalRate : 0);
         const ts = it.taxStatus || "Without Tax";
@@ -171,7 +174,7 @@ function KravyPOS() {
     const router = useRouter();
     const billReceiptRef = useRef<HTMLDivElement | null>(null);
     const kotReceiptRef = useRef<HTMLDivElement | null>(null);
-    const [activeTab] = useState<TabKey>("dashboard");
+    const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
     const [orders, setOrders] = useState<Order[]>([]);
     const [tablesList, setTablesList] = useState<TableStatus[]>([]);
     const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
@@ -205,8 +208,8 @@ function KravyPOS() {
 
     if (activeOrderForSelected) {
         activeOrderForSelected.items.forEach((it: any) => {
-            const q = Number(it.quantity || 0);
-            const p = Number(it.price || 0);
+            const q = Number(it.quantity || it.qty || 0);
+            const p = Number(it.price || it.rate || 0);
             const lineTotal = q * p;
             const rate = (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (isTaxEnabled ? globalRate : 0);
 
@@ -943,8 +946,8 @@ function KravyPOS() {
             <OrderAlertLoop pendingCount={stats.incoming} />
             {/* ── HEADER ── */}
             <header className="flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8 min-h-[64px] lg:h-[64px] shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm z-[50] py-3 lg:py-0 gap-4 lg:gap-8 transition-colors duration-300">
-                {/* Brand & Mobile Actions */}
-                <div className="flex items-center justify-between w-full lg:w-auto">
+                {/* Brand & Navigation */}
+                <div className="flex items-center gap-8">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-gradient-to-br from-slate-800 to-slate-950 rounded-2xl flex items-center justify-center font-mono text-xl font-black text-white shadow-xl shadow-slate-950/20 flex-shrink-0 border border-white/10">
                             <span>K</span>
@@ -954,15 +957,26 @@ function KravyPOS() {
                         </div>
                     </div>
 
-                    <div className="flex lg:hidden items-center gap-2">
-                        <button className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><User size={14} /></button>
-                        <button
-                            onClick={() => { kravy.click(); fetchData(); }}
-                            className="px-4 py-2 bg-rose-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest"
-                        >
-                            Refresh
-                        </button>
-                    </div>
+                    <nav className="hidden lg:flex items-center gap-1 p-1 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                        {[
+                            { key: "dashboard", label: "Terminal", icon: TerminalIcon },
+                            { key: "payment", label: "Cashier", icon: CreditCard },
+                        ].map(t => {
+                            const isActive = activeTab === t.key;
+                            const Icon = t.icon;
+                            return (
+                                <button
+                                    key={t.key}
+                                    onClick={() => { kravy.click(); setActiveTab(t.key as TabKey); }}
+                                    className={`relative flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${isActive ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+                                >
+                                    <Icon size={14} />
+                                    <span>{t.label}</span>
+                                    {isActive && <motion.div layoutId="nav-ind" className="absolute -bottom-[21px] left-3 right-3 h-0.5 bg-slate-900 dark:bg-white rounded-t-full" />}
+                                </button>
+                            );
+                        })}
+                    </nav>
                 </div>
 
 
@@ -1200,19 +1214,16 @@ function KravyPOS() {
                                                 >
                                                     <Plus size={14} /> New Order
                                                 </button>
-                                                <div className="w-px h-8 bg-slate-100 dark:bg-slate-800 mx-1" />
                                                 <button 
                                                     onClick={() => {
                                                         kravy.click();
-                                                        const passOrderId = activeOrderForSelected?.id || selectedTable?.activeOrderId;
-                                                        if (passOrderId && activeOrderForSelected) {
-                                                            try {
-                                                                sessionStorage.setItem(`kravy_checkout_order_${passOrderId}`, JSON.stringify(activeOrderForSelected));
-                                                            } catch {}
+                                                        if (activeOrderForSelected) {
+                                                            router.push(`/dashboard/billing/checkout?orderId=${activeOrderForSelected.id}&tableId=${selectedTable.id}&tableName=${selectedTable.name}&returnTo=terminal`);
+                                                        } else {
+                                                            toast.error("Please select a table/order first");
                                                         }
-                                                        router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}${passOrderId ? `&orderId=${passOrderId}` : ""}&returnTo=/dashboard/terminal`);
                                                     }}
-                                                    className="h-10 px-4 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-slate-900/10 hover:scale-105 active:scale-95 transition-all"
+                                                    className="h-10 px-4 bg-slate-900 text-white rounded-xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-slate-900/20"
                                                 >
                                                     <Plus size={14} /> Add Item
                                                 </button>
@@ -1337,7 +1348,7 @@ function KravyPOS() {
                                                 <div className="h-full flex flex-col items-center justify-center opacity-30 text-center">
                                                     <UtensilsCrossed size={64} strokeWidth={0.8} />
                                                     <p className="text-xs font-bold uppercase tracking-widest mt-6">Table selected. No active order.</p>
-                                                    <button className="mt-4 h-11 px-6 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:scale-105 active:scale-95 transition-all">Start Dining Session</button>
+                                                    <button className="mt-4 h-11 px-6 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:scale-110 active:scale-95 transition-all">Start Dining Session</button>
                                                 </div>
                                             )}
                                         </div>
@@ -1414,7 +1425,8 @@ function KravyPOS() {
                                                     onClick={() => {
                                                         if (!activeOrderForSelected || !selectedTable) return;
                                                         kravy.payment();
-                                                        router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}&orderId=${activeOrderForSelected.id}&returnTo=/dashboard/terminal`);
+                                                        setSelectedOrderId(activeOrderForSelected.id);
+                                                        setActiveTab("payment");
                                                     }}
                                                     className="flex-[2.5] h-14 rounded-2xl flex items-center justify-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-900/20 active:scale-95 transition-all hover:bg-slate-800 dark:hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
@@ -1437,6 +1449,315 @@ function KravyPOS() {
                          </motion.div>
                      )}
 
+                    {/* ── CASHIER / BILLING TAB ── */}
+                    {activeTab === "payment" && (
+                        <motion.div
+                            key="payment"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="h-full flex flex-col items-center justify-center p-8 overflow-y-auto no-scrollbar"
+                        >
+                            {selectedTable && activeOrderForSelected ? (
+                                <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-8 max-w-6xl w-full h-full lg:h-auto overflow-visible">
+                                    {/* Receipt column */}
+                                    <div className="bg-white dark:bg-white shadow-2xl rounded-[2.5rem] p-8 flex flex-col border border-slate-100 relative overflow-hidden h-fit animate-in fade-in zoom-in-95 duration-500">
+                                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900" />
+
+                                        <div className="text-center pb-8 border-b border-dashed border-slate-200 mb-8 mt-4">
+                                            <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 p-4 shadow-xl shadow-slate-900/10">
+                                                <Printer size={32} strokeWidth={1.5} />
+                                            </div>
+                                            <h3 className="text-2xl font-black text-slate-900 tracking-tighter italic leading-none uppercase">
+                                                {business?.businessName || "Kravy POS"}
+                                            </h3>
+                                            <div className="flex flex-col gap-1 mt-3">
+                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Order Settlement</span>
+                                                <div className="flex items-center justify-center gap-2 text-[11px] font-black text-slate-600">
+                                                    <span className="bg-slate-100 px-2 py-0.5 rounded-md">Table {selectedTable.name}</span>
+                                                    <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                                    <span className="bg-slate-100 px-2 py-0.5 rounded-md">#{activeOrderForSelected.id.slice(-6).toUpperCase()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4 mb-8 max-h-[300px] overflow-y-auto scrollbar-hide py-2">
+                                            {activeOrderForSelected.items.map((it, idx) => (
+                                                <div key={idx} className="flex justify-between items-start group">
+                                                    <div className="flex-1 pr-4">
+                                                        <p className="text-sm font-black text-slate-900 uppercase leading-none mb-1">{it.name}</p>
+                                                        <p className="text-[10px] font-bold text-slate-400 tracking-tight uppercase">{it.quantity} × ₹{it.price}</p>
+                                                    </div>
+                                                    <span className="text-xs font-black italic text-slate-900">₹{it.price * it.quantity}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="mt-auto pt-6 border-t border-dashed border-slate-200 space-y-3">
+                                            <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                                                <span>Subtotal</span>
+                                                <span>₹{(activeOrderForSelected.total / 1.05).toFixed(0)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                                                <span>GST (5%)</span>
+                                                <span>₹{(activeOrderForSelected.total - activeOrderForSelected.total / 1.05).toFixed(0)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center mt-6 pt-6 border-t-2 border-slate-900">
+                                                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-900 italic">Bill Amount</span>
+                                                <span className="text-3xl font-black italic tracking-tighter text-slate-900">₹{activeOrderForSelected.total}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-8 text-center opacity-20 text-[9px] font-black uppercase tracking-[0.4em] italic">
+                                            Trusted by Kravy
+                                        </div>
+                                    </div>
+
+                                    {/* Payment Options */}
+                                    <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white dark:border-slate-800 rounded-[3rem] p-8 lg:p-12 shadow-sm flex flex-col h-full animate-in slide-in-from-right-8 duration-700">
+                                        <div className="mb-10">
+                                            <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic mb-2 leading-none uppercase">Checkout</h3>
+                                            <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Select Settlement Pipeline</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 mb-8">
+                                            {[
+                                                { id: "upi", label: "UPI", emoji: "📱", desc: "Digital Payment", theme: "emerald" },
+                                                { id: "cash", label: "Cash", emoji: "💵", desc: "Hard Currency", theme: "amber" },
+                                                { id: "wallet", label: "Wallet", emoji: "💰", desc: `Bal: ₹${selectedParty?.walletBalance?.toFixed(0) || 0}`, theme: "indigo" },
+                                                { id: "card", label: "Card", emoji: "💳", desc: "Swipe / Dip", theme: "slate" },
+                                                { id: "pay on counter", label: "Counter", emoji: "🏪", desc: "Pay at counter", theme: "slate" },
+                                            ].map(m => (
+                                                <button
+                                                    key={m.id}
+                                                    onClick={() => { kravy.click(); setPayMethod(m.id); }}
+                                                    className={`relative flex flex-col items-start p-6 rounded-[2.5rem] border-2 transition-all group overflow-hidden ${payMethod === m.id ? "bg-white dark:bg-slate-800 border-slate-900 dark:border-white shadow-2xl -translate-y-1" : "bg-white/50 dark:bg-slate-900/50 border-transparent hover:border-slate-200 dark:hover:border-slate-700"}`}
+                                                >
+                                                    {payMethod === m.id && (
+                                                        <motion.div layoutId="pay-marker" className="absolute top-5 right-5 text-slate-900 dark:text-white">
+                                                            <CheckCircle2 size={24} />
+                                                        </motion.div>
+                                                    )}
+                                                    <span className="text-4xl mb-5 grayscale group-hover:grayscale-0 transition-all duration-500 scale-100 group-hover:scale-110">{m.emoji}</span>
+                                                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white leading-none">{m.label}</span>
+                                                    <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter mt-1.5 leading-none">{m.desc}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="bg-white/60 dark:bg-slate-800/60 rounded-[2.5rem] border border-white/80 dark:border-slate-700 shadow-inner p-8 mb-8 flex-1 flex flex-col justify-center min-h-[160px]">
+                                            {payMethod === "upi" ? (
+                                                <div className="flex items-center gap-8 animate-in fade-in slide-in-from-bottom-4">
+                                                    <div className="w-20 h-20 bg-white dark:bg-slate-700 rounded-3xl flex items-center justify-center text-4xl shadow-2xl shadow-indigo-500/10 border border-slate-50 dark:border-slate-600">📱</div>
+                                                    <div>
+                                                        <p className="text-xl font-black text-slate-900 dark:text-white leading-none uppercase tracking-tight mb-2 italic">Scan to Pay ₹{activeOrderForSelected.total}</p>
+                                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Awaiting Digital Handshake...</p>
+                                                        <div className="mt-4 flex items-center gap-2 text-emerald-500 bg-emerald-50 w-fit px-3 py-1 rounded-full border border-emerald-100">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                            <span className="text-[9px] font-black uppercase tracking-widest italic">Live Sync Active</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center animate-in fade-in scale-95">
+                                                    <p className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight">Handover {payMethod.toUpperCase()} Settlement</p>
+                                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-2">Confirm once payment is physically received</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex gap-4">
+                                            <button
+                                                onClick={() => { setPreviewMode("BILL"); setShowPreview(true); }}
+                                                className="w-20 h-20 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white shadow-sm transition-all active:scale-90"
+                                            >
+                                                <Eye size={20} />
+                                                <span className="text-[8px] font-black uppercase mt-1">Preview</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handlePrint("BILL")}
+                                                className="flex-1 h-20 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white shadow-sm transition-all active:scale-95"
+                                            >
+                                                <Printer size={18} /> Print Physical Receipt
+                                            </button>
+                                            <button
+                                                onClick={() => handleCheckout(activeOrderForSelected.id)}
+                                                className="flex-[2.5] h-20 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[1.8rem] flex items-center justify-center gap-4 text-base font-black uppercase tracking-[0.15em] shadow-2xl shadow-slate-900/40 active:scale-95 transition-all hover:bg-slate-800 dark:hover:bg-slate-100"
+                                            >
+                                                Print Payment Receipt <ArrowRight size={20} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center text-center max-w-sm opacity-30 animate-in fade-in zoom-in-95">
+                                    <div className="w-24 h-24 bg-slate-100 rounded-[2.5rem] flex items-center justify-center text-slate-400 mb-8 border border-slate-200 shadow-inner">
+                                        <CreditCard size={40} strokeWidth={1} />
+                                    </div>
+                                    <p className="text-3xl font-black text-slate-900 mb-3 italic tracking-tighter uppercase leading-none">Billing Vault</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed mb-10">Select an active table from Terminal to initiate checkout flow.</p>
+                                    <button onClick={() => setActiveTab("dashboard")} className="h-14 px-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:scale-110 active:scale-90 transition-all">
+                                        <LayoutDashboard size={16} className="mr-2 inline" /> Back to Terminal
+                                    </button>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+
+                    {/* ── CASHIER / BILLING TAB ── */}
+                    {activeTab === "payment" && (
+                        <motion.div
+                            key="payment"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="h-full flex flex-col items-center justify-center p-8 overflow-y-auto no-scrollbar"
+                        >
+                            {selectedTable && activeOrderForSelected ? (
+                                <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-8 max-w-6xl w-full h-full lg:h-auto overflow-visible">
+                                    {/* Receipt column */}
+                                    <div className="bg-white dark:bg-white shadow-2xl rounded-[2.5rem] p-8 flex flex-col border border-slate-100 relative overflow-hidden h-fit animate-in fade-in zoom-in-95 duration-500">
+                                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900" />
+
+                                        <div className="text-center pb-8 border-b border-dashed border-slate-200 mb-8 mt-4">
+                                            <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 p-4 shadow-xl shadow-slate-900/10">
+                                                <Printer size={32} strokeWidth={1.5} />
+                                            </div>
+                                            <h3 className="text-2xl font-black text-slate-900 tracking-tighter italic leading-none uppercase">
+                                                {business?.businessName || "Kravy POS"}
+                                            </h3>
+                                            <div className="flex flex-col gap-1 mt-3">
+                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Order Settlement</span>
+                                                <div className="flex items-center justify-center gap-2 text-[11px] font-black text-slate-600">
+                                                    <span className="bg-slate-100 px-2 py-0.5 rounded-md">Table {selectedTable.name}</span>
+                                                    <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                                    <span className="bg-slate-100 px-2 py-0.5 rounded-md">#{activeOrderForSelected.id.slice(-6).toUpperCase()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4 mb-8 max-h-[300px] overflow-y-auto scrollbar-hide py-2">
+                                            {activeOrderForSelected.items.map((it, idx) => (
+                                                <div key={idx} className="flex justify-between items-start group">
+                                                    <div className="flex-1 pr-4">
+                                                        <p className="text-sm font-black text-slate-900 uppercase leading-none mb-1">{it.name}</p>
+                                                        <p className="text-[10px] font-bold text-slate-400 tracking-tight uppercase">{it.quantity} × ₹{it.price}</p>
+                                                    </div>
+                                                    <span className="text-xs font-black italic text-slate-900">₹{it.price * it.quantity}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="mt-auto pt-6 border-t border-dashed border-slate-200 space-y-3">
+                                            <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                                                <span>Subtotal</span>
+                                                <span>₹{(activeOrderForSelected.total / 1.05).toFixed(0)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                                                <span>GST (5%)</span>
+                                                <span>₹{(activeOrderForSelected.total - activeOrderForSelected.total / 1.05).toFixed(0)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center mt-6 pt-6 border-t-2 border-slate-900">
+                                                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-900 italic">Bill Amount</span>
+                                                <span className="text-3xl font-black italic tracking-tighter text-slate-900">₹{activeOrderForSelected.total}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-8 text-center opacity-20 text-[9px] font-black uppercase tracking-[0.4em] italic">
+                                            Trusted by Kravy
+                                        </div>
+                                    </div>
+
+                                    {/* Payment Options */}
+                                    <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white dark:border-slate-800 rounded-[3rem] p-8 lg:p-12 shadow-sm flex flex-col h-full animate-in slide-in-from-right-8 duration-700">
+                                        <div className="mb-10">
+                                            <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic mb-2 leading-none uppercase">Checkout</h3>
+                                            <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Select Settlement Pipeline</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 mb-8">
+                                            {[
+                                                { id: "upi", label: "UPI", emoji: "📱", desc: "Digital Payment", theme: "emerald" },
+                                                { id: "cash", label: "Cash", emoji: "💵", desc: "Hard Currency", theme: "amber" },
+                                                { id: "wallet", label: "Wallet", emoji: "💰", desc: `Bal: ₹${selectedParty?.walletBalance?.toFixed(0) || 0}`, theme: "indigo" },
+                                                { id: "card", label: "Card", emoji: "💳", desc: "Swipe / Dip", theme: "slate" },
+                                                { id: "pay on counter", label: "Counter", emoji: "🏪", desc: "Pay at counter", theme: "slate" },
+                                            ].map(m => (
+                                                <button
+                                                    key={m.id}
+                                                    onClick={() => { kravy.click(); setPayMethod(m.id); }}
+                                                    className={`relative flex flex-col items-start p-6 rounded-[2.5rem] border-2 transition-all group overflow-hidden ${payMethod === m.id ? "bg-white dark:bg-slate-800 border-slate-900 dark:border-white shadow-2xl -translate-y-1" : "bg-white/50 dark:bg-slate-900/50 border-transparent hover:border-slate-200 dark:hover:border-slate-700"}`}
+                                                >
+                                                    {payMethod === m.id && (
+                                                        <motion.div layoutId="pay-marker" className="absolute top-5 right-5 text-slate-900 dark:text-white">
+                                                            <CheckCircle2 size={24} />
+                                                        </motion.div>
+                                                    )}
+                                                    <span className="text-4xl mb-5 grayscale group-hover:grayscale-0 transition-all duration-500 scale-100 group-hover:scale-110">{m.emoji}</span>
+                                                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white leading-none">{m.label}</span>
+                                                    <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter mt-1.5 leading-none">{m.desc}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="bg-white/60 dark:bg-slate-800/60 rounded-[2.5rem] border border-white/80 dark:border-slate-700 shadow-inner p-8 mb-8 flex-1 flex flex-col justify-center min-h-[160px]">
+                                            {payMethod === "upi" ? (
+                                                <div className="flex items-center gap-8 animate-in fade-in slide-in-from-bottom-4">
+                                                    <div className="w-20 h-20 bg-white dark:bg-slate-700 rounded-3xl flex items-center justify-center text-4xl shadow-2xl shadow-indigo-500/10 border border-slate-50 dark:border-slate-600">📱</div>
+                                                    <div>
+                                                        <p className="text-xl font-black text-slate-900 dark:text-white leading-none uppercase tracking-tight mb-2 italic">Scan to Pay ₹{activeOrderForSelected.total}</p>
+                                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Awaiting Digital Handshake...</p>
+                                                        <div className="mt-4 flex items-center gap-2 text-emerald-500 bg-emerald-50 w-fit px-3 py-1 rounded-full border border-emerald-100">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                            <span className="text-[9px] font-black uppercase tracking-widest italic">Live Sync Active</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center animate-in fade-in scale-95">
+                                                    <p className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight">Handover {payMethod.toUpperCase()} Settlement</p>
+                                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-2">Confirm once payment is physically received</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex gap-4">
+                                            <button
+                                                onClick={() => { setPreviewMode("BILL"); setShowPreview(true); }}
+                                                className="w-20 h-20 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white shadow-sm transition-all active:scale-90"
+                                            >
+                                                <Eye size={20} />
+                                                <span className="text-[8px] font-black uppercase mt-1">Preview</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handlePrint("BILL")}
+                                                className="flex-1 h-20 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white shadow-sm transition-all active:scale-95"
+                                            >
+                                                <Printer size={18} /> Print Physical Receipt
+                                            </button>
+                                            <button
+                                                onClick={() => handleCheckout(activeOrderForSelected.id)}
+                                                className="flex-[2.5] h-20 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[1.8rem] flex items-center justify-center gap-4 text-base font-black uppercase tracking-[0.15em] shadow-2xl shadow-slate-900/40 active:scale-95 transition-all hover:bg-slate-800 dark:hover:bg-slate-100"
+                                            >
+                                                Print Payment Receipt <ArrowRight size={20} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center text-center max-w-sm opacity-30 animate-in fade-in zoom-in-95">
+                                    <div className="w-24 h-24 bg-slate-100 rounded-[2.5rem] flex items-center justify-center text-slate-400 mb-8 border border-slate-200 shadow-inner">
+                                        <CreditCard size={40} strokeWidth={1} />
+                                    </div>
+                                    <p className="text-3xl font-black text-slate-900 mb-3 italic tracking-tighter uppercase leading-none">Billing Vault</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed mb-10">Select an active table from Terminal to initiate checkout flow.</p>
+                                    <button onClick={() => setActiveTab("dashboard")} className="h-14 px-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:scale-110 active:scale-90 transition-all">
+                                        <LayoutDashboard size={16} className="mr-2 inline" /> Back to Terminal
+                                    </button>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
                 </AnimatePresence>
             </main>
 
@@ -1622,9 +1943,15 @@ function KravyPOS() {
     );
 
     async function addItemToOrder(menuItem: any) {
-        if (!orderToUpdate) return;
+        console.log("[DEBUG] addItemToOrder started. MenuItem:", menuItem);
+        if (!orderToUpdate) {
+            console.error("[ERROR] No order selected to update!");
+            toast.error("Please select an order first");
+            return;
+        }
         
         try {
+            console.log("[DEBUG] Current Order to update:", orderToUpdate);
             const newItem: OrderItem = {
                 itemId: menuItem.id,
                 name: menuItem.name,
@@ -1637,7 +1964,10 @@ function KravyPOS() {
             };
 
             const updatedItems = [...orderToUpdate.items, newItem];
+            console.log("[DEBUG] Updated items list:", updatedItems);
+
             const { total: newTotal } = calculateOrderTotals(updatedItems, isTaxEnabled, globalRate, perProductEnabled);
+            console.log("[DEBUG] Calculated new total:", newTotal);
 
             const res = await fetch("/api/orders", {
                 method: "PATCH",
@@ -1649,17 +1979,21 @@ function KravyPOS() {
                 })
             });
 
+            console.log("[DEBUG] API Response Status:", res.status);
             if (res.ok) {
                 toast.success(`Added ${menuItem.name} to order`);
+                console.log("[SUCCESS] Item added. Refreshing data...");
                 fetchData(); // Refresh orders
                 setShowAddItemModal(false);
                 setItemSearch("");
             } else {
-                toast.error("Failed to add item");
+                const errData = await res.json();
+                console.error("[ERROR] API Failure:", errData);
+                toast.error("Failed to add item: " + (errData.message || "Unknown error"));
             }
         } catch (err) {
-            console.error("Add item error:", err);
-            toast.error("An error occurred");
+            console.error("[CRITICAL] addItemToOrder caught error:", err);
+            toast.error("An error occurred while adding item");
         }
     }
 }
