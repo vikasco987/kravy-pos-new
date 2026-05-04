@@ -1169,7 +1169,6 @@ export default function CheckoutClient() {
         deliveryCharges: deliveryCharge,
         packagingCharges: packagingCharge,
         serviceCharge: serviceCharge,
-        auditNote, // ✅ SaaS Feature: Audit Log
         kotNumbers,
       };
 
@@ -1299,7 +1298,7 @@ export default function CheckoutClient() {
             addedAt: new Date().toISOString(),
             taxStatus: it.taxStatus || "Without Tax",
             gst: it.gst ?? 0,
-            isNew: false
+            isNew: it.isNew
           })),
           total: finalTotal,
           status: "PREPARING",
