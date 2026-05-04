@@ -125,13 +125,13 @@ const navGroups = [
   {
     group: "OPERATIONS",
     items: [
-      { icon: <Home size={18} />, label: "Store Dashboard", href: "/dashboard", badge: "Live", badgeColor: "#10B981" },
-      { icon: <ShoppingCart size={18} />, label: "Quick POS Billing", href: "/dashboard/billing/checkout", badge: "Fast", badgeColor: "#FF6B35" },
-      { icon: <Activity size={18} />, label: "Kitchen Workflow", href: "/dashboard/workflow?tab=track", badge: "Queue", badgeColor: "#EF4444" },
-      { icon: <LayoutDashboard size={18} />, label: "POS Terminal", href: "/dashboard/workflow?tab=dashboard", badge: "Live", badgeColor: "#10B981" },
+      { icon: <Home size={18} />, label: "Store Dashboard", href: "/dashboard" },
+      { icon: <ShoppingCart size={18} />, label: "Quick POS Billing", href: "/dashboard/billing/checkout" },
+      { icon: <LayoutDashboard size={18} />, label: "Floor Management", href: "/dashboard/terminal" },
+      { icon: <Activity size={18} />, label: "Kitchen Workflow", href: "/dashboard/kitchen" },
       { icon: <LayoutGrid size={18} />, label: "Table Status", href: "/dashboard/tables" },
       { icon: <Receipt size={18} />, label: "Past Bills / History", href: "/dashboard/billing" },
-      { icon: <Zap size={18} />, label: "Go to Billing Panel", href: "https://billing.kravy.in", badge: "Live", badgeColor: "#10B981", external: true },
+      { icon: <Zap size={18} />, label: "Go to Billing Panel", href: "https://billing.kravy.in", external: true },
     ]
   },
   {
@@ -451,6 +451,7 @@ export default function Sidebar() {
   const [taxEnabled, setTaxEnabled] = useState(false);
   const [aiScraperEnabled, setAiScraperEnabled] = useState(false);
   const [excelImportEnabled, setExcelImportEnabled] = useState(false);
+  const [activeTablesCount, setActiveTablesCount] = useState<number | null>(null);
 
   // Derive from AuthContext
   const userRole = authUser?.type || "USER";
@@ -471,6 +472,28 @@ export default function Sidebar() {
         }
       })
       .catch(() => {});
+
+    // Fetch active tables count
+    const fetchActiveCount = async () => {
+      try {
+        const res = await fetch("/api/orders?limit=50");
+        if (res.ok) {
+          const orders = await res.json();
+          if (Array.isArray(orders)) {
+            const activeTables = new Set(
+              orders
+                .filter((o: any) => o.status !== "COMPLETED" && !o.isDeleted && o.table?.id)
+                .map((o: any) => o.table.id)
+            );
+            setActiveTablesCount(activeTables.size);
+          }
+        }
+      } catch (err) {}
+    };
+
+    fetchActiveCount();
+    const interval = setInterval(fetchActiveCount, 15000); // 15 seconds
+    return () => clearInterval(interval);
   }, []);
 
   if (!mounted) return null;
@@ -735,7 +758,10 @@ export default function Sidebar() {
             // 2. Explicit Path-based Access (from DB allowedPaths)
             // If the current user has this specific path in their allowed list, grant access
             const baseHref = item.href.split("?")[0];
-            if (allowedPaths.includes("*") || allowedPaths.includes(item.href) || allowedPaths.includes(baseHref)) return true;
+            const hasLegacyWorkflow = allowedPaths.includes("/dashboard/workflow");
+            const isNewPath = baseHref === "/dashboard/terminal" || baseHref === "/dashboard/kitchen";
+            
+            if (allowedPaths.includes("*") || allowedPaths.includes(item.href) || allowedPaths.includes(baseHref) || (hasLegacyWorkflow && isNewPath)) return true;
 
             // 3. Application-wide Feature Flags (Controlled by profile settings)
             if (item.label === "GST Reports" && !taxEnabled) return false;

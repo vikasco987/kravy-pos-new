@@ -10,7 +10,8 @@ type Role = "ADMIN" | "SELLER" | "USER";
 const ALL_PATHS = [
   { group: "Operations", name: "Store Dashboard", path: "/dashboard" },
   { group: "Operations", name: "Quick POS Billing", path: "/dashboard/billing/checkout" },
-  { group: "Operations", name: "Kitchen Workflow", path: "/dashboard/workflow" },
+  { group: "Operations", name: "POS Terminal", path: "/dashboard/terminal" },
+  { group: "Operations", name: "Kitchen Workflow", path: "/dashboard/kitchen" },
   { group: "Operations", name: "Table Status", path: "/dashboard/tables" },
   { group: "Operations", name: "Bill History", path: "/dashboard/billing" },
   
@@ -45,8 +46,8 @@ export default function RolePermissionsPage() {
   const [activeRole, setActiveRole] = useState<Role>("SELLER");
   const [permissions, setPermissions] = useState<Record<Role, string[]>>({
     ADMIN: ["*"],
-    SELLER: ["/dashboard", "/dashboard/billing/checkout", "/dashboard/tables", "/dashboard/billing", "/dashboard/workflow", "/dashboard/menu/view", "/dashboard/menu/upload", "/dashboard/store-item-upload", "/dashboard/menu/edit", "/dashboard/parties", "/dashboard/inventory", "/dashboard/combos", "/dashboard/gallery", "/dashboard/settings", "/dashboard/billing/deleted", "/dashboard/help"],
-    USER: ["/dashboard", "/dashboard/billing/checkout", "/dashboard/tables", "/dashboard/workflow", "/dashboard/qr-orders", "/dashboard/help"],
+    SELLER: ["/dashboard", "/dashboard/billing/checkout", "/dashboard/tables", "/dashboard/billing", "/dashboard/terminal", "/dashboard/kitchen", "/dashboard/menu/view", "/dashboard/menu/upload", "/dashboard/store-item-upload", "/dashboard/menu/edit", "/dashboard/parties", "/dashboard/inventory", "/dashboard/combos", "/dashboard/gallery", "/dashboard/settings", "/dashboard/billing/deleted", "/dashboard/help"],
+    USER: ["/dashboard", "/dashboard/billing/checkout", "/dashboard/tables", "/dashboard/terminal", "/dashboard/kitchen", "/dashboard/qr-orders", "/dashboard/help"],
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

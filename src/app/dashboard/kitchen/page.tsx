@@ -208,7 +208,7 @@ function KravyPOS() {
     const router = useRouter();
     const billReceiptRef = useRef<HTMLDivElement | null>(null);
     const kotReceiptRef = useRef<HTMLDivElement | null>(null);
-    const [activeTab, setActiveTab] = useState<TabKey>("live-orders");
+    const [activeTab, setActiveTab] = useState<TabKey>("track");
     const [liveOrderTab, setLiveOrderTab] = useState<"PREPARING" | "READY" | "COMPLETED">("PREPARING");
     const [liveOrderSearch, setLiveOrderSearch] = useState("");
     const [orders, setOrders] = useState<Order[]>([]);
@@ -265,17 +265,10 @@ function KravyPOS() {
     
     useEffect(() => {
         fetchMenu();
-        fetchData(); // Fetch fresh orders immediately when params change
-        const tableId = searchParams.get("tableId");
+        fetchData(); 
         const orderId = searchParams.get("orderId");
-        const tab = searchParams.get("tab") as TabKey;
 
-        if (tab) {
-            setActiveTab(tab);
-        } else if (tableId) {
-            setSelectedTableId(tableId);
-            setActiveTab("dashboard");
-        }
+        setActiveTab("track");
 
         if (orderId) {
             setSelectedOrderId(orderId);
@@ -1606,7 +1599,7 @@ function KravyPOS() {
                                                 <button 
                                                     onClick={() => {
                                                         kravy.click();
-                                                        router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}&returnTo=/dashboard/workflow`);
+                                                        router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}&returnTo=/dashboard/kitchen`);
                                                     }}
                                                     className="h-10 px-4 rounded-xl bg-indigo-500 text-white text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-indigo-500/10 hover:scale-105 active:scale-95 transition-all"
                                                 >
@@ -1622,7 +1615,7 @@ function KravyPOS() {
                                                                 sessionStorage.setItem(`kravy_checkout_order_${passOrderId}`, JSON.stringify(activeOrderForSelected));
                                                             } catch {}
                                                         }
-                                                        router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}${passOrderId ? `&orderId=${passOrderId}` : ""}&returnTo=/dashboard/workflow`);
+                                                        router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}${passOrderId ? `&orderId=${passOrderId}` : ""}&returnTo=/dashboard/kitchen`);
                                                     }}
                                                     className="h-10 px-4 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-slate-900/10 hover:scale-105 active:scale-95 transition-all"
                                                 >
@@ -2432,9 +2425,9 @@ function KravyPOS() {
                 receiptRef={billReceiptRef}
                 kotRef={kotReceiptRef}
                 business={business}
-                billNumber={printOrder?.id ? `SV/${new Date(printOrder.createdAt || Date.now()).getFullYear().toString().slice(-2)}${(new Date(printOrder.createdAt || Date.now()).getMonth() + 1).toString().padStart(2, '0')}/${(parseInt(printOrder.id.slice(-4), 16) % 10000).toString().padStart(4, '0')}` : "DRAFT"}
+                billNumber={printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
                 billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}
-                tokenNumber={printOrder?.tokenNumber ? printOrder.tokenNumber.toString() : (printOrder?.id ? (parseInt(printOrder.id.slice(-4), 16) % 1000).toString().padStart(3, '0') : "001")}
+                tokenNumber={printOrder?.tokenNumber ? printOrder.tokenNumber.toString().padStart(3, '0') : "---"}
                 selectedTable={printOrder?.table?.name || "Counter"}
                 customerName={printOrder?.customerName?.trim() || "Walk-in Customer"}
                 customerPhone={printOrder?.customerPhone || ""}
@@ -2479,9 +2472,9 @@ function KravyPOS() {
                 previewZoom={previewZoom}
                 setPreviewZoom={setPreviewZoom}
                 business={business}
-                billNumber={printOrder?.id ? `SV/${new Date(printOrder.createdAt || Date.now()).getFullYear().toString().slice(-2)}${(new Date(printOrder.createdAt || Date.now()).getMonth() + 1).toString().padStart(2, '0')}/${(parseInt(printOrder.id.slice(-4), 16) % 10000).toString().padStart(4, '0')}` : "DRAFT"}
+                billNumber={printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
                 billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}
-                tokenNumber={printOrder?.tokenNumber ? printOrder.tokenNumber.toString() : (printOrder?.id ? (parseInt(printOrder.id.slice(-4), 16) % 1000).toString().padStart(3, '0') : "001")}
+                tokenNumber={printOrder?.tokenNumber ? printOrder.tokenNumber.toString().padStart(3, '0') : "---"}
                 selectedTable={printOrder?.table?.name || "Counter"}
                 customerName={printOrder?.customerName?.trim() || "Walk-in Customer"}
                 customerPhone={printOrder?.customerPhone || ""}

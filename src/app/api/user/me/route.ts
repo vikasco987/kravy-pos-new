@@ -39,7 +39,8 @@ export async function GET() {
           "/dashboard/billing/checkout", 
           "/dashboard/tables", 
           "/dashboard/billing", 
-          "/dashboard/workflow",
+          "/dashboard/terminal",
+          "/dashboard/kitchen",
           "/dashboard/menu/view", 
           "/dashboard/menu-editor",
           "/dashboard/menu/addons",
@@ -76,7 +77,7 @@ export async function GET() {
     // priority 4: Expand mobile app group permissions into actual URL paths
     const PERMISSION_MAPPING: Record<string, string[]> = {
       "Dashboard Permissions": ["/dashboard"],
-      "Order & Billing Permissions": ["/dashboard/billing/checkout", "/dashboard/workflow", "/dashboard/tables"],
+      "Order & Billing Permissions": ["/dashboard/billing/checkout", "/dashboard/terminal", "/dashboard/kitchen", "/dashboard/tables"],
       "Invoices & Receipts": ["/dashboard/billing", "/dashboard/billing/deleted"],
       "Customer Permissions": ["/dashboard/parties"],
       "Menu & Items Permissions": ["/dashboard/menu/view", "/dashboard/menu-editor", "/dashboard/menu/addons", "/dashboard/menu/upload", "/dashboard/store-item-upload", "/dashboard/menu/edit", "/dashboard/inventory"],

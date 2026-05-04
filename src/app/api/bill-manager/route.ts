@@ -204,7 +204,8 @@ export async function POST(req: NextRequest) {
     const lastBill = await prisma.billManager.findFirst({
       where: {
         clerkUserId: effectiveId,
-        createdAt: { gte: monthStart }
+        createdAt: { gte: monthStart },
+        billNumber: { startsWith: 'SV/' } // Filter for formatted bills only
       },
       orderBy: { billNumber: 'desc' },
       select: { billNumber: true }
@@ -258,30 +259,33 @@ export async function POST(req: NextRequest) {
     }
 
     // ✅ TOKEN NUMBER GENERATION (DAILY RESET)
-    let nextToken = 1;
-    try {
-      // Re-fetch profile to get latest lastTokenNumber (prevent race condition)
-      const latestProfile = await prisma.businessProfile.findUnique({
-        where: { userId: effectiveId },
-      });
-      const today = new Date().toISOString().split('T')[0];
-      const lastTokenDate = latestProfile?.lastTokenDate ? new Date(latestProfile.lastTokenDate).toISOString().split('T')[0] : "";
-      
-      if (lastTokenDate === today) {
-        nextToken = (latestProfile?.lastTokenNumber || 0) + 1;
-      } else {
-        nextToken = 1;
-      }
+    let nextToken = body.tokenNumber || 1;
+    
+    if (!body.tokenNumber) {
+        try {
+            // Re-fetch profile to get latest lastTokenNumber (prevent race condition)
+            const latestProfile = await prisma.businessProfile.findUnique({
+                where: { userId: effectiveId },
+            });
+            const today = new Date().toISOString().split('T')[0];
+            const lastTokenDate = latestProfile?.lastTokenDate ? new Date(latestProfile.lastTokenDate).toISOString().split('T')[0] : "";
+            
+            if (lastTokenDate === today) {
+                nextToken = (latestProfile?.lastTokenNumber || 0) + 1;
+            } else {
+                nextToken = 1;
+            }
 
-      await prisma.businessProfile.update({
-        where: { userId: effectiveId },
-        data: {
-          lastTokenNumber: nextToken,
-          lastTokenDate: new Date()
+            await prisma.businessProfile.update({
+                where: { userId: effectiveId },
+                data: {
+                    lastTokenNumber: nextToken,
+                    lastTokenDate: new Date()
+                }
+            });
+        } catch (tokenErr) {
+            console.error("TOKEN GENERATION ERROR:", tokenErr);
         }
-      });
-    } catch (tokenErr) {
-      console.error("TOKEN GENERATION ERROR:", tokenErr);
     }
 
     const bill = await prisma.billManager.create({
