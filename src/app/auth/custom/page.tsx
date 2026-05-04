@@ -36,15 +36,22 @@ export default function CustomAuthPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
         });
-        const data = await res.json();
+        
+        let data: any = {};
+        try {
+          data = await res.json();
+        } catch (e) {
+          throw new Error("Server returned an invalid response. Please check your internet or try again later.");
+        }
+
         if (!res.ok) {
           if (data.needsVerification) {
             setMode('verify');
             setFormData(prev => ({ ...prev, email: data.email || prev.email }));
-            toast.info(data.error);
+            toast.info(data.error || "Verification required");
             return;
           }
-          throw new Error(data.error);
+          throw new Error(data.error || "Failed to register");
         }
         toast.success("OTP sent to your email!");
         setMode('verify');
@@ -55,8 +62,8 @@ export default function CustomAuthPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email, otp: formData.otp })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        const data = await res.json().catch(() => ({ error: "Invalid server response" }));
+        if (!res.ok) throw new Error(data.error || "Verification failed");
         toast.success("Account verified! Please login.");
         setMode('login');
       }
@@ -66,15 +73,15 @@ export default function CustomAuthPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ identifier: formData.email || formData.phone, password: formData.password })
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({ error: "Invalid server response" }));
         if (!res.ok) {
           if (data.notVerified) {
             setMode('verify');
             setFormData(prev => ({ ...prev, email: data.email || prev.email }));
-            toast.info(data.error);
+            toast.info(data.error || "Not verified");
             return;
           }
-          throw new Error(data.error);
+          throw new Error(data.error || "Login failed");
         }
         toast.success("Logged in successfully!");
         router.push('/dashboard');
@@ -85,8 +92,8 @@ export default function CustomAuthPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        const data = await res.json().catch(() => ({ error: "Invalid server response" }));
+        if (!res.ok) throw new Error(data.error || "Request failed");
         toast.success("Reset OTP sent to your email!");
         setMode('reset');
       }
@@ -100,13 +107,14 @@ export default function CustomAuthPage() {
             newPassword: formData.newPassword 
           })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        const data = await res.json().catch(() => ({ error: "Invalid server response" }));
+        if (!res.ok) throw new Error(data.error || "Reset failed");
         toast.success("Password reset successfully! Please login.");
         setMode('login');
       }
     } catch (error: any) {
-      toast.error(error.message || "Something went wrong");
+      console.error("Auth Error:", error);
+      toast.error(error.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
