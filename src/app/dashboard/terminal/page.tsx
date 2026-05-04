@@ -1250,52 +1250,72 @@ function KravyPOS() {
                                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5"><Zap size={11} /> Order Breakdown</span>
                                                         <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-50 px-2.5 py-1 rounded-lg">Kitchen Priority: HIGH</span>
                                                     </div>
-                                                    {activeOrderForSelected.items.map((item, idx) => (
-                                                        <motion.div
-                                                            key={idx}
-                                                            initial={{ opacity: 0, y: 8 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            transition={{ delay: idx * 0.04 }}
-                                                            className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:bg-slate-50 hover:border-slate-200 transition-all group"
-                                                        >
-                                                            <div className="flex items-center gap-4">
-                                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${item.isVeg === false ? "bg-rose-50 border border-rose-100 text-rose-500" : "bg-emerald-50 border border-emerald-100 text-emerald-500"}`}>
-                                                                    {item.isVeg === false ? "🍗" : "🥗"}
+                                                    {(() => {
+                                                        const rounds = activeOrderForSelected.items.reduce((acc: any, item: any) => {
+                                                            const r = item.kotNumber || "New Items";
+                                                            if (!acc[r]) acc[r] = [];
+                                                            acc[r].push(item);
+                                                            return acc;
+                                                        }, {});
+
+                                                        return Object.entries(rounds).map(([round, roundItems]: [string, any], rIdx) => (
+                                                            <div key={round} className="space-y-2 pb-4">
+                                                                <div className="flex items-center gap-2 px-2 py-1">
+                                                                    <div className="h-[1px] flex-1 bg-slate-100" />
+                                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                                                                        {round === "New Items" ? "🛒 Current Cart" : `⚡ KOT #${round}`}
+                                                                    </span>
+                                                                    <div className="h-[1px] flex-1 bg-slate-100" />
                                                                 </div>
-                                                                <div>
-                                                                    <p className="text-sm font-black text-slate-900 uppercase leading-none mb-1">{item.name}</p>
-                                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                                                                        ₹{item.price}
-                                                                        {item.instruction && <span className="text-slate-900 ml-1.5 font-black border-l border-slate-200 pl-1.5 italic text-[9px] uppercase"> · {item.instruction}</span>}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex items-center gap-6">
-                                                                <div className="flex items-center gap-3 bg-white border border-slate-100 rounded-xl p-1 shadow-sm">
-                                                                    <button 
-                                                                        onClick={() => handleUpdateItemQty(activeOrderForSelected.id, idx, item.quantity - 1)}
-                                                                        className="w-6 h-6 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors font-bold"
+                                                                {roundItems.map((item: any, idx: number) => (
+                                                                    <motion.div
+                                                                        key={`${round}-${idx}`}
+                                                                        initial={{ opacity: 0, y: 8 }}
+                                                                        animate={{ opacity: 1, y: 0 }}
+                                                                        transition={{ delay: idx * 0.04 }}
+                                                                        className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:bg-slate-50 hover:border-slate-200 transition-all group"
                                                                     >
-                                                                        −
-                                                                    </button>
-                                                                    <span className="w-4 text-center text-xs font-black italic">x{item.quantity}</span>
-                                                                    <button 
-                                                                        onClick={() => handleUpdateItemQty(activeOrderForSelected.id, idx, item.quantity + 1)}
-                                                                        className="w-6 h-6 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors font-bold"
-                                                                    >
-                                                                        +
-                                                                    </button>
-                                                                </div>
-                                                                <span className="w-16 text-right text-sm font-black italic text-slate-900">₹{item.price * item.quantity}</span>
-                                                                <button 
-                                                                    onClick={() => handleRemoveItem(activeOrderForSelected.id, idx)}
-                                                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
-                                                                >
-                                                                    <Trash2 size={14} />
-                                                                </button>
+                                                                        <div className="flex items-center gap-4">
+                                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${item.isVeg === false ? "bg-rose-50 border border-rose-100 text-rose-500" : "bg-emerald-50 border border-emerald-100 text-emerald-500"}`}>
+                                                                                {item.isVeg === false ? "🍗" : "🥗"}
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-sm font-black text-slate-900 uppercase leading-none mb-1">{item.name}</p>
+                                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                                                                                    ₹{item.price}
+                                                                                    {item.instruction && <span className="text-slate-900 ml-1.5 font-black border-l border-slate-200 pl-1.5 italic text-[9px] uppercase"> · {item.instruction}</span>}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-6">
+                                                                            <div className="flex items-center gap-3 bg-white border border-slate-100 rounded-xl p-1 shadow-sm">
+                                                                                <button 
+                                                                                    onClick={() => handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity - 1)}
+                                                                                    className="w-6 h-6 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors font-bold"
+                                                                                >
+                                                                                    −
+                                                                                </button>
+                                                                                <span className="w-4 text-center text-xs font-black italic">x{item.quantity}</span>
+                                                                                <button 
+                                                                                    onClick={() => handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity + 1)}
+                                                                                    className="w-6 h-6 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors font-bold"
+                                                                                >
+                                                                                    +
+                                                                                </button>
+                                                                            </div>
+                                                                            <span className="w-16 text-right text-sm font-black italic text-slate-900">₹{item.price * item.quantity}</span>
+                                                                            <button 
+                                                                                onClick={() => handleRemoveItem(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item))}
+                                                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
+                                                                            >
+                                                                                <Trash2 size={14} />
+                                                                            </button>
+                                                                        </div>
+                                                                    </motion.div>
+                                                                ))}
                                                             </div>
-                                                        </motion.div>
-                                                    ))}
+                                                        ));
+                                                    })()}
                                                 </div>
                                             ) : (
                                                 <div className="h-full flex flex-col items-center justify-center opacity-30 text-center">

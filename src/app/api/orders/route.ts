@@ -80,10 +80,28 @@ export async function PATCH(req: NextRequest) {
                     }
                 });
 
-                // Fetch current kotNumbers to append
+                // Fetch current kotNumbers and items
                 const currentOrder = await prisma.order.findUnique({ where: { id: orderId } });
                 const existingKotNumbers = Array.isArray(currentOrder?.kotNumbers) ? currentOrder.kotNumbers : (currentOrder?.tokenNumber ? [currentOrder.tokenNumber] : []);
                 
+                // Tag items that are being printed as 'new' with this KOT number
+                if (items && Array.isArray(items)) {
+                    data.items = items.map((it: any) => {
+                        if (it.isNew) {
+                            return { ...it, isNew: false, kotNumber: nextToken };
+                        }
+                        return it;
+                    });
+                } else if (currentOrder && Array.isArray(currentOrder.items)) {
+                    // Fallback to existing items if items not passed in body (though they usually are)
+                    data.items = (currentOrder.items as any[]).map((it: any) => {
+                        if (it.isNew) {
+                            return { ...it, isNew: false, kotNumber: nextToken };
+                        }
+                        return it;
+                    });
+                }
+
                 data.tokenNumber = nextToken; // Update latest for legacy
                 data.kotNumbers = [...existingKotNumbers, nextToken];
             } catch (tokenErr) {
