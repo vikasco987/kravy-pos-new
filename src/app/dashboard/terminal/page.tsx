@@ -417,6 +417,10 @@ function KravyPOS() {
 
                 if (type === "KOT" || autoBoth) {
                     body.isKotPrinted = true;
+                    // Mark all items as not new after KOT print
+                    if (targetOrder.items) {
+                        body.items = targetOrder.items.map((it: any) => ({ ...it, isNew: false }));
+                    }
                     // Auto transition PENDING/ACCEPTED -> PREPARING
                     if (targetOrder.status === "PENDING" || targetOrder.status === "ACCEPTED") {
                         body.status = "PREPARING";
@@ -1493,7 +1497,8 @@ function KravyPOS() {
                     name: it.name,
                     qty: it.quantity,
                     rate: it.price,
-                    gst: it.gst
+                    gst: it.gst,
+                    isNew: it.isNew
                 })) || []}
                 subtotal={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
                 discountAmt={0}

@@ -332,19 +332,23 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             </tr>
           </thead>
           <tbody>
-            {items.map((i, idx) => (
-              <tr key={idx} className="border-b border-dotted border-black/30">
-                <td className="py-2 pr-2 leading-[1.1] uppercase">
-                   {i.name}
-                   {i.variants && i.variants.length > 0 && (
-                     <div className="text-[9px] font-bold opacity-70 lowercase">
-                        ({i.variants.map((v:any) => v.name).join(', ')})
-                     </div>
-                   )}
-                </td>
-                <td className="text-right py-2 align-top text-[14px]">x{i.qty}</td>
-              </tr>
-            ))}
+            {(() => {
+              const newItems = items.filter(i => i.isNew);
+              const itemsToPrint = newItems.length > 0 ? newItems : items;
+              return itemsToPrint.map((i, idx) => (
+                <tr key={idx} className="border-b border-dotted border-black/30">
+                  <td className="py-2 pr-2 leading-[1.1] uppercase">
+                     {i.name}
+                     {i.variants && i.variants.length > 0 && (
+                       <div className="text-[9px] font-bold opacity-70 lowercase">
+                          ({i.variants.map((v:any) => v.name).join(', ')})
+                       </div>
+                     )}
+                  </td>
+                  <td className="text-right py-2 align-top text-[14px]">x{i.qty}</td>
+                </tr>
+              ));
+            })()}
           </tbody>
         </table>
 

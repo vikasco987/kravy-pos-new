@@ -667,7 +667,8 @@ export default function CheckoutClient() {
         rate: item.price,
         gst: item.gst ?? null,
         hsnCode: item.hsnCode || "",
-        taxStatus: item.taxStatus || "Without Tax"
+        taxStatus: item.taxStatus || "Without Tax",
+        isNew: true
       }];
     });
   }
@@ -1293,7 +1294,8 @@ export default function CheckoutClient() {
             itemId: it.id,
             addedAt: new Date().toISOString(),
             taxStatus: it.taxStatus || "Without Tax",
-            gst: it.gst ?? 0
+            gst: it.gst ?? 0,
+            isNew: false
           })),
           total: finalTotal,
           status: "PREPARING",
