@@ -1258,22 +1258,36 @@ function KravyPOS() {
                                                             return acc;
                                                         }, {});
 
-                                                        return Object.entries(rounds).map(([round, roundItems]: [string, any], rIdx) => (
-                                                            <div key={round} className="space-y-2 pb-4">
-                                                                <div className="flex items-center gap-2 px-2 py-1">
-                                                                    <div className="h-[1px] flex-1 bg-slate-100" />
-                                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                                                        {round === "New Items" ? "🛒 Current Cart" : `⚡ KOT #${round}`}
-                                                                    </span>
-                                                                    <div className="h-[1px] flex-1 bg-slate-100" />
+                                                        const kotList = activeOrderForSelected.kotNumbers || [];
+                                                        
+                                                        // Sort rounds: first all KOTs in sequence, then New Items
+                                                        const sortedRounds = [
+                                                            ...kotList.map((kn: number, i: number) => ({ id: kn, label: `Round ${i + 1} - KOT #${kn}`, items: rounds[kn] })),
+                                                            ...(rounds["New Items"] ? [{ id: "New Items", label: "🛒 Current Cart (Not Printed)", items: rounds["New Items"] }] : [])
+                                                        ].filter(r => r.items && r.items.length > 0);
+
+                                                        return sortedRounds.map((roundObj, rIdx) => (
+                                                            <div key={roundObj.id} className="space-y-2 pb-6 last:pb-2">
+                                                                <div className="flex items-center gap-3 px-2 py-1">
+                                                                    <div className={`h-[1.5px] flex-1 ${roundObj.id === "New Items" ? "bg-amber-100" : "bg-indigo-100"}`} />
+                                                                    <div className="flex flex-col items-center">
+                                                                        <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${roundObj.id === "New Items" ? "text-amber-500" : "text-indigo-500"}`}>
+                                                                            {roundObj.label}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className={`h-[1.5px] flex-1 ${roundObj.id === "New Items" ? "bg-amber-100" : "bg-indigo-100"}`} />
                                                                 </div>
-                                                                {roundItems.map((item: any, idx: number) => (
+                                                                {roundObj.items.map((item: any, idx: number) => (
                                                                     <motion.div
-                                                                        key={`${round}-${idx}`}
+                                                                        key={`${roundObj.id}-${idx}`}
                                                                         initial={{ opacity: 0, y: 8 }}
                                                                         animate={{ opacity: 1, y: 0 }}
-                                                                        transition={{ delay: idx * 0.04 }}
-                                                                        className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:bg-slate-50 hover:border-slate-200 transition-all group"
+                                                                        transition={{ delay: idx * 0.03 }}
+                                                                        className={`flex items-center justify-between p-4 rounded-2xl border transition-all group ${
+                                                                            roundObj.id === "New Items" 
+                                                                            ? "bg-amber-50/30 border-amber-100 hover:bg-amber-50 hover:border-amber-200" 
+                                                                            : "bg-slate-50/50 border-slate-100 hover:bg-slate-50 hover:border-slate-200"
+                                                                        }`}
                                                                     >
                                                                         <div className="flex items-center gap-4">
                                                                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${item.isVeg === false ? "bg-rose-50 border border-rose-100 text-rose-500" : "bg-emerald-50 border border-emerald-100 text-emerald-500"}`}>
@@ -1281,10 +1295,12 @@ function KravyPOS() {
                                                                             </div>
                                                                             <div>
                                                                                 <p className="text-sm font-black text-slate-900 uppercase leading-none mb-1">{item.name}</p>
-                                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                                                                                    ₹{item.price}
-                                                                                    {item.instruction && <span className="text-slate-900 ml-1.5 font-black border-l border-slate-200 pl-1.5 italic text-[9px] uppercase"> · {item.instruction}</span>}
-                                                                                </p>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                                                                                        ₹{item.price}
+                                                                                    </p>
+                                                                                    {item.instruction && <span className="text-slate-900 font-black border-l border-slate-200 pl-1.5 italic text-[9px] uppercase"> · {item.instruction}</span>}
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex items-center gap-6">
