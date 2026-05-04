@@ -845,6 +845,7 @@ export default function CheckoutClient() {
             userId: data.userId,
             syncQuickPosWithKitchen: data.syncQuickPosWithKitchen ?? false,
             multiZoneMenuEnabled: data.multiZoneMenuEnabled ?? false,
+            greetingMessage: data.greetingMessage,
           });
           console.log("DEBUG POS API RESPONSE - enableKOTWithBill:", data.enableKOTWithBill);
           console.log("DEBUG POS API FULL DATA:", data);

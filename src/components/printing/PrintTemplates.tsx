@@ -294,7 +294,9 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         )}
 
         <div className="mt-4 border-t-2 border-black pt-2 text-center">
-          <div className="text-[12px] font-black italic tracking-widest uppercase mb-1">Thank You!</div>
+          <div className="text-[12px] font-black italic tracking-widest uppercase mb-1">
+            {business?.greetingMessage || "Thank You!"}
+          </div>
           <div className="text-[9px] font-bold">Visit Again for Fresh Food</div>
           <div className="text-[8px] mt-3 opacity-50 font-bold">Powered by MagicScale netizen</div>
         </div>

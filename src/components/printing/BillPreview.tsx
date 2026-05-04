@@ -265,7 +265,9 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
               )}
 
               {business?.businessTagLine && <div className="text-center text-[9px] mt-1 italic opacity-80">{business.businessTagLine}</div>}
-              <div className="text-center font-bold text-[11px] mt-2">THANK YOU 🙏 VISIT AGAIN</div>
+              <div className="text-center font-bold text-[11px] mt-2">
+                {business?.greetingMessage || "THANK YOU 🙏 VISIT AGAIN"}
+              </div>
             </div>
           </div>
         </div>
