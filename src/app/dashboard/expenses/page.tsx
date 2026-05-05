@@ -11,7 +11,7 @@ import {
     MoreVertical, Download, X,
     ChevronLeft, ChevronRight,
     Utensils, Wallet, ShoppingCart, 
-    Lightbulb, UserGroup, Rocket,
+    Lightbulb, Users, Rocket,
     MoreHorizontal
 } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -21,7 +21,7 @@ import { kravy } from "@/lib/sounds";
 const CATEGORIES = [
     { name: "Ingredients", icon: ShoppingCart, color: "text-amber-500", bg: "bg-amber-50" },
     { name: "Rent", icon: Wallet, color: "text-blue-500", bg: "bg-blue-50" },
-    { name: "Salaries", icon: UserGroup, color: "text-indigo-500", bg: "bg-indigo-50" },
+    { name: "Salaries", icon: Users, color: "text-indigo-500", bg: "bg-indigo-50" },
     { name: "Utilities", icon: Lightbulb, color: "text-emerald-500", bg: "bg-emerald-50" },
     { name: "Marketing", icon: Rocket, color: "text-rose-500", bg: "bg-rose-50" },
     { name: "Others", icon: MoreHorizontal, color: "text-slate-500", bg: "bg-slate-50" },

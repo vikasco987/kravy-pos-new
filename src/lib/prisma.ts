@@ -16,5 +16,6 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export default prisma;
+// Forced reload for Expenses feature at Tue May 5 13:32:00 IST 2026
 // Re-indexed at Wed Apr 22 17:36:00 IST 2026
 // Updated for POS Visibility Settings at Tue May 5 12:47:00 IST 2026
