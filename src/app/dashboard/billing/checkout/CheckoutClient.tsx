@@ -1323,7 +1323,6 @@ export default function CheckoutClient() {
 
     try {
       kravy.ping();
-      printKOT();
       setIsKotPrinted(true);
 
       // Sync and Redirect Logic
@@ -1368,7 +1367,11 @@ export default function CheckoutClient() {
           if (data.kotNumbers) setKotNumbers(data.kotNumbers);
           if (data.tokenNumber) setTokenNumber(data.tokenNumber);
           
-          toast.success("KOT Printed & Order Synced! ✅");
+          // ✅ Print KOT AFTER sync and state update
+          setTimeout(() => {
+            printKOT();
+            toast.success("KOT Printed & Order Synced! ✅");
+          }, 500);
 
           const returnTo = searchParams.get("returnTo");
           if (returnTo) {
@@ -1392,6 +1395,10 @@ export default function CheckoutClient() {
           console.error("SYNC_ERROR:", errData);
           toast.error(`Sync Failed: ${errData.error || "Unknown Error"}. Please try again.`);
         }
+      } else {
+        // ✅ Local print if sync is off
+        printKOT();
+        toast.success("KOT Printed (Local) ✅");
       }
     } catch (err: any) {
       console.error("KOT_PRINT_CRITICAL_ERROR:", err);
@@ -2711,7 +2718,7 @@ export default function CheckoutClient() {
                   printReceipt(business?.enableKOTWithBill);
                   resetForm();
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                }, 300);
+                }, 500);
               }}
               disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl
