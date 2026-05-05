@@ -579,6 +579,7 @@ export default function CheckoutClient() {
               setCustomerPhone(cachedOrder.customerPhone || "");
               setOrderNotes(cachedOrder.notes || "");
               setKotNumbers(cachedOrder.kotNumbers || (cachedOrder.tokenNumber ? [cachedOrder.tokenNumber] : []));
+              setTokenNumber(cachedOrder.tokenNumber || null);
               
               // Clean up to avoid stale data on next visit
               sessionStorage.removeItem("quick_pos_handoff_order");
@@ -607,6 +608,7 @@ export default function CheckoutClient() {
           setCustomerPhone(order.customerPhone || "");
           setOrderNotes(order.notes || "");
           setKotNumbers(order.kotNumbers || (order.tokenNumber ? [order.tokenNumber] : []));
+          setTokenNumber(order.tokenNumber || null);
         } catch (err) {
           console.error("LOAD ORDER ERROR:", err);
         }
@@ -1199,6 +1201,7 @@ export default function CheckoutClient() {
         packagingCharges: packagingCharge,
         serviceCharge: serviceCharge,
         kotNumbers,
+        tokenNumber,
       };
 
       const url = resumeBillId ? `/api/bill-manager/${resumeBillId}` : "/api/bill-manager";
