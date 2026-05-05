@@ -54,12 +54,15 @@ export default function ProfitLossPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [expRes, ordRes] = await Promise.all([
+            const [expRes, billRes] = await Promise.all([
                 fetch("/api/expenses"),
-                fetch("/api/orders?status=COMPLETED") // Only completed orders count as realized sales
+                fetch("/api/bill-manager")
             ]);
-            setExpenses(await expRes.json());
-            setOrders(await ordRes.json());
+            const expData = await expRes.json();
+            const billData = await billRes.json();
+            
+            setExpenses(expData);
+            setOrders(billData.bills || []); // Using bills as the source of revenue
         } catch (error) {
             console.error("Failed to fetch data");
             toast.error("Failed to load financial data");
