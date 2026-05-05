@@ -12,54 +12,108 @@ import {
     ChevronLeft, ChevronRight,
     Utensils, Wallet, ShoppingCart, 
     Lightbulb, Users, Rocket,
-    MoreHorizontal
+    MoreHorizontal, Settings, Edit, Trash
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { kravy } from "@/lib/sounds";
 
-const CATEGORIES = [
-    { name: "Ingredients", icon: ShoppingCart, color: "text-amber-500", bg: "bg-amber-50" },
-    { name: "Rent", icon: Wallet, color: "text-blue-500", bg: "bg-blue-50" },
-    { name: "Salaries", icon: Users, color: "text-indigo-500", bg: "bg-indigo-50" },
-    { name: "Utilities", icon: Lightbulb, color: "text-emerald-500", bg: "bg-emerald-50" },
-    { name: "Marketing", icon: Rocket, color: "text-rose-500", bg: "bg-rose-50" },
-    { name: "Others", icon: MoreHorizontal, color: "text-slate-500", bg: "bg-slate-50" },
+const DEFAULT_CATEGORIES = [
+    { name: "Ingredients", icon: "ShoppingCart", color: "#F59E0B" },
+    { name: "Rent", icon: "Wallet", color: "#3B82F6" },
+    { name: "Salaries", icon: "Users", color: "#6366F1" },
+    { name: "Utilities", icon: "Lightbulb", color: "#10B981" },
+    { name: "Marketing", icon: "Rocket", color: "#F43F5E" },
+    { name: "Others", icon: "MoreHorizontal", color: "#64748B" },
 ];
+
+const ICON_MAP: any = {
+    ShoppingCart, Wallet, Users, Lightbulb, Rocket, MoreHorizontal, Utensils, Tag, CreditCard, Banknote
+};
 
 export default function ExpensesPage() {
     const router = useRouter();
     const [expenses, setExpenses] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [editingExpense, setEditingExpense] = useState<any>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [filterCategory, setFilterCategory] = useState("All");
 
     const [formData, setFormData] = useState({
         amount: "",
-        category: "Ingredients",
+        category: "",
         description: "",
         date: format(new Date(), "yyyy-MM-dd"),
         paymentMode: "Cash",
     });
 
+    const [catFormData, setCatFormData] = useState({
+        id: "",
+        name: "",
+        color: "#64748B",
+        icon: "MoreHorizontal"
+    });
+
     useEffect(() => {
-        fetchExpenses();
+        fetchInitialData();
     }, []);
 
-    const fetchExpenses = async () => {
+    const fetchInitialData = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/expenses");
-            const data = await res.json();
-            setExpenses(data);
+            const [expRes, catRes] = await Promise.all([
+                fetch("/api/expenses"),
+                fetch("/api/expenses/categories")
+            ]);
+            
+            const expData = await expRes.json();
+            const catData = await catRes.json();
+
+            setExpenses(expData);
+            
+            if (catData.length === 0) {
+                // Seed default categories if none exist
+                const seeded = await seedDefaultCategories();
+                setCategories(seeded);
+                setFormData(prev => ({ ...prev, category: seeded[0]?.name || "" }));
+            } else {
+                setCategories(catData);
+                setFormData(prev => ({ ...prev, category: catData[0]?.name || "" }));
+            }
         } catch (error) {
-            toast.error("Failed to fetch expenses");
+            toast.error("Failed to load data");
         } finally {
             setLoading(false);
         }
+    };
+
+    const seedDefaultCategories = async () => {
+        const created = [];
+        for (const cat of DEFAULT_CATEGORIES) {
+            const res = await fetch("/api/expenses/categories", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(cat),
+            });
+            if (res.ok) created.push(await res.json());
+        }
+        return created;
+    };
+
+    const fetchExpenses = async () => {
+        const res = await fetch("/api/expenses");
+        const data = await res.json();
+        setExpenses(data);
+    };
+
+    const fetchCategories = async () => {
+        const res = await fetch("/api/expenses/categories");
+        const data = await res.json();
+        setCategories(data);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -81,7 +135,7 @@ export default function ExpensesPage() {
                 setEditingExpense(null);
                 setFormData({
                     amount: "",
-                    category: "Ingredients",
+                    category: categories[0]?.name || "",
                     description: "",
                     date: format(new Date(), "yyyy-MM-dd"),
                     paymentMode: "Cash",
@@ -92,6 +146,41 @@ export default function ExpensesPage() {
             }
         } catch (error) {
             toast.error("Failed to save expense");
+        }
+    };
+
+    const handleCategorySubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const method = catFormData.id ? "PATCH" : "POST";
+        const url = catFormData.id ? `/api/expenses/categories/${catFormData.id}` : "/api/expenses/categories";
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(catFormData),
+            });
+
+            if (res.ok) {
+                toast.success(catFormData.id ? "Category updated" : "Category created");
+                setCatFormData({ id: "", name: "", color: "#64748B", icon: "MoreHorizontal" });
+                fetchCategories();
+            }
+        } catch (error) {
+            toast.error("Failed to save category");
+        }
+    };
+
+    const deleteCategory = async (id: string) => {
+        if (!confirm("Are you sure? This won't delete expenses but they might lose their category association.")) return;
+        try {
+            const res = await fetch(`/api/expenses/categories/${id}`, { method: "DELETE" });
+            if (res.ok) {
+                toast.success("Category deleted");
+                fetchCategories();
+            }
+        } catch (error) {
+            toast.error("Failed to delete");
         }
     };
 
@@ -130,7 +219,14 @@ export default function ExpensesPage() {
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Track your daily operational costs</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                    <button 
+                        onClick={() => { kravy.click(); setShowCategoryModal(true); }}
+                        className="h-14 px-6 rounded-[1.5rem] bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest text-[10px] flex items-center gap-3 hover:bg-slate-200 transition-all active:scale-95"
+                    >
+                        <Settings size={18} />
+                        Categories
+                    </button>
                     <button 
                         onClick={() => { kravy.click(); router.push("/dashboard/expenses/reports"); }}
                         className="h-14 px-8 rounded-[1.5rem] bg-indigo-500 hover:bg-indigo-400 text-white font-black uppercase tracking-widest text-xs flex items-center gap-3 shadow-2xl shadow-indigo-500/20 transition-all active:scale-95"
@@ -162,9 +258,6 @@ export default function ExpensesPage() {
                     <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
                         ₹{totalExpense.toLocaleString()}
                     </h3>
-                    <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mt-2 flex items-center gap-1">
-                        <PieChart size={12} /> View Details
-                    </p>
                 </motion.div>
 
                 <motion.div 
@@ -180,7 +273,6 @@ export default function ExpensesPage() {
                     <h3 className="text-4xl font-black tracking-tighter">
                         {filteredExpenses.length} Records
                     </h3>
-                    <p className="text-[10px] font-bold uppercase tracking-widest mt-2 opacity-80">Tracked Operations</p>
                 </motion.div>
 
                 <motion.div 
@@ -196,7 +288,6 @@ export default function ExpensesPage() {
                     <h3 className="text-4xl font-black tracking-tighter">
                         Cash Only
                     </h3>
-                    <p className="text-[10px] font-bold uppercase tracking-widest mt-2 text-emerald-400 italic font-mono">Real-time sync active</p>
                 </motion.div>
             </div>
 
@@ -214,17 +305,27 @@ export default function ExpensesPage() {
                 </div>
 
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto scrollbar-hide">
-                    {["All", ...CATEGORIES.map(c => c.name)].map((cat) => (
+                    <button
+                        onClick={() => { kravy.toggle(); setFilterCategory("All"); }}
+                        className={`h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                            filterCategory === "All" 
+                            ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-lg" 
+                            : "bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 text-slate-400 hover:text-slate-600"
+                        }`}
+                    >
+                        All
+                    </button>
+                    {categories.map((cat) => (
                         <button
-                            key={cat}
-                            onClick={() => { kravy.toggle(); setFilterCategory(cat); }}
+                            key={cat.id}
+                            onClick={() => { kravy.toggle(); setFilterCategory(cat.name); }}
                             className={`h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                                filterCategory === cat 
+                                filterCategory === cat.name 
                                 ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-lg" 
-                                : "bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                                : "bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 text-slate-400 hover:text-slate-600"
                             }`}
                         >
-                            {cat}
+                            {cat.name}
                         </button>
                     ))}
                 </div>
@@ -264,8 +365,8 @@ export default function ExpensesPage() {
                                 </tr>
                             ) : (
                                 filteredExpenses.map((exp) => {
-                                    const catInfo = CATEGORIES.find(c => c.name === exp.category) || CATEGORIES[5];
-                                    const Icon = catInfo.icon;
+                                    const catInfo = categories.find(c => c.name === exp.category) || { color: "#64748B", icon: "MoreHorizontal" };
+                                    const Icon = ICON_MAP[catInfo.icon] || MoreHorizontal;
                                     return (
                                         <motion.tr 
                                             key={exp.id}
@@ -280,7 +381,10 @@ export default function ExpensesPage() {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tight ${catInfo.bg} ${catInfo.color}`}>
+                                                <div 
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tight"
+                                                    style={{ backgroundColor: `${catInfo.color}15`, color: catInfo.color }}
+                                                >
                                                     <Icon size={12} />
                                                     {exp.category}
                                                 </div>
@@ -333,23 +437,130 @@ export default function ExpensesPage() {
                 </div>
             </div>
 
-            {/* Add/Edit Modal */}
+            {/* Manage Categories Modal */}
+            <AnimatePresence>
+                {showCategoryModal && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCategoryModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                            <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-black/20">
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Manage Categories</h2>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Customize your expense groups</p>
+                                </div>
+                                <button onClick={() => setShowCategoryModal(false)} className="w-10 h-10 rounded-full bg-white dark:bg-white/5 flex items-center justify-center text-slate-400 shadow-sm">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                                {/* Create/Edit Form */}
+                                <form onSubmit={handleCategorySubmit} className="bg-slate-50 dark:bg-white/5 p-6 rounded-[2rem] border border-slate-100 dark:border-white/10 space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category Name</label>
+                                            <input 
+                                                required
+                                                type="text"
+                                                value={catFormData.name}
+                                                onChange={(e) => setCatFormData({ ...catFormData, name: e.target.value })}
+                                                placeholder="e.g. Ingredients"
+                                                className="w-full h-12 px-4 bg-white dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-xl text-sm font-bold outline-none transition-all shadow-sm"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Color Picker</label>
+                                            <div className="flex items-center gap-3">
+                                                <input 
+                                                    type="color"
+                                                    value={catFormData.color}
+                                                    onChange={(e) => setCatFormData({ ...catFormData, color: e.target.value })}
+                                                    className="w-12 h-12 rounded-xl cursor-pointer border-none bg-transparent"
+                                                />
+                                                <input 
+                                                    type="text"
+                                                    value={catFormData.color}
+                                                    onChange={(e) => setCatFormData({ ...catFormData, color: e.target.value })}
+                                                    className="flex-1 h-12 px-4 bg-white dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-xl text-xs font-mono outline-none transition-all shadow-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Icon</label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {Object.keys(ICON_MAP).map(iconName => {
+                                                const IconComp = ICON_MAP[iconName];
+                                                return (
+                                                    <button
+                                                        key={iconName}
+                                                        type="button"
+                                                        onClick={() => setCatFormData({ ...catFormData, icon: iconName })}
+                                                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
+                                                            catFormData.icon === iconName 
+                                                            ? "bg-slate-900 text-white shadow-lg scale-110" 
+                                                            : "bg-white dark:bg-white/5 text-slate-400 hover:bg-slate-100"
+                                                        }`}
+                                                    >
+                                                        <IconComp size={18} />
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                        <button type="submit" className="flex-1 h-12 rounded-xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 active:scale-95 transition-all">
+                                            {catFormData.id ? "Update Category" : "Add New Category"}
+                                        </button>
+                                        {catFormData.id && (
+                                            <button type="button" onClick={() => setCatFormData({ id: "", name: "", color: "#64748B", icon: "MoreHorizontal" })} className="h-12 px-6 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                                                Cancel
+                                            </button>
+                                        )}
+                                    </div>
+                                </form>
+
+                                {/* Categories List */}
+                                <div className="space-y-4">
+                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Existing Categories</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {categories.map(cat => {
+                                            const Icon = ICON_MAP[cat.icon] || MoreHorizontal;
+                                            return (
+                                                <div key={cat.id} className="p-4 bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 flex items-center justify-between group">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${cat.color}20`, color: cat.color }}>
+                                                            <Icon size={18} />
+                                                        </div>
+                                                        <span className="font-bold text-slate-700 dark:text-white">{cat.name}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => setCatFormData({ id: cat.id, name: cat.name, color: cat.color, icon: cat.icon })} className="p-2 hover:text-indigo-500 transition-colors">
+                                                            <Edit size={16} />
+                                                        </button>
+                                                        <button onClick={() => deleteCategory(cat.id)} className="p-2 hover:text-rose-500 transition-colors">
+                                                            <Trash size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Add/Edit Expense Modal */}
             <AnimatePresence>
                 {showAddModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setShowAddModal(false)}
-                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
-                        />
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden"
-                        >
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" />
+                        <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden">
                             <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
                                 <div>
                                     <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">
@@ -386,7 +597,7 @@ export default function ExpensesPage() {
                                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                             className="w-full h-12 px-4 bg-slate-50 dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-2xl text-sm font-bold outline-none transition-all"
                                         >
-                                            {CATEGORIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                                            {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                                         </select>
                                     </div>
                                     <div className="space-y-2">

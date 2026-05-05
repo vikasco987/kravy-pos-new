@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
     ChevronLeft, Calendar, TrendingDown, 
     PieChart, ArrowLeft, Download,
@@ -10,32 +10,26 @@ import {
     MoreHorizontal, IndianRupee,
     ChevronRight, Users, ArrowUpRight,
     BarChart3, History, Zap,
-    Clock, Search
+    Clock, Search, Utensils, Tag, CreditCard, Banknote
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { 
     PieChart as RePieChart, Pie, Cell, 
     ResponsiveContainer, Tooltip,
     AreaChart, Area, XAxis, YAxis, 
-    CartesianGrid, Legend
+    CartesianGrid
 } from "recharts";
 import { 
     format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, 
     startOfYear, endOfYear, eachMonthOfInterval, isSameMonth,
-    addDays, subDays, addWeeks, subWeeks, addMonths, subMonths,
-    addYears, subYears, isSameDay, isSameWeek, isSameYear,
+    addDays, addWeeks, addMonths, addYears, isSameDay,
     eachDayOfInterval, startOfDay, endOfDay
 } from "date-fns";
 import { kravy } from "@/lib/sounds";
 
-const CATEGORIES = [
-    { name: "Ingredients", color: "#F59E0B", icon: ShoppingCart }, 
-    { name: "Rent", color: "#3B82F6", icon: Wallet },        
-    { name: "Salaries", color: "#6366F1", icon: Users },    
-    { name: "Utilities", color: "#10B981", icon: Lightbulb },   
-    { name: "Marketing", color: "#F43F5E", icon: Rocket },   
-    { name: "Others", color: "#64748B", icon: MoreHorizontal },      
-];
+const ICON_MAP: any = {
+    ShoppingCart, Wallet, Users, Lightbulb, Rocket, MoreHorizontal, Utensils, Tag, CreditCard, Banknote
+};
 
 type FilterMode = 'Day' | 'Week' | 'Month' | 'Year';
 
@@ -44,26 +38,29 @@ export default function ExpenseReportsPage() {
     const [filterMode, setFilterMode] = useState<FilterMode>('Month');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [expenses, setExpenses] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchExpenses();
+        fetchData();
     }, []);
 
-    const fetchExpenses = async () => {
+    const fetchData = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/expenses");
-            const data = await res.json();
-            setExpenses(data);
+            const [expRes, catRes] = await Promise.all([
+                fetch("/api/expenses"),
+                fetch("/api/expenses/categories")
+            ]);
+            setExpenses(await expRes.json());
+            setCategories(await catRes.json());
         } catch (error) {
-            console.error("Failed to fetch expenses");
+            console.error("Failed to fetch data");
         } finally {
             setLoading(false);
         }
     };
 
-    // Calculate current range based on mode and reference date
     const range = useMemo(() => {
         if (filterMode === 'Day') return { start: startOfDay(currentDate), end: endOfDay(currentDate) };
         if (filterMode === 'Week') return { start: startOfWeek(currentDate), end: endOfWeek(currentDate) };
@@ -89,13 +86,10 @@ export default function ExpenseReportsPage() {
         if (filterMode === 'Year') setCurrentDate(addYears(currentDate, factor));
     };
 
-    // Trend Data for Area Chart
     const trendData = useMemo(() => {
         if (filterMode === 'Day') return [];
-        
         let intervals: Date[] = [];
-        if (filterMode === 'Week') intervals = eachDayOfInterval({ start: range.start, end: range.end });
-        if (filterMode === 'Month') intervals = eachDayOfInterval({ start: range.start, end: range.end });
+        if (filterMode === 'Week' || filterMode === 'Month') intervals = eachDayOfInterval({ start: range.start, end: range.end });
         if (filterMode === 'Year') intervals = eachMonthOfInterval({ start: range.start, end: range.end });
 
         return intervals.map(interval => {
@@ -106,7 +100,6 @@ export default function ExpenseReportsPage() {
                     return isSameDay(d, interval);
                 })
                 .reduce((acc, curr) => acc + curr.amount, 0);
-            
             return {
                 name: format(interval, filterMode === 'Year' ? "MMM" : "dd MMM"),
                 amount: amount
@@ -114,18 +107,20 @@ export default function ExpenseReportsPage() {
         });
     }, [expenses, range, filterMode]);
 
-    const chartData = CATEGORIES.map(cat => {
-        const amount = filtered
-            .filter(exp => exp.category === cat.name)
-            .reduce((acc, curr) => acc + curr.amount, 0);
-        return {
-            name: cat.name,
-            value: amount,
-            color: cat.color
-        };
-    }).filter(d => d.value > 0);
+    const chartData = useMemo(() => {
+        return categories.map(cat => {
+            const amount = filtered
+                .filter(exp => exp.category === cat.name)
+                .reduce((acc, curr) => acc + curr.amount, 0);
+            return {
+                name: cat.name,
+                value: amount,
+                color: cat.color
+            };
+        }).filter(d => d.value > 0);
+    }, [categories, filtered]);
 
-    const topCategory = [...chartData].sort((a, b) => b.value - a.value)[0];
+    const topCategory = useMemo(() => [...chartData].sort((a, b) => b.value - a.value)[0], [chartData]);
 
     return (
         <div className="max-w-[1600px] mx-auto p-6 md:p-10 space-y-8 min-h-screen bg-[#F8FAFC] dark:bg-slate-950 kravy-page-fade">
@@ -149,7 +144,6 @@ export default function ExpenseReportsPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
-                    {/* View Mode Selector */}
                     <div className="bg-slate-100 dark:bg-black/20 p-1.5 rounded-2xl flex items-center shadow-inner">
                         {(['Day', 'Week', 'Month', 'Year'] as FilterMode[]).map((m) => (
                             <button
@@ -166,12 +160,8 @@ export default function ExpenseReportsPage() {
                         ))}
                     </div>
 
-                    {/* Date Navigator */}
                     <div className="flex items-center gap-3 bg-white dark:bg-white/5 p-1.5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
-                        <button 
-                            onClick={() => navigate('prev')}
-                            className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center text-slate-400 transition-all"
-                        >
+                        <button onClick={() => navigate('prev')} className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center text-slate-400 transition-all">
                             <ChevronLeft size={20} />
                         </button>
                         <div className="px-4 min-w-[140px] text-center">
@@ -183,10 +173,7 @@ export default function ExpenseReportsPage() {
                                 {filterMode === 'Year' && format(currentDate, "yyyy")}
                             </p>
                         </div>
-                        <button 
-                            onClick={() => navigate('next')}
-                            className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center text-slate-400 transition-all"
-                        >
+                        <button onClick={() => navigate('next')} className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center text-slate-400 transition-all">
                             <ChevronRight size={20} />
                         </button>
                     </div>
@@ -205,13 +192,7 @@ export default function ExpenseReportsPage() {
                     { label: "Records", value: filtered.length, icon: History, color: "text-indigo-500", bg: "bg-indigo-500/10", trend: "Processed", trendColor: "text-indigo-500" },
                     { label: "Period Avg", value: filtered.length > 0 ? `₹${(totalAmount / filtered.length).toFixed(0)}` : "₹0", icon: BarChart3, color: "text-emerald-500", bg: "bg-emerald-500/10", trend: "Balanced", trendColor: "text-emerald-500" },
                 ].map((stat, i) => (
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        key={stat.label} 
-                        className="bg-white dark:bg-white/5 p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all"
-                    >
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} key={stat.label} className="bg-white dark:bg-white/5 p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all">
                         <div className="flex items-center justify-between mb-4">
                             <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
                                 <stat.icon size={22} />
@@ -248,7 +229,7 @@ export default function ExpenseReportsPage() {
                                 <Clock size={40} />
                             </div>
                             <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Single Day View</h4>
-                            <p className="text-sm text-slate-400 max-w-xs font-medium">Trends are shown for Week, Month or Year views. For a single day, check the distribution on the right.</p>
+                            <p className="text-sm text-slate-400 max-w-xs font-medium">Trends are shown for Week, Month or Year views.</p>
                         </div>
                     ) : (
                         <div className="h-[400px] w-full">
@@ -261,22 +242,9 @@ export default function ExpenseReportsPage() {
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                                    <XAxis 
-                                        dataKey="name" 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} 
-                                        dy={10}
-                                    />
-                                    <YAxis 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} 
-                                    />
-                                    <Tooltip 
-                                        contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', background: '#111827', color: '#fff' }}
-                                        itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '900' }}
-                                    />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} dy={10}/>
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} />
+                                    <Tooltip contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', background: '#111827', color: '#fff' }} itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '900' }}/>
                                     <Area type="monotone" dataKey="amount" stroke="#F43F5E" strokeWidth={5} fillOpacity={1} fill="url(#colorAmt)" animationDuration={2000} />
                                 </AreaChart>
                             </ResponsiveContainer>
@@ -293,17 +261,8 @@ export default function ExpenseReportsPage() {
                     <div className="h-[280px] w-full relative mb-10">
                         <ResponsiveContainer width="100%" height="100%">
                             <RePieChart>
-                                <Pie
-                                    data={chartData.length > 0 ? chartData : [{ value: 1, color: '#E2E8F0' }]}
-                                    innerRadius={80}
-                                    outerRadius={110}
-                                    paddingAngle={10}
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
+                                <Pie data={chartData.length > 0 ? chartData : [{ value: 1, color: '#E2E8F0' }]} innerRadius={80} outerRadius={110} paddingAngle={10} dataKey="value" stroke="none">
+                                    {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                                 </Pie>
                                 <Tooltip />
                             </RePieChart>
@@ -337,7 +296,7 @@ export default function ExpenseReportsPage() {
                 </div>
             </div>
 
-            {/* Detailed Category Deep-Dive */}
+            {/* Category Deep-Dive */}
             <div className="bg-white dark:bg-white/5 p-12 rounded-[4rem] border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
                     <PieChart size={200} className="text-slate-900 dark:text-white" />
@@ -346,26 +305,18 @@ export default function ExpenseReportsPage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
                     <div>
                         <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Category Intelligence</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Deep analysis of operational costs for {filterMode === 'Day' ? format(currentDate, "dd MMM") : filterMode === 'Year' ? format(currentDate, "yyyy") : "selected period"}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <div className="h-12 px-6 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Real-time Sync</span>
-                        </div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Deep analysis of operational costs</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                    {CATEGORIES.map((cat) => {
-                        const amount = filtered
-                            .filter(exp => exp.category === cat.name)
-                            .reduce((acc, curr) => acc + curr.amount, 0);
+                    {categories.map((cat) => {
+                        const amount = filtered.filter(exp => exp.category === cat.name).reduce((acc, curr) => acc + curr.amount, 0);
                         const percentage = totalAmount > 0 ? (amount / totalAmount) * 100 : 0;
-                        const Icon = cat.icon;
+                        const Icon = ICON_MAP[cat.icon] || MoreHorizontal;
 
                         return (
-                            <div key={cat.name} className="group space-y-5">
+                            <div key={cat.id} className="group space-y-5">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-5">
                                         <div className="w-14 h-14 rounded-[1.5rem] bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-inner">
@@ -382,16 +333,7 @@ export default function ExpenseReportsPage() {
                                     </div>
                                 </div>
                                 <div className="relative h-4 w-full bg-slate-100 dark:bg-black/20 rounded-full overflow-hidden shadow-inner border border-slate-200/50 dark:border-white/5">
-                                    <motion.div 
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${percentage}%` }}
-                                        transition={{ duration: 1.5, ease: "circOut" }}
-                                        className="h-full rounded-full relative"
-                                        style={{ 
-                                            backgroundColor: cat.color,
-                                            boxShadow: `0 0 25px ${cat.color}40`
-                                        }}
-                                    >
+                                    <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} transition={{ duration: 1.5, ease: "circOut" }} className="h-full rounded-full relative" style={{ backgroundColor: cat.color, boxShadow: `0 0 25px ${cat.color}40` }}>
                                         <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"></div>
                                     </motion.div>
                                 </div>

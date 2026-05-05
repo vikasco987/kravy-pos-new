@@ -687,3 +687,16 @@ model WalletTransaction {
   @@index([partyId])
   @@index([clerkId])
 }
+
+model ExpenseCategory {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String
+  name      String
+  color     String   @default("#64748B")
+  icon      String   @default("MoreHorizontal")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+}
