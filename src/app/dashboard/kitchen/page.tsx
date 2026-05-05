@@ -207,7 +207,7 @@ function KravyPOS() {
     const router = useRouter();
     const billReceiptRef = useRef<HTMLDivElement | null>(null);
     const kotReceiptRef = useRef<HTMLDivElement | null>(null);
-    const [activeTab, setActiveTab] = useState<TabKey>("track");
+    const [activeTab, setActiveTab] = useState<TabKey>("live-orders");
     const [liveOrderTab, setLiveOrderTab] = useState<"PREPARING" | "READY" | "COMPLETED">("PREPARING");
     const [liveOrderSearch, setLiveOrderSearch] = useState("");
     const { 
@@ -274,7 +274,7 @@ function KravyPOS() {
         fetchData(); 
         const orderId = searchParams.get("orderId");
 
-        setActiveTab("track");
+        setActiveTab("live-orders");
 
         if (orderId) {
             setSelectedOrderId(orderId);
