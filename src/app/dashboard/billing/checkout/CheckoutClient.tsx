@@ -2553,7 +2553,21 @@ export default function CheckoutClient() {
             </div>
 
             {/* Payment Method - Compact Rows */}
-            <div className="grid grid-cols-5 gap-1.5">
+            <div 
+              className="grid gap-1.5"
+              style={{ 
+                gridTemplateColumns: `repeat(${
+                  (["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const).filter(mode => {
+                    if (mode === "Cash") return business?.posCashEnabled ?? true;
+                    if (mode === "UPI") return business?.posUpiEnabled ?? true;
+                    if (mode === "Card") return business?.posCardEnabled ?? true;
+                    if (mode === "Pay on Counter") return business?.posCounterEnabled ?? true;
+                    if (mode === "Wallet") return business?.posWalletEnabled ?? true;
+                    return true;
+                  }).length
+                }, 1fr)` 
+              }}
+            >
               {(["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const)
                 .filter(mode => {
                   if (mode === "Cash") return business?.posCashEnabled ?? true;
@@ -2610,7 +2624,19 @@ export default function CheckoutClient() {
             )}
 
             {/* Primary Action Buttons */}
-            <div className="grid grid-cols-4 gap-2">
+            <div 
+              className="grid gap-2"
+              style={{ 
+                gridTemplateColumns: `repeat(${
+                  [
+                    business?.posHoldEnabled ?? true,
+                    business?.posSaveEnabled ?? true,
+                    business?.posPreviewEnabled ?? true,
+                    business?.posKotEnabled ?? true
+                  ].filter(Boolean).length
+                }, 1fr)`
+              }}
+            >
               {(business?.posHoldEnabled ?? true) && (
                 <button
                   onClick={async () => {

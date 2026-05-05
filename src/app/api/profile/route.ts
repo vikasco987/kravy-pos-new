@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /* =============================
-   GET BUSINESS PROFILE
+   GET BUSINESS PROFILE (Reloaded)
 ============================= */
 export async function GET(request: Request) {
   try {
