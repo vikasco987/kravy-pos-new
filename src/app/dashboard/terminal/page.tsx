@@ -1405,130 +1405,131 @@ function KravyPOS() {
                             {selectedTable && activeOrderForSelected ? (
                                 <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-8 max-w-6xl w-full h-full lg:h-auto overflow-visible">
                                     {/* Receipt column */}
-                                    <div className="bg-white dark:bg-white shadow-2xl rounded-[2.5rem] p-8 flex flex-col border border-slate-100 relative overflow-hidden h-fit animate-in fade-in zoom-in-95 duration-500">
-                                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900" />
+                                    <div className="bg-white dark:bg-white shadow-2xl rounded-[1.5rem] p-6 flex flex-col border border-slate-100 relative overflow-hidden h-fit animate-in fade-in zoom-in-95 duration-500 max-w-[320px] mx-auto lg:mx-0">
+                                        <div className="absolute top-0 left-0 right-0 h-1 bg-slate-900" />
 
-                                        <div className="text-center pb-8 border-b border-dashed border-slate-200 mb-8 mt-4">
-                                            <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 p-4 shadow-xl shadow-slate-900/10">
-                                                <Printer size={32} strokeWidth={1.5} />
+                                        <div className="text-center pb-4 border-b border-dashed border-slate-200 mb-6 mt-2">
+                                            <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                                                <Printer size={24} strokeWidth={1.5} />
                                             </div>
-                                            <h3 className="text-2xl font-black text-slate-900 tracking-tighter italic leading-none uppercase">
+                                            <h3 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">
                                                 {business?.businessName || "Kravy POS"}
                                             </h3>
-                                            <div className="flex flex-col gap-1 mt-3">
-                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Order Settlement</span>
-                                                <div className="flex items-center justify-center gap-2 text-[11px] font-black text-slate-600">
-                                                    <span className="bg-slate-100 px-2 py-0.5 rounded-md">Table {selectedTable.name}</span>
+                                            <div className="flex flex-col gap-1 mt-2">
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Order Settlement</span>
+                                                <div className="flex items-center justify-center gap-2 text-[9px] font-black text-slate-600">
+                                                    <span className="bg-slate-100 px-1.5 py-0.5 rounded">Table {selectedTable.name}</span>
                                                     <span className="w-1 h-1 rounded-full bg-slate-300" />
-                                                    <span className="bg-slate-100 px-2 py-0.5 rounded-md">#{activeOrderForSelected.id.slice(-6).toUpperCase()}</span>
+                                                    <span className="bg-slate-100 px-1.5 py-0.5 rounded">#{activeOrderForSelected.id.slice(-4).toUpperCase()}</span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="space-y-4 mb-8 max-h-[300px] overflow-y-auto scrollbar-hide py-2">
+                                        <div className="space-y-3 mb-6 max-h-[220px] overflow-y-auto scrollbar-hide py-1">
                                             {activeOrderForSelected.items.map((it, idx) => (
-                                                <div key={idx} className="flex justify-between items-start group">
-                                                    <div className="flex-1 pr-4">
-                                                        <p className="text-sm font-black text-slate-900 uppercase leading-none mb-1">{it.name}</p>
-                                                        <p className="text-[10px] font-bold text-slate-400 tracking-tight uppercase">{it.quantity} × ₹{it.price}</p>
+                                                <div key={idx} className="flex justify-between items-start">
+                                                    <div className="flex-1 pr-3">
+                                                        <p className="text-[11px] font-black text-slate-900 uppercase leading-none mb-0.5">{it.name}</p>
+                                                        <p className="text-[8px] font-bold text-slate-400 uppercase">{it.quantity} × ₹{it.price}</p>
                                                     </div>
-                                                    <span className="text-xs font-black italic text-slate-900">₹{it.price * it.quantity}</span>
+                                                    <span className="text-[10px] font-black italic text-slate-900">₹{it.price * it.quantity}</span>
                                                 </div>
                                             ))}
                                         </div>
 
-                                        <div className="mt-auto pt-6 border-t border-dashed border-slate-200 space-y-3">
-                                            <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                                        <div className="pt-4 border-t border-dashed border-slate-200 space-y-2">
+                                            <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest">
                                                 <span>Subtotal</span>
                                                 <span>₹{(activeOrderForSelected.total / 1.05).toFixed(0)}</span>
                                             </div>
-                                            <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                                            <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest">
                                                 <span>GST (5%)</span>
                                                 <span>₹{(activeOrderForSelected.total - activeOrderForSelected.total / 1.05).toFixed(0)}</span>
                                             </div>
-                                            <div className="flex justify-between items-center mt-6 pt-6 border-t-2 border-slate-900">
-                                                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-900 italic">Bill Amount</span>
-                                                <span className="text-3xl font-black italic tracking-tighter text-slate-900">₹{activeOrderForSelected.total}</span>
+                                            <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-900">
+                                                <span className="text-[10px] font-black uppercase italic text-slate-900">Total</span>
+                                                <span className="text-2xl font-black italic tracking-tighter text-slate-900">₹{activeOrderForSelected.total}</span>
                                             </div>
                                         </div>
 
-                                        <div className="mt-8 text-center opacity-20 text-[9px] font-black uppercase tracking-[0.4em] italic">
+                                        <div className="mt-6 text-center opacity-20 text-[7px] font-black uppercase tracking-[0.3em] italic">
                                             Trusted by Kravy
                                         </div>
                                     </div>
 
                                     {/* Payment Options */}
-                                    <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white dark:border-slate-800 rounded-[3rem] p-8 lg:p-12 shadow-sm flex flex-col h-full animate-in slide-in-from-right-8 duration-700">
-                                        <div className="mb-10">
-                                            <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic mb-2 leading-none uppercase">Checkout</h3>
-                                            <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Select Settlement Pipeline</p>
+                                    <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white dark:border-slate-800 rounded-[2.5rem] p-6 lg:p-10 shadow-sm flex flex-col h-fit animate-in slide-in-from-right-8 duration-700">
+                                        <div className="mb-8">
+                                            <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic mb-1 uppercase">Settlement</h3>
+                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Select Payment Pipeline</p>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4 mb-8">
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 mb-8">
                                             {[
-                                                { id: "upi", label: "UPI", emoji: "📱", desc: "Digital Payment", theme: "emerald" },
-                                                { id: "cash", label: "Cash", emoji: "💵", desc: "Hard Currency", theme: "amber" },
-                                                { id: "wallet", label: "Wallet", emoji: "💰", desc: `Bal: ₹${selectedParty?.walletBalance?.toFixed(0) || 0}`, theme: "indigo" },
-                                                { id: "card", label: "Card", emoji: "💳", desc: "Swipe / Dip", theme: "slate" },
-                                                { id: "pay on counter", label: "Counter", emoji: "🏪", desc: "Pay at counter", theme: "slate" },
+                                                { id: "upi", label: "UPI", emoji: "📱", desc: "Digital", theme: "emerald" },
+                                                { id: "cash", label: "Cash", emoji: "💵", desc: "Cash", theme: "amber" },
+                                                { id: "wallet", label: "Wallet", emoji: "💰", desc: `₹${selectedParty?.walletBalance?.toFixed(0) || 0}`, theme: "indigo" },
+                                                { id: "card", label: "Card", emoji: "💳", desc: "Swipe", theme: "slate" },
+                                                { id: "pay on counter", label: "Counter", emoji: "🏪", desc: "Counter", theme: "slate" },
                                             ].map(m => (
                                                 <button
                                                     key={m.id}
                                                     onClick={() => { kravy.click(); setPayMethod(m.id); }}
-                                                    className={`relative flex flex-col items-start p-6 rounded-[2.5rem] border-2 transition-all group overflow-hidden ${payMethod === m.id ? "bg-white dark:bg-slate-800 border-slate-900 dark:border-white shadow-2xl -translate-y-1" : "bg-white/50 dark:bg-slate-900/50 border-transparent hover:border-slate-200 dark:hover:border-slate-700"}`}
+                                                    className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all group ${payMethod === m.id ? "bg-indigo-600 border-indigo-600 shadow-xl shadow-indigo-600/20 -translate-y-1" : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-800 hover:border-slate-300"}`}
                                                 >
+                                                    <span className={`text-2xl mb-2 transition-all ${payMethod === m.id ? "scale-110" : "grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100"}`}>{m.emoji}</span>
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest leading-none ${payMethod === m.id ? "text-white" : "text-slate-900 dark:text-white"}`}>{m.label}</span>
+                                                    <span className={`text-[8px] font-black uppercase tracking-tighter mt-1 opacity-40 ${payMethod === m.id ? "text-white" : "text-slate-400 dark:text-slate-500"}`}>{m.desc}</span>
                                                     {payMethod === m.id && (
-                                                        <motion.div layoutId="pay-marker" className="absolute top-5 right-5 text-slate-900 dark:text-white">
-                                                            <CheckCircle2 size={24} />
-                                                        </motion.div>
+                                                        <div className="absolute top-2 right-2 text-white">
+                                                            <CheckCircle2 size={12} />
+                                                        </div>
                                                     )}
-                                                    <span className="text-4xl mb-5 grayscale group-hover:grayscale-0 transition-all duration-500 scale-100 group-hover:scale-110">{m.emoji}</span>
-                                                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white leading-none">{m.label}</span>
-                                                    <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter mt-1.5 leading-none">{m.desc}</span>
                                                 </button>
                                             ))}
                                         </div>
 
-                                        <div className="bg-white/60 dark:bg-slate-800/60 rounded-[2.5rem] border border-white/80 dark:border-slate-700 shadow-inner p-8 mb-8 flex-1 flex flex-col justify-center min-h-[160px]">
+                                        <div className="bg-slate-900 dark:bg-slate-800 rounded-[1.5rem] shadow-xl p-6 mb-8 flex flex-col justify-center min-h-[120px] relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 -mr-8 -mt-8 rounded-full blur-3xl" />
                                             {payMethod === "upi" ? (
-                                                <div className="flex items-center gap-8 animate-in fade-in slide-in-from-bottom-4">
-                                                    <div className="w-20 h-20 bg-white dark:bg-slate-700 rounded-3xl flex items-center justify-center text-4xl shadow-2xl shadow-indigo-500/10 border border-slate-50 dark:border-slate-600">📱</div>
+                                                <div className="flex items-center gap-6 animate-in fade-in slide-in-from-bottom-4">
+                                                    <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-white/10">📱</div>
                                                     <div>
-                                                        <p className="text-xl font-black text-slate-900 dark:text-white leading-none uppercase tracking-tight mb-2 italic">Scan to Pay ₹{activeOrderForSelected.total}</p>
-                                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Awaiting Digital Handshake...</p>
-                                                        <div className="mt-4 flex items-center gap-2 text-emerald-500 bg-emerald-50 w-fit px-3 py-1 rounded-full border border-emerald-100">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                            <span className="text-[9px] font-black uppercase tracking-widest italic">Live Sync Active</span>
+                                                        <p className="text-lg font-black text-white leading-none uppercase italic mb-1.5">Scan to Pay ₹{activeOrderForSelected.total}</p>
+                                                        <div className="flex items-center gap-2 text-emerald-400">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                                            <span className="text-[8px] font-black uppercase tracking-[0.2em] italic">Live Sync Active</span>
                                                         </div>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <div className="text-center animate-in fade-in scale-95">
-                                                    <p className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight">Handover {payMethod.toUpperCase()} Settlement</p>
-                                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-2">Confirm once payment is physically received</p>
+                                                    <p className="text-lg font-black text-white uppercase italic tracking-tight">Handover {payMethod.toUpperCase()} Settlement</p>
+                                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mt-1">Confirm physical receipt of funds</p>
                                                 </div>
                                             )}
                                         </div>
 
-                                        <div className="flex gap-4">
-                                            <button
-                                                onClick={() => { setPreviewMode("BILL"); setShowPreview(true); }}
-                                                className="w-20 h-20 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white shadow-sm transition-all active:scale-90"
-                                            >
-                                                <Eye size={20} />
-                                                <span className="text-[8px] font-black uppercase mt-1">Preview</span>
-                                            </button>
-                                            <button
-                                                onClick={() => handlePrint("BILL")}
-                                                className="flex-1 h-20 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white shadow-sm transition-all active:scale-95"
-                                            >
-                                                <Printer size={18} /> Print Physical Receipt
-                                            </button>
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            <div className="flex gap-2 shrink-0">
+                                                <button
+                                                    onClick={() => { setPreviewMode("BILL"); setShowPreview(true); }}
+                                                    className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
+                                                >
+                                                    <Eye size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handlePrint("BILL")}
+                                                    className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white shadow-sm transition-all"
+                                                >
+                                                    <Printer size={18} />
+                                                </button>
+                                            </div>
                                             <button
                                                 onClick={() => handleCheckout(activeOrderForSelected.id)}
-                                                className="flex-[2.5] h-20 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[1.8rem] flex items-center justify-center gap-4 text-base font-black uppercase tracking-[0.15em] shadow-2xl shadow-slate-900/40 active:scale-95 transition-all hover:bg-slate-800 dark:hover:bg-slate-100"
+                                                className="flex-1 h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 active:scale-95 transition-all"
                                             >
-                                                Print Payment Receipt <ArrowRight size={20} />
+                                                Finalize Settlement <ArrowRight size={16} />
                                             </button>
                                         </div>
                                     </div>
