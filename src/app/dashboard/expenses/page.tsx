@@ -94,14 +94,20 @@ export default function ExpensesPage() {
     const seedDefaultCategories = async () => {
         const created = [];
         for (const cat of DEFAULT_CATEGORIES) {
-            const res = await fetch("/api/expenses/categories", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(cat),
-            });
-            if (res.ok) created.push(await res.json());
+            try {
+                const res = await fetch("/api/expenses/categories", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(cat),
+                });
+                if (res.ok) created.push(await res.json());
+            } catch (e) {
+                // Ignore seeding errors (e.g. unique constraint)
+            }
         }
-        return created;
+        // Fetch again to get all categories (even if seeding skipped some)
+        const res = await fetch("/api/expenses/categories");
+        return await res.json();
     };
 
     const fetchExpenses = async () => {
