@@ -1,35 +1,39 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
     ChevronLeft, Calendar, TrendingDown, 
     PieChart, ArrowLeft, Download,
     Filter, ShoppingCart, Wallet,
-    UserGroup, Lightbulb, Rocket,
+    Lightbulb, Rocket,
     MoreHorizontal, IndianRupee,
-    ChevronRight, Users
+    ChevronRight, Users, ArrowUpRight,
+    ArrowDownRight, BarChart3,
+    History, Zap
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { 
     PieChart as RePieChart, Pie, Cell, 
-    ResponsiveContainer, Tooltip 
+    ResponsiveContainer, Tooltip,
+    AreaChart, Area, XAxis, YAxis, 
+    CartesianGrid, Legend, BarChart, Bar
 } from "recharts";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, subMonths, subYears } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachMonthOfInterval, isSameMonth } from "date-fns";
 import { kravy } from "@/lib/sounds";
 
 const CATEGORIES = [
-    { name: "Ingredients", color: "#F59E0B" }, // amber-500
-    { name: "Rent", color: "#3B82F6" },        // blue-500
-    { name: "Salaries", color: "#6366F1" },    // indigo-500
-    { name: "Utilities", color: "#10B981" },   // emerald-500
-    { name: "Marketing", color: "#F43F5E" },   // rose-500
-    { name: "Others", color: "#64748B" },      // slate-500
+    { name: "Ingredients", color: "#F59E0B", icon: ShoppingCart }, 
+    { name: "Rent", color: "#3B82F6", icon: Wallet },        
+    { name: "Salaries", color: "#6366F1", icon: Users },    
+    { name: "Utilities", color: "#10B981", icon: Lightbulb },   
+    { name: "Marketing", color: "#F43F5E", icon: Rocket },   
+    { name: "Others", color: "#64748B", icon: MoreHorizontal },      
 ];
 
 export default function ExpenseReportsPage() {
     const router = useRouter();
-    const [timeFrame, setTimeFrame] = useState<'Week' | 'Month' | 'Year'>('Month');
+    const [timeFrame, setTimeFrame] = useState<'Week' | 'Month' | 'Year'>('Year');
     const [expenses, setExpenses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -74,6 +78,28 @@ export default function ExpenseReportsPage() {
     const filtered = getFilteredExpenses();
     const totalAmount = filtered.reduce((acc, curr) => acc + curr.amount, 0);
 
+    // Trend Data for Area Chart (Monthly for Year view)
+    const getTrendData = () => {
+        if (timeFrame !== 'Year') return [];
+        const now = new Date();
+        const months = eachMonthOfInterval({
+            start: startOfYear(now),
+            end: endOfYear(now)
+        });
+
+        return months.map(month => {
+            const monthTotal = expenses
+                .filter(exp => isSameMonth(new Date(exp.date), month))
+                .reduce((acc, curr) => acc + curr.amount, 0);
+            return {
+                name: format(month, "MMM"),
+                amount: monthTotal
+            };
+        });
+    };
+
+    const trendData = getTrendData();
+
     const chartData = CATEGORIES.map(cat => {
         const amount = filtered
             .filter(exp => exp.category === cat.name)
@@ -85,180 +111,219 @@ export default function ExpenseReportsPage() {
         };
     }).filter(d => d.value > 0);
 
-    // If no data, show a placeholder
-    const finalChartData = chartData.length > 0 ? chartData : [{ name: "No Data", value: 1, color: "#E2E8F0" }];
+    const topCategory = [...chartData].sort((a, b) => b.value - a.value)[0];
 
     return (
-        <div className="max-w-4xl mx-auto min-h-screen bg-white dark:bg-slate-900 pb-20 kravy-page-fade">
-            {/* Header - App Style */}
-            <div className="bg-[var(--kravy-brand)] p-6 pt-12 pb-12 rounded-b-[3rem] shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-10">
-                    <PieChart size={120} className="text-white" />
-                </div>
-
-                <div className="flex items-center justify-between relative z-10">
+        <div className="max-w-[1600px] mx-auto p-6 md:p-10 space-y-10 min-h-screen bg-[#F8FAFC] dark:bg-slate-950 kravy-page-fade">
+            {/* Professional Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
                     <button 
                         onClick={() => { kravy.click(); router.back(); }}
-                        className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-all"
+                        className="w-10 h-10 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 transition-all shadow-sm"
                     >
-                        <ArrowLeft size={20} strokeWidth={3} />
+                        <ArrowLeft size={18} />
                     </button>
-                    <div className="text-center">
-                        <h1 className="text-xl font-black text-white tracking-tight">Expense Analytics</h1>
-                        <p className="text-[10px] text-white/70 font-bold uppercase tracking-widest mt-0.5">Visual Reports</p>
+                    <div>
+                        <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                            <span>Expenses</span>
+                            <ChevronRight size={10} />
+                            <span className="text-rose-500">Analytics & Reports</span>
+                        </nav>
+                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Financial Insights</h1>
                     </div>
-                    <button className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
-                        <Calendar size={20} />
-                    </button>
                 </div>
 
-                {/* Timeframe Toggle */}
-                <div className="mt-8 bg-white/10 backdrop-blur-md p-1.5 rounded-2xl flex items-center relative z-10 border border-white/10">
-                    {(['Week', 'Month', 'Year'] as const).map((t) => (
-                        <button
-                            key={t}
-                            onClick={() => { kravy.toggle(); setTimeFrame(t); }}
-                            className={`flex-1 h-11 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                                timeFrame === t 
-                                ? "bg-slate-900 text-white shadow-lg" 
-                                : "text-white/80 hover:text-white"
-                            }`}
-                        >
-                            {t}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Date Range Label */}
-            <div className="px-8 mt-8 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-slate-400">
-                    <ChevronLeft size={16} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">
-                        {timeFrame === 'Week' ? "This Week" : timeFrame === 'Month' ? "This Month" : "This Year"}
-                    </span>
-                    <ChevronRight size={16} />
-                </div>
-                <div className="text-[10px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 px-3 py-1 rounded-full">
-                    Live Data
-                </div>
-            </div>
-
-            {/* Donut Chart Section */}
-            <div className="flex flex-col items-center justify-center py-12 relative">
-                <div className="w-full h-[300px] flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <RePieChart>
-                            <Pie
-                                data={finalChartData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={80}
-                                outerRadius={110}
-                                paddingAngle={5}
-                                dataKey="value"
-                                stroke="none"
+                <div className="flex items-center gap-3">
+                    <div className="bg-white dark:bg-white/5 p-1 rounded-2xl border border-slate-200 dark:border-white/10 flex shadow-sm">
+                        {(['Week', 'Month', 'Year'] as const).map((t) => (
+                            <button
+                                key={t}
+                                onClick={() => { kravy.toggle(); setTimeFrame(t); }}
+                                className={`px-6 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                    timeFrame === t 
+                                    ? "bg-slate-900 text-white shadow-lg" 
+                                    : "text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                                }`}
                             >
-                                {finalChartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                            </Pie>
-                            <Tooltip 
-                                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
-                                itemStyle={{ fontWeight: '900', fontSize: '12px' }}
-                            />
-                        </RePieChart>
-                    </ResponsiveContainer>
-                </div>
-
-                {/* Center Text */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p>
-                    <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
-                        ₹{totalAmount.toLocaleString()}
-                    </h2>
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+                    <button className="h-12 px-6 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm">
+                        <Download size={16} /> Export
+                    </button>
                 </div>
             </div>
 
-            {/* Category Breakdown List */}
-            <div className="px-8 space-y-6">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Breakdown by Category</h3>
-                    <button className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-1">
-                        <Download size={12} /> Export CSV
+            {/* Top Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                    { label: "Total Outflow", value: `₹${totalAmount.toLocaleString()}`, icon: TrendingDown, color: "text-rose-500", bg: "bg-rose-500/10", trend: "+12.5%", trendColor: "text-rose-500" },
+                    { label: "Top Category", value: topCategory?.name || "N/A", icon: Zap, color: "text-amber-500", bg: "bg-amber-500/10", trend: topCategory ? `${((topCategory.value / totalAmount) * 100).toFixed(0)}% of total` : "No Data", trendColor: "text-slate-400" },
+                    { label: "Entries", value: filtered.length, icon: History, color: "text-indigo-500", bg: "bg-indigo-500/10", trend: "Processed", trendColor: "text-indigo-500" },
+                    { label: "Avg / Transaction", value: filtered.length > 0 ? `₹${(totalAmount / filtered.length).toFixed(0)}` : "₹0", icon: BarChart3, color: "text-emerald-500", bg: "bg-emerald-500/10", trend: "Balanced", trendColor: "text-emerald-500" },
+                ].map((stat, i) => (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        key={stat.label} 
+                        className="bg-white dark:bg-white/5 p-6 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all"
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                                <stat.icon size={22} />
+                            </div>
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${stat.trendColor}`}>{stat.trend}</span>
+                        </div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">{stat.value}</h3>
+                    </motion.div>
+                ))}
+            </div>
+
+            {/* Main Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Trend Chart */}
+                <div className="lg:col-span-2 bg-white dark:bg-white/5 p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm">
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Spending Trends</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Monthly expense flow over the year</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</span>
+                        </div>
+                    </div>
+                    <div className="h-[350px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={trendData}>
+                                <defs>
+                                    <linearGradient id="colorAmt" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.2}/>
+                                        <stop offset="95%" stopColor="#F43F5E" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                                <XAxis 
+                                    dataKey="name" 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} 
+                                    dy={10}
+                                />
+                                <YAxis 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} 
+                                />
+                                <Tooltip 
+                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', background: '#111827', color: '#fff' }}
+                                    itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '900' }}
+                                />
+                                <Area type="monotone" dataKey="amount" stroke="#F43F5E" strokeWidth={4} fillOpacity={1} fill="url(#colorAmt)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Distribution Chart */}
+                <div className="bg-white dark:bg-white/5 p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm flex flex-col">
+                    <div className="mb-8">
+                        <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Distribution</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Expenses by Category</p>
+                    </div>
+                    <div className="h-[250px] w-full relative mb-6">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <RePieChart>
+                                <Pie
+                                    data={chartData.length > 0 ? chartData : [{ value: 1, color: '#E2E8F0' }]}
+                                    innerRadius={70}
+                                    outerRadius={90}
+                                    paddingAngle={8}
+                                    dataKey="value"
+                                    stroke="none"
+                                >
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                            </RePieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p>
+                            <p className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">₹{totalAmount.toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <div className="space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                        {chartData.map((cat) => (
+                            <div key={cat.name} className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }}></div>
+                                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{cat.name}</span>
+                                </div>
+                                <span className="text-xs font-black text-slate-900 dark:text-white">{((cat.value / totalAmount) * 100).toFixed(1)}%</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Detailed Category Breakdown */}
+            <div className="bg-white dark:bg-white/5 p-10 rounded-[3rem] border border-slate-200 dark:border-white/10 shadow-sm">
+                <div className="flex items-center justify-between mb-10">
+                    <div>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Category Deep-Dive</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Detailed analysis of every expense group</p>
+                    </div>
+                    <button className="h-10 px-6 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-all">
+                        View All Categories
                     </button>
                 </div>
 
-                <div className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                     {CATEGORIES.map((cat) => {
                         const amount = filtered
                             .filter(exp => exp.category === cat.name)
                             .reduce((acc, curr) => acc + curr.amount, 0);
                         const percentage = totalAmount > 0 ? (amount / totalAmount) * 100 : 0;
-
-                        if (amount === 0) return null;
+                        const Icon = cat.icon;
 
                         return (
-                            <motion.div 
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                key={cat.name} 
-                                className="space-y-2"
-                            >
-                                <div className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-slate-50 dark:bg-white/5">
-                                            {cat.name === "Ingredients" && <ShoppingCart size={14} className="text-amber-500" />}
-                                            {cat.name === "Rent" && <Wallet size={14} className="text-blue-500" />}
-                                            {cat.name === "Salaries" && <Users size={14} className="text-indigo-500" />}
-                                            {cat.name === "Utilities" && <Lightbulb size={14} className="text-emerald-500" />}
-                                            {cat.name === "Marketing" && <Rocket size={14} className="text-rose-500" />}
-                                            {cat.name === "Others" && <MoreHorizontal size={14} className="text-slate-500" />}
+                            <div key={cat.name} className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-slate-600 transition-colors shadow-inner">
+                                            <Icon size={20} />
                                         </div>
                                         <div>
-                                            <p className="font-bold text-slate-700 dark:text-white/80">{cat.name}</p>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight">
-                                                {percentage.toFixed(1)}% of total
-                                            </p>
+                                            <h4 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">{cat.name}</h4>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{percentage.toFixed(1)}% weightage</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="font-black text-slate-900 dark:text-white">₹{amount.toLocaleString()}</p>
+                                        <p className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">₹{amount.toLocaleString()}</p>
+                                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Net Outflow</p>
                                     </div>
                                 </div>
-                                <div className="h-2 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                <div className="relative h-3 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden shadow-inner">
                                     <motion.div 
                                         initial={{ width: 0 }}
                                         animate={{ width: `${percentage}%` }}
-                                        transition={{ duration: 1, ease: "easeOut" }}
-                                        className="h-full rounded-full shadow-[0_0_8px_rgba(0,0,0,0.1)]"
-                                        style={{ backgroundColor: cat.color }}
+                                        transition={{ duration: 1.5, ease: "circOut" }}
+                                        className="h-full rounded-full"
+                                        style={{ 
+                                            backgroundColor: cat.color,
+                                            boxShadow: `0 0 15px ${cat.color}40`
+                                        }}
                                     />
                                 </div>
-                            </motion.div>
+                            </div>
                         );
                     })}
-                </div>
-            </div>
-
-            {/* Bottom Floating Summary */}
-            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md">
-                <div className="bg-slate-900 text-white p-5 rounded-[2rem] shadow-2xl flex items-center justify-between border border-white/10 backdrop-blur-xl bg-opacity-90">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center">
-                            <TrendingDown size={20} className="text-rose-400" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Net Outflow</p>
-                            <h4 className="text-xl font-black tracking-tighter">₹{totalAmount.toLocaleString()}</h4>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={() => router.push('/dashboard/expenses')}
-                        className="bg-white text-black h-12 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-                    >
-                        View Logs
-                    </button>
                 </div>
             </div>
         </div>
