@@ -2748,8 +2748,7 @@ export default function CheckoutClient() {
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
                 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 bg-[length:200%_auto] hover:bg-right transition-all duration-500
                 text-white font-black text-xs uppercase tracking-[0.1em]
-                shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 active:scale-[0.98] disabled:opacity-50"
-                disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-widest"
+                shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed tracking-widest"
             >
               {isSaving ? <RefreshCw size={18} className="animate-spin" /> : <Printer size={18} strokeWidth={3} />} 
               {business?.enableKOTWithBill ? "KOT & Print Bill" : "Print Bill / Receipt"}
