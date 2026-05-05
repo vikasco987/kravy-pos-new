@@ -2,21 +2,18 @@
 import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+  prisma_v2: PrismaClient | undefined;
 };
 
 export const prisma =
-  globalForPrisma.prisma ??
+  globalForPrisma.prisma_v2 ??
   new PrismaClient({
     log: ["error", "warn"],
   });
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  globalForPrisma.prisma_v2 = prisma;
 }
 
 export default prisma;
-// Forced reload for Expenses feature at Tue May 5 13:32:00 IST 2026
-// Re-indexed at Wed Apr 22 17:36:00 IST 2026
-// Updated for POS Visibility Settings at Tue May 5 12:47:00 IST 2026
-// Updated for Expense Categories at Tue May 5 14:53:00 IST 2026
+// Forced reload with v2 global for Expense Categories at Tue May 5 14:55:00 IST 2026
