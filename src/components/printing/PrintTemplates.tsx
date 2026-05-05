@@ -159,7 +159,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                 <span>₹{deliveryCharge.toFixed(2)}</span>
               </div>
               {deliveryGst > 0 && (
-                <div className="flex justify-between items-center text-[8px] font-bold italic opacity-60">
+                <div className="flex justify-between items-center text-[8px] font-bold italic">
                   <span className="pl-2">└ Tax on Delivery ({business?.deliveryGstRate}%)</span>
                   <span>₹{deliveryGst.toFixed(2)}</span>
                 </div>
@@ -173,7 +173,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                 <span>₹{packagingCharge.toFixed(2)}</span>
               </div>
               {packagingGst > 0 && (
-                <div className="flex justify-between items-center text-[8px] font-bold italic opacity-60">
+                <div className="flex justify-between items-center text-[8px] font-bold italic">
                   <span className="pl-2">└ Tax on Packaging ({business?.packagingGstRate}%)</span>
                   <span>₹{packagingGst.toFixed(2)}</span>
                 </div>
@@ -298,7 +298,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             {business?.greetingMessage || "Thank You!"}
           </div>
           <div className="text-[9px] font-bold">Visit Again for Fresh Food</div>
-          <div className="text-[8px] mt-3 opacity-50 font-bold">Powered by MagicScale netizen</div>
+          <div className="text-[8px] mt-3 font-bold">Powered by Kravy</div>
         </div>
       </div>
 
@@ -312,14 +312,14 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         <div className="text-center font-black text-[22px] border-b-2 border-black pb-1 mb-2">K.O.T</div>
         
         <div className="flex justify-between items-center font-black text-[12px] mb-2 px-1">
-          <div className="bg-black text-white px-3 py-1.5 rounded-sm">
+          <div className="border-2 border-black text-black px-3 py-1.5 rounded-sm font-black">
             {selectedTable === "POS" ? "COUNTER" : 
              selectedTable === "TAKEAWAY" ? "TAKEAWAY" : 
              selectedTable === "DELIVERY" ? "DELIVERY" : 
              `TABLE: ${selectedTable}`}
           </div>
           <div className="text-right leading-none">
-            <div className="text-[10px] font-black uppercase opacity-60">Token Number</div>
+            <div className="text-[10px] font-black uppercase">Token Number</div>
             <div className="text-[18px]">#{kotNumbers && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : tokenNumber || "NEW"}</div>
           </div>
         </div>
@@ -348,7 +348,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                   <td className="py-2 pr-2 leading-[1.1] uppercase">
                      {i.name}
                      {i.variants && i.variants.length > 0 && (
-                       <div className="text-[9px] font-bold opacity-70 lowercase">
+                       <div className="text-[9px] font-bold lowercase">
                           ({i.variants.map((v:any) => v.name).join(', ')})
                        </div>
                      )}
@@ -362,7 +362,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
 
         {orderNotes && (
           <div className="mt-3 p-2 border-2 border-black bg-black/5 rounded-sm">
-            <div className="text-[9px] font-black uppercase mb-1 border-b border-black/20">Chef Instructions:</div>
+            <div className="text-[9px] font-black uppercase mb-1 border-b border-black">Chef Instructions:</div>
             <div className="text-[11px] font-bold italic leading-tight">{orderNotes}</div>
           </div>
         )}
