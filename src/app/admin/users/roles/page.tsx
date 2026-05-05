@@ -14,6 +14,7 @@ const ALL_PATHS = [
   { group: "Operations", name: "Kitchen Workflow", path: "/dashboard/kitchen" },
   { group: "Operations", name: "Table Status", path: "/dashboard/tables" },
   { group: "Operations", name: "Bill History", path: "/dashboard/billing" },
+  { group: "Operations", name: "Expense Manager", path: "/dashboard/expenses" },
   
   { group: "Store Catalog", name: "Browse Products", path: "/dashboard/menu/view" },
   { group: "Store Catalog", name: "Interactive Editor", path: "/dashboard/menu-editor" },
@@ -32,6 +33,8 @@ const ALL_PATHS = [
 
   { group: "Reports & Insights", name: "Daily Sales Report", path: "/dashboard/reports/sales/daily" },
   { group: "Reports & Insights", name: "GST Reports", path: "/dashboard/reports/gst" },
+  { group: "Reports & Insights", name: "Expense Reports", path: "/dashboard/expenses/reports" },
+  { group: "Reports & Insights", name: "Profit & Loss", path: "/dashboard/expenses/pnl" },
 
   { group: "Administration", name: "Business Profile", path: "/dashboard/profile" },
   { group: "Administration", name: "POS Settings", path: "/dashboard/settings" },
@@ -46,7 +49,7 @@ export default function RolePermissionsPage() {
   const [activeRole, setActiveRole] = useState<Role>("SELLER");
   const [permissions, setPermissions] = useState<Record<Role, string[]>>({
     ADMIN: ["*"],
-    SELLER: ["/dashboard", "/dashboard/billing/checkout", "/dashboard/tables", "/dashboard/billing", "/dashboard/terminal", "/dashboard/kitchen", "/dashboard/menu/view", "/dashboard/menu/upload", "/dashboard/store-item-upload", "/dashboard/menu/edit", "/dashboard/parties", "/dashboard/inventory", "/dashboard/combos", "/dashboard/gallery", "/dashboard/settings", "/dashboard/billing/deleted", "/dashboard/help"],
+    SELLER: ["/dashboard", "/dashboard/billing/checkout", "/dashboard/tables", "/dashboard/billing", "/dashboard/expenses", "/dashboard/expenses/reports", "/dashboard/expenses/pnl", "/dashboard/terminal", "/dashboard/kitchen", "/dashboard/menu/view", "/dashboard/menu/upload", "/dashboard/store-item-upload", "/dashboard/menu/edit", "/dashboard/parties", "/dashboard/inventory", "/dashboard/combos", "/dashboard/gallery", "/dashboard/settings", "/dashboard/billing/deleted", "/dashboard/help"],
     USER: ["/dashboard", "/dashboard/billing/checkout", "/dashboard/tables", "/dashboard/terminal", "/dashboard/kitchen", "/dashboard/qr-orders", "/dashboard/help"],
   });
   const [loading, setLoading] = useState(true);
