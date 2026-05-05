@@ -614,14 +614,17 @@ export default function CheckoutClient() {
         }
       }
       loadActiveOrder();
-    }
-  }, [searchParams]);
-
-  // Sync activeZone with selectedTable's zone
+// Sync activeZone with selectedTable's zone
   useEffect(() => {
     if (business?.multiZoneMenuEnabled && selectedTable && tables.length > 0) {
       if (["POS", "TAKEAWAY", "DELIVERY"].includes(selectedTable)) {
-        if (activeZone !== "All") setActiveZone("All");
+        // Use localStorage default if available for direct visits
+        const savedDefault = localStorage.getItem('kravy_default_zone');
+        if (savedDefault && availableZones.includes(savedDefault)) {
+          if (activeZone !== savedDefault) setActiveZone(savedDefault);
+        } else if (activeZone !== "All") {
+          setActiveZone("All");
+        }
       } else {
         const tableObj = tables.find(t => t.name === selectedTable);
         const tZone = tableObj?.zone;
@@ -1695,19 +1698,37 @@ export default function CheckoutClient() {
                     </button>
                     <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-[var(--kravy-border)] rounded-xl shadow-2xl p-1 z-50 opacity-0 invisible group-hover/zone:opacity-100 group-hover/zone:visible transition-all">
                        <button
-                         onClick={() => { kravy.click(); setActiveZone("All"); }}
+                         onClick={() => { 
+                           kravy.click(); 
+                           setActiveZone("All");
+                           if (confirm("Set Global as default for direct visits?")) {
+                             localStorage.setItem('kravy_default_zone', 'All');
+                             toast.success("Default zone updated");
+                           }
+                         }}
                          className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all mb-0.5 last:mb-0 ${activeZone === "All" ? "bg-indigo-600 text-white" : "hover:bg-indigo-50 text-slate-600"}`}
                        >
                          All Items (Global)
                        </button>
                        {availableZones.map(zone => (
-                         <button
-                           key={zone}
-                           onClick={() => { kravy.click(); setActiveZone(zone); }}
-                           className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all mb-0.5 last:mb-0 ${activeZone === zone ? "bg-indigo-600 text-white" : "hover:bg-indigo-50 text-slate-600"}`}
-                         >
-                           {zone}
-                         </button>
+                         <div key={zone} className="relative group/zoneitem">
+                           <button
+                             onClick={() => { kravy.click(); setActiveZone(zone); }}
+                             className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all mb-0.5 last:mb-0 ${activeZone === zone ? "bg-indigo-600 text-white" : "hover:bg-indigo-50 text-slate-600"}`}
+                           >
+                             {zone}
+                           </button>
+                           <button 
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               localStorage.setItem('kravy_default_zone', zone);
+                               toast.success(`${zone} set as default`);
+                             }}
+                             className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/zoneitem:opacity-100 p-1 hover:text-indigo-600 text-[8px] font-black"
+                           >
+                             SET DEFAULT
+                           </button>
+                         </div>
                        ))}
                     </div>
                   </div>
