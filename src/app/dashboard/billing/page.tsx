@@ -36,6 +36,7 @@ type BillManager = {
   isOrder?: boolean;
   orderStatus?: string;
   tokenNumber?: number | null;
+  kotNumbers?: number[] | null;
   zoneName?: string | null;
 };
 
@@ -203,7 +204,8 @@ export default function BillingPage() {
             isOrder: true, 
             orderStatus: o.status, 
             items: o.items, 
-            tokenNumber: o.tokenNumber
+            tokenNumber: o.tokenNumber,
+            kotNumbers: o.kotNumbers
           };
         });
         combined = [...combined, ...activeOrders];
