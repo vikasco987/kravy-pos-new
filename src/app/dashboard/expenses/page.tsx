@@ -12,7 +12,7 @@ import {
     ChevronLeft, ChevronRight,
     Utensils, Wallet, ShoppingCart, 
     Lightbulb, Users, Rocket,
-    MoreHorizontal, Settings, Edit, Trash
+    MoreHorizontal, Settings, Edit, Trash, AlertCircle, Info
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
@@ -42,6 +42,21 @@ export default function ExpensesPage() {
     const [editingExpense, setEditingExpense] = useState<any>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [filterCategory, setFilterCategory] = useState("All");
+
+    // Custom Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'info';
+    }>({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        type: 'info'
+    });
 
     const [formData, setFormData] = useState({
         amount: "",
@@ -76,7 +91,6 @@ export default function ExpensesPage() {
             setExpenses(expData);
             
             if (catData.length === 0) {
-                // Seed default categories if none exist
                 const seeded = await seedDefaultCategories();
                 setCategories(seeded);
                 setFormData(prev => ({ ...prev, category: seeded[0]?.name || "" }));
@@ -101,11 +115,8 @@ export default function ExpensesPage() {
                     body: JSON.stringify(cat),
                 });
                 if (res.ok) created.push(await res.json());
-            } catch (e) {
-                // Ignore seeding errors (e.g. unique constraint)
-            }
+            } catch (e) {}
         }
-        // Fetch again to get all categories (even if seeding skipped some)
         const res = await fetch("/api/expenses/categories");
         return await res.json();
     };
@@ -147,8 +158,6 @@ export default function ExpensesPage() {
                     paymentMode: "Cash",
                 });
                 fetchExpenses();
-            } else {
-                toast.error("Something went wrong");
             }
         } catch (error) {
             toast.error("Failed to save expense");
@@ -177,31 +186,47 @@ export default function ExpensesPage() {
         }
     };
 
-    const deleteCategory = async (id: string) => {
-        if (!confirm("Are you sure? This won't delete expenses but they might lose their category association.")) return;
-        try {
-            const res = await fetch(`/api/expenses/categories/${id}`, { method: "DELETE" });
-            if (res.ok) {
-                toast.success("Category deleted");
-                fetchCategories();
+    const deleteCategory = (id: string) => {
+        setConfirmModal({
+            isOpen: true,
+            type: 'danger',
+            title: "Delete Category?",
+            message: "This will remove the category. Existing expenses will remain but without category assignment.",
+            onConfirm: async () => {
+                try {
+                    const res = await fetch(`/api/expenses/categories/${id}`, { method: "DELETE" });
+                    if (res.ok) {
+                        toast.success("Category deleted");
+                        fetchCategories();
+                        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                    }
+                } catch (error) {
+                    toast.error("Failed to delete");
+                }
             }
-        } catch (error) {
-            toast.error("Failed to delete");
-        }
+        });
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure?")) return;
-        try {
-            const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
-            if (res.ok) {
-                kravy.ping();
-                toast.success("Expense deleted");
-                fetchExpenses();
+    const handleDelete = (id: string) => {
+        setConfirmModal({
+            isOpen: true,
+            type: 'danger',
+            title: "Delete Expense?",
+            message: "Are you sure you want to permanently delete this expense record? This action cannot be undone.",
+            onConfirm: async () => {
+                try {
+                    const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+                    if (res.ok) {
+                        kravy.ping();
+                        toast.success("Expense deleted");
+                        fetchExpenses();
+                        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                    }
+                } catch (error) {
+                    toast.error("Failed to delete");
+                }
             }
-        } catch (error) {
-            toast.error("Failed to delete");
-        }
+        });
     };
 
     const filteredExpenses = expenses.filter(exp => {
@@ -252,48 +277,20 @@ export default function ExpensesPage() {
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-8 rounded-[2.5rem] bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 shadow-sm relative overflow-hidden group"
-                >
-                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                        <ArrowUpRight size={80} className="text-rose-500" />
-                    </div>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-8 rounded-[2.5rem] bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform"><ArrowUpRight size={80} className="text-rose-500" /></div>
                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Total Spending</p>
-                    <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
-                        ₹{totalExpense.toLocaleString()}
-                    </h3>
+                    <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">₹{totalExpense.toLocaleString()}</h3>
                 </motion.div>
-
-                <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="p-8 rounded-[2.5rem] bg-indigo-500 text-white shadow-2xl shadow-indigo-500/20 relative overflow-hidden group"
-                >
-                    <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:rotate-12 transition-transform">
-                        <ShoppingCart size={80} />
-                    </div>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-8 rounded-[2.5rem] bg-indigo-500 text-white shadow-2xl shadow-indigo-500/20 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:rotate-12 transition-transform"><ShoppingCart size={80} /></div>
                     <p className="text-xs font-black opacity-60 uppercase tracking-widest mb-4">Entries Count</p>
-                    <h3 className="text-4xl font-black tracking-tighter">
-                        {filteredExpenses.length} Records
-                    </h3>
+                    <h3 className="text-4xl font-black tracking-tighter">{filteredExpenses.length} Records</h3>
                 </motion.div>
-
-                <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="p-8 rounded-[2.5rem] bg-slate-900 dark:bg-white/10 text-white shadow-2xl relative overflow-hidden group"
-                >
-                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:-rotate-12 transition-transform text-emerald-500">
-                        <Banknote size={80} />
-                    </div>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-8 rounded-[2.5rem] bg-slate-900 dark:bg-white/10 text-white shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:-rotate-12 transition-transform text-emerald-500"><Banknote size={80} /></div>
                     <p className="text-xs font-black opacity-40 uppercase tracking-widest mb-4">Primary Mode</p>
-                    <h3 className="text-4xl font-black tracking-tighter">
-                        Cash Only
-                    </h3>
+                    <h3 className="text-4xl font-black tracking-tighter">Cash Only</h3>
                 </motion.div>
             </div>
 
@@ -301,38 +298,12 @@ export default function ExpensesPage() {
             <div className="flex flex-col md:flex-row items-center gap-4 bg-white dark:bg-white/5 p-4 rounded-[2rem] border border-slate-100 dark:border-white/10 shadow-sm">
                 <div className="relative flex-1 group w-full">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-rose-500 transition-colors" size={18} />
-                    <input 
-                        type="text"
-                        placeholder="Search by description or category..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full h-12 pl-12 pr-4 bg-slate-50 dark:bg-black/20 border-transparent rounded-2xl text-sm focus:bg-white dark:focus:bg-black/40 focus:ring-2 focus:ring-rose-500/20 transition-all outline-none"
-                    />
+                    <input type="text" placeholder="Search by description or category..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-12 pl-12 pr-4 bg-slate-50 dark:bg-black/20 border-transparent rounded-2xl text-sm focus:bg-white dark:focus:bg-black/40 focus:ring-2 focus:ring-rose-500/20 transition-all outline-none" />
                 </div>
-
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto scrollbar-hide">
-                    <button
-                        onClick={() => { kravy.toggle(); setFilterCategory("All"); }}
-                        className={`h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                            filterCategory === "All" 
-                            ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-lg" 
-                            : "bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 text-slate-400 hover:text-slate-600"
-                        }`}
-                    >
-                        All
-                    </button>
+                    <button onClick={() => { kravy.toggle(); setFilterCategory("All"); }} className={`h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterCategory === "All" ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-lg" : "bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 text-slate-400 hover:text-slate-600"}`}>All</button>
                     {categories.map((cat) => (
-                        <button
-                            key={cat.id}
-                            onClick={() => { kravy.toggle(); setFilterCategory(cat.name); }}
-                            className={`h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                                filterCategory === cat.name 
-                                ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-lg" 
-                                : "bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 text-slate-400 hover:text-slate-600"
-                            }`}
-                        >
-                            {cat.name}
-                        </button>
+                        <button key={cat.id} onClick={() => { kravy.toggle(); setFilterCategory(cat.name); }} className={`h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterCategory === cat.name ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-lg" : "bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 text-slate-400 hover:text-slate-600"}`}>{cat.name}</button>
                     ))}
                 </div>
             </div>
@@ -352,208 +323,64 @@ export default function ExpensesPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                            {loading ? (
-                                Array(5).fill(0).map((_, i) => (
-                                    <tr key={i} className="animate-pulse">
-                                        <td colSpan={6} className="px-8 py-6 h-16 bg-slate-50/10 dark:bg-white/5"></td>
-                                    </tr>
-                                ))
-                            ) : filteredExpenses.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-8 py-20 text-center text-slate-400">
-                                        <div className="flex flex-col items-center gap-4">
-                                            <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-300">
-                                                <PieChart size={32} />
+                            {!loading && filteredExpenses.map((exp) => {
+                                const catInfo = categories.find(c => c.name === exp.category) || { color: "#64748B", icon: "MoreHorizontal" };
+                                const Icon = ICON_MAP[catInfo.icon] || MoreHorizontal;
+                                return (
+                                    <motion.tr key={exp.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="group hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                                        <td className="px-8 py-6">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-slate-700 dark:text-white/80">{format(new Date(exp.date), "dd MMM yyyy")}</span>
+                                                <span className="text-[10px] text-slate-400 font-mono italic">{format(new Date(exp.date), "hh:mm a")}</span>
                                             </div>
-                                            <p className="font-bold uppercase tracking-widest text-xs">No records found matching your filters</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredExpenses.map((exp) => {
-                                    const catInfo = categories.find(c => c.name === exp.category) || { color: "#64748B", icon: "MoreHorizontal" };
-                                    const Icon = ICON_MAP[catInfo.icon] || MoreHorizontal;
-                                    return (
-                                        <motion.tr 
-                                            key={exp.id}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            className="group hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors"
-                                        >
-                                            <td className="px-8 py-6">
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-slate-700 dark:text-white/80">{format(new Date(exp.date), "dd MMM yyyy")}</span>
-                                                    <span className="text-[10px] text-slate-400 font-mono italic">{format(new Date(exp.date), "hh:mm a")}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div 
-                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tight"
-                                                    style={{ backgroundColor: `${catInfo.color}15`, color: catInfo.color }}
-                                                >
-                                                    <Icon size={12} />
-                                                    {exp.category}
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 max-w-xs">
-                                                <p className="text-sm text-slate-600 dark:text-slate-400 truncate font-medium">{exp.description || "—"}</p>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                                                    {exp.paymentMode === "Cash" ? <Banknote size={14} /> : <CreditCard size={14} />}
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">{exp.paymentMode || "Cash"}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 text-right">
-                                                <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter">₹{exp.amount.toLocaleString()}</span>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button 
-                                                        onClick={() => {
-                                                            kravy.open();
-                                                            setEditingExpense(exp);
-                                                            setFormData({
-                                                                amount: exp.amount.toString(),
-                                                                category: exp.category,
-                                                                description: exp.description || "",
-                                                                date: format(new Date(exp.date), "yyyy-MM-dd"),
-                                                                paymentMode: exp.paymentMode || "Cash",
-                                                            });
-                                                            setShowAddModal(true);
-                                                        }}
-                                                        className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-110 transition-all"
-                                                    >
-                                                        <Edit3 size={16} />
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleDelete(exp.id)}
-                                                        className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center hover:scale-110 transition-all"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </motion.tr>
-                                    );
-                                })
-                            )}
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tight" style={{ backgroundColor: `${catInfo.color}15`, color: catInfo.color }}><Icon size={12} />{exp.category}</div>
+                                        </td>
+                                        <td className="px-8 py-6 max-w-xs"><p className="text-sm text-slate-600 dark:text-slate-400 truncate font-medium">{exp.description || "—"}</p></td>
+                                        <td className="px-8 py-6"><div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">{exp.paymentMode === "Cash" ? <Banknote size={14} /> : <CreditCard size={14} />}<span className="text-[10px] font-black uppercase tracking-widest">{exp.paymentMode || "Cash"}</span></div></td>
+                                        <td className="px-8 py-6 text-right"><span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter">₹{exp.amount.toLocaleString()}</span></td>
+                                        <td className="px-8 py-6">
+                                            <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => { kravy.open(); setEditingExpense(exp); setFormData({ amount: exp.amount.toString(), category: exp.category, description: exp.description || "", date: format(new Date(exp.date), "yyyy-MM-dd"), paymentMode: exp.paymentMode || "Cash" }); setShowAddModal(true); }} className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-110 transition-all"><Edit3 size={16} /></button>
+                                                <button onClick={() => handleDelete(exp.id)} className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center hover:scale-110 transition-all"><Trash2 size={16} /></button>
+                                            </div>
+                                        </td>
+                                    </motion.tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {/* Manage Categories Modal */}
+            {/* Custom Premium Confirmation Modal */}
             <AnimatePresence>
-                {showCategoryModal && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCategoryModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
-                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                            <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-black/20">
-                                <div>
-                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Manage Categories</h2>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Customize your expense groups</p>
+                {confirmModal.isOpen && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))} className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl" />
+                        <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden border border-white/20">
+                            <div className="p-10 text-center space-y-6">
+                                <div className={`w-20 h-20 rounded-[2.5rem] mx-auto flex items-center justify-center ${confirmModal.type === 'danger' ? 'bg-rose-500/10 text-rose-500' : 'bg-indigo-500/10 text-indigo-500'}`}>
+                                    {confirmModal.type === 'danger' ? <AlertCircle size={40} strokeWidth={2.5} /> : <Info size={40} strokeWidth={2.5} />}
                                 </div>
-                                <button onClick={() => setShowCategoryModal(false)} className="w-10 h-10 rounded-full bg-white dark:bg-white/5 flex items-center justify-center text-slate-400 shadow-sm">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-8 space-y-8">
-                                {/* Create/Edit Form */}
-                                <form onSubmit={handleCategorySubmit} className="bg-slate-50 dark:bg-white/5 p-6 rounded-[2rem] border border-slate-100 dark:border-white/10 space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category Name</label>
-                                            <input 
-                                                required
-                                                type="text"
-                                                value={catFormData.name}
-                                                onChange={(e) => setCatFormData({ ...catFormData, name: e.target.value })}
-                                                placeholder="e.g. Ingredients"
-                                                className="w-full h-12 px-4 bg-white dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-xl text-sm font-bold outline-none transition-all shadow-sm"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Color Picker</label>
-                                            <div className="flex items-center gap-3">
-                                                <input 
-                                                    type="color"
-                                                    value={catFormData.color}
-                                                    onChange={(e) => setCatFormData({ ...catFormData, color: e.target.value })}
-                                                    className="w-12 h-12 rounded-xl cursor-pointer border-none bg-transparent"
-                                                />
-                                                <input 
-                                                    type="text"
-                                                    value={catFormData.color}
-                                                    onChange={(e) => setCatFormData({ ...catFormData, color: e.target.value })}
-                                                    className="flex-1 h-12 px-4 bg-white dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-xl text-xs font-mono outline-none transition-all shadow-sm"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Icon</label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {Object.keys(ICON_MAP).map(iconName => {
-                                                const IconComp = ICON_MAP[iconName];
-                                                return (
-                                                    <button
-                                                        key={iconName}
-                                                        type="button"
-                                                        onClick={() => setCatFormData({ ...catFormData, icon: iconName })}
-                                                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                                                            catFormData.icon === iconName 
-                                                            ? "bg-slate-900 text-white shadow-lg scale-110" 
-                                                            : "bg-white dark:bg-white/5 text-slate-400 hover:bg-slate-100"
-                                                        }`}
-                                                    >
-                                                        <IconComp size={18} />
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-3">
-                                        <button type="submit" className="flex-1 h-12 rounded-xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 active:scale-95 transition-all">
-                                            {catFormData.id ? "Update Category" : "Add New Category"}
-                                        </button>
-                                        {catFormData.id && (
-                                            <button type="button" onClick={() => setCatFormData({ id: "", name: "", color: "#64748B", icon: "MoreHorizontal" })} className="h-12 px-6 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                                                Cancel
-                                            </button>
-                                        )}
-                                    </div>
-                                </form>
-
-                                {/* Categories List */}
-                                <div className="space-y-4">
-                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Existing Categories</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {categories.map(cat => {
-                                            const Icon = ICON_MAP[cat.icon] || MoreHorizontal;
-                                            return (
-                                                <div key={cat.id} className="p-4 bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 flex items-center justify-between group">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${cat.color}20`, color: cat.color }}>
-                                                            <Icon size={18} />
-                                                        </div>
-                                                        <span className="font-bold text-slate-700 dark:text-white">{cat.name}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => setCatFormData({ id: cat.id, name: cat.name, color: cat.color, icon: cat.icon })} className="p-2 hover:text-indigo-500 transition-colors">
-                                                            <Edit size={16} />
-                                                        </button>
-                                                        <button onClick={() => deleteCategory(cat.id)} className="p-2 hover:text-rose-500 transition-colors">
-                                                            <Trash size={16} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">{confirmModal.title}</h3>
+                                    <p className="text-sm text-slate-400 font-medium leading-relaxed px-4">{confirmModal.message}</p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button 
+                                        onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                                        className="h-14 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        onClick={() => { kravy.click(); confirmModal.onConfirm(); }}
+                                        className={`h-14 rounded-2xl text-white text-[10px] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 ${confirmModal.type === 'danger' ? 'bg-rose-500 shadow-rose-500/20' : 'bg-indigo-500 shadow-indigo-500/20'}`}
+                                    >
+                                        Yes, Confirm
+                                    </button>
                                 </div>
                             </div>
                         </motion.div>
@@ -561,100 +388,59 @@ export default function ExpensesPage() {
                 )}
             </AnimatePresence>
 
-            {/* Add/Edit Expense Modal */}
+            {/* Existing Modals (Add/Edit, Categories) ... */}
+            <AnimatePresence>
+                {showCategoryModal && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCategoryModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                            <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-black/20">
+                                <div><h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Manage Categories</h2><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Customize your expense groups</p></div>
+                                <button onClick={() => setShowCategoryModal(false)} className="w-10 h-10 rounded-full bg-white dark:bg-white/5 flex items-center justify-center text-slate-400 shadow-sm"><X size={20} /></button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                                <form onSubmit={handleCategorySubmit} className="bg-slate-50 dark:bg-white/5 p-6 rounded-[2rem] border border-slate-100 dark:border-white/10 space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category Name</label><input required type="text" value={catFormData.name} onChange={(e) => setCatFormData({ ...catFormData, name: e.target.value })} placeholder="e.g. Ingredients" className="w-full h-12 px-4 bg-white dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-xl text-sm font-bold outline-none transition-all shadow-sm" /></div>
+                                        <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Color Picker</label><div className="flex items-center gap-3"><input type="color" value={catFormData.color} onChange={(e) => setCatFormData({ ...catFormData, color: e.target.value })} className="w-12 h-12 rounded-xl cursor-pointer border-none bg-transparent" /><input type="text" value={catFormData.color} onChange={(e) => setCatFormData({ ...catFormData, color: e.target.value })} className="flex-1 h-12 px-4 bg-white dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-xl text-xs font-mono outline-none transition-all shadow-sm" /></div></div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Icon</label>
+                                        <div className="flex flex-wrap gap-2">{Object.keys(ICON_MAP).map(iconName => { const IconComp = ICON_MAP[iconName]; return (<button key={iconName} type="button" onClick={() => setCatFormData({ ...catFormData, icon: iconName })} className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${catFormData.icon === iconName ? "bg-slate-900 text-white shadow-lg scale-110" : "bg-white dark:bg-white/5 text-slate-400 hover:bg-slate-100"}`}><IconComp size={18} /></button>); })}</div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button type="submit" className="flex-1 h-12 rounded-xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 active:scale-95 transition-all">{catFormData.id ? "Update Category" : "Add New Category"}</button>
+                                        {catFormData.id && <button type="button" onClick={() => setCatFormData({ id: "", name: "", color: "#64748B", icon: "MoreHorizontal" })} className="h-12 px-6 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">Cancel</button>}
+                                    </div>
+                                </form>
+                                <div className="space-y-4">
+                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Existing Categories</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{categories.map(cat => { const Icon = ICON_MAP[cat.icon] || MoreHorizontal; return (<div key={cat.id} className="p-4 bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 flex items-center justify-between group"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${cat.color}20`, color: cat.color }}><Icon size={18} /></div><span className="font-bold text-slate-700 dark:text-white">{cat.name}</span></div><div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => setCatFormData({ id: cat.id, name: cat.name, color: cat.color, icon: cat.icon })} className="p-2 hover:text-indigo-500 transition-colors"><Edit size={16} /></button><button onClick={() => deleteCategory(cat.id)} className="p-2 hover:text-rose-500 transition-colors"><Trash size={16} /></button></div></div>); })}</div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             <AnimatePresence>
                 {showAddModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" />
                         <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden">
                             <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">
-                                        {editingExpense ? "Edit Expense" : "New Expense"}
-                                    </h2>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Fill in the operational details</p>
-                                </div>
-                                <button onClick={() => setShowAddModal(false)} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors">
-                                    <X size={20} />
-                                </button>
+                                <div><h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">{editingExpense ? "Edit Expense" : "New Expense"}</h2><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Fill in the operational details</p></div>
+                                <button onClick={() => setShowAddModal(false)} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors"><X size={20} /></button>
                             </div>
-
                             <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Amount (₹)</label>
-                                    <div className="relative">
-                                        <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 text-rose-500" size={20} />
-                                        <input 
-                                            required
-                                            type="number"
-                                            value={formData.amount}
-                                            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                                            placeholder="0.00"
-                                            className="w-full h-14 pl-12 pr-4 bg-slate-50 dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-2xl text-xl font-black outline-none transition-all"
-                                        />
-                                    </div>
-                                </div>
-
+                                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Amount (₹)</label><div className="relative"><IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 text-rose-500" size={20} /><input required type="number" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} placeholder="0.00" className="w-full h-14 pl-12 pr-4 bg-slate-50 dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-2xl text-xl font-black outline-none transition-all" /></div></div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
-                                        <select 
-                                            value={formData.category}
-                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                            className="w-full h-12 px-4 bg-slate-50 dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-2xl text-sm font-bold outline-none transition-all"
-                                        >
-                                            {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
-                                        <input 
-                                            type="date"
-                                            value={formData.date}
-                                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                            className="w-full h-12 px-4 bg-slate-50 dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-2xl text-sm font-bold outline-none transition-all"
-                                        />
-                                    </div>
+                                    <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label><select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full h-12 px-4 bg-slate-50 dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-2xl text-sm font-bold outline-none transition-all">{categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select></div>
+                                    <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label><input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className="w-full h-12 px-4 bg-slate-50 dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-2xl text-sm font-bold outline-none transition-all" /></div>
                                 </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description</label>
-                                    <textarea 
-                                        value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        placeholder="What was this expense for?"
-                                        rows={3}
-                                        className="w-full p-4 bg-slate-50 dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-2xl text-sm font-bold outline-none transition-all resize-none"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Payment Mode</label>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {["Cash", "UPI"].map(mode => (
-                                            <button
-                                                key={mode}
-                                                type="button"
-                                                onClick={() => { kravy.toggle(); setFormData({ ...formData, paymentMode: mode }); }}
-                                                className={`h-12 rounded-2xl border-2 transition-all font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 ${
-                                                    formData.paymentMode === mode 
-                                                    ? "bg-rose-500 border-rose-500 text-white shadow-lg" 
-                                                    : "bg-white dark:bg-black/20 border-slate-100 dark:border-white/10 text-slate-400 hover:border-rose-500/30"
-                                                }`}
-                                            >
-                                                {mode === "Cash" ? <Banknote size={14} /> : <CreditCard size={14} />}
-                                                {mode}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <button 
-                                    type="submit"
-                                    className="w-full h-14 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-black font-black uppercase tracking-widest text-xs shadow-2xl transition-all active:scale-95 mt-4"
-                                >
-                                    {editingExpense ? "Save Changes" : "Create Expense Entry"}
-                                </button>
+                                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="What was this expense for?" rows={3} className="w-full p-4 bg-slate-50 dark:bg-black/40 border-2 border-transparent focus:border-rose-500/30 rounded-2xl text-sm font-bold outline-none transition-all resize-none" /></div>
+                                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Payment Mode</label><div className="grid grid-cols-2 gap-3">{["Cash", "UPI"].map(mode => (<button key={mode} type="button" onClick={() => { kravy.toggle(); setFormData({ ...formData, paymentMode: mode }); }} className={`h-12 rounded-2xl border-2 transition-all font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 ${formData.paymentMode === mode ? "bg-rose-500 border-rose-500 text-white shadow-lg" : "bg-white dark:bg-black/20 border-slate-100 dark:border-white/10 text-slate-400 hover:border-rose-500/30"}`}>{mode === "Cash" ? <Banknote size={14} /> : <CreditCard size={14} />}{mode}</button>))}</div></div>
+                                <button type="submit" className="w-full h-14 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-black font-black uppercase tracking-widest text-xs shadow-2xl transition-all active:scale-95 mt-4">{editingExpense ? "Save Changes" : "Create Expense Entry"}</button>
                             </form>
                         </motion.div>
                     </div>
