@@ -614,7 +614,10 @@ export default function CheckoutClient() {
         }
       }
       loadActiveOrder();
-// Sync activeZone with selectedTable's zone
+    }
+  }, [searchParams]);
+
+  // Sync activeZone with selectedTable's zone
   useEffect(() => {
     if (business?.multiZoneMenuEnabled && selectedTable && tables.length > 0) {
       if (["POS", "TAKEAWAY", "DELIVERY"].includes(selectedTable)) {
