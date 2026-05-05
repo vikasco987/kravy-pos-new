@@ -2612,13 +2612,13 @@ export default function CheckoutClient() {
                 <button
                   key={mode}
                   onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
-                  className={`py-2 rounded-xl border font-black text-[9px] transition-all flex flex-col items-center justify-center gap-1 ${paymentMode === mode
-                    ? "bg-[var(--kravy-brand)] border-[var(--kravy-brand)] text-white shadow-md scale-105"
-                    : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-[var(--kravy-brand)]"
+                  className={`py-1.5 px-1 rounded-lg border font-black text-[8px] transition-all flex flex-col items-center justify-center gap-0.5 ${paymentMode === mode
+                    ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20 scale-105"
+                    : "bg-white border-slate-100 text-slate-500 hover:border-indigo-400 hover:bg-indigo-50/30"
                     }`}
                 >
-                  <span className="text-[14px] leading-none mb-0.5">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
-                  <span className="truncate w-full px-0.5 text-center">{mode === "Pay on Counter" ? "Counter" : mode}</span>
+                  <span className="text-[12px] leading-none">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
+                  <span className="truncate w-full text-center uppercase tracking-tighter">{mode === "Pay on Counter" ? "Counter" : mode}</span>
                 </button>
               ))}
             </div>
@@ -2635,12 +2635,12 @@ export default function CheckoutClient() {
                       <button
                         key={s}
                         onClick={() => setPaymentStatus(s)}
-                        className={`py-2 rounded-xl border font-black text-[9px] transition-all ${paymentStatus === s
-                          ? s === "Paid" ? "bg-emerald-500 border-emerald-500 text-white" : "bg-amber-500 border-amber-500 text-white"
-                          : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)]"
+                        className={`py-1.5 rounded-lg border font-black text-[8px] transition-all uppercase tracking-wider ${paymentStatus === s
+                          ? s === "Paid" ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20" : "bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/20"
+                          : "bg-white border-slate-100 text-slate-400"
                           }`}
                       >
-                        {s === "Pending" ? "🕒" : "✅"}
+                        {s === "Pending" ? "🕒 PENDING" : "✅ PAID"}
                       </button>
                     ))}
                   </div>
@@ -2679,10 +2679,10 @@ export default function CheckoutClient() {
                     if (resumeBillId) router.replace("/dashboard/billing/checkout");
                   }}
                   disabled={items.length === 0 || isSaving}
-                  className="flex flex-col items-center justify-center py-2 rounded-xl border border-amber-500/30 text-amber-500 bg-amber-500/5 hover:bg-amber-500/10 disabled:opacity-40 transition-all"
+                  className="flex flex-col items-center justify-center py-1.5 rounded-lg border border-amber-100 text-amber-600 bg-amber-50/50 hover:bg-amber-100 disabled:opacity-40 transition-all shadow-sm"
                 >
-                  {isSaving ? <RefreshCw size={14} className="mb-0.5 animate-spin" /> : <PauseCircle size={14} className="mb-0.5" strokeWidth={3} />}
-                  <span className="text-[8px] font-black uppercase">Hold</span>
+                  {isSaving ? <RefreshCw size={12} className="mb-0.5 animate-spin" /> : <PauseCircle size={12} className="mb-0.5" strokeWidth={3} />}
+                  <span className="text-[7px] font-black uppercase">Hold</span>
                 </button>
               )}
 
@@ -2697,10 +2697,10 @@ export default function CheckoutClient() {
                     if (resumeBillId) router.replace("/dashboard/billing/checkout");
                   }}
                   disabled={items.length === 0 || isSaving}
-                  className="flex flex-col items-center justify-center py-2 rounded-xl border border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] bg-[var(--kravy-bg)] hover:bg-[var(--kravy-surface-hover)] disabled:opacity-40 transition-all font-black"
+                  className="flex flex-col items-center justify-center py-1.5 rounded-lg border border-slate-100 text-slate-500 bg-slate-50/50 hover:bg-slate-100 disabled:opacity-40 transition-all shadow-sm font-black"
                 >
-                  {isSaving ? <RefreshCw size={14} className="mb-0.5 animate-spin" /> : <Save size={14} className="mb-0.5" strokeWidth={3} />}
-                  <span className="text-[8px] uppercase">Save</span>
+                  {isSaving ? <RefreshCw size={12} className="mb-0.5 animate-spin" /> : <Save size={12} className="mb-0.5" strokeWidth={3} />}
+                  <span className="text-[7px] uppercase">Save</span>
                 </button>
               )}
 
@@ -2708,10 +2708,10 @@ export default function CheckoutClient() {
                 <button
                   onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
                   disabled={items.length === 0 || isSaving}
-                  className="flex flex-col items-center justify-center py-2 rounded-xl border border-indigo-500/20 text-indigo-500 bg-indigo-500/5 hover:bg-indigo-500/10 disabled:opacity-40 transition-all font-black"
+                  className="flex flex-col items-center justify-center py-1.5 rounded-lg border border-indigo-100 text-indigo-500 bg-indigo-50/50 hover:bg-indigo-100 disabled:opacity-40 transition-all shadow-sm font-black"
                 >
-                  <Eye size={14} className="mb-0.5" strokeWidth={3} />
-                  <span className="text-[8px] uppercase">Preview</span>
+                  <Eye size={12} className="mb-0.5" strokeWidth={3} />
+                  <span className="text-[7px] uppercase">Preview</span>
                 </button>
               )}
 
@@ -2719,10 +2719,10 @@ export default function CheckoutClient() {
                 <button
                   onClick={handlePrintKOT}
                   disabled={items.length === 0 || isSaving}
-                  className="flex flex-col items-center justify-center py-2 rounded-xl border border-orange-500/20 text-orange-500 bg-orange-500/5 hover:bg-orange-500/10 disabled:opacity-40 transition-all font-black"
+                  className="flex flex-col items-center justify-center py-1.5 rounded-lg border border-orange-100 text-orange-500 bg-orange-50/50 hover:bg-orange-100 disabled:opacity-40 transition-all shadow-sm font-black"
                 >
-                  <Printer size={14} className="mb-0.5" strokeWidth={3} />
-                  <span className="text-[8px] uppercase">KOT</span>
+                  <Printer size={12} className="mb-0.5" strokeWidth={3} />
+                  <span className="text-[7px] uppercase">KOT</span>
                 </button>
               )}
             </div>
@@ -2745,9 +2745,10 @@ export default function CheckoutClient() {
                 }, 500);
               }}
               disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl
-                bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm
-                shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 active:scale-[0.98] transition-all
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
+                bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 bg-[length:200%_auto] hover:bg-right transition-all duration-500
+                text-white font-black text-xs uppercase tracking-[0.1em]
+                shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 active:scale-[0.98] disabled:opacity-50"
                 disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-widest"
             >
               {isSaving ? <RefreshCw size={18} className="animate-spin" /> : <Printer size={18} strokeWidth={3} />} 
