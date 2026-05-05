@@ -280,6 +280,12 @@ export default function ExpenseReportsPage() {
                     </div>
 
                     <button 
+                        onClick={() => { kravy.click(); router.push("/dashboard/expenses/pnl"); }}
+                        className="h-14 px-8 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-emerald-500/20"
+                    >
+                        <Scale size={18} /> P&L Statement
+                    </button>
+                    <button 
                         onClick={exportToCSV}
                         className="h-14 px-8 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-slate-900/20"
                     >

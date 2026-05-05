@@ -259,6 +259,13 @@ export default function ExpensesPage() {
                         Categories
                     </button>
                     <button 
+                        onClick={() => { kravy.click(); router.push("/dashboard/expenses/pnl"); }}
+                        className="h-14 px-6 rounded-[1.5rem] bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-3 shadow-2xl shadow-emerald-500/20 transition-all active:scale-95"
+                    >
+                        <Scale size={18} />
+                        P&L Statement
+                    </button>
+                    <button 
                         onClick={() => { kravy.click(); router.push("/dashboard/expenses/reports"); }}
                         className="h-14 px-8 rounded-[1.5rem] bg-indigo-500 hover:bg-indigo-400 text-white font-black uppercase tracking-widest text-xs flex items-center gap-3 shadow-2xl shadow-indigo-500/20 transition-all active:scale-95"
                     >
