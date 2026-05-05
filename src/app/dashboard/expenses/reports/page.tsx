@@ -13,6 +13,7 @@ import {
     Clock, Search, Utensils, Tag, CreditCard, Banknote,
     X
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { 
     PieChart as RePieChart, Pie, Cell, 
@@ -146,6 +147,38 @@ export default function ExpenseReportsPage() {
 
     const topCategory = useMemo(() => [...chartData].sort((a, b) => b.value - a.value)[0], [chartData]);
 
+    const exportToCSV = () => {
+        kravy.click();
+        if (filtered.length === 0) {
+            toast.error("No data to export");
+            return;
+        }
+
+        const headers = ["Date", "Category", "Description", "Mode", "Amount"];
+        const rows = filtered.map(exp => [
+            format(new Date(exp.date), "yyyy-MM-dd"),
+            exp.category,
+            exp.description || "",
+            exp.paymentMode || "Cash",
+            exp.amount
+        ]);
+
+        const csvContent = [
+            headers.join(","),
+            ...rows.map(row => row.join(","))
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Expenses_${format(range.start, "yyyyMMdd")}_${format(range.end, "yyyyMMdd")}.csv`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="max-w-[1600px] mx-auto p-6 md:p-10 space-y-8 min-h-screen bg-[#F8FAFC] dark:bg-slate-950 kravy-page-fade">
             {/* Professional Header */}
@@ -246,7 +279,10 @@ export default function ExpenseReportsPage() {
                         )}
                     </div>
 
-                    <button className="h-14 px-8 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-slate-900/20">
+                    <button 
+                        onClick={exportToCSV}
+                        className="h-14 px-8 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-slate-900/20"
+                    >
                         <Download size={18} /> Export CSV
                     </button>
                 </div>
