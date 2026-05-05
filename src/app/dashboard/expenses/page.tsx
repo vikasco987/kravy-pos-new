@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 import { kravy } from "@/lib/sounds";
 
 const CATEGORIES = [
@@ -28,6 +29,7 @@ const CATEGORIES = [
 ];
 
 export default function ExpensesPage() {
+    const router = useRouter();
     const [expenses, setExpenses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -129,6 +131,13 @@ export default function ExpensesPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => { kravy.click(); router.push("/dashboard/expenses/reports"); }}
+                        className="h-14 px-8 rounded-[1.5rem] bg-indigo-500 hover:bg-indigo-400 text-white font-black uppercase tracking-widest text-xs flex items-center gap-3 shadow-2xl shadow-indigo-500/20 transition-all active:scale-95"
+                    >
+                        <PieChart size={18} strokeWidth={3} />
+                        View Reports
+                    </button>
                     <button 
                         onClick={() => { kravy.toggle(); setShowAddModal(true); }}
                         className="h-14 px-8 rounded-[1.5rem] bg-rose-500 hover:bg-rose-400 text-white font-black uppercase tracking-widest text-xs flex items-center gap-3 shadow-2xl shadow-rose-500/20 transition-all active:scale-95"
