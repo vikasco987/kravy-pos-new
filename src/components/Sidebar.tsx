@@ -762,8 +762,15 @@ export default function Sidebar() {
             const baseHref = item.href.split("?")[0];
             const hasLegacyWorkflow = allowedPaths.includes("/dashboard/workflow");
             const isNewPath = baseHref === "/dashboard/terminal" || baseHref === "/dashboard/kitchen";
+            const isExpensePath = baseHref === "/dashboard/expenses";
             
-            if (allowedPaths.includes("*") || allowedPaths.includes(item.href) || allowedPaths.includes(baseHref) || (hasLegacyWorkflow && isNewPath)) return true;
+            if (
+              allowedPaths.includes("*") || 
+              allowedPaths.includes(item.href) || 
+              allowedPaths.includes(baseHref) || 
+              (hasLegacyWorkflow && isNewPath) ||
+              (isExpensePath && (userRole === "ADMIN" || userRole === "SELLER"))
+            ) return true;
 
             // 3. Application-wide Feature Flags (Controlled by profile settings)
             if (item.label === "GST Reports" && !taxEnabled) return false;
