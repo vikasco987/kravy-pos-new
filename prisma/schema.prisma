@@ -439,6 +439,26 @@ model BusinessProfile {
 }
 
 //////////////////////////////////////////////////
+// EXPENSE
+//////////////////////////////////////////////////
+
+model Expense {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String
+  amount      Float
+  category    String   // Rent, Salaries, Ingredients, Utilities, Marketing, Others
+  description String?
+  date        DateTime @default(now())
+  paymentMode String?  // Cash, UPI, Card, Bank Transfer
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([date])
+}
+
+
+//////////////////////////////////////////////////
 // UPLOAD
 //////////////////////////////////////////////////
 

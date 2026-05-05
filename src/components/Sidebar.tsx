@@ -59,6 +59,7 @@ import {
   Tag,
   DollarSign,
   TrendingDown,
+  IndianRupee,
   Activity,
   Globe,
   Lock,
@@ -152,6 +153,7 @@ const navGroups = [
       { icon: <Users size={18} />, label: "Customer Parties", href: "/dashboard/parties" },
       { icon: <UserPlus size={18} />, label: "Staff Management", href: "/dashboard/staff", roles: ["ADMIN", "SELLER", "STAFF"] },
       { icon: <Package size={18} />, label: "Inventory Stock", href: "/dashboard/inventory", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <IndianRupee size={18} />, label: "Restaurant Expenses", href: "/dashboard/expenses" },
       { icon: <QrCode size={18} />, label: "QR Order Terminal", href: "/dashboard/qr-orders", badge: "Scan", badgeColor: "#8B5CF6" },
     ]
   },
