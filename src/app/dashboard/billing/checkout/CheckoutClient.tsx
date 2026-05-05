@@ -559,6 +559,33 @@ export default function CheckoutClient() {
 
     if (orderId) {
       async function loadActiveOrder() {
+        // ✅ Instant Edit Handoff: Check for cached order first
+        const cachedStr = sessionStorage.getItem("quick_pos_handoff_order");
+        if (cachedStr) {
+          try {
+            const cachedOrder = JSON.parse(cachedStr);
+            if (cachedOrder.id === orderId) {
+              setSyncedOrderId(cachedOrder.id);
+              setItems(cachedOrder.items.map((i: any) => ({
+                id: i.itemId || i.id,
+                name: i.name,
+                qty: Number(i.quantity || i.qty || 0),
+                rate: Number(i.price || i.rate || 0),
+                gst: i.gst,
+                taxStatus: i.taxStatus || "Without Tax",
+                isNew: false
+              })));
+              setCustomerName(cachedOrder.customerName || "");
+              setCustomerPhone(cachedOrder.customerPhone || "");
+              setOrderNotes(cachedOrder.notes || "");
+              setKotNumbers(cachedOrder.kotNumbers || (cachedOrder.tokenNumber ? [cachedOrder.tokenNumber] : []));
+              
+              // Clean up to avoid stale data on next visit
+              sessionStorage.removeItem("quick_pos_handoff_order");
+            }
+          } catch (e) { console.error("Cache parse error", e); }
+        }
+
         try {
           const res = await fetch(`/api/orders/${orderId}`);
           if (!res.ok) return;
@@ -574,7 +601,7 @@ export default function CheckoutClient() {
             rate: Number(i.price || i.rate || 0),
             gst: i.gst,
             taxStatus: i.taxStatus || "Without Tax",
-            isNew: false // Important: Existing items are not 'new' for the next KOT
+            isNew: false 
           })));
           setCustomerName(order.customerName || "");
           setCustomerPhone(order.customerPhone || "");
@@ -1291,7 +1318,7 @@ export default function CheckoutClient() {
       if (business?.syncQuickPosWithKitchen || searchParams.get("returnTo")) {
         const orderData = {
           orderId: syncedOrderId || undefined,
-          tableId: selectedTable !== "POS" ? tables.find(t => t.name === selectedTable)?.id : null,
+          tableId: selectedTable !== "POS" ? (tables.find(t => t.name === selectedTable)?.id || searchParams.get("tableId")) : null,
           items: items.map(it => ({
             itemId: it.id, // Use consistent ID
             name: it.name,
@@ -1324,6 +1351,11 @@ export default function CheckoutClient() {
         if (res.ok) {
           const data = await res.json();
           if (!syncedOrderId) setSyncedOrderId(data.id || data._id);
+          
+          // ✅ Sync tokens from server
+          if (data.kotNumbers) setKotNumbers(data.kotNumbers);
+          if (data.tokenNumber) setTokenNumber(data.tokenNumber);
+          
           toast.success("KOT Printed & Order Synced! ✅");
 
           const returnTo = searchParams.get("returnTo");
@@ -3001,6 +3033,7 @@ export default function CheckoutClient() {
         qrUrl={qrUrl}
         numberToWords={numberToWords}
         kravy={kravy}
+        kotNumbers={kotNumbers}
         printKOT={printKOT}
         printReceipt={printReceipt}
         saveBill={saveBill}

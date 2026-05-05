@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
+import { useTerminalContext } from "@/components/TerminalContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { kravy } from "@/lib/sounds";
@@ -211,8 +212,15 @@ function KravyPOS() {
     const [activeTab, setActiveTab] = useState<TabKey>("track");
     const [liveOrderTab, setLiveOrderTab] = useState<"PREPARING" | "READY" | "COMPLETED">("PREPARING");
     const [liveOrderSearch, setLiveOrderSearch] = useState("");
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [tablesList, setTablesList] = useState<TableStatus[]>([]);
+    const { 
+        orders, 
+        tablesList, 
+        business, 
+        isLoading, 
+        fetchData, 
+        updateTableStatus,
+        setOrders 
+    } = useTerminalContext();
     const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
     const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
     const [payMethod, setPayMethod] = useState("upi");
@@ -227,7 +235,7 @@ function KravyPOS() {
     const [selectedParty, setSelectedParty] = useState<any>(null);
     const [clock, setClock] = useState("");
     const [dateStr, setDateStr] = useState("");
-    const [business, setBusiness] = useState<any>(null);
+
     
     const selectedTable = tablesList.find(t => t.id === selectedTableId);
     const tableOrders = selectedTable ? orders.filter(o => o.table?.id === selectedTable.id && o.status !== "COMPLETED" && !o.isDeleted) : [];
@@ -471,10 +479,11 @@ function KravyPOS() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(body)
                 }).then(() => {
+                    // ✅ Local update (Optimistic)
+                    setOrders(prev => prev.map(o => o.id === (body.orderId || targetOrder.id) ? { ...o, ...body } : o));
+                    
                     if (body.status === "COMPLETED") {
-                        handleCheckout(body.orderId, true);
-                    } else {
-                        fetchData();
+                        handleCheckout(body.orderId || targetOrder.id, true);
                     }
                 });
             }
@@ -500,10 +509,11 @@ function KravyPOS() {
             });
             if (res.ok) {
                 toast.success(`Order ${type} Saved & Updated`);
+                // ✅ Local update
+                setOrders(prev => prev.map(o => o.id === order.id ? { ...o, ...body } : o));
+
                 if (body.status === "COMPLETED") {
                     await handleCheckout(order.id, true);
-                } else {
-                    fetchData();
                 }
             }
         } catch (err) {
@@ -542,7 +552,8 @@ function KravyPOS() {
                 })
             });
             if (res.ok) {
-                fetchData();
+                // ✅ Local update
+                setOrders(prev => prev.map(o => o.id === orderId ? { ...o, items: newItems, total: finalTotal } : o));
             }
         } catch (err) {
             toast.error("Failed to update quantity");
@@ -560,7 +571,10 @@ function KravyPOS() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ orderId, isDeleted: true })
                 });
-                if (res.ok) fetchData();
+                if (res.ok) {
+                    // ✅ Local update
+                    setOrders(prev => prev.filter(o => o.id !== orderId));
+                }
             }
             return;
         }
@@ -581,7 +595,8 @@ function KravyPOS() {
             });
             if (res.ok) {
                 toast.success("Item removed");
-                fetchData();
+                // ✅ Local update
+                setOrders(prev => prev.map(o => o.id === orderId ? { ...o, items: newItems, total: Number(finalTotal.toFixed(2)) } : o));
             }
         } catch (err) {
             toast.error("Failed to remove item");
@@ -599,55 +614,6 @@ function KravyPOS() {
         if (order && order.status !== newStatus) {
             updateOrderStatus(orderId, newStatus);
         }
-    };
-
-    const fetchData = async () => {
-        try {
-            const [ordersRes, tablesRes] = await Promise.all([
-                fetch("/api/orders?limit=50"),
-                fetch("/api/tables")
-            ]);
-            if (ordersRes.ok && tablesRes.ok) {
-                const ordersData: Order[] = await ordersRes.json();
-                const rawTables = await tablesRes.json();
-                setOrders(ordersData);
-                const processed = rawTables.map((t: any) => {
-                    const tableOrders = ordersData.filter(o => o.table?.id === t.id && o.status !== "COMPLETED" && !o.isDeleted);
-                    // Sort to find the oldest order (when they started dining)
-                    const sorted = [...tableOrders].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-                    const firstOrder = sorted[0];
-                    const liveOrder = tableOrders[0]; 
-                    
-                    let status: "FREE" | "PENDING" | "ACCEPTED" | "PREPARING" | "READY" = "FREE";
-                    if (liveOrder) {
-                        if (liveOrder.status === "PENDING") status = "PENDING";
-                        else if (liveOrder.status === "ACCEPTED") status = "ACCEPTED";
-                        else if (liveOrder.status === "PREPARING") status = "PREPARING";
-                        else if (liveOrder.status === "READY") status = "READY";
-                    }
-                    return { 
-                        id: t.id, 
-                        name: t.name, 
-                        isOccupied: !!liveOrder, 
-                        activeOrderId: liveOrder?.id, 
-                        status, 
-                        activeCount: tableOrders.length,
-                        startTime: firstOrder?.createdAt
-                    };
-                });
-                setTablesList(processed);
-            }
-        } catch (err) { console.error("Polling failed", err); }
-    };
-
-    const fetchBusiness = async () => {
-        try {
-            const res = await fetch("/api/profile");
-            if (res.ok) {
-                const data = await res.json();
-                setBusiness(data);
-            }
-        } catch (err) { console.error("Profile fetch failed", err); }
     };
 
     useEffect(() => {
@@ -674,12 +640,8 @@ function KravyPOS() {
     }, [activeTab, activeOrderForSelected?.customerPhone]);
 
     useEffect(() => {
-        fetchData();
-        fetchBusiness();
-        // Set up auto-refresh every 5 seconds
-        const interval = setInterval(fetchData, 5000);
-        return () => clearInterval(interval);
-    }, []);
+        fetchData(false, true); // ✅ Force fetch on mount to see new orders instantly
+    }, [fetchData]);
     useEffect(() => {
         const tick = () => setClock(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
         tick(); const i = setInterval(tick, 1000); return () => clearInterval(i);
@@ -724,10 +686,11 @@ function KravyPOS() {
                     kravy.success();
                 }
 
+                // ✅ Local update (Optimistic)
+                setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+
                 if (newStatus === "COMPLETED") {
                     await handleCheckout(orderId, true);
-                } else {
-                    fetchData();
                 }
             }
         } catch {
@@ -1141,8 +1104,19 @@ function KravyPOS() {
                                                             <p className="text-[11px] text-slate-500 dark:text-slate-400">{order.table?.name || "Counter"}</p>
                                                         </div>
 
-                                                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                                                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                                             <p className="text-sm font-bold text-slate-900 dark:text-white">ID: {order.id.slice(-4).toUpperCase()}</p>
+                                                            {(order.kotNumbers && order.kotNumbers.length > 0) ? (
+                                                                <div className="flex flex-col items-end">
+                                                                    <span className="text-[8px] font-black text-slate-400 uppercase leading-none">Tokens</span>
+                                                                    <span className="text-[12px] font-black text-indigo-600 dark:text-indigo-400 font-mono leading-none">{order.kotNumbers.join(', ')}</span>
+                                                                </div>
+                                                            ) : order.tokenNumber ? (
+                                                                <div className="flex flex-col items-end">
+                                                                    <span className="text-[8px] font-black text-slate-400 uppercase leading-none">Token</span>
+                                                                    <span className="text-[14px] font-black text-indigo-600 dark:text-indigo-400 font-mono leading-none">{String(order.tokenNumber).padStart(2, '0')}</span>
+                                                                </div>
+                                                            ) : null}
                                                         </div>
 
                                                         <div className="flex flex-col gap-1.5">
@@ -1457,7 +1431,7 @@ function KravyPOS() {
                                 <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
                                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
                                         {filteredTables.map(t => {
-                                            const cfg = statusConfig[t.status];
+                                            const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
                                             return (
                                                 <motion.button
@@ -1490,7 +1464,7 @@ function KravyPOS() {
                                                     <div className="flex flex-col items-center gap-1 mt-1">
                                                         <span className={`text-[8px] font-black uppercase tracking-widest flex items-center gap-1 ${cfg.text}`}>
                                                             <span className={`w-1 h-1 rounded-full ${cfg.dot}`} />
-                                                            {cfg.label}
+                                                            {cfg?.label || "Status"}
                                                         </span>
                                                         {t.startTime && (
                                                             <TableTimer startTime={t.startTime} />
@@ -1612,7 +1586,7 @@ function KravyPOS() {
                                                         const passOrderId = activeOrderForSelected?.id || selectedTable?.activeOrderId;
                                                         if (passOrderId && activeOrderForSelected) {
                                                             try {
-                                                                sessionStorage.setItem(`kravy_checkout_order_${passOrderId}`, JSON.stringify(activeOrderForSelected));
+                                                                sessionStorage.setItem("quick_pos_handoff_order", JSON.stringify(activeOrderForSelected));
                                                             } catch {}
                                                         }
                                                         router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}${passOrderId ? `&orderId=${passOrderId}` : ""}&returnTo=/dashboard/kitchen`);
@@ -2463,6 +2437,7 @@ function KravyPOS() {
                 prevWalletBalance={null}
                 selectedParty={null}
                 numberToWords={numberToWords}
+                kotNumbers={printOrder?.kotNumbers || []}
             />
 
             {/* Modular Bill Preview Modal */}
@@ -2506,6 +2481,7 @@ function KravyPOS() {
                 qrUrl={qrUrl}
                 numberToWords={numberToWords}
                 kravy={kravy}
+                kotNumbers={printOrder?.kotNumbers || []}
                 // Actions - Adapting for workflow
                 printKOT={() => handlePrint("KOT", printOrder || undefined)}
                 printReceipt={(enableKOT) => handlePrint("BILL", printOrder || undefined)}

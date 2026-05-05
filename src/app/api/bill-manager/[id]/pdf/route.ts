@@ -182,6 +182,15 @@ export async function GET(
     
     if (bill.customerName) line(`Customer: ${bill.customerName}`, 8, 'left');
     if (bill.customerPhone) line(`Phone: ${bill.customerPhone}`, 8, 'left');
+    
+    // ✅ ADD TOKEN NUMBERS
+    const tokens = (bill.kotNumbers && bill.kotNumbers.length > 0) 
+      ? bill.kotNumbers.join(', ') 
+      : (bill.tokenNumber ? String(bill.tokenNumber).padStart(2, '0') : null);
+    
+    if (tokens) {
+      line(`Token(s): ${tokens}`, 9, 'left', true);
+    }
     // ✅ ADD BUYER GSTIN
     if ((bill as any).buyerGSTIN) line(`Buyer GSTIN: ${(bill as any).buyerGSTIN}`, 8, 'left', true);
     if ((bill as any).placeOfSupply) line(`Place of Supply: ${(bill as any).placeOfSupply}`, 8, 'left');

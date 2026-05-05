@@ -15,11 +15,14 @@ export async function GET(req: NextRequest) {
         const status = searchParams.get("status");
         const includeDeleted = searchParams.get("includeDeleted") === "true";
 
+        const active = searchParams.get("active") === "true";
+
         const orders = await prisma.order.findMany({
             where: { 
                 clerkUserId: effectiveId,
                 ...(tableId ? { tableId } : {}),
                 ...(status ? { status } : {}),
+                ...(active ? { NOT: { status: "COMPLETED" } } : {}),
                 isDeleted: includeDeleted ? undefined : { not: true },
             },
             take: limit,

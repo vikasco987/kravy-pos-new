@@ -48,6 +48,7 @@ interface BillPreviewProps {
   userPermissions: string[];
   resumeBillId: string | null;
   router: any;
+  kotNumbers?: number[];
 }
 
 const BillPreview: React.FC<BillPreviewProps> = (props) => {
@@ -59,7 +60,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
     deliveryCharge, deliveryGst, packagingCharge, packagingGst, finalTotal,
     paymentMode, paymentStatus, qrUrl, numberToWords, kravy,
     printKOT, printReceipt, saveBill, resetForm, isSaving, lastSavedBillId,
-    userRole, userPermissions, resumeBillId, router
+    userRole, userPermissions, resumeBillId, router, kotNumbers
   } = props;
 
   if (!showPreview) return null;
@@ -119,7 +120,14 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
               <div className="text-center text-[9px] mt-1">
                 <div>Bill No: {billNumber}</div>
                 <div>Date: {billDate}</div>
-                {(tokenNumber || business?.lastTokenNumber !== undefined) && (
+                {(kotNumbers && kotNumbers.length > 0) ? (
+                  <div className="mt-1 flex flex-col items-center border-2 border-black py-1 px-2">
+                    <div className="text-[7px] font-black uppercase">Token Numbers</div>
+                    <div className="text-[12px] font-black leading-none py-1">
+                      {kotNumbers.join(', ')}
+                    </div>
+                  </div>
+                ) : (tokenNumber || business?.lastTokenNumber !== undefined) ? (
                   <div className="mt-1 flex flex-col items-center border-2 border-black py-1 px-2">
                     <div className="text-[7px] font-black uppercase">Token Number</div>
                     <div className="text-[14px] font-black leading-none">
@@ -127,7 +135,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
                     </div>
                     {!tokenNumber && <div className="text-[5px] italic opacity-50 uppercase tracking-tighter">Draft Preview</div>}
                   </div>
-                )}
+                ) : null}
                 {selectedTable && (
                   <div className="font-bold text-black mt-0.5 uppercase text-[9px] border border-black px-1 inline-block">
                     {selectedTable === "POS" ? "TYPE: DINING / COUNTER" : 

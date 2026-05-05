@@ -6,6 +6,8 @@ export const metadata = {
   title: "Kravy Billing",
 };
 
+import { TerminalProvider } from "@/components/TerminalContext";
+
 export default function DashboardLayout({
   children,
 }: {
@@ -13,7 +15,9 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthProvider>
-      <ClientLayout>{children}</ClientLayout>
+      <TerminalProvider>
+        <ClientLayout>{children}</ClientLayout>
+      </TerminalProvider>
     </AuthProvider>
   );
 }

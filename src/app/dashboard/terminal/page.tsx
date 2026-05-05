@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
+import { useTerminalContext, Order, Table } from "@/components/TerminalContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { kravy } from "@/lib/sounds";
@@ -27,6 +28,7 @@ import BillPreview from "@/components/printing/BillPreview";
 import OrderAlertLoop from "./components/order-alert-loop";
 import { useAuthContext } from "@/components/AuthContext";
 
+
 // --- TYPES ---
 type OrderItem = {
     itemId: string;
@@ -34,7 +36,6 @@ type OrderItem = {
     price: number;
     quantity: number;
     qty?: number;
-    price: number;
     rate?: number;
     isVeg?: boolean;
     isNew?: boolean;
@@ -44,37 +45,6 @@ type OrderItem = {
     gst?: number;
 };
 
-type Order = {
-    id: string;
-    items: OrderItem[];
-    total: number;
-    status: "PENDING" | "ACCEPTED" | "PREPARING" | "READY" | "COMPLETED";
-    table?: { id: string; name: string };
-    customerName?: string;
-    customerPhone?: string;
-    createdAt: string;
-    caseType?: string;
-    parentOrderId?: string;
-    isMerged?: boolean;
-    isKotPrinted?: boolean;
-    customerAddress?: string;
-    updatedAt: string;
-    notes?: string;
-    preferences?: {
-        dontSendCutlery?: boolean;
-    };
-    isDeleted?: boolean;
-};
-
-type TableStatus = {
-    id: string;
-    name: string;
-    isOccupied: boolean;
-    activeOrderId?: string;
-    status: "FREE" | "PENDING" | "ACCEPTED" | "PREPARING" | "READY";
-    activeCount: number;
-    startTime?: string;
-};
 
 const TableTimer = ({ startTime, className = "" }: { startTime?: string, className?: string }) => {
     const [elapsed, setElapsed] = useState("");
@@ -175,8 +145,16 @@ function KravyPOS() {
     const billReceiptRef = useRef<HTMLDivElement | null>(null);
     const kotReceiptRef = useRef<HTMLDivElement | null>(null);
     const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [tablesList, setTablesList] = useState<TableStatus[]>([]);
+    const { 
+        tablesList, 
+        orders, 
+        business, 
+        isLoading, 
+        fetchData, 
+        updateTableStatus,
+        setOrders
+    } = useTerminalContext();
+
     const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
     const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
     const [payMethod, setPayMethod] = useState("upi");
@@ -191,7 +169,27 @@ function KravyPOS() {
     const [selectedParty, setSelectedParty] = useState<any>(null);
     const [clock, setClock] = useState("");
     const [dateStr, setDateStr] = useState("");
-    const [business, setBusiness] = useState<any>(null);
+
+    // Persist and restore selection
+    useEffect(() => {
+        fetchData(false, true); // ✅ Force fetch on mount to see new orders instantly
+        const savedTableId = sessionStorage.getItem("terminal_selected_table");
+        const savedOrderId = sessionStorage.getItem("terminal_selected_order");
+        if (savedTableId) setSelectedTableId(savedTableId);
+        if (savedOrderId) setSelectedOrderId(savedOrderId);
+        
+        router.prefetch("/dashboard/billing/checkout");
+    }, [router, fetchData]);
+
+    useEffect(() => {
+        if (selectedTableId) sessionStorage.setItem("terminal_selected_table", selectedTableId);
+        else sessionStorage.removeItem("terminal_selected_table");
+    }, [selectedTableId]);
+
+    useEffect(() => {
+        if (selectedOrderId) sessionStorage.setItem("terminal_selected_order", selectedOrderId);
+        else sessionStorage.removeItem("terminal_selected_order");
+    }, [selectedOrderId]);
     
     const selectedTable = tablesList.find(t => t.id === selectedTableId);
     const tableOrders = selectedTable ? orders.filter(o => o.table?.id === selectedTable.id && o.status !== "COMPLETED" && !o.isDeleted) : [];
@@ -228,8 +226,6 @@ function KravyPOS() {
     }
     
     useEffect(() => {
-        fetchMenu();
-        fetchData(); 
         const tableId = searchParams.get("tableId");
         const orderId = searchParams.get("orderId");
 
@@ -242,23 +238,12 @@ function KravyPOS() {
         }
     }, [searchParams]);
 
-    const fetchMenu = async () => {
-        try {
-            const res = await fetch("/api/items");
-            if (res.ok) {
-                const data = await res.json();
-                setMenuItems(data);
-            }
-        } catch (err) {
-            console.error("Failed to fetch menu:", err);
-        }
-    };
     const [printMode, setPrintMode] = useState<"KOT" | "BILL" | null>(null);
     const [showPreview, setShowPreview] = useState(false);
     const [previewMode, setPreviewMode] = useState<"KOT" | "BILL">("BILL");
     const [previewZoom, setPreviewZoom] = useState(1);
     const [printOrder, setPrintOrder] = useState<Order | null>(null);
-    const [printTable, setPrintTable] = useState<TableStatus | null>(null);
+    const [printTable, setPrintTable] = useState<Table | null>(null);
     const [menuItems, setMenuItems] = useState<any[]>([]);
     const [showAddItemModal, setShowAddItemModal] = useState(false);
     const [orderToUpdate, setOrderToUpdate] = useState<Order | null>(null);
@@ -270,7 +255,7 @@ function KravyPOS() {
     const [showCombineModal, setShowCombineModal] = useState(false);
     const [combineSelection, setCombineSelection] = useState<Set<string>>(new Set());
 
-    const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL" | "MANUAL_COMBINE", customOrder?: Order, customTable?: TableStatus) => {
+    const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL" | "MANUAL_COMBINE", customOrder?: Order, customTable?: Table) => {
         kravy.click();
 
         let targetOrder = customOrder || printOrder || activeOrderForSelected;
@@ -442,10 +427,11 @@ function KravyPOS() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(body)
                 }).then(() => {
+                    // ✅ Local update
+                    setOrders(prev => prev.map(o => o.id === (body.orderId || targetOrder.id) ? { ...o, ...body } : o));
+
                     if (body.status === "COMPLETED") {
-                        handleCheckout(body.orderId, true);
-                    } else {
-                        fetchData();
+                        handleCheckout(body.orderId || targetOrder.id, true);
                     }
                 });
             }
@@ -471,10 +457,11 @@ function KravyPOS() {
             });
             if (res.ok) {
                 toast.success(`Order ${type} Saved & Updated`);
+                // ✅ Local update
+                setOrders(prev => prev.map(o => o.id === order.id ? { ...o, ...body } : o));
+
                 if (body.status === "COMPLETED") {
                     await handleCheckout(order.id, true);
-                } else {
-                    fetchData();
                 }
             }
         } catch (err) {
@@ -513,7 +500,8 @@ function KravyPOS() {
                 })
             });
             if (res.ok) {
-                fetchData();
+                // ✅ Local update
+                setOrders(prev => prev.map(o => o.id === orderId ? { ...o, items: newItems, total: Number(finalTotal.toFixed(2)) } : o));
             }
         } catch (err) {
             toast.error("Failed to update quantity");
@@ -531,7 +519,10 @@ function KravyPOS() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ orderId, isDeleted: true })
                 });
-                if (res.ok) fetchData();
+                if (res.ok) {
+                    // ✅ Local update
+                    setOrders(prev => prev.filter(o => o.id !== orderId));
+                }
             }
             return;
         }
@@ -552,7 +543,8 @@ function KravyPOS() {
             });
             if (res.ok) {
                 toast.success("Item removed");
-                fetchData();
+                // ✅ Local update
+                setOrders(prev => prev.map(o => o.id === orderId ? { ...o, items: newItems, total: Number(finalTotal.toFixed(2)) } : o));
             }
         } catch (err) {
             toast.error("Failed to remove item");
@@ -572,54 +564,8 @@ function KravyPOS() {
         }
     };
 
-    const fetchData = async () => {
-        try {
-            const [ordersRes, tablesRes] = await Promise.all([
-                fetch("/api/orders?limit=50"),
-                fetch("/api/tables")
-            ]);
-            if (ordersRes.ok && tablesRes.ok) {
-                const ordersData: Order[] = await ordersRes.json();
-                const rawTables = await tablesRes.json();
-                setOrders(ordersData);
-                const processed = rawTables.map((t: any) => {
-                    const tableOrders = ordersData.filter(o => o.table?.id === t.id && o.status !== "COMPLETED" && !o.isDeleted);
-                    // Sort to find the oldest order (when they started dining)
-                    const sorted = [...tableOrders].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-                    const firstOrder = sorted[0];
-                    const liveOrder = tableOrders[0]; 
-                    
-                    let status: "FREE" | "PENDING" | "ACCEPTED" | "PREPARING" | "READY" = "FREE";
-                    if (liveOrder) {
-                        if (liveOrder.status === "PENDING") status = "PENDING";
-                        else if (liveOrder.status === "ACCEPTED") status = "ACCEPTED";
-                        else if (liveOrder.status === "PREPARING") status = "PREPARING";
-                        else if (liveOrder.status === "READY") status = "READY";
-                    }
-                    return { 
-                        id: t.id, 
-                        name: t.name, 
-                        isOccupied: !!liveOrder, 
-                        activeOrderId: liveOrder?.id, 
-                        status, 
-                        activeCount: tableOrders.length,
-                        startTime: firstOrder?.createdAt
-                    };
-                });
-                setTablesList(processed);
-            }
-        } catch (err) { console.error("Polling failed", err); }
-    };
-
-    const fetchBusiness = async () => {
-        try {
-            const res = await fetch("/api/profile");
-            if (res.ok) {
-                const data = await res.json();
-                setBusiness(data);
-            }
-        } catch (err) { console.error("Profile fetch failed", err); }
-    };
+    // fetchData is now provided by TerminalContext
+    // fetchBusiness is now managed by TerminalContext
 
     useEffect(() => {
         if (activeTab === "payment" && activeOrderForSelected?.customerPhone) {
@@ -644,13 +590,7 @@ function KravyPOS() {
         }
     }, [activeTab, activeOrderForSelected?.customerPhone]);
 
-    useEffect(() => {
-        fetchData();
-        fetchBusiness();
-        // Set up auto-refresh every 5 seconds
-        const interval = setInterval(fetchData, 5000);
-        return () => clearInterval(interval);
-    }, []);
+    // Polling is now managed by TerminalContext
     useEffect(() => {
         const tick = () => setClock(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
         tick(); const i = setInterval(tick, 1000); return () => clearInterval(i);
@@ -695,10 +635,11 @@ function KravyPOS() {
                     kravy.success();
                 }
 
+                // ✅ Local update (Optimistic)
+                setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+
                 if (newStatus === "COMPLETED") {
                     await handleCheckout(orderId, true);
-                } else {
-                    fetchData();
                 }
             }
         } catch {
@@ -723,7 +664,8 @@ function KravyPOS() {
             });
             if (res.ok) {
                 toast.success("Order removed from workflow");
-                fetchData();
+                // ✅ Local update (Optimistic)
+                setOrders(prev => prev.map(o => o.id === orderId ? { ...o, isDeleted: true } : o));
             }
         } catch (err) {
             toast.error("Failed to delete order");
@@ -1033,7 +975,7 @@ function KravyPOS() {
                                             <Layers size={12} />
                                             Dining Tables
                                         </span>
-                                        <button onClick={fetchData} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"><RotateCcw size={13} /></button>
+                                        <button onClick={() => fetchData()} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"><RotateCcw size={13} /></button>
                                     </div>
 
                                     {/* Search */}
@@ -1066,7 +1008,7 @@ function KravyPOS() {
                                 <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
                                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
                                         {filteredTables.map(t => {
-                                            const cfg = statusConfig[t.status];
+                                            const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
                                             return (
                                                 <motion.button
@@ -1099,7 +1041,7 @@ function KravyPOS() {
                                                     <div className="flex flex-col items-center gap-1 mt-1">
                                                         <span className={`text-[8px] font-black uppercase tracking-widest flex items-center gap-1 ${cfg.text}`}>
                                                             <span className={`w-1 h-1 rounded-full ${cfg.dot}`} />
-                                                            {cfg.label}
+                                                            {cfg?.label || "Status"}
                                                         </span>
                                                         {t.startTime && (
                                                             <TableTimer startTime={t.startTime} />
@@ -1218,6 +1160,8 @@ function KravyPOS() {
                                                     onClick={() => {
                                                         kravy.click();
                                                         if (activeOrderForSelected) {
+                                                            // ✅ Instant Edit Handoff: Cache order data
+                                                            sessionStorage.setItem("quick_pos_handoff_order", JSON.stringify(activeOrderForSelected));
                                                             router.push(`/dashboard/billing/checkout?orderId=${activeOrderForSelected.id}&tableId=${selectedTable.id}&tableName=${selectedTable.name}&returnTo=terminal`);
                                                         } else {
                                                             toast.error("Please select a table/order first");
@@ -1768,6 +1712,7 @@ function KravyPOS() {
                 qrUrl={qrUrl}
                 numberToWords={numberToWords}
                 kravy={kravy}
+                kotNumbers={printOrder?.kotNumbers || []}
                 // Actions - Adapting for workflow
                 printKOT={() => handlePrint("KOT", printOrder || undefined)}
                 printReceipt={(enableKOT) => handlePrint("BILL", printOrder || undefined)}

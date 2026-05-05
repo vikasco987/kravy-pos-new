@@ -411,7 +411,19 @@ export default async function DailySalesReportPage({
                       <td style={{ fontSize: "0.8rem", color: "var(--kravy-text-muted)", fontFamily: "monospace" }}>{bill.customerPhone || "—"}</td>
                       <td style={{ textAlign: "right", fontSize: "1.1rem", fontWeight: 950 }}>₹{format(bill.total)}</td>
                       <td><PaymentBadge mode={bill.paymentMode} /></td>
-                      <td>{bill.tokenNumber ? <span style={{ fontSize: "0.9rem", fontWeight: 900, color: "var(--kravy-purple)", fontFamily: "monospace" }}>{String(bill.tokenNumber).padStart(2, '0')}</span> : <span style={{ color: "var(--kravy-text-faint)" }}>—</span>}</td>
+                      <td>
+                        {bill.kotNumbers?.length > 0 ? (
+                          <span style={{ fontSize: "0.85rem", fontWeight: 900, color: "var(--kravy-purple)", fontFamily: "monospace" }}>
+                            {bill.kotNumbers.join(', ')}
+                          </span>
+                        ) : bill.tokenNumber ? (
+                          <span style={{ fontSize: "0.9rem", fontWeight: 900, color: "var(--kravy-purple)", fontFamily: "monospace" }}>
+                            {String(bill.tokenNumber).padStart(2, '0')}
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--kravy-text-faint)" }}>—</span>
+                        )}
+                      </td>
                       <td style={{ paddingRight: "20px", textAlign: "right" }}>
                          <BillActionsReport billId={bill.id} bill={bill} business={profile} />
                       </td>
