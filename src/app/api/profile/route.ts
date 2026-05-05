@@ -123,6 +123,15 @@ export async function POST(request: Request) {
         multiZoneMenuEnabled: body.multiZoneMenuEnabled !== undefined ? body.multiZoneMenuEnabled : undefined,
         enableClerkAuth: body.enableClerkAuth !== undefined ? body.enableClerkAuth : undefined,
         enableCustomAuth: body.enableCustomAuth !== undefined ? body.enableCustomAuth : undefined,
+        posCashEnabled: body.posCashEnabled !== undefined ? body.posCashEnabled : undefined,
+        posUpiEnabled: body.posUpiEnabled !== undefined ? body.posUpiEnabled : undefined,
+        posCardEnabled: body.posCardEnabled !== undefined ? body.posCardEnabled : undefined,
+        posCounterEnabled: body.posCounterEnabled !== undefined ? body.posCounterEnabled : undefined,
+        posWalletEnabled: body.posWalletEnabled !== undefined ? body.posWalletEnabled : undefined,
+        posHoldEnabled: body.posHoldEnabled !== undefined ? body.posHoldEnabled : undefined,
+        posSaveEnabled: body.posSaveEnabled !== undefined ? body.posSaveEnabled : undefined,
+        posPreviewEnabled: body.posPreviewEnabled !== undefined ? body.posPreviewEnabled : undefined,
+        posKotEnabled: body.posKotEnabled !== undefined ? body.posKotEnabled : undefined,
       },
 
       create: {
@@ -178,6 +187,15 @@ export async function POST(request: Request) {
         multiZoneMenuEnabled: body.multiZoneMenuEnabled ?? false,
         enableClerkAuth: body.enableClerkAuth ?? true,
         enableCustomAuth: body.enableCustomAuth ?? false,
+        posCashEnabled: body.posCashEnabled ?? true,
+        posUpiEnabled: body.posUpiEnabled ?? true,
+        posCardEnabled: body.posCardEnabled ?? true,
+        posCounterEnabled: body.posCounterEnabled ?? true,
+        posWalletEnabled: body.posWalletEnabled ?? true,
+        posHoldEnabled: body.posHoldEnabled ?? true,
+        posSaveEnabled: body.posSaveEnabled ?? true,
+        posPreviewEnabled: body.posPreviewEnabled ?? true,
+        posKotEnabled: body.posKotEnabled ?? true,
       },
     });
 

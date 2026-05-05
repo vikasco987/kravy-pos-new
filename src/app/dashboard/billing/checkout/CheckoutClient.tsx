@@ -873,6 +873,15 @@ export default function CheckoutClient() {
             lastTokenNumber: data.lastTokenNumber ?? 0,
             userId: data.userId,
             syncQuickPosWithKitchen: data.syncQuickPosWithKitchen ?? false,
+            posCashEnabled: data.posCashEnabled ?? true,
+            posUpiEnabled: data.posUpiEnabled ?? true,
+            posCardEnabled: data.posCardEnabled ?? true,
+            posCounterEnabled: data.posCounterEnabled ?? true,
+            posWalletEnabled: data.posWalletEnabled ?? true,
+            posHoldEnabled: data.posHoldEnabled ?? true,
+            posSaveEnabled: data.posSaveEnabled ?? true,
+            posPreviewEnabled: data.posPreviewEnabled ?? true,
+            posKotEnabled: data.posKotEnabled ?? true,
             multiZoneMenuEnabled: data.multiZoneMenuEnabled ?? false,
             greetingMessage: data.greetingMessage,
           });
@@ -2545,7 +2554,16 @@ export default function CheckoutClient() {
 
             {/* Payment Method - Compact Rows */}
             <div className="grid grid-cols-5 gap-1.5">
-              {(["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const).map((mode) => (
+              {(["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const)
+                .filter(mode => {
+                  if (mode === "Cash") return business?.posCashEnabled ?? true;
+                  if (mode === "UPI") return business?.posUpiEnabled ?? true;
+                  if (mode === "Card") return business?.posCardEnabled ?? true;
+                  if (mode === "Pay on Counter") return business?.posCounterEnabled ?? true;
+                  if (mode === "Wallet") return business?.posWalletEnabled ?? true;
+                  return true;
+                })
+                .map((mode) => (
                 <button
                   key={mode}
                   onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
@@ -2593,55 +2611,63 @@ export default function CheckoutClient() {
 
             {/* Primary Action Buttons */}
             <div className="grid grid-cols-4 gap-2">
-              <button
-                onClick={async () => {
-                  const bill = await saveBill(true);
-                  if (!bill) return;
-                  kravy.ping(); 
-                  resetForm();
-                  fetchHeldBills();
-                  if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                }}
-                disabled={items.length === 0 || isSaving}
-                className="flex flex-col items-center justify-center py-2 rounded-xl border border-amber-500/30 text-amber-500 bg-amber-500/5 hover:bg-amber-500/10 disabled:opacity-40 transition-all"
-              >
-                {isSaving ? <RefreshCw size={14} className="mb-0.5 animate-spin" /> : <PauseCircle size={14} className="mb-0.5" strokeWidth={3} />}
-                <span className="text-[8px] font-black uppercase">Hold</span>
-              </button>
+              {(business?.posHoldEnabled ?? true) && (
+                <button
+                  onClick={async () => {
+                    const bill = await saveBill(true);
+                    if (!bill) return;
+                    kravy.ping(); 
+                    resetForm();
+                    fetchHeldBills();
+                    if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                  }}
+                  disabled={items.length === 0 || isSaving}
+                  className="flex flex-col items-center justify-center py-2 rounded-xl border border-amber-500/30 text-amber-500 bg-amber-500/5 hover:bg-amber-500/10 disabled:opacity-40 transition-all"
+                >
+                  {isSaving ? <RefreshCw size={14} className="mb-0.5 animate-spin" /> : <PauseCircle size={14} className="mb-0.5" strokeWidth={3} />}
+                  <span className="text-[8px] font-black uppercase">Hold</span>
+                </button>
+              )}
 
-              <button
-                type="button"
-                onClick={async () => {
-                  const bill = await saveBill();
-                  if (!bill) return;
-                  kravy.success(); 
-                  resetForm();
-                  if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                }}
-                disabled={items.length === 0 || isSaving}
-                className="flex flex-col items-center justify-center py-2 rounded-xl border border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] bg-[var(--kravy-bg)] hover:bg-[var(--kravy-surface-hover)] disabled:opacity-40 transition-all font-black"
-              >
-                {isSaving ? <RefreshCw size={14} className="mb-0.5 animate-spin" /> : <Save size={14} className="mb-0.5" strokeWidth={3} />}
-                <span className="text-[8px] uppercase">Save</span>
-              </button>
+              {(business?.posSaveEnabled ?? true) && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const bill = await saveBill();
+                    if (!bill) return;
+                    kravy.success(); 
+                    resetForm();
+                    if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                  }}
+                  disabled={items.length === 0 || isSaving}
+                  className="flex flex-col items-center justify-center py-2 rounded-xl border border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] bg-[var(--kravy-bg)] hover:bg-[var(--kravy-surface-hover)] disabled:opacity-40 transition-all font-black"
+                >
+                  {isSaving ? <RefreshCw size={14} className="mb-0.5 animate-spin" /> : <Save size={14} className="mb-0.5" strokeWidth={3} />}
+                  <span className="text-[8px] uppercase">Save</span>
+                </button>
+              )}
 
-              <button
-                onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
-                disabled={items.length === 0 || isSaving}
-                className="flex flex-col items-center justify-center py-2 rounded-xl border border-indigo-500/20 text-indigo-500 bg-indigo-500/5 hover:bg-indigo-500/10 disabled:opacity-40 transition-all font-black"
-              >
-                <Eye size={14} className="mb-0.5" strokeWidth={3} />
-                <span className="text-[8px] uppercase">Preview</span>
-              </button>
+              {(business?.posPreviewEnabled ?? true) && (
+                <button
+                  onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
+                  disabled={items.length === 0 || isSaving}
+                  className="flex flex-col items-center justify-center py-2 rounded-xl border border-indigo-500/20 text-indigo-500 bg-indigo-500/5 hover:bg-indigo-500/10 disabled:opacity-40 transition-all font-black"
+                >
+                  <Eye size={14} className="mb-0.5" strokeWidth={3} />
+                  <span className="text-[8px] uppercase">Preview</span>
+                </button>
+              )}
 
-              <button
-                onClick={handlePrintKOT}
-                disabled={items.length === 0 || isSaving}
-                className="flex flex-col items-center justify-center py-2 rounded-xl border border-orange-500/20 text-orange-500 bg-orange-500/5 hover:bg-orange-500/10 disabled:opacity-40 transition-all font-black"
-              >
-                <Printer size={14} className="mb-0.5" strokeWidth={3} />
-                <span className="text-[8px] uppercase">KOT</span>
-              </button>
+              {(business?.posKotEnabled ?? true) && (
+                <button
+                  onClick={handlePrintKOT}
+                  disabled={items.length === 0 || isSaving}
+                  className="flex flex-col items-center justify-center py-2 rounded-xl border border-orange-500/20 text-orange-500 bg-orange-500/5 hover:bg-orange-500/10 disabled:opacity-40 transition-all font-black"
+                >
+                  <Printer size={14} className="mb-0.5" strokeWidth={3} />
+                  <span className="text-[8px] uppercase">KOT</span>
+                </button>
+              )}
             </div>
 
             <button

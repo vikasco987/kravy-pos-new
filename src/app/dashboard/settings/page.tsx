@@ -60,6 +60,13 @@ export default function SettingsPage() {
           label: "Loyalty Program",
           desc: "Set point ratios and redemption rules for customers"
         },
+        {
+          href: "/dashboard/settings/pos",
+          icon: <LayoutDashboard size={20} />,
+          color: "#8B5CF6",
+          label: "Quick POS Layout",
+          desc: "Enable/Disable payment modes and action buttons"
+        },
       ]
     },
     {
