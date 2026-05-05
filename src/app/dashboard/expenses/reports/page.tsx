@@ -11,7 +11,7 @@ import {
     ChevronRight, Users, ArrowUpRight,
     BarChart3, History, Zap,
     Clock, Search, Utensils, Tag, CreditCard, Banknote,
-    X
+    X, Scale
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";

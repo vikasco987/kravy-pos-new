@@ -12,7 +12,7 @@ import {
     ChevronLeft, ChevronRight,
     Utensils, Wallet, ShoppingCart, 
     Lightbulb, Users, Rocket,
-    MoreHorizontal, Settings, Edit, Trash, AlertCircle, Info
+    MoreHorizontal, Settings, Edit, Trash, AlertCircle, Info, Scale
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
