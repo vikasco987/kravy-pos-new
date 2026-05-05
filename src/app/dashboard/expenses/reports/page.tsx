@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
     ChevronLeft, Calendar, TrendingDown, 
     PieChart, ArrowLeft, Download,
@@ -10,7 +10,8 @@ import {
     MoreHorizontal, IndianRupee,
     ChevronRight, Users, ArrowUpRight,
     BarChart3, History, Zap,
-    Clock, Search, Utensils, Tag, CreditCard, Banknote
+    Clock, Search, Utensils, Tag, CreditCard, Banknote,
+    X
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { 
@@ -23,7 +24,7 @@ import {
     format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, 
     startOfYear, endOfYear, eachMonthOfInterval, isSameMonth,
     addDays, addWeeks, addMonths, addYears, isSameDay,
-    eachDayOfInterval, startOfDay, endOfDay
+    eachDayOfInterval, startOfDay, endOfDay, parseISO, isWithinInterval
 } from "date-fns";
 import { kravy } from "@/lib/sounds";
 
@@ -31,12 +32,21 @@ const ICON_MAP: any = {
     ShoppingCart, Wallet, Users, Lightbulb, Rocket, MoreHorizontal, Utensils, Tag, CreditCard, Banknote
 };
 
-type FilterMode = 'Day' | 'Week' | 'Month' | 'Year';
+type FilterMode = 'Day' | 'Week' | 'Month' | 'Year' | 'Custom';
 
 export default function ExpenseReportsPage() {
     const router = useRouter();
+    const dateInputRef = useRef<HTMLInputElement>(null);
+    const startRangeRef = useRef<HTMLInputElement>(null);
+    const endRangeRef = useRef<HTMLInputElement>(null);
+
     const [filterMode, setFilterMode] = useState<FilterMode>('Month');
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [customRange, setCustomRange] = useState({ 
+        start: format(new Date(), "yyyy-MM-dd"), 
+        end: format(new Date(), "yyyy-MM-dd") 
+    });
+    
     const [expenses, setExpenses] = useState<any[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -65,8 +75,9 @@ export default function ExpenseReportsPage() {
         if (filterMode === 'Day') return { start: startOfDay(currentDate), end: endOfDay(currentDate) };
         if (filterMode === 'Week') return { start: startOfWeek(currentDate), end: endOfWeek(currentDate) };
         if (filterMode === 'Month') return { start: startOfMonth(currentDate), end: endOfMonth(currentDate) };
-        return { start: startOfYear(currentDate), end: endOfYear(currentDate) };
-    }, [filterMode, currentDate]);
+        if (filterMode === 'Year') return { start: startOfYear(currentDate), end: endOfYear(currentDate) };
+        return { start: startOfDay(parseISO(customRange.start)), end: endOfDay(parseISO(customRange.end)) };
+    }, [filterMode, currentDate, customRange]);
 
     const filtered = useMemo(() => {
         return expenses.filter(exp => {
@@ -78,6 +89,7 @@ export default function ExpenseReportsPage() {
     const totalAmount = filtered.reduce((acc, curr) => acc + curr.amount, 0);
 
     const navigate = (direction: 'prev' | 'next') => {
+        if (filterMode === 'Custom') return;
         kravy.click();
         const factor = direction === 'next' ? 1 : -1;
         if (filterMode === 'Day') setCurrentDate(addDays(currentDate, factor));
@@ -89,19 +101,31 @@ export default function ExpenseReportsPage() {
     const trendData = useMemo(() => {
         if (filterMode === 'Day') return [];
         let intervals: Date[] = [];
-        if (filterMode === 'Week' || filterMode === 'Month') intervals = eachDayOfInterval({ start: range.start, end: range.end });
-        if (filterMode === 'Year') intervals = eachMonthOfInterval({ start: range.start, end: range.end });
+        
+        if (filterMode === 'Week' || filterMode === 'Month' || filterMode === 'Custom') {
+            intervals = eachDayOfInterval({ start: range.start, end: range.end });
+            // Cap custom interval intervals to avoid performance issues
+            if (intervals.length > 60) {
+                // Show monthly if more than 60 days
+                intervals = eachMonthOfInterval({ start: range.start, end: range.end });
+            }
+        } else if (filterMode === 'Year') {
+            intervals = eachMonthOfInterval({ start: range.start, end: range.end });
+        }
 
         return intervals.map(interval => {
             const amount = expenses
                 .filter(exp => {
                     const d = new Date(exp.date);
-                    if (filterMode === 'Year') return isSameMonth(d, interval);
+                    if (filterMode === 'Year' || intervals.length <= 60 && intervals.some(i => isSameMonth(i, interval) && intervals.length > 31)) {
+                        if (intervals.length > 31) return isSameMonth(d, interval);
+                    }
                     return isSameDay(d, interval);
                 })
                 .reduce((acc, curr) => acc + curr.amount, 0);
+            
             return {
-                name: format(interval, filterMode === 'Year' ? "MMM" : "dd MMM"),
+                name: format(interval, intervals.length > 31 ? "MMM" : "dd MMM"),
                 amount: amount
             };
         });
@@ -144,12 +168,13 @@ export default function ExpenseReportsPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
-                    <div className="bg-slate-100 dark:bg-black/20 p-1.5 rounded-2xl flex items-center shadow-inner">
-                        {(['Day', 'Week', 'Month', 'Year'] as FilterMode[]).map((m) => (
+                    {/* View Mode Selector */}
+                    <div className="bg-slate-100 dark:bg-black/20 p-1.5 rounded-2xl flex items-center shadow-inner overflow-x-auto scrollbar-hide">
+                        {(['Day', 'Week', 'Month', 'Year', 'Custom'] as FilterMode[]).map((m) => (
                             <button
                                 key={m}
                                 onClick={() => { kravy.toggle(); setFilterMode(m); }}
-                                className={`px-5 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                className={`px-4 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                                     filterMode === m 
                                     ? "bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-md" 
                                     : "text-slate-400 hover:text-slate-600"
@@ -160,22 +185,65 @@ export default function ExpenseReportsPage() {
                         ))}
                     </div>
 
-                    <div className="flex items-center gap-3 bg-white dark:bg-white/5 p-1.5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
-                        <button onClick={() => navigate('prev')} className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center text-slate-400 transition-all">
-                            <ChevronLeft size={20} />
-                        </button>
-                        <div className="px-4 min-w-[140px] text-center">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Time Period</p>
+                    {/* Date Navigator & Picker */}
+                    <div className="flex items-center gap-3 bg-white dark:bg-white/5 p-1.5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm relative group">
+                        {filterMode !== 'Custom' && (
+                            <button onClick={() => navigate('prev')} className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center text-slate-400 transition-all">
+                                <ChevronLeft size={20} />
+                            </button>
+                        )}
+                        
+                        <div 
+                            onClick={() => {
+                                if (filterMode === 'Day' || filterMode === 'Month' || filterMode === 'Year') {
+                                    dateInputRef.current?.showPicker();
+                                }
+                            }}
+                            className="px-4 min-w-[140px] text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-all py-1"
+                        >
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 flex items-center justify-center gap-1">
+                                {filterMode === 'Custom' ? 'Select Range' : 'Click to Pick'}
+                                <Calendar size={10} />
+                            </p>
                             <p className="text-sm font-black text-slate-900 dark:text-white whitespace-nowrap">
                                 {filterMode === 'Day' && format(currentDate, "dd MMM yyyy")}
                                 {filterMode === 'Week' && `${format(range.start, "dd MMM")} - ${format(range.end, "dd MMM")}`}
                                 {filterMode === 'Month' && format(currentDate, "MMMM yyyy")}
                                 {filterMode === 'Year' && format(currentDate, "yyyy")}
+                                {filterMode === 'Custom' && (
+                                    <span className="flex items-center gap-2">
+                                        <span onClick={(e) => { e.stopPropagation(); startRangeRef.current?.showPicker(); }}>{format(parseISO(customRange.start), "dd MMM")}</span>
+                                        <ChevronRight size={12} className="text-slate-300" />
+                                        <span onClick={(e) => { e.stopPropagation(); endRangeRef.current?.showPicker(); }}>{format(parseISO(customRange.end), "dd MMM")}</span>
+                                    </span>
+                                )}
                             </p>
+                            {/* Hidden Inputs for Direct Selection */}
+                            <input 
+                                ref={dateInputRef} 
+                                type={filterMode === 'Year' ? 'number' : filterMode === 'Month' ? 'month' : 'date'} 
+                                className="absolute opacity-0 pointer-events-none" 
+                                onChange={(e) => {
+                                    if (!e.target.value) return;
+                                    if (filterMode === 'Year') {
+                                        const year = parseInt(e.target.value);
+                                        const d = new Date(currentDate);
+                                        d.setFullYear(year);
+                                        setCurrentDate(d);
+                                    } else {
+                                        setCurrentDate(new Date(e.target.value));
+                                    }
+                                }}
+                            />
+                            <input ref={startRangeRef} type="date" className="absolute opacity-0 pointer-events-none" onChange={(e) => setCustomRange({ ...customRange, start: e.target.value })} />
+                            <input ref={endRangeRef} type="date" className="absolute opacity-0 pointer-events-none" onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })} />
                         </div>
-                        <button onClick={() => navigate('next')} className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center text-slate-400 transition-all">
-                            <ChevronRight size={20} />
-                        </button>
+
+                        {filterMode !== 'Custom' && (
+                            <button onClick={() => navigate('next')} className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center text-slate-400 transition-all">
+                                <ChevronRight size={20} />
+                            </button>
+                        )}
                     </div>
 
                     <button className="h-14 px-8 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-slate-900/20">
@@ -187,9 +255,9 @@ export default function ExpenseReportsPage() {
             {/* Top Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: "Total Outflow", value: `₹${totalAmount.toLocaleString()}`, icon: TrendingDown, color: "text-rose-500", bg: "bg-rose-500/10", trend: "+12.5%", trendColor: "text-rose-500" },
+                    { label: "Total Outflow", value: `₹${totalAmount.toLocaleString()}`, icon: TrendingDown, color: "text-rose-500", bg: "bg-rose-500/10", trend: "Processed", trendColor: "text-rose-500" },
                     { label: "Top Category", value: topCategory?.name || "N/A", icon: Zap, color: "text-amber-500", bg: "bg-amber-500/10", trend: topCategory ? `${((topCategory.value / totalAmount) * 100).toFixed(0)}% weight` : "No Data", trendColor: "text-slate-400" },
-                    { label: "Records", value: filtered.length, icon: History, color: "text-indigo-500", bg: "bg-indigo-500/10", trend: "Processed", trendColor: "text-indigo-500" },
+                    { label: "Records", value: filtered.length, icon: History, color: "text-indigo-500", bg: "bg-indigo-500/10", trend: "Volume", trendColor: "text-indigo-500" },
                     { label: "Period Avg", value: filtered.length > 0 ? `₹${(totalAmount / filtered.length).toFixed(0)}` : "₹0", icon: BarChart3, color: "text-emerald-500", bg: "bg-emerald-500/10", trend: "Balanced", trendColor: "text-emerald-500" },
                 ].map((stat, i) => (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} key={stat.label} className="bg-white dark:bg-white/5 p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all">
@@ -211,7 +279,7 @@ export default function ExpenseReportsPage() {
                     <div className="flex items-center justify-between mb-10">
                         <div>
                             <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Spending Curve</h3>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Expense flow for the selected {filterMode}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Expense flow for the selected period</p>
                         </div>
                         {filterMode !== 'Day' && (
                             <div className="flex items-center gap-3">
@@ -229,7 +297,7 @@ export default function ExpenseReportsPage() {
                                 <Clock size={40} />
                             </div>
                             <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Single Day View</h4>
-                            <p className="text-sm text-slate-400 max-w-xs font-medium">Trends are shown for Week, Month or Year views.</p>
+                            <p className="text-sm text-slate-400 max-w-xs font-medium">Trends are shown for ranges. For a single day, check the distribution on the right.</p>
                         </div>
                     ) : (
                         <div className="h-[400px] w-full">
@@ -289,7 +357,7 @@ export default function ExpenseReportsPage() {
                         )) : (
                             <div className="flex flex-col items-center justify-center py-10 text-slate-300">
                                 <Search size={40} />
-                                <p className="text-[10px] font-black uppercase tracking-widest mt-4">No Data for this range</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest mt-4">No Data</p>
                             </div>
                         )}
                     </div>
