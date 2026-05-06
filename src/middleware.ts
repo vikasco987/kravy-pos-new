@@ -78,17 +78,18 @@ export default clerkMiddleware(async (auth, request) => {
   }
 
   // 4. Allow Public Routes
+  // 4. Allow Public Routes
   if (isPublicRoute(request)) {
     return NextResponse.next();
   }
 
   // 5. If not authenticated and not a public route, redirect to CUSTOM auth page
   if (!isPublicRoute(request) && !userId && !customToken && !staffToken) {
-    return NextResponse.redirect(new URL('/auth/custom', request.url));
+    const signInUrl = new URL('/auth/custom', request.url);
+    // signInUrl.searchParams.set('redirect_url', request.nextUrl.pathname);
+    return NextResponse.redirect(signInUrl);
   }
 
-  // 6. Optional: Still run Clerk's logic for Clerk-specific routes or just let it pass
-  // if you want to keep Clerk's session handling active.
   return NextResponse.next();
 });
 
