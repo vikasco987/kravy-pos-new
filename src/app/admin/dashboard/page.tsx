@@ -56,8 +56,9 @@ type SellerDetail = {
 };
 
 export default function AdminDashboardPage() {
-  const [data, setData] = useState<{ stats: any; sellers: Seller[] } | null>(null);
+  const [data, setData] = useState<{ stats: any; sellers: Seller[]; pagination: { total: number; page: number; limit: number; pages: number } } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
 
@@ -71,13 +72,13 @@ export default function AdminDashboardPage() {
   const [timeRange, setTimeRange] = useState<7 | 30 | 90>(7);
 
   useEffect(() => {
-    fetchStats();
-  }, []);
+    fetchStats(currentPage);
+  }, [currentPage]);
 
-  const fetchStats = async () => {
+  const fetchStats = async (page: number = 1) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/dashboard-stats");
+      const res = await fetch(`/api/admin/dashboard-stats?page=${page}&limit=50`);
       if (!res.ok) throw new Error("Forbidden");
       const result = await res.json();
       setData(result);
@@ -274,6 +275,40 @@ export default function AdminDashboardPage() {
                  })}
                </tbody>
              </table>
+
+            {/* PAGINATION */}
+            {data.pagination && data.pagination.pages > 1 && (
+              <div className="mt-12 mb-6 flex items-center justify-between bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100 shadow-sm mx-4">
+                <div className="flex flex-col gap-1">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Platform Context</div>
+                  <div className="text-xs font-bold text-slate-600">
+                    Page <span className="text-indigo-600 font-black">{data.pagination.page}</span> of {data.pagination.pages} · {data.pagination.total} total vendors
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button 
+                    disabled={currentPage === 1 || loading}
+                    onClick={() => {
+                      setCurrentPage(p => p - 1);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="group h-12 px-6 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 text-slate-600 font-black text-[10px] uppercase tracking-widest disabled:opacity-40 hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                  >
+                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Prev
+                  </button>
+                  <button 
+                    disabled={currentPage >= data.pagination.pages || loading}
+                    onClick={() => {
+                      setCurrentPage(p => p + 1);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="group h-12 px-6 bg-indigo-600 rounded-2xl flex items-center gap-3 text-white font-black text-[10px] uppercase tracking-widest disabled:opacity-40 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                  >
+                    Next <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
