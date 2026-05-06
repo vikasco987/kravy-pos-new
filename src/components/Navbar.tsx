@@ -7,6 +7,7 @@ import {
   useUser
 } from "@clerk/nextjs";
 import { useAuthContext } from "@/components/AuthContext";
+import CustomUserButton from "@/components/CustomUserButton";
 import { useSearch } from "@/components/SearchContext";
 import { useTheme } from "@/components/ThemeProvider";
 import { Search, Bell, MapPin, Menu, X, Sun, Moon, Monitor, Volume2, Package, Receipt, Users, ArrowRight, Loader2, XCircle, LogOut } from "lucide-react";
@@ -530,30 +531,7 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
               {clerkUser ? (
                 <UserButton afterSignOutUrl="/" />
               ) : customUser ? (
-                <div className="flex items-center gap-3">
-                  <div style={{
-                    width: "32px", height: "32px", borderRadius: "10px",
-                    background: "rgba(16, 185, 129, 0.1)",
-                    border: "1px solid rgba(16, 185, 129, 0.2)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "#10B981"
-                  }}>
-                    <Users size={16} />
-                  </div>
-                  {/* Logout Button for Custom Session */}
-                  <button 
-                    onClick={() => {
-                      kravy.close();
-                      document.cookie = "kravy_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-                      document.cookie = "staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-                      window.location.href = "/";
-                    }}
-                    className="group flex items-center justify-center p-2 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-500 transition-all active:scale-95"
-                    title="Logout"
-                  >
-                    <LogOut size={16} />
-                  </button>
-                </div>
+                <CustomUserButton user={customUser} />
               ) : (
                 <Link href="/">
                   <button style={{
