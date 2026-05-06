@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
     // Fetch detailed activity for 1 specific seller
-    const [seller, bills, profile] = await Promise.all([
+    const [seller, billsInRange, lifetimeStats, profile] = await Promise.all([
       prisma.user.findUnique({
         where: { clerkId: targetUserId },
         select: { name: true, email: true, createdAt: true }
@@ -32,9 +32,15 @@ export async function GET(req: Request) {
       prisma.billManager.findMany({
         where: { 
             clerkUserId: targetUserId,
-            createdAt: { gte: cutoffDate }
+            createdAt: { gte: cutoffDate },
+            isDeleted: false
         },
         orderBy: { createdAt: "desc" },
+      }),
+      prisma.billManager.aggregate({
+        where: { clerkUserId: targetUserId, isDeleted: false },
+        _sum: { total: true },
+        _count: true
       }),
       prisma.businessProfile.findUnique({
         where: { userId: targetUserId }
@@ -50,7 +56,11 @@ export async function GET(req: Request) {
       const dayStart = new Date(date.setHours(0, 0, 0, 0));
       const dayEnd = new Date(date.setHours(23, 59, 59, 999));
       
-      const count = bills.filter(b => b.createdAt >= dayStart && b.createdAt <= dayEnd).length;
+      const count = billsInRange.filter(b => {
+          const bDate = new Date(b.createdAt);
+          return bDate >= dayStart && bDate <= dayEnd;
+      }).length;
+
       return { 
         date: days <= 14 
           ? dayStart.toLocaleDateString('en-IN', { weekday: 'short' }) 
@@ -59,21 +69,24 @@ export async function GET(req: Request) {
       };
     }).reverse();
 
-    const paymentModes = bills.reduce((acc: any, b) => {
+    const paymentModes = billsInRange.reduce((acc: any, b) => {
       acc[b.paymentMode] = (acc[b.paymentMode] || 0) + 1;
       return acc;
     }, {});
+
+    const totalLifetimeRevenue = lifetimeStats._sum.total || 0;
+    const totalLifetimeBills = lifetimeStats._count || 0;
 
     return NextResponse.json({
       seller,
       profile,
       stats: {
-        totalBills: bills.length,
-        totalRevenue: bills.reduce((sum, b) => sum + (b.total || 0), 0),
-        avgTicketSize: bills.length > 0 ? bills.reduce((sum, b) => sum + (b.total || 0), 0) / bills.length : 0,
+        totalBills: totalLifetimeBills,
+        totalRevenue: totalLifetimeRevenue,
+        avgTicketSize: totalLifetimeBills > 0 ? totalLifetimeRevenue / totalLifetimeBills : 0,
         trends: trendData,
         paymentDistribution: Object.entries(paymentModes).map(([name, value]) => ({ name, value })),
-        recentBills: bills.slice(0, 5).map(b => ({
+        recentBills: billsInRange.slice(0, 5).map(b => ({
           id: b.id,
           total: b.total,
           paymentMode: b.paymentMode,
