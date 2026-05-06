@@ -57,10 +57,11 @@ export default function CustomAuthPage() {
         setMode('verify');
       } 
       else if (mode === 'verify') {
+        const cleanEmail = formData.email.trim().toLowerCase();
         const res = await fetch('/api/auth/verify-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.email, otp: formData.otp })
+          body: JSON.stringify({ email: cleanEmail, otp: formData.otp })
         });
         const data = await res.json().catch(() => ({ error: "Invalid server response" }));
         if (!res.ok) throw new Error(data.error || "Verification failed");
@@ -68,10 +69,11 @@ export default function CustomAuthPage() {
         setMode('login');
       }
       else if (mode === 'login') {
+        const identifier = (formData.email || formData.phone).trim().toLowerCase();
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identifier: formData.email || formData.phone, password: formData.password })
+          body: JSON.stringify({ identifier, password: formData.password })
         });
         const data = await res.json().catch(() => ({ error: "Invalid server response" }));
         if (!res.ok) {
