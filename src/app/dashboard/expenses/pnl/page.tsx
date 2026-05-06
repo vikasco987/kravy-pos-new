@@ -260,15 +260,21 @@ export default function ProfitLossPage() {
                     { label: "Net Profit", value: `₹${netProfit.toLocaleString()}`, icon: netProfit >= 0 ? TrendingUp : TrendingDown, color: netProfit >= 0 ? "text-indigo-500" : "text-rose-600", bg: netProfit >= 0 ? "bg-indigo-500/10" : "bg-rose-600/10", trend: netProfit >= 0 ? "SURPLUS" : "DEFICIT", trendColor: netProfit >= 0 ? "text-indigo-500" : "text-rose-600" },
                     { label: "Profit Margin", value: `${profitMargin.toFixed(1)}%`, icon: Scale, color: "text-amber-500", bg: "bg-amber-500/10", trend: "Efficiency", trendColor: "text-amber-500" },
                 ].map((stat, i) => (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} key={stat.label} className="bg-white dark:bg-white/5 p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                                <stat.icon size={22} />
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }} 
+                        animate={{ opacity: 1, y: 0 }} 
+                        transition={{ delay: i * 0.1 }} 
+                        key={stat.label} 
+                        className="bg-white dark:bg-white/5 p-6 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all"
+                    >
+                        <div className="flex items-center justify-between mb-3">
+                            <div className={`w-10 h-10 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                                <stat.icon size={18} />
                             </div>
                             <span className={`text-[10px] font-black uppercase tracking-widest ${stat.trendColor}`}>{stat.trend}</span>
                         </div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                        <h3 className={`text-3xl font-black tracking-tighter ${stat.label === "Net Profit" ? (netProfit >= 0 ? "text-emerald-500" : "text-rose-500") : "text-slate-900 dark:text-white"}`}>{stat.value}</h3>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{stat.label}</p>
+                        <h3 className={`text-2xl font-black tracking-tighter ${stat.label === "Net Profit" ? (netProfit >= 0 ? "text-emerald-500" : "text-rose-500") : "text-slate-900 dark:text-white"}`}>{stat.value}</h3>
                     </motion.div>
                 ))}
             </div>
