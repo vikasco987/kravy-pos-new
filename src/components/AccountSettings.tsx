@@ -37,7 +37,7 @@ export default function AccountSettings() {
 
   const fetchUserData = async () => {
     try {
-      const res = await fetch('/api/user/profile');
+      const res = await fetch('/api/user/me');
       if (res.ok) {
         const data = await res.json();
         setUser(data);
@@ -60,7 +60,7 @@ export default function AccountSettings() {
     setSaving(true);
     try {
       const payload = { ...formData, ...updates };
-      const res = await fetch('/api/user/profile', {
+      const res = await fetch('/api/user/me', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -97,14 +97,30 @@ export async function GET() {
     // Ensure uniqueness, and include the expanded paths
     const finalPaths = [...new Set(expandedAllowed)];
 
+    // Fetch full user details from DB to include new fields
+    const user = await prisma.user.findUnique({
+      where: { id: authUser.id },
+      select: {
+        imageUrl: true,
+        secondaryEmails: true,
+        secondaryPhones: true,
+        phone: true,
+        uiPreferences: true,
+      }
+    });
+
     return NextResponse.json({ 
         id: authUser.id,
         name: authUser.name,
         email: authUser.email,
+        phone: user?.phone || "",
+        imageUrl: user?.imageUrl || null,
+        secondaryEmails: user?.secondaryEmails || [],
+        secondaryPhones: user?.secondaryPhones || [],
         role: authUser.type, // Maintain original role for frontend
         businessId: authUser.businessId,
         allowedPaths: finalPaths,
-        uiPreferences: {} // Default empty for now
+        uiPreferences: user?.uiPreferences || {}
     });
 
   } catch (error) {
@@ -122,21 +138,57 @@ export async function PATCH(req: Request) {
     if (!authUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { uiPreferences } = body;
+    const { name, phone, imageUrl, secondaryEmails, secondaryPhones, uiPreferences } = body;
 
-    // Only update if it's a Clerk user for now (Standard User model)
-    if (authUser.type === "OWNER") {
-        await (prisma.user as any).update({
-          where: { id: authUser.id },
-          data: {
-            uiPreferences: uiPreferences ?? {}
+    // Check uniqueness for any NEW identifiers
+    if (secondaryEmails || secondaryPhones) {
+       const allNew = [...(secondaryEmails || []), ...(secondaryPhones || [])];
+       for (const ident of allNew) {
+          const cleanIdent = ident.trim().toLowerCase();
+          const existing = await prisma.user.findFirst({
+            where: {
+               OR: [
+                 { email: cleanIdent },
+                 { phone: cleanIdent },
+                 { secondaryEmails: { has: cleanIdent } },
+                 { secondaryPhones: { has: cleanIdent } }
+               ],
+               NOT: { id: authUser.id }
+            }
+          });
+          if (existing) {
+            return NextResponse.json({ error: `The identifier "${ident}" is already in use by another account.` }, { status: 400 });
           }
-        });
+       }
     }
 
-    return NextResponse.json({ success: true, uiPreferences: uiPreferences || {} });
+    const updatedUser = await prisma.user.update({
+      where: { id: authUser.id },
+      data: {
+        name: name !== undefined ? name : undefined,
+        phone: phone !== undefined ? phone.replace(/\D/g, '') : undefined,
+        imageUrl: imageUrl !== undefined ? imageUrl : undefined,
+        secondaryEmails: secondaryEmails !== undefined ? secondaryEmails : undefined,
+        secondaryPhones: secondaryPhones !== undefined ? secondaryPhones.map((p: string) => p.replace(/\D/g, '')) : undefined,
+        uiPreferences: uiPreferences !== undefined ? uiPreferences : undefined,
+      }
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        imageUrl: updatedUser.imageUrl,
+        secondaryEmails: updatedUser.secondaryEmails,
+        secondaryPhones: updatedUser.secondaryPhones,
+        uiPreferences: updatedUser.uiPreferences
+      }
+    });
   } catch (error) {
     console.error("USER/ME PATCH ERROR:", error);
-    return NextResponse.json({ error: "Failed to update preferences" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update user profile" }, { status: 500 });
   }
 }
