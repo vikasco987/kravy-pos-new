@@ -308,9 +308,14 @@ export default function AdminDashboardPage() {
                          <span className="text-slate-400 font-bold text-xs">{sellerDetail.seller.email}</span>
                        </div>
                      </div>
-                     <Link href={`/dashboard/billing/checkout?asUserId=${selectedSeller.clerkId}`} target="_blank" className="p-4 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-600/20 hover:scale-105 transition-all">
-                       <Eye size={20} />
-                     </Link>
+                     <div className="flex gap-2">
+                       <Link href={`/dashboard/billing?asUserId=${selectedSeller.clerkId}`} target="_blank" className="p-4 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all flex items-center gap-2 font-black text-[10px] uppercase tracking-widest">
+                         <Receipt size={16} /> Reports
+                       </Link>
+                       <Link href={`/dashboard/billing/checkout?asUserId=${selectedSeller.clerkId}`} target="_blank" className="p-4 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-600/20 hover:scale-105 transition-all">
+                         <Eye size={20} />
+                       </Link>
+                     </div>
                    </div>
 
                    {/* PERFORMANCE STRIP */}

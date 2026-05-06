@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { formatWhatsAppNumber } from "@/lib/whatsapp";
 import { useSearch } from "@/components/SearchContext";
@@ -130,6 +130,9 @@ export default function BillingPage() {
     orderType: "All Types", paymentModeFilter: "All Payments", statusFilter: "All Status"
   });
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const asUserId = searchParams.get("asUserId");
+
   const [dateRange, setDateRange] = useState(() => {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -149,10 +152,11 @@ export default function BillingPage() {
   async function fetchBills(silent = false) {
     try {
       if (!silent) setLoading(true);
+      const querySuffix = asUserId ? `?asUserId=${asUserId}` : "";
       const [billsRes, ordersRes, profileRes] = await Promise.all([
-        fetch("/api/bill-manager", { cache: "no-store" }),
-        fetch("/api/orders", { cache: "no-store" }),
-        fetch("/api/profile", { cache: "no-store" })
+        fetch(`/api/bill-manager${querySuffix}`, { cache: "no-store" }),
+        fetch(`/api/orders${querySuffix}`, { cache: "no-store" }),
+        fetch(`/api/profile${querySuffix}`, { cache: "no-store" })
       ]);
       
       const prof = profileRes.ok ? await profileRes.json() : business;
