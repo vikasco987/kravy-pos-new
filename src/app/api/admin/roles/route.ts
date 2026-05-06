@@ -1,22 +1,17 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { Role } from "@prisma/client";
+import { getAuthUser } from "@/lib/auth-utils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const me = await getAuthUser();
+    if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const admin = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true }
-    });
-    
-    if (!admin || admin.role !== "ADMIN") {
+    if (me.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -29,15 +24,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const me = await getAuthUser();
+    if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const admin = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true }
-    });
-    
-    if (!admin || admin.role !== "ADMIN") {
+    if (me.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
