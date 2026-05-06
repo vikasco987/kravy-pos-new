@@ -14,42 +14,43 @@ export async function GET(req: Request) {
     const skip = (page - 1) * limit;
 
     // 1. Calculate Global Stats (Very fast via DB aggregation)
-    const [totalSellers, totalBills, totalRevenue, featureStats] = await Promise.all([
+    const [totalSellers, totalBills, totalRevenue, upiCount, qrCount, kotCount, aiCount] = await Promise.all([
       prisma.user.count({ where: { role: { not: "ADMIN" } } }),
       prisma.billManager.count({ where: { isDeleted: false } }),
       prisma.billManager.aggregate({ 
         where: { isDeleted: false },
         _sum: { total: true } 
       }),
-      prisma.businessProfile.aggregate({
-        _count: {
-          upiQrEnabled: true,
-          menuLinkEnabled: true,
-          enableKOTWithBill: true,
-          aiScraperEnabled: true
-        }
-      })
+      prisma.businessProfile.count({ where: { upiQrEnabled: true } }),
+      prisma.businessProfile.count({ where: { menuLinkEnabled: true } }),
+      prisma.businessProfile.count({ where: { enableKOTWithBill: true } }),
+      prisma.businessProfile.count({ where: { aiScraperEnabled: true } }),
     ]);
 
-    // Calculate active sellers today (simplified)
+    // Calculate active sellers today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const activeToday = await prisma.billManager.groupBy({
+    const activeTodayGroups = await prisma.billManager.groupBy({
         by: ['clerkUserId'],
-        where: { createdAt: { gte: today } },
-        _count: true
+        where: { 
+            createdAt: { gte: today },
+            isDeleted: false
+        },
+        _count: {
+            clerkUserId: true
+        }
     });
 
     const stats = {
       totalSellers,
-      activeToday: activeToday.length,
+      activeToday: activeTodayGroups.length,
       totalBills,
       totalRevenue: totalRevenue._sum.total || 0,
       features: {
-        upi: featureStats._count.upiQrEnabled,
-        qrMenu: featureStats._count.menuLinkEnabled,
-        kot: featureStats._count.enableKOTWithBill,
-        ai: featureStats._count.aiScraperEnabled,
+        upi: upiCount,
+        qrMenu: qrCount,
+        kot: kotCount,
+        ai: aiCount,
       }
     };
 
