@@ -45,6 +45,7 @@ type Seller = {
 type SellerDetail = {
   seller: { name: string; email: string; createdAt: string };
   profile: any;
+  stats: {
     totalBills: number;
     totalRevenue: number;
     avgTicketSize: number;
