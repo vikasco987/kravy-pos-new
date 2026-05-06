@@ -49,22 +49,32 @@ export async function GET(req: Request) {
 
     if (!seller) return NextResponse.json({ error: "Seller not found" }, { status: 404 });
 
-    // Calculate trends based on requested days
+    // Calculate trends based on requested days (IST Aware)
     const trendData = Array.from({ length: days }).map((_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dayStart = new Date(date.setHours(0, 0, 0, 0));
-      const dayEnd = new Date(date.setHours(23, 59, 59, 999));
+      // Get IST date by adding offset
+      const now = new Date();
+      const istNow = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      
+      const targetDate = new Date(istNow);
+      targetDate.setDate(targetDate.getDate() - i);
+      
+      const dayStart = new Date(targetDate);
+      dayStart.setUTCHours(0, 0, 0, 0);
+      dayStart.setTime(dayStart.getTime() - (5.5 * 60 * 60 * 1000)); // Back to UTC for DB comparison
+      
+      const dayEnd = new Date(dayStart);
+      dayEnd.setTime(dayEnd.getTime() + (24 * 60 * 60 * 1000) - 1);
       
       const count = billsInRange.filter(b => {
           const bDate = new Date(b.createdAt);
           return bDate >= dayStart && bDate <= dayEnd;
       }).length;
 
+      const labelDate = new Date(targetDate);
       return { 
         date: days <= 14 
-          ? dayStart.toLocaleDateString('en-IN', { weekday: 'short' }) 
-          : dayStart.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), 
+          ? labelDate.toLocaleDateString('en-IN', { weekday: 'short', timeZone: 'UTC' }) 
+          : labelDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' }), 
         count 
       };
     }).reverse();
