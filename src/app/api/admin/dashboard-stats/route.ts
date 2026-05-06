@@ -79,16 +79,18 @@ export async function GET(req: Request) {
     // Enrich sellers with revenue and last bill (still doing it per seller for now, but only for 50)
     const enrichedSellers = await Promise.all(
         sellers.map(async (seller) => {
-          const lastBill = await prisma.billManager.findFirst({
-            where: { clerkUserId: seller.clerkId },
-            orderBy: { createdAt: "desc" },
-            select: { createdAt: true },
-          });
-  
-          const billStats = await prisma.billManager.aggregate({
-            where: { clerkUserId: seller.clerkId },
-            _sum: { total: true },
-          });
+          const [lastBill, billStats] = await Promise.all([
+            prisma.billManager.findFirst({
+              where: { clerkUserId: seller.clerkId, isDeleted: false },
+              orderBy: { createdAt: "desc" },
+              select: { createdAt: true },
+            }),
+            prisma.billManager.aggregate({
+              where: { clerkUserId: seller.clerkId, isDeleted: false },
+              _sum: { total: true },
+              _count: true
+            })
+          ]);
   
           const profile = seller.profiles[0];
           return {
@@ -99,7 +101,7 @@ export async function GET(req: Request) {
             createdAt: seller.createdAt,
             isDisabled: seller.isDisabled,
             businessName: profile?.businessName || "No Name",
-            billCount: seller._count.bills || 0,
+            billCount: billStats._count || 0,
             totalRevenue: billStats._sum.total || 0,
             lastBillDate: lastBill?.createdAt || null,
             features: {
