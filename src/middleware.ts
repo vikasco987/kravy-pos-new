@@ -82,8 +82,14 @@ export default clerkMiddleware(async (auth, request) => {
     return NextResponse.next();
   }
 
-  // 5. Protect all other routes via Clerk
-  await auth.protect();
+  // 5. If not authenticated and not a public route, redirect to CUSTOM auth page
+  if (!isPublicRoute(request) && !userId && !customToken && !staffToken) {
+    return NextResponse.redirect(new URL('/auth/custom', request.url));
+  }
+
+  // 6. Optional: Still run Clerk's logic for Clerk-specific routes or just let it pass
+  // if you want to keep Clerk's session handling active.
+  return NextResponse.next();
 });
 
 export const config = {
