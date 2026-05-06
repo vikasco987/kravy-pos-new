@@ -58,26 +58,31 @@ export default function CustomAuthPage() {
       } 
       else if (mode === 'verify') {
         const cleanEmail = formData.email.trim().toLowerCase();
+        console.log("[DEBUG_AUTH] Verifying OTP for:", cleanEmail, "OTP:", formData.otp);
         const res = await fetch('/api/auth/verify-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: cleanEmail, otp: formData.otp })
         });
         const data = await res.json().catch(() => ({ error: "Invalid server response" }));
+        console.log("[DEBUG_AUTH] Verification Response:", data);
         if (!res.ok) throw new Error(data.error || "Verification failed");
         toast.success("Account verified! Please login.");
         setMode('login');
       }
       else if (mode === 'login') {
         const identifier = (formData.email || formData.phone).trim().toLowerCase();
+        console.log("[DEBUG_AUTH] Attempting Login with identifier:", identifier);
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ identifier, password: formData.password })
         });
         const data = await res.json().catch(() => ({ error: "Invalid server response" }));
+        console.log("[DEBUG_AUTH] Login Response:", data);
         if (!res.ok) {
           if (data.notVerified) {
+            console.log("[DEBUG_AUTH] User not verified. Switching to verify mode with email:", data.email);
             setMode('verify');
             setFormData(prev => ({ ...prev, email: data.email || prev.email }));
             toast.info(data.error || "Not verified");
@@ -117,6 +122,25 @@ export default function CustomAuthPage() {
     } catch (error: any) {
       console.error("Auth Error:", error);
       toast.error(error.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (!formData.email) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, resend: true }) // Reuse register as it handles existing users
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to resend");
+      toast.success("New OTP sent to your email!");
+    } catch (error: any) {
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -294,6 +318,18 @@ export default function CustomAuthPage() {
                   className={`w-full ${mode === 'reset' ? 'bg-blue-500/5 border-blue-500/20 text-blue-500' : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500'} border-2 rounded-2xl py-5 px-4 text-center text-3xl font-black tracking-[0.5em] placeholder:text-white/5 focus:outline-none transition-all`}
                 />
               </div>
+              {mode === 'verify' && (
+                <div className="flex justify-center">
+                  <button 
+                    type="button" 
+                    onClick={handleResendOTP}
+                    disabled={loading}
+                    className="text-[10px] font-black text-white/30 hover:text-emerald-500 transition-colors uppercase tracking-[0.2em]"
+                  >
+                    Didn't receive code? Resend
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
