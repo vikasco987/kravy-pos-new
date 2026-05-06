@@ -12,11 +12,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email and OTP are required" }, { status: 400 });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
+    const identifier = email.trim().toLowerCase();
 
     // 🔍 1. Find user and check OTP
-    const user = await prisma.user.findUnique({
-      where: { email: cleanEmail }
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { phone: identifier },
+          // Try to match if the user provided 10 digits but DB has +91
+          { phone: { endsWith: identifier.length >= 10 ? identifier.slice(-10) : identifier } }
+        ]
+      }
     });
 
     if (!user) {
