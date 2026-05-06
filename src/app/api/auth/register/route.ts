@@ -17,38 +17,61 @@ export async function POST(req: NextRequest) {
     const cleanPhone = phone.replace(/\D/g, '');
 
     // 🛑 1. Check if user already exists
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: cleanEmail },
-          { phone: cleanPhone }
-        ]
-      }
-    });
+    const existingByEmail = await prisma.user.findUnique({ where: { email: cleanEmail } });
+    const existingByPhone = await prisma.user.findFirst({ where: { phone: cleanPhone } });
 
-    if (existingUser) {
-      // 🚀 Whether verified or not, let them trigger a password reset flow via OTP
+    if (existingByEmail || existingByPhone) {
+      // Case A: Exactly the same user (Email and Phone both match or one matches and the other is empty/same)
+      const isSameUser = existingByEmail && existingByPhone && existingByEmail.id === existingByPhone.id;
+      const onlyEmailMatches = existingByEmail && !existingByPhone;
+      const onlyPhoneMatches = !existingByEmail && existingByPhone;
+
+      // If it's a conflict (Phone belongs to X, but you're trying to use Email Y)
+      if (existingByEmail && existingByPhone && existingByEmail.id !== existingByPhone.id) {
+        return NextResponse.json({ 
+          error: "Conflict: This email and phone number belong to two different accounts." 
+        }, { status: 400 });
+      }
+
+      // If phone is already taken by someone else
+      if (onlyPhoneMatches && existingByPhone.email !== cleanEmail) {
+         return NextResponse.json({ 
+          error: `The phone number ${cleanPhone} is already linked to another account.` 
+        }, { status: 400 });
+      }
+
+      // If email is already taken but with a different phone
+      if (onlyEmailMatches && existingByEmail.phone && existingByEmail.phone !== cleanPhone) {
+         return NextResponse.json({ 
+          error: `The email ${cleanEmail} is already linked to another account with a different phone number.` 
+        }, { status: 400 });
+      }
+
+      // Otherwise, it's a safe "Retry" flow for the SAME user
+      const userToUpdate = existingByEmail || existingByPhone;
+      if (!userToUpdate) return; // Should not happen
+
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
       const otpExpiry = new Date(Date.now() + 10 * 60000);
       const hashedPassword = await bcrypt.hash(password, 10);
 
       await prisma.user.update({
-        where: { id: existingUser.id },
-        data: { otpCode, otpExpiry, password: hashedPassword }
+        where: { id: userToUpdate.id },
+        data: { otpCode, otpExpiry, password: hashedPassword, name } // Also update name if they changed it
       });
 
       await resend.emails.send({
         from: 'Kravy POS <auth@kravy.in>',
         to: cleanEmail,
-        subject: 'Verify Password Change - Kravy POS',
-        html: getOTPEmailTemplate(existingUser.name, otpCode, 'Account Update', { phone: existingUser.phone || undefined, email: existingUser.email })
+        subject: 'Verify your Kravy POS Account',
+        html: getOTPEmailTemplate(name, otpCode, 'Verification', { phone: cleanPhone, email: cleanEmail })
       });
 
       return NextResponse.json({ 
-        error: "User exists. Please verify OTP to update your password/account.",
+        message: "Account found. A new OTP has been sent to your email for verification.",
         needsVerification: true,
         email: cleanEmail 
-      }, { status: 400 });
+      }, { status: 200 });
     }
 
     // 🔐 2. Hash Password
