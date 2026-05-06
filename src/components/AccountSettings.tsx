@@ -226,15 +226,49 @@ export default function AccountSettings() {
                           {user.name?.[0].toUpperCase() || "U"}
                         </div>
                       )}
-                      <button 
-                        onClick={() => {
-                          const url = prompt("Enter Image URL for profile photo:", formData.imageUrl);
-                          if (url !== null) handleUpdateProfile({ imageUrl: url });
+                      
+                      {/* Hidden File Input */}
+                      <input 
+                        type="file" 
+                        id="avatar-upload" 
+                        accept="image/*"
+                        className="hidden" 
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          setSaving(true);
+                          const loadingToast = toast.loading("Uploading image...");
+                          try {
+                            const uploadData = new FormData();
+                            uploadData.append('file', file);
+                            
+                            const res = await fetch('/api/upload', {
+                              method: 'POST',
+                              body: uploadData
+                            });
+                            
+                            const data = await res.json();
+                            if (res.ok && data.secure_url) {
+                              handleUpdateProfile({ imageUrl: data.secure_url });
+                              toast.success("Image uploaded!", { id: loadingToast });
+                            } else {
+                              throw new Error(data.error || "Upload failed");
+                            }
+                          } catch (err: any) {
+                            toast.error(err.message, { id: loadingToast });
+                          } finally {
+                            setSaving(false);
+                          }
                         }}
-                        className="absolute -bottom-2 -right-2 w-12 h-12 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border-2 border-slate-50 dark:border-white/10 flex items-center justify-center text-emerald-500 hover:scale-110 active:scale-95 transition-all"
+                      />
+
+                      <label 
+                        htmlFor="avatar-upload"
+                        className="absolute -bottom-2 -right-2 w-12 h-12 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border-2 border-slate-50 dark:border-white/10 flex items-center justify-center text-emerald-500 hover:scale-110 active:scale-95 transition-all cursor-pointer"
                       >
                         <Camera size={20} />
-                      </button>
+                      </label>
                     </div>
 
                     <div className="flex-1 space-y-6">
