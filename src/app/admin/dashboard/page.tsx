@@ -45,11 +45,10 @@ type Seller = {
 type SellerDetail = {
   seller: { name: string; email: string; createdAt: string };
   profile: any;
-  stats: {
     totalBills: number;
     totalRevenue: number;
     avgTicketSize: number;
-    last7Days: { date: string; count: number }[];
+    trends: { date: string; count: number }[];
     paymentDistribution: { name: string; value: number }[];
     recentBills: { id: string; total: number; paymentMode: string; createdAt: string }[];
   };
@@ -68,6 +67,7 @@ export default function AdminDashboardPage() {
   const [newSlug, setNewSlug] = useState("");
   const [updating, setUpdating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [timeRange, setTimeRange] = useState<7 | 30 | 90>(7);
 
   useEffect(() => {
     fetchStats();
@@ -87,12 +87,12 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const fetchSellerDetail = async (seller: Seller) => {
+  const fetchSellerDetail = async (seller: Seller, days: number = timeRange) => {
     setSelectedSeller(seller);
     setNewSlug(seller.features.slug || "");
     setLoadingDetail(true);
     try {
-      const res = await fetch(`/api/admin/seller-detail?sellerId=${seller.clerkId}`);
+      const res = await fetch(`/api/admin/seller-detail?sellerId=${seller.clerkId}&days=${days}`);
       if (!res.ok) throw new Error();
       const result = await res.json();
       setSellerDetail(result);
@@ -100,6 +100,13 @@ export default function AdminDashboardPage() {
       toast.error("Could not fetch seller insights");
     } finally {
       setLoadingDetail(false);
+    }
+  };
+
+  const handleTimeRangeChange = (days: 7 | 30 | 90) => {
+    setTimeRange(days);
+    if (selectedSeller) {
+      fetchSellerDetail(selectedSeller, days);
     }
   };
 
@@ -324,12 +331,25 @@ export default function AdminDashboardPage() {
                    {/* CHART SECTION */}
                    <div className="space-y-6">
                       <div className="flex items-center justify-between">
-                         <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Activity Trend (7 Days)</h3>
-                         <BarChart3 size={16} className="text-slate-400" />
+                         <div className="space-y-1">
+                           <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Activity Trend</h3>
+                           <p className="text-[10px] font-bold text-slate-400">Transactions over selected period</p>
+                         </div>
+                         <div className="flex p-1 bg-slate-100 rounded-xl">
+                            {[7, 30, 90].map((d) => (
+                               <button 
+                                 key={d} 
+                                 onClick={() => handleTimeRangeChange(d as any)}
+                                 className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${timeRange === d ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                               >
+                                 {d}D
+                               </button>
+                            ))}
+                         </div>
                       </div>
                       <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={sellerDetail.stats.last7Days}>
+                          <AreaChart data={sellerDetail.stats.trends}>
                             <defs>
                               <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
