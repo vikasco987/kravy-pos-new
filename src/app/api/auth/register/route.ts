@@ -13,12 +13,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.replace(/\D/g, '');
+
     // 🛑 1. Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
-          { email },
-          { phone }
+          { email: cleanEmail },
+          { phone: cleanPhone }
         ]
       }
     });
@@ -36,7 +39,7 @@ export async function POST(req: NextRequest) {
 
       await resend.emails.send({
         from: 'Kravy POS <auth@kravy.in>',
-        to: email,
+        to: cleanEmail,
         subject: 'Verify Password Change - Kravy POS',
         html: getOTPEmailTemplate(existingUser.name, otpCode, 'Account Update', { phone: existingUser.phone || undefined, email: existingUser.email })
       });
@@ -44,7 +47,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ 
         error: "User exists. Please verify OTP to update your password/account.",
         needsVerification: true,
-        email 
+        email: cleanEmail 
       }, { status: 400 });
     }
 
@@ -59,12 +62,10 @@ export async function POST(req: NextRequest) {
     // For custom users, we use a prefixed clerkId to maintain schema relations
     const customClerkId = `custom_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-    const cleanPhone = phone.replace(/\D/g, ''); // Remove non-numeric chars
-    
     const user = await prisma.user.create({
       data: {
         name,
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         phone: cleanPhone,
         password: hashedPassword,
         clerkId: customClerkId,
@@ -79,9 +80,9 @@ export async function POST(req: NextRequest) {
     try {
       await resend.emails.send({
         from: 'Kravy POS <auth@kravy.in>', 
-        to: email,
+        to: cleanEmail,
         subject: 'Verify your Kravy POS Account',
-        html: getOTPEmailTemplate(name, otp, 'Verification', { phone, email })
+        html: getOTPEmailTemplate(name, otp, 'Verification', { phone: cleanPhone, email: cleanEmail })
       });
     } catch (emailErr) {
       console.error("EMAIL_SEND_ERROR:", emailErr);
