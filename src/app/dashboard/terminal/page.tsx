@@ -721,7 +721,8 @@ function KravyPOS() {
                 customerPhone: order.customerPhone || null,
                 customerAddress: order.customerAddress || null,
                 tableName: order.table?.name || "Counter",
-                tokenNumber: order.tokenNumber
+                tokenNumber: order.tokenNumber,
+                kotNumbers: order.kotNumbers || []
             };
             const res = await fetch("/api/bill-manager", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(billData) });
             const data = await res.json();

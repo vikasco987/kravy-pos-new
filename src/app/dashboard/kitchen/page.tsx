@@ -65,6 +65,8 @@ type Order = {
         dontSendCutlery?: boolean;
     };
     isDeleted?: boolean;
+    tokenNumber?: number;
+    kotNumbers?: number[];
 };
 
 type TableStatus = {
@@ -743,7 +745,9 @@ function KravyPOS() {
                 paymentMode: payMethod.toUpperCase(),
                 paymentStatus: "Paid",
                 customerName: order.customerName || "Walk-in",
-                tableName: order.table?.name || "Counter"
+                tableName: order.table?.name || "Counter",
+                tokenNumber: order.tokenNumber,
+                kotNumbers: order.kotNumbers || []
             };
             const res = await fetch("/api/bill-manager", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(billData) });
             if (!res.ok) throw new Error("fail");
