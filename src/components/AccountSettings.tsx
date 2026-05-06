@@ -123,6 +123,24 @@ export default function AccountSettings() {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0a0a0a]">
+        <div className="text-center space-y-4">
+           <X className="w-12 h-12 text-rose-500 mx-auto" />
+           <h2 className="text-xl font-black text-slate-900 dark:text-white">Account Not Found</h2>
+           <p className="text-slate-400">We couldn't load your account details. Please try logging in again.</p>
+           <button 
+             onClick={() => router.push('/')}
+             className="px-8 py-3 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl font-bold uppercase text-[10px] tracking-widest"
+           >
+             Go to Login
+           </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-6 md:p-12 space-y-12 min-h-screen">
       {/* Header */}
