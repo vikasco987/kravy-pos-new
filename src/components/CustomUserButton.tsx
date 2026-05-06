@@ -11,6 +11,7 @@ interface CustomUserButtonProps {
     name?: string;
     email?: string;
     role?: string;
+    imageUrl?: string | null;
   };
 }
 
@@ -42,9 +43,17 @@ export default function CustomUserButton({ user }: CustomUserButtonProps) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all group"
       >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-xs font-black shadow-lg">
-          {user.name?.[0].toUpperCase() || "U"}
-        </div>
+        {user.imageUrl ? (
+          <img 
+            src={user.imageUrl} 
+            alt={user.name || "User"} 
+            className="w-8 h-8 rounded-lg object-cover shadow-lg"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-xs font-black shadow-lg">
+            {user.name?.[0].toUpperCase() || "U"}
+          </div>
+        )}
         <div className="hidden lg:block text-left">
            <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-wider truncate max-w-[100px]">
              {user.name || "User"}
@@ -68,9 +77,17 @@ export default function CustomUserButton({ user }: CustomUserButtonProps) {
             {/* User Info Header */}
             <div className="p-6 bg-slate-50/50 dark:bg-white/5 border-bottom border-slate-200 dark:border-white/10">
                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-lg font-black shadow-xl">
-                    {user.name?.[0].toUpperCase() || "U"}
-                  </div>
+                   {user.imageUrl ? (
+                      <img 
+                        src={user.imageUrl} 
+                        alt={user.name || "User"} 
+                        className="w-12 h-12 rounded-2xl object-cover shadow-xl"
+                      />
+                   ) : (
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-lg font-black shadow-xl">
+                        {user.name?.[0].toUpperCase() || "U"}
+                      </div>
+                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-slate-900 dark:text-white truncate">{user.name}</p>
                     <p className="text-[10px] font-medium text-slate-400 truncate">{user.email}</p>

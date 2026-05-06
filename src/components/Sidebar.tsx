@@ -842,13 +842,14 @@ export default function Sidebar() {
           whileHover={{ scale: 1.05, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
         >
-          {user?.imageUrl ? (
+          {(authUser?.imageUrl || user?.imageUrl) ? (
             <motion.img
-              src={user.imageUrl}
+              src={authUser?.imageUrl || user?.imageUrl}
               style={{
                 width: "38px", height: "38px", borderRadius: "50%",
                 border: "2px solid #FF6B35", flexShrink: 0,
                 boxShadow: "0 4px 16px rgba(255,107,53,0.3)",
+                objectFit: "cover"
               }}
               alt="User Avatar"
               whileHover={{ boxShadow: "0 6px 24px rgba(255,107,53,0.5)" }}
@@ -859,12 +860,12 @@ export default function Sidebar() {
               style={{
                 width: "38px", height: "38px", borderRadius: "50%",
                 background: "linear-gradient(135deg, #FF6B35, #F59E0B)",
-                display: "flex", alignItems: "center", justifyContent: "center",
+                display: "flex", alignItems: "center", justifyCenter: "center",
                 fontSize: "0.9rem", fontWeight: 800, color: "#fff",
                 flexShrink: 0, boxShadow: "0 4px 16px rgba(255,107,53,0.3)",
               }}
             >
-              {user?.firstName?.[0] || 'U'}
+              {(authUser?.name?.[0] || user?.firstName?.[0] || 'U').toUpperCase()}
             </motion.div>
           )}
         </motion.div>
