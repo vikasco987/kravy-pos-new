@@ -140,6 +140,7 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
         <TerminalContext.Provider value={{ 
             tablesList, 
             orders, 
+            ordersByTableId,
             business, 
             isLoading, 
             lastUpdated, 

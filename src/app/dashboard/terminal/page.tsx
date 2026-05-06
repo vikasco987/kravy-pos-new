@@ -737,7 +737,7 @@ function KravyPOS() {
                 toast.success("Transaction Finalized! 💰");
                 setSelectedTableId(null);
             }
-            fetchData();
+            fetchData(false, true); // ✅ Force refresh
             
             // Important: return the bill so the caller (like BillPreview) can use the real billNumber
             if (savedBill) {
@@ -1775,7 +1775,7 @@ function KravyPOS() {
             if (res.ok) {
                 toast.success(`Added ${menuItem.name} to order`);
                 console.log("[SUCCESS] Item added. Refreshing data...");
-                fetchData(); // Refresh orders
+                fetchData(false, true); // ✅ Force refresh
                 setShowAddItemModal(false);
                 setItemSearch("");
             } else {
