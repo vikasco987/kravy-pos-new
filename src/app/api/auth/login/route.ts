@@ -22,6 +22,8 @@ export async function POST(req: NextRequest) {
         OR: [
           { email: cleanIdentifier },
           { phone: cleanIdentifier },
+          { secondaryEmails: { has: cleanIdentifier } },
+          { secondaryPhones: { has: cleanIdentifier } },
           // Try to match if the user provided 10 digits but DB has +91
           { phone: { endsWith: cleanIdentifier.length >= 10 ? cleanIdentifier.slice(-10) : cleanIdentifier } }
         ],

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, Mail, Phone, Shield, Key, ChevronRight, 
   Camera, Check, X, RefreshCw, LogOut, ArrowLeft,
-  Bell, Globe, Moon, Smartphone
+  Bell, Plus, Trash2, Globe, ShieldCheck
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
@@ -22,7 +22,14 @@ export default function AccountSettings() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    imageUrl: '',
+    secondaryEmails: [] as string[],
+    secondaryPhones: [] as string[],
   });
+
+  // UI state for adding new entries
+  const [newEmail, setNewEmail] = useState('');
+  const [newPhone, setNewPhone] = useState('');
 
   useEffect(() => {
     fetchUserData();
@@ -34,7 +41,13 @@ export default function AccountSettings() {
       if (res.ok) {
         const data = await res.json();
         setUser(data);
-        setFormData({ name: data.name || '', phone: data.phone || '' });
+        setFormData({ 
+          name: data.name || '', 
+          phone: data.phone || '',
+          imageUrl: data.imageUrl || '',
+          secondaryEmails: data.secondaryEmails || [],
+          secondaryPhones: data.secondaryPhones || [],
+        });
       }
     } catch (err) {
       toast.error("Failed to load account details");
@@ -43,19 +56,20 @@ export default function AccountSettings() {
     }
   };
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdateProfile = async (updates: Partial<typeof formData>) => {
     setSaving(true);
     try {
+      const payload = { ...formData, ...updates };
       const res = await fetch('/api/user/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success("Profile updated successfully");
+        toast.success("Account updated successfully");
         setUser({ ...user, ...data.user });
+        setFormData(prev => ({ ...prev, ...data.user }));
         setEditMode(false);
       } else {
         throw new Error(data.error || "Update failed");
@@ -67,12 +81,43 @@ export default function AccountSettings() {
     }
   };
 
+  const addSecondaryEmail = () => {
+    if (!newEmail.includes('@')) return toast.error("Invalid email");
+    if (formData.secondaryEmails.includes(newEmail) || user.email === newEmail) {
+      return toast.error("Email already added");
+    }
+    const updated = [...formData.secondaryEmails, newEmail];
+    handleUpdateProfile({ secondaryEmails: updated });
+    setNewEmail('');
+  };
+
+  const removeSecondaryEmail = (email: string) => {
+    const updated = formData.secondaryEmails.filter(e => e !== email);
+    handleUpdateProfile({ secondaryEmails: updated });
+  };
+
+  const addSecondaryPhone = () => {
+    const clean = newPhone.replace(/\D/g, '');
+    if (clean.length < 10) return toast.error("Invalid phone");
+    if (formData.secondaryPhones.includes(clean) || user.phone === clean) {
+      return toast.error("Phone already added");
+    }
+    const updated = [...formData.secondaryPhones, clean];
+    handleUpdateProfile({ secondaryPhones: updated });
+    setNewPhone('');
+  };
+
+  const removeSecondaryPhone = (phone: string) => {
+    const updated = formData.secondaryPhones.filter(p => p !== phone);
+    handleUpdateProfile({ secondaryPhones: updated });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0a0a0a]">
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Loading your account...</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Syncing account...</p>
         </div>
       </div>
     );
@@ -84,10 +129,10 @@ export default function AccountSettings() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-2">
-            <Shield size={12} /> Account Management
+            <ShieldCheck size={12} /> Kravy Secure Profile
           </div>
           <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">Manage your profile</h1>
-          <p className="text-slate-400 font-medium mt-1">Control your personal information and security settings.</p>
+          <p className="text-slate-400 font-medium mt-1">Control your identity and login identifiers.</p>
         </div>
         
         <button 
@@ -123,7 +168,10 @@ export default function AccountSettings() {
 
           <div className="pt-8 border-t border-slate-200 dark:border-white/10 mt-8">
              <button
-              onClick={() => { /* Handle Logout */ }}
+              onClick={() => {
+                document.cookie = "kravy_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                window.location.href = "/";
+              }}
               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500/5 transition-all"
             >
               <LogOut size={18} />
@@ -149,19 +197,33 @@ export default function AccountSettings() {
                   
                   <div className="flex flex-col md:flex-row gap-10 items-start">
                     <div className="relative group/avatar">
-                      <div className="w-32 h-32 rounded-[2rem] bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-4xl font-black shadow-xl ring-8 ring-emerald-500/10">
-                        {user.name?.[0].toUpperCase() || "U"}
-                      </div>
-                      <button className="absolute -bottom-2 -right-2 w-10 h-10 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-400 hover:text-emerald-500 transition-all opacity-0 group-hover/avatar:opacity-100">
-                        <Camera size={18} />
+                      {formData.imageUrl ? (
+                        <img 
+                          src={formData.imageUrl} 
+                          alt="Profile" 
+                          className="w-32 h-32 rounded-[2rem] object-cover shadow-xl ring-8 ring-emerald-500/10 transition-transform hover:scale-105" 
+                        />
+                      ) : (
+                        <div className="w-32 h-32 rounded-[2rem] bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-4xl font-black shadow-xl ring-8 ring-emerald-500/10">
+                          {user.name?.[0].toUpperCase() || "U"}
+                        </div>
+                      )}
+                      <button 
+                        onClick={() => {
+                          const url = prompt("Enter Image URL for profile photo:", formData.imageUrl);
+                          if (url !== null) handleUpdateProfile({ imageUrl: url });
+                        }}
+                        className="absolute -bottom-2 -right-2 w-12 h-12 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border-2 border-slate-50 dark:border-white/10 flex items-center justify-center text-emerald-500 hover:scale-110 active:scale-95 transition-all"
+                      >
+                        <Camera size={20} />
                       </button>
                     </div>
 
                     <div className="flex-1 space-y-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Profile Details</h2>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Update your name and phone number</p>
+                          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Profile details</h2>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Update your primary information</p>
                         </div>
                         <button 
                           onClick={() => setEditMode(!editMode)}
@@ -171,11 +233,11 @@ export default function AccountSettings() {
                             : "bg-emerald-500/10 text-emerald-500"
                           }`}
                         >
-                          {editMode ? "Cancel Edit" : "Edit Profile"}
+                          {editMode ? "Cancel" : "Edit Profile"}
                         </button>
                       </div>
 
-                      <form onSubmit={handleUpdateProfile} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <form onSubmit={(e) => { e.preventDefault(); handleUpdateProfile({}); }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                             <User size={12} /> Full Name
@@ -190,7 +252,7 @@ export default function AccountSettings() {
 
                         <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                            <Phone size={12} /> Phone Number
+                            <Phone size={12} /> Primary Phone
                           </label>
                           <input 
                             disabled={!editMode}
@@ -208,10 +270,11 @@ export default function AccountSettings() {
                           >
                             <button 
                               disabled={saving}
+                              type="submit"
                               className="h-14 px-10 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
                             >
                               {saving ? <RefreshCw className="animate-spin" size={16} /> : <Check size={16} />}
-                              Save Changes
+                              Save Profile Changes
                             </button>
                           </motion.div>
                         )}
@@ -220,19 +283,125 @@ export default function AccountSettings() {
                   </div>
                 </div>
 
-                {/* Email Display Card */}
-                <div className="bg-slate-100 dark:bg-white/5 rounded-[2rem] p-10 flex items-center justify-between group">
-                  <div className="flex items-center gap-6">
-                    <div className="w-14 h-14 rounded-2xl bg-white dark:bg-black/20 flex items-center justify-center text-slate-400">
-                      <Mail size={24} />
+                {/* Email Section */}
+                <div className="bg-white dark:bg-white/5 rounded-[2.5rem] border border-slate-200 dark:border-white/10 p-10 space-y-6">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">Email addresses</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Add multiple emails for account recovery and login</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Primary */}
+                    <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-black/20 rounded-2xl border border-slate-100 dark:border-white/5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-white/5 flex items-center justify-center text-slate-400">
+                           <Mail size={18} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white">{user.email}</p>
+                          <p className="text-[8px] font-black uppercase tracking-widest text-emerald-500">Verified · Primary</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Email Address (Primary)</p>
-                      <h4 className="text-lg font-bold text-slate-900 dark:text-white">{user.email}</h4>
+
+                    {/* Secondary Emails */}
+                    {formData.secondaryEmails.map(email => (
+                      <div key={email} className="flex items-center justify-between p-6 bg-white dark:bg-white/2 rounded-2xl border border-slate-100 dark:border-white/5 group/item">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                             <Mail size={18} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 dark:text-white">{email}</p>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Secondary Identifier</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => removeSecondaryEmail(email)}
+                          className="w-10 h-10 rounded-xl hover:bg-rose-500/10 text-slate-300 hover:text-rose-500 transition-all flex items-center justify-center"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Add Email */}
+                    <div className="flex gap-4 p-2 bg-slate-50 dark:bg-black/20 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
+                      <input 
+                        placeholder="Add email address..."
+                        value={newEmail}
+                        onChange={(e) => setNewEmail(e.target.value)}
+                        className="flex-1 bg-transparent px-4 text-sm font-bold text-slate-900 dark:text-white focus:outline-none"
+                      />
+                      <button 
+                        onClick={addSecondaryEmail}
+                        disabled={saving || !newEmail}
+                        className="h-12 px-6 bg-slate-900 dark:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 transition-all flex items-center gap-2"
+                      >
+                        <Plus size={14} /> Add Email
+                      </button>
                     </div>
                   </div>
-                  <div className="px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
-                    Verified
+                </div>
+
+                {/* Phone Section */}
+                <div className="bg-white dark:bg-white/5 rounded-[2.5rem] border border-slate-200 dark:border-white/10 p-10 space-y-6">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">Phone numbers</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Login via any of your linked phone numbers</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Primary */}
+                    <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-black/20 rounded-2xl border border-slate-100 dark:border-white/5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-white/5 flex items-center justify-center text-slate-400">
+                           <Phone size={18} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white">{user.phone}</p>
+                          <p className="text-[8px] font-black uppercase tracking-widest text-emerald-500">Primary Identifier</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Secondary Phones */}
+                    {formData.secondaryPhones.map(phone => (
+                      <div key={phone} className="flex items-center justify-between p-6 bg-white dark:bg-white/2 rounded-2xl border border-slate-100 dark:border-white/5 group/item">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                             <Phone size={18} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 dark:text-white">{phone}</p>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Secondary Identifier</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => removeSecondaryPhone(phone)}
+                          className="w-10 h-10 rounded-xl hover:bg-rose-500/10 text-slate-300 hover:text-rose-500 transition-all flex items-center justify-center"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Add Phone */}
+                    <div className="flex gap-4 p-2 bg-slate-50 dark:bg-black/20 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
+                      <input 
+                        placeholder="Add phone number..."
+                        value={newPhone}
+                        onChange={(e) => setNewPhone(e.target.value)}
+                        className="flex-1 bg-transparent px-4 text-sm font-bold text-slate-900 dark:text-white focus:outline-none"
+                      />
+                      <button 
+                        onClick={addSecondaryPhone}
+                        disabled={saving || !newPhone}
+                        className="h-12 px-6 bg-slate-900 dark:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 transition-all flex items-center gap-2"
+                      >
+                        <Plus size={14} /> Add Phone
+                      </button>
+                    </div>
                   </div>
                 </div>
               </motion.div>

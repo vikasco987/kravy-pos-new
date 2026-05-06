@@ -206,6 +206,10 @@ model User {
   otpCode   String?        // ✅ 6-digit OTP
   otpExpiry DateTime?      // ✅ OTP Expiry Time
   role    Role   @default(SELLER)
+  imageUrl String?         // ✅ Profile Photo
+
+  secondaryEmails String[] @default([]) // ✅ Additional emails for login
+  secondaryPhones String[] @default([]) // ✅ Additional phones for login
 
   items    Item[]
   bills    BillManager[]

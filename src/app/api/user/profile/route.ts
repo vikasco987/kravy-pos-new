@@ -16,6 +16,9 @@ export async function GET() {
         name: true,
         email: true,
         phone: true,
+        imageUrl: true,
+        secondaryEmails: true,
+        secondaryPhones: true,
         role: true,
         isVerified: true,
         createdAt: true,
@@ -41,16 +44,38 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, phone } = body;
+    const { name, phone, imageUrl, secondaryEmails, secondaryPhones } = body;
 
-    // Email update is usually restricted or requires verification, 
-    // so we only allow name and phone for now.
+    // Check uniqueness for any NEW identifiers
+    if (secondaryEmails || secondaryPhones) {
+       const allNew = [...(secondaryEmails || []), ...(secondaryPhones || [])];
+       for (const ident of allNew) {
+          const cleanIdent = ident.trim().toLowerCase();
+          const existing = await prisma.user.findFirst({
+            where: {
+               OR: [
+                 { email: cleanIdent },
+                 { phone: cleanIdent },
+                 { secondaryEmails: { has: cleanIdent } },
+                 { secondaryPhones: { has: cleanIdent } }
+               ],
+               NOT: { id: authUser.id }
+            }
+          });
+          if (existing) {
+            return NextResponse.json({ error: `The identifier "${ident}" is already in use by another account.` }, { status: 400 });
+          }
+       }
+    }
     
     const updatedUser = await prisma.user.update({
       where: { id: authUser.id },
       data: {
         name: name !== undefined ? name : undefined,
+        imageUrl: imageUrl !== undefined ? imageUrl : undefined,
         phone: phone !== undefined ? phone.replace(/\D/g, '') : undefined,
+        secondaryEmails: secondaryEmails !== undefined ? secondaryEmails : undefined,
+        secondaryPhones: secondaryPhones !== undefined ? secondaryPhones.map((p: string) => p.replace(/\D/g, '')) : undefined,
       }
     });
 
@@ -60,7 +85,10 @@ export async function PATCH(req: NextRequest) {
         id: updatedUser.id,
         name: updatedUser.name,
         email: updatedUser.email,
-        phone: updatedUser.phone
+        phone: updatedUser.phone,
+        imageUrl: updatedUser.imageUrl,
+        secondaryEmails: updatedUser.secondaryEmails,
+        secondaryPhones: updatedUser.secondaryPhones
       }
     });
   } catch (error: any) {
