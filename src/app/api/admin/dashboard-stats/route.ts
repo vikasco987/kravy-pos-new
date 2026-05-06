@@ -1,21 +1,16 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getAuthUser } from "@/lib/auth-utils";
 
 export async function GET(req: Request) {
   try {
-    const { userId } = await auth();
+    const me = await getAuthUser();
 
-    if (!userId) {
+    if (!me) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const me = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true },
-    });
-
-    if (!me || me.role !== "ADMIN") {
+    if (me.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
