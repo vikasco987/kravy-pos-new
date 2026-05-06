@@ -96,8 +96,21 @@ export async function POST(req: NextRequest) {
       userId: user.id 
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("REGISTER_ERROR:", error);
-    return NextResponse.json({ error: "Failed to register" }, { status: 500 });
+    
+    // Handle Prisma unique constraint errors
+    if (error.code === 'P2002') {
+      const target = error.meta?.target || '';
+      if (target.includes('email')) {
+        return NextResponse.json({ error: "An account with this email already exists." }, { status: 400 });
+      }
+      if (target.includes('phone')) {
+        return NextResponse.json({ error: "An account with this phone number already exists." }, { status: 400 });
+      }
+      return NextResponse.json({ error: "Email or Phone already registered. Please login or reset password." }, { status: 400 });
+    }
+
+    return NextResponse.json({ error: "Failed to register: " + (error.message || "Unknown error") }, { status: 500 });
   }
 }

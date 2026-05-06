@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: `No account found for "${identifier}". Please signup first.` }, { status: 404 });
     }
 
     if (user.isVerified) {
