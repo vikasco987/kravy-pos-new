@@ -1,33 +1,30 @@
 import { NextResponse } from "next/server";
-import { clerkClient, auth } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getAuthUser } from "@/lib/auth-utils";
 
 /* =========================
    GET → LIST USERS
 ========================= */
 export async function GET(req: Request) {
   try {
-    const { userId } = await auth();
+    const me = await getAuthUser();
 
-    if (!userId) {
+    if (!me) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const me = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true },
-    });
-
-    if (!me || me.role !== "ADMIN") {
+    if (me.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Forbidden" },
         { status: 403 }
       );
     }
 
+    // 1. Fetch from User model
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -41,7 +38,38 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(users, { status: 200 });
+    // 2. Fetch from Staff model
+    const staff = await prisma.staff.findMany({
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            accessType: true,
+            status: true,
+            createdAt: true,
+            businessId: true,
+        }
+    });
+
+    // Map Staff to match User structure for UI
+    const mappedStaff = staff.map(s => ({
+        id: s.id,
+        clerkId: `staff_${s.id}`, // Pseudo clerkId for UI keys
+        name: s.name,
+        email: s.email,
+        role: "USER" as const, // Treat as USER role in the main list
+        isDisabled: s.status !== "active",
+        createdAt: s.createdAt,
+        isStaffModel: true, // Tag for potential specific actions
+        businessId: s.businessId
+    }));
+
+    // Combine both
+    const allUsers = [...users, ...mappedStaff].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    return NextResponse.json(allUsers, { status: 200 });
   } catch (error) {
     console.error("ADMIN GET USERS ERROR:", error);
     return NextResponse.json(
@@ -56,18 +84,13 @@ export async function GET(req: Request) {
 ========================= */
 export async function POST(req: Request) {
   try {
-    const { userId } = await auth();
+    const admin = await getAuthUser();
 
-    if (!userId) {
+    if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const admin = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true },
-    });
-
-    if (!admin || admin.role !== "ADMIN") {
+    if (admin.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

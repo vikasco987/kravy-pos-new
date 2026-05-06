@@ -1,24 +1,20 @@
 import { NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getAuthUser } from "@/lib/auth-utils";
 
 export async function PUT(req: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const me = await getAuthUser();
+    if (!me) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const me = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { role: true },
-    });
-
-    if (!me || me.role !== "ADMIN") {
+    if (me.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { targetUserId, role } = await req.json();
+    const { targetUserId, role, isStaffModel } = await req.json();
 
     if (!["USER", "SELLER", "ADMIN"].includes(role)) {
       return NextResponse.json(
@@ -27,19 +23,32 @@ export async function PUT(req: Request) {
       );
     }
 
-    // Update DB
+    // 1. If it's a Staff Model entry
+    if (isStaffModel) {
+        const updatedStaff = await prisma.staff.update({
+            where: { id: targetUserId },
+            data: { 
+                accessType: role === "ADMIN" ? "Full Access" : (role === "SELLER" ? "Manager Access" : "Sales Access")
+            }
+        });
+        return NextResponse.json(updatedStaff);
+    }
+
+    // 2. If it's a User Model entry
     const updated = await prisma.user.update({
       where: { id: targetUserId },
       data: { role },
     });
 
-    // ✅ ALSO UPDATE CLERK (IMPORTANT: Sync issue fix)
-    const client = await clerkClient();
-    await client.users.updateUser(updated.clerkId, {
-      publicMetadata: {
-        role,
-      },
-    });
+    // ✅ ALSO UPDATE CLERK (ONLY IF IT'S A CLERK USER)
+    if (updated.clerkId && !updated.clerkId.startsWith("custom_")) {
+      const client = await clerkClient();
+      await client.users.updateUser(updated.clerkId, {
+        publicMetadata: {
+          role,
+        },
+      });
+    }
 
     return NextResponse.json(updated);
   } catch (err) {

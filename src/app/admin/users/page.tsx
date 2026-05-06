@@ -20,6 +20,7 @@ type User = {
   isDisabled: boolean;
   clerkId: string;
   createdAt: string;
+  isStaffModel?: boolean;
 };
 
 const roleStyles: Record<Role, { bg: string; text: string; icon: any }> = {
@@ -120,10 +121,15 @@ export default function AdminUsersPage() {
   const changeRole = async (userId: string, role: Role) => {
     setActionUserId(userId);
     try {
+      const target = users.find(u => u.id === userId);
       const res = await fetch("/api/admin/users/role", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUserId: userId, role }),
+        body: JSON.stringify({ 
+          targetUserId: userId, 
+          role, 
+          isStaffModel: target?.isStaffModel 
+        }),
       });
       if (res.ok) {
         toast.success("User role updated");
@@ -147,6 +153,7 @@ export default function AdminUsersPage() {
         body: JSON.stringify({
           targetUserId: user.id,
           disable: !user.isDisabled,
+          isStaffModel: user.isStaffModel
         }),
       });
       if (res.ok) {

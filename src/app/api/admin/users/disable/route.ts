@@ -2,15 +2,16 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { getAuthUser } from "@/lib/auth-utils";
 
 export async function POST(req: Request) {
   try {
-    // 1️⃣ Auth check (App Router)
-    const { userId } = await auth();
+    // 1️⃣ Auth check
+    const me = await getAuthUser();
 
-    if (!userId) {
+    if (!me) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -18,12 +19,7 @@ export async function POST(req: Request) {
     }
 
     // 2️⃣ Verify ADMIN from DB
-    const admin = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { id: true, role: true },
-    });
-
-    if (!admin || admin.role !== "ADMIN") {
+    if (me.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Forbidden" },
         { status: 403 }
@@ -32,7 +28,7 @@ export async function POST(req: Request) {
 
     // 3️⃣ Parse request body
     const body = await req.json();
-    const { targetUserId, disable } = body;
+    const { targetUserId, disable, isStaffModel } = body;
 
     if (
       typeof targetUserId !== "string" ||
@@ -44,7 +40,25 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4️⃣ Find target user
+    // 4️⃣ Handle Staff Model
+    if (isStaffModel) {
+        const staff = await prisma.staff.update({
+            where: { id: targetUserId },
+            data: { status: disable ? "inactive" : "active" }
+        });
+        
+        await prisma.activityLog.create({
+            data: {
+                userId: me.id,
+                action: disable ? "USER_DISABLED" : "USER_ENABLED",
+                meta: `${disable ? "Disabled" : "Enabled"} Staff ${staff.email}`,
+            },
+        });
+
+        return NextResponse.json({ success: true });
+    }
+
+    // 5️⃣ Find target user (User Model)
     const targetUser = await prisma.user.findUnique({
       where: { id: targetUserId },
     });
@@ -57,45 +71,48 @@ export async function POST(req: Request) {
     }
 
     // ❌ Prevent admin disabling self
-    if (targetUser.clerkId === userId) {
+    if (targetUser.id === me.id) {
       return NextResponse.json(
         { error: "You cannot disable your own account" },
         { status: 400 }
       );
     }
-// 5️⃣ Get Clerk client
-const client = await clerkClient();
 
-// Disable / enable user in Clerk
-await client.users.updateUser(targetUser.clerkId, {
-  publicMetadata: {
-    disabled: disable,
-  },
-});
+    // 6️⃣ Update Clerk (ONLY IF IT'S A CLERK USER)
+    if (targetUser.clerkId && !targetUser.clerkId.startsWith("custom_")) {
+        const client = await clerkClient();
 
-// 6️⃣ Force logout if disabling
-if (disable) {
-  const sessions = await client.sessions.getSessionList({
-    userId: targetUser.clerkId,
-  });
+        // Disable / enable user in Clerk
+        await client.users.updateUser(targetUser.clerkId, {
+            publicMetadata: {
+                disabled: disable,
+            },
+        });
 
-  await Promise.all(
-    sessions.data.map((s) =>
-      client.sessions.revokeSession(s.id)
-    )
-  );
-}
+        // 7️⃣ Force logout if disabling
+        if (disable) {
+            const sessions = await client.sessions.getSessionList({
+                userId: targetUser.clerkId,
+            });
 
-    // 7️⃣ Update DB status
+            await Promise.all(
+                sessions.data.map((s) =>
+                    client.sessions.revokeSession(s.id)
+                )
+            );
+        }
+    }
+
+    // 8️⃣ Update DB status
     await prisma.user.update({
       where: { id: targetUserId },
       data: { isDisabled: disable },
     });
 
-    // 8️⃣ Activity log
+    // 9️⃣ Activity log
     await prisma.activityLog.create({
       data: {
-        userId: admin.id,
+        userId: me.id,
         action: disable ? "USER_DISABLED" : "USER_ENABLED",
         meta: `${disable ? "Disabled" : "Enabled"} ${targetUser.email}`,
       },
