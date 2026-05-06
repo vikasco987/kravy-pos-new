@@ -66,9 +66,7 @@ export async function GET(req: Request) {
                 taxEnabled: true,
                 enableKOTWithBill: true,
                 aiScraperEnabled: true,
-                excelImportEnabled: true,
-                slug: true,
-                publicId: true
+                excelImportEnabled: true
             }
         },
         _count: { select: { bills: true } }
@@ -111,8 +109,8 @@ export async function GET(req: Request) {
               kot: profile?.enableKOTWithBill || false,
               ai: profile?.aiScraperEnabled || false,
               excel: profile?.excelImportEnabled || false,
-              slug: profile?.slug || null,
-              publicId: profile?.publicId || null,
+              slug: (profile as any)?.slug || null,
+              publicId: (profile as any)?.publicId || null,
             },
           };
         })
