@@ -121,10 +121,27 @@ export async function getAuthUser(): Promise<AuthUser | null> {
     if (token) {
         try {
             const decoded: any = jwt.verify(token, JWT_SECRET);
+            const userId = decoded.userId || decoded.staffId;
+
+            // 🔍 ALWAYS FETCH LATEST DATA FROM DB (Sync Fix)
+            // This ensures role changes are reflected immediately without logout
+            const user = await prisma.user.findUnique({ where: { id: userId } });
             
-            // Handle both new 'kravy_auth_token' and legacy 'staff_token' structures
+            if (user) {
+                return {
+                    id: user.id,
+                    type: user.role, // Latest role from DB
+                    businessId: user.ownerId || user.clerkId || "",
+                    permissions: user.allowedPaths,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role
+                };
+            }
+
+            // Fallback for legacy staff model if not in User table
             return {
-                id: decoded.userId || decoded.staffId,
+                id: userId,
                 type: decoded.role || 'STAFF',
                 businessId: decoded.clerkId || decoded.businessId || "",
                 permissions: decoded.permissions || [],
