@@ -131,16 +131,16 @@ export default function CustomAuthPage() {
     if (!formData.email) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch('/api/auth/resend-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, resend: true }) // Reuse register as it handles existing users
+        body: JSON.stringify({ email: formData.email })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to resend");
+      if (!res.ok) throw new Error(data.error || "Resend failed");
       toast.success("New OTP sent to your email!");
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (err: any) {
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
