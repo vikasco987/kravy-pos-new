@@ -61,11 +61,12 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         style={{ 
           width: '100%', 
           maxWidth: '58mm', 
-          padding: '0 4mm', 
+          padding: '0 6mm', 
           margin: '0 auto', 
           boxSizing: 'border-box',
           WebkitFontSmoothing: 'none',
-          fontSmooth: 'never'
+          fontSmooth: 'never',
+          overflow: 'hidden'
         }}
       >
         {business?.logoUrl && (
@@ -152,7 +153,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         </div>
         <div className="flex justify-between font-bold text-[9px] uppercase border-y-2 border-dashed border-black py-1 my-1">
           <span className="flex-1 min-w-0 pr-1">Item Description</span>
-          <span className="w-[12mm] text-right shrink-0">Total</span>
+          <span className="w-[10mm] text-right shrink-0">Total</span>
         </div>
         <div className="border-t-2 border-dashed border-black my-1" />
         {items.map((i, idx) => {
@@ -161,7 +162,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             <div key={idx} className="mb-2 border-b border-dotted border-black/20 pb-1">
               <div className="flex justify-between items-start text-[11px] font-bold">
                 <span className="flex-1 min-w-0 pr-1 break-words leading-[1.2]">{i.name}</span>
-                <span className="w-[14mm] text-right shrink-0">₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
+                <span className="w-[12mm] text-right shrink-0">₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-[11px] font-bold mt-0.5">
                 <span>{i.qty} x ₹{Number(i.rate ?? 0).toFixed(2)}</span>
@@ -224,7 +225,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             </div>
           )}
           <div className="border-t-2 border-dashed border-black my-1" />
-          <div className="flex justify-between font-black text-[14px] border-y-2 border-black py-2 my-1.5 uppercase bg-white px-1">
+          <div className="flex justify-between font-black text-[13px] border-y-2 border-black py-2 my-1.5 uppercase bg-white px-1">
             <span>GRAND TOTAL</span>
             <span>₹{finalTotal.toFixed(2)}</span>
           </div>
@@ -344,7 +345,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         ref={kotRef}
         data-paper="58"
         className="hidden print:block kot font-mono text-[10px] leading-tight text-black bg-white"
-        style={{ width: '100%', maxWidth: '58mm', padding: '0 4mm', margin: '0 auto', boxSizing: 'border-box' }}
+        style={{ width: '100%', maxWidth: '58mm', padding: '0 6mm', margin: '0 auto', boxSizing: 'border-box', overflow: 'hidden' }}
       >
         <div className="text-center font-black text-[22px] border-b-2 border-black pb-1 mb-2">K.O.T</div>
         
@@ -378,7 +379,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           <thead>
             <tr className="border-b-2 border-black">
               <th className="text-left py-1 uppercase">Item Description</th>
-              <th className="text-right py-1 w-[6mm] shrink-0">QTY</th>
+              <th className="text-right py-1 w-[5mm] shrink-0">QTY</th>
             </tr>
           </thead>
           <tbody>
