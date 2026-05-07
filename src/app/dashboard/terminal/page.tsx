@@ -63,9 +63,9 @@ const TableTimer = ({ startTime, className = "" }: { startTime?: string, classNa
             const diff = Math.floor((now.getTime() - start.getTime()) / 1000);
             const mins = Math.floor(diff / 60);
             
-            // Age status logic
-            if (mins < 15) setAgeStatus("fresh");
-            else if (mins < 45) setAgeStatus("medium");
+            // Age status logic (Updated: 20m, 40m)
+            if (mins < 20) setAgeStatus("fresh");
+            else if (mins < 40) setAgeStatus("medium");
             else setAgeStatus("old");
 
             if (diff < 0) {
@@ -91,13 +91,13 @@ const TableTimer = ({ startTime, className = "" }: { startTime?: string, classNa
     if (!startTime) return null;
 
     const ageColors = {
-        fresh: "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100",
-        medium: "text-amber-600 bg-amber-50 dark:bg-amber-500/10 border-amber-100",
-        old: "text-rose-600 bg-rose-50 dark:bg-rose-500/10 border-rose-100"
+        fresh: "text-emerald-600 bg-emerald-50/50 dark:bg-emerald-500/10 border-emerald-100/50",
+        medium: "text-amber-600 bg-amber-50/50 dark:bg-amber-500/10 border-amber-100/50",
+        old: "text-[#ff4d6d] bg-[rgba(255,77,109,0.08)] dark:bg-rose-500/10 border-rose-100/20"
     };
 
     return (
-        <span className={`flex items-center gap-1 px-2 py-1 rounded-lg border font-medium text-[11px] transition-colors duration-500 ${ageColors[ageStatus]} ${className}`}>
+        <span className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border font-semibold text-[11px] transition-colors duration-500 ${ageColors[ageStatus]} ${className}`}>
             <Timer size={10} className="opacity-70" />
             {elapsed}
         </span>
@@ -797,11 +797,11 @@ function KravyPOS() {
     };
 
     const statusConfig = {
-        FREE: { bg: "bg-slate-50", text: "text-slate-500", dot: "bg-slate-400", ring: "ring-slate-100", label: "Vacant", glass: "bg-slate-500/10 border-slate-500/20", glow: "", shadow: "shadow-sm" },
-        PENDING: { bg: "bg-amber-50", text: "text-amber-600", dot: "bg-amber-500", ring: "ring-amber-100", label: "Reserved", glass: "bg-amber-500/10 border-amber-500/20", glow: "shadow-[0_0_15px_rgba(245,158,11,0.2)]", shadow: "shadow-md" },
-        ACCEPTED: { bg: "bg-indigo-50", text: "text-indigo-600", dot: "bg-indigo-500", ring: "ring-indigo-100", label: "Accepted", glass: "bg-indigo-500/10 border-indigo-500/20", glow: "shadow-[0_0_15px_rgba(79,70,229,0.2)]", shadow: "shadow-md" },
-        PREPARING: { bg: "bg-indigo-50", text: "text-indigo-600", dot: "bg-indigo-600", ring: "ring-indigo-200", label: "Preparing", glass: "bg-indigo-600/10 border-indigo-600/20", glow: "shadow-[0_0_20px_rgba(79,70,229,0.25)]", shadow: "shadow-lg" },
-        READY: { bg: "bg-emerald-50", text: "text-emerald-600", dot: "bg-emerald-600", ring: "ring-emerald-200", label: "Serve Now", glass: "bg-emerald-600/10 border-emerald-600/20", glow: "shadow-[0_0_20px_rgba(16,185,129,0.3)]", shadow: "shadow-lg" }
+        FREE: { bg: "bg-white", border: "border-dashed border-slate-300", text: "text-slate-400", dot: "bg-slate-300", ring: "ring-slate-100", label: "Vacant", glass: "bg-slate-500/5 border-slate-500/10", glow: "", shadow: "shadow-sm" },
+        PENDING: { bg: "bg-amber-50", border: "border-transparent", text: "text-amber-600", dot: "bg-amber-500", ring: "ring-amber-100", label: "Reserved", glass: "bg-amber-500/10 border-amber-500/20", glow: "shadow-[0_0_15px_rgba(245,158,11,0.1)]", shadow: "shadow-md" },
+        ACCEPTED: { bg: "bg-indigo-50", border: "border-transparent", text: "text-indigo-600", dot: "bg-indigo-500", ring: "ring-indigo-100", label: "Accepted", glass: "bg-indigo-500/10 border-indigo-500/20", glow: "shadow-[0_0_15px_rgba(79,70,229,0.15)]", shadow: "shadow-md" },
+        PREPARING: { bg: "bg-gradient-to-b from-[#f7f7ff] to-[#eef0ff]", border: "border-transparent", text: "text-indigo-600", dot: "bg-indigo-600", ring: "ring-indigo-200", label: "Preparing", glass: "bg-indigo-600/10 border-indigo-600/20", glow: "shadow-[0_0_20px_rgba(79,70,229,0.2)]", shadow: "shadow-lg" },
+        READY: { bg: "bg-gradient-to-b from-[#f2fff8] to-[#e4fff0]", border: "border-transparent", text: "text-emerald-600", dot: "bg-emerald-600", ring: "ring-emerald-200", label: "Serve Now", glass: "bg-emerald-600/10 border-emerald-600/20", glow: "shadow-[0_0_20px_rgba(16,185,129,0.25)]", shadow: "shadow-lg" }
     };
 
     // Helper: Aggregate items for Chef
@@ -1031,8 +1031,8 @@ function KravyPOS() {
                                 </div>
 
                                 {/* Tables Grid */}
-                                <div className="flex-1 overflow-y-auto p-4 scrollbar-hide bg-gradient-to-b from-[#F8FAFC] to-[#EEF2FF] dark:from-slate-900 dark:to-slate-950">
-                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-4">
+                                <div className="flex-1 overflow-y-auto p-6 scrollbar-hide bg-[#F8FAFC] dark:bg-slate-950">
+                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[18px]">
                                         {filteredTables.map((t) => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
@@ -1045,27 +1045,27 @@ function KravyPOS() {
                                                         setSelectedTableId(t.id); 
                                                         setSelectedOrderId(null); 
                                                     }}
-                                                    className={`relative group min-h-[170px] flex flex-col rounded-[24px] transition-all duration-300 ${isActive ? "z-20 scale-[1.02]" : "z-10"}`}
-                                                    whileHover={{ y: -6, scale: 1.03, transition: { duration: 0.2, ease: "easeOut" } }}
-                                                    whileTap={{ scale: 0.96 }}
+                                                    className={`relative group aspect-[0.75] flex flex-col rounded-[24px] transition-all duration-300 ${isActive ? "z-20 scale-[1.02]" : "z-10"}`}
+                                                    whileHover={{ y: -4, scale: 1.03, transition: { duration: 0.2, ease: "easeOut" } }}
+                                                    whileTap={{ scale: 0.98 }}
                                                 >
-                                                    <div className={`w-full h-full rounded-[24px] flex flex-col items-center justify-between p-[14px] border-2 transition-all duration-300 gap-3 ${cfg.bg} ${cfg.text} ${isActive ? `border-indigo-600 ring-4 ring-indigo-500/10 shadow-indigo-500/20 shadow-2xl` : `border-transparent ${cfg.shadow} ${cfg.glow}`}`}>
+                                                    <div className={`w-full h-full rounded-[24px] flex flex-col items-center justify-between p-[14px] border-2 transition-all duration-300 gap-3 ${cfg.bg} ${cfg.text} ${cfg.border} ${isActive ? `border-[rgba(79,70,229,0.8)] ring-[4px] ring-[rgba(79,70,229,0.08)] shadow-[0_10px_25px_rgba(99,102,241,0.2)]` : `shadow-[0_6px_16px_rgba(0,0,0,0.05),0_12px_40px_rgba(99,102,241,0.08)] ${cfg.glow}`}`}>
                                                         
                                                         {/* Modern Glassmorphism Status Badge */}
                                                         <div className="flex flex-col items-center w-full">
-                                                            <div className={`backdrop-blur-xl ${cfg.glass} border py-1.5 px-3 rounded-full flex items-center gap-2 shadow-sm w-full justify-center`}>
+                                                            <div className={`backdrop-blur-md ${cfg.glass} border py-1.5 px-3 rounded-full flex items-center gap-2 shadow-sm w-full justify-center`}>
                                                                 <span className={`w-2 h-2 rounded-full ${cfg.dot} animate-pulse`} />
                                                                 <span className="text-[9px] font-black uppercase tracking-[0.1em]">{cfg?.label}</span>
                                                             </div>
                                                         </div>
 
-                                                        {/* Table Identity */}
-                                                        <div className="flex flex-col items-center w-full py-1 relative">
-                                                            <div className="absolute -top-3 opacity-10">
+                                                        {/* Table Identity - Centered Typography */}
+                                                        <div className="flex flex-col items-center justify-center flex-1 w-full py-1 relative">
+                                                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] scale-[2.5]">
                                                                 {getTableIcon(t.name)}
                                                             </div>
-                                                            <span className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-30 mb-0.5">Table</span>
-                                                            <span className="text-3xl font-black italic tracking-[-0.05em] leading-none text-slate-900 dark:text-white">
+                                                            <span className="text-[11px] font-bold uppercase tracking-[4px] opacity-[0.45] mb-2 leading-none">Table</span>
+                                                            <span className="text-4xl font-[800] tracking-[-0.05em] leading-none text-slate-900 dark:text-white">
                                                                 {t.name?.startsWith("T-") ? t.name.slice(2) : t.name}
                                                             </span>
                                                         </div>
@@ -1076,8 +1076,8 @@ function KravyPOS() {
                                                                 <TableTimer startTime={t.startTime} />
                                                             ) : (
                                                                 <div className="flex items-center gap-1.5 opacity-20 group-hover:opacity-40 transition-opacity">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-current" />
-                                                                    <span className="text-[10px] font-black uppercase tracking-widest">Free</span>
+                                                                    <div className="w-1 h-1 rounded-full bg-current" />
+                                                                    <span className="text-[10px] font-bold uppercase tracking-[2px]">Free</span>
                                                                 </div>
                                                             )}
                                                         </div>
