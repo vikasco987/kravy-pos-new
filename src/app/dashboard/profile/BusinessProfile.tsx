@@ -182,6 +182,7 @@ export default function BusinessProfile({
           enableMenuQRInBill: data.enableMenuQRInBill,
           enableClerkAuth: data.enableClerkAuth,
           enableCustomAuth: data.enableCustomAuth,
+          tokenNumberSize: data.tokenNumberSize,
           userId: data.userId, 
         }}
         onCancel={() => setEditMode(false)}
