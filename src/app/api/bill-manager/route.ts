@@ -81,51 +81,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "कुल राशि (Total) सही नहीं है।" }, { status: 400 });
     }
 
-    // 🛡️ 2. PRISMA USER SYNC FALLBACK (Critical Fix for "Failed to create bill")
-    // If the effectiveId (Owner or Staff) doesn't exist in our User table, 
-    // Prisma will fail with a relation error. We must ensure it exists.
-    const dbUser = await prisma.user.findUnique({ where: { clerkId: effectiveId } });
-    if (!dbUser) {
-      try {
-        const client = await clerkClient();
-        const fullUser = await client.users.getUser(effectiveId);
-        await prisma.user.create({
-          data: {
-            clerkId: effectiveId,
-            email: fullUser.emailAddresses[0].emailAddress,
-            name: `${fullUser.firstName || ""} ${fullUser.lastName || ""}`.trim() || fullUser.username || "Staff Member",
-            role: "USER",
-            ownerId: (fullUser.publicMetadata?.ownerId as string) || null,
-          }
-        });
-      } catch (syncErr) {
-        console.error("USER SYNC FALLBACK ERROR:", syncErr);
-      }
-    }
+    // ✅ CONSTANTS & DATE PREP
+    const nowLocal = new Date();
+    const yy = String(nowLocal.getFullYear()).slice(-2);
+    const mm = String(nowLocal.getMonth() + 1).padStart(2, '0');
+    const monthStart = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), 1);
 
-    // ✅ HARD DEFAULTS (CRITICAL)
-    const finalPaymentMode: "Cash" | "UPI" | "Card" | "Pay on Counter" | "Wallet" =
-      paymentMode === "UPI" || paymentMode === "Card" || paymentMode === "Pay on Counter" || paymentMode === "Wallet"
-        ? paymentMode
-        : "Cash";
-
-    // ✅ FETCH PROFILE FOR GLOBAL GST FALLBACK
-    const profile = await prisma.businessProfile.findUnique({
-      where: { userId: effectiveId },
-    });
+    // ✅ OPTIMIZED PARALLEL DATA FETCHING
+    const itemIds = items.map((it: any) => it.id).filter(Boolean);
+    const [profile, dbItems, offer, lastBill] = await Promise.all([
+      prisma.businessProfile.findUnique({ where: { userId: effectiveId } }),
+      prisma.item.findMany({ where: { id: { in: itemIds }, clerkId: effectiveId } }),
+      discountCode ? prisma.offer.findFirst({ where: { code: discountCode.toUpperCase(), isActive: true, clerkUserId: effectiveId } }) : Promise.resolve(null),
+      prisma.billManager.findFirst({
+        where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, billNumber: { startsWith: 'SV/' } },
+        orderBy: { billNumber: 'desc' },
+        select: { billNumber: true }
+      })
+    ]);
     
     const isTaxEnabled = profile?.taxEnabled ?? true;
     const globalGstRate = isTaxEnabled ? (profile?.taxRate ?? 0) : 0;
     const perProductEnabled = profile?.perProductTaxEnabled ?? false;
-
-    // ✅ FETCH LATEST PRICES FROM DB (SECURITY)
-    const itemIds = items.map((it: any) => it.id).filter(Boolean);
-    const dbItems = await prisma.item.findMany({
-      where: { 
-        id: { in: itemIds },
-        clerkId: effectiveId 
-      }
-    });
 
     let calcSubtotal = 0;
     let totalTax = 0;
@@ -133,16 +110,9 @@ export async function POST(req: NextRequest) {
     items.forEach((item: any) => {
       const dbItem = dbItems.find(it => it.id === item.id);
       const qty = Number(item.qty || item.quantity) || 0;
-      
-      // Use DB price if available, otherwise fallback to client price (for custom items if any)
-      const dbPrice = dbItem ? Number(dbItem.sellingPrice ?? dbItem.price) : Number(item.rate || item.price || 0);
-      const rate = dbPrice;
-      
-      const itemGstRate = (perProductEnabled && item.gst !== undefined && item.gst !== null) 
-        ? Number(item.gst) 
-        : globalGstRate;
+      const rate = dbItem ? Number(dbItem.sellingPrice ?? dbItem.price) : Number(item.rate || item.price || 0);
+      const itemGstRate = (perProductEnabled && item.gst !== undefined && item.gst !== null) ? Number(item.gst) : globalGstRate;
       const taxStatus = item.taxStatus || "Without Tax";
-      
       const gross = qty * rate;
 
       if (taxStatus === "With Tax") {
@@ -155,39 +125,27 @@ export async function POST(req: NextRequest) {
         calcSubtotal += gross;
         totalTax += gst;
       }
-      
-      // Update item rate in the array to be saved to DB
       item.rate = rate; 
     });
 
     const finalSubtotal = Number(calcSubtotal.toFixed(2));
     const calculatedTax = Number(totalTax.toFixed(2));
     
-    // 🎟️ SERVER-SIDE DISCOUNT VALIDATION
     let serverDiscountAmt = 0;
     let validatedDiscountCode = null;
-
-    if (discountCode) {
-      const offer = await prisma.offer.findFirst({
-        where: { code: discountCode.toUpperCase(), isActive: true, clerkUserId: effectiveId },
-      });
-
-      if (offer) {
-        serverDiscountAmt = calculateDiscount(offer as any, finalSubtotal, items);
-        validatedDiscountCode = offer.code;
-      }
+    if (offer) {
+      serverDiscountAmt = calculateDiscount(offer as any, finalSubtotal, items);
+      validatedDiscountCode = offer.code;
     }
 
     const finalDeliveryCharge = Number(deliveryCharges) || 0;
     const finalPackagingCharge = Number(packagingCharges) || 0;
     const finalServiceCharge = Number(serviceCharge) || 0;
 
-    // ✅ RECALCULATE CHARGES GST (SERVER-SIDE)
     let serverDeliveryGst = 0;
     if (finalDeliveryCharge > 0 && profile?.deliveryGstEnabled) {
       serverDeliveryGst = (finalDeliveryCharge * (profile.deliveryGstRate || 0)) / 100;
     }
-    
     let serverPackagingGst = 0;
     if (finalPackagingCharge > 0 && profile?.packagingGstEnabled) {
       serverPackagingGst = (finalPackagingCharge * (profile.packagingGstRate || 0)) / 100;
@@ -195,36 +153,20 @@ export async function POST(req: NextRequest) {
 
     const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt + finalDeliveryCharge + serverDeliveryGst + finalPackagingCharge + serverPackagingGst + finalServiceCharge).toFixed(2));
 
-    // ✅ Generate unique sequential bill number (SV/YYMM/XXXX)
-    const nowLocal = new Date();
-    const yy = String(nowLocal.getFullYear()).slice(-2);
-    const mm = String(nowLocal.getMonth() + 1).padStart(2, '0');
-    
-    const monthStart = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), 1);
-    
-    const lastBill = await prisma.billManager.findFirst({
-      where: {
-        clerkUserId: effectiveId,
-        createdAt: { gte: monthStart },
-        billNumber: { startsWith: 'SV/' } // Filter for formatted bills only
-      },
-      orderBy: { billNumber: 'desc' },
-      select: { billNumber: true }
-    });
-    
     let nextSerial = 1;
     if (lastBill && lastBill.billNumber) {
       const parts = lastBill.billNumber.split('/');
       const lastSerial = parseInt(parts[parts.length - 1], 10);
-      if (!isNaN(lastSerial)) {
-        nextSerial = lastSerial + 1;
-      }
+      if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
     }
-    
     const serialLabel = String(nextSerial).padStart(4, '0');
     const billNumber = `SV/${yy}${mm}/${serialLabel}`;
 
-    // ✅ DERIVE FINAL PAYMENT STATUS
+    const finalPaymentMode: "Cash" | "UPI" | "Card" | "Pay on Counter" | "Wallet" =
+      paymentMode === "UPI" || paymentMode === "Card" || paymentMode === "Pay on Counter" || paymentMode === "Wallet"
+        ? paymentMode
+        : "Cash";
+
     let finalPaymentStatus: string;
     if (isHeld === true) {
       finalPaymentStatus = "HELD";
@@ -259,24 +201,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ✅ TOKEN NUMBER GENERATION (DAILY RESET)
-    let nextToken = body.tokenNumber || 1;
+    // ✅ TOKEN NUMBER GENERATION (REUSE OR INCREMENT)
+    let nextToken = body.tokenNumber || (kotNumbers && Array.isArray(kotNumbers) && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : null);
     
-    if (!body.tokenNumber) {
+    if (!nextToken) {
         try {
-            // Re-fetch profile to get latest lastTokenNumber (prevent race condition)
-            const latestProfile = await prisma.businessProfile.findUnique({
-                where: { userId: effectiveId },
-            });
             const today = new Date().toISOString().split('T')[0];
-            const lastTokenDate = latestProfile?.lastTokenDate ? new Date(latestProfile.lastTokenDate).toISOString().split('T')[0] : "";
+            const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
             
             if (lastTokenDate === today) {
-                nextToken = (latestProfile?.lastTokenNumber || 0) + 1;
+                nextToken = (profile?.lastTokenNumber || 0) + 1;
             } else {
                 nextToken = 1;
             }
 
+            // Sync with BusinessProfile
             await prisma.businessProfile.update({
                 where: { userId: effectiveId },
                 data: {
@@ -286,6 +225,7 @@ export async function POST(req: NextRequest) {
             });
         } catch (tokenErr) {
             console.error("TOKEN GENERATION ERROR:", tokenErr);
+            nextToken = 1; // Fallback
         }
     }
 

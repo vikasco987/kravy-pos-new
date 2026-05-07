@@ -61,45 +61,50 @@ export async function PATCH(req: NextRequest) {
 
         // ✅ TOKEN NUMBER GENERATION FOR ADD-ON KOTs
         if (isKotPrinted) {
-            let nextToken = 1;
             try {
-                const profile = await prisma.businessProfile.findUnique({
-                    where: { userId: effectiveId },
-                });
-                const today = new Date().toISOString().split('T')[0];
-                const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
-                
-                if (lastTokenDate === today) {
-                    nextToken = (profile?.lastTokenNumber || 0) + 1;
-                } else {
-                    nextToken = 1;
-                }
-
-                await prisma.businessProfile.update({
-                    where: { userId: effectiveId },
-                    data: {
-                        lastTokenNumber: nextToken,
-                        lastTokenDate: new Date()
-                    }
-                });
-
-                // Fetch current kotNumbers and items
+                // Fetch current order to see if we actually HAVE new items
                 const currentOrder = await prisma.order.findUnique({ where: { id: orderId } });
                 if (currentOrder) {
-                    const existingKotNumbers = Array.isArray(currentOrder.kotNumbers) ? currentOrder.kotNumbers : (currentOrder.tokenNumber ? [currentOrder.tokenNumber] : []);
-                    
-                    // Tag items that are being printed as 'new' with this KOT number
                     const targetItems = (items && Array.isArray(items)) ? items : (Array.isArray(currentOrder.items) ? currentOrder.items : []);
-                    
-                    data.items = (targetItems as any[]).map((it: any) => {
-                        if (it.isNew) {
-                            return { ...it, isNew: false, kotNumber: nextToken };
-                        }
-                        return it;
-                    });
+                    const hasNewItems = (targetItems as any[]).some(it => it.isNew);
 
-                    data.tokenNumber = nextToken; // Update latest for legacy
-                    data.kotNumbers = [...existingKotNumbers, nextToken];
+                    if (hasNewItems) {
+                        let nextToken = 1;
+                        const profile = await prisma.businessProfile.findUnique({
+                            where: { userId: effectiveId },
+                        });
+                        const today = new Date().toISOString().split('T')[0];
+                        const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
+                        
+                        if (lastTokenDate === today) {
+                            nextToken = (profile?.lastTokenNumber || 0) + 1;
+                        } else {
+                            nextToken = 1;
+                        }
+
+                        await prisma.businessProfile.update({
+                            where: { userId: effectiveId },
+                            data: {
+                                lastTokenNumber: nextToken,
+                                lastTokenDate: new Date()
+                            }
+                        });
+
+                        const existingKotNumbers = Array.isArray(currentOrder.kotNumbers) ? currentOrder.kotNumbers : (currentOrder.tokenNumber ? [currentOrder.tokenNumber] : []);
+                        
+                        data.items = (targetItems as any[]).map((it: any) => {
+                            if (it.isNew) {
+                                return { ...it, isNew: false, kotNumber: nextToken };
+                            }
+                            return it;
+                        });
+
+                        data.tokenNumber = nextToken; 
+                        data.kotNumbers = [...existingKotNumbers, nextToken];
+                    } else {
+                        // NO NEW ITEMS: Don't increment. Just mark everything as not new if they weren't already.
+                        data.items = (targetItems as any[]).map((it: any) => ({ ...it, isNew: false }));
+                    }
                 }
             } catch (tokenErr) {
                 console.error("PATCH_ORDER_TOKEN_ERROR:", tokenErr);
