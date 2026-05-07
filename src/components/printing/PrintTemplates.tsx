@@ -60,8 +60,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         className="hidden print:block receipt font-sans text-[11px] leading-tight text-black bg-white"
         style={{ 
           width: '100%', 
-          maxWidth: '80mm', 
-          padding: '0 4%', 
+          maxWidth: '58mm', 
+          padding: '0 4mm', 
           margin: '0 auto', 
           boxSizing: 'border-box',
           WebkitFontSmoothing: 'none',
@@ -82,7 +82,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         )}
         <div 
-          className=\"text-center font-bold leading-none mb-1\"
+          className="text-center font-bold leading-none mb-1"
           style={{ 
             fontSize: business?.businessNameSize === 'medium' ? '12px' : 
                       business?.businessNameSize === 'xlarge' ? '22px' : '18px' 
@@ -152,7 +152,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         </div>
         <div className="flex justify-between font-bold text-[9px] uppercase border-y-2 border-dashed border-black py-1 my-1">
           <span className="flex-1 min-w-0 pr-1">Item Description</span>
-          <span className="w-[15mm] text-right shrink-0">Total</span>
+          <span className="w-[12mm] text-right shrink-0">Total</span>
         </div>
         <div className="border-t-2 border-dashed border-black my-1" />
         {items.map((i, idx) => {
@@ -160,8 +160,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           return (
             <div key={idx} className="mb-2 border-b border-dotted border-black/20 pb-1">
               <div className="flex justify-between items-start text-[11px] font-bold">
-                <span className="flex-1 min-w-0 pr-2 break-words leading-[1.2]">{i.name}</span>
-                <span className="w-[16mm] text-right shrink-0">₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
+                <span className="flex-1 min-w-0 pr-1 break-words leading-[1.2]">{i.name}</span>
+                <span className="w-[14mm] text-right shrink-0">₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-[11px] font-bold mt-0.5">
                 <span>{i.qty} x ₹{Number(i.rate ?? 0).toFixed(2)}</span>
@@ -224,7 +224,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             </div>
           )}
           <div className="border-t-2 border-dashed border-black my-1" />
-          <div className="flex justify-between font-black text-[18px] border-y-2 border-black py-2.5 my-1.5 uppercase bg-white">
+          <div className="flex justify-between font-black text-[14px] border-y-2 border-black py-2 my-1.5 uppercase bg-white px-1">
             <span>GRAND TOTAL</span>
             <span>₹{finalTotal.toFixed(2)}</span>
           </div>
@@ -285,7 +285,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                 <div className="font-bold text-[11px] mb-1">SCAN & PAY</div>
                 <div className="my-2 text-center">
                   <div className="inline-block border-2 border-black p-1 bg-white">
-                    <img src={qrUrl} alt="UPI QR" className="w-[32mm] h-[32mm] object-contain block" style={{ imageRendering: 'pixelated', filter: 'contrast(1000%) grayscale(100%)' }} />
+                    <img src={qrUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain block" style={{ imageRendering: 'pixelated', filter: 'contrast(1000%) grayscale(100%)' }} />
                   </div>
                 </div>
                 <div className="mb-2 text-[11px] font-bold">UPI: {business.upi}</div>
@@ -304,7 +304,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                 <img 
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/menu/${business?.userId}`)}`} 
                   alt="Menu QR" 
-                  className="w-[32mm] h-[32mm] object-contain block mx-auto" 
+                  className="w-[30mm] h-[30mm] object-contain block mx-auto" 
                   style={{ imageRendering: 'pixelated', filter: 'contrast(300%) grayscale(100%)' }}
                 />
               </div>
@@ -344,20 +344,25 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         ref={kotRef}
         data-paper="58"
         className="hidden print:block kot font-mono text-[10px] leading-tight text-black bg-white"
-        style={{ width: '100%', maxWidth: '80mm', padding: '0 6%', margin: '0 auto', boxSizing: 'border-box' }}
+        style={{ width: '100%', maxWidth: '58mm', padding: '0 4mm', margin: '0 auto', boxSizing: 'border-box' }}
       >
         <div className="text-center font-black text-[22px] border-b-2 border-black pb-1 mb-2">K.O.T</div>
         
-        <div className="flex justify-between items-center font-black text-[12px] mb-2 px-1">
-          <div className="border-2 border-black text-black px-3 py-1.5 rounded-sm font-black">
+        <div className="flex flex-wrap justify-between items-center font-black text-[11px] mb-2 px-0.5 gap-y-1">
+          <div className="border-2 border-black text-black px-1.5 py-1 rounded-sm font-black whitespace-nowrap text-[10px]">
             {selectedTable === "POS" ? "COUNTER" : 
              selectedTable === "TAKEAWAY" ? "TAKEAWAY" : 
              selectedTable === "DELIVERY" ? "DELIVERY" : 
              `TABLE: ${selectedTable}`}
           </div>
           <div className="text-right leading-none">
-            <div className="text-[10px] font-black uppercase">Token Number</div>
-            <div className="text-[18px]">#{kotNumbers && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : tokenNumber || "NEW"}</div>
+            <div className="text-[8px] font-black uppercase tracking-tighter">Token No.</div>
+            <div 
+              className="font-black"
+              style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
+            >
+              #{kotNumbers && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : (tokenNumber || business?.lastTokenNumber || "NEW")}
+            </div>
           </div>
         </div>
 
@@ -366,14 +371,14 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             <span>Bill: {billNumber}</span>
             <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
-          {customerName && <div className="mt-0.5 truncate">Customer: {customerName}</div>}
+          {customerName && <div className="mt-0.5 truncate">Cust: {customerName}</div>}
         </div>
 
-        <table className="w-full border-collapse font-black text-[12px]">
+        <table className="w-full border-collapse font-black text-[11px]">
           <thead>
             <tr className="border-b-2 border-black">
-              <th className="text-left py-1">ITEM</th>
-              <th className="text-right py-1">QTY</th>
+              <th className="text-left py-1 uppercase">Item Description</th>
+              <th className="text-right py-1 w-[6mm] shrink-0">QTY</th>
             </tr>
           </thead>
           <tbody>

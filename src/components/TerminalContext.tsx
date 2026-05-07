@@ -95,9 +95,9 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
         
         try {
             const [tablesRes, ordersRes, profileRes] = await Promise.all([
-                fetch("/api/tables").catch(() => null),
-                fetch("/api/orders?active=true").catch(() => null),
-                fetch("/api/profile").catch(() => null)
+                fetch(`/api/tables`).catch(() => null),
+                fetch(`/api/orders?active=true`).catch(() => null),
+                fetch(`/api/profile`).catch(() => null)
             ]);
 
             if (tablesRes?.ok) {

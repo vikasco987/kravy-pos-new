@@ -69,8 +69,8 @@ export default function PricingSettingsPage() {
         async function fetchAll() {
             try {
                 const [profileRes, offerRes] = await Promise.all([
-                    fetch("/api/profile", { cache: "no-store" }),
-                    fetch("/api/admin/offers", { cache: "no-store" }),
+                    fetch(`/api/profile`, { cache: "no-store" }),
+                    fetch(`/api/admin/offers`, { cache: "no-store" }),
                 ]);
                 const profileData = await profileRes.json();
                 const offerData = await offerRes.json();
@@ -123,7 +123,7 @@ export default function PricingSettingsPage() {
                 syncQuickPosWithKitchen,
                 taxRate: Number(taxRate) 
             };
-            const res = await fetch("/api/profile", {
+            const res = await fetch(`/api/profile`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -146,7 +146,7 @@ export default function PricingSettingsPage() {
         if (newOffer.discountValue <= 0) { toast.error("Discount must be > 0"); return; }
         setSavingOffer(true);
         try {
-            const res = await fetch("/api/admin/offers", {
+            const res = await fetch(`/api/admin/offers`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(newOffer),
@@ -181,7 +181,7 @@ export default function PricingSettingsPage() {
 
     async function handleToggleOffer(offer: Offer) {
         try {
-            const res = await fetch("/api/admin/offers", {
+            const res = await fetch(`/api/admin/offers`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ id: offer.id, isActive: !offer.isActive }),
@@ -198,9 +198,9 @@ export default function PricingSettingsPage() {
         const oldVal = enableKOTWithBill;
         setEnableKOTWithBill(newVal);
         try {
-            const res = await fetch(\"/api/profile\", {
-                method: \"POST\",
-                headers: { \"Content-Type\": \"application/json\" },
+            const res = await fetch(`/api/profile`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ enableKOTWithBill: newVal }),
             });
             if (res.ok) {
@@ -209,11 +209,11 @@ export default function PricingSettingsPage() {
                 kravy.success();
                 toast.success(`Auto-KOT ${newVal ? 'Enabled' : 'Disabled'} ✅`);
             } else {
-                throw new Error(\"Failed to save\");
+                throw new Error("Failed to save");
             }
         } catch {
             kravy.error();
-            toast.error(\"Failed to save printing preference\");
+            toast.error("Failed to save printing preference");
             setEnableKOTWithBill(oldVal);
         }
     }
@@ -221,9 +221,9 @@ export default function PricingSettingsPage() {
         const oldVal = enableMenuQRInBill;
         setEnableMenuQRInBill(val);
         try {
-            const res = await fetch(\"/api/profile\", {
-                method: \"POST\",
-                headers: { \"Content-Type\": \"application/json\" },
+            const res = await fetch(`/api/profile`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ enableMenuQRInBill: val }),
             });
             if (res.ok) {
@@ -232,11 +232,11 @@ export default function PricingSettingsPage() {
                 kravy.success();
                 toast.success(`Menu QR ${val ? 'Enabled' : 'Disabled'} on Bills ✅`);
             } else {
-                throw new Error(\"Failed to save\");
+                throw new Error("Failed to save");
             }
         } catch {
             kravy.error();
-            toast.error(\"Failed to update setting\");
+            toast.error("Failed to update setting");
             setEnableMenuQRInBill(oldVal);
         }
     }
@@ -646,7 +646,7 @@ export default function PricingSettingsPage() {
                 <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-3.5 mb-4">
                     <Info size={16} className="text-blue-500 shrink-0 mt-0.5" />
                     <p className="text-[0.72rem] font-[600] text-blue-700 leading-relaxed">
-                        Active offers appear on the customer&apos;s <strong>QR Menu</strong> page and in the cart. Customers can copy the code and apply it at checkout.
+                        Active offers appear on the customer{"'"}s <strong>QR Menu</strong> page and in the cart. Customers can copy the code and apply it at checkout.
                     </p>
                 </div>
 
@@ -763,7 +763,7 @@ export default function PricingSettingsPage() {
                     <div className="text-center py-12 bg-[var(--kravy-surface)] border border-dashed border-[var(--kravy-border)] rounded-2xl">
                         <PackageOpen size={32} className="text-gray-300 mx-auto mb-3" />
                         <p className="text-sm font-bold text-[var(--kravy-text-muted)]">No offers yet</p>
-                        <p className="text-xs text-gray-400 mt-1">Click &quot;New Offer&quot; to create your first discount</p>
+                        <p className="text-xs text-gray-400 mt-1">Click {"'"}New Offer{"'"} to create your first discount</p>
                     </div>
                 ) : (
                     <div className="space-y-3">

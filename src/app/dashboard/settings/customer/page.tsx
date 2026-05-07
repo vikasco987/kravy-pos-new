@@ -23,7 +23,7 @@ export default function CustomerDataSettings() {
     });
 
     useEffect(() => {
-        fetch("/api/profile")
+        fetch(`/api/profile`)
             .then(res => res.json())
             .then(data => {
                 if (data) {
@@ -44,7 +44,7 @@ export default function CustomerDataSettings() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const res = await fetch("/api/profile", {
+            const res = await fetch(`/api/profile`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(settings),
