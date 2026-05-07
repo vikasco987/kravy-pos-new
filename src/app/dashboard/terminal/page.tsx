@@ -1011,7 +1011,7 @@ function KravyPOS() {
 
                                 {/* Tables Grid */}
                                 <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                                         {filteredTables.map(t => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
@@ -1037,9 +1037,9 @@ function KravyPOS() {
                                                             </span>
                                                         </div>
 
-                                                        <div className="flex flex-col items-center">
+                                                        <div className="flex flex-col items-center w-full px-2">
                                                             <span className="text-[9px] font-black uppercase tracking-widest opacity-30 mb-0.5">Table</span>
-                                                            <span className="text-2xl font-black italic tracking-tighter leading-none">
+                                                            <span className="text-xl font-black italic tracking-tighter leading-none truncate w-full text-center">
                                                                 {t.name?.startsWith("T-") ? t.name.slice(2) : t.name}
                                                             </span>
                                                         </div>
