@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -77,9 +77,9 @@ export default function AdminDashboardPage() {
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [currentPage, searchQuery]);
+  }, [currentPage, searchQuery, fetchStats]);
 
-  const fetchStats = async (page: number = 1, search: string = "") => {
+  const fetchStats = useCallback(async (page: number = 1, search: string = "") => {
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/dashboard-stats?page=${page}&limit=50&search=${encodeURIComponent(search)}`);
@@ -91,7 +91,7 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const fetchSellerDetail = async (seller: Seller, days: number = timeRange) => {
     setSelectedSeller(seller);
@@ -132,7 +132,7 @@ export default function AdminDashboardPage() {
       const result = await res.json();
       if (res.ok) {
         toast.success("Identity updated");
-        fetchStats();
+        fetchStats(currentPage, searchQuery);
         if (action === "REFRESH_PUBLIC_ID") {
           setSellerDetail(prev => prev ? { ...prev, profile: { ...prev.profile, publicId: result.publicId } } : null);
         }
