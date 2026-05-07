@@ -1031,8 +1031,8 @@ function KravyPOS() {
                                 </div>
 
                                 {/* Tables Grid */}
-                                <div className="flex-1 overflow-y-auto p-6 scrollbar-hide bg-[#F8FAFC] dark:bg-slate-950">
-                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-[12px] sm:gap-[18px]">
+                                <div className="flex-1 overflow-y-auto p-4 scrollbar-hide bg-[#F8FAFC] dark:bg-slate-950">
+                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4">
                                         {filteredTables.map((t) => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
@@ -1045,47 +1045,44 @@ function KravyPOS() {
                                                         setSelectedTableId(t.id); 
                                                         setSelectedOrderId(null); 
                                                     }}
-                                                    className={`relative group aspect-[0.75] flex flex-col rounded-[24px] transition-all duration-300 ${isActive ? "z-20 scale-[1.02]" : "z-10"}`}
-                                                    whileHover={{ y: -4, scale: 1.03, transition: { duration: 0.2, ease: "easeOut" } }}
+                                                    className={`relative group h-[160px] flex flex-col rounded-[24px] transition-all duration-300 ${isActive ? "z-20 scale-[1.02]" : "z-10"}`}
+                                                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
                                                     whileTap={{ scale: 0.98 }}
                                                 >
-                                                    <div className={`w-full h-full rounded-[24px] flex flex-col items-center justify-between p-[14px] border-2 transition-all duration-300 gap-3 ${cfg.bg} ${cfg.text} ${cfg.border} ${isActive ? `border-[rgba(79,70,229,0.8)] ring-[4px] ring-[rgba(79,70,229,0.08)] shadow-[0_10px_25px_rgba(99,102,241,0.2)]` : `shadow-[0_6px_16px_rgba(0,0,0,0.05),0_12px_40px_rgba(99,102,241,0.08)] ${cfg.glow}`}`}>
+                                                    <div className={`w-full h-full rounded-[24px] flex flex-col items-center justify-between p-4 border-2 transition-all duration-300 ${cfg.bg} ${cfg.text} ${cfg.border} ${isActive ? `border-indigo-600 ring-4 ring-indigo-500/10 shadow-2xl` : `shadow-sm ${cfg.glow}`}`}>
                                                         
-                                                        {/* Modern Glassmorphism Status Badge */}
-                                                        <div className="flex flex-col items-center w-full">
-                                                            <div className={`backdrop-blur-md ${cfg.glass} border py-1.5 px-3 rounded-full flex items-center gap-2 shadow-sm w-full justify-center`}>
-                                                                <span className={`w-2 h-2 rounded-full ${cfg.dot} animate-pulse`} />
-                                                                <span className="text-[9px] font-black uppercase tracking-[0.1em]">{cfg?.label}</span>
+                                                        {/* Compact Status Badge */}
+                                                        <div className="w-full flex justify-center">
+                                                            <div className={`backdrop-blur-md ${cfg.glass} border py-1 px-2.5 rounded-full flex items-center gap-1.5 shadow-sm`}>
+                                                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} animate-pulse`} />
+                                                                <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">{cfg?.label}</span>
                                                             </div>
                                                         </div>
 
-                                                        {/* Table Identity - Centered Typography */}
-                                                        <div className="flex flex-col items-center justify-center flex-1 w-full py-1 relative">
-                                                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] scale-[2.5]">
-                                                                {getTableIcon(t.name)}
-                                                            </div>
-                                                            <span className="text-[11px] font-bold uppercase tracking-[4px] opacity-[0.45] mb-2 leading-none">Table</span>
-                                                            <span className="text-2xl sm:text-4xl font-[800] tracking-[-0.05em] leading-none text-slate-900 dark:text-white">
+                                                        {/* Table Number - Clean & Centered */}
+                                                        <div className="flex flex-col items-center justify-center flex-1 w-full overflow-hidden">
+                                                            <span className="text-[10px] font-bold uppercase tracking-[3px] opacity-40 mb-1 leading-none">Table</span>
+                                                            <span className="text-3xl font-[800] tracking-tighter leading-none text-slate-900 dark:text-white truncate w-full text-center px-1">
                                                                 {t.name?.startsWith("T-") ? t.name.slice(2) : t.name}
                                                             </span>
                                                         </div>
 
-                                                        {/* Occupancy Timer */}
-                                                        <div className="flex items-center justify-center w-full pt-1">
+                                                        {/* Compact Timer */}
+                                                        <div className="w-full flex justify-center pt-1">
                                                             {t.startTime ? (
                                                                 <TableTimer startTime={t.startTime} />
                                                             ) : (
-                                                                <div className="flex items-center gap-1.5 opacity-20 group-hover:opacity-40 transition-opacity">
+                                                                <div className="flex items-center gap-1 opacity-20">
                                                                     <div className="w-1 h-1 rounded-full bg-current" />
-                                                                    <span className="text-[10px] font-bold uppercase tracking-[2px]">Free</span>
+                                                                    <span className="text-[9px] font-black uppercase tracking-widest">Free</span>
                                                                 </div>
                                                             )}
                                                         </div>
 
-                                                        {/* Order Notification Badge */}
+                                                        {/* Notification Badge */}
                                                         {t.activeCount > 0 && (
-                                                            <div className="absolute -top-1 -right-1">
-                                                                <div className="bg-rose-500 text-white text-[11px] font-black min-w-[24px] h-[24px] px-1 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900 animate-in zoom-in-50 duration-300">
+                                                            <div className="absolute -top-1 -right-1 z-30">
+                                                                <div className="bg-rose-500 text-white text-[10px] font-black min-w-[22px] h-[22px] px-1 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900">
                                                                     {t.activeCount}
                                                                 </div>
                                                             </div>
