@@ -168,10 +168,35 @@ export async function POST(request: Request) {
 
     let profile;
     if (existingProfile) {
-      profile = await prisma.businessProfile.update({
-        where: { userId: effectiveId },
-        data: updateData
-      });
+      const fieldCount = Object.keys(updateData).length;
+      
+      if (fieldCount > 40) {
+        // Split updates to avoid MongoDB Atlas pipeline limit
+        const keys = Object.keys(updateData);
+        const half = Math.ceil(keys.length / 2);
+        const chunk1: any = {};
+        const chunk2: any = {};
+        
+        keys.forEach((key, idx) => {
+          if (idx < half) chunk1[key] = updateData[key];
+          else chunk2[key] = updateData[key];
+        });
+
+        // Update in two chunks
+        await prisma.businessProfile.update({
+          where: { userId: effectiveId },
+          data: chunk1
+        });
+        profile = await prisma.businessProfile.update({
+          where: { userId: effectiveId },
+          data: chunk2
+        });
+      } else {
+        profile = await prisma.businessProfile.update({
+          where: { userId: effectiveId },
+          data: updateData
+        });
+      }
     } else {
       profile = await prisma.businessProfile.create({
         data: {
