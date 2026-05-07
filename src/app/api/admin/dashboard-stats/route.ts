@@ -105,8 +105,6 @@ export async function GET(req: Request) {
                   enableKOTWithBill: true,
                   aiScraperEnabled: true,
                   excelImportEnabled: true,
-                  slug: true,
-                  publicId: true
               }
           }
         },
@@ -154,8 +152,6 @@ export async function GET(req: Request) {
           kot: profile?.enableKOTWithBill || false,
           ai: profile?.aiScraperEnabled || false,
           excel: profile?.excelImportEnabled || false,
-          slug: (profile as any)?.slug || null,
-          publicId: (profile as any)?.publicId || null,
         },
       };
     });

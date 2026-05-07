@@ -37,8 +37,6 @@ type Seller = {
     kot: boolean;
     ai: boolean;
     excel: boolean;
-    slug: string | null;
-    publicId: string | null;
   };
 };
 
@@ -133,9 +131,6 @@ export default function AdminDashboardPage() {
       if (res.ok) {
         toast.success("Identity updated");
         fetchStats(currentPage, searchQuery);
-        if (action === "REFRESH_PUBLIC_ID") {
-          setSellerDetail(prev => prev ? { ...prev, profile: { ...prev.profile, publicId: result.publicId } } : null);
-        }
       } else {
         toast.error(result.error);
       }
@@ -180,10 +175,10 @@ export default function AdminDashboardPage() {
 
         {/* TOP METRICS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard label="Total Vendors" value={data?.stats.totalSellers} icon={Users} color="indigo" />
-          <StatCard label="Live Pulse" value={data?.stats.activeToday} icon={Activity} color="emerald" sub="Sellers billing today" pulse />
-          <StatCard label="System Volume" value={data?.stats.totalBills} icon={Receipt} color="blue" sub="Total bills processed" />
-          <StatCard label="Network GMV" value={`₹${data?.stats.totalRevenue.toLocaleString()}`} icon={TrendingUp} color="rose" />
+          <StatCard label="Total Vendors" value={data?.stats?.totalSellers || 0} icon={Users} color="indigo" />
+          <StatCard label="Live Pulse" value={data?.stats?.activeToday || 0} icon={Activity} color="emerald" sub="Sellers billing today" pulse />
+          <StatCard label="System Volume" value={data?.stats?.totalBills || 0} icon={Receipt} color="blue" sub="Total bills processed" />
+          <StatCard label="Network GMV" value={`₹${(data?.stats?.totalRevenue || 0).toLocaleString()}`} icon={TrendingUp} color="rose" />
         </div>
 
         {/* SELLER DIRECTORY */}
@@ -242,7 +237,6 @@ export default function AdminDashboardPage() {
                              <div>
                                <div className="font-black text-slate-900 leading-tight flex items-center gap-2">
                                  {s.businessName}
-                                 {s.features.slug && <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[8px] font-black rounded uppercase tracking-wider">{s.features.slug}</span>}
                                </div>
                                <div className="text-[11px] font-bold text-slate-400 mt-0.5">{s.name} • {s.email}</div>
                              </div>
@@ -276,7 +270,7 @@ export default function AdminDashboardPage() {
              </table>
 
             {/* PAGINATION */}
-            {data.pagination && data.pagination.pages > 1 && (
+            {data?.pagination && data.pagination.pages > 1 && (
               <div className="mt-12 mb-6 flex items-center justify-between bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100 shadow-sm mx-4">
                 <div className="flex flex-col gap-1">
                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Platform Context</div>
@@ -452,7 +446,7 @@ export default function AdminDashboardPage() {
                       </div>
                       
                       <div className="space-y-4">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Domain Slug</p>
+                         <p className="text-xs font-bold text-slate-500 italic text-center">Managed in profile settings.</p>
                          <div className="flex gap-2">
                            <input 
                               type="text" 
@@ -467,16 +461,6 @@ export default function AdminDashboardPage() {
                          </div>
                       </div>
 
-                      <div className="space-y-3 pt-4">
-                         <div className="flex items-center justify-between">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Fetch Key</p>
-                            <button onClick={() => updateConfig("REFRESH_PUBLIC_ID")} className="text-[10px] font-black text-indigo-600 hover:underline">Regenerate</button>
-                         </div>
-                         <div className="p-4 bg-white border border-indigo-50 rounded-xl flex items-center justify-between">
-                            <code className="text-[10px] font-mono font-bold text-slate-500">{sellerDetail.profile?.publicId || 'None'}</code>
-                            <button onClick={() => { navigator.clipboard.writeText(sellerDetail.profile?.publicId || ''); toast.success("Copied Key") }} className="text-slate-400 hover:text-indigo-600 transition-colors"><Copy size={14} /></button>
-                         </div>
-                      </div>
                    </div>
 
                    {/* RECENT BILLS TABLE */}
