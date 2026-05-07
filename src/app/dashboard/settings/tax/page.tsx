@@ -88,6 +88,8 @@ export default function PricingSettingsPage() {
                 setPackagingGstEnabled(profileData?.packagingGstEnabled ?? false);
                 setPackagingGstRate(profileData?.packagingGstRate ?? 0);
                 setSyncQuickPosWithKitchen(profileData?.syncQuickPosWithKitchen ?? false);
+                setEnableKOTWithBill(profileData?.enableKOTWithBill ?? false);
+                setEnableMenuQRInBill(profileData?.enableMenuQRInBill ?? false);
 
                 setTaxRate(profileData?.taxRate ?? 5.0);
                 setOffers(Array.isArray(offerData) ? offerData : []);
@@ -193,41 +195,49 @@ export default function PricingSettingsPage() {
     }
 
     async function handleToggleKOT(newVal: boolean) {
+        const oldVal = enableKOTWithBill;
         setEnableKOTWithBill(newVal);
         try {
-            const payload = { ...businessProfile, enableKOTWithBill: newVal };
-            const res = await fetch("/api/profile", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-            if (!res.ok) throw new Error();
-            kravy.success();
-            setBusinessProfile(payload);
-        } catch {
-            toast.error("Failed to save printing preference");
-            setEnableKOTWithBill(!newVal);
-        }
-    }
-    async function handleToggleMenuQR(val: boolean) {
-        setEnableMenuQRInBill(val);
-        try {
-            const payload = { ...businessProfile, enableMenuQRInBill: val };
-            const res = await fetch("/api/profile", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
+            const res = await fetch(\"/api/profile\", {
+                method: \"POST\",
+                headers: { \"Content-Type\": \"application/json\" },
+                body: JSON.stringify({ enableKOTWithBill: newVal }),
             });
             if (res.ok) {
                 const data = await res.json();
                 setBusinessProfile(data);
-                toast.success(`Menu QR ${val ? 'Enabled' : 'Disabled'} on Bills ✅`);
+                kravy.success();
+                toast.success(`Auto-KOT ${newVal ? 'Enabled' : 'Disabled'} ✅`);
             } else {
-                throw new Error("Failed to save");
+                throw new Error(\"Failed to save\");
             }
         } catch {
-            toast.error("Failed to update setting");
-            setEnableMenuQRInBill(!val);
+            kravy.error();
+            toast.error(\"Failed to save printing preference\");
+            setEnableKOTWithBill(oldVal);
+        }
+    }
+    async function handleToggleMenuQR(val: boolean) {
+        const oldVal = enableMenuQRInBill;
+        setEnableMenuQRInBill(val);
+        try {
+            const res = await fetch(\"/api/profile\", {
+                method: \"POST\",
+                headers: { \"Content-Type\": \"application/json\" },
+                body: JSON.stringify({ enableMenuQRInBill: val }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setBusinessProfile(data);
+                kravy.success();
+                toast.success(`Menu QR ${val ? 'Enabled' : 'Disabled'} on Bills ✅`);
+            } else {
+                throw new Error(\"Failed to save\");
+            }
+        } catch {
+            kravy.error();
+            toast.error(\"Failed to update setting\");
+            setEnableMenuQRInBill(oldVal);
         }
     }
 
