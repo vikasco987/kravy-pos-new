@@ -26,33 +26,33 @@ import { INDIA_STATE_DISTRICT } from "@/lib/india-state-district";
 
 /* ---------------- SCHEMA ---------------- */
 const schema = z.object({
-  businessType: z.string().optional(),
+  businessType: z.string().nullable().optional(),
   businessName: z.string().min(1, "Required"),
-  businessTagline: z.string().optional(),
+  businessTagline: z.string().nullable().optional(),
 
-  contactName: z.string().optional(),
-  contactPhone: z.string().optional(),
-  contactEmail: z.string().email().or(z.literal('')).optional(),
+  contactName: z.string().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+  contactEmail: z.string().email().or(z.literal('')).nullable().optional(),
 
-  upi: z.string().optional(),
-  gstNumber: z.string().optional(),
+  upi: z.string().nullable().optional(),
+  gstNumber: z.string().nullable().optional(),
 
-  businessAddress: z.string().optional(),
-  state: z.string().optional(),
-  district: z.string().optional(),
-  pinCode: z.string().optional(),
+  businessAddress: z.string().nullable().optional(),
+  state: z.string().nullable().optional(),
+  district: z.string().nullable().optional(),
+  pinCode: z.string().nullable().optional(),
   
-  upiQrEnabled: z.boolean().optional(),
-  menuLinkEnabled: z.boolean().optional(),
-  greetingMessage: z.string().optional(),
-  businessNameSize: z.string().optional(),
-  fssaiNumber: z.string().optional(),
-  fssaiEnabled: z.boolean().optional(),
-  hsnEnabled: z.boolean().optional(),
-  enableMenuQRInBill: z.boolean().optional(),
-  enableClerkAuth: z.boolean().optional(),
-  enableCustomAuth: z.boolean().optional(),
-  tokenNumberSize: z.number().optional(),
+  upiQrEnabled: z.boolean().nullable().optional(),
+  menuLinkEnabled: z.boolean().nullable().optional(),
+  greetingMessage: z.string().nullable().optional(),
+  businessNameSize: z.string().nullable().optional(),
+  fssaiNumber: z.string().nullable().optional(),
+  fssaiEnabled: z.boolean().nullable().optional(),
+  hsnEnabled: z.boolean().nullable().optional(),
+  enableMenuQRInBill: z.boolean().nullable().optional(),
+  enableClerkAuth: z.boolean().nullable().optional(),
+  enableCustomAuth: z.boolean().nullable().optional(),
+  tokenNumberSize: z.number().nullable().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -264,8 +264,13 @@ export default function BusinessProfileForm({
     <div className="flex flex-col xl:flex-row gap-6 max-w-[1400px] mx-auto p-6 items-start">
       <form
         onSubmit={handleSubmit(onSubmit, (errors) => {
-          console.error("Validation Errors:", errors);
-          toast.error("Please fix the validation errors in the form");
+          console.group(\"🚫 Validation Errors Details\");
+          console.error(\"Full Errors Object:\", errors);
+          Object.keys(errors).forEach(key => {
+            console.error(`Field \"${key}\":`, errors[key as keyof typeof errors]);
+          });
+          console.groupEnd();
+          toast.error(\"Please fix the validation errors in the form\");
         })}
         className="flex-1 w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 transition-colors"
       >
