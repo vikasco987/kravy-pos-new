@@ -50,7 +50,11 @@ export async function POST(request: Request) {
     }
 
     // --- Data Sanitization ---
-    const s = (val: any) => (val === undefined || val === null ? undefined : String(val).trim()); 
+    const s = (val: any) => {
+      if (val === undefined || val === null) return undefined;
+      const trimmed = String(val).trim();
+      return trimmed === "" ? null : trimmed;
+    };
     const b = (val: any) => (typeof val === 'boolean' ? val : (val === 'true' ? true : (val === 'false' ? false : undefined)));
     const n = (val: any) => {
       if (val === undefined || val === null || val === "") return undefined;

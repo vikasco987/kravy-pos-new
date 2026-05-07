@@ -113,6 +113,11 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             {business?.pinCode && ` - ${business.pinCode}`}
           </div>
         )}
+        {business?.contactPersonPhone && (
+          <div className="text-center text-[12px] font-bold mt-1">
+            Phone: {business.contactPersonPhone}
+          </div>
+        )}
         {business?.gstNumber && <div className="text-center text-[10px] font-bold border-y border-black py-1 mt-2 mb-1">GSTIN: {business.gstNumber}</div>}
         {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[10px] font-bold mt-0.5">FSSAI: {business.fssaiNumber}</div>}
         
