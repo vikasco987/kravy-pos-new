@@ -6,6 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { kravy } from "@/lib/sounds";
 import {
+    LayoutDashboard, ChefHat, MapPin, CreditCard,
+    Clock, Bell, TrendingUp, ArrowRight, Check,
+    Flame, UtensilsCrossed, Plus, Trash2, Eye,
     Printer, X, Filter, Search, User, ChevronRight,
     Edit3, LogOut, Table as TableIcon, History,
     RotateCcw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
