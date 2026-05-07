@@ -71,14 +71,6 @@ export default function AdminDashboardPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<7 | 30 | 90>(7);
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchStats(currentPage, searchQuery);
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [currentPage, searchQuery, fetchStats]);
-
   const fetchStats = useCallback(async (page: number = 1, search: string = "") => {
     setLoading(true);
     try {
@@ -92,6 +84,14 @@ export default function AdminDashboardPage() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchStats(currentPage, searchQuery);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [currentPage, searchQuery, fetchStats]);
 
   const fetchSellerDetail = async (seller: Seller, days: number = timeRange) => {
     setSelectedSeller(seller);
