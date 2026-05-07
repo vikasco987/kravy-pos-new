@@ -2603,17 +2603,17 @@ export default function CheckoutClient() {
               )}
             </div>
 
-            {/* Payment Method - Compact Rows */}
+            {/* 💳 PAYMENT METHODS (Compact Grid) */}
             <div 
-              className="grid gap-1.5"
+              className="grid gap-2 mb-4"
               style={{ 
                 gridTemplateColumns: `repeat(${
                   (["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const).filter(mode => {
-                    if (mode === "Cash") return business?.posCashEnabled ?? true;
-                    if (mode === "UPI") return business?.posUpiEnabled ?? true;
-                    if (mode === "Card") return business?.posCardEnabled ?? true;
-                    if (mode === "Pay on Counter") return business?.posCounterEnabled ?? true;
-                    if (mode === "Wallet") return business?.posWalletEnabled ?? true;
+                    if (mode === "Cash") return business?.posCashEnabled !== false;
+                    if (mode === "UPI") return business?.posUpiEnabled !== false;
+                    if (mode === "Card") return business?.posCardEnabled !== false;
+                    if (mode === "Pay on Counter") return business?.posCounterEnabled !== false;
+                    if (mode === "Wallet") return business?.posWalletEnabled !== false;
                     return true;
                   }).length
                 }, 1fr)` 
@@ -2621,33 +2621,33 @@ export default function CheckoutClient() {
             >
               {(["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const)
                 .filter(mode => {
-                  if (mode === "Cash") return business?.posCashEnabled ?? true;
-                  if (mode === "UPI") return business?.posUpiEnabled ?? true;
-                  if (mode === "Card") return business?.posCardEnabled ?? true;
-                  if (mode === "Pay on Counter") return business?.posCounterEnabled ?? true;
-                  if (mode === "Wallet") return business?.posWalletEnabled ?? true;
+                  if (mode === "Cash") return business?.posCashEnabled !== false;
+                  if (mode === "UPI") return business?.posUpiEnabled !== false;
+                  if (mode === "Card") return business?.posCardEnabled !== false;
+                  if (mode === "Pay on Counter") return business?.posCounterEnabled !== false;
+                  if (mode === "Wallet") return business?.posWalletEnabled !== false;
                   return true;
                 })
                 .map((mode) => (
                 <button
                   key={mode}
                   onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
-                  className={`py-1.5 px-1 rounded-lg border font-black text-[8px] transition-all flex flex-col items-center justify-center gap-0.5 ${paymentMode === mode
-                    ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20 scale-105"
-                    : "bg-white border-slate-100 text-slate-500 hover:border-indigo-400 hover:bg-indigo-50/30"
+                  className={`py-2 px-1 rounded-xl border-2 font-black text-[8px] transition-all flex flex-col items-center justify-center gap-1 ${paymentMode === mode
+                    ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                    : "bg-white border-slate-200 text-slate-900 hover:border-indigo-400 hover:bg-indigo-50/30"
                     }`}
                 >
-                  <span className="text-[12px] leading-none">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
+                  <span className="text-[14px] leading-none">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
                   <span className="truncate w-full text-center uppercase tracking-tighter">{mode === "Pay on Counter" ? "Counter" : mode}</span>
                 </button>
               ))}
             </div>
 
-            {/* UPI Details - Conditional & Compact */}
+            {/* UPI Details - Conditional */}
             {paymentMode === "UPI" && (
-              <div className="space-y-2 p-2.5 rounded-2xl bg-[var(--kravy-brand)]/5 border border-[var(--kravy-brand)]/10">
+              <div className="space-y-2 p-2.5 rounded-2xl bg-indigo-50 border border-indigo-200 mb-4">
                 <div className="grid grid-cols-2 gap-2">
-                  <a href={upiLink} className="text-center text-[var(--kravy-brand)] font-black text-[10px] py-2 border border-dashed border-[var(--kravy-brand)]/30 rounded-xl bg-white flex items-center justify-center gap-2">
+                  <a href={upiLink} className="text-center text-indigo-700 font-black text-[10px] py-2 border-2 border-dashed border-indigo-300 rounded-xl bg-white flex items-center justify-center gap-2">
                     📱 UPI App
                   </a>
                   <div className="grid grid-cols-2 gap-1">
@@ -2655,9 +2655,9 @@ export default function CheckoutClient() {
                       <button
                         key={s}
                         onClick={() => setPaymentStatus(s)}
-                        className={`py-1.5 rounded-lg border font-black text-[8px] transition-all uppercase tracking-wider ${paymentStatus === s
-                          ? s === "Paid" ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20" : "bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/20"
-                          : "bg-white border-slate-100 text-slate-400"
+                        className={`py-1.5 rounded-lg border-2 font-black text-[8px] transition-all uppercase tracking-wider ${paymentStatus === s
+                          ? s === "Paid" ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/20" : "bg-amber-600 border-amber-600 text-white shadow-md shadow-amber-500/20"
+                          : "bg-white border-slate-200 text-slate-500"
                           }`}
                       >
                         {s === "Pending" ? "🕒 PENDING" : "✅ PAID"}
@@ -2669,29 +2669,32 @@ export default function CheckoutClient() {
                   placeholder="Txn Ref No."
                   value={upiTxnRef}
                   onChange={(e) => setUpiTxnRef(e.target.value)}
-                  className="bg-white border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-2 w-full rounded-xl text-[11px] outline-none focus:ring-1 focus:ring-[var(--kravy-brand)] font-mono"
+                  className="bg-white border-2 border-slate-200 text-slate-900 p-2 w-full rounded-xl text-[11px] outline-none focus:ring-1 focus:ring-indigo-500 font-bold"
                 />
               </div>
             )}
 
-            {/* Primary Action Buttons */}
-            {/* 🧠 SMART DYNAMIC ACTIONS: 2x2 Grid for Prominence */}
+            {/* 💎 SMART DYNAMIC ACTIONS: Prominent if few, Compact if many */}
             {(() => {
+              if (!business) return <div className="h-10 animate-pulse bg-slate-50 rounded-xl mb-4" />;
+
               const enabledActions = [
-                { id: 'hold', enabled: business?.posHoldEnabled ?? true },
-                { id: 'save', enabled: business?.posSaveEnabled ?? true },
-                { id: 'preview', enabled: business?.posPreviewEnabled ?? true },
-                { id: 'kot', enabled: business?.posKotEnabled ?? true }
+                { id: 'hold', enabled: business.posHoldEnabled !== false },
+                { id: 'save', enabled: business.posSaveEnabled !== false },
+                { id: 'preview', enabled: business.posPreviewEnabled !== false },
+                { id: 'kot', enabled: business.posKotEnabled !== false }
               ].filter(a => a.enabled);
 
-              // If we have 3 or 4 buttons, use 2x2 grid. If 1 or 2, use 1x2 or 1x1.
-              const useTwoColumns = enabledActions.length >= 2;
+              const isCompact = enabledActions.length > 2;
 
               return (
                 <div 
-                  className={`grid gap-3 mb-4 ${useTwoColumns ? "grid-cols-2" : "grid-cols-1"}`}
+                  className={`grid gap-2 mb-4 ${isCompact ? "" : "grid-cols-2"}`}
+                  style={isCompact ? { 
+                    gridTemplateColumns: `repeat(${enabledActions.length}, 1fr)`
+                  } : {}}
                 >
-                  {(business?.posHoldEnabled ?? true) && (
+                  {(business.posHoldEnabled !== false) && (
                     <button
                       onClick={async () => {
                         const bill = await saveBill(true);
@@ -2702,14 +2705,14 @@ export default function CheckoutClient() {
                         if (resumeBillId) router.replace("/dashboard/billing/checkout");
                       }}
                       disabled={items.length === 0 || isSaving}
-                      className="flex items-center justify-center gap-3 py-4 rounded-2xl border border-amber-200 text-amber-700 bg-amber-50/50 hover:bg-amber-100 transition-all shadow-sm font-black active:scale-95"
+                      className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all font-black active:scale-95`}
                     >
-                      <PauseCircle size={18} strokeWidth={3} />
-                      <span className="text-[11px] uppercase tracking-wider">Hold</span>
+                      <PauseCircle size={isCompact ? 14 : 18} strokeWidth={3} />
+                      <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Hold</span>
                     </button>
                   )}
 
-                  {(business?.posSaveEnabled ?? true) && (
+                  {(business.posSaveEnabled !== false) && (
                     <button
                       type="button"
                       onClick={async () => {
@@ -2720,40 +2723,41 @@ export default function CheckoutClient() {
                         if (resumeBillId) router.replace("/dashboard/billing/checkout");
                       }}
                       disabled={items.length === 0 || isSaving}
-                      className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-slate-800 text-white hover:bg-slate-900 disabled:opacity-40 transition-all shadow-md font-black active:scale-95 shadow-slate-200"
+                      className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-slate-300 text-slate-900 bg-slate-50 hover:bg-slate-200 transition-all font-black active:scale-95`}
                     >
-                      <Save size={18} strokeWidth={3} />
-                      <span className="text-[11px] uppercase tracking-wider">Save Bill</span>
+                      <Save size={isCompact ? 14 : 18} strokeWidth={3} />
+                      <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Save</span>
                     </button>
                   )}
 
-                  {(business?.posPreviewEnabled ?? true) && (
+                  {(business.posPreviewEnabled !== false) && (
                     <button
                       onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
                       disabled={items.length === 0 || isSaving}
-                      className="flex items-center justify-center gap-3 py-4 rounded-2xl border border-indigo-200 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-100 transition-all shadow-sm font-black active:scale-95"
+                      className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 text-indigo-800 bg-indigo-50 hover:bg-indigo-100 transition-all font-black active:scale-95`}
                     >
-                      <Eye size={18} strokeWidth={3} />
-                      <span className="text-[11px] uppercase tracking-wider">Preview</span>
+                      <Eye size={isCompact ? 14 : 18} strokeWidth={3} />
+                      <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Preview</span>
                     </button>
                   )}
 
-                  {(business?.posKotEnabled ?? true) && (
+                  {(business.posKotEnabled !== false) && (
                     <button
                       onClick={handlePrintKOT}
                       disabled={items.length === 0 || isSaving}
-                      className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40 transition-all shadow-md font-black active:scale-95 shadow-orange-200"
+                      className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-orange-300 text-orange-800 bg-orange-50 hover:bg-orange-100 transition-all font-black active:scale-95`}
                     >
-                      <Printer size={18} strokeWidth={3} />
-                      <span className="text-[11px] uppercase tracking-wider">Print KOT</span>
+                      <Printer size={isCompact ? 14 : 18} strokeWidth={3} />
+                      <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>KOT</span>
                     </button>
                   )}
                 </div>
               );
             })()}
 
-
-            <button
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
               onClick={async () => {
                 if (paymentMode === "Wallet" && selectedParty) {
                   setPrevWalletBalance(selectedParty.walletBalance);
@@ -2773,12 +2777,12 @@ export default function CheckoutClient() {
               disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
                 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 bg-[length:200%_auto] hover:bg-right transition-all duration-500
-                text-white font-black text-xs uppercase tracking-[0.1em]
-                shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed tracking-widest"
+                text-white font-black text-xs uppercase tracking-widest
+                shadow-lg shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? <RefreshCw size={18} className="animate-spin" /> : <Printer size={18} strokeWidth={3} />} 
               {business?.enableKOTWithBill ? "KOT & Print Bill" : "Print Bill / Receipt"}
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
