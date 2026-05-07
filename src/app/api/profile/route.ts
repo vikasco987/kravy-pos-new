@@ -85,7 +85,6 @@ export async function POST(request: Request) {
         profileImageUrl: body.profileImage !== undefined ? body.profileImage : (body.profileImageUrl !== undefined ? body.profileImageUrl : undefined),
         logoUrl: body.logo !== undefined ? body.logo : (body.logoUrl !== undefined ? body.logoUrl : undefined),
         signatureUrl: body.signature !== undefined ? body.signature : (body.signatureUrl !== undefined ? body.signatureUrl : undefined),
-        businessTagLine: body.businessTagline !== undefined ? body.businessTagline : (body.businessTagLine !== undefined ? body.businessTagLine : undefined),
 
         gstNumber: body.gstNumber !== undefined ? body.gstNumber : undefined,
         businessAddress: body.businessAddress !== undefined ? body.businessAddress : undefined,
@@ -111,6 +110,7 @@ export async function POST(request: Request) {
         qrMenuPriceInclusive: body.qrMenuPriceInclusive !== undefined ? body.qrMenuPriceInclusive : undefined,
         enableKOTWithBill: body.enableKOTWithBill !== undefined ? body.enableKOTWithBill : undefined,
         enableMenuQRInBill: body.enableMenuQRInBill !== undefined ? body.enableMenuQRInBill : undefined,
+        tokenNumberSize: (body.tokenNumberSize !== undefined && body.tokenNumberSize !== null) ? Number(body.tokenNumberSize) : undefined,
         enableDeliveryCharges: body.enableDeliveryCharges !== undefined ? body.enableDeliveryCharges : undefined,
         deliveryChargeAmount: body.deliveryChargeAmount !== undefined ? body.deliveryChargeAmount : undefined,
         deliveryGstEnabled: body.deliveryGstEnabled !== undefined ? body.deliveryGstEnabled : undefined,
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
         posSaveEnabled: body.posSaveEnabled !== undefined ? body.posSaveEnabled : undefined,
         posPreviewEnabled: body.posPreviewEnabled !== undefined ? body.posPreviewEnabled : undefined,
         posKotEnabled: body.posKotEnabled !== undefined ? body.posKotEnabled : undefined,
-        tokenNumberSize: body.tokenNumberSize !== undefined ? Number(body.tokenNumberSize) : undefined,
+        tokenNumberSize: (body.tokenNumberSize !== undefined && body.tokenNumberSize !== null) ? Number(body.tokenNumberSize) : undefined,
       },
 
       create: {
