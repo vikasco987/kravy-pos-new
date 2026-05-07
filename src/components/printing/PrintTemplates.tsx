@@ -100,6 +100,11 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         >
           {business?.businessName}
         </div>
+        {business?.businessTagLine && (
+          <div className="text-center text-[11px] font-bold italic opacity-90 mb-1 leading-none uppercase tracking-tight">
+            {business.businessTagLine}
+          </div>
+        )}
         {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
           <div className="text-center text-[12px] font-bold leading-tight mt-1">
             {business?.businessAddress}
