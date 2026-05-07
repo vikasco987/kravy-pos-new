@@ -145,6 +145,20 @@ export async function POST(request: Request) {
     if (body.posPreviewEnabled !== undefined) updateData.posPreviewEnabled = b(body.posPreviewEnabled);
     if (body.posKotEnabled !== undefined) updateData.posKotEnabled = b(body.posKotEnabled);
 
+    // ✅ MISC SETTINGS
+    if (body.gstType !== undefined) updateData.gstType = s(body.gstType);
+    if (body.collectCustomerName !== undefined) updateData.collectCustomerName = b(body.collectCustomerName);
+    if (body.requireCustomerName !== undefined) updateData.requireCustomerName = b(body.requireCustomerName);
+    if (body.collectCustomerPhone !== undefined) updateData.collectCustomerPhone = b(body.collectCustomerPhone);
+    if (body.requireCustomerPhone !== undefined) updateData.requireCustomerPhone = b(body.requireCustomerPhone);
+    if (body.collectCustomerAddress !== undefined) updateData.collectCustomerAddress = b(body.collectCustomerAddress);
+    if (body.requireCustomerAddress !== undefined) updateData.requireCustomerAddress = b(body.requireCustomerAddress);
+    if (body.loyaltyPointRatio !== undefined) updateData.loyaltyPointRatio = n(body.loyaltyPointRatio);
+    if (body.loyaltyMinRedeem !== undefined) updateData.loyaltyMinRedeem = n(body.loyaltyMinRedeem);
+    if (body.aiScraperEnabled !== undefined) updateData.aiScraperEnabled = b(body.aiScraperEnabled);
+    if (body.excelImportEnabled !== undefined) updateData.excelImportEnabled = b(body.excelImportEnabled);
+    if (body.multiZoneMenuEnabled !== undefined) updateData.multiZoneMenuEnabled = b(body.multiZoneMenuEnabled);
+
     console.log("SERVER DEBUG: Final Update Data:", JSON.stringify(updateData, null, 2));
 
     const profile = await prisma.businessProfile.upsert({
@@ -196,6 +210,19 @@ export async function POST(request: Request) {
         packagingChargeAmount: n(body.packagingChargeAmount) ?? 0,
         packagingGstEnabled: b(body.packagingGstEnabled) ?? false,
         packagingGstRate: n(body.packagingGstRate) ?? 0,
+
+        gstType: s(body.gstType) ?? "PRODUCT",
+        collectCustomerName: b(body.collectCustomerName) ?? true,
+        requireCustomerName: b(body.requireCustomerName) ?? false,
+        collectCustomerPhone: b(body.collectCustomerPhone) ?? true,
+        requireCustomerPhone: b(body.requireCustomerPhone) ?? false,
+        collectCustomerAddress: b(body.collectCustomerAddress) ?? false,
+        requireCustomerAddress: b(body.requireCustomerAddress) ?? false,
+        loyaltyPointRatio: n(body.loyaltyPointRatio) ?? 10.0,
+        loyaltyMinRedeem: n(body.loyaltyMinRedeem) ?? 100,
+        aiScraperEnabled: b(body.aiScraperEnabled) ?? false,
+        excelImportEnabled: b(body.excelImportEnabled) ?? false,
+        multiZoneMenuEnabled: b(body.multiZoneMenuEnabled) ?? false,
       },
     });
 
