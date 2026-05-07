@@ -1442,7 +1442,7 @@ export default function CheckoutClient() {
           height: auto !important;
           overflow: visible !important;
           margin: 0 auto !important;
-          padding: 2mm 8% 20px 8% !important; 
+          padding: 2mm 4% 20px 4% !important; 
           background: #fff !important;
           color: #000 !important;
           font-family: 'Courier New', Courier, monospace !important;
