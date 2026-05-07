@@ -1032,14 +1032,21 @@ function KravyPOS() {
 
                                 {/* Tables Grid */}
                                 <div className="flex-1 overflow-y-auto p-4 scrollbar-hide bg-[#F8FAFC] dark:bg-slate-950">
-                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4">
+                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-4">
                                         {filteredTables.map((t) => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
+                                            const displayName = t.name?.startsWith("T-") ? t.name.slice(2) : t.name;
+                                            
+                                            // Dynamic Font Scaling
+                                            const nameLength = displayName?.length || 0;
+                                            const fontSize = nameLength <= 3 ? "text-4xl" : nameLength <= 8 ? "text-3xl" : "text-xl";
+
                                             return (
                                                 <motion.button
                                                     layout
                                                     key={t.id}
+                                                    title={displayName} // Tooltip on hover
                                                     onClick={() => { 
                                                         kravy.click(); 
                                                         setSelectedTableId(t.id); 
@@ -1049,7 +1056,7 @@ function KravyPOS() {
                                                     whileHover={{ y: -4, transition: { duration: 0.2 } }}
                                                     whileTap={{ scale: 0.98 }}
                                                 >
-                                                    <div className={`w-full h-full rounded-[24px] flex flex-col items-center justify-between p-4 border-2 transition-all duration-300 ${cfg.bg} ${cfg.text} ${cfg.border} ${isActive ? `border-indigo-600 ring-4 ring-indigo-500/10 shadow-2xl` : `shadow-sm ${cfg.glow}`}`}>
+                                                    <div className={`w-full h-full rounded-[24px] flex flex-col items-center justify-between p-3 border-2 transition-all duration-300 ${cfg.bg} ${cfg.text} ${cfg.border} ${isActive ? `border-indigo-600 ring-4 ring-indigo-500/10 shadow-2xl` : `shadow-sm ${cfg.glow}`}`}>
                                                         
                                                         {/* Compact Status Badge */}
                                                         <div className="w-full flex justify-center">
@@ -1059,11 +1066,21 @@ function KravyPOS() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Table Number - Clean & Centered */}
+                                                        {/* Table Number - Dynamic Scaling & 2-Line Clamp */}
                                                         <div className="flex flex-col items-center justify-center flex-1 w-full overflow-hidden">
-                                                            <span className="text-[10px] font-bold uppercase tracking-[3px] opacity-40 mb-1 leading-none">Table</span>
-                                                            <span className="text-3xl font-[800] tracking-tighter leading-none text-slate-900 dark:text-white truncate w-full text-center px-1">
-                                                                {t.name?.startsWith("T-") ? t.name.slice(2) : t.name}
+                                                            {nameLength <= 6 && (
+                                                                <span className="text-[10px] font-bold uppercase tracking-[3px] opacity-40 mb-1 leading-none">Table</span>
+                                                            )}
+                                                            <span 
+                                                                className={`${fontSize} font-[800] tracking-tighter leading-[1.1] text-slate-900 dark:text-white text-center px-1 line-clamp-2`}
+                                                                style={{
+                                                                    display: '-webkit-box',
+                                                                    WebkitLineClamp: 2,
+                                                                    WebkitBoxOrient: 'vertical',
+                                                                    wordBreak: 'break-word'
+                                                                }}
+                                                            >
+                                                                {displayName}
                                                             </span>
                                                         </div>
 
