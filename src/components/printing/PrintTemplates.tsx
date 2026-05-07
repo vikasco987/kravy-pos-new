@@ -57,41 +57,60 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
       <div
         ref={receiptRef}
         data-paper="58"
-        className="hidden print:block receipt font-mono text-[10px] leading-tight text-black bg-white"
-        style={{ width: '100%', maxWidth: '80mm', padding: '0 6%', margin: '0 auto', boxSizing: 'border-box' }}
+        className="hidden print:block receipt font-sans text-[11px] leading-tight text-black bg-white"
+        style={{ 
+          width: '100%', 
+          maxWidth: '80mm', 
+          padding: '0 4%', 
+          margin: '0 auto', 
+          boxSizing: 'border-box',
+          WebkitFontSmoothing: 'none',
+          fontSmooth: 'never'
+        }}
       >
         {business?.logoUrl && (
-          <div className="flex justify-center mb-1">
-            <img src={business.logoUrl} alt="Logo" className="max-h-[30mm] object-contain" style={{ filter: 'contrast(300%) grayscale(100%)' }} />
+          <div className="flex justify-center mb-2">
+            <img 
+              src={business.logoUrl} 
+              alt="Logo" 
+              className="max-h-[35mm] object-contain" 
+              style={{ 
+                imageRendering: 'pixelated', 
+                filter: 'contrast(1000%) grayscale(100%) brightness(1.1)' 
+              }} 
+            />
           </div>
         )}
-        <div className="text-center font-black text-[15px]">{business?.businessName}</div>
+        <div className="text-center font-bold text-[18px] leading-none mb-1">{business?.businessName}</div>
         {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
-          <div className="text-center text-[10px] font-bold">
+          <div className="text-center text-[10px] font-bold leading-tight mt-1 opacity-90">
             {business?.businessAddress}
             {business?.district && `, ${business.district}`}
             {business?.state && `, ${business.state}`}
             {business?.pinCode && ` - ${business.pinCode}`}
           </div>
         )}
-        {business?.gstNumber && <div className="text-center text-[10px] font-bold border-y border-dashed border-black py-1 mt-1.5">GSTIN: {business.gstNumber}</div>}
-        {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[10px] font-bold">FSSAI: {business.fssaiNumber}</div>}
-        <div className="text-center text-[11px] mt-1.5 font-bold">
-          <div>Bill No: {billNumber}</div>
-          <div>Date: {billDate}</div>
+        {business?.gstNumber && <div className="text-center text-[10px] font-bold border-y border-black py-1 mt-2 mb-1">GSTIN: {business.gstNumber}</div>}
+        {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[10px] font-bold mt-0.5">FSSAI: {business.fssaiNumber}</div>}
+        
+        <div className="text-center text-[11px] mt-2 space-y-0.5">
+          <div className="font-bold">Bill No: {billNumber}</div>
+          <div className="font-bold">Date: {billDate}</div>
+          
           {(kotNumbers && kotNumbers.length > 0) ? (
-            <div className="mt-2 flex flex-col items-center border-2 border-black py-1 px-4 mx-auto w-fit">
-              <div className="text-[9px] font-black uppercase tracking-widest">Token Numbers</div>
-              <div className="text-[14px] font-black leading-none py-1">{kotNumbers.join(', ')}</div>
+            <div className="mt-3 flex flex-col items-center border-2 border-black py-1.5 px-6 mx-auto w-fit bg-white">
+              <div className="text-[10px] font-bold uppercase tracking-widest border-b border-black mb-1">Token Numbers</div>
+              <div className="text-[20px] font-bold leading-none tracking-tighter">{kotNumbers.join(', ')}</div>
             </div>
           ) : tokenNumber && (
-            <div className="mt-2 flex flex-col items-center border-2 border-black py-1 px-4 mx-auto w-fit">
-              <div className="text-[9px] font-black uppercase tracking-widest">Token Number</div>
-              <div className="text-[18px] font-black leading-none py-1">#{tokenNumber}</div>
+            <div className="mt-3 flex flex-col items-center border-2 border-black py-2 px-8 mx-auto w-fit bg-white">
+              <div className="text-[11px] font-bold uppercase tracking-widest border-b border-black mb-1">Token Number</div>
+              <div className="text-[28px] font-bold leading-none pt-1">#{tokenNumber}</div>
             </div>
           )}
+          
           {selectedTable && (
-            <div className="font-bold text-[11px] mt-1 border border-black px-2 py-0.5 inline-block uppercase tracking-tighter">
+            <div className="font-bold text-[11px] mt-2 border border-black px-3 py-1 inline-block uppercase tracking-tight bg-white">
               {selectedTable === "POS" ? "TYPE: DINING / COUNTER" : 
                selectedTable === "TAKEAWAY" ? "TYPE: 🛍️ TAKEAWAY" : 
                selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
@@ -245,13 +264,13 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           <div className="mt-2 text-center text-[10px] font-bold border-t border-dashed border-black pt-2">
             {(business?.upi && business?.upiQrEnabled !== false) && (
               <>
-                <div className="font-black">SCAN & PAY</div>
+                <div className="font-bold text-[11px] mb-1">SCAN & PAY</div>
                 <div className="my-2 text-center">
                   <div className="inline-block border-2 border-black p-1 bg-white">
-                    <img src={qrUrl} alt="UPI QR" className="w-[32mm] h-[32mm] object-contain block" style={{ imageRendering: 'pixelated', filter: 'contrast(300%) grayscale(100%)' }} />
+                    <img src={qrUrl} alt="UPI QR" className="w-[32mm] h-[32mm] object-contain block" style={{ imageRendering: 'pixelated', filter: 'contrast(1000%) grayscale(100%)' }} />
                   </div>
                 </div>
-                <div className="mb-2">UPI: {business.upi}</div>
+                <div className="mb-2 text-[11px] font-bold">UPI: {business.upi}</div>
               </>
             )}
             {paymentMode === "UPI" && (

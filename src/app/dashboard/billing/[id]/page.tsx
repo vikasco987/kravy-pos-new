@@ -776,6 +776,8 @@ export default function ViewBillPage() {
             padding: 0;
             width: 58mm;
             background: white;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           /* Hide everything except the receipt */
           body * {
@@ -789,8 +791,10 @@ export default function ViewBillPage() {
             left: 0;
             top: 0;
             width: 58mm;
-            padding: 2mm;
+            padding: 0 4%;
             box-sizing: border-box;
+            font-family: sans-serif !important;
+            -webkit-font-smoothing: none;
           }
           /* Remove browser headers/footers */
           header, footer { display: none !important; }
@@ -801,15 +805,17 @@ export default function ViewBillPage() {
         ref={receiptRef}
         className="hidden print:block thermal-receipt w-[58mm] text-[10px] leading-tight font-sans text-black"
       >
-        {/* LOGO */}
         {business?.logoUrl && (
-          <div className="flex justify-center mb-1">
+          <div className="flex justify-center mb-2">
             <img
               src={business.logoUrl}
               alt={business.businessName ?? "Business logo"}
-              className="max-h-[40px] object-contain"
+              className="max-h-[35mm] object-contain"
+              style={{ 
+                imageRendering: 'pixelated', 
+                filter: 'contrast(1000%) grayscale(100%) brightness(1.1)' 
+              }}
             />
-
           </div>
         )}
 
@@ -817,8 +823,8 @@ export default function ViewBillPage() {
           className="text-center font-bold"
           style={{ 
             fontSize: business?.businessNameSize === 'medium' ? '12px' : 
-                      business?.businessNameSize === 'xlarge' ? '22px' : '17px',
-            lineHeight: '1.2'
+                      business?.businessNameSize === 'xlarge' ? '22px' : '18px',
+            lineHeight: '1.1'
           }}
         >
           {business?.businessName}
@@ -828,7 +834,7 @@ export default function ViewBillPage() {
           business?.district ||
           business?.state ||
           business?.pinCode) && (
-            <div className="text-center text-[9px]">
+            <div className="text-center text-[10px] font-bold mt-1 opacity-90">
               {business.businessAddress}
               {business.district && `, ${business.district}`}
               {business.state && `, ${business.state}`}
@@ -1027,13 +1033,17 @@ export default function ViewBillPage() {
           <>
             <div className="flex justify-center my-2">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
                   `upi://pay?pa=${business.upi}&pn=${encodeURIComponent(
                     business.businessName ?? ""
                   )}&am=${bill.total}&cu=INR`
                 )}`}
                 alt="UPI QR"
-                className="w-[24mm] h-[24mm]"
+                className="w-[32mm] h-[32mm]"
+                style={{ 
+                  imageRendering: 'pixelated', 
+                  filter: 'contrast(1000%) grayscale(100%)' 
+                }}
               />
             </div>
 
