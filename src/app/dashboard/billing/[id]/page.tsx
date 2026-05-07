@@ -834,7 +834,7 @@ export default function ViewBillPage() {
           business?.district ||
           business?.state ||
           business?.pinCode) && (
-            <div className="text-center text-[10px] font-bold mt-1 opacity-90">
+            <div className="text-center text-[12px] font-bold mt-1">
               {business.businessAddress}
               {business.district && `, ${business.district}`}
               {business.state && `, ${business.state}`}
@@ -893,9 +893,7 @@ export default function ViewBillPage() {
           return (
             <div
               key={idx}
-              className="flex justify-between text-[11px] mt-1 leading-tight font-medium"
-            >
-              <span className="w-[24mm] break-words">
+              className=\"flex justify-between text-[11px] mt-1 leading-tight font-bold\"\n            >\n              <span className="w-[24mm] break-words">
                 {i.name}{hsnCode}
               </span>
               <span className="w-[6mm] text-right">

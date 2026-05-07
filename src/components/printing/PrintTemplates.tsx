@@ -83,7 +83,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         )}
         <div className="text-center font-bold text-[18px] leading-none mb-1">{business?.businessName}</div>
         {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
-          <div className="text-center text-[10px] font-bold leading-tight mt-1 opacity-90">
+          <div className="text-center text-[12px] font-bold leading-tight mt-1">
             {business?.businessAddress}
             {business?.district && `, ${business.district}`}
             {business?.state && `, ${business.state}`}
@@ -145,9 +145,9 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                 <span className="flex-1 min-w-0 pr-2 break-words leading-[1.2]">{i.name}</span>
                 <span className="w-[16mm] text-right shrink-0">₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center text-[10px] font-bold opacity-90">
+              <div className="flex justify-between items-center text-[11px] font-bold mt-0.5">
                 <span>{i.qty} x ₹{Number(i.rate ?? 0).toFixed(2)}</span>
-                <span className="text-[9px]">
+                <span className="text-[10px] font-bold">
                   {((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} 
                   {(taxActive || perProductEnabled) ? ` | GST: ${itemRate}%` : ""}
                 </span>
