@@ -81,7 +81,15 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             />
           </div>
         )}
-        <div className="text-center font-bold text-[18px] leading-none mb-1">{business?.businessName}</div>
+        <div 
+          className=\"text-center font-bold leading-none mb-1\"
+          style={{ 
+            fontSize: business?.businessNameSize === 'medium' ? '12px' : 
+                      business?.businessNameSize === 'xlarge' ? '22px' : '18px' 
+          }}
+        >
+          {business?.businessName}
+        </div>
         {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
           <div className="text-center text-[12px] font-bold leading-tight mt-1">
             {business?.businessAddress}
