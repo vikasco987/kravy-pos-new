@@ -1438,11 +1438,11 @@ export default function CheckoutClient() {
         #${containerId} {
           display: block !important;
           width: 100% !important;
-          max-width: 80mm !important;
+          max-width: 58mm !important;
           height: auto !important;
           overflow: visible !important;
           margin: 0 auto !important;
-          padding: 2mm 6% 20px 6% !important; 
+          padding: 2mm 8% 20px 8% !important; 
           background: #fff !important;
           color: #000 !important;
           font-family: 'Courier New', Courier, monospace !important;

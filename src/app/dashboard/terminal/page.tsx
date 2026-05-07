@@ -357,20 +357,24 @@ function KravyPOS() {
                     #print-receipt-container {
                         display: block !important;
                         width: 100% !important;
+                        max-width: 58mm !important;
                         height: auto !important;
                         overflow: visible !important;
-                        margin: 0 !important;
-                        padding: 10px 0 30px 0 !important; 
+                        margin: 0 auto !important;
+                        padding: 2mm 8% 20px 8% !important; 
                         background: #fff !important;
                         color: #000 !important;
                         font-family: 'Courier New', Courier, monospace !important;
                         font-weight: 700 !important;
+                        position: relative !important;
+                        box-sizing: border-box !important;
                     }
                     * { 
                         color: #000 !important; 
                         border-color: #000 !important; 
                         -webkit-print-color-adjust: exact !important; 
                         print-color-adjust: exact !important;
+                        overflow: visible !important;
                     }
                     img { 
                         filter: grayscale(100%) contrast(300%) !important; 
