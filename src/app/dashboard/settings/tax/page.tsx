@@ -108,7 +108,6 @@ export default function PricingSettingsPage() {
         setSaving(true);
         try {
             const payload = { 
-                ...businessProfile, 
                 taxEnabled, 
                 perProductTaxEnabled, 
                 qrMenuPriceInclusive, 

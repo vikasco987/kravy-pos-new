@@ -232,6 +232,13 @@ export default function CheckoutClient() {
     userId?: string;
     syncQuickPosWithKitchen?: boolean;
     multiZoneMenuEnabled?: boolean;
+    posCashEnabled?: boolean;
+    posUpiEnabled?: boolean;
+    posCardEnabled?: boolean;
+    posHoldEnabled?: boolean;
+    posSaveEnabled?: boolean;
+    posPreviewEnabled?: boolean;
+    posKotEnabled?: boolean;
   } | null>(null);
 
   /* ================= CATEGORY + SEARCH ================= */
@@ -2668,77 +2675,85 @@ export default function CheckoutClient() {
             )}
 
             {/* Primary Action Buttons */}
-            <div 
-              className="grid gap-2"
-              style={{ 
-                gridTemplateColumns: `repeat(${
-                  [
-                    business?.posHoldEnabled ?? true,
-                    business?.posSaveEnabled ?? true,
-                    business?.posPreviewEnabled ?? true,
-                    business?.posKotEnabled ?? true
-                  ].filter(Boolean).length
-                }, 1fr)`
-              }}
-            >
-              {(business?.posHoldEnabled ?? true) && (
-                <button
-                  onClick={async () => {
-                    const bill = await saveBill(true);
-                    if (!bill) return;
-                    kravy.ping(); 
-                    resetForm();
-                    fetchHeldBills();
-                    if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                  }}
-                  disabled={items.length === 0 || isSaving}
-                  className="flex flex-col items-center justify-center py-1.5 rounded-lg border border-amber-100 text-amber-600 bg-amber-50/50 hover:bg-amber-100 disabled:opacity-40 transition-all shadow-sm"
-                >
-                  {isSaving ? <RefreshCw size={12} className="mb-0.5 animate-spin" /> : <PauseCircle size={12} className="mb-0.5" strokeWidth={3} />}
-                  <span className="text-[7px] font-black uppercase">Hold</span>
-                </button>
-              )}
+            {/* 🧠 SMART DYNAMIC ACTIONS: Prominent if few, Compact if many */}
+            {(() => {
+              const enabledActions = [
+                { id: 'hold', enabled: business?.posHoldEnabled ?? true },
+                { id: 'save', enabled: business?.posSaveEnabled ?? true },
+                { id: 'preview', enabled: business?.posPreviewEnabled ?? true },
+                { id: 'kot', enabled: business?.posKotEnabled ?? true }
+              ].filter(a => a.enabled);
 
-              {(business?.posSaveEnabled ?? true) && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const bill = await saveBill();
-                    if (!bill) return;
-                    kravy.success(); 
-                    resetForm();
-                    if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                  }}
-                  disabled={items.length === 0 || isSaving}
-                  className="flex flex-col items-center justify-center py-1.5 rounded-lg border border-slate-100 text-slate-500 bg-slate-50/50 hover:bg-slate-100 disabled:opacity-40 transition-all shadow-sm font-black"
-                >
-                  {isSaving ? <RefreshCw size={12} className="mb-0.5 animate-spin" /> : <Save size={12} className="mb-0.5" strokeWidth={3} />}
-                  <span className="text-[7px] uppercase">Save</span>
-                </button>
-              )}
+              const isCompact = enabledActions.length > 2;
 
-              {(business?.posPreviewEnabled ?? true) && (
-                <button
-                  onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
-                  disabled={items.length === 0 || isSaving}
-                  className="flex flex-col items-center justify-center py-1.5 rounded-lg border border-indigo-100 text-indigo-500 bg-indigo-50/50 hover:bg-indigo-100 disabled:opacity-40 transition-all shadow-sm font-black"
+              return (
+                <div 
+                  className={`grid gap-2 mb-4 ${isCompact ? "" : "grid-cols-2"}`}
+                  style={isCompact ? { 
+                    gridTemplateColumns: `repeat(${enabledActions.length}, 1fr)`
+                  } : {}}
                 >
-                  <Eye size={12} className="mb-0.5" strokeWidth={3} />
-                  <span className="text-[7px] uppercase">Preview</span>
-                </button>
-              )}
+                  {(business?.posHoldEnabled ?? true) && (
+                    <button
+                      onClick={async () => {
+                        const bill = await saveBill(true);
+                        if (!bill) return;
+                        kravy.ping(); 
+                        resetForm();
+                        fetchHeldBills();
+                        if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                      }}
+                      disabled={items.length === 0 || isSaving}
+                      className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-3.5"} items-center justify-center gap-2 rounded-xl border border-amber-100 text-amber-600 bg-amber-50/40 hover:bg-amber-100/60 disabled:opacity-40 transition-all shadow-sm font-black active:scale-95`}
+                    >
+                      {isSaving ? <RefreshCw size={isCompact ? 12 : 16} className="animate-spin" /> : <PauseCircle size={isCompact ? 12 : 16} strokeWidth={3} />}
+                      <span className={`${isCompact ? "text-[7px]" : "text-[10px]"} uppercase tracking-wider`}>Hold</span>
+                    </button>
+                  )}
 
-              {(business?.posKotEnabled ?? true) && (
-                <button
-                  onClick={handlePrintKOT}
-                  disabled={items.length === 0 || isSaving}
-                  className="flex flex-col items-center justify-center py-1.5 rounded-lg border border-orange-100 text-orange-500 bg-orange-50/50 hover:bg-orange-100 disabled:opacity-40 transition-all shadow-sm font-black"
-                >
-                  <Printer size={12} className="mb-0.5" strokeWidth={3} />
-                  <span className="text-[7px] uppercase">KOT</span>
-                </button>
-              )}
-            </div>
+                  {(business?.posSaveEnabled ?? true) && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const bill = await saveBill();
+                        if (!bill) return;
+                        kravy.success(); 
+                        resetForm();
+                        if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                      }}
+                      disabled={items.length === 0 || isSaving}
+                      className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-3.5"} items-center justify-center gap-2 rounded-xl border border-slate-200 text-slate-600 bg-slate-50/50 hover:bg-slate-100/80 disabled:opacity-40 transition-all shadow-sm font-black active:scale-95`}
+                    >
+                      {isSaving ? <RefreshCw size={isCompact ? 12 : 16} className="animate-spin" /> : <Save size={isCompact ? 12 : 16} strokeWidth={3} />}
+                      <span className={`${isCompact ? "text-[7px]" : "text-[10px]"} uppercase tracking-wider`}>Save</span>
+                    </button>
+                  )}
+
+                  {(business?.posPreviewEnabled ?? true) && (
+                    <button
+                      onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
+                      disabled={items.length === 0 || isSaving}
+                      className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-3.5"} items-center justify-center gap-2 rounded-xl border border-indigo-100 text-indigo-500 bg-indigo-50/40 hover:bg-indigo-100/60 disabled:opacity-40 transition-all shadow-sm font-black active:scale-95`}
+                    >
+                      <Eye size={isCompact ? 12 : 16} strokeWidth={3} />
+                      <span className={`${isCompact ? "text-[7px]" : "text-[10px]"} uppercase tracking-wider`}>Preview</span>
+                    </button>
+                  )}
+
+                  {(business?.posKotEnabled ?? true) && (
+                    <button
+                      onClick={handlePrintKOT}
+                      disabled={items.length === 0 || isSaving}
+                      className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-3.5"} items-center justify-center gap-2 rounded-xl border border-orange-200 text-orange-600 bg-orange-50/50 hover:bg-orange-100/80 disabled:opacity-40 transition-all shadow-sm font-black active:scale-95`}
+                    >
+                      <Printer size={isCompact ? 12 : 16} strokeWidth={3} />
+                      <span className={`${isCompact ? "text-[7px]" : "text-[10px]"} uppercase tracking-wider`}>KOT</span>
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
+
 
             <button
               onClick={async () => {

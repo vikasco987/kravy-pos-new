@@ -27,7 +27,7 @@ export default function PosLayoutSettings() {
     });
 
     useEffect(() => {
-        fetch(`/api/profile`)
+        fetch(`/api/profile`, { cache: 'no-store' })
             .then(res => res.json())
             .then(data => {
                 if (data) {
