@@ -31,6 +31,7 @@ export async function GET(request: Request) {
    CREATE / UPDATE PROFILE
 ============================= */
 export async function POST(request: Request) {
+  console.log("🚀 API VERSION: 1.0.5 - Hardened Update");
   try {
     const effectiveId = await getEffectiveClerkId();
 
@@ -49,9 +50,13 @@ export async function POST(request: Request) {
     }
 
     // --- Data Sanitization ---
-    const s = (val: any) => (val === undefined ? undefined : val); // String or same
+    const s = (val: any) => (val === undefined || val === null ? undefined : String(val).trim()); 
     const b = (val: any) => (typeof val === 'boolean' ? val : (val === 'true' ? true : (val === 'false' ? false : undefined)));
-    const n = (val: any) => (val !== undefined && val !== null && val !== "" ? Number(val) : undefined);
+    const n = (val: any) => {
+      if (val === undefined || val === null || val === "") return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    };
 
     const updateData: any = {};
     
@@ -72,6 +77,7 @@ export async function POST(request: Request) {
     if (body.contactEmail !== undefined || body.contactPersonEmail !== undefined) {
       updateData.contactPersonEmail = s(body.contactEmail ?? body.contactPersonEmail);
     }
+    // Only include businessEmail IF explicitly provided, otherwise let it be null/omit
     if (body.businessEmail !== undefined) updateData.businessEmail = s(body.businessEmail);
     if (body.upi !== undefined) updateData.upi = s(body.upi);
 
@@ -110,6 +116,8 @@ export async function POST(request: Request) {
 
     // Other settings
     if (body.posKotEnabled !== undefined) updateData.posKotEnabled = b(body.posKotEnabled);
+
+    console.log("SERVER DEBUG: Final Update Data:", JSON.stringify(updateData, null, 2));
 
     const profile = await prisma.businessProfile.upsert({
       where: { userId: effectiveId },
