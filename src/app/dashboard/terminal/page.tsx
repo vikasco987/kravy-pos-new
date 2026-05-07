@@ -1012,7 +1012,7 @@ function KravyPOS() {
                                 {/* Tables Grid */}
                                 <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
                                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                                        {filteredTables.map(t => {
+                                        {filteredTables.map((t) => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
                                             return (
@@ -1029,20 +1029,17 @@ function KravyPOS() {
                                                     whileTap={{ scale: 0.95 }}
                                                 >
                                                     <div className={`w-full h-full rounded-3xl flex flex-col items-center justify-between p-2 border-2 transition-all duration-300 ${cfg.bg} ${cfg.text} ${isActive ? `border-slate-900 ring-4 ring-slate-900/5 shadow-2xl` : "border-slate-100 dark:border-white/5 shadow-sm"}`}>
-                                                        
                                                         <div className="flex flex-col items-center w-full">
                                                             <span className={`text-[8px] font-black uppercase tracking-wider flex items-center gap-1 px-1.5 py-0.5 rounded-full ${cfg.bg} border border-current w-full justify-center truncate`}>
                                                                 <span className={`w-1 h-1 rounded-full ${cfg.dot} animate-pulse`} />
                                                                 {cfg?.label || "Status"}
                                                             </span>
                                                         </div>
-
                                                         <div className="flex flex-col items-center w-full px-1">
                                                             <span className="text-xl font-black italic tracking-tighter leading-none w-full text-center">
                                                                 {t.name?.startsWith("T-") ? t.name.slice(2) : t.name}
                                                             </span>
                                                         </div>
-
                                                         <div className="flex items-center justify-center w-full">
                                                             {t.startTime ? (
                                                                 <TableTimer startTime={t.startTime} className="!bg-white/50 dark:!bg-black/30 !border-none !px-2 !py-1 !text-[11px]" />
@@ -1050,7 +1047,6 @@ function KravyPOS() {
                                                                 <div className="h-6" />
                                                             )}
                                                         </div>
-
                                                         {t.activeCount > 0 && (
                                                             <div className="absolute -top-1 -right-1">
                                                                 <div className="bg-rose-500 text-white text-[10px] font-black min-w-[20px] h-[20px] px-1 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900 animate-in zoom-in-50 duration-300">
