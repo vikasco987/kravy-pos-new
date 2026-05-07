@@ -6,14 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { kravy } from "@/lib/sounds";
 import {
-    LayoutDashboard, ChefHat, MapPin, CreditCard,
-    Clock, Bell, TrendingUp, ArrowRight, Check,
-    Flame, UtensilsCrossed, Plus, Trash2, Eye,
     Printer, X, Filter, Search, User, ChevronRight,
     Edit3, LogOut, Table as TableIcon, History,
     RotateCcw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
     Wifi, Battery, Signal, Smartphone, Timer, AlertTriangle, ChevronUp, Package2,
-    Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut, Phone, MessageSquare
+    Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut, Phone, MessageSquare,
+    Crown, Building, Wind, Monitor, Layout, Navigation
 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { 
@@ -48,6 +46,7 @@ type OrderItem = {
 
 const TableTimer = ({ startTime, className = "" }: { startTime?: string, className?: string }) => {
     const [elapsed, setElapsed] = useState("");
+    const [ageStatus, setAgeStatus] = useState<"fresh" | "medium" | "old">("fresh");
 
     useEffect(() => {
         if (!startTime) {
@@ -59,38 +58,57 @@ const TableTimer = ({ startTime, className = "" }: { startTime?: string, classNa
             const now = new Date();
             const start = new Date(startTime);
             const diff = Math.floor((now.getTime() - start.getTime()) / 1000);
+            const mins = Math.floor(diff / 60);
             
+            // Age status logic
+            if (mins < 15) setAgeStatus("fresh");
+            else if (mins < 45) setAgeStatus("medium");
+            else setAgeStatus("old");
+
             if (diff < 0) {
-                setElapsed("0s");
+                setElapsed("00:00");
                 return;
             }
 
-            const secs = diff % 60;
-            const mins = Math.floor(diff / 60);
-            const hrs = Math.floor(mins / 60);
+            const h = Math.floor(mins / 60);
+            const m = mins % 60;
             
-            if (hrs > 0) {
-                setElapsed(`${hrs}h ${mins % 60}m`);
-            } else if (mins > 0) {
-                setElapsed(`${mins}m ${secs}s`);
+            if (h > 0) {
+                setElapsed(`${h}h ${m.toString().padStart(2, '0')}m`);
             } else {
-                setElapsed(`${secs}s`);
+                setElapsed(`${m}m`);
             }
         };
 
         update();
-        const interval = setInterval(update, 1000);
+        const interval = setInterval(update, 10000); // Update every 10s is enough
         return () => clearInterval(interval);
     }, [startTime]);
 
     if (!startTime) return null;
 
+    const ageColors = {
+        fresh: "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100",
+        medium: "text-amber-600 bg-amber-50 dark:bg-amber-500/10 border-amber-100",
+        old: "text-rose-600 bg-rose-50 dark:bg-rose-500/10 border-rose-100"
+    };
+
     return (
-        <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-sm font-black text-slate-900 dark:text-white shadow-md ${className}`}>
-            <Clock size={14} strokeWidth={3} className="text-indigo-600 dark:text-indigo-400" />
+        <span className={`flex items-center gap-1 px-2 py-1 rounded-lg border font-medium text-[11px] transition-colors duration-500 ${ageColors[ageStatus]} ${className}`}>
+            <Timer size={10} className="opacity-70" />
             {elapsed}
         </span>
     );
+};
+
+const getTableIcon = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes("vip")) return <Crown size={14} />;
+    if (n.includes("balcony")) return <Building size={14} />;
+    if (n.includes("window")) return <Layout size={14} />;
+    if (n.includes("rooftop")) return <Wind size={14} />;
+    if (n.includes("floor")) return <Navigation size={14} />;
+    return <TableIcon size={14} />;
 };
 
 
@@ -776,11 +794,11 @@ function KravyPOS() {
     };
 
     const statusConfig = {
-        FREE: { bg: "bg-slate-50", text: "text-slate-500", dot: "bg-slate-400", ring: "ring-slate-100", label: "Vacant", glass: "bg-slate-500/10 border-slate-500/20", btn: "bg-slate-900" },
-        PENDING: { bg: "bg-amber-50", text: "text-amber-600", dot: "bg-amber-500", ring: "ring-amber-100", label: "Reserved", glass: "bg-amber-500/10 border-amber-500/20", btn: "bg-amber-600 hover:bg-amber-700" },
-        ACCEPTED: { bg: "bg-indigo-50", text: "text-indigo-600", dot: "bg-indigo-500", ring: "ring-indigo-100", label: "Accepted", glass: "bg-indigo-500/10 border-indigo-500/20", btn: "bg-indigo-600 hover:bg-indigo-700" },
-        PREPARING: { bg: "bg-indigo-50", text: "text-indigo-600", dot: "bg-indigo-600", ring: "ring-indigo-200", label: "Preparing", glass: "bg-indigo-600/10 border-indigo-600/20", btn: "bg-indigo-600 hover:bg-indigo-700" },
-        READY: { bg: "bg-emerald-50", text: "text-emerald-600", dot: "bg-emerald-600", ring: "ring-emerald-200", label: "Serve Now", glass: "bg-emerald-600/10 border-emerald-600/20", btn: "bg-emerald-600 hover:bg-emerald-700" }
+        FREE: { bg: "bg-slate-50", text: "text-slate-500", dot: "bg-slate-400", ring: "ring-slate-100", label: "Vacant", glass: "bg-slate-500/10 border-slate-500/20", glow: "", shadow: "shadow-sm" },
+        PENDING: { bg: "bg-amber-50", text: "text-amber-600", dot: "bg-amber-500", ring: "ring-amber-100", label: "Reserved", glass: "bg-amber-500/10 border-amber-500/20", glow: "shadow-[0_0_15px_rgba(245,158,11,0.2)]", shadow: "shadow-md" },
+        ACCEPTED: { bg: "bg-indigo-50", text: "text-indigo-600", dot: "bg-indigo-500", ring: "ring-indigo-100", label: "Accepted", glass: "bg-indigo-500/10 border-indigo-500/20", glow: "shadow-[0_0_15px_rgba(79,70,229,0.2)]", shadow: "shadow-md" },
+        PREPARING: { bg: "bg-indigo-50", text: "text-indigo-600", dot: "bg-indigo-600", ring: "ring-indigo-200", label: "Preparing", glass: "bg-indigo-600/10 border-indigo-600/20", glow: "shadow-[0_0_20px_rgba(79,70,229,0.25)]", shadow: "shadow-lg" },
+        READY: { bg: "bg-emerald-50", text: "text-emerald-600", dot: "bg-emerald-600", ring: "ring-emerald-200", label: "Serve Now", glass: "bg-emerald-600/10 border-emerald-600/20", glow: "shadow-[0_0_20px_rgba(16,185,129,0.3)]", shadow: "shadow-lg" }
     };
 
     // Helper: Aggregate items for Chef
@@ -1010,8 +1028,8 @@ function KravyPOS() {
                                 </div>
 
                                 {/* Tables Grid */}
-                                <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
-                                    <div className="grid grid-cols-4 gap-3">
+                                <div className="flex-1 overflow-y-auto p-4 scrollbar-hide bg-gradient-to-b from-[#F8FAFC] to-[#EEF2FF] dark:from-slate-900 dark:to-slate-950">
+                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-4">
                                         {filteredTables.map((t) => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
@@ -1024,24 +1042,27 @@ function KravyPOS() {
                                                         setSelectedTableId(t.id); 
                                                         setSelectedOrderId(null); 
                                                     }}
-                                                    className={`relative group min-h-[170px] flex flex-col rounded-[24px] transition-all ${isActive ? "z-10" : ""}`}
-                                                    whileHover={{ y: -6, transition: { duration: 0.3 } }}
+                                                    className={`relative group min-h-[170px] flex flex-col rounded-[24px] transition-all duration-300 ${isActive ? "z-20 scale-[1.02]" : "z-10"}`}
+                                                    whileHover={{ y: -6, scale: 1.03, transition: { duration: 0.2, ease: "easeOut" } }}
                                                     whileTap={{ scale: 0.96 }}
                                                 >
-                                                    <div className={`w-full h-full rounded-[24px] flex flex-col items-center justify-between p-[14px] border-2 transition-all duration-300 gap-3 ${cfg.bg} ${cfg.text} ${isActive ? `border-slate-900 ring-4 ring-slate-900/10 shadow-2xl` : "border-slate-100 dark:border-white/5 shadow-sm hover:shadow-md"}`}>
+                                                    <div className={`w-full h-full rounded-[24px] flex flex-col items-center justify-between p-[14px] border-2 transition-all duration-300 gap-3 ${cfg.bg} ${cfg.text} ${isActive ? `border-indigo-600 ring-4 ring-indigo-500/10 shadow-indigo-500/20 shadow-2xl` : `border-transparent ${cfg.shadow} ${cfg.glow}`}`}>
                                                         
                                                         {/* Modern Glassmorphism Status Badge */}
                                                         <div className="flex flex-col items-center w-full">
-                                                            <div className={`backdrop-blur-md ${cfg.glass} border py-1.5 px-3 rounded-full flex items-center gap-2 shadow-sm w-full justify-center`}>
-                                                                <span className={`w-2 h-2 rounded-full ${cfg.dot} animate-pulse shadow-[0_0_10px_rgba(0,0,0,0.1)]`} />
-                                                                <span className="text-[10px] font-black uppercase tracking-[0.1em]">{cfg?.label}</span>
+                                                            <div className={`backdrop-blur-xl ${cfg.glass} border py-1.5 px-3 rounded-full flex items-center gap-2 shadow-sm w-full justify-center`}>
+                                                                <span className={`w-2 h-2 rounded-full ${cfg.dot} animate-pulse`} />
+                                                                <span className="text-[9px] font-black uppercase tracking-[0.1em]">{cfg?.label}</span>
                                                             </div>
                                                         </div>
 
                                                         {/* Table Identity */}
-                                                        <div className="flex flex-col items-center w-full py-1">
-                                                            <span className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-40 mb-1">Table</span>
-                                                            <span className="text-3xl font-black italic tracking-tighter leading-none text-slate-900 dark:text-white">
+                                                        <div className="flex flex-col items-center w-full py-1 relative">
+                                                            <div className="absolute -top-3 opacity-10">
+                                                                {getTableIcon(t.name)}
+                                                            </div>
+                                                            <span className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-30 mb-0.5">Table</span>
+                                                            <span className="text-3xl font-black italic tracking-[-0.05em] leading-none text-slate-900 dark:text-white">
                                                                 {t.name?.startsWith("T-") ? t.name.slice(2) : t.name}
                                                             </span>
                                                         </div>
@@ -1049,9 +1070,12 @@ function KravyPOS() {
                                                         {/* Occupancy Timer */}
                                                         <div className="flex items-center justify-center w-full pt-1">
                                                             {t.startTime ? (
-                                                                <TableTimer startTime={t.startTime} className="!bg-white/80 dark:!bg-black/40 !border-slate-200/50 !shadow-sm !px-3 !py-1.5 !rounded-xl !text-[12px]" />
+                                                                <TableTimer startTime={t.startTime} />
                                                             ) : (
-                                                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-20">Available</span>
+                                                                <div className="flex items-center gap-1.5 opacity-20 group-hover:opacity-40 transition-opacity">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                                                                    <span className="text-[10px] font-black uppercase tracking-widest">Free</span>
+                                                                </div>
                                                             )}
                                                         </div>
 
@@ -1064,10 +1088,6 @@ function KravyPOS() {
                                                             </div>
                                                         )}
                                                     </div>
-                                                    
-                                                    {t.isOccupied && !isActive && (
-                                                        <span className={`absolute inset-0 rounded-[24px] opacity-20 animate-pulse pointer-events-none ring-2 ${cfg.ring}`} />
-                                                    )}
                                                 </motion.button>
                                             );
                                         })}
@@ -1080,24 +1100,36 @@ function KravyPOS() {
                                     )}
                                 </div>
 
-                                {/* Stats Footer */}
-                                <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-                                    <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 rounded-2xl p-1">
-                                        <div className="flex-1 text-center py-2 border-r border-slate-200 dark:border-slate-700">
-                                            <span className="block text-[11px] font-black text-indigo-600 leading-none">{stats.running}</span>
-                                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Cooking</span>
+                                {/* Stats Footer - Professional Stats Bar */}
+                                <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+                                    <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide pb-1">
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Preparing</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                                                    <span className="text-sm font-black text-slate-900 dark:text-white">{stats.running}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Ready</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                    <span className="text-sm font-black text-slate-900 dark:text-white">{stats.ready}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Queue</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                                    <span className="text-sm font-black text-slate-900 dark:text-white">{stats.pending}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="flex-1 text-center py-2 border-r border-slate-200 dark:border-slate-700">
-                                            <span className="block text-[11px] font-black text-amber-600 leading-none">{stats.pending}</span>
-                                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Waiting</span>
-                                        </div>
-                                        <div className="flex-1 text-center py-2 border-r border-slate-200 dark:border-slate-700">
-                                            <span className="block text-[11px] font-black text-emerald-600 leading-none">{stats.ready}</span>
-                                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Done</span>
-                                        </div>
-                                        <div className="flex-1 text-center py-2">
-                                            <span className="block text-[11px] font-black text-slate-900 dark:text-white leading-none">₹{stats.sales}</span>
-                                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Sales</span>
+                                        <div className="h-8 w-px bg-slate-100 dark:bg-slate-800 shrink-0" />
+                                        <div className="flex flex-col items-end shrink-0">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sales Today</span>
+                                            <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">₹{stats.sales.toLocaleString()}</span>
                                         </div>
                                     </div>
                                 </div>
