@@ -165,11 +165,10 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         <div className="mt-1 text-center text-[10px] font-bold">
           {placeOfSupply && <div>Place of Supply: {placeOfSupply}</div>}
         </div>
-        <div className="flex justify-between font-bold text-[9px] uppercase border-y-2 border-dashed border-black py-1 my-1">
+        <div className="flex justify-between font-bold text-[10px] uppercase border-b border-dashed border-black py-1 my-1">
           <span className="flex-1 min-w-0 pr-1">Item Description</span>
           <span className="w-[10mm] text-right shrink-0">Total</span>
         </div>
-        <div className="border-t-2 border-dashed border-black my-1" />
         {items.map((i, idx) => {
           const itemRate = (perProductEnabled && i.gst !== undefined && i.gst !== null) ? i.gst : (taxActive ? globalRate : 0);
           return (
