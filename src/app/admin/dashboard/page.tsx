@@ -369,6 +369,44 @@ export default function AdminDashboardPage() {
                       </div>
                    </div>
 
+                   {/* IDENTITY & CONTACT SECTION */}
+                   <div className="grid grid-cols-2 gap-8">
+                      <div className="p-8 bg-slate-50/50 border border-slate-100 rounded-[32px] space-y-4">
+                        <div className="flex items-center gap-2 text-slate-900">
+                          <Users size={16} />
+                          <h3 className="text-xs font-black uppercase tracking-widest">Contact Identity</h3>
+                        </div>
+                        <div className="space-y-3">
+                           <div>
+                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Representative</p>
+                             <p className="text-sm font-bold text-slate-700">{sellerDetail.profile?.contactPersonName || 'Not Specified'}</p>
+                           </div>
+                           <div>
+                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Direct Contact</p>
+                             <p className="text-sm font-black text-indigo-600">{sellerDetail.profile?.contactPersonPhone || 'No Phone Registered'}</p>
+                           </div>
+                        </div>
+                      </div>
+
+                      <div className="p-8 bg-slate-50/50 border border-slate-100 rounded-[32px] space-y-4">
+                        <div className="flex items-center gap-2 text-slate-900">
+                          <Globe size={16} />
+                          <h3 className="text-xs font-black uppercase tracking-widest">Business Location</h3>
+                        </div>
+                        <div className="space-y-2">
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Full Address</p>
+                           <p className="text-xs font-bold text-slate-600 leading-relaxed italic">
+                             {sellerDetail.profile?.businessAddress ? (
+                               <>
+                                 {sellerDetail.profile.businessAddress}<br/>
+                                 {sellerDetail.profile.district}, {sellerDetail.profile.state} - {sellerDetail.profile.pinCode}
+                               </>
+                             ) : 'No address provided'}
+                           </p>
+                        </div>
+                      </div>
+                   </div>
+
                    {/* CHART SECTION */}
                    <div className="space-y-6">
                       <div className="flex items-center justify-between">
