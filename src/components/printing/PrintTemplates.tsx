@@ -53,16 +53,25 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
 
   return (
     <div className="hidden-print">
-      {/* ================= PRINT RECEIPT (58mm) ================= */}
+      {/* Universal Print Style Reset */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page { margin: 0 !important; }
+          body { margin: 0 !important; padding: 0 !important; }
+          .receipt-container { width: 58mm !important; margin: 0 auto !important; }
+          .kot-container { width: 58mm !important; margin: 0 auto !important; }
+        }
+      `}} />
+
+      {/* ================= PRINT RECEIPT (58mm Content) ================= */}
       <div
         ref={receiptRef}
         data-paper="58"
-        className="hidden print:block receipt font-sans text-[11px] leading-tight text-black bg-white"
+        className="hidden print:block receipt receipt-container font-sans text-[11px] leading-tight text-black bg-white"
         style={{ 
-          width: '100%', 
-          maxWidth: '58mm', 
-          padding: '0 6mm', 
-          margin: '0 auto', 
+          width: '58mm', 
+          margin: '0 auto',
+          padding: '4mm 4mm 8mm 4mm', 
           boxSizing: 'border-box',
           WebkitFontSmoothing: 'none',
           fontSmooth: 'never',
@@ -340,12 +349,12 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         </div>
       </div>
 
-      {/* ================= KOT TEMPLATE (58mm) ================= */}
+      {/* ================= KOT TEMPLATE (58mm Content) ================= */}
       <div
         ref={kotRef}
         data-paper="58"
-        className="hidden print:block kot font-mono text-[10px] leading-tight text-black bg-white"
-        style={{ width: '100%', maxWidth: '58mm', padding: '0 6mm', margin: '0 auto', boxSizing: 'border-box', overflow: 'hidden' }}
+        className="hidden print:block kot kot-container font-mono text-[10px] leading-tight text-black bg-white"
+        style={{ width: '58mm', margin: '0 auto', padding: '4mm 4mm 8mm 4mm', boxSizing: 'border-box', overflow: 'hidden' }}
       >
         <div className="text-center font-black text-[22px] border-b-2 border-black pb-1 mb-2">K.O.T</div>
         
