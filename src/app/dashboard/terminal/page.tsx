@@ -86,8 +86,8 @@ const TableTimer = ({ startTime, className = "" }: { startTime?: string, classNa
     if (!startTime) return null;
 
     return (
-        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[12px] font-mono font-black text-slate-900 dark:text-slate-100 shadow-sm ${className}`}>
-            <Clock size={12} strokeWidth={3} className="text-indigo-600 dark:text-indigo-400" />
+        <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-sm font-black text-slate-900 dark:text-white shadow-md ${className}`}>
+            <Clock size={14} strokeWidth={3} className="text-indigo-600 dark:text-indigo-400" />
             {elapsed}
         </span>
     );
