@@ -161,70 +161,35 @@ export async function POST(request: Request) {
 
     console.log("SERVER DEBUG: Final Update Data:", JSON.stringify(updateData, null, 2));
 
-    const profile = await prisma.businessProfile.upsert({
-      where: { userId: effectiveId },
-      update: updateData,
-      create: {
-        userId: effectiveId,
-        businessType: s(body.businessType) ?? null,
-        businessName: s(body.businessName) ?? "My Business",
-        businessTagLine: s(body.businessTagline ?? body.businessTagLine) ?? null,
-        contactPersonName: s(body.contactName ?? body.contactPersonName) ?? null,
-        contactPersonPhone: s(body.contactPhone ?? body.contactPersonPhone) ?? null,
-        contactPersonEmail: s(body.contactEmail ?? body.contactPersonEmail) ?? null,
-        businessEmail: s(body.businessEmail) ?? null,
-        upi: s(body.upi) ?? null,
-        profileImageUrl: s(body.profileImage ?? body.profileImageUrl) ?? null,
-        logoUrl: s(body.logo ?? body.logoUrl) ?? null,
-        signatureUrl: s(body.signature ?? body.signatureUrl) ?? null,
-        gstNumber: s(body.gstNumber) ?? null,
-        businessAddress: s(body.businessAddress) ?? null,
-        state: s(body.state) ?? null,
-        district: s(body.district) ?? null,
-        pinCode: s(body.pinCode) ?? null,
-        taxEnabled: b(body.taxEnabled) ?? true,
-        taxRate: n(body.taxRate) ?? 5.0,
-        upiQrEnabled: b(body.upiQrEnabled) ?? true,
-        menuLinkEnabled: b(body.menuLinkEnabled) ?? true,
-        greetingMessage: s(body.greetingMessage) ?? "Thank You 🙏 Visit Again!",
-        businessNameSize: s(body.businessNameSize) ?? "large",
-        fssaiNumber: s(body.fssaiNumber) ?? null,
-        fssaiEnabled: b(body.fssaiEnabled) ?? false,
-        hsnEnabled: b(body.hsnEnabled) ?? false,
-        enableMenuQRInBill: b(body.enableMenuQRInBill) ?? false,
-        enableClerkAuth: b(body.enableClerkAuth) ?? true,
-        enableCustomAuth: b(body.enableCustomAuth) ?? false,
-        tokenNumberSize: n(body.tokenNumberSize) ?? 22,
-        
-        perProductTaxEnabled: b(body.perProductTaxEnabled) ?? false,
-        qrMenuPriceInclusive: b(body.qrMenuPriceInclusive) ?? false,
-        enableKOTWithBill: b(body.enableKOTWithBill) ?? false,
-        syncQuickPosWithKitchen: b(body.syncQuickPosWithKitchen) ?? false,
-        
-        enableDeliveryCharges: b(body.enableDeliveryCharges) ?? false,
-        deliveryChargeAmount: n(body.deliveryChargeAmount) ?? 0,
-        deliveryGstEnabled: b(body.deliveryGstEnabled) ?? false,
-        deliveryGstRate: n(body.deliveryGstRate) ?? 0,
-        
-        enablePackagingCharges: b(body.enablePackagingCharges) ?? false,
-        packagingChargeAmount: n(body.packagingChargeAmount) ?? 0,
-        packagingGstEnabled: b(body.packagingGstEnabled) ?? false,
-        packagingGstRate: n(body.packagingGstRate) ?? 0,
-
-        gstType: s(body.gstType) ?? "PRODUCT",
-        collectCustomerName: b(body.collectCustomerName) ?? true,
-        requireCustomerName: b(body.requireCustomerName) ?? false,
-        collectCustomerPhone: b(body.collectCustomerPhone) ?? true,
-        requireCustomerPhone: b(body.requireCustomerPhone) ?? false,
-        collectCustomerAddress: b(body.collectCustomerAddress) ?? false,
-        requireCustomerAddress: b(body.requireCustomerAddress) ?? false,
-        loyaltyPointRatio: n(body.loyaltyPointRatio) ?? 10.0,
-        loyaltyMinRedeem: n(body.loyaltyMinRedeem) ?? 100,
-        aiScraperEnabled: b(body.aiScraperEnabled) ?? false,
-        excelImportEnabled: b(body.excelImportEnabled) ?? false,
-        multiZoneMenuEnabled: b(body.multiZoneMenuEnabled) ?? false,
-      },
+    // ✅ FIX: Use separate find/update/create instead of upsert to avoid MongoDB Atlas pipeline length limit (50 stages)
+    const existingProfile = await prisma.businessProfile.findUnique({
+      where: { userId: effectiveId }
     });
+
+    let profile;
+    if (existingProfile) {
+      profile = await prisma.businessProfile.update({
+        where: { userId: effectiveId },
+        data: updateData
+      });
+    } else {
+      profile = await prisma.businessProfile.create({
+        data: {
+          ...updateData, // Use the fields we have in updateData
+          userId: effectiveId,
+          // Ensure mandatory fields have defaults if missing in updateData
+          businessName: updateData.businessName ?? s(body.businessName) ?? "My Business",
+          taxEnabled: updateData.taxEnabled ?? b(body.taxEnabled) ?? true,
+          taxRate: updateData.taxRate ?? n(body.taxRate) ?? 5.0,
+          upiQrEnabled: updateData.upiQrEnabled ?? b(body.upiQrEnabled) ?? true,
+          menuLinkEnabled: updateData.menuLinkEnabled ?? b(body.menuLinkEnabled) ?? true,
+          greetingMessage: updateData.greetingMessage ?? s(body.greetingMessage) ?? "Thank You 🙏 Visit Again!",
+          businessNameSize: updateData.businessNameSize ?? s(body.businessNameSize) ?? "large",
+          tokenNumberSize: updateData.tokenNumberSize ?? n(body.tokenNumberSize) ?? 22,
+          gstType: updateData.gstType ?? s(body.gstType) ?? "PRODUCT",
+        }
+      });
+    }
 
     return NextResponse.json(profile, { status: 200 });
   } catch (error: any) {
