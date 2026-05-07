@@ -1263,6 +1263,19 @@ export default function CheckoutClient() {
         setTokenNumber(savedBill.tokenNumber);
         setBusiness(prev => prev ? { ...prev, lastTokenNumber: savedBill.tokenNumber } : prev);
       }
+
+      // ✅ COMPETE LINKED ORDER (Prevent Duplicates in History)
+      if (syncedOrderId && !isHeld) {
+        try {
+          await fetch("/api/orders", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: syncedOrderId, status: "COMPLETED" })
+          });
+        } catch (compErr) {
+          console.error("Failed to complete linked order:", compErr);
+        }
+      }
       
       setIsSaving(false);
       return savedBill;

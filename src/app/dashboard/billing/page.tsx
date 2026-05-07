@@ -70,11 +70,31 @@ const TypeBadge = ({ type }: { type: string }) => {
 
 const StatusIndicator = ({ status, isHeld }: { status: string, isHeld?: boolean }) => {
   const s = status?.toLowerCase();
-  if (isHeld || s === "pending") return (
+  
+  if (isHeld) return (
+    <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#f59e0b", fontSize: "0.65rem", fontWeight: 800 }}>
+      <Clock size={12} /> HELD
+    </div>
+  );
+
+  if (s === "pending") return (
     <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#f59e0b", fontSize: "0.65rem", fontWeight: 800 }}>
       <Clock size={12} /> PENDING
     </div>
   );
+
+  if (s === "accepted" || s === "preparing" || s === "ready") return (
+    <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#3b82f6", fontSize: "0.65rem", fontWeight: 800 }}>
+      <UtensilsCrossed size={12} /> {s.toUpperCase()}
+    </div>
+  );
+
+  if (s === "cancelled") return (
+    <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#ef4444", fontSize: "0.65rem", fontWeight: 800 }}>
+      <XCircle size={12} /> CANCELLED
+    </div>
+  );
+
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#10b981", fontSize: "0.65rem", fontWeight: 800 }}>
       <CheckCircle2 size={12} /> SETTLED
@@ -171,7 +191,7 @@ export default function BillingPage() {
         const globalRate = prof?.taxRate ?? 5;
         const taxActive = prof?.taxEnabled ?? true;
 
-        const activeOrders = oData.filter((o: any) => o.status !== "COMPLETED").map((o: any) => {
+        const activeOrders = oData.filter((o: any) => o.status !== "COMPLETED" && !o.isDeleted).map((o: any) => {
           const items = Array.isArray(o.items) ? o.items : [];
           let calcTax = 0;
           let calcSubtotal = 0;
