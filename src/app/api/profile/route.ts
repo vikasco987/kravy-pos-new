@@ -132,6 +132,7 @@ export async function POST(request: Request) {
         posSaveEnabled: body.posSaveEnabled !== undefined ? body.posSaveEnabled : undefined,
         posPreviewEnabled: body.posPreviewEnabled !== undefined ? body.posPreviewEnabled : undefined,
         posKotEnabled: body.posKotEnabled !== undefined ? body.posKotEnabled : undefined,
+        tokenNumberSize: body.tokenNumberSize !== undefined ? Number(body.tokenNumberSize) : undefined,
       },
 
       create: {
@@ -196,6 +197,7 @@ export async function POST(request: Request) {
         posSaveEnabled: body.posSaveEnabled ?? true,
         posPreviewEnabled: body.posPreviewEnabled ?? true,
         posKotEnabled: body.posKotEnabled ?? true,
+        tokenNumberSize: body.tokenNumberSize ?? 22,
       },
     });
 

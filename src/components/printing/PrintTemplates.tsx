@@ -98,14 +98,24 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           <div className="font-bold">Date: {billDate}</div>
           
           {(kotNumbers && kotNumbers.length > 0) ? (
-            <div className="mt-3 flex flex-col items-center border-2 border-black py-1.5 px-6 mx-auto w-fit bg-white">
-              <div className="text-[10px] font-bold uppercase tracking-widest border-b border-black mb-1">Token Numbers</div>
-              <div className="text-[20px] font-bold leading-none tracking-tighter">{kotNumbers.join(', ')}</div>
+            <div className=\"mt-3 flex flex-col items-center border-2 border-black py-1.5 px-6 mx-auto w-fit bg-white\">
+              <div className=\"text-[10px] font-bold uppercase tracking-widest border-b border-black mb-1\">Token Numbers</div>
+              <div 
+                className=\"font-bold leading-none tracking-tighter\"
+                style={{ fontSize: `${(business?.tokenNumberSize || 22) * 0.9}px` }}
+              >
+                {kotNumbers.join(', ')}
+              </div>
             </div>
           ) : tokenNumber && (
-            <div className="mt-3 flex flex-col items-center border-2 border-black py-2 px-8 mx-auto w-fit bg-white">
-              <div className="text-[11px] font-bold uppercase tracking-widest border-b border-black mb-1">Token Number</div>
-              <div className="text-[28px] font-bold leading-none pt-1">#{tokenNumber}</div>
+            <div className=\"mt-3 flex flex-col items-center border-2 border-black py-2 px-8 mx-auto w-fit bg-white\">
+              <div className=\"text-[11px] font-bold uppercase tracking-widest border-b border-black mb-1\">Token Number</div>
+              <div 
+                className=\"font-bold leading-none pt-1\"
+                style={{ fontSize: `${business?.tokenNumberSize || 28}px` }}
+              >
+                #{tokenNumber}
+              </div>
             </div>
           )}
           

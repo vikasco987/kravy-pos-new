@@ -51,6 +51,7 @@ const schema = z.object({
   enableMenuQRInBill: z.boolean().optional(),
   enableClerkAuth: z.boolean().optional(),
   enableCustomAuth: z.boolean().optional(),
+  tokenNumberSize: z.number().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -225,6 +226,7 @@ export default function BusinessProfileForm({
         enableMenuQRInBill: values.enableMenuQRInBill || false,
         enableClerkAuth: values.enableClerkAuth,
         enableCustomAuth: values.enableCustomAuth,
+        tokenNumberSize: values.tokenNumberSize || 22,
       };
 
       const res = await fetch("/api/profile", {
@@ -382,6 +384,21 @@ export default function BusinessProfileForm({
       <Section title="Receipt Customization">
         <Field label="Greeting Message">
           <Input {...register("greetingMessage")} placeholder="Thank You 🙏 Visit Again!" />
+        </Field>
+
+        <Field label={`Token Number Size (${watchedValues.tokenNumberSize || 22}px)`}>
+          <div className="flex items-center gap-4">
+            <input 
+              type="range" 
+              min="14" 
+              max="48" 
+              step="1"
+              {...register("tokenNumberSize", { valueAsNumber: true })}
+              className="flex-1 accent-[var(--kravy-brand)]"
+            />
+            <span className="text-xs font-black w-8">{watchedValues.tokenNumberSize || 22}</span>
+          </div>
+          <p className="text-[10px] text-[var(--kravy-text-muted)] mt-1 italic">Default is 22px. Increase for better visibility.</p>
         </Field>
       </Section>
 
@@ -578,6 +595,17 @@ export default function BusinessProfileForm({
             <div className="text-center text-[9px] mt-1.5 opacity-90 text-[10px]">
               <div>Bill No: SV-SAMPLE</div>
               <div>Date: {new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' })}</div>
+            </div>
+
+            {/* Simulated Token Number */}
+            <div className="mt-2 flex flex-col items-center border border-black py-1 px-4 mx-auto w-fit">
+              <div className="text-[7px] font-bold uppercase border-b border-black mb-0.5">Token Number</div>
+              <div 
+                className="font-bold leading-none pt-0.5"
+                style={{ fontSize: `${(watchedValues.tokenNumberSize || 22) * 0.7}px` }} // Scaled for preview
+              >
+                #123
+              </div>
             </div>
             
             <div className="my-1.5 border-t border-dashed border-gray-400" />
