@@ -72,13 +72,17 @@ export default function AdminDashboardPage() {
   const [timeRange, setTimeRange] = useState<7 | 30 | 90>(7);
 
   useEffect(() => {
-    fetchStats(currentPage);
-  }, [currentPage]);
+    const delayDebounceFn = setTimeout(() => {
+      fetchStats(currentPage, searchQuery);
+    }, 500);
 
-  const fetchStats = async (page: number = 1) => {
+    return () => clearTimeout(delayDebounceFn);
+  }, [currentPage, searchQuery]);
+
+  const fetchStats = async (page: number = 1, search: string = "") => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/dashboard-stats?page=${page}&limit=50`);
+      const res = await fetch(`/api/admin/dashboard-stats?page=${page}&limit=50&search=${encodeURIComponent(search)}`);
       if (!res.ok) throw new Error("Forbidden");
       const result = await res.json();
       setData(result);
@@ -141,19 +145,13 @@ export default function AdminDashboardPage() {
   };
 
   const filteredSellers = useMemo(() => {
-    if (!data) return [];
+    if (!data?.sellers) return [];
     return data.sellers.filter(s => {
-      const nameMatch = s.businessName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                       s.name.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const isActuallyActive = s.lastBillDate && (new Date().getTime() - new Date(s.lastBillDate).getTime()) < 24 * 60 * 60 * 1000;
-      const statusMatch = statusFilter === "ALL" || 
-                         (statusFilter === "ACTIVE" && isActuallyActive) ||
-                         (statusFilter === "INACTIVE" && !isActuallyActive);
-
-      return nameMatch && statusMatch;
+      if (statusFilter === "ACTIVE") return !s.isDisabled;
+      if (statusFilter === "INACTIVE") return s.isDisabled;
+      return true;
     });
-  }, [data, searchQuery, statusFilter]);
+  }, [data?.sellers, statusFilter]);
 
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 

@@ -11,10 +11,11 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
+    const search = searchParams.get("search") || "";
     const skip = (page - 1) * limit;
 
-    // 1. Calculate Global Stats (Very fast via DB aggregation)
-    const [totalSellers, totalBills, totalRevenue, upiCount, qrCount, kotCount, aiCount] = await Promise.all([
+    // 1. Calculate Global Stats (Always platform-wide)
+    const [totalSellersPlatform, totalBills, totalRevenue, upiCount, qrCount, kotCount, aiCount] = await Promise.all([
       prisma.user.count({ where: { role: { not: "ADMIN" } } }),
       prisma.billManager.count({ where: { isDeleted: false } }),
       prisma.billManager.aggregate({ 
@@ -26,6 +27,18 @@ export async function GET(req: Request) {
       prisma.businessProfile.count({ where: { enableKOTWithBill: true } }),
       prisma.businessProfile.count({ where: { aiScraperEnabled: true } }),
     ]);
+
+    // Build Search Filter
+    const searchFilter: any = {
+      role: { not: "ADMIN" },
+      OR: search ? [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { profiles: { some: { businessName: { contains: search, mode: 'insensitive' } } } },
+        { profiles: { some: { contactPersonPhone: { contains: search, mode: 'insensitive' } } } }
+      ] : undefined
+    };
 
     // Calculate active sellers today
     const today = new Date();
@@ -42,7 +55,7 @@ export async function GET(req: Request) {
     });
 
     const stats = {
-      totalSellers,
+      totalSellers: totalSellersPlatform,
       activeToday: activeTodayGroups.length,
       totalBills,
       totalRevenue: totalRevenue._sum.total || 0,
@@ -54,27 +67,31 @@ export async function GET(req: Request) {
       }
     };
 
-    // 2. Fetch Sellers (Paginated)
-    const sellers = await prisma.user.findMany({
-      where: { role: { not: "ADMIN" } },
-      include: {
-        profiles: {
-            select: {
-                businessName: true,
-                upiQrEnabled: true,
-                menuLinkEnabled: true,
-                taxEnabled: true,
-                enableKOTWithBill: true,
-                aiScraperEnabled: true,
-                excelImportEnabled: true
-            }
+    // 2. Fetch Sellers (Filtered & Paginated)
+    const [sellers, totalFiltered] = await Promise.all([
+      prisma.user.findMany({
+        where: searchFilter,
+        include: {
+          profiles: {
+              select: {
+                  businessName: true,
+                  contactPersonPhone: true,
+                  contactPersonName: true,
+                  upiQrEnabled: true,
+                  menuLinkEnabled: true,
+                  taxEnabled: true,
+                  enableKOTWithBill: true,
+                  aiScraperEnabled: true,
+                  excelImportEnabled: true
+              }
+          }
         },
-        _count: { select: { bills: true } }
-      },
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit,
-    });
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.user.count({ where: searchFilter })
+    ]);
 
     // Enrich sellers with revenue and last bill (still doing it per seller for now, but only for 50)
     const enrichedSellers = await Promise.all(
@@ -122,10 +139,10 @@ export async function GET(req: Request) {
         stats, 
         sellers: enrichedSellers,
         pagination: {
-            total: totalSellers,
+            total: totalFiltered,
             page,
             limit,
-            pages: Math.ceil(totalSellers / limit)
+            pages: Math.ceil(totalFiltered / limit)
         }
     }, { status: 200 });
   } catch (error) {
