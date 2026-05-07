@@ -104,7 +104,9 @@ export async function GET(req: Request) {
                   taxEnabled: true,
                   enableKOTWithBill: true,
                   aiScraperEnabled: true,
-                  excelImportEnabled: true
+                  excelImportEnabled: true,
+                  slug: true,
+                  publicId: true
               }
           }
         },
@@ -115,47 +117,48 @@ export async function GET(req: Request) {
       prisma.user.count({ where: searchFilter })
     ]);
 
-    // Enrich sellers with revenue and last bill (still doing it per seller for now, but only for 50)
-    const enrichedSellers = await Promise.all(
-        sellers.map(async (seller) => {
-          const [lastBill, billStats] = await Promise.all([
-            prisma.billManager.findFirst({
-              where: { clerkUserId: seller.clerkId, isDeleted: false },
-              orderBy: { createdAt: "desc" },
-              select: { createdAt: true },
-            }),
-            prisma.billManager.aggregate({
-              where: { clerkUserId: seller.clerkId, isDeleted: false },
-              _sum: { total: true },
-              _count: true
-            })
-          ]);
-  
-          const profile = seller.profiles[0];
-          return {
-            id: seller.id,
-            name: seller.name,
-            email: seller.email,
-            clerkId: seller.clerkId,
-            createdAt: seller.createdAt,
-            isDisabled: seller.isDisabled,
-            businessName: profile?.businessName || "No Name",
-            billCount: billStats._count || 0,
-            totalRevenue: billStats._sum.total || 0,
-            lastBillDate: lastBill?.createdAt || null,
-            features: {
-              upi: profile?.upiQrEnabled || false,
-              qrMenu: profile?.menuLinkEnabled || false,
-              tax: profile?.taxEnabled || false,
-              kot: profile?.enableKOTWithBill || false,
-              ai: profile?.aiScraperEnabled || false,
-              excel: profile?.excelImportEnabled || false,
-              slug: (profile as any)?.slug || null,
-              publicId: (profile as any)?.publicId || null,
-            },
-          };
-        })
-    );
+    // 3. Batch Enrich (Optimized: 1 query instead of 100)
+    const sellerIds = sellers.map(s => s.clerkId);
+    const batchStats = await prisma.billManager.groupBy({
+        by: ['clerkUserId'],
+        where: {
+            clerkUserId: { in: sellerIds },
+            isDeleted: false
+        },
+        _sum: { total: true },
+        _count: { _all: true },
+        _max: { createdAt: true }
+    });
+
+    const statsMap = new Map(batchStats.map(s => [s.clerkUserId, s]));
+
+    const enrichedSellers = sellers.map((seller) => {
+      const sellerStats = statsMap.get(seller.clerkId);
+      const profile = seller.profiles[0];
+
+      return {
+        id: seller.id,
+        name: seller.name,
+        email: seller.email,
+        clerkId: seller.clerkId,
+        createdAt: seller.createdAt,
+        isDisabled: seller.isDisabled,
+        businessName: profile?.businessName || "No Name",
+        billCount: sellerStats?._count?._all || 0,
+        totalRevenue: sellerStats?._sum?.total || 0,
+        lastBillDate: sellerStats?._max?.createdAt || null,
+        features: {
+          upi: profile?.upiQrEnabled || false,
+          qrMenu: profile?.menuLinkEnabled || false,
+          tax: profile?.taxEnabled || false,
+          kot: profile?.enableKOTWithBill || false,
+          ai: profile?.aiScraperEnabled || false,
+          excel: profile?.excelImportEnabled || false,
+          slug: (profile as any)?.slug || null,
+          publicId: (profile as any)?.publicId || null,
+        },
+      };
+    });
 
     return NextResponse.json({ 
         stats, 
