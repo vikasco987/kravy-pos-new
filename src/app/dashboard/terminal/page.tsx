@@ -86,8 +86,8 @@ const TableTimer = ({ startTime, className = "" }: { startTime?: string, classNa
     if (!startTime) return null;
 
     return (
-        <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-slate-900/5 dark:bg-white/5 border border-slate-900/5 dark:border-white/5 text-[8px] font-mono font-bold text-slate-500 dark:text-slate-400 ${className}`}>
-            <Clock size={8} strokeWidth={3} className="opacity-70" />
+        <span className={`flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-900/5 dark:bg-white/5 border border-slate-900/5 dark:border-white/5 text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400 ${className}`}>
+            <Clock size={11} strokeWidth={3} className="opacity-70" />
             {elapsed}
         </span>
     );
@@ -1136,7 +1136,7 @@ function KravyPOS() {
                                                         <span className="flex items-center gap-1"><ShieldCheck size={11} /> Rahul S.</span>
                                                         {(activeOrderForSelected?.createdAt || selectedTable?.startTime) && (
                                                             <div className="flex items-center gap-1.5 ml-1 pl-3 border-l border-slate-100 dark:border-slate-800">
-                                                                <TableTimer startTime={activeOrderForSelected?.createdAt || selectedTable.startTime} className="!bg-emerald-500/10 !text-emerald-600 !border-emerald-500/20 !px-2" />
+                                                                <TableTimer startTime={activeOrderForSelected?.createdAt || selectedTable.startTime} className="!bg-emerald-500/10 !text-emerald-600 !border-emerald-500/20 !px-2.5 !py-1" />
                                                                 <span className="text-[9px] font-black text-slate-300 uppercase tracking-wider">
                                                                     Since {new Date(activeOrderForSelected?.createdAt || selectedTable.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                 </span>
@@ -1194,7 +1194,7 @@ function KravyPOS() {
                                                         <div className="flex flex-col items-start gap-0.5">
                                                             <span className="leading-none">{o.customerName || `Order #${o.id.slice(-4).toUpperCase()}`}</span>
                                                             <div className="flex items-center gap-1.5 opacity-60">
-                                                                <TableTimer startTime={o.createdAt} className="!bg-transparent !p-0 !border-none !text-[8px] !font-black !text-inherit" />
+                                                                <TableTimer startTime={o.createdAt} className="!bg-transparent !p-0 !border-none !text-[10px] !font-black !text-inherit" />
                                                             </div>
                                                         </div>
                                                     </button>

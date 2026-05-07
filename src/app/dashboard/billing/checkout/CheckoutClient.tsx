@@ -2675,7 +2675,7 @@ export default function CheckoutClient() {
             )}
 
             {/* Primary Action Buttons */}
-            {/* 🧠 SMART DYNAMIC ACTIONS: Prominent if few, Compact if many */}
+            {/* 🧠 SMART DYNAMIC ACTIONS: 2x2 Grid for Prominence */}
             {(() => {
               const enabledActions = [
                 { id: 'hold', enabled: business?.posHoldEnabled ?? true },
@@ -2684,14 +2684,12 @@ export default function CheckoutClient() {
                 { id: 'kot', enabled: business?.posKotEnabled ?? true }
               ].filter(a => a.enabled);
 
-              const isCompact = enabledActions.length > 2;
+              // If we have 3 or 4 buttons, use 2x2 grid. If 1 or 2, use 1x2 or 1x1.
+              const useTwoColumns = enabledActions.length >= 2;
 
               return (
                 <div 
-                  className={`grid gap-2 mb-4 ${isCompact ? "" : "grid-cols-2"}`}
-                  style={isCompact ? { 
-                    gridTemplateColumns: `repeat(${enabledActions.length}, 1fr)`
-                  } : {}}
+                  className={`grid gap-3 mb-4 ${useTwoColumns ? "grid-cols-2" : "grid-cols-1"}`}
                 >
                   {(business?.posHoldEnabled ?? true) && (
                     <button
@@ -2704,10 +2702,10 @@ export default function CheckoutClient() {
                         if (resumeBillId) router.replace("/dashboard/billing/checkout");
                       }}
                       disabled={items.length === 0 || isSaving}
-                      className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-3.5"} items-center justify-center gap-2 rounded-xl border border-amber-100 text-amber-600 bg-amber-50/40 hover:bg-amber-100/60 disabled:opacity-40 transition-all shadow-sm font-black active:scale-95`}
+                      className="flex items-center justify-center gap-3 py-4 rounded-2xl border border-amber-200 text-amber-700 bg-amber-50/50 hover:bg-amber-100 transition-all shadow-sm font-black active:scale-95"
                     >
-                      {isSaving ? <RefreshCw size={isCompact ? 12 : 16} className="animate-spin" /> : <PauseCircle size={isCompact ? 12 : 16} strokeWidth={3} />}
-                      <span className={`${isCompact ? "text-[7px]" : "text-[10px]"} uppercase tracking-wider`}>Hold</span>
+                      <PauseCircle size={18} strokeWidth={3} />
+                      <span className="text-[11px] uppercase tracking-wider">Hold</span>
                     </button>
                   )}
 
@@ -2722,10 +2720,10 @@ export default function CheckoutClient() {
                         if (resumeBillId) router.replace("/dashboard/billing/checkout");
                       }}
                       disabled={items.length === 0 || isSaving}
-                      className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-3.5"} items-center justify-center gap-2 rounded-xl border border-slate-200 text-slate-600 bg-slate-50/50 hover:bg-slate-100/80 disabled:opacity-40 transition-all shadow-sm font-black active:scale-95`}
+                      className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-slate-800 text-white hover:bg-slate-900 disabled:opacity-40 transition-all shadow-md font-black active:scale-95 shadow-slate-200"
                     >
-                      {isSaving ? <RefreshCw size={isCompact ? 12 : 16} className="animate-spin" /> : <Save size={isCompact ? 12 : 16} strokeWidth={3} />}
-                      <span className={`${isCompact ? "text-[7px]" : "text-[10px]"} uppercase tracking-wider`}>Save</span>
+                      <Save size={18} strokeWidth={3} />
+                      <span className="text-[11px] uppercase tracking-wider">Save Bill</span>
                     </button>
                   )}
 
@@ -2733,10 +2731,10 @@ export default function CheckoutClient() {
                     <button
                       onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
                       disabled={items.length === 0 || isSaving}
-                      className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-3.5"} items-center justify-center gap-2 rounded-xl border border-indigo-100 text-indigo-500 bg-indigo-50/40 hover:bg-indigo-100/60 disabled:opacity-40 transition-all shadow-sm font-black active:scale-95`}
+                      className="flex items-center justify-center gap-3 py-4 rounded-2xl border border-indigo-200 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-100 transition-all shadow-sm font-black active:scale-95"
                     >
-                      <Eye size={isCompact ? 12 : 16} strokeWidth={3} />
-                      <span className={`${isCompact ? "text-[7px]" : "text-[10px]"} uppercase tracking-wider`}>Preview</span>
+                      <Eye size={18} strokeWidth={3} />
+                      <span className="text-[11px] uppercase tracking-wider">Preview</span>
                     </button>
                   )}
 
@@ -2744,10 +2742,10 @@ export default function CheckoutClient() {
                     <button
                       onClick={handlePrintKOT}
                       disabled={items.length === 0 || isSaving}
-                      className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-3.5"} items-center justify-center gap-2 rounded-xl border border-orange-200 text-orange-600 bg-orange-50/50 hover:bg-orange-100/80 disabled:opacity-40 transition-all shadow-sm font-black active:scale-95`}
+                      className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40 transition-all shadow-md font-black active:scale-95 shadow-orange-200"
                     >
-                      <Printer size={isCompact ? 12 : 16} strokeWidth={3} />
-                      <span className={`${isCompact ? "text-[7px]" : "text-[10px]"} uppercase tracking-wider`}>KOT</span>
+                      <Printer size={18} strokeWidth={3} />
+                      <span className="text-[11px] uppercase tracking-wider">Print KOT</span>
                     </button>
                   )}
                 </div>
