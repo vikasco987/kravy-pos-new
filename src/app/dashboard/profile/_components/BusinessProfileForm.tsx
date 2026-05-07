@@ -6,8 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from \"@/components/ui/button\";
-import { toast } from \"sonner\";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Upload, Download, FileJson, ClipboardPaste, Info, AlertCircle, Sparkles } from "lucide-react";
@@ -238,8 +238,8 @@ export default function BusinessProfileForm({
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        console.error(\"Save failed:\", errData);
-        alert(`Failed to save profile: ${errData.details || errData.error || \"Unknown Server Error\"}`);
+        console.error("Save failed:", errData);
+        alert(`Failed to save profile: ${errData.details || errData.error || "Unknown Server Error"}`);
         return;
       }
 
@@ -264,8 +264,8 @@ export default function BusinessProfileForm({
     <div className="flex flex-col xl:flex-row gap-6 max-w-[1400px] mx-auto p-6 items-start">
       <form
         onSubmit={handleSubmit(onSubmit, (errors) => {
-          console.error(\"Validation Errors:\", JSON.stringify(errors, null, 2));
-          toast.error(\"Please fix the validation errors in the form\");
+          console.error("Validation Errors:", JSON.stringify(errors, null, 2));
+          toast.error("Please fix the validation errors in the form");
         })}
         className="flex-1 w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 transition-colors"
       >

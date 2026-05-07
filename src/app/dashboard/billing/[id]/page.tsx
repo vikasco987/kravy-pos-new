@@ -848,18 +848,18 @@ export default function ViewBillPage() {
           </div>
         )}
         {/* BILL META */}
-        <div className=\"text-center text-[9px]\">
+        <div className="text-center text-[9px]">
           Date: {new Date(bill.createdAt).toLocaleString()}
         </div>
 
         {/* TOKEN NUMBER */}
         {((bill.kotNumbers && bill.kotNumbers.length > 0) || bill.tokenNumber) && (
-          <div className=\"mt-2 flex flex-col items-center border-2 border-black py-1.5 px-6 mx-auto w-fit bg-white\">
-            <div className=\"text-[10px] font-bold uppercase tracking-widest border-b border-black mb-1\">
-              {bill.kotNumbers && bill.kotNumbers.length > 0 ? \"Token Numbers\" : \"Token Number\"}
+          <div className="mt-2 flex flex-col items-center border-2 border-black py-1.5 px-6 mx-auto w-fit bg-white">
+            <div className="text-[10px] font-bold uppercase tracking-widest border-b border-black mb-1">
+              {bill.kotNumbers && bill.kotNumbers.length > 0 ? "Token Numbers" : "Token Number"}
             </div>
             <div 
-              className=\"font-bold leading-none tracking-tighter\"
+              className="font-bold leading-none tracking-tighter"
               style={{ 
                 fontSize: `${bill.kotNumbers && bill.kotNumbers.length > 0 
                   ? (business?.tokenNumberSize || 22) * 0.9 
