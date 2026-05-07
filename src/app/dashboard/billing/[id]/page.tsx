@@ -893,7 +893,9 @@ export default function ViewBillPage() {
           return (
             <div
               key={idx}
-              className=\"flex justify-between text-[11px] mt-1 leading-tight font-bold\"\n            >\n              <span className="w-[24mm] break-words">
+              className="flex justify-between text-[11px] mt-1 leading-tight font-bold"
+            >
+              <span className="w-[24mm] break-words">
                 {i.name}{hsnCode}
               </span>
               <span className="w-[6mm] text-right">
