@@ -1032,7 +1032,7 @@ function KravyPOS() {
 
                                 {/* Tables Grid */}
                                 <div className="flex-1 overflow-y-auto p-6 scrollbar-hide bg-[#F8FAFC] dark:bg-slate-950">
-                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[18px]">
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-[12px] sm:gap-[18px]">
                                         {filteredTables.map((t) => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
@@ -1065,7 +1065,7 @@ function KravyPOS() {
                                                                 {getTableIcon(t.name)}
                                                             </div>
                                                             <span className="text-[11px] font-bold uppercase tracking-[4px] opacity-[0.45] mb-2 leading-none">Table</span>
-                                                            <span className="text-4xl font-[800] tracking-[-0.05em] leading-none text-slate-900 dark:text-white">
+                                                            <span className="text-2xl sm:text-4xl font-[800] tracking-[-0.05em] leading-none text-slate-900 dark:text-white">
                                                                 {t.name?.startsWith("T-") ? t.name.slice(2) : t.name}
                                                             </span>
                                                         </div>
