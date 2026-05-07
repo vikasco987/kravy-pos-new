@@ -1030,8 +1030,8 @@ function KravyPOS() {
                                                 >
                                                     <div className={`w-full h-full rounded-3xl flex flex-col items-center justify-between p-2 border-2 transition-all duration-300 ${cfg.bg} ${cfg.text} ${isActive ? `border-slate-900 ring-4 ring-slate-900/5 shadow-2xl` : "border-slate-100 dark:border-white/5 shadow-sm"}`}>
                                                         <div className="flex flex-col items-center w-full">
-                                                            <span className={`text-[8px] font-black uppercase tracking-wider flex items-center gap-1 px-1.5 py-0.5 rounded-full ${cfg.bg} border border-current w-full justify-center truncate`}>
-                                                                <span className={`w-1 h-1 rounded-full ${cfg.dot} animate-pulse`} />
+                                                            <span className={`text-[10px] font-black uppercase tracking-tight flex items-center gap-1 px-2.5 py-0.5 rounded-full ${cfg.bg} border border-current w-fit shadow-sm`}>
+                                                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} animate-pulse`} />
                                                                 {cfg?.label || "Status"}
                                                             </span>
                                                         </div>
