@@ -1011,7 +1011,7 @@ function KravyPOS() {
 
                                 {/* Tables Grid */}
                                 <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                                    <div className="grid grid-cols-4 gap-3">
                                         {filteredTables.map((t) => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
@@ -1024,7 +1024,7 @@ function KravyPOS() {
                                                         setSelectedTableId(t.id); 
                                                         setSelectedOrderId(null); 
                                                     }}
-                                                    className={`relative group h-32 flex flex-col rounded-3xl transition-all ${isActive ? "z-10" : ""}`}
+                                                    className={`relative group h-28 flex flex-col rounded-3xl transition-all ${isActive ? "z-10" : ""}`}
                                                     whileHover={{ y: -4, transition: { duration: 0.2 } }}
                                                     whileTap={{ scale: 0.95 }}
                                                 >
@@ -1036,7 +1036,7 @@ function KravyPOS() {
                                                             </span>
                                                         </div>
                                                         <div className="flex flex-col items-center w-full px-1">
-                                                            <span className="text-xl font-black italic tracking-tighter leading-none w-full text-center">
+                                                            <span className="text-lg font-black italic tracking-tighter leading-none w-full text-center">
                                                                 {t.name?.startsWith("T-") ? t.name.slice(2) : t.name}
                                                             </span>
                                                         </div>
