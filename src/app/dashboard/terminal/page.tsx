@@ -776,11 +776,11 @@ function KravyPOS() {
     };
 
     const statusConfig = {
-        FREE: { bg: "bg-slate-50", text: "text-slate-400", dot: "bg-slate-300", ring: "ring-slate-100", label: "Vacant", btn: "bg-slate-900" },
-        PENDING: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500", ring: "ring-rose-200", label: "Reviewing", btn: "bg-rose-600 hover:bg-rose-700" },
-        ACCEPTED: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", ring: "ring-amber-200", label: "Accepted", btn: "bg-amber-600 hover:bg-amber-700" },
-        PREPARING: { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500", ring: "ring-indigo-200", label: "Preparing", btn: "bg-indigo-600 hover:bg-indigo-700" },
-        READY: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", ring: "ring-emerald-200", label: "Serve Now", btn: "bg-emerald-600 hover:bg-emerald-700" }
+        FREE: { bg: "bg-slate-50", text: "text-slate-500", dot: "bg-slate-400", ring: "ring-slate-100", label: "Vacant", glass: "bg-slate-500/10 border-slate-500/20", btn: "bg-slate-900" },
+        PENDING: { bg: "bg-amber-50", text: "text-amber-600", dot: "bg-amber-500", ring: "ring-amber-100", label: "Reserved", glass: "bg-amber-500/10 border-amber-500/20", btn: "bg-amber-600 hover:bg-amber-700" },
+        ACCEPTED: { bg: "bg-indigo-50", text: "text-indigo-600", dot: "bg-indigo-500", ring: "ring-indigo-100", label: "Accepted", glass: "bg-indigo-500/10 border-indigo-500/20", btn: "bg-indigo-600 hover:bg-indigo-700" },
+        PREPARING: { bg: "bg-indigo-50", text: "text-indigo-600", dot: "bg-indigo-600", ring: "ring-indigo-200", label: "Preparing", glass: "bg-indigo-600/10 border-indigo-600/20", btn: "bg-indigo-600 hover:bg-indigo-700" },
+        READY: { bg: "bg-emerald-50", text: "text-emerald-600", dot: "bg-emerald-600", ring: "ring-emerald-200", label: "Serve Now", glass: "bg-emerald-600/10 border-emerald-600/20", btn: "bg-emerald-600 hover:bg-emerald-700" }
     };
 
     // Helper: Aggregate items for Chef
@@ -1024,39 +1024,49 @@ function KravyPOS() {
                                                         setSelectedTableId(t.id); 
                                                         setSelectedOrderId(null); 
                                                     }}
-                                                    className={`relative group h-28 flex flex-col rounded-3xl transition-all ${isActive ? "z-10" : ""}`}
-                                                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                                                    whileTap={{ scale: 0.95 }}
+                                                    className={`relative group min-h-[170px] flex flex-col rounded-[24px] transition-all ${isActive ? "z-10" : ""}`}
+                                                    whileHover={{ y: -6, transition: { duration: 0.3 } }}
+                                                    whileTap={{ scale: 0.96 }}
                                                 >
-                                                    <div className={`w-full h-full rounded-3xl flex flex-col items-center justify-between p-2 border-2 transition-all duration-300 ${cfg.bg} ${cfg.text} ${isActive ? `border-slate-900 ring-4 ring-slate-900/5 shadow-2xl` : "border-slate-100 dark:border-white/5 shadow-sm"}`}>
+                                                    <div className={`w-full h-full rounded-[24px] flex flex-col items-center justify-between p-[14px] border-2 transition-all duration-300 gap-3 ${cfg.bg} ${cfg.text} ${isActive ? `border-slate-900 ring-4 ring-slate-900/10 shadow-2xl` : "border-slate-100 dark:border-white/5 shadow-sm hover:shadow-md"}`}>
+                                                        
+                                                        {/* Modern Glassmorphism Status Badge */}
                                                         <div className="flex flex-col items-center w-full">
-                                                            <span className={`text-[10px] font-black uppercase tracking-tight flex items-center gap-1 px-2.5 py-0.5 rounded-full ${cfg.bg} border border-current w-fit shadow-sm`}>
-                                                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} animate-pulse`} />
-                                                                {cfg?.label || "Status"}
-                                                            </span>
+                                                            <div className={`backdrop-blur-md ${cfg.glass} border py-1.5 px-3 rounded-full flex items-center gap-2 shadow-sm w-full justify-center`}>
+                                                                <span className={`w-2 h-2 rounded-full ${cfg.dot} animate-pulse shadow-[0_0_10px_rgba(0,0,0,0.1)]`} />
+                                                                <span className="text-[10px] font-black uppercase tracking-[0.1em]">{cfg?.label}</span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex flex-col items-center w-full px-1">
-                                                            <span className="text-lg font-black italic tracking-tighter leading-none w-full text-center">
+
+                                                        {/* Table Identity */}
+                                                        <div className="flex flex-col items-center w-full py-1">
+                                                            <span className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-40 mb-1">Table</span>
+                                                            <span className="text-3xl font-black italic tracking-tighter leading-none text-slate-900 dark:text-white">
                                                                 {t.name?.startsWith("T-") ? t.name.slice(2) : t.name}
                                                             </span>
                                                         </div>
-                                                        <div className="flex items-center justify-center w-full">
+
+                                                        {/* Occupancy Timer */}
+                                                        <div className="flex items-center justify-center w-full pt-1">
                                                             {t.startTime ? (
-                                                                <TableTimer startTime={t.startTime} className="!bg-white/50 dark:!bg-black/30 !border-none !px-2 !py-1 !text-[11px]" />
+                                                                <TableTimer startTime={t.startTime} className="!bg-white/80 dark:!bg-black/40 !border-slate-200/50 !shadow-sm !px-3 !py-1.5 !rounded-xl !text-[12px]" />
                                                             ) : (
-                                                                <div className="h-6" />
+                                                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-20">Available</span>
                                                             )}
                                                         </div>
+
+                                                        {/* Order Notification Badge */}
                                                         {t.activeCount > 0 && (
                                                             <div className="absolute -top-1 -right-1">
-                                                                <div className="bg-rose-500 text-white text-[10px] font-black min-w-[20px] h-[20px] px-1 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900 animate-in zoom-in-50 duration-300">
+                                                                <div className="bg-rose-500 text-white text-[11px] font-black min-w-[24px] h-[24px] px-1 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900 animate-in zoom-in-50 duration-300">
                                                                     {t.activeCount}
                                                                 </div>
                                                             </div>
                                                         )}
                                                     </div>
+                                                    
                                                     {t.isOccupied && !isActive && (
-                                                        <span className={`absolute inset-0 rounded-3xl opacity-20 animate-pulse pointer-events-none ring-2 ${cfg.ring}`} />
+                                                        <span className={`absolute inset-0 rounded-[24px] opacity-20 animate-pulse pointer-events-none ring-2 ${cfg.ring}`} />
                                                     )}
                                                 </motion.button>
                                             );
