@@ -60,7 +60,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "LIVE" | "STATIONARY" | "ACTIVE_7D" | "DISABLED">("ALL");
 
   // Detail & Config State
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
@@ -71,10 +71,10 @@ export default function AdminDashboardPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<7 | 30 | 90>(7);
 
-  const fetchStats = useCallback(async (page: number = 1, search: string = "") => {
+  const fetchStats = useCallback(async (page: number = 1, search: string = "", status: string = "ALL") => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/dashboard-stats?page=${page}&limit=50&search=${encodeURIComponent(search)}`);
+      const res = await fetch(`/api/admin/dashboard-stats?page=${page}&limit=50&search=${encodeURIComponent(search)}&status=${status}`);
       if (!res.ok) throw new Error("Forbidden");
       const result = await res.json();
       setData(result);
@@ -87,11 +87,11 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      fetchStats(currentPage, searchQuery);
+      fetchStats(currentPage, searchQuery, statusFilter);
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [currentPage, searchQuery, fetchStats]);
+  }, [currentPage, searchQuery, statusFilter, fetchStats]);
 
   const fetchSellerDetail = async (seller: Seller, days: number = timeRange) => {
     setSelectedSeller(seller);
@@ -145,13 +145,8 @@ export default function AdminDashboardPage() {
   };
 
   const filteredSellers = useMemo(() => {
-    if (!data?.sellers) return [];
-    return data.sellers.filter(s => {
-      if (statusFilter === "ACTIVE") return !s.isDisabled;
-      if (statusFilter === "INACTIVE") return s.isDisabled;
-      return true;
-    });
-  }, [data?.sellers, statusFilter]);
+    return data?.sellers || [];
+  }, [data?.sellers]);
 
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -204,16 +199,22 @@ export default function AdminDashboardPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex gap-2 w-full md:w-auto">
-              <select 
-                className="flex-1 md:flex-none px-6 py-4 bg-slate-50 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-600 outline-none"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-              >
-                <option value="ALL">All States</option>
-                <option value="ACTIVE">Active (24h)</option>
-                <option value="INACTIVE">Inactive</option>
-              </select>
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              {[
+                { id: 'ALL', label: 'All' },
+                { id: 'LIVE', label: 'Live' },
+                { id: 'STATIONARY', label: 'Stationary' },
+                { id: 'ACTIVE_7D', label: '7D Active' },
+                { id: 'DISABLED', label: 'Disabled' }
+              ].map((f) => (
+                <button 
+                  key={f.id} 
+                  onClick={() => { setStatusFilter(f.id as any); setCurrentPage(1); }}
+                  className={`px-4 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${statusFilter === f.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                >
+                  {f.label}
+                </button>
+              ))}
             </div>
           </div>
 

@@ -12,7 +12,15 @@ export async function GET(req: Request) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
     const search = searchParams.get("search") || "";
+    const status = searchParams.get("status") || "ALL";
     const skip = (page - 1) * limit;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    weekAgo.setHours(0, 0, 0, 0);
 
     // 1. Calculate Global Stats (Always platform-wide)
     const [totalSellersPlatform, totalBills, totalRevenue, upiCount, qrCount, kotCount, aiCount] = await Promise.all([
@@ -31,18 +39,32 @@ export async function GET(req: Request) {
     // Build Search Filter
     const searchFilter: any = {
       role: { not: "ADMIN" },
-      OR: search ? [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search, mode: 'insensitive' } },
-        { profiles: { some: { businessName: { contains: search, mode: 'insensitive' } } } },
-        { profiles: { some: { contactPersonPhone: { contains: search, mode: 'insensitive' } } } }
-      ] : undefined
+      AND: []
     };
 
+    if (search) {
+      searchFilter.AND.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
+          { profiles: { some: { businessName: { contains: search, mode: 'insensitive' } } } },
+          { profiles: { some: { contactPersonPhone: { contains: search, mode: 'insensitive' } } } }
+        ]
+      });
+    }
+
+    if (status === "LIVE") {
+      searchFilter.AND.push({ bills: { some: { createdAt: { gte: today }, isDeleted: false } } });
+    } else if (status === "STATIONARY") {
+      searchFilter.AND.push({ bills: { none: { createdAt: { gte: today }, isDeleted: false } }, isDisabled: false });
+    } else if (status === "ACTIVE_7D") {
+      searchFilter.AND.push({ bills: { some: { createdAt: { gte: weekAgo }, isDeleted: false } } });
+    } else if (status === "DISABLED") {
+      searchFilter.AND.push({ isDisabled: true });
+    }
+
     // Calculate active sellers today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     const activeTodayGroups = await prisma.billManager.groupBy({
         by: ['clerkUserId'],
         where: { 
