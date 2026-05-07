@@ -1011,7 +1011,7 @@ function KravyPOS() {
 
                                 {/* Tables Grid */}
                                 <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
-                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                                         {filteredTables.map(t => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
@@ -1024,35 +1024,45 @@ function KravyPOS() {
                                                         setSelectedTableId(t.id); 
                                                         setSelectedOrderId(null); 
                                                     }}
-                                                    className={`relative group h-24 flex flex-col items-center justify-center gap-2 rounded-2xl transition-all ${isActive ? "z-10" : ""}`}
-                                                    whileHover={{ y: -2 }}
-                                                    whileTap={{ scale: 0.96 }}
+                                                    className={`relative group h-32 flex flex-col rounded-3xl transition-all ${isActive ? "z-10" : ""}`}
+                                                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                                                    whileTap={{ scale: 0.95 }}
                                                 >
-                                                    <div className={`w-full flex-1 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-2 transition-all ${cfg.bg} ${cfg.text} ${isActive ? `border-slate-900 scale-105 shadow-xl` : "border-transparent"}`}>
-                                                        <span className="text-[8px] font-black uppercase tracking-tighter opacity-40">TAB</span>
-                                                        <span className="text-xl font-black italic">
-                                                            {t.name?.startsWith("T-") ? t.name.slice(2) : t.name}
-                                                        </span>
+                                                    <div className={`w-full h-full rounded-3xl flex flex-col items-center justify-between p-3 border-2 transition-all duration-300 ${cfg.bg} ${cfg.text} ${isActive ? `border-slate-900 ring-4 ring-slate-900/5 shadow-2xl` : "border-slate-100 dark:border-white/5 shadow-sm"}`}>
+                                                        
+                                                        <div className="flex flex-col items-center gap-1">
+                                                            <span className={`text-[9px] font-black uppercase tracking-[0.15em] flex items-center gap-1.5 px-2 py-0.5 rounded-full ${cfg.bg} border border-current opacity-80`}>
+                                                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} animate-pulse`} />
+                                                                {cfg?.label || "Status"}
+                                                            </span>
+                                                        </div>
 
-                                                        {/* Active Order Count Badge */}
+                                                        <div className="flex flex-col items-center">
+                                                            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 mb-0.5">Table</span>
+                                                            <span className="text-2xl font-black italic tracking-tighter leading-none">
+                                                                {t.name?.startsWith("T-") ? t.name.slice(2) : t.name}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="h-6 flex items-center justify-center">
+                                                            {t.startTime ? (
+                                                                <TableTimer startTime={t.startTime} className="!bg-white/40 dark:!bg-black/20 !border-none" />
+                                                            ) : (
+                                                                <span className="text-[10px] font-bold opacity-20 uppercase tracking-widest">Available</span>
+                                                            )}
+                                                        </div>
+
                                                         {t.activeCount > 0 && (
-                                                            <div className="absolute -top-1 -right-1 flex items-center justify-center">
-                                                                <div className="bg-rose-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900 animate-in zoom-in-50 duration-300">
+                                                            <div className="absolute -top-1 -right-1">
+                                                                <div className="bg-rose-500 text-white text-[10px] font-black min-w-[22px] h-[22px] px-1 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900 animate-in zoom-in-50 duration-300">
                                                                     {t.activeCount}
                                                                 </div>
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div className="flex flex-col items-center gap-1 mt-1">
-                                                        <span className={`text-[8px] font-black uppercase tracking-widest flex items-center gap-1 ${cfg.text}`}>
-                                                            <span className={`w-1 h-1 rounded-full ${cfg.dot}`} />
-                                                            {cfg?.label || "Status"}
-                                                        </span>
-                                                        {t.startTime && (
-                                                            <TableTimer startTime={t.startTime} />
-                                                        )}
-                                                    </div>
-                                                    {t.isOccupied && <span className="absolute inset-0 rounded-2xl ring-4 ring-slate-900/5 animate-pulse" />}
+                                                    {t.isOccupied && !isActive && (
+                                                        <span className={`absolute inset-0 rounded-3xl opacity-20 animate-pulse pointer-events-none ring-2 ${cfg.ring}`} />
+                                                    )}
                                                 </motion.button>
                                             );
                                         })}
