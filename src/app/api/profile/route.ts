@@ -31,7 +31,7 @@ export async function GET(request: Request) {
    CREATE / UPDATE PROFILE
 ============================= */
 export async function POST(request: Request) {
-  console.log("🚀 API VERSION: 1.0.5 - Hardened Update");
+  console.log("API VERSION: 1.0.6 - Debug Status");
   try {
     const effectiveId = await getEffectiveClerkId();
 

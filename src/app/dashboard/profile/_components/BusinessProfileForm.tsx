@@ -237,9 +237,17 @@ export default function BusinessProfileForm({
       });
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        console.error("Save failed:", errData);
-        alert(`Failed to save profile: ${errData.details || errData.error || "Unknown Server Error"}`);
+        const status = res.status;
+        const text = await res.text().catch(() => "No response text");
+        console.error(`Save failed (${status}):`, text);
+        
+        let errorMsg = "Unknown Server Error";
+        try {
+          const errData = JSON.parse(text);
+          errorMsg = errData.details || errData.error || errorMsg;
+        } catch (e) {}
+
+        alert(`Failed to save profile (Status ${status}): ${errorMsg}`);
         return;
       }
 
