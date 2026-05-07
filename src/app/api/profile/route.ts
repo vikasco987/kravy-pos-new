@@ -119,7 +119,30 @@ export async function POST(request: Request) {
     if (body.enableCustomAuth !== undefined) updateData.enableCustomAuth = b(body.enableCustomAuth);
     if (body.tokenNumberSize !== undefined) updateData.tokenNumberSize = n(body.tokenNumberSize);
 
-    // Other settings
+    // ✅ TAX & PRICING (MISSING FIELDS FIX)
+    if (body.perProductTaxEnabled !== undefined) updateData.perProductTaxEnabled = b(body.perProductTaxEnabled);
+    if (body.qrMenuPriceInclusive !== undefined) updateData.qrMenuPriceInclusive = b(body.qrMenuPriceInclusive);
+    if (body.enableKOTWithBill !== undefined) updateData.enableKOTWithBill = b(body.enableKOTWithBill);
+    if (body.syncQuickPosWithKitchen !== undefined) updateData.syncQuickPosWithKitchen = b(body.syncQuickPosWithKitchen);
+    
+    // ✅ ADDITIONAL CHARGES
+    if (body.enableDeliveryCharges !== undefined) updateData.enableDeliveryCharges = b(body.enableDeliveryCharges);
+    if (body.deliveryChargeAmount !== undefined) updateData.deliveryChargeAmount = n(body.deliveryChargeAmount);
+    if (body.deliveryGstEnabled !== undefined) updateData.deliveryGstEnabled = b(body.deliveryGstEnabled);
+    if (body.deliveryGstRate !== undefined) updateData.deliveryGstRate = n(body.deliveryGstRate);
+    
+    if (body.enablePackagingCharges !== undefined) updateData.enablePackagingCharges = b(body.enablePackagingCharges);
+    if (body.packagingChargeAmount !== undefined) updateData.packagingChargeAmount = n(body.packagingChargeAmount);
+    if (body.packagingGstEnabled !== undefined) updateData.packagingGstEnabled = b(body.packagingGstEnabled);
+    if (body.packagingGstRate !== undefined) updateData.packagingGstRate = n(body.packagingGstRate);
+
+    // POS Checkout Visibility
+    if (body.posCashEnabled !== undefined) updateData.posCashEnabled = b(body.posCashEnabled);
+    if (body.posUpiEnabled !== undefined) updateData.posUpiEnabled = b(body.posUpiEnabled);
+    if (body.posCardEnabled !== undefined) updateData.posCardEnabled = b(body.posCardEnabled);
+    if (body.posHoldEnabled !== undefined) updateData.posHoldEnabled = b(body.posHoldEnabled);
+    if (body.posSaveEnabled !== undefined) updateData.posSaveEnabled = b(body.posSaveEnabled);
+    if (body.posPreviewEnabled !== undefined) updateData.posPreviewEnabled = b(body.posPreviewEnabled);
     if (body.posKotEnabled !== undefined) updateData.posKotEnabled = b(body.posKotEnabled);
 
     console.log("SERVER DEBUG: Final Update Data:", JSON.stringify(updateData, null, 2));
@@ -158,6 +181,21 @@ export async function POST(request: Request) {
         enableClerkAuth: b(body.enableClerkAuth) ?? true,
         enableCustomAuth: b(body.enableCustomAuth) ?? false,
         tokenNumberSize: n(body.tokenNumberSize) ?? 22,
+        
+        perProductTaxEnabled: b(body.perProductTaxEnabled) ?? false,
+        qrMenuPriceInclusive: b(body.qrMenuPriceInclusive) ?? false,
+        enableKOTWithBill: b(body.enableKOTWithBill) ?? false,
+        syncQuickPosWithKitchen: b(body.syncQuickPosWithKitchen) ?? false,
+        
+        enableDeliveryCharges: b(body.enableDeliveryCharges) ?? false,
+        deliveryChargeAmount: n(body.deliveryChargeAmount) ?? 0,
+        deliveryGstEnabled: b(body.deliveryGstEnabled) ?? false,
+        deliveryGstRate: n(body.deliveryGstRate) ?? 0,
+        
+        enablePackagingCharges: b(body.enablePackagingCharges) ?? false,
+        packagingChargeAmount: n(body.packagingChargeAmount) ?? 0,
+        packagingGstEnabled: b(body.packagingGstEnabled) ?? false,
+        packagingGstRate: n(body.packagingGstRate) ?? 0,
       },
     });
 

@@ -121,6 +121,8 @@ export default function PricingSettingsPage() {
                 packagingGstEnabled,
                 packagingGstRate: Number(packagingGstRate),
                 syncQuickPosWithKitchen,
+                enableKOTWithBill,
+                enableMenuQRInBill,
                 taxRate: Number(taxRate) 
             };
             const res = await fetch(`/api/profile`, {
