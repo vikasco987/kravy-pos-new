@@ -51,7 +51,8 @@ export async function POST(request: Request) {
 
     // --- Data Sanitization ---
     const s = (val: any) => {
-      if (val === undefined || val === null) return undefined;
+      if (val === undefined) return undefined;
+      if (val === null) return null;
       const trimmed = String(val).trim();
       return trimmed === "" ? null : trimmed;
     };
