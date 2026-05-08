@@ -123,6 +123,9 @@ export default function StaffManagementPage() {
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [updatingPassword, setUpdatingPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const [editInfoData, setEditInfoData] = useState({ name: "", phone: "" });
 
   useEffect(() => {
     fetch("/api/user/me")
@@ -207,10 +210,40 @@ export default function StaffManagementPage() {
       if (res.ok) {
         toast.success(updatingPassword ? "Permissions & Password updated" : "Permissions updated");
         setUpdatingPassword("");
+        setIsEditingInfo(false);
         fetchStaff();
         setSelectedStaff(null);
       } else {
         toast.error("Failed to update staff member");
+      }
+    } catch (error) {
+      toast.error("Network error");
+    } finally {
+      setSavingPermissions(false);
+    }
+  };
+
+  const saveProfileInfo = async () => {
+    if (!selectedStaff) return;
+    setSavingPermissions(true);
+    try {
+      const res = await fetch("/api/seller/staff", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          staffId: selectedStaff.id,
+          name: editInfoData.name,
+          phone: editInfoData.phone
+        })
+      });
+
+      if (res.ok) {
+        toast.success("Profile information updated");
+        setIsEditingInfo(false);
+        fetchStaff();
+        setSelectedStaff(null);
+      } else {
+        toast.error("Failed to update profile");
       }
     } catch (error) {
       toast.error("Network error");
@@ -318,7 +351,7 @@ export default function StaffManagementPage() {
                     placeholder="e.g. Rahul Singh"
                     value={newStaff.name}
                     onChange={e => setNewStaff({ ...newStaff, name: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
                   />
                 </div>
                 <div className="space-y-1">
@@ -330,7 +363,7 @@ export default function StaffManagementPage() {
                       placeholder="rahul@kravypos.com"
                        value={newStaff.email}
                       onChange={e => setNewStaff({ ...newStaff, email: e.target.value })}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
                     />
                     <button 
                       type="button"
@@ -351,7 +384,7 @@ export default function StaffManagementPage() {
                     placeholder="e.g. 9876543210"
                      value={newStaff.phone}
                     onChange={e => setNewStaff({ ...newStaff, phone: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
                   />
                 </div>
                 <div className="space-y-1 sm:col-span-2">
@@ -359,22 +392,32 @@ export default function StaffManagementPage() {
                   <div className="relative">
                      <input
                       required
-                      type="text"
+                      type={showPassword ? "text" : "password"}
                       placeholder="Set a secure password"
                        value={newStaff.password}
                       onChange={e => setNewStaff({ ...newStaff, password: e.target.value })}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
                     />
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        const pass = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase() + "!";
-                        setNewStaff({...newStaff, password: pass});
-                      }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white dark:bg-slate-700 px-2 py-1 rounded-lg border dark:border-slate-600 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 dark:text-white"
-                    >
-                      Auto-Generate
-                    </button>
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      <button 
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="text-slate-400 hover:text-indigo-600 p-1.5"
+                      >
+                        {showPassword ? <UserX size={14} /> : <Lock size={14} />}
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const pass = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase() + "!";
+                          setNewStaff({...newStaff, password: pass});
+                          setShowPassword(true);
+                        }}
+                        className="text-[10px] font-bold bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg border dark:border-slate-600 shadow-sm hover:bg-slate-200 dark:hover:bg-slate-600 dark:text-white"
+                      >
+                        Auto
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <button
@@ -435,10 +478,14 @@ export default function StaffManagementPage() {
                         <Trash2 size={18} />
                       </button>
                       <button
-                        onClick={() => setSelectedStaff(member)}
+                        onClick={() => {
+                          setSelectedStaff(member);
+                          setIsEditingInfo(false);
+                          setEditInfoData({ name: member.name, phone: (member as any).phone || "" });
+                        }}
                         className="ml-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all"
                       >
-                        Manage Access
+                        Settings
                       </button>
                     </div>
                   </motion.div>
@@ -470,73 +517,127 @@ export default function StaffManagementPage() {
                     </button>
                  </div>
 
-                 <p className="text-slate-400 text-xs mb-6 font-medium leading-relaxed">
-                   Select the modules this staff member can access. Unticked items will be hidden from their sidebar immediately.
-                 </p>
-                 <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
-                    <label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2">
-                       <Key size={12} className="text-orange-400" />
-                       Reset Staff Password
-                    </label>
-                    <div className="flex gap-2">
-                       <input 
-                         type="text"
-                         placeholder="New password (optional)"
-                         value={updatingPassword}
-                         onChange={(e) => setUpdatingPassword(e.target.value)}
-                         className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:ring-1 focus:ring-orange-500 outline-none"
-                       />
-                       <button 
-                         type="button"
-                         onClick={() => setUpdatingPassword(Math.random().toString(36).slice(-8))}
-                         className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-xl"
-                       >
-                         <Sparkles size={14} />
-                       </button>
-                    </div>
-                    {updatingPassword && (
-                       <p className="text-[9px] text-orange-300/70 font-medium">⚠️ Password will be updated when you save.</p>
-                    )}
-                 </div>
-
-                 <div className="space-y-2 mb-8 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                     {ALL_PATHS.map(item => {
-                        if ((item as any).isHeader) {
-                          return (
-                            <div key={item.path} className="pt-4 pb-1">
-                              <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest text-center">
-                                {item.label}
-                              </p>
-                            </div>
-                          );
-                        }
-                        const isActive = selectedStaff.allowedPaths?.includes(item.path);
-                        return (
-                          <button
-                            key={item.path}
-                            onClick={() => handleTogglePath(item.path)}
-                            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isActive ? 'bg-indigo-600/20 border-indigo-500/50 text-white' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
-                          >
-                            <div className="flex items-center gap-3">
-                              {item.icon}
-                              <span className="text-xs font-bold">{item.label}</span>
-                            </div>
-                            <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${isActive ? 'bg-indigo-500 text-white' : 'border border-slate-700'}`}>
-                               {isActive && <Check size={12} />}
-                            </div>
-                          </button>
-                        );
-                     })}
+                  <div className="flex bg-slate-800/50 p-1 rounded-xl mb-6">
+                    <button 
+                      onClick={() => setIsEditingInfo(false)}
+                      className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${!isEditingInfo ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
+                    >
+                      Permissions
+                    </button>
+                    <button 
+                      onClick={() => setIsEditingInfo(true)}
+                      className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${isEditingInfo ? 'bg-orange-600 text-white' : 'text-slate-400'}`}
+                    >
+                      Profile Info
+                    </button>
                   </div>
 
-                 <button
-                    onClick={savePermissions}
-                    disabled={savingPermissions}
-                    className="w-full bg-orange-600 text-white font-black py-4 rounded-2xl hover:bg-orange-500 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20"
-                 >
-                    {savingPermissions ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                    Save Access Rules
-                 </button>
+                  {!isEditingInfo ? (
+                    <>
+                      <p className="text-slate-400 text-xs mb-6 font-medium leading-relaxed">
+                        Select the modules this staff member can access. Unticked items will be hidden from their sidebar immediately.
+                      </p>
+                      <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
+                        <label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2">
+                           <Key size={12} className="text-orange-400" />
+                           Reset Staff Password
+                        </label>
+                        <div className="flex gap-2">
+                           <input 
+                             type="text"
+                             placeholder="New password (optional)"
+                             value={updatingPassword}
+                             onChange={(e) => setUpdatingPassword(e.target.value)}
+                             className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:ring-1 focus:ring-orange-500 outline-none"
+                           />
+                           <button 
+                             type="button"
+                             onClick={() => setUpdatingPassword(Math.random().toString(36).slice(-8))}
+                             className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-xl"
+                           >
+                             <Sparkles size={14} />
+                           </button>
+                        </div>
+                        {updatingPassword && (
+                           <p className="text-[9px] text-orange-300/70 font-medium">⚠️ Password will be updated when you save.</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 mb-8 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                          {ALL_PATHS.map(item => {
+                             if ((item as any).isHeader) {
+                               return (
+                                 <div key={item.path} className="pt-4 pb-1">
+                                   <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest text-center">
+                                     {item.label}
+                                   </p>
+                                 </div>
+                               );
+                             }
+                             const isActive = selectedStaff.allowedPaths?.includes(item.path);
+                             return (
+                               <button
+                                 key={item.path}
+                                 onClick={() => handleTogglePath(item.path)}
+                                 className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isActive ? 'bg-indigo-600/20 border-indigo-500/50 text-white' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
+                               >
+                                 <div className="flex items-center gap-3">
+                                   {item.icon}
+                                   <span className="text-xs font-bold">{item.label}</span>
+                                 </div>
+                                 <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${isActive ? 'bg-indigo-500 text-white' : 'border border-slate-700'}`}>
+                                    {isActive && <Check size={12} />}
+                                 </div>
+                               </button>
+                             );
+                          })}
+                       </div>
+
+                      <button
+                         onClick={savePermissions}
+                         disabled={savingPermissions}
+                         className="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/20"
+                      >
+                         {savingPermissions ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                         Update Permissions
+                      </button>
+                    </>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-500">Display Name</label>
+                        <input 
+                          type="text"
+                          value={editInfoData.name}
+                          onChange={(e) => setEditInfoData({...editInfoData, name: e.target.value})}
+                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-orange-500 transition-all"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-500">Contact Number</label>
+                        <input 
+                          type="tel"
+                          value={editInfoData.phone}
+                          onChange={(e) => setEditInfoData({...editInfoData, phone: e.target.value})}
+                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-orange-500 transition-all"
+                        />
+                      </div>
+                      <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl">
+                         <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest flex items-center gap-2 mb-1">
+                            <AlertCircle size={12} /> Email Restricted
+                         </p>
+                         <p className="text-[11px] text-slate-400">Staff email login ID ({selectedStaff.email}) cannot be changed after account creation to maintain security logs.</p>
+                      </div>
+                      <button
+                         onClick={saveProfileInfo}
+                         disabled={savingPermissions}
+                         className="w-full bg-orange-600 text-white font-black py-4 rounded-2xl hover:bg-orange-500 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20"
+                      >
+                         {savingPermissions ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                         Save Profile Changes
+                      </button>
+                    </div>
+                  )}
                </motion.div>
              ) : (
                <motion.div
