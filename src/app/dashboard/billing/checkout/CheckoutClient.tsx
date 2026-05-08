@@ -915,6 +915,7 @@ export default function CheckoutClient() {
             tokenNumberSize: data.tokenNumberSize,
             businessNameSize: data.businessNameSize,
             phonePrefixType: data.phonePrefixType || "TEXT",
+            printSettings: data.printSettings
           });
           console.log("DEBUG POS API RESPONSE - enableKOTWithBill:", data.enableKOTWithBill);
           console.log("DEBUG POS API FULL DATA:", data);
