@@ -41,6 +41,7 @@ type UserData = {
   business?: {
     businessName: string;
   };
+  loginType: "CLERK" | "CUSTOM" | "STAFF";
 };
 
 export default function UserDetailPage() {
@@ -51,6 +52,7 @@ export default function UserDetailPage() {
   const [activeTab, setActiveTab] = useState("Profile");
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [impersonating, setImpersonating] = useState(false);
   const [editData, setEditData] = useState({ name: "", phone: "", password: "" });
   const [saving, setSaving] = useState(false);
 
@@ -105,6 +107,30 @@ export default function UserDetailPage() {
       toast.error("Network error");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImpersonate = async () => {
+    if (!user) return;
+    setImpersonating(true);
+    try {
+      const res = await fetch("/api/admin/users/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, loginType: user.loginType })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(`Logging in as ${user.name}...`);
+        window.location.href = data.redirect;
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Login failed");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setImpersonating(false);
     }
   };
 
@@ -403,6 +429,14 @@ export default function UserDetailPage() {
 
             <div className="bg-[#16161a] border border-white/5 rounded-3xl p-8 shadow-2xl space-y-4">
                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Quick Actions</h3>
+               <button 
+                 onClick={handleImpersonate}
+                 disabled={impersonating}
+                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+               >
+                  {impersonating ? <Loader2 size={12} className="animate-spin" /> : <Shield size={12} />}
+                  Login as User
+               </button>
                <button className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all text-rose-500 border border-rose-500/10">
                   Suspend Account
                </button>
