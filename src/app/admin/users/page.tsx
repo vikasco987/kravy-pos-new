@@ -45,6 +45,11 @@ export default function AdminUsersPage() {
   const [newRole, setNewRole] = useState<Role>("USER");
   const [inviting, setInviting] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -115,6 +120,36 @@ export default function AdminUsersPage() {
       toast.error("Network error");
     } finally {
       setAdding(false);
+    }
+  };
+  const saveUserEdits = async () => {
+    if (!selectedUser) return;
+    setSavingEdit(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          userId: selectedUser.id, 
+          name: editName, 
+          password: editPassword || undefined,
+          isStaffModel: selectedUser.isStaffModel
+        }),
+      });
+      if (res.ok) {
+        toast.success("User updated successfully");
+        fetchUsers();
+        setSelectedUser(null);
+        setIsEditing(false);
+        setEditPassword("");
+      } else {
+        const data = await res.json();
+        toast.error(data?.error || "Update failed");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -264,7 +299,7 @@ export default function AdminUsersPage() {
                           <input 
                             type="text" 
                             placeholder="e.g. John Doe"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all"
+                            className="w-full px-4 py-3 bg-white border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all text-slate-900 shadow-sm"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                           />
@@ -278,7 +313,7 @@ export default function AdminUsersPage() {
                           <input 
                             type="email" 
                             placeholder="staff@kravy.pos"
-                            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all"
+                            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all text-slate-900 shadow-sm"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                           />
@@ -288,13 +323,22 @@ export default function AdminUsersPage() {
                     {activeTab === "add" && (
                        <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
-                          <input 
-                            type="text" 
-                            placeholder="Set secure password"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                          />
+                          <div className="relative">
+                              <input 
+                                type={showPassword ? "text" : "password"} 
+                                placeholder="Set secure password"
+                                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all text-slate-900 shadow-sm"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                              />
+                              <button 
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                              >
+                                {showPassword ? <XCircle size={18} /> : <Eye size={18} />}
+                              </button>
+                           </div>
                        </div>
                     )}
 
@@ -396,7 +440,11 @@ export default function AdminUsersPage() {
                                     </div>
                                     <div>
                                        <button 
-                                         onClick={() => setSelectedUser(u)}
+                                         onClick={() => {
+                                            setSelectedUser(u);
+                                            setIsEditing(false);
+                                            setEditName(u.name || "");
+                                          }}
                                          className="font-black text-slate-900 hover:text-indigo-600 transition-colors block text-sm"
                                        >
                                           {u.name || "Pending Account"}
@@ -514,53 +562,96 @@ export default function AdminUsersPage() {
                      </div>
                   </div>
 
-                  <div className="space-y-4">
-                     <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <Mail className="text-indigo-600" size={20} />
-                        <div className="flex-1">
-                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Primary Email</p>
-                           <p className="text-sm font-bold text-slate-900">{selectedUser.email}</p>
+                   {!isEditing ? (
+                     <div className="space-y-4">
+                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                           <Mail className="text-indigo-600" size={20} />
+                           <div className="flex-1">
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Primary Email</p>
+                              <p className="text-sm font-bold text-slate-900">{selectedUser.email}</p>
+                           </div>
+                           <button 
+                             onClick={() => {
+                               navigator.clipboard.writeText(selectedUser.email);
+                               toast.success("Email copied");
+                             }}
+                             className="text-[10px] font-black text-indigo-600 uppercase"
+                           >
+                              Copy
+                           </button>
                         </div>
-                        <button 
-                          onClick={() => {
-                            navigator.clipboard.writeText(selectedUser.email);
-                            toast.success("Email copied");
-                          }}
-                          className="text-[10px] font-black text-indigo-600 uppercase"
-                        >
-                           Copy
-                        </button>
-                     </div>
 
-                     <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <Lock className="text-slate-400" size={20} />
-                        <div className="flex-1">
-                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Authentication ID</p>
-                           <p className="text-[10px] font-bold text-slate-800 truncate max-w-[180px]">{selectedUser.clerkId}</p>
+                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                           <Lock className="text-slate-400" size={20} />
+                           <div className="flex-1">
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Authentication ID</p>
+                              <p className="text-[10px] font-bold text-slate-800 truncate max-w-[180px]">{selectedUser.clerkId}</p>
+                           </div>
+                           <button 
+                             onClick={() => {
+                               navigator.clipboard.writeText(selectedUser.clerkId);
+                               toast.success("ID copied");
+                             }}
+                             className="text-[10px] font-black text-indigo-600 uppercase"
+                           >
+                              Copy
+                           </button>
                         </div>
-                        <button 
-                          onClick={() => {
-                            navigator.clipboard.writeText(selectedUser.clerkId);
-                            toast.success("ID copied");
-                          }}
-                          className="text-[10px] font-black text-indigo-600 uppercase"
-                        >
-                           Copy
-                        </button>
-                     </div>
-                  </div>
 
-                  <div className="pt-4 flex gap-3">
-                     <button 
-                       onClick={() => toggleUserStatus(selectedUser)}
-                       className={`flex-1 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${selectedUser.isDisabled ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}
-                     >
-                        {selectedUser.isDisabled ? "Resume Access" : "Revoke Access"}
-                     </button>
-                     <button className="flex-1 py-3 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg">
-                        Session Log
-                     </button>
-                  </div>
+                        <div className="pt-4 flex gap-3">
+                           <button 
+                             onClick={() => toggleUserStatus(selectedUser)}
+                             className={`flex-1 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${selectedUser.isDisabled ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100'}`}
+                           >
+                              {selectedUser.isDisabled ? "Resume Access" : "Revoke Access"}
+                           </button>
+                           <button 
+                             onClick={() => setIsEditing(true)}
+                             className="flex-1 py-3 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg hover:bg-black transition-all"
+                           >
+                              Edit Profile
+                           </button>
+                        </div>
+                     </div>
+                   ) : (
+                     <div className="space-y-4">
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Display Name</label>
+                           <input 
+                             type="text" 
+                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all"
+                             value={editName}
+                             onChange={(e) => setEditName(e.target.value)}
+                           />
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password (Optional)</label>
+                           <input 
+                             type="text" 
+                             placeholder="Leave empty to keep current"
+                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 font-medium transition-all"
+                             value={editPassword}
+                             onChange={(e) => setEditPassword(e.target.value)}
+                           />
+                        </div>
+                        <div className="pt-4 flex gap-3">
+                           <button 
+                             onClick={() => setIsEditing(false)}
+                             className="flex-1 py-3 rounded-2xl font-black uppercase text-xs tracking-widest bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all"
+                           >
+                              Cancel
+                           </button>
+                           <button 
+                             onClick={saveUserEdits}
+                             disabled={savingEdit}
+                             className="flex-1 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                           >
+                              {savingEdit ? <RefreshCw className="animate-spin" size={14} /> : <CheckCircle2 size={14} />}
+                              Save Changes
+                           </button>
+                        </div>
+                     </div>
+                   )}
                </div>
             </motion.div>
           </div>

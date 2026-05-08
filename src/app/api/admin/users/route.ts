@@ -181,3 +181,65 @@ export async function POST(req: Request) {
     );
   }
 }
+/* =========================
+   PUT → UPDATE USER
+========================= */
+export async function PUT(req: Request) {
+  try {
+    const admin = await getAuthUser();
+    if (!admin || admin.role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { userId, name, password, isStaffModel } = await req.json();
+
+    if (!userId) {
+      return NextResponse.json({ error: "User ID required" }, { status: 400 });
+    }
+
+    // 1. Handle Staff Model Users
+    if (isStaffModel) {
+      let updateData: any = {};
+      if (name) updateData.name = name;
+      if (password) {
+        const bcrypt = await import("bcryptjs");
+        updateData.password = await bcrypt.hash(password, 10);
+      }
+
+      const updated = await prisma.staff.update({
+        where: { id: userId },
+        data: updateData
+      });
+      return NextResponse.json(updated);
+    }
+
+    // 2. Handle Clerk Users
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const client = await clerkClient();
+    let clerkUpdate: any = {};
+    if (name) {
+      const parts = name.trim().split(" ");
+      clerkUpdate.firstName = parts[0];
+      clerkUpdate.lastName = parts.slice(1).join(" ") || "User";
+    }
+    if (password) {
+      clerkUpdate.password = password;
+    }
+
+    await client.users.updateUser(user.clerkId, clerkUpdate);
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { name: name || undefined }
+    });
+
+    return NextResponse.json(updated);
+  } catch (error: any) {
+    console.error("ADMIN UPDATE USER ERROR:", error);
+    return NextResponse.json({ error: error.message || "Update failed" }, { status: 500 });
+  }
+}
