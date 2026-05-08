@@ -46,6 +46,17 @@ export async function deductInventory(orderItems: any[]) {
           console.error(`[INVENTORY_DEBUG] Failed to update material ${ri.materialId}:`, updateErr);
         }
       }
+
+      // ✅ ALSO DEDUCT FINISHED ITEM STOCK (The item itself)
+      try {
+        const updatedItem = await prisma.item.update({
+          where: { id: itemId },
+          data: { currentStock: { decrement: Number(quantitySold) } }
+        });
+        console.log(`[INVENTORY_DEBUG] Success: New stock for Finished Item ${updatedItem.name} is ${updatedItem.currentStock}`);
+      } catch (itemErr) {
+        console.warn(`[INVENTORY_DEBUG] Failed to update Item stock (might not exist in Item model):`, itemErr);
+      }
     }
     console.log("[INVENTORY_DEBUG] Inventory deduction cycle completed.");
   } catch (err) {
