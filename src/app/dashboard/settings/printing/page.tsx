@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import { 
     ArrowLeft, Save, Printer, Eye, Settings, 
     Image as ImageIcon, Type, Phone, MapPin, 
-    Hash, User, Percent, MessageSquare, QrCode,
-    Receipt, ChefHat, Clock, FileText, Check
+    Hash, User, Users, Percent, MessageSquare, QrCode,
+    Receipt, ChefHat, Clock, FileText, Check, Zap
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
