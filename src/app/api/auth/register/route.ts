@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Resend } from "resend";
 import { getOTPEmailTemplate } from "@/lib/mail-templates";
+import { sendWhatsAppOTP } from "@/lib/whatsapp-bill";
 
 export async function POST(req: NextRequest) {
   try {
@@ -81,6 +82,13 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // 📲 Also try WhatsApp
+      try {
+        await sendWhatsAppOTP(name, cleanPhone, otpCode);
+      } catch (waErr) {
+        console.error("RETRY_WHATSAPP_ERROR:", waErr);
+      }
+
       return NextResponse.json({ 
         message: "Account already exists. A new OTP has been sent for verification.",
         needsVerification: true,
@@ -121,13 +129,26 @@ export async function POST(req: NextRequest) {
       } catch (emailErr) {
         console.error("SIGNUP_EMAIL_ERROR:", emailErr);
       }
-    } else {
-      console.error("RESEND_API_KEY is missing. OTP sent to logs: ", otp);
     }
+
+    // 📲 6. Send WhatsApp OTP
+    let whatsappSent = false;
+    try {
+      const waRes = await sendWhatsAppOTP(name, cleanPhone, otp);
+      whatsappSent = waRes.success;
+    } catch (waErr) {
+      console.error("SIGNUP_WHATSAPP_ERROR:", waErr);
+    }
+
+    const message = [];
+    if (resend) message.push("Email");
+    if (whatsappSent) message.push("WhatsApp");
 
     return NextResponse.json({ 
       success: true, 
-      message: resend ? "OTP sent to your email" : "OTP generated (Email service unavailable)",
+      message: message.length > 0 
+        ? `OTP sent via ${message.join(" and ")}` 
+        : "Account created (OTP sent to console logs)",
       userId: user.id 
     });
 

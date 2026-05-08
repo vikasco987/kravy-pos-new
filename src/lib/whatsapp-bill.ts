@@ -156,3 +156,30 @@ export async function sendWhatsAppBillWithPDF(
     return { success: false, error: errMsg };
   }
 }
+// ── Send WhatsApp OTP ──────────────────────────────────────────────────────
+export async function sendWhatsAppOTP(
+  name: string,
+  phone: string,
+  otp: string
+): Promise<{ success: boolean; messageSid?: string; error?: string }> {
+  try {
+    const formattedPhone = phone.startsWith("+")
+      ? phone
+      : `+91${phone.replace(/^0/, "")}`;
+
+    const fromNumber = process.env.TWILIO_WHATSAPP_FROM!.startsWith("whatsapp:") 
+      ? process.env.TWILIO_WHATSAPP_FROM! 
+      : `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
+
+    const message = await client.messages.create({
+      from: fromNumber,
+      to: `whatsapp:${formattedPhone}`,
+      body: `🔐 *Kravy POS Verification*\n\nHello ${name},\n\nYour 6-digit verification code is: *${otp}*\n\nThis code will expire in 10 minutes.\n\n🙏 Thank you for joining Kravy!`,
+    });
+
+    return { success: true, messageSid: message.sid };
+  } catch (error: any) {
+    console.error("❌ TWILIO OTP ERROR:", error);
+    return { success: false, error: error.message || "Unknown error" };
+  }
+}
