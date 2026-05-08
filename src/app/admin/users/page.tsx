@@ -34,6 +34,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"ALL" | Role>("ALL");
+  const [loginTypeFilter, setLoginTypeFilter] = useState<"ALL" | "CLERK" | "CUSTOM">("ALL");
   const [actionUserId, setActionUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
@@ -209,9 +210,12 @@ export default function AdminUsersPage() {
       const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            u.email.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
-      return matchesSearch && matchesRole;
+      const matchesLoginType = loginTypeFilter === "ALL" || 
+                              (loginTypeFilter === "CUSTOM" && u.isStaffModel) ||
+                              (loginTypeFilter === "CLERK" && !u.isStaffModel);
+      return matchesSearch && matchesRole && matchesLoginType;
     });
-  }, [users, searchQuery, roleFilter]);
+  }, [users, searchQuery, roleFilter, loginTypeFilter]);
 
   if (loading) {
     return (
@@ -399,6 +403,18 @@ export default function AdminUsersPage() {
                </div>
                <div className="flex gap-2">
                   <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1 rounded-2xl border border-slate-100">
+                     <Lock size={14} className="text-slate-400" />
+                     <select 
+                       className="bg-transparent border-none outline-none font-black text-[11px] uppercase tracking-widest text-slate-600 py-2 pr-4"
+                       value={loginTypeFilter}
+                       onChange={(e) => setLoginTypeFilter(e.target.value as any)}
+                     >
+                        <option value="ALL">All Logins</option>
+                        <option value="CLERK">Clerk (External)</option>
+                        <option value="CUSTOM">Custom (Local)</option>
+                     </select>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1 rounded-2xl border border-slate-100">
                      <Filter size={14} className="text-slate-400" />
                      <select 
                        className="bg-transparent border-none outline-none font-black text-[11px] uppercase tracking-widest text-slate-600 py-2 pr-4"
@@ -449,8 +465,11 @@ export default function AdminUsersPage() {
                                        >
                                           {u.name || "Pending Account"}
                                        </button>
-                                       <div className="text-xs text-slate-400 font-medium">
+                                       <div className="text-xs text-slate-400 font-medium flex items-center gap-2">
                                           {u.email}
+                                          <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${u.isStaffModel ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                                             {u.isStaffModel ? 'Custom' : 'Clerk'}
+                                          </span>
                                        </div>
                                     </div>
                                  </div>
