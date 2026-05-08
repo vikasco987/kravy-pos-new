@@ -24,6 +24,15 @@ type InventoryItem = {
   zones: string[];
 };
 
+type RawMaterial = {
+  id: string;
+  name: string;
+  unit: string;
+  stock: number;
+  minStock: number;
+  price: number;
+};
+
 export default function InventoryPage() {
   const { query: globalQuery } = useSearch();
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -36,6 +45,21 @@ export default function InventoryPage() {
   const [filterStatus, setFilterStatus] = useState<"all" | "in-stock" | "low-stock" | "out-of-stock">("all");
   const [sortBy, setSortBy] = useState<"name" | "stock-low" | "stock-high" | "price-low" | "price-high">("name");
   const [filterMode, setFilterMode] = useState<"all" | "critical">("all");
+  const [activeTab, setActiveTab] = useState<"finished" | "raw">("finished");
+  
+  // Raw Materials State
+  const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);
+  const [isRawModalOpen, setIsRawModalOpen] = useState(false);
+  const [editingRaw, setEditingRaw] = useState<RawMaterial | null>(null);
+  const [rawFormData, setRawFormData] = useState({
+    name: "", unit: "kg", stock: 0, minStock: 0, price: 0
+  });
+
+  // Recipe Modal State
+  const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
+  const [selectedItemForRecipe, setSelectedItemForRecipe] = useState<InventoryItem | null>(null);
+  const [currentRecipe, setCurrentRecipe] = useState<any[]>([]);
+  const [isRecipeSaving, setIsRecipeSaving] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -61,6 +85,7 @@ export default function InventoryPage() {
     fetchInventory();
     fetchCategories();
     fetchProfile();
+    fetchRawMaterials();
 
     const handleKravySearch = (e: any) => {
       setSearchTerm(e.detail || "");
@@ -68,6 +93,18 @@ export default function InventoryPage() {
     window.addEventListener("kravy-search", handleKravySearch);
     return () => window.removeEventListener("kravy-search", handleKravySearch);
   }, []);
+
+  const fetchRawMaterials = async () => {
+    try {
+      const res = await fetch("/api/inventory/materials");
+      if (res.ok) {
+        const data = await res.json();
+        setRawMaterials(data);
+      }
+    } catch (err) {
+      console.error("Fetch raw materials error:", err);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -224,17 +261,37 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] p-1 rounded-xl flex gap-1 mr-4 shadow-sm">
+            <button 
+              onClick={() => setActiveTab("finished")}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'finished' ? 'bg-[var(--kravy-brand)] text-white shadow-lg shadow-[var(--kravy-brand)]/20' : 'text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg)]'}`}
+            >
+              Finished Products
+            </button>
+            <button 
+              onClick={() => setActiveTab("raw")}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'raw' ? 'bg-[var(--kravy-brand)] text-white shadow-lg shadow-[var(--kravy-brand)]/20' : 'text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg)]'}`}
+            >
+              Raw Ingredients
+            </button>
+          </div>
           <button 
             onClick={() => {
-              setEditingItem(null);
-              setFormData({
-                name: "", categoryId: "", currentStock: 0, reorderLevel: 0, openingStock: 0, unit: "pcs", price: 0, sellingPrice: 0, barcode: "", taxStatus: "Without Tax", gst: null, hsnCode: "", zones: []
-              });
-              setIsModalOpen(true);
+              if (activeTab === 'finished') {
+                setEditingItem(null);
+                setFormData({
+                  name: "", categoryId: "", currentStock: 0, reorderLevel: 0, openingStock: 0, unit: "pcs", price: 0, sellingPrice: 0, barcode: "", taxStatus: "Without Tax", gst: null, hsnCode: "", zones: []
+                });
+                setIsModalOpen(true);
+              } else {
+                setEditingRaw(null);
+                setRawFormData({ name: "", unit: "kg", stock: 0, minStock: 0, price: 0 });
+                setIsRawModalOpen(true);
+              }
             }}
             className="h-10 px-6 bg-[var(--kravy-brand)] text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:shadow-lg hover:shadow-[var(--kravy-brand)]/20 transition-all active:scale-95 shadow-md shadow-[var(--kravy-brand)]/10"
           >
-            <Plus size={16} strokeWidth={3} /> New Record
+            <Plus size={16} strokeWidth={3} /> {activeTab === 'finished' ? 'New Product' : 'New Material'}
           </button>
         </div>
       </div>
@@ -350,8 +407,8 @@ export default function InventoryPage() {
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-10 bg-[var(--kravy-navbar-bg)] backdrop-blur-xl border-b border-[var(--kravy-border)]">
               <tr className="bg-gradient-to-r from-[var(--kravy-brand)]/[0.03] to-transparent">
-                <th className="px-5 py-4 text-left text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">Inventory Item</th>
-                <th className="px-5 py-4 text-left text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">Category</th>
+                <th className="px-5 py-4 text-left text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">{activeTab === 'finished' ? 'Inventory Item' : 'Raw Material'}</th>
+                <th className="px-5 py-4 text-left text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">{activeTab === 'finished' ? 'Category' : 'Stock Unit'}</th>
                 <th className="px-5 py-4 text-left text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">Stock Status</th>
                 <th className="px-5 py-4 text-left text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">Critical Floor</th>
                 <th className="px-5 py-4 text-left text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">Valuation</th>
@@ -373,7 +430,7 @@ export default function InventoryPage() {
                     <div className="text-[10px] uppercase tracking-widest text-[var(--kravy-text-faint)] mt-1">Try adjusting your filters</div>
                   </td>
                 </tr>
-              ) : (
+              ) : activeTab === 'finished' ? (
                 filteredItems.map((item) => {
                   const status = getStatus(item);
                   return (
@@ -391,15 +448,6 @@ export default function InventoryPage() {
                             <div className="text-sm font-bold text-[var(--kravy-text-primary)] leading-tight">{item.name}</div>
                             <div className="flex flex-wrap gap-1 mt-1">
                                <div className="text-[10px] font-bold text-[var(--kravy-text-faint)]">ID: {item.id.slice(-8).toUpperCase()} · {item.unit}</div>
-                               {item.zones && item.zones.length > 0 && (
-                                 <div className="flex gap-1 ml-2">
-                                   {item.zones.map(z => (
-                                     <span key={z} className="text-[8px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-md font-black uppercase tracking-tighter">
-                                       {z}
-                                     </span>
-                                   ))}
-                                 </div>
-                               )}
                             </div>
                           </div>
                         </div>
@@ -424,9 +472,6 @@ export default function InventoryPage() {
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">
                           <div className="text-sm font-bold text-[var(--kravy-text-muted)]">{item.reorderLevel}</div>
-                          {item.currentStock <= item.reorderLevel && (
-                            <AlertTriangle size={14} className="text-amber-500 animate-pulse" />
-                          )}
                         </div>
                       </td>
                       <td className="px-5 py-4">
@@ -437,6 +482,25 @@ export default function InventoryPage() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={async () => {
+                              setSelectedItemForRecipe(item);
+                              setIsRecipeModalOpen(true);
+                              // Fetch recipe
+                              const res = await fetch(`/api/inventory/recipes?itemId=${item.id}`);
+                              if (res.ok) {
+                                const data = await res.json();
+                                setCurrentRecipe(data.map((r: any) => ({
+                                  materialId: r.materialId,
+                                  quantity: r.quantity,
+                                  name: r.material.name
+                                })));
+                              }
+                            }}
+                            className="h-8 px-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all flex items-center gap-1"
+                          >
+                            <FileText size={12} /> Recipe
+                          </button>
                           <button 
                             onClick={() => handleEdit(item)}
                             className="w-8 h-8 rounded-lg bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:text-[var(--kravy-brand)] hover:border-[var(--kravy-brand)]/50 transition-all flex items-center justify-center"
@@ -454,6 +518,85 @@ export default function InventoryPage() {
                     </motion.tr>
                   );
                 })
+              ) : (
+                rawMaterials
+                  .filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .map((mat) => {
+                    const isLow = mat.stock <= mat.minStock;
+                    return (
+                      <motion.tr 
+                        layout
+                        key={mat.id} 
+                        className="group hover:bg-orange-500/[0.02] transition-colors"
+                      >
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center font-black text-xs">
+                              {mat.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-[var(--kravy-text-primary)] leading-tight">{mat.name}</div>
+                              <div className="text-[10px] font-bold text-[var(--kravy-text-faint)] mt-1 uppercase">ID: {mat.id.slice(-6)}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="px-3 py-1.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-white/60">
+                            {mat.unit}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="text-sm font-black text-[var(--kravy-text-primary)]">{mat.stock} {mat.unit}</div>
+                            {isLow && (
+                              <div className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter bg-rose-500/10 text-rose-600">
+                                LOW STOCK
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="text-sm font-bold text-[var(--kravy-text-muted)]">{mat.minStock} {mat.unit}</div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="text-sm font-black text-[var(--kravy-text-primary)]">₹{mat.price}</div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => {
+                                setEditingRaw(mat);
+                                setRawFormData({
+                                  name: mat.name,
+                                  unit: mat.unit,
+                                  stock: mat.stock,
+                                  minStock: mat.minStock,
+                                  price: mat.price
+                                });
+                                setIsRawModalOpen(true);
+                              }}
+                              className="w-8 h-8 rounded-lg bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:text-orange-500 hover:border-orange-500/50 transition-all flex items-center justify-center"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                if(!confirm("Delete this material?")) return;
+                                const res = await fetch(`/api/inventory/materials?id=${mat.id}`, { method: 'DELETE' });
+                                if(res.ok) {
+                                  toast.success("Deleted");
+                                  fetchRawMaterials();
+                                }
+                              }}
+                              className="w-8 h-8 rounded-lg bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:text-rose-500 hover:border-rose-500/50 transition-all flex items-center justify-center"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    );
+                  })
               )}
             </tbody>
           </table>
@@ -688,6 +831,172 @@ export default function InventoryPage() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Raw Material Modal */}
+      <AnimatePresence>
+        {isRawModalOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsRawModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] w-full max-w-md rounded-3xl overflow-hidden shadow-2xl relative z-10 p-6">
+              <h2 className="text-lg font-black mb-6 flex items-center gap-2">
+                <Package className="text-orange-500" /> {editingRaw ? "Edit Material" : "New Raw Material"}
+              </h2>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Material Name</label>
+                  <input className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-orange-500" placeholder="e.g. Flour, Sugar" value={rawFormData.name} onChange={e => setRawFormData({...rawFormData, name: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Unit (kg, ltr, pcs)</label>
+                    <input className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-orange-500" value={rawFormData.unit} onChange={e => setRawFormData({...rawFormData, unit: e.target.value})} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Current Stock</label>
+                    <input type="number" className="w-full bg-[var(--kravy-bg)] border border(--kravy-border)] rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-orange-500" value={rawFormData.stock} onChange={e => setRawFormData({...rawFormData, stock: Number(e.target.value)})} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Reorder Level</label>
+                    <input type="number" className="w-full bg-[var(--kravy-bg)] border border(--kravy-border)] rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-orange-500" value={rawFormData.minStock} onChange={e => setRawFormData({...rawFormData, minStock: Number(e.target.value)})} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Price per Unit</label>
+                    <input type="number" className="w-full bg-[var(--kravy-bg)] border border(--kravy-border)] rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-orange-500" value={rawFormData.price} onChange={e => setRawFormData({...rawFormData, price: Number(e.target.value)})} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-8">
+                <button onClick={() => setIsRawModalOpen(false)} className="flex-1 py-3 bg-slate-100 dark:bg-white/5 rounded-xl text-xs font-black uppercase">Cancel</button>
+                <button onClick={async () => {
+                  const res = await fetch("/api/inventory/materials", {
+                    method: editingRaw ? 'PATCH' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(editingRaw ? { ...rawFormData, id: editingRaw.id } : rawFormData)
+                  });
+                  if(res.ok) {
+                    toast.success("Saved");
+                    setIsRawModalOpen(false);
+                    fetchRawMaterials();
+                  }
+                }} className="flex-1 py-3 bg-orange-600 text-white rounded-xl text-xs font-black uppercase">Save Material</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Recipe Management Modal */}
+      <AnimatePresence>
+        {isRecipeModalOpen && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsRecipeModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl relative z-10">
+              <div className="px-6 py-5 border-b border-[var(--kravy-border)] flex justify-between items-center bg-indigo-500/5">
+                <div>
+                  <h2 className="text-lg font-black text-indigo-600">Recipe: {selectedItemForRecipe?.name}</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Map raw materials to this item</p>
+                </div>
+                <button onClick={() => setIsRecipeModalOpen(false)} className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-6 space-y-6">
+                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                  {currentRecipe.length === 0 ? (
+                    <div className="py-10 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-2xl">
+                      <FileText className="mx-auto text-slate-300 mb-2" size={32} />
+                      <p className="text-xs font-bold text-slate-400">No ingredients mapped yet</p>
+                    </div>
+                  ) : (
+                    currentRecipe.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10">
+                        <div className="flex-1 font-bold text-sm">{item.name}</div>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="number" 
+                            className="w-24 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold outline-none"
+                            placeholder="Qty"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const newRecipe = [...currentRecipe];
+                              newRecipe[idx].quantity = Number(e.target.value);
+                              setCurrentRecipe(newRecipe);
+                            }}
+                          />
+                          <span className="text-[10px] font-black text-slate-400 uppercase">{rawMaterials.find(m => m.id === item.materialId)?.unit}</span>
+                        </div>
+                        <button 
+                          onClick={() => setCurrentRecipe(currentRecipe.filter((_, i) => i !== idx))}
+                          className="w-8 h-8 rounded-lg text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition-all"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 dark:border-white/10">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 block">Add Ingredient</label>
+                  <div className="flex gap-2">
+                    <select 
+                      className="flex-1 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none"
+                      onChange={(e) => {
+                        const matId = e.target.value;
+                        if (!matId) return;
+                        if (currentRecipe.some(r => r.materialId === matId)) return toast.error("Already added");
+                        const mat = rawMaterials.find(m => m.id === matId);
+                        if (mat) {
+                          setCurrentRecipe([...currentRecipe, { materialId: matId, quantity: 1, name: mat.name }]);
+                        }
+                        e.target.value = "";
+                      }}
+                    >
+                      <option value="">Select a material...</option>
+                      {rawMaterials.map(m => (
+                        <option key={m.id} value={m.id}>{m.name} ({m.unit})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button 
+                    onClick={() => setIsRecipeModalOpen(false)}
+                    className="flex-1 py-3.5 bg-slate-100 dark:bg-white/5 rounded-2xl text-xs font-black uppercase tracking-widest"
+                  >
+                    Discard
+                  </button>
+                  <button 
+                    disabled={isRecipeSaving}
+                    onClick={async () => {
+                      setIsRecipeSaving(true);
+                      try {
+                        const res = await fetch("/api/inventory/recipes", {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ itemId: selectedItemForRecipe?.id, materials: currentRecipe })
+                        });
+                        if (res.ok) {
+                          toast.success("Recipe saved successfully!");
+                          setIsRecipeModalOpen(false);
+                        }
+                      } finally {
+                        setIsRecipeSaving(false);
+                      }
+                    }}
+                    className="flex-[2] py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20"
+                  >
+                    {isRecipeSaving ? "Saving..." : "Save Recipe Configuration"}
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

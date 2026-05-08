@@ -117,10 +117,37 @@ model Item {
   user User @relation(fields: [userId], references: [id])
 
   reviews   Review[]
+  recipe    RecipeItem[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([clerkId])
+}
+
+model RawMaterial {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkId   String?  // Clerk User ID
+  userId    String   @db.ObjectId
+  name      String
+  unit      String   // e.g., kg, gram, piece, liter
+  stock     Float    @default(0)
+  minStock  Float    @default(0) // Alert level
+  price     Float?   // Last purchase price
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recipeItems RecipeItem[]
+}
+
+model RecipeItem {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  itemId        String      @db.ObjectId
+  item          Item        @relation(fields: [itemId], references: [id])
+  materialId    String      @db.ObjectId
+  material      RawMaterial @relation(fields: [materialId], references: [id])
+  quantity      Float       // Quantity needed per item
+  
+  @@unique([itemId, materialId])
 }
 
 model AddonGroup {

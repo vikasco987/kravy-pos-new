@@ -119,6 +119,12 @@ export async function PATCH(req: NextRequest) {
             data,
         });
 
+        // ✅ AUTO-DEDUCT INVENTORY ON COMPLETION
+        if (status === "COMPLETED" && order.items && Array.isArray(order.items)) {
+            const { deductInventory } = await import("@/lib/inventory-utils");
+            await deductInventory(order.items);
+        }
+
         return NextResponse.json(order);
     } catch (error: any) {
         console.error("PATCH_ORDER_ERROR:", error);
