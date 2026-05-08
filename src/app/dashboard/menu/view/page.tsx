@@ -835,6 +835,11 @@ export default function ViewMenuPage() {
       return;
     }
 
+    if (!quickAddCat.id) {
+      setToast("Please select a category");
+      return;
+    }
+
     const tempId = `temp-${Date.now()}`;
     const optimisticItem: MenuItem = {
       id: tempId,
@@ -1399,7 +1404,14 @@ export default function ViewMenuPage() {
                 </button>
                 <div className="w-[1px] h-8 bg-gray-100 mx-1" />
                 <button
-                  onClick={() => setQuickAddCat({ id: menus[0]?.id || "", name: menus[0]?.name || "General" })}
+                  onClick={() => {
+                    if (menus.length === 0) {
+                      setShowAddCategory(true);
+                      setToast("Create a category first!");
+                    } else {
+                      setQuickAddCat({ id: menus[0].id, name: menus[0].name });
+                    }
+                  }}
                   className="px-6 py-2.5 rounded-2xl bg-emerald-600 text-white font-black text-xs uppercase tracking-widest flex-shrink-0 hover:bg-emerald-700 transition-all flex items-center gap-2.5 shadow-lg shadow-emerald-600/20 active:scale-95"
                   title="Quick Add Item"
                 >

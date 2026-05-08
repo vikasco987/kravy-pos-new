@@ -265,22 +265,30 @@ async function findOrCreateDBUser(clerkId: string) {
   });
 
   if (!user) {
-    // Get Clerk client (IMPORTANT)
-    const client = await clerkClient();
+    // If it's a custom user, they MUST exist in DB. 
+    // If not found, it's a real error, don't try to sync from Clerk.
+    if (clerkId.startsWith("custom_")) {
+       throw new Error(`Custom User ${clerkId} not found in database.`);
+    }
 
-    // ✅ fetch Clerk user to get email
-    const clerkUser = await client.users.getUser(clerkId);
+    try {
+      const client = await clerkClient();
+      const clerkUser = await client.users.getUser(clerkId);
 
-    user = await prisma.user.create({
-      data: {
-        clerkId,
-        name: clerkUser.fullName ?? "",
-        email:
-          clerkUser.emailAddresses[0]?.emailAddress ??
-          `no-email-${clerkId}@example.com`,
-      },
-      select: { id: true },
-    });
+      user = await prisma.user.create({
+        data: {
+          clerkId,
+          name: clerkUser.fullName ?? "",
+          email:
+            clerkUser.emailAddresses[0]?.emailAddress ??
+            `no-email-${clerkId}@example.com`,
+        },
+        select: { id: true },
+      });
+    } catch (err: any) {
+      console.error("Clerk user sync failed:", err);
+      throw new Error(`Failed to sync user from Clerk: ${err.message}`);
+    }
   }
 
   return user;
@@ -354,8 +362,14 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     if (!body?.name || body.price == null || !body.categoryId) {
+      console.log("ITEM CREATE VALIDATION FAILED:", {
+        name: !!body?.name,
+        price: body?.price != null,
+        categoryId: !!body?.categoryId,
+        body: body
+      });
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required fields", missing: { name: !body?.name, price: body?.price == null, categoryId: !body?.categoryId } },
         { status: 400 }
       );
     }
