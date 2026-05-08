@@ -208,6 +208,12 @@ export async function POST(req: NextRequest) {
             include: { table: true },
         });
 
+        // ✅ 4. AUTO-DEDUCT INVENTORY IF COMPLETED
+        if (order.status === "COMPLETED") {
+            const { deductInventory } = await import("@/lib/inventory-utils");
+            await deductInventory(order.items as any[]);
+        }
+
         return NextResponse.json(order);
     } catch (error: any) {
         console.error("POST_ORDER_ERROR:", error);

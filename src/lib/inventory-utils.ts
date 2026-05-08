@@ -12,10 +12,13 @@ export async function deductInventory(orderItems: any[]) {
       // In this app, order.items is a JSON array. We need to match with Item model.
       
       // Let's assume orderItem has an 'id' (the Item's DB id)
-      const itemId = item.id;
+      const itemId = item.itemId || item.id;
       const quantitySold = item.qty || item.quantity || 1;
 
-      if (!itemId) continue;
+      if (!itemId) {
+        console.warn("[INVENTORY_DEDUCT_SKIP]: Item has no ID", item);
+        continue;
+      }
 
       const recipeItems = await prisma.recipeItem.findMany({
         where: { itemId },

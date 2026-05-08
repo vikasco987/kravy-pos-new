@@ -714,7 +714,7 @@ export default function InventoryPage() {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest px-1">Purchase Cost</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--kravy-text-faint)]">\u20B9</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--kravy-text-faint)]">₹</span>
                       <input
                         type="number"
                         className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl pl-8 pr-4 py-3 text-sm font-bold text-[var(--kravy-text-primary)] focus:border-[var(--kravy-brand)] outline-none transition-all shadow-inner shadow-black/5"
