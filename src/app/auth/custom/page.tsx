@@ -22,7 +22,23 @@ export default function CustomAuthPage() {
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    // ✅ Phone Validation: Numbers only, max 10 digits
+    if (name === 'phone') {
+      const cleaned = value.replace(/\D/g, '').slice(0, 10);
+      setFormData({ ...formData, [name]: cleaned });
+      return;
+    }
+
+    // ✅ OTP Validation: Numbers only, max 6 digits
+    if (name === 'otp') {
+      const cleaned = value.replace(/\D/g, '').slice(0, 6);
+      setFormData({ ...formData, [name]: cleaned });
+      return;
+    }
+
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleAction = async (e: React.FormEvent) => {
@@ -31,6 +47,11 @@ export default function CustomAuthPage() {
 
     try {
       if (mode === 'signup') {
+        if (formData.phone.length !== 10) {
+          toast.error("Please enter a valid 10-digit phone number.");
+          setLoading(false);
+          return;
+        }
         const res = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
