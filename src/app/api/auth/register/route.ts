@@ -24,8 +24,10 @@ export async function POST(req: NextRequest) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPhone = phone.replace(/\D/g, '');
 
-    if (cleanPhone.length < 10) {
-      return NextResponse.json({ error: "Please provide a valid 10-digit phone number" }, { status: 400 });
+    if (cleanPhone.length !== 10) {
+      return NextResponse.json({ 
+        error: `Please provide a valid 10-digit phone number. You provided ${cleanPhone.length} digits.` 
+      }, { status: 400 });
     }
 
     const resendApiKey = process.env.RESEND_API_KEY;
