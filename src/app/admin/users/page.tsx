@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, UserPlus, Shield, ShieldAlert, Mail, Search, Filter, 
   MoreVertical, CheckCircle2, XCircle, Lock, Unlock, ArrowRight,
-  ShieldCheck, ArrowLeft, RefreshCw, Eye
+  ShieldCheck, ArrowLeft, RefreshCw, Eye, Loader2
 } from "lucide-react";
 
 type Role = "USER" | "SELLER" | "ADMIN" | "STAFF";
