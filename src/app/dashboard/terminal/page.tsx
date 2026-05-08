@@ -280,7 +280,7 @@ function KravyPOS() {
     const [showCombineModal, setShowCombineModal] = useState(false);
     const [combineSelection, setCombineSelection] = useState<Set<string>>(new Set());
 
-    const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL" | "MANUAL_COMBINE", customOrder?: Order, customTable?: Table) => {
+    const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL" | "MANUAL_COMBINE" | "KOT_BILL", customOrder?: Order, customTable?: Table) => {
         kravy.click();
 
         let targetOrder = customOrder || printOrder || activeOrderForSelected;
@@ -337,8 +337,8 @@ function KravyPOS() {
         console.log(`[PRINT] Context: Order=${targetOrder?.id}, Table=${targetTable?.name || "None"}`);
 
         setTimeout(() => {
-            const isBill = type === "BILL" || type === "COMBINED_BILL" || type === "MANUAL_COMBINE";
-            const autoBoth = isBill && business?.enableKOTWithBill && type !== "MANUAL_COMBINE" && type !== "COMBINED_BILL";
+            const isBill = type === "BILL" || type === "COMBINED_BILL" || type === "MANUAL_COMBINE" || type === "KOT_BILL";
+            const autoBoth = (isBill && business?.enableKOTWithBill && type !== "MANUAL_COMBINE" && type !== "COMBINED_BILL") || type === "KOT_BILL";
             
             let printHTML = "";
             if (autoBoth) {
@@ -1490,9 +1490,23 @@ function KravyPOS() {
                                                                 setTimeout(() => handlePrint("KOT", activeOrderForSelected, tbl || undefined), 100);
                                                             }
                                                         }}
-                                                        className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] bg-white border border-slate-200 text-[#0B1B48] hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+                                                        className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-wider bg-white border border-slate-200 text-slate-900 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
                                                     >
-                                                        <Printer size={16} /> Print KOT
+                                                        <Printer size={16} /> KOT
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            const tbl = tablesList.find(t => t.id === activeOrderForSelected?.table?.id);
+                                                            if (activeOrderForSelected) {
+                                                                setPrintOrder(activeOrderForSelected);
+                                                                setPrintTable(tbl || null);
+                                                                // Force "BOTH" by setting business flag temporarily or passing a flag
+                                                                setTimeout(() => handlePrint("KOT_BILL", activeOrderForSelected, tbl || undefined), 100);
+                                                            }
+                                                        }}
+                                                        className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-wider bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-xl active:scale-95"
+                                                    >
+                                                        <Printer size={16} /> KOT + BILL
                                                     </button>
                                                 </div>
                                                 <button
@@ -1651,7 +1665,14 @@ function KravyPOS() {
                                                     <Eye size={18} />
                                                 </button>
                                                 <button
-                                                    onClick={() => handlePrint("BILL")}
+                                                    onClick={() => {
+                                                        if (activeOrderForSelected) {
+                                                            setPrintOrder(activeOrderForSelected);
+                                                            const tbl = tablesList.find(t => t.id === activeOrderForSelected.table?.id);
+                                                            setPrintTable(tbl || null);
+                                                            setTimeout(() => handlePrint("BILL", activeOrderForSelected, tbl || undefined), 100);
+                                                        }
+                                                    }}
                                                     className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white shadow-sm transition-all"
                                                 >
                                                     <Printer size={18} />
@@ -1763,7 +1784,7 @@ function KravyPOS() {
                 kotRef={kotReceiptRef}
                 business={business}
                 billNumber={printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
-                billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-GB').split('/').join('|') : new Date().toLocaleDateString('en-GB').split('/').join('|')}
+                billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -') : new Date().toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -')}
                 tokenNumber={printOrder?.tokenNumber ? printOrder.tokenNumber.toString().padStart(3, '0') : "---"}
                 selectedTable={printOrder?.table?.name || "Counter"}
                 customerName={printOrder?.customerName?.trim() || "Walk-in Customer"}

@@ -124,29 +124,32 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         {business?.gstNumber && <div className="text-center text-[10px] font-bold border-y border-black py-1 mt-2 mb-1">GSTIN: {business.gstNumber}</div>}
         {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[10px] font-bold mt-0.5">FSSAI: {business.fssaiNumber}</div>}
         
-        <div className="flex justify-between items-start mt-3 px-1 border-t border-dashed border-gray-400 pt-2">
-          <div className="text-[10px] space-y-0.5">
-            <div className="font-black uppercase tracking-tighter text-black">Bill Info</div>
-            <div className="font-black text-black">No: {billNumber}</div>
-            <div className="font-black text-black">Date: {billDate}</div>
+        <div className="mt-3 border-t border-dashed border-gray-400 pt-2 px-1">
+          <div className="flex justify-between items-center mb-1">
+            <div className="font-black uppercase text-[10px] tracking-tight">Bill Summary</div>
             {selectedTable && (
-              <div className="font-black uppercase text-[8px] bg-black text-white px-1.5 py-0.5 inline-block mt-1">
+              <div className="font-black uppercase text-[8px] bg-black text-white px-2 py-0.5 rounded-sm">
                 {selectedTable === "POS" ? "COUNTER" : selectedTable.replace("TYPE: ", "")}
               </div>
             )}
           </div>
-
-          {((kotNumbers && kotNumbers.length > 0) || (tokenNumber && tokenNumber !== "---" && tokenNumber !== "")) && (
-            <div className="flex flex-col items-end py-1">
-              <div className="text-[8px] font-black uppercase tracking-tighter text-black">Token No.</div>
-              <div 
-                className="font-black leading-none"
-                style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
-              >
-                {kotNumbers && kotNumbers.length > 0 ? kotNumbers.join(',') : `#${tokenNumber}`}
-              </div>
+          <div className="flex justify-between items-start">
+            <div className="text-[10px] space-y-0.5">
+              <div className="font-black">No: {billNumber}</div>
+              <div className="font-black text-[9px]">{billDate}</div>
             </div>
-          )}
+            {((kotNumbers && kotNumbers.length > 0) || (tokenNumber && tokenNumber !== "---" && tokenNumber !== "")) && (
+              <div className="flex flex-col items-end border-l border-black pl-2 py-0.5">
+                <div className="text-[7px] font-black uppercase tracking-tighter text-black opacity-60 leading-none mb-0.5">Token</div>
+                <div 
+                  className="font-black leading-none"
+                  style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
+                >
+                  {kotNumbers && kotNumbers.length > 0 ? kotNumbers.join(',') : `#${tokenNumber}`}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {(customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && (

@@ -630,20 +630,28 @@ export default function BusinessProfileForm({
               <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">FSSAI: {watchedValues.fssaiNumber}</div>
             )}
             
-            <div className="flex justify-between items-start mt-2 px-1 border-t border-dashed border-gray-400 pt-1.5 opacity-90">
-              <div className="text-[9px] space-y-0.5">
-                <div className="font-bold uppercase tracking-tighter text-[7px]">Bill Info</div>
-                <div className="italic opacity-80">No: SV-SAMPLE</div>
-                <div className="italic opacity-80">Date: {new Date().toLocaleDateString('en-GB').split('/').join('|')}</div>
+            <div className="mt-2 border-t border-dashed border-gray-400 pt-1.5 px-1">
+              <div className="flex justify-between items-center mb-1">
+                <div className="font-black uppercase text-[8px] tracking-tight text-black opacity-80">Bill Summary</div>
+                <div className="font-black uppercase text-[7px] bg-black text-white px-1.5 py-0.5 rounded-sm">
+                  COUNTER
+                </div>
               </div>
-
-              <div className="flex flex-col items-end py-0.5">
-                <div className="text-[7px] font-black uppercase tracking-tighter opacity-60">Token No.</div>
-                <div 
-                  className="font-black leading-none pt-0.5 text-black"
-                  style={{ fontSize: `${(watchedValues.tokenNumberSize || 22) * 0.7}px` }} // Scaled for preview
-                >
-                  #123
+              <div className="flex justify-between items-start">
+                <div className="text-[9px] space-y-0.5">
+                  <div className="font-black text-black">No: SV-SAMPLE</div>
+                  <div className="font-black text-[8px] text-black/70">
+                    {new Date().toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -')}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end border-l border-black/20 pl-2 py-0.5">
+                  <div className="text-[6px] font-black uppercase tracking-tighter opacity-50">Token</div>
+                  <div 
+                    className="font-black leading-none pt-0.5 text-black"
+                    style={{ fontSize: `${(watchedValues.tokenNumberSize || 22) * 0.7}px` }} 
+                  >
+                    #123
+                  </div>
                 </div>
               </div>
             </div>
