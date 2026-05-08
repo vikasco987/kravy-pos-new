@@ -1520,13 +1520,13 @@ function KravyPOS() {
                                                             if (activeOrderForSelected) {
                                                                 setPrintOrder(activeOrderForSelected);
                                                                 setPrintTable(tbl || null);
-                                                                // Force "BOTH" by setting business flag temporarily or passing a flag
-                                                                setTimeout(() => handlePrint("KOT_BILL", activeOrderForSelected, tbl || undefined), 100);
+                                                                const printType = business?.enableKOTWithBill ? "KOT_BILL" : "BILL";
+                                                                setTimeout(() => handlePrint(printType, activeOrderForSelected, tbl || undefined), 100);
                                                             }
                                                         }}
                                                         className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-wider bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-xl active:scale-95"
                                                     >
-                                                        <Printer size={16} /> KOT + BILL
+                                                        <Printer size={16} /> {business?.enableKOTWithBill ? "KOT + BILL" : "PRINT BILL"}
                                                     </button>
                                                 </div>
                                                 <button
