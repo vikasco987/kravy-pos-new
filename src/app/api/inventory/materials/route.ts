@@ -20,16 +20,47 @@ export async function GET() {
   }
 }
 
+/* --------------------------------
+   Helper: find or create DB user
+--------------------------------- */
+async function findOrCreateDBUser(clerkId: string) {
+  let user = await prisma.user.findUnique({
+    where: { clerkId },
+    select: { id: true },
+  });
+
+  if (!user) {
+    if (clerkId.startsWith("custom_")) {
+       throw new Error(`Custom User ${clerkId} not found in database.`);
+    }
+    const { clerkClient } = await import("@clerk/nextjs/server");
+    const client = await clerkClient();
+    const clerkUser = await client.users.getUser(clerkId);
+
+    user = await prisma.user.create({
+      data: {
+        clerkId,
+        name: clerkUser.fullName ?? "",
+        email: clerkUser.emailAddresses[0]?.emailAddress ?? `no-email-${clerkId}@example.com`,
+      },
+      select: { id: true },
+    });
+  }
+  return user;
+}
+
 export async function POST(req: Request) {
   try {
     const effectiveId = await getEffectiveClerkId();
     if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const user = await prisma.user.findUnique({ where: { clerkId: effectiveId } });
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
-
+    const dbUser = await findOrCreateDBUser(effectiveId);
     const body = await req.json();
     const { name, unit, stock, minStock, price } = body;
+
+    if (!name || !unit) {
+      return NextResponse.json({ error: "Name and Unit are required" }, { status: 400 });
+    }
 
     const material = await prisma.rawMaterial.create({
       data: {
@@ -39,13 +70,14 @@ export async function POST(req: Request) {
         minStock: Number(minStock) || 0,
         price: Number(price) || 0,
         clerkId: effectiveId,
-        userId: user.id
+        user: { connect: { id: dbUser.id } }
       }
     });
 
     return NextResponse.json(material);
-  } catch (err) {
-    return NextResponse.json({ error: "Failed to create material" }, { status: 500 });
+  } catch (err: any) {
+    console.error("[RAW_MATERIAL_POST_ERROR]:", err);
+    return NextResponse.json({ error: "Failed to create material", details: err?.message || String(err) }, { status: 500 });
   }
 }
 
@@ -55,12 +87,13 @@ export async function PATCH(req: Request) {
     if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { id, stock, minStock, price, name } = body;
+    const { id, stock, minStock, price, name, unit } = body;
 
     const material = await prisma.rawMaterial.update({
       where: { id, clerkId: effectiveId },
       data: {
         name: name !== undefined ? name : undefined,
+        unit: unit !== undefined ? unit : undefined,
         stock: stock !== undefined ? Number(stock) : undefined,
         minStock: minStock !== undefined ? Number(minStock) : undefined,
         price: price !== undefined ? Number(price) : undefined,
@@ -68,8 +101,9 @@ export async function PATCH(req: Request) {
     });
 
     return NextResponse.json(material);
-  } catch (err) {
-    return NextResponse.json({ error: "Failed to update material" }, { status: 500 });
+  } catch (err: any) {
+    console.error("[RAW_MATERIAL_PATCH_ERROR]:", err);
+    return NextResponse.json({ error: "Failed to update material", details: err?.message || String(err) }, { status: 500 });
   }
 }
 

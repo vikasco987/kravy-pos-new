@@ -128,6 +128,7 @@ model RawMaterial {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   clerkId   String?  // Clerk User ID
   userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
   name      String
   unit      String   // e.g., kg, gram, piece, liter
   stock     Float    @default(0)
@@ -245,6 +246,7 @@ model User {
   profiles BusinessProfile[]
   uploads  Upload[]
   addonGroups AddonGroup[]
+  rawMaterials RawMaterial[]
 
   isDisabled   Boolean  @default(false)
   ownerId      String?
