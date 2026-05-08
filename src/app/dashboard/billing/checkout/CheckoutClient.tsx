@@ -1400,7 +1400,7 @@ export default function CheckoutClient() {
           if (data.kotNumbers && Array.isArray(data.kotNumbers)) {
             setKotNumbers(data.kotNumbers);
           }
-          if (data.tokenNumber) {
+          if (data.tokenNumber != null) {
             setTokenNumber(data.tokenNumber);
           }
           
@@ -1408,7 +1408,7 @@ export default function CheckoutClient() {
           setTimeout(() => {
             printKOT();
             toast.success("KOT Printed & Order Synced! ✅");
-          }, 800); // Increased timeout to ensure DOM re-render
+          }, 1000); // Increased timeout further for slow DOM updates
 
           const returnTo = searchParams.get("returnTo");
           if (returnTo) {

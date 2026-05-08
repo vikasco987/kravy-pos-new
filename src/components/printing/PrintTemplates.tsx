@@ -375,7 +375,15 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               className="font-black"
               style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
             >
-              #{kotNumbers && kotNumbers.length > 0 ? kotNumbers.join(',') : (tokenNumber || "---")}
+              #{(() => {
+                if (Array.isArray(kotNumbers) && kotNumbers.length > 0) {
+                  return kotNumbers.filter(n => n != null).join(', ');
+                }
+                if (tokenNumber != null && tokenNumber !== "" && tokenNumber !== "---") {
+                  return tokenNumber;
+                }
+                return "---";
+              })()}
             </div>
           </div>
         </div>
