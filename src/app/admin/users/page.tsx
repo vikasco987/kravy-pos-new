@@ -37,6 +37,7 @@ export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [navigatingId, setNavigatingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"ALL" | Role>("ALL");
   const [loginTypeFilter, setLoginTypeFilter] = useState<"ALL" | "CLERK" | "CUSTOM">("ALL");
@@ -453,22 +454,25 @@ export default function AdminUsersPage() {
                              key={u.id}
                              initial={{ opacity: 0 }}
                              animate={{ opacity: 1 }}
-                             className="hover:bg-slate-50/50 transition-colors group"
+                             className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                             onClick={() => {
+                               setNavigatingId(u.id);
+                               router.push(`/admin/users/${u.id}`);
+                             }}
                            >
                               <td className="px-8 py-6">
                                  <div className="flex items-center gap-4">
                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${roleStyles[u.role].bg} ${roleStyles[u.role].text}`}>
-                                       {u.name?.[0] || 'U'}
+                                       {navigatingId === u.id ? (
+                                          <Loader2 size={20} className="animate-spin text-indigo-500" />
+                                       ) : (
+                                          u.name?.[0] || 'U'
+                                       )}
                                     </div>
                                     <div>
-                                        <button 
-                                          onClick={() => {
-                                            router.push(`/admin/users/${u.id}`);
-                                          }}
-                                          className="font-black text-slate-900 hover:text-indigo-600 transition-colors block text-sm"
-                                        >
+                                        <div className="font-black text-slate-900 group-hover:text-indigo-600 transition-colors block text-sm">
                                            {u.name || "Pending Account"}
-                                        </button>
+                                        </div>
                                        <div className="text-xs text-slate-400 font-medium flex items-center gap-2">
                                           {u.email}
                                           <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${
