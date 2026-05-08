@@ -54,6 +54,7 @@ const schema = z.object({
   enableCustomAuth: z.boolean().nullable().optional(),
   tokenNumberSize: z.number().nullable().optional(),
   businessAddressSize: z.number().nullable().optional(),
+  phonePrefixType: z.string().nullable().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -230,6 +231,7 @@ export default function BusinessProfileForm({
         enableCustomAuth: values.enableCustomAuth,
         tokenNumberSize: values.tokenNumberSize || 22,
         businessAddressSize: values.businessAddressSize || 12,
+        phonePrefixType: values.phonePrefixType || "TEXT",
       };
 
       const res = await fetch("/api/profile", {
@@ -434,6 +436,17 @@ export default function BusinessProfileForm({
           </div>
           <p className="text-[10px] text-[var(--kravy-text-muted)] mt-1 italic">Decrease to fit long addresses. Default is 12px.</p>
         </Field>
+
+        <Field label="Phone Prefix Style">
+          <select 
+            {...register("phonePrefixType")} 
+            className="w-full bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl h-11 px-4 outline-none font-bold"
+          >
+            <option value="TEXT">Text (Mob: )</option>
+            <option value="SYMBOL">Symbol (📞 )</option>
+          </select>
+          <p className="text-[10px] text-[var(--kravy-text-muted)] mt-1 italic">Choose how the phone number is labeled on the bill.</p>
+        </Field>
       </Section>
 
       {/* CONTACT */}
@@ -622,7 +635,7 @@ export default function BusinessProfileForm({
                 {watchedValues.district && `, ${watchedValues.district}`}
                 {selectedState && `, ${selectedState}`}
                 {watchedValues.pinCode && ` - ${watchedValues.pinCode}`}
-                {watchedValues.contactPhone && <div className="mt-0.5">Mob: {watchedValues.contactPhone}</div>}
+                {watchedValues.contactPhone && <div className="mt-0.5">{watchedValues.phonePrefixType === 'SYMBOL' ? '📞 ' : 'Mob: '} {watchedValues.contactPhone}</div>}
               </div>
             )}
             {watchedValues.gstNumber && <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">GSTIN: {watchedValues.gstNumber}</div>}

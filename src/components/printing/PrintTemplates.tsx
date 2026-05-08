@@ -107,7 +107,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         )}
         {(business?.contactPersonPhone || business?.contactPhone || business?.businessPhone) && (
           <div className="text-center font-bold text-[12px] mt-0.5">
-            Mob: {business.contactPersonPhone || business.contactPhone || business.businessPhone}
+            {business?.phonePrefixType === 'SYMBOL' ? '📞 ' : 'Mob: '} {business.contactPersonPhone || business.contactPhone || business.businessPhone}
           </div>
         )}
         {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
@@ -140,7 +140,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             </div>
             {((kotNumbers && kotNumbers.length > 0) || (tokenNumber && tokenNumber !== "---" && tokenNumber !== "")) && (
               <div className="flex flex-col items-end border-l border-black pl-2 py-0.5">
-                <div className="text-[7px] font-black uppercase tracking-tighter text-black opacity-60 leading-none mb-0.5">Token</div>
+                <div className="text-[7px] font-black uppercase tracking-tighter text-black leading-none mb-0.5">Token</div>
                 <div 
                   className="font-black leading-none"
                   style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
@@ -153,7 +153,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         </div>
 
         {(customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && (
-          <div className="mt-2 text-[10px] font-bold border-t-2 border-dashed border-black pt-1">
+          <div className="mt-2 text-[10px] font-black border-t-2 border-dashed border-black pt-1">
             {customerName && <div>Customer: {customerName}</div>}
             {customerPhone && <div>Phone: {customerPhone}</div>}
             {buyerGSTIN && <div className="uppercase">Buyer GST: {buyerGSTIN}</div>}

@@ -159,6 +159,7 @@ export async function POST(request: Request) {
     if (body.aiScraperEnabled !== undefined) updateData.aiScraperEnabled = b(body.aiScraperEnabled);
     if (body.excelImportEnabled !== undefined) updateData.excelImportEnabled = b(body.excelImportEnabled);
     if (body.multiZoneMenuEnabled !== undefined) updateData.multiZoneMenuEnabled = b(body.multiZoneMenuEnabled);
+    if (body.phonePrefixType !== undefined) updateData.phonePrefixType = s(body.phonePrefixType);
 
     console.log("SERVER DEBUG: Final Update Data:", JSON.stringify(updateData, null, 2));
 

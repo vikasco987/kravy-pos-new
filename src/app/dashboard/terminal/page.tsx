@@ -1183,82 +1183,96 @@ function KravyPOS() {
                                         animate={{ opacity: 1, x: 0 }}
                                         className="h-full flex flex-col"
                                     >
-                                        {/* Order Header */}
-                                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between transition-colors duration-300">
-                                            <div className="flex items-center gap-4">
-                                                <motion.div
-                                                    initial={{ rotate: -10, scale: 0.8 }}
-                                                    animate={{ rotate: 0, scale: 1 }}
-                                                    className="w-12 h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center justify-center font-black italic shadow-lg shadow-slate-900/10"
-                                                >
-                                                    {selectedTable.name}
-                                                </motion.div>
-                                                <div>
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <h2 className="text-lg font-black text-slate-900 dark:text-white leading-none">
-                                                            {activeOrderForSelected?.customerName || "Walk-in Customer"}
-                                                        </h2>
-                                                        {activeOrderForSelected?.customerPhone && (
-                                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center gap-1 uppercase tracking-tighter">
-                                                                <Smartphone size={10} />
-                                                                {activeOrderForSelected.customerPhone}
-                                                            </span>
-                                                        )}
-                                                        <span className="flex items-center gap-1 text-[9px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-full">● Live</span>
-                                                        {activeOrderForSelected?.isKotPrinted && (
-                                                            <span className="flex items-center gap-1 text-[9px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-                                                                <Printer size={10} /> KOT PRINTED
-                                                            </span>
-                                                        )}
-                                                        {activeOrderForSelected?.isBillPrinted && (
-                                                            <span className="flex items-center gap-1 text-[9px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
-                                                                <CreditCard size={10} /> BILL PRINTED
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">
-                                                        <span className="flex items-center gap-1"><User size={11} /> 4 Guests</span>
-                                                        <span className="w-1 h-1 rounded-full bg-slate-200" />
-                                                        <span className="flex items-center gap-1"><ShieldCheck size={11} /> Rahul S.</span>
-                                                        {(activeOrderForSelected?.createdAt || selectedTable?.startTime) && (
-                                                            <div className="flex items-center gap-1.5 ml-1 pl-3 border-l border-slate-100 dark:border-slate-800">
-                                                                <TableTimer startTime={activeOrderForSelected?.createdAt || selectedTable.startTime} className="!bg-emerald-500/10 !text-emerald-600 !border-emerald-500/20 !px-2.5 !py-1" />
-                                                                <span className="text-[9px] font-black text-slate-300 uppercase tracking-wider">
-                                                                    Since {new Date(activeOrderForSelected?.createdAt || selectedTable.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                        {activeOrderForSelected && (
-                                                            <>
-                                                                <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-700" />
-                                                                <span className="text-slate-900 dark:text-white">{activeOrderForSelected.items.length} items</span>
-                                                            </>
-                                                        )}
-                                                    </div>
+                                        {/* Order Header: Horizontal Flow Design */}
+                                        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-4 transition-colors duration-300">
+                                            {/* 1. Avatar (Table ID) */}
+                                            <motion.div
+                                                initial={{ rotate: -10, scale: 0.8 }}
+                                                animate={{ rotate: 0, scale: 1 }}
+                                                className="w-12 h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center justify-center font-black italic shadow-lg shadow-slate-900/10 shrink-0"
+                                            >
+                                                {selectedTable.name}
+                                            </motion.div>
+
+                                            {/* 2. Customer Info */}
+                                            <div className="flex flex-col gap-0.5 min-w-0">
+                                                <h2 className="text-sm font-black text-slate-900 dark:text-white leading-none truncate uppercase tracking-tight">
+                                                    {activeOrderForSelected?.customerName || "Walk-in Customer"}
+                                                </h2>
+                                                <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">
+                                                    <span className="flex items-center gap-1"><User size={10} /> 4 GUESTS</span>
+                                                    <span className="w-1 h-1 rounded-full bg-slate-200" />
+                                                    <span className="flex items-center gap-1"><ShieldCheck size={10} /> RAHUL S.</span>
                                                 </div>
                                             </div>
+
+                                            {/* 3. Divider */}
+                                            <div className="h-8 w-[1.5px] bg-slate-100 dark:bg-slate-800 mx-1" />
+
+                                            {/* 4. Status Tags */}
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <span className="flex items-center gap-1 text-[8px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100/50">● LIVE</span>
+                                                {activeOrderForSelected?.isKotPrinted && (
+                                                    <span className="flex items-center gap-1 text-[8px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100/50">
+                                                        <Printer size={10} /> KOT PRINTED
+                                                    </span>
+                                                )}
+                                                {activeOrderForSelected?.isBillPrinted && (
+                                                    <span className="flex items-center gap-1 text-[8px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-1 rounded-lg border border-rose-100/50">
+                                                        <CreditCard size={10} /> BILL PRINTED
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* 5. Divider */}
+                                            <div className="h-8 w-[1.5px] bg-slate-100 dark:bg-slate-800 mx-1" />
+
+                                            {/* 6. Timer (Waiting Time) */}
+                                            {(activeOrderForSelected?.createdAt || selectedTable?.startTime) && (
+                                                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50/50 dark:bg-emerald-500/5 rounded-xl border border-emerald-100/50 dark:border-emerald-500/10">
+                                                    <TableTimer startTime={activeOrderForSelected?.createdAt || selectedTable.startTime} className="!bg-transparent !p-0 !border-none !text-[11px] !font-black !text-emerald-600" />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[7px] font-black text-emerald-500/60 uppercase leading-none">SINCE</span>
+                                                        <span className="text-[8px] font-black text-emerald-600 uppercase">
+                                                            {new Date(activeOrderForSelected?.createdAt || selectedTable.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* 7. Items Count */}
+                                            {activeOrderForSelected && (
+                                                <div className="flex flex-col items-center px-3 border-l border-slate-100 dark:border-slate-800">
+                                                    <span className="text-[12px] font-black text-slate-900 dark:text-white leading-none">{activeOrderForSelected.items.length}</span>
+                                                    <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">ITEMS</span>
+                                                </div>
+                                            )}
+
+                                            {/* 8. Spacer */}
+                                            <div className="flex-1" />
+
+                                            {/* 9. Action Buttons */}
                                             <div className="flex items-center gap-2">
                                                 <button 
                                                     onClick={() => {
                                                         kravy.click();
                                                         router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}&returnTo=/dashboard/terminal`);
                                                     }}
-                                                    className="h-10 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all"
+                                                    className="h-10 px-5 rounded-2xl bg-[#6D3BFF] text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all group"
                                                 >
-                                                    <Plus size={14} /> New Order
+                                                    <Plus size={14} className="group-hover:rotate-90 transition-transform" /> New Order
                                                 </button>
                                                 <button 
                                                     onClick={() => {
                                                         kravy.click();
                                                         if (activeOrderForSelected) {
-                                                            // ✅ Instant Edit Handoff: Cache order data
                                                             sessionStorage.setItem("quick_pos_handoff_order", JSON.stringify(activeOrderForSelected));
                                                             router.push(`/dashboard/billing/checkout?orderId=${activeOrderForSelected.id}&tableId=${selectedTable.id}&tableName=${selectedTable.name}&returnTo=terminal`);
                                                         } else {
                                                             toast.error("Please select a table/order first");
                                                         }
                                                     }}
-                                                    className="h-10 px-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-sm border border-slate-200 dark:border-slate-700"
+                                                    className="h-10 px-5 bg-white dark:bg-slate-800 text-[#0B1B48] dark:text-white rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-sm border border-slate-200 dark:border-slate-700"
                                                 >
                                                     <Plus size={14} /> Add Item
                                                 </button>
@@ -1353,27 +1367,27 @@ function KravyPOS() {
                                                                         initial={{ opacity: 0, y: 8 }}
                                                                         animate={{ opacity: 1, y: 0 }}
                                                                         transition={{ delay: idx * 0.03 }}
-                                                                        className={`flex items-center justify-between p-4 min-h-[76px] rounded-[1.5rem] border transition-all duration-300 group bg-white dark:bg-slate-900/70 border-slate-100 dark:border-slate-800 hover:border-[#6D3BFF]/20 hover:shadow-[0_12px_40px_rgba(15,23,42,0.04)] ${roundObj.id === "New Items" ? "ring-1 ring-amber-200/50" : ""}`}
+                                                                        className={`flex items-center justify-between px-3 py-2 min-h-[64px] rounded-[1.25rem] border transition-all duration-300 group bg-white dark:bg-slate-900/70 border-slate-100 dark:border-slate-800 hover:border-[#6D3BFF]/20 hover:shadow-[0_8px_30px_rgba(15,23,42,0.04)] ${roundObj.id === "New Items" ? "ring-1 ring-amber-200/40" : ""}`}
                                                                     >
-                                                                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
                                                                             {(() => {
                                                                                 const isNonVeg = item.isVeg === false || item.name?.toUpperCase().includes("(NV)");
                                                                                 return (
                                                                                     <>
-                                                                                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shadow-sm border border-white/50 dark:border-slate-800 ${isNonVeg ? "bg-rose-50 text-rose-500" : "bg-emerald-50 text-emerald-500"}`}>
+                                                                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-base shadow-sm border border-white/50 dark:border-slate-800 shrink-0 ${isNonVeg ? "bg-rose-50 text-rose-500" : "bg-emerald-50 text-emerald-500"}`}>
                                                                                             {isNonVeg ? "🍗" : "🥗"}
                                                                                         </div>
                                                                                         <div className="flex-1 min-w-0">
-                                                                                            <div className="flex items-center gap-2">
-                                                                                                <p className="text-[13px] font-black text-[#0B1B48] dark:text-white truncate leading-none uppercase tracking-tight">{item.name}</p>
-                                                                                                <div className={`w-1.5 h-1.5 rounded-full ${activeOrderForSelected?.status === "READY" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-amber-400"}`} />
+                                                                                            <div className="flex items-center gap-1.5">
+                                                                                                <p className="text-[12px] font-black text-[#0B1B48] dark:text-white truncate leading-tight uppercase tracking-tight">{item.name}</p>
+                                                                                                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${activeOrderForSelected?.status === "READY" ? "bg-emerald-500" : "bg-amber-400"}`} />
                                                                                             </div>
-                                                                                            <div className="flex items-center gap-3 mt-1.5">
-                                                                                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md ${isNonVeg ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"} uppercase tracking-widest border border-current/10`}>
+                                                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                                                <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-md ${isNonVeg ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"} uppercase tracking-widest border border-current/10`}>
                                                                                                     {isNonVeg ? "Non-Veg" : "Veg"}
                                                                                                 </span>
-                                                                                                <span className="text-[9px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-widest">
-                                                                                                    <Timer size={10} className="opacity-50" /> ⏱ 12 MIN
+                                                                                                <span className="text-[8px] font-bold text-slate-400 flex items-center gap-1 uppercase tracking-widest">
+                                                                                                    ⏱ 12M
                                                                                                 </span>
                                                                                             </div>
                                                                                         </div>
@@ -1382,33 +1396,33 @@ function KravyPOS() {
                                                                             })()}
                                                                         </div>
 
-                                                                        <div className="flex items-center gap-6">
-                                                                            <div className="font-mono text-base font-black text-[#0B1B48] dark:text-white min-w-[70px] text-right drop-shadow-sm">
+                                                                        <div className="flex items-center gap-4">
+                                                                            <div className="font-mono text-[13px] font-black text-[#0B1B48] dark:text-white min-w-[50px] text-right">
                                                                                 ₹{item.price}
                                                                             </div>
-                                                                            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/50 dark:border-slate-700/50 shadow-inner">
+                                                                            <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
                                                                                 <button 
                                                                                     onClick={() => handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity - 1)}
-                                                                                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm text-slate-400 transition-all font-black active:scale-90"
+                                                                                    className="w-5 h-5 rounded flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 text-slate-400 transition-all font-black"
                                                                                 >
                                                                                     −
                                                                                 </button>
-                                                                                <span className="w-7 text-center text-xs font-black text-[#0B1B48] dark:text-white">
+                                                                                <span className="w-5 text-center text-[11px] font-black text-[#0B1B48] dark:text-white">
                                                                                     {item.quantity}
                                                                                 </span>
                                                                                 <button 
                                                                                     onClick={() => handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity + 1)}
-                                                                                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm text-[#6D3BFF] transition-all font-black active:scale-90"
+                                                                                    className="w-5 h-5 rounded flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 text-[#6D3BFF] transition-all font-black"
                                                                                 >
                                                                                     +
                                                                                 </button>
                                                                             </div>
-                                                                            <span className="w-16 text-right text-sm font-black italic text-slate-900">₹{item.price * item.quantity}</span>
+                                                                            <span className="w-14 text-right text-[12px] font-black text-slate-900">₹{item.price * item.quantity}</span>
                                                                             <button 
                                                                                 onClick={() => handleRemoveItem(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item))}
-                                                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
+                                                                                className="w-6 h-6 rounded flex items-center justify-center text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
                                                                             >
-                                                                                <Trash2 size={14} />
+                                                                                <Trash2 size={12} />
                                                                             </button>
                                                                         </div>
                                                                     </motion.div>

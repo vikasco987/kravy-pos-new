@@ -441,6 +441,7 @@ model BusinessProfile {
   posPreviewEnabled  Boolean @default(true)
   posKotEnabled      Boolean @default(true)
 
+  phonePrefixType         String? @default("TEXT") // "TEXT" (Mob:) or "SYMBOL"
   updatedAt DateTime @updatedAt
 }
 
