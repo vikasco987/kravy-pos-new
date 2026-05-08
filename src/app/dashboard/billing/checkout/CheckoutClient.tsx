@@ -897,6 +897,12 @@ export default function CheckoutClient() {
             posKotEnabled: data.posKotEnabled ?? true,
             multiZoneMenuEnabled: data.multiZoneMenuEnabled ?? false,
             greetingMessage: data.greetingMessage,
+            contactPersonPhone: data.contactPersonPhone,
+            contactPhone: data.contactPhone,
+            businessPhone: data.businessPhone,
+            businessAddressSize: data.businessAddressSize,
+            tokenNumberSize: data.tokenNumberSize,
+            businessNameSize: data.businessNameSize,
           });
           console.log("DEBUG POS API RESPONSE - enableKOTWithBill:", data.enableKOTWithBill);
           console.log("DEBUG POS API FULL DATA:", data);

@@ -126,19 +126,19 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         
         <div className="flex justify-between items-start mt-3 px-1 border-t border-dashed border-gray-400 pt-2">
           <div className="text-[10px] space-y-0.5">
-            <div className="font-bold uppercase tracking-tighter">Bill Info</div>
-            <div className="font-medium opacity-80 italic">No: {billNumber}</div>
-            <div className="font-medium opacity-80 italic">Date: {billDate}</div>
+            <div className="font-black uppercase tracking-tighter text-black">Bill Info</div>
+            <div className="font-black text-black">No: {billNumber}</div>
+            <div className="font-black text-black">Date: {billDate}</div>
             {selectedTable && (
               <div className="font-black uppercase text-[8px] bg-black text-white px-1.5 py-0.5 inline-block mt-1">
-                {selectedTable.replace("TYPE: ", "")}
+                {selectedTable === "POS" ? "COUNTER" : selectedTable.replace("TYPE: ", "")}
               </div>
             )}
           </div>
 
           {((kotNumbers && kotNumbers.length > 0) || (tokenNumber && tokenNumber !== "---" && tokenNumber !== "")) && (
             <div className="flex flex-col items-end py-1">
-              <div className="text-[8px] font-black uppercase tracking-tighter opacity-60">Token No.</div>
+              <div className="text-[8px] font-black uppercase tracking-tighter text-black">Token No.</div>
               <div 
                 className="font-black leading-none"
                 style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
