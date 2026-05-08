@@ -5,41 +5,50 @@ import prisma from "./prisma";
  * @param orderItems List of items in the order
  */
 export async function deductInventory(orderItems: any[]) {
+  console.log(`[INVENTORY_DEBUG] Starting deduction for ${orderItems.length} items.`);
+  
   try {
     for (const item of orderItems) {
-      // Find the recipe for this item
-      // Note: We need to find by name or ID. Usually Item ID is better if stored in Order.
-      // In this app, order.items is a JSON array. We need to match with Item model.
-      
-      // Let's assume orderItem has an 'id' (the Item's DB id)
       const itemId = item.itemId || item.id;
       const quantitySold = item.qty || item.quantity || 1;
+      const itemName = item.name || "Unknown Item";
+
+      console.log(`[INVENTORY_DEBUG] Processing: ${itemName} (ID: ${itemId}), Qty: ${quantitySold}`);
 
       if (!itemId) {
-        console.warn("[INVENTORY_DEDUCT_SKIP]: Item has no ID", item);
+        console.warn(`[INVENTORY_DEBUG] Skipping ${itemName} - No valid ID found.`);
         continue;
       }
 
       const recipeItems = await prisma.recipeItem.findMany({
         where: { itemId },
+        include: { material: true }
       });
 
-      for (const recipe of recipeItems) {
-        const amountToDeduct = recipe.quantity * quantitySold;
+      if (recipeItems.length === 0) {
+        console.warn(`[INVENTORY_DEBUG] No recipe found for ${itemName} (ID: ${itemId}). Deduction skipped.`);
+        continue;
+      }
 
-        await prisma.rawMaterial.update({
-          where: { id: recipe.materialId },
-          data: {
-            stock: {
-              decrement: amountToDeduct
-            }
-          }
-        });
+      console.log(`[INVENTORY_DEBUG] Found recipe with ${recipeItems.length} ingredients for ${itemName}.`);
+
+      for (const ri of recipeItems) {
+        const totalDeduction = ri.quantity * quantitySold;
+        console.log(`[INVENTORY_DEBUG] Deducting ${totalDeduction} ${ri.material?.unit || ''} of ${ri.material?.name || ri.materialId} for ${itemName}`);
         
-        console.log(`[INVENTORY] Deducted ${amountToDeduct} from material ${recipe.materialId} for item ${itemId}`);
+        try {
+          const updated = await prisma.rawMaterial.update({
+            where: { id: ri.materialId },
+            data: { stock: { decrement: totalDeduction } },
+          });
+          console.log(`[INVENTORY_DEBUG] Success: New stock for ${updated.name} is ${updated.stock}`);
+        } catch (updateErr) {
+          console.error(`[INVENTORY_DEBUG] Failed to update material ${ri.materialId}:`, updateErr);
+        }
       }
     }
-  } catch (error) {
-    console.error("[INVENTORY_DEDUCTION_ERROR]:", error);
+    console.log("[INVENTORY_DEBUG] Inventory deduction cycle completed.");
+  } catch (err) {
+    console.error("[INVENTORY_DEBUG] CRITICAL ERROR in deductInventory:", err);
   }
 }

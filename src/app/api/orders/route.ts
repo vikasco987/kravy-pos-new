@@ -121,8 +121,11 @@ export async function PATCH(req: NextRequest) {
 
         // ✅ AUTO-DEDUCT INVENTORY ON COMPLETION
         if (status === "COMPLETED" && order.items && Array.isArray(order.items)) {
+            console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Triggering inventory deduction.`);
             const { deductInventory } = await import("@/lib/inventory-utils");
             await deductInventory(order.items);
+        } else if (status === "COMPLETED") {
+            console.warn(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED but has NO items. Deduction skipped.`);
         }
 
         return NextResponse.json(order);
@@ -210,6 +213,7 @@ export async function POST(req: NextRequest) {
 
         // ✅ 4. AUTO-DEDUCT INVENTORY IF COMPLETED
         if (order.status === "COMPLETED") {
+            console.log(`[ORDER_POST_DEBUG] New Order ${order.id} is COMPLETED. Triggering inventory deduction.`);
             const { deductInventory } = await import("@/lib/inventory-utils");
             await deductInventory(order.items as any[]);
         }
