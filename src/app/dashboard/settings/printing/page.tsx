@@ -6,7 +6,7 @@ import {
     ArrowLeft, Save, Printer, Eye, Settings, 
     Image as ImageIcon, Type, Phone, MapPin, 
     Hash, User, Users, Percent, MessageSquare, QrCode,
-    Receipt, ChefHat, Clock, FileText, Check, Zap
+    Receipt, ChefHat, Clock, FileText, Check, Zap, MoreVertical
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
@@ -244,6 +244,24 @@ export default function PrintingSettings() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <SettingToggle icon={MessageSquare} label="Visit Again" sKey="showVisitAgain" desc="Greeting footer line" color="bg-slate-600" />
                             <SettingToggle icon={Zap} label="Powered By" sKey="showPoweredBy" desc="Kravy branding line" color="bg-violet-600" />
+                        </div>
+                    </div>
+
+                    {/* Separator Settings */}
+                    <div className="space-y-6 pt-4">
+                        <div className="flex items-center gap-3 px-4">
+                            <div className="w-2 h-2 rounded-full bg-slate-500" />
+                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Layout Separators</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <SettingToggle icon={MoreVertical} label="Top Header Line" sKey="sepTop" desc="Divider at the very top" color="bg-slate-500" />
+                            <SettingToggle icon={MoreVertical} label="Customer Divider" sKey="sepCustomer" desc="Line after customer info" color="bg-slate-400" />
+                            <SettingToggle icon={MoreVertical} label="Items Header Line" sKey="sepItemsHeader" desc="Divider for item column names" color="bg-slate-500" />
+                            <SettingToggle icon={MoreVertical} label="Total Top Line" sKey="sepTotalTop" desc="Divider before Grand Total" color="bg-slate-600" />
+                            <SettingToggle icon={MoreVertical} label="Total Bottom Line" sKey="sepTotalBottom" desc="Divider after Grand Total" color="bg-slate-700" />
+                            <SettingToggle icon={MoreVertical} label="Payment Divider" sKey="sepPayment" desc="Line before payment mode" color="bg-slate-500" />
+                            <SettingToggle icon={MoreVertical} label="Footer Divider" sKey="sepFooter" desc="Line before greetings" color="bg-slate-400" />
+                            <SettingToggle icon={MoreVertical} label="KOT Note Border" sKey="sepKOTInstructions" desc="Box around chef notes" color="bg-slate-500" />
                         </div>
                     </div>
 

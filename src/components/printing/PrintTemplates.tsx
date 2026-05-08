@@ -156,7 +156,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         </div>
 
         {((customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && s('showCustomerDetails')) && (
-          <div className="mt-2 text-[10px] font-black border-t-2 border-dashed border-black pt-1">
+          <div className={`mt-2 text-[10px] font-black ${s('sepCustomer') ? 'border-t-2 border-dashed border-black' : ''} pt-1`}>
             {customerName && <div>Customer: {customerName}</div>}
             {customerPhone && <div>Phone: {customerPhone}</div>}
             {buyerGSTIN && <div className="uppercase">Buyer GST: {buyerGSTIN}</div>}
@@ -168,7 +168,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         <div className="mt-1 text-center text-[10px] font-bold">
           {placeOfSupply && <div>Place of Supply: {placeOfSupply}</div>}
         </div>
-        <div className="flex justify-between font-bold text-[10px] uppercase border-b border-dashed border-black py-1 my-1">
+        <div className={`flex justify-between font-bold text-[10px] uppercase ${s('sepItemsHeader') ? 'border-b border-dashed border-black py-1 my-1' : 'my-1'}`}>
           <span className="flex-1 min-w-0 pr-1">Item Description</span>
           <span className="w-[10mm] text-right shrink-0">Total</span>
         </div>
@@ -190,7 +190,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             </div>
           );
         })}
-        <div className="my-1 border-t-2 border-black" />
+        {s('sepTotalTop') && <div className="my-1 border-t-2 border-black" />}
         
         <div className="space-y-1">
           {s('showSubtotal') && <div className="flex justify-between text-[11px] font-bold"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>}
@@ -240,8 +240,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               <span>₹{serviceCharge.toFixed(2)}</span>
             </div>
           )}
-          <div className="border-t-2 border-dashed border-black my-1" />
-          <div className="flex justify-between font-black text-[13px] border-y-2 border-black py-2 my-1.5 uppercase bg-white px-1">
+          {s('sepTotalTop') && <div className="border-t-2 border-dashed border-black my-1" />}
+          <div className={`flex justify-between font-black text-[13px] ${s('sepTotalBottom') ? 'border-y-2 border-black py-2 my-1.5' : 'my-1.5'} uppercase bg-white px-1`}>
             <span>GRAND TOTAL</span>
             <span>₹{finalTotal.toFixed(2)}</span>
           </div>
@@ -293,7 +293,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         )}
 
         {s('showPaymentStatus') && (
-          <div className="mt-3 border-t-2 border-dashed border-black pt-1 flex justify-between text-[11px] font-bold">
+          <div className={`mt-3 ${s('sepPayment') ? 'border-t-2 border-dashed border-black' : ''} pt-1 flex justify-between text-[11px] font-bold`}>
             <span>Payment: {paymentMode}</span>
             <span>Status: {paymentStatus}</span>
           </div>
@@ -351,7 +351,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         )}
 
-        <div className="mt-4 border-t-2 border-black pt-2 text-center">
+        <div className={`mt-4 ${s('sepFooter') ? 'border-t-2 border-black' : ''} pt-2 text-center`}>
           {s('showGreetings') && (
             <div className="text-[12px] font-black italic tracking-widest uppercase mb-1">
               {business?.greetingMessage || "Thank You!"}
@@ -438,7 +438,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         </table>
 
         {(orderNotes && s('showKOTInstructions')) && (
-          <div className="mt-3 p-2 border-2 border-black bg-black/5 rounded-sm">
+          <div className={`mt-3 p-2 ${s('sepKOTInstructions') ? 'border-2 border-black bg-black/5' : ''} rounded-sm`}>
             <div className="text-[9px] font-black uppercase mb-1 border-b border-black">Chef Instructions:</div>
             <div className="text-[11px] font-bold italic leading-tight">{orderNotes}</div>
           </div>
