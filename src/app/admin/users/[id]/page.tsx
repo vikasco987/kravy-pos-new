@@ -19,7 +19,9 @@ import {
   Loader2,
   Activity,
   History,
-  Key
+  Key,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -48,6 +50,7 @@ export default function UserDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Profile");
   const [isEditing, setIsEditing] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [editData, setEditData] = useState({ name: "", phone: "", password: "" });
   const [saving, setSaving] = useState(false);
 
@@ -291,16 +294,29 @@ export default function UserDetailPage() {
                      <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">New Password</label>
                         <div className="flex gap-3">
-                           <input 
-                             type="text"
-                             placeholder="Set a new secure password"
-                             value={editData.password}
-                             onChange={(e) => setEditData({...editData, password: e.target.value})}
-                             className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-indigo-500 transition-all"
-                           />
+                           <div className="relative flex-1">
+                              <input 
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Set a new secure password"
+                                value={editData.password}
+                                onChange={(e) => setEditData({...editData, password: e.target.value})}
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:border-indigo-500 transition-all pr-12"
+                              />
+                              <button 
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                              >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                              </button>
+                           </div>
                            <button 
-                             onClick={() => setEditData({...editData, password: Math.random().toString(36).slice(-10) + "!"})}
-                             className="px-5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all"
+                             onClick={() => {
+                               const newPass = Math.random().toString(36).slice(-10) + "!";
+                               setEditData({...editData, password: newPass});
+                               setShowPassword(true); // Show it automatically when generated
+                             }}
+                             className="px-5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all text-xs font-bold"
                            >
                              Generate
                            </button>
