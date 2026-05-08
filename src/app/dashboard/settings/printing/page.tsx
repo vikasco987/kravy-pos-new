@@ -218,6 +218,35 @@ export default function PrintingSettings() {
                         </div>
                     </div>
 
+                    {/* Financial Settings */}
+                    <div className="space-y-6 pt-4">
+                        <div className="flex items-center gap-3 px-4">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Financial Summary</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <SettingToggle icon={Hash} label="Subtotal" sKey="showSubtotal" desc="Sum before taxes" color="bg-emerald-500" />
+                            <SettingToggle icon={Percent} label="Discount" sKey="showDiscount" desc="Offer & coupon lines" color="bg-amber-500" />
+                            <SettingToggle icon={FileText} label="Taxable Amount" sKey="showTaxableAmt" desc="Amount liable for tax" color="bg-cyan-500" />
+                            <SettingToggle icon={Receipt} label="Total GST" sKey="showTotalTax" desc="Sum of CGST+SGST" color="bg-blue-500" />
+                            <SettingToggle icon={MapPin} label="Delivery Fee" sKey="showDeliveryCharges" desc="Shipping/Delivery line" color="bg-indigo-500" />
+                            <SettingToggle icon={Hash} label="Packaging" sKey="showPackagingCharges" desc="Container/Packing line" color="bg-violet-500" />
+                            <SettingToggle icon={Users} label="Service Charge" sKey="showServiceCharge" desc="Additional service fee" color="bg-rose-500" />
+                        </div>
+                    </div>
+
+                    {/* Footer Settings */}
+                    <div className="space-y-6 pt-4">
+                        <div className="flex items-center gap-3 px-4">
+                            <div className="w-2 h-2 rounded-full bg-slate-500" />
+                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Footer & Branding</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <SettingToggle icon={MessageSquare} label="Visit Again" sKey="showVisitAgain" desc="Greeting footer line" color="bg-slate-600" />
+                            <SettingToggle icon={Zap} label="Powered By" sKey="showPoweredBy" desc="Kravy branding line" color="bg-violet-600" />
+                        </div>
+                    </div>
+
                     {/* KOT Settings */}
                     <div className="space-y-6 pt-4">
                         <div className="flex items-center gap-3 px-4">
@@ -228,6 +257,7 @@ export default function PrintingSettings() {
                             <SettingToggle icon={Clock} label="KOT Token" sKey="showKOTToken" desc="Token number for chefs" color="bg-rose-500" />
                             <SettingToggle icon={User} label="KOT Customer" sKey="showKOTCustomer" desc="Customer name on KOT" color="bg-orange-500" />
                             <SettingToggle icon={Receipt} label="Bill Reference" sKey="showKOTBillNo" desc="Invoice # on KOT" color="bg-indigo-500" />
+                            <SettingToggle icon={Clock} label="Print Time" sKey="showKOTTime" desc="Current time on KOT" color="bg-blue-500" />
                             <SettingToggle icon={ChefHat} label="Instructions" sKey="showKOTInstructions" desc="Chef notes & modifications" color="bg-emerald-500" />
                         </div>
                     </div>

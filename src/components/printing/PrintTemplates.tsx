@@ -193,8 +193,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         <div className="my-1 border-t-2 border-black" />
         
         <div className="space-y-1">
-          <div className="flex justify-between text-[11px] font-bold"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
-          {discountAmt > 0 && (
+          {s('showSubtotal') && <div className="flex justify-between text-[11px] font-bold"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>}
+          {(discountAmt > 0 && s('showDiscount')) && (
             <div className="flex justify-between text-[11px] font-bold italic">
               <span>Discount ({appliedOffer?.code})</span>
               <span>- ₹{discountAmt.toFixed(2)}</span>
@@ -202,11 +202,11 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           )}
           {(taxActive || perProductEnabled) && (
             <>
-              <div className="flex justify-between text-[10px] font-bold"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>
-              <div className="flex justify-between text-[10px] font-bold"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
+              {s('showTaxableAmt') && <div className="flex justify-between text-[10px] font-bold"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>}
+              {s('showTotalTax') && <div className="flex justify-between text-[10px] font-bold"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>}
             </>
           )}
-          {deliveryCharge > 0 && (
+          {(deliveryCharge > 0 && s('showDeliveryCharges')) && (
             <>
               <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
                 <span>DELIVERY CHARGES</span>
@@ -220,7 +220,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               )}
             </>
           )}
-          {packagingCharge > 0 && (
+          {(packagingCharge > 0 && s('showPackagingCharges')) && (
             <>
               <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
                 <span>PACKAGING CHARGES</span>
@@ -234,7 +234,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               )}
             </>
           )}
-          {serviceCharge > 0 && (
+          {(serviceCharge > 0 && s('showServiceCharge')) && (
             <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
               <span>SERVICE CHARGE</span>
               <span>₹{serviceCharge.toFixed(2)}</span>
@@ -357,8 +357,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               {business?.greetingMessage || "Thank You!"}
             </div>
           )}
-          <div className="text-[9px] font-bold">Visit Again for Fresh Food</div>
-          <div className="text-[8px] mt-3 font-bold">Powered by Kravy</div>
+          {s('showVisitAgain') && <div className="text-[9px] font-bold">Visit Again for Fresh Food</div>}
+          {s('showPoweredBy') && <div className="text-[8px] mt-3 font-bold">Powered by Kravy</div>}
         </div>
       </div>
 
@@ -403,7 +403,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           {s('showKOTBillNo') && (
             <div className="flex justify-between">
               <span>Bill: {billNumber}</span>
-              <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+              {s('showKOTTime') && <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>}
             </div>
           )}
           {(customerName && s('showKOTCustomer')) && <div className="mt-0.5 truncate">Cust: {customerName}</div>}
