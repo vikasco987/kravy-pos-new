@@ -63,7 +63,8 @@ export default function UserDetailPage() {
         setUser(data);
         setEditData({ name: data.name || "", phone: data.phone || "", password: "" });
       } else {
-        toast.error("User not found");
+        const data = await res.json();
+        toast.error(data?.error || "User not found");
         router.push("/admin/users");
       }
     } catch (error) {
