@@ -1491,7 +1491,11 @@ function KravyPOS() {
                                             <div className="flex gap-4">
                                                 <div className="flex-1 flex gap-3">
                                                     <button
-                                                        onClick={() => { setPreviewMode("KOT"); setShowPreview(true); }}
+                                                        onClick={() => { 
+                                                            if (activeOrderForSelected) setPrintOrder(activeOrderForSelected);
+                                                            setPreviewMode("KOT"); 
+                                                            setShowPreview(true); 
+                                                        }}
                                                         className="w-14 h-14 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 hover:text-white hover:bg-[#0B1B48] hover:border-[#0B1B48] transition-all bg-white dark:bg-slate-900 shadow-sm"
                                                         title="Preview KOT"
                                                     >
@@ -1675,7 +1679,11 @@ function KravyPOS() {
                                         <div className="flex flex-col sm:flex-row gap-3">
                                             <div className="flex gap-2 shrink-0">
                                                 <button
-                                                    onClick={() => { setPreviewMode("BILL"); setShowPreview(true); }}
+                                                    onClick={() => { 
+                                                        if (activeOrderForSelected) setPrintOrder(activeOrderForSelected);
+                                                        setPreviewMode("BILL"); 
+                                                        setShowPreview(true); 
+                                                    }}
                                                     className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
                                                 >
                                                     <Eye size={18} />
