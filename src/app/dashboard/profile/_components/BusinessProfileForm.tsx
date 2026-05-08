@@ -635,7 +635,7 @@ export default function BusinessProfileForm({
                 {watchedValues.district && `, ${watchedValues.district}`}
                 {selectedState && `, ${selectedState}`}
                 {watchedValues.pinCode && ` - ${watchedValues.pinCode}`}
-                {watchedValues.contactPhone && <div className="mt-0.5">{watchedValues.phonePrefixType === 'SYMBOL' ? '📞 ' : 'Mob: '} {watchedValues.contactPhone}</div>}
+                {watchedValues.contactPhone && <div className="mt-0.5">{watchedValues.phonePrefixType?.toString().toUpperCase() === 'SYMBOL' ? '📞 ' : 'Mob: '} {watchedValues.contactPhone}</div>}
               </div>
             )}
             {watchedValues.gstNumber && <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">GSTIN: {watchedValues.gstNumber}</div>}

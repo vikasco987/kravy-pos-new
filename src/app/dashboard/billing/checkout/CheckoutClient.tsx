@@ -903,6 +903,7 @@ export default function CheckoutClient() {
             businessAddressSize: data.businessAddressSize,
             tokenNumberSize: data.tokenNumberSize,
             businessNameSize: data.businessNameSize,
+            phonePrefixType: data.phonePrefixType || "TEXT",
           });
           console.log("DEBUG POS API RESPONSE - enableKOTWithBill:", data.enableKOTWithBill);
           console.log("DEBUG POS API FULL DATA:", data);
@@ -1396,14 +1397,18 @@ export default function CheckoutClient() {
           if (!syncedOrderId) setSyncedOrderId(data.id || data._id);
           
           // ✅ Sync tokens from server
-          if (data.kotNumbers) setKotNumbers(data.kotNumbers);
-          if (data.tokenNumber) setTokenNumber(data.tokenNumber);
+          if (data.kotNumbers && Array.isArray(data.kotNumbers)) {
+            setKotNumbers(data.kotNumbers);
+          }
+          if (data.tokenNumber) {
+            setTokenNumber(data.tokenNumber);
+          }
           
           // ✅ Print KOT AFTER sync and state update
           setTimeout(() => {
             printKOT();
             toast.success("KOT Printed & Order Synced! ✅");
-          }, 500);
+          }, 800); // Increased timeout to ensure DOM re-render
 
           const returnTo = searchParams.get("returnTo");
           if (returnTo) {

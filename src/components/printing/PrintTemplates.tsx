@@ -7,7 +7,7 @@ interface PrintTemplatesProps {
   business: any;
   billNumber: string;
   billDate: string;
-  tokenNumber: string;
+  tokenNumber: any;
   selectedTable: string;
   customerName: string;
   customerPhone: string;
@@ -107,7 +107,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         )}
         {(business?.contactPersonPhone || business?.contactPhone || business?.businessPhone) && (
           <div className="text-center font-bold text-[12px] mt-0.5">
-            {business?.phonePrefixType === 'SYMBOL' ? '📞 ' : 'Mob: '} {business.contactPersonPhone || business.contactPhone || business.businessPhone}
+            {business?.phonePrefixType?.toString().toUpperCase() === 'SYMBOL' ? '📞 ' : 'Mob: '} {business.contactPersonPhone || business.contactPhone || business.businessPhone}
           </div>
         )}
         {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
