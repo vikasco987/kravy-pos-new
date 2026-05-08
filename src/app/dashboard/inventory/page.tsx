@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Package, Search, Plus, Filter, Download, Eye, Edit, Trash2, FileText, X, AlertTriangle, Save, Sparkles, TrendingUp, Layers, ArrowUpDown, CheckCircle2, XCircle, BadgePercent, BarChart3 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSearch } from "@/components/SearchContext";
+import Link from "next/link";
 
 type InventoryItem = {
   id: string;
