@@ -261,6 +261,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // ✅ AUTO-DEDUCT INVENTORY ON FINAL BILL (IF NOT HELD)
+    if (!bill.isHeld) {
+      try {
+        console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Triggering inventory deduction.`);
+        const { deductInventory } = await import("@/lib/inventory-utils");
+        await deductInventory(bill.items as any[]);
+      } catch (deductErr) {
+        console.error("Failed to deduct inventory from bill:", deductErr);
+      }
+    }
+
     return NextResponse.json({ bill });
   } catch (err) {
     console.error("BILL MANAGER CREATE ERROR:", err);
