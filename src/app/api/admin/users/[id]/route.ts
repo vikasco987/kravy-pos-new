@@ -15,47 +15,43 @@ export async function GET(
     const { id } = await params;
 
     if (!id || id.length !== 24) {
-      return NextResponse.json({ error: "Invalid User ID format" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
     }
 
-    // Check if it's a Staff model user
+    // 1. Try Staff Model
     try {
       const staff = await prisma.staff.findUnique({
-        where: { id },
+        where: { id }
       });
-
       if (staff) {
         return NextResponse.json({
           ...staff,
           isStaffModel: true,
+          loginType: "STAFF",
           source: "prisma"
         });
       }
-    } catch (err) {
-      console.log("Not a staff ID or DB error");
-    }
+    } catch (e) {}
 
-    // Check if it's a User model user
+    // 2. Try User Model
     try {
       const user = await prisma.user.findUnique({
-        where: { id },
+        where: { id }
       });
-
       if (user) {
         return NextResponse.json({
           ...user,
           isStaffModel: false,
+          loginType: user.clerkId?.startsWith("custom_") ? "CUSTOM" : "CLERK",
           source: "clerk"
         });
       }
-    } catch (err) {
-      console.log("Not a user ID or DB error");
-    }
+    } catch (e) {}
 
-    return NextResponse.json({ error: `User with ID ${id} not found in database` }, { status: 404 });
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   } catch (error: any) {
     console.error("ADMIN GET USER DETAIL ERROR:", error);
-    return NextResponse.json({ error: "Server error: " + error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -63,7 +59,5 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-    // We already have a PUT in the main route, but we can move it here or keep it there.
-    // For now, let's just use the main PUT to keep it simple, or implement specific ones here.
-    return NextResponse.json({ error: "Use main users API for updates" }, { status: 405 });
+    return NextResponse.json({ error: "Use main users API" }, { status: 405 });
 }

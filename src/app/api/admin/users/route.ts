@@ -233,15 +233,19 @@ export async function PUT(req: Request) {
       clerkUpdate.firstName = parts[0];
       clerkUpdate.lastName = parts.slice(1).join(" ") || "User";
     }
-    if (password) {
-      clerkUpdate.password = password;
+    if (user.clerkId && !user.clerkId.startsWith("custom_")) {
+      await client.users.updateUser(user.clerkId, clerkUpdate);
     }
 
-    await client.users.updateUser(user.clerkId, clerkUpdate);
+    let dbUpdate: any = { name: name || undefined };
+    if (password && user.clerkId?.startsWith("custom_")) {
+      const bcrypt = await import("bcryptjs");
+      dbUpdate.password = await bcrypt.hash(password, 10);
+    }
 
     const updated = await prisma.user.update({
       where: { id: userId },
-      data: { name: name || undefined }
+      data: dbUpdate
     });
 
     return NextResponse.json(updated);
