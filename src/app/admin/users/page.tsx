@@ -29,7 +29,10 @@ const roleStyles: Record<Role, { bg: string; text: string; icon: any }> = {
   USER: { bg: "bg-slate-50", text: "text-slate-600", icon: <Users size={14} /> },
 };
 
+import { useRouter } from "next/navigation";
+
 export default function AdminUsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
