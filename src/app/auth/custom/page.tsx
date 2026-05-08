@@ -58,11 +58,13 @@ export default function CustomAuthPage() {
           body: JSON.stringify(formData)
         });
         
+        const responseText = await res.text();
         let data: any = {};
         try {
-          data = await res.json();
+          data = JSON.parse(responseText);
         } catch (e) {
-          throw new Error("Server returned an invalid response. Please check your internet or try again later.");
+          console.error("RAW_RESPONSE_ERROR:", responseText);
+          throw new Error(`Server Error (${res.status}): ${responseText.substring(0, 50)}...`);
         }
 
         if (!res.ok) {
