@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Search, Plus, Filter, Download, Eye, Edit, Trash2, FileText, X, AlertTriangle, Save, Sparkles, TrendingUp, Layers, ArrowUpDown, CheckCircle2, XCircle, BadgePercent } from "lucide-react";
+import { Package, Search, Plus, Filter, Download, Eye, Edit, Trash2, FileText, X, AlertTriangle, Save, Sparkles, TrendingUp, Layers, ArrowUpDown, CheckCircle2, XCircle, BadgePercent, BarChart3 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSearch } from "@/components/SearchContext";
 
@@ -275,6 +275,12 @@ export default function InventoryPage() {
               Raw Ingredients
             </button>
           </div>
+          <Link 
+            href="/dashboard/inventory/reports"
+            className="h-10 px-4 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:border-[var(--kravy-brand)] transition-all"
+          >
+            <BarChart3 size={16} /> REPORT
+          </Link>
           <button 
             onClick={() => {
               if (activeTab === 'finished') {
