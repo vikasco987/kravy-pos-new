@@ -10,7 +10,7 @@ import {
   ShieldCheck, ArrowLeft, RefreshCw, Eye
 } from "lucide-react";
 
-type Role = "USER" | "SELLER" | "ADMIN";
+type Role = "USER" | "SELLER" | "ADMIN" | "STAFF";
 
 type User = {
   id: string;
@@ -28,6 +28,7 @@ const roleStyles: Record<Role, { bg: string; text: string; icon: any }> = {
   ADMIN: { bg: "bg-rose-50", text: "text-rose-600", icon: <ShieldAlert size={14} /> },
   SELLER: { bg: "bg-indigo-50", text: "text-indigo-600", icon: <ShieldCheck size={14} /> },
   USER: { bg: "bg-slate-50", text: "text-slate-600", icon: <Users size={14} /> },
+  STAFF: { bg: "bg-amber-50", text: "text-amber-600", icon: <ShieldCheck size={14} /> },
 };
 
 import { useRouter } from "next/navigation";
