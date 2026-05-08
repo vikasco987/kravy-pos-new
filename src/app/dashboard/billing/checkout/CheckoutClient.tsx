@@ -1358,39 +1358,38 @@ export default function CheckoutClient() {
       kravy.ping();
       setIsKotPrinted(true);
 
-      // Sync and Redirect Logic
-      if (business?.syncQuickPosWithKitchen || searchParams.get("returnTo")) {
-        const orderData = {
-          orderId: syncedOrderId || undefined,
-          tableId: selectedTable !== "POS" ? (tables.find(t => t.name === selectedTable)?.id || searchParams.get("tableId")) : null,
-          items: items.map(it => ({
-            itemId: it.id, // Use consistent ID
-            name: it.name,
-            price: Number(it.rate || 0),
-            quantity: Number(it.qty || 0),
-            rate: Number(it.rate || 0), // Include both for compatibility
-            qty: Number(it.qty || 0),
-            addedAt: new Date().toISOString(),
-            taxStatus: it.taxStatus || "Without Tax",
-            gst: it.gst ?? 0,
-            isNew: !!it.isNew,
-            variants: (it as any).variants || [],
-            kotNumber: (it as any).kotNumber
-          })),
-          total: Number(finalTotal.toFixed(2)),
-          status: "PREPARING",
-          customerName: customerName,
-          customerPhone: customerPhone,
-          customerAddress: customerAddress,
-          notes: orderNotes,
-          isKotPrinted: true,
-        };
+      // ✅ ALWAYS SYNC FOR KOT (To get Token Number)
+      const orderData = {
+        orderId: syncedOrderId || undefined,
+        tableId: selectedTable !== "POS" ? (tables.find(t => t.name === selectedTable)?.id || searchParams.get("tableId")) : null,
+        items: items.map(it => ({
+          itemId: it.id, 
+          name: it.name,
+          price: Number(it.rate || 0),
+          quantity: Number(it.qty || 0),
+          rate: Number(it.rate || 0),
+          qty: Number(it.qty || 0),
+          addedAt: new Date().toISOString(),
+          taxStatus: it.taxStatus || "Without Tax",
+          gst: it.gst ?? 0,
+          isNew: !!it.isNew,
+          variants: (it as any).variants || [],
+          kotNumber: (it as any).kotNumber
+        })),
+        total: Number(finalTotal.toFixed(2)),
+        status: "PREPARING",
+        customerName: customerName,
+        customerPhone: customerPhone,
+        customerAddress: customerAddress,
+        notes: orderNotes,
+        isKotPrinted: true,
+      };
 
-        const res = await fetch("/api/orders", {
-          method: syncedOrderId ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(orderData)
-        });
+      const res = await fetch("/api/orders", {
+        method: syncedOrderId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData)
+      });
 
         if (res.ok) {
           const data = await res.json();
@@ -1432,11 +1431,6 @@ export default function CheckoutClient() {
           console.error("SYNC_ERROR:", errData);
           toast.error(`Sync Failed: ${errData.error || "Unknown Error"}. Please try again.`);
         }
-      } else {
-        // ✅ Local print if sync is off
-        printKOT();
-        toast.success("KOT Printed (Local) ✅");
-      }
     } catch (err: any) {
       console.error("KOT_PRINT_CRITICAL_ERROR:", err);
       toast.error(`Critical Error: ${err.message || "Failed to sync with kitchen"}`);
