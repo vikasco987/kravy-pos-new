@@ -1402,6 +1402,17 @@ export default function CheckoutClient() {
           if (data.tokenNumber != null) {
             setTokenNumber(data.tokenNumber);
           }
+
+          // ✅ Sync items from server to clear isNew flags
+          if (data.items && Array.isArray(data.items)) {
+            setItems(data.items.map((it: any) => ({
+              ...it,
+              id: it.itemId || it.id,
+              rate: it.price || it.rate,
+              qty: it.quantity || it.qty,
+              isNew: false // Explicitly clear local isNew flag
+            })));
+          }
           
           // ✅ Print KOT AFTER sync and state update
           setTimeout(() => {

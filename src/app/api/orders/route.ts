@@ -177,12 +177,16 @@ export async function POST(req: NextRequest) {
             // Fallback to 1 if profile update fails
         }
 
+        const processedItems = (items && Array.isArray(items)) 
+            ? items.map((it: any) => ({ ...it, isNew: false, kotNumber: nextToken }))
+            : items;
+
         // ✅ 3. CREATE ORDER WITH PERSISTENT TOKEN
         const order = await prisma.order.create({
             data: {
                 clerkUserId: effectiveId,
                 tableId: tableId || null,
-                items,
+                items: processedItems,
                 total: parseFloat(total),
                 status: status || "PENDING",
                 customerName: customerName || null,
