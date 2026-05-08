@@ -17,6 +17,7 @@ export default function PrintingSettings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [business, setBusiness] = useState<any>(null);
+    const [previewGst, setPreviewGst] = useState(true);
     const [printSettings, setPrintSettings] = useState<any>({
         // Bill Settings
         showLogo: true,
@@ -104,22 +105,22 @@ export default function PrintingSettings() {
         customerPhone: "9876543210",
         customerAddress: "Flat 101, Green Heights, Delhi",
         orderNotes: "Extra spicy, no onions please!",
-        buyerGSTIN: "07AAAAA0000A1Z5",
-        placeOfSupply: "Delhi (07)",
+        buyerGSTIN: previewGst ? "07AAAAA0000A1Z5" : null,
+        placeOfSupply: previewGst ? "Delhi (07)" : null,
         items: [
-            { name: "Paneer Butter Masala", qty: 2, rate: 250, gst: 5 },
-            { name: "Butter Naan", qty: 4, rate: 40, gst: 5 },
-            { name: "Cold Coffee", qty: 1, rate: 120, gst: 18 }
+            { name: "Paneer Butter Masala", qty: 2, rate: 250, gst: previewGst ? 5 : 0 },
+            { name: "Butter Naan", qty: 4, rate: 40, gst: previewGst ? 5 : 0 },
+            { name: "Cold Coffee", qty: 1, rate: 120, gst: previewGst ? 18 : 0 }
         ],
         subtotal: 780,
         discountAmt: 50,
         appliedOffer: { code: "WELCOME50" },
-        taxActive: true,
-        perProductEnabled: true,
+        taxActive: previewGst,
+        perProductEnabled: previewGst,
         globalRate: 5,
         totalTaxable: 730,
-        totalGst: 36.5,
-        taxBreakup: [{ rate: 5, taxable: 610, cgst: 15.25, sgst: 15.25, igst: 0 }, { rate: 18, taxable: 120, cgst: 10.8, sgst: 10.8, igst: 0 }],
+        totalGst: previewGst ? 36.5 : 0,
+        taxBreakup: previewGst ? [{ rate: 5, taxable: 610, cgst: 15.25, sgst: 15.25, igst: 0 }, { rate: 18, taxable: 120, cgst: 10.8, sgst: 10.8, igst: 0 }] : [],
         deliveryCharge: 0,
         deliveryGst: 0,
         packagingCharge: 20,
@@ -285,8 +286,19 @@ export default function PrintingSettings() {
                 <div className="xl:col-span-4 sticky top-24 space-y-6">
                     <div className="flex items-center justify-between px-4">
                         <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Live Preview</h2>
-                        <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
-                            <div className="px-3 py-1 bg-white dark:bg-white/10 rounded-lg text-[10px] font-black uppercase shadow-sm">Real-time</div>
+                        <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1">
+                            <button 
+                                onClick={() => setPreviewGst(true)}
+                                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${previewGst ? 'bg-white dark:bg-white/10 shadow-sm text-violet-600' : 'text-slate-400'}`}
+                            >
+                                GST
+                            </button>
+                            <button 
+                                onClick={() => setPreviewGst(false)}
+                                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${!previewGst ? 'bg-white dark:bg-white/10 shadow-sm text-violet-600' : 'text-slate-400'}`}
+                            >
+                                Non-GST
+                            </button>
                         </div>
                     </div>
 
