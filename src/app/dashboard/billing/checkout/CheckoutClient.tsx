@@ -2718,7 +2718,7 @@ export default function CheckoutClient() {
                       disabled={items.length === 0 || isSaving}
                       className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all font-black active:scale-95`}
                     >
-                      <PauseCircle size={isCompact ? 14 : 18} strokeWidth={3} />
+                      <span className={isCompact ? "text-[16px]" : "text-[20px]"}>⏸️</span>
                       <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Hold</span>
                     </button>
                   )}
@@ -2736,7 +2736,7 @@ export default function CheckoutClient() {
                       disabled={items.length === 0 || isSaving}
                       className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-slate-300 text-slate-900 bg-slate-50 hover:bg-slate-200 transition-all font-black active:scale-95`}
                     >
-                      <Save size={isCompact ? 14 : 18} strokeWidth={3} />
+                      <span className={isCompact ? "text-[16px]" : "text-[20px]"}>💾</span>
                       <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Save</span>
                     </button>
                   )}
@@ -2747,7 +2747,7 @@ export default function CheckoutClient() {
                       disabled={items.length === 0 || isSaving}
                       className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 text-indigo-800 bg-indigo-50 hover:bg-indigo-100 transition-all font-black active:scale-95`}
                     >
-                      <Eye size={isCompact ? 14 : 18} strokeWidth={3} />
+                      <span className={isCompact ? "text-[16px]" : "text-[20px]"}>👁️</span>
                       <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Preview</span>
                     </button>
                   )}
@@ -2758,7 +2758,7 @@ export default function CheckoutClient() {
                       disabled={items.length === 0 || isSaving}
                       className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-orange-300 text-orange-800 bg-orange-50 hover:bg-orange-100 transition-all font-black active:scale-95`}
                     >
-                      <Printer size={isCompact ? 14 : 18} strokeWidth={3} />
+                      <span className={isCompact ? "text-[16px]" : "text-[20px]"}>🧾</span>
                       <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>KOT</span>
                     </button>
                   )}
