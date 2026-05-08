@@ -29,11 +29,27 @@ export default function CustomUserButton({ user }: CustomUserButtonProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     kravy.close();
-    document.cookie = "kravy_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-    document.cookie = "staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-    window.location.href = "/";
+    try {
+      // ✅ 1. Call server-side logout to clear HttpOnly cookies
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Logout API failed:", err);
+    }
+    
+    // ✅ 2. Clear local storage
+    if (typeof window !== "undefined") {
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // ✅ 3. Clear custom auth cookies (fallback)
+      document.cookie = "kravy_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      
+      // ✅ 4. Redirect and force reload
+      window.location.replace("/");
+    }
   };
 
   return (
