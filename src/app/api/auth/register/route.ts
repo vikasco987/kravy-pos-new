@@ -138,5 +138,4 @@ export async function POST(req: NextRequest) {
       details: String(error)
     }, { status: 500 });
   }
-  }
 }
