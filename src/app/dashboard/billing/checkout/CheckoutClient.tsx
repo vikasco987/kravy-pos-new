@@ -1325,7 +1325,7 @@ export default function CheckoutClient() {
     const billHtml = receiptRef.current.innerHTML;
     const kotHtml = kotRef.current?.innerHTML || "";
 
-    const isKOTEnabled = forceBoth || business?.enableKOTWithBill;
+    const isKOTEnabled = forceBoth; // Strictly follow the flag now
     console.log("PRINT TRIGGERED - KOT:", isKOTEnabled);
 
     if (isKOTEnabled && kotHtml) {
@@ -2775,7 +2775,7 @@ export default function CheckoutClient() {
                 kravy.payment(); 
                 // Wait slightly for state to settle and DOM to update
                 setTimeout(() => {
-                  printReceipt(business?.enableKOTWithBill);
+                  printReceipt(false);
                   resetForm();
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }, 500);

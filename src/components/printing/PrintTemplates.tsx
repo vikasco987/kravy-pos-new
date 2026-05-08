@@ -128,7 +128,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           <div className="flex justify-between items-center mb-1">
             <div className="font-black uppercase text-[10px] tracking-tight">Bill Summary</div>
             {selectedTable && (
-              <div className="font-black uppercase text-[8px] bg-black text-white px-2 py-0.5 rounded-sm">
+              <div className="font-black uppercase text-[7px] border-2 border-black text-black px-1.5 py-0.5 rounded-sm">
                 {selectedTable === "POS" ? "COUNTER" : selectedTable.replace("TYPE: ", "")}
               </div>
             )}

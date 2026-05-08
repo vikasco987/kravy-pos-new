@@ -633,7 +633,7 @@ export default function BusinessProfileForm({
             <div className="mt-2 border-t border-dashed border-gray-400 pt-1.5 px-1">
               <div className="flex justify-between items-center mb-1">
                 <div className="font-black uppercase text-[8px] tracking-tight text-black opacity-80">Bill Summary</div>
-                <div className="font-black uppercase text-[7px] bg-black text-white px-1.5 py-0.5 rounded-sm">
+                <div className="font-black uppercase text-[7px] border-2 border-black text-black px-1.5 py-0.5 rounded-sm">
                   COUNTER
                 </div>
               </div>
