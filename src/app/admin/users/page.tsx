@@ -455,16 +455,14 @@ export default function AdminUsersPage() {
                                        {u.name?.[0] || 'U'}
                                     </div>
                                     <div>
-                                       <button 
-                                         onClick={() => {
-                                            setSelectedUser(u);
-                                            setIsEditing(false);
-                                            setEditName(u.name || "");
+                                        <button 
+                                          onClick={() => {
+                                            router.push(`/admin/users/${u.id}`);
                                           }}
-                                         className="font-black text-slate-900 hover:text-indigo-600 transition-colors block text-sm"
-                                       >
-                                          {u.name || "Pending Account"}
-                                       </button>
+                                          className="font-black text-slate-900 hover:text-indigo-600 transition-colors block text-sm"
+                                        >
+                                           {u.name || "Pending Account"}
+                                        </button>
                                        <div className="text-xs text-slate-400 font-medium flex items-center gap-2">
                                           {u.email}
                                           <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${u.isStaffModel ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
