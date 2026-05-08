@@ -195,6 +195,50 @@ const QuickAddAddonChip = ({ onClick }: { onClick: () => void }) => {
 
 export default function CheckoutClient() {
   /* ================= BUSINESS PROFILE ================= */
+  const [business, setBusiness] = useState<{
+    businessName: string;
+    businessTagLine?: string;
+    gstNumber?: string;
+    businessAddress?: string;
+    district?: string;
+    state?: string;
+    pinCode?: string;
+    upi?: string;
+    logoUrl?: string;
+    taxEnabled?: boolean;
+    taxRate?: number;
+    upiQrEnabled?: boolean;
+    fssaiNumber?: string;
+    fssaiEnabled?: boolean;
+    hsnEnabled?: boolean;
+    perProductTaxEnabled?: boolean;
+    collectCustomerName?: boolean;
+    requireCustomerName?: boolean;
+    collectCustomerPhone?: boolean;
+    requireCustomerPhone?: boolean;
+    collectCustomerAddress?: boolean;
+    requireCustomerAddress?: boolean;
+    enableKOTWithBill?: boolean;
+    enableMenuQRInBill?: boolean;
+    enableDeliveryCharges?: boolean;
+    deliveryChargeAmount?: number;
+    deliveryGstEnabled?: boolean;
+    deliveryGstRate?: number;
+    enablePackagingCharges?: boolean;
+    packagingChargeAmount?: number;
+    packagingGstEnabled?: boolean;
+    packagingGstRate?: number;
+    lastTokenNumber?: number;
+    userId?: string;
+    syncQuickPosWithKitchen?: boolean;
+    multiZoneMenuEnabled?: boolean;
+    posCashEnabled?: boolean;
+    posUpiEnabled?: boolean;
+    posCardEnabled?: boolean;
+    posHoldEnabled?: boolean;
+    posSaveEnabled?: boolean;
+    posPreviewEnabled?: boolean;
+    posKotEnabled?: boolean;
   } | null>({
     businessName: "Kravy POS",
     taxEnabled: true,
