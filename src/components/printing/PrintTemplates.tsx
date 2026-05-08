@@ -105,54 +105,46 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             {business.businessTagLine}
           </div>
         )}
+        {(business?.contactPersonPhone || business?.contactPhone || business?.businessPhone) && (
+          <div className="text-center font-bold text-[12px] mt-0.5">
+            Mob: {business.contactPersonPhone || business.contactPhone || business.businessPhone}
+          </div>
+        )}
         {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
-          <div className="text-center text-[12px] font-bold leading-tight mt-1">
+          <div 
+            className="text-center font-bold leading-tight mt-1"
+            style={{ fontSize: `${business?.businessAddressSize || 12}px` }}
+          >
             {business?.businessAddress}
             {business?.district && `, ${business.district}`}
             {business?.state && `, ${business.state}`}
             {business?.pinCode && ` - ${business.pinCode}`}
           </div>
         )}
-        {business?.contactPersonPhone && (
-          <div className="text-center text-[12px] font-bold mt-1">
-            Phone: {business.contactPersonPhone}
-          </div>
-        )}
         {business?.gstNumber && <div className="text-center text-[10px] font-bold border-y border-black py-1 mt-2 mb-1">GSTIN: {business.gstNumber}</div>}
         {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[10px] font-bold mt-0.5">FSSAI: {business.fssaiNumber}</div>}
         
-        <div className="text-center text-[11px] mt-2 space-y-0.5">
-          <div className="font-bold">Bill No: {billNumber}</div>
-          <div className="font-bold">Date: {billDate}</div>
-          
-          {(kotNumbers && kotNumbers.length > 0) ? (
-            <div className="mt-3 flex flex-col items-center border-2 border-black py-1.5 px-6 mx-auto w-fit bg-white">
-              <div className="text-[10px] font-bold uppercase tracking-widest border-b border-black mb-1">Token Numbers</div>
-              <div 
-                className="font-bold leading-none tracking-tighter"
-                style={{ fontSize: `${(business?.tokenNumberSize || 22) * 0.9}px` }}
-              >
-                {kotNumbers.join(', ')}
+        <div className="flex justify-between items-start mt-3 px-1 border-t border-dashed border-gray-400 pt-2">
+          <div className="text-[10px] space-y-0.5">
+            <div className="font-bold uppercase tracking-tighter">Bill Info</div>
+            <div className="font-medium opacity-80 italic">No: {billNumber}</div>
+            <div className="font-medium opacity-80 italic">Date: {billDate}</div>
+            {selectedTable && (
+              <div className="font-black uppercase text-[8px] bg-black text-white px-1.5 py-0.5 inline-block mt-1">
+                {selectedTable.replace("TYPE: ", "")}
               </div>
-            </div>
-          ) : tokenNumber && (
-            <div className="mt-3 flex flex-col items-center border-2 border-black py-2 px-8 mx-auto w-fit bg-white">
-              <div className="text-[11px] font-bold uppercase tracking-widest border-b border-black mb-1">Token Number</div>
+            )}
+          </div>
+
+          {((kotNumbers && kotNumbers.length > 0) || (tokenNumber && tokenNumber !== "---" && tokenNumber !== "")) && (
+            <div className="flex flex-col items-end py-1">
+              <div className="text-[8px] font-black uppercase tracking-tighter opacity-60">Token No.</div>
               <div 
-                className="font-bold leading-none pt-1"
-                style={{ fontSize: `${business?.tokenNumberSize || 28}px` }}
+                className="font-black leading-none"
+                style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
               >
-                #{tokenNumber}
+                {kotNumbers && kotNumbers.length > 0 ? kotNumbers.join(',') : `#${tokenNumber}`}
               </div>
-            </div>
-          )}
-          
-          {selectedTable && (
-            <div className="font-bold text-[11px] mt-2 border border-black px-3 py-1 inline-block uppercase tracking-tight bg-white">
-              {selectedTable === "POS" ? "TYPE: DINING / COUNTER" : 
-               selectedTable === "TAKEAWAY" ? "TYPE: 🛍️ TAKEAWAY" : 
-               selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
-               `TYPE: DINING (TABLE: ${selectedTable})`}
             </div>
           )}
         </div>
@@ -380,7 +372,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               className="font-black"
               style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
             >
-              #{kotNumbers && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : (tokenNumber || business?.lastTokenNumber || "NEW")}
+              #{kotNumbers && kotNumbers.length > 0 ? kotNumbers.join(',') : (tokenNumber || "---")}
             </div>
           </div>
         </div>

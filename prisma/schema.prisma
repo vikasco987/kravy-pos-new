@@ -392,6 +392,7 @@ model BusinessProfile {
   greetingMessage  String? @default("Thank You 🙏 Visit Again!")
   businessNameSize String? @default("large") // medium, large, xlarge
   tokenNumberSize  Int?     @default(22)
+  businessAddressSize Int?   @default(12)
 
   fssaiNumber  String?
   fssaiEnabled Boolean @default(false)

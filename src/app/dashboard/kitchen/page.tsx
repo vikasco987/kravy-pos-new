@@ -1793,7 +1793,7 @@ function KravyPOS() {
                 kotRef={kotReceiptRef}
                 business={business}
                 billNumber={printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
-                billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}
+                billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-GB').split('/').join('|') : new Date().toLocaleDateString('en-GB').split('/').join('|')}
                 tokenNumber={printOrder?.tokenNumber ? printOrder.tokenNumber.toString().padStart(3, '0') : "---"}
                 selectedTable={printOrder?.table?.name || "Counter"}
                 customerName={printOrder?.customerName?.trim() || "Walk-in Customer"}

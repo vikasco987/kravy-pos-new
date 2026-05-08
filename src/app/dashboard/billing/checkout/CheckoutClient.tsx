@@ -416,7 +416,7 @@ export default function CheckoutClient() {
     const dateStr = `${now.getDate().toString().padStart(2, '0')}${ (now.getMonth() + 1).toString().padStart(2, '0')}`;
     const rand = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
     setBillNumber(`SV-${dateStr}-${rand}`); 
-    setBillDate(new Date().toLocaleString());
+    setBillDate(new Date().toLocaleDateString('en-GB').split('/').join('|'));
   }, []);
 
   const [prevWalletBalance, setPrevWalletBalance] = useState<number | null>(null);

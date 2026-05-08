@@ -107,44 +107,43 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
                 </div>
               )}
               <div className="text-center font-bold text-[12px]">{business?.businessName}</div>
-              {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
+              {(business?.businessAddress || business?.district || business?.state || business?.pinCode || business?.contactPersonPhone || business?.contactPhone) && (
                 <div className="text-center text-[9px]">
                   {business?.businessAddress}
                   {business?.district && `, ${business.district}`}
                   {business?.state && `, ${business.state}`}
                   {business?.pinCode && ` - ${business.pinCode}`}
+                  {(business?.contactPersonPhone || business?.contactPhone) && (
+                    <div className="font-bold">Mob: {business.contactPersonPhone || business.contactPhone}</div>
+                  )}
                 </div>
               )}
               {business?.gstNumber && <div className="text-center text-[9px]">GSTIN: {business.gstNumber}</div>}
               {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[9px]">FSSAI: {business.fssaiNumber}</div>}
-              <div className="text-center text-[9px] mt-1">
-                <div>Bill No: {billNumber}</div>
-                <div>Date: {billDate}</div>
-                {(kotNumbers && kotNumbers.length > 0) ? (
-                  <div className="mt-1 flex flex-col items-center border-2 border-black py-1 px-2">
-                    <div className="text-[7px] font-black uppercase">Token Numbers</div>
-                    <div className="text-[12px] font-black leading-none py-1">
-                      {kotNumbers.join(', ')}
+                <div className="flex justify-between items-start mt-2 px-1 border-t border-dashed border-gray-400 pt-2">
+                  <div className="text-[9px] space-y-0.5">
+                    <div className="font-bold uppercase tracking-tighter">Bill Info</div>
+                    <div className="font-medium opacity-80">No: {billNumber}</div>
+                    <div className="font-medium opacity-80">Date: {billDate}</div>
+                    {selectedTable && (
+                      <div className="font-black uppercase text-[7px] bg-black text-white px-1 py-0.5 inline-block mt-1">
+                        {selectedTable === "POS" ? "DINING / COUNTER" : 
+                         selectedTable === "TAKEAWAY" ? "🛍️ TAKEAWAY" : 
+                         selectedTable === "DELIVERY" ? "🚚 DELIVERY" : 
+                         `DINING (TABLE: ${selectedTable})`}
+                      </div>
+                    )}
+                  </div>
+
+                  {((kotNumbers && kotNumbers.length > 0) || (tokenNumber || business?.lastTokenNumber !== undefined)) && (
+                    <div className="flex flex-col items-end py-0.5">
+                      <div className="text-[7px] font-black uppercase tracking-tighter opacity-60">Token No.</div>
+                      <div className="text-[12px] font-black leading-none py-0.5">
+                        {kotNumbers && kotNumbers.length > 0 ? kotNumbers.join(',') : `#${tokenNumber || "---"}`}
+                      </div>
                     </div>
-                  </div>
-                ) : (tokenNumber || business?.lastTokenNumber !== undefined) ? (
-                  <div className="mt-1 flex flex-col items-center border-2 border-black py-1 px-2">
-                    <div className="text-[7px] font-black uppercase">Token Number</div>
-                    <div className="text-[14px] font-black leading-none">
-                      #{tokenNumber || (business?.lastTokenNumber || 0) + 1}
-                    </div>
-                    {!tokenNumber && <div className="text-[5px] italic opacity-50 uppercase tracking-tighter">Draft Preview</div>}
-                  </div>
-                ) : null}
-                {selectedTable && (
-                  <div className="font-bold text-black mt-0.5 uppercase text-[9px] border border-black px-1 inline-block">
-                    {selectedTable === "POS" ? "TYPE: DINING / COUNTER" : 
-                     selectedTable === "TAKEAWAY" ? "TYPE: 🛍️ TAKEAWAY" : 
-                     selectedTable === "DELIVERY" ? "TYPE: 🚚 DELIVERY" : 
-                     `TYPE: DINING (TABLE: ${selectedTable})`}
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
               <div className="my-1 border-t border-dashed border-gray-400" />
               {(customerName || customerPhone || customerAddress) && (
                 <div className="text-[9px]">

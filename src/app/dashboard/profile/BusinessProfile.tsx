@@ -183,6 +183,7 @@ export default function BusinessProfile({
           enableClerkAuth: data.enableClerkAuth,
           enableCustomAuth: data.enableCustomAuth,
           tokenNumberSize: data.tokenNumberSize,
+          businessAddressSize: data.businessAddressSize,
           userId: data.userId, 
         }}
         onCancel={() => setEditMode(false)}

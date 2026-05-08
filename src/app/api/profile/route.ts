@@ -118,6 +118,7 @@ export async function POST(request: Request) {
     if (body.enableClerkAuth !== undefined) updateData.enableClerkAuth = b(body.enableClerkAuth);
     if (body.enableCustomAuth !== undefined) updateData.enableCustomAuth = b(body.enableCustomAuth);
     if (body.tokenNumberSize !== undefined) updateData.tokenNumberSize = n(body.tokenNumberSize);
+    if (body.businessAddressSize !== undefined) updateData.businessAddressSize = n(body.businessAddressSize);
 
     // ✅ TAX & PRICING (MISSING FIELDS FIX)
     if (body.perProductTaxEnabled !== undefined) updateData.perProductTaxEnabled = b(body.perProductTaxEnabled);

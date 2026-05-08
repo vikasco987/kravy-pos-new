@@ -53,6 +53,7 @@ const schema = z.object({
   enableClerkAuth: z.boolean().nullable().optional(),
   enableCustomAuth: z.boolean().nullable().optional(),
   tokenNumberSize: z.number().nullable().optional(),
+  businessAddressSize: z.number().nullable().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -228,6 +229,7 @@ export default function BusinessProfileForm({
         enableClerkAuth: values.enableClerkAuth,
         enableCustomAuth: values.enableCustomAuth,
         tokenNumberSize: values.tokenNumberSize || 22,
+        businessAddressSize: values.businessAddressSize || 12,
       };
 
       const res = await fetch("/api/profile", {
@@ -407,7 +409,7 @@ export default function BusinessProfileForm({
           <div className="flex items-center gap-4">
             <input 
               type="range" 
-              min="14" 
+              min="10" 
               max="48" 
               step="1"
               {...register("tokenNumberSize", { valueAsNumber: true })}
@@ -415,7 +417,22 @@ export default function BusinessProfileForm({
             />
             <span className="text-xs font-black w-8">{watchedValues.tokenNumberSize || 22}</span>
           </div>
-          <p className="text-[10px] text-[var(--kravy-text-muted)] mt-1 italic">Default is 22px. Increase for better visibility.</p>
+          <p className="text-[10px] text-[var(--kravy-text-muted)] mt-1 italic">Controls token size on Bill & KOT. Default is 22px.</p>
+        </Field>
+
+        <Field label={`Address Font Size (${watchedValues.businessAddressSize || 12}px)`}>
+          <div className="flex items-center gap-4">
+            <input 
+              type="range" 
+              min="8" 
+              max="24" 
+              step="1"
+              {...register("businessAddressSize", { valueAsNumber: true })}
+              className="flex-1 accent-purple-500"
+            />
+            <span className="text-xs font-black w-8">{watchedValues.businessAddressSize || 12}</span>
+          </div>
+          <p className="text-[10px] text-[var(--kravy-text-muted)] mt-1 italic">Decrease to fit long addresses. Default is 12px.</p>
         </Field>
       </Section>
 
@@ -596,12 +613,16 @@ export default function BusinessProfileForm({
             >
               {watchedValues.businessName || "Your Business"}
             </div>
-            {(watchedValues.businessAddress || watchedValues.district || selectedState || watchedValues.pinCode) && (
-              <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">
+            {(watchedValues.businessAddress || watchedValues.district || selectedState || watchedValues.pinCode || watchedValues.contactPhone) && (
+              <div 
+                className="text-center mt-0.5 opacity-90 text-[10px]"
+                style={{ fontSize: `${(watchedValues.businessAddressSize || 12) * 0.8}px` }} // Scaled for preview
+              >
                 {watchedValues.businessAddress}
                 {watchedValues.district && `, ${watchedValues.district}`}
                 {selectedState && `, ${selectedState}`}
                 {watchedValues.pinCode && ` - ${watchedValues.pinCode}`}
+                {watchedValues.contactPhone && <div className="mt-0.5">Mob: {watchedValues.contactPhone}</div>}
               </div>
             )}
             {watchedValues.gstNumber && <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">GSTIN: {watchedValues.gstNumber}</div>}
@@ -609,19 +630,21 @@ export default function BusinessProfileForm({
               <div className="text-center text-[9px] mt-0.5 opacity-90 text-[10px]">FSSAI: {watchedValues.fssaiNumber}</div>
             )}
             
-            <div className="text-center text-[9px] mt-1.5 opacity-90 text-[10px]">
-              <div>Bill No: SV-SAMPLE</div>
-              <div>Date: {new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' })}</div>
-            </div>
+            <div className="flex justify-between items-start mt-2 px-1 border-t border-dashed border-gray-400 pt-1.5 opacity-90">
+              <div className="text-[9px] space-y-0.5">
+                <div className="font-bold uppercase tracking-tighter text-[7px]">Bill Info</div>
+                <div className="italic opacity-80">No: SV-SAMPLE</div>
+                <div className="italic opacity-80">Date: {new Date().toLocaleDateString('en-GB').split('/').join('|')}</div>
+              </div>
 
-            {/* Simulated Token Number */}
-            <div className="mt-2 flex flex-col items-center border border-black py-1 px-4 mx-auto w-fit">
-              <div className="text-[7px] font-bold uppercase border-b border-black mb-0.5">Token Number</div>
-              <div 
-                className="font-bold leading-none pt-0.5"
-                style={{ fontSize: `${(watchedValues.tokenNumberSize || 22) * 0.7}px` }} // Scaled for preview
-              >
-                #123
+              <div className="flex flex-col items-end py-0.5">
+                <div className="text-[7px] font-black uppercase tracking-tighter opacity-60">Token No.</div>
+                <div 
+                  className="font-black leading-none pt-0.5 text-black"
+                  style={{ fontSize: `${(watchedValues.tokenNumberSize || 22) * 0.7}px` }} // Scaled for preview
+                >
+                  #123
+                </div>
               </div>
             </div>
             
