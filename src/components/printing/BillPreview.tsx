@@ -264,7 +264,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
                   <span>Status: {paymentStatus}</span>
                 </div>
               )}
-              
+
               {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
                 <div className="mt-2 text-center text-[9px] font-bold border-t border-dashed border-gray-400 pt-2">
                   {(business?.upi && business?.upiQrEnabled !== false) && (
@@ -281,6 +281,21 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
                   {paymentMode === "UPI" && (
                     <div className="text-center text-[9px]">Txn Ref: {upiTxnRef || "Pending"}</div>
                   )}
+                </div>
+              )}
+
+              {s('showReviewQR') && business?.reviewUrl && (
+                <div className="mt-2 text-center text-[9px] font-bold border-t border-dashed border-gray-400 pt-2">
+                  <div>Rate Your Experience</div>
+                  <div className="my-1.5 text-center">
+                    <div className="inline-block border border-gray-300 p-1 rounded-md bg-white">
+                      <img 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(business.reviewUrl)}`} 
+                        alt="Review QR" 
+                        className="w-[30mm] h-[30mm] object-contain block mix-blend-multiply" 
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 

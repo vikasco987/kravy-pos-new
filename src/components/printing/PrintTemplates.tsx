@@ -323,8 +323,23 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             <div className="my-2 text-center">
               <div className="inline-block border-2 border-black p-1 bg-white">
                 <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/menu/${business?.userId}`)}`} 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${typeof window !== 'undefined' ? window.location.origin : ''}/menu/${business?.userId}`)}`} 
                   alt="Menu QR" 
+                  className="w-[30mm] h-[30mm] object-contain block mx-auto" 
+                  style={{ imageRendering: 'pixelated', filter: 'contrast(300%) grayscale(100%)' }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+        {s('showReviewQR') && business?.reviewUrl && (
+          <div className="mt-2 text-center border-t-2 border-black pt-2">
+            <div className="text-[11px] font-black mb-1 uppercase tracking-tighter">Rate Your Experience</div>
+            <div className="my-2 text-center">
+              <div className="inline-block border-2 border-black p-1 bg-white">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(business.reviewUrl)}`} 
+                  alt="Review QR" 
                   className="w-[30mm] h-[30mm] object-contain block mx-auto" 
                   style={{ imageRendering: 'pixelated', filter: 'contrast(300%) grayscale(100%)' }}
                 />

@@ -161,6 +161,7 @@ export async function POST(request: Request) {
     if (body.multiZoneMenuEnabled !== undefined) updateData.multiZoneMenuEnabled = b(body.multiZoneMenuEnabled);
     if (body.phonePrefixType !== undefined) updateData.phonePrefixType = s(body.phonePrefixType);
     if (body.printSettings !== undefined) updateData.printSettings = body.printSettings;
+    if (body.reviewUrl !== undefined) updateData.reviewUrl = s(body.reviewUrl);
 
     console.log("SERVER DEBUG: Final Update Data:", JSON.stringify(updateData, null, 2));
 

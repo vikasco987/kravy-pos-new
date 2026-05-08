@@ -37,6 +37,8 @@ export default function PrintingSettings() {
         showKOTCustomer: true,
         showKOTBillNo: true,
         showKOTInstructions: true,
+        // QR Settings
+        showReviewQR: false,
     });
 
     const receiptRef = useRef<HTMLDivElement>(null);
@@ -66,7 +68,10 @@ export default function PrintingSettings() {
             const res = await fetch(`/api/profile`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ printSettings }),
+                body: JSON.stringify({ 
+                    printSettings,
+                    reviewUrl: business.reviewUrl 
+                }),
             });
             if (res.ok) {
                 kravy.success();
@@ -279,6 +284,42 @@ export default function PrintingSettings() {
                             <SettingToggle icon={Clock} label="Print Time" sKey="showKOTTime" desc="Current time on KOT" color="bg-blue-500" />
                             <SettingToggle icon={ChefHat} label="Instructions" sKey="showKOTInstructions" desc="Chef notes & modifications" color="bg-emerald-500" />
                         </div>
+                    </div>
+
+                    {/* QR Code & Digital */}
+                    <div className="space-y-6 pt-4">
+                        <div className="flex items-center gap-3 px-4">
+                            <div className="w-2 h-2 rounded-full bg-orange-500" />
+                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">QR Code & Digital</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <SettingToggle icon={QrCode} label="Feedback QR" sKey="showReviewQR" desc="Scan to review on Google" color="bg-orange-500" />
+                        </div>
+                        
+                        {printSettings.showReviewQR && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="mx-4 p-6 rounded-3xl bg-orange-500/5 border border-orange-500/10 space-y-4"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center">
+                                        <QrCode size={18} />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-black text-slate-900 dark:text-white">Review/Feedback URL</h4>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Enter your Google Review or Form link</p>
+                                    </div>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    placeholder="https://g.page/r/your-id/review"
+                                    value={business?.reviewUrl || ""}
+                                    onChange={(e) => setBusiness({ ...business, reviewUrl: e.target.value })}
+                                    className="w-full h-12 px-5 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm font-bold focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                />
+                            </motion.div>
+                        )}
                     </div>
                 </div>
 

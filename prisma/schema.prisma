@@ -443,6 +443,7 @@ model BusinessProfile {
 
   phonePrefixType         String? @default("TEXT") // "TEXT" (Mob:) or "SYMBOL"
   printSettings           Json?   @default("{}")
+  reviewUrl               String?
   updatedAt DateTime @updatedAt
 }
 
