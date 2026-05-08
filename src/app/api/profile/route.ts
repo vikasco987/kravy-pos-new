@@ -160,6 +160,7 @@ export async function POST(request: Request) {
     if (body.excelImportEnabled !== undefined) updateData.excelImportEnabled = b(body.excelImportEnabled);
     if (body.multiZoneMenuEnabled !== undefined) updateData.multiZoneMenuEnabled = b(body.multiZoneMenuEnabled);
     if (body.phonePrefixType !== undefined) updateData.phonePrefixType = s(body.phonePrefixType);
+    if (body.printSettings !== undefined) updateData.printSettings = body.printSettings;
 
     console.log("SERVER DEBUG: Final Update Data:", JSON.stringify(updateData, null, 2));
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   UserCircle, Activity, Users, BarChart3,
-  ChevronRight, Shield, Bell, Palette, HelpCircle, Database, Percent, Book, Award, Zap, LayoutDashboard
+  ChevronRight, Shield, Bell, Palette, HelpCircle, Database, Percent, Book, Award, Zap, LayoutDashboard, Printer
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -66,6 +66,13 @@ export default function SettingsPage() {
           color: "#8B5CF6",
           label: "Quick POS Layout",
           desc: "Enable/Disable payment modes and action buttons"
+        },
+        {
+          href: "/dashboard/settings/printing",
+          icon: <Printer size={20} />,
+          color: "#EC4899",
+          label: "Printing Setup",
+          desc: "Customize bill & KOT layouts with live preview"
         },
       ]
     },

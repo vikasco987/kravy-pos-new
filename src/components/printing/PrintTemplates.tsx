@@ -51,6 +51,9 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
     paymentStatus, upiTxnRef, qrUrl, prevWalletBalance, selectedParty, numberToWords, kotNumbers
   } = props;
 
+  const ps = business?.printSettings || {};
+  const s = (key: string) => ps[key] !== false; // Default to true if not set
+
   return (
     <div className="hidden-print">
       {/* Universal Print Style Reset */}
@@ -78,7 +81,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           overflow: 'hidden'
         }}
       >
-        {business?.logoUrl && (
+        {(business?.logoUrl && s('showLogo')) && (
           <div className="flex justify-center mb-2">
             <img 
               src={business.logoUrl} 
@@ -100,17 +103,17 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         >
           {business?.businessName}
         </div>
-        {business?.businessTagLine && (
+        {(business?.businessTagLine && s('showTagline')) && (
           <div className="text-center text-[11px] font-bold italic opacity-90 mb-1 leading-none uppercase tracking-tight">
             {business.businessTagLine}
           </div>
         )}
-        {(business?.contactPersonPhone || business?.contactPhone || business?.businessPhone) && (
+        {((business?.contactPersonPhone || business?.contactPhone || business?.businessPhone) && s('showContact')) && (
           <div className="text-center font-bold text-[12px] mt-0.5">
             {business?.phonePrefixType?.toString().toUpperCase() === 'SYMBOL' ? '📞 ' : 'Mob: '} {business.contactPersonPhone || business.contactPhone || business.businessPhone}
           </div>
         )}
-        {(business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
+        {((business?.businessAddress || business?.district || business?.state || business?.pinCode) && s('showAddress')) && (
           <div 
             className="text-center font-bold leading-tight mt-1"
             style={{ fontSize: `${business?.businessAddressSize || 12}px` }}
@@ -121,8 +124,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             {business?.pinCode && ` - ${business.pinCode}`}
           </div>
         )}
-        {business?.gstNumber && <div className="text-center text-[10px] font-bold border-y border-black py-1 mt-2 mb-1">GSTIN: {business.gstNumber}</div>}
-        {(business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[10px] font-bold mt-0.5">FSSAI: {business.fssaiNumber}</div>}
+        {(business?.gstNumber && s('showGST')) && <div className="text-center text-[10px] font-bold border-y border-black py-1 mt-2 mb-1">GSTIN: {business.gstNumber}</div>}
+        {(business?.fssaiNumber && business?.fssaiEnabled && s('showFSSAI')) && <div className="text-center text-[10px] font-bold mt-0.5">FSSAI: {business.fssaiNumber}</div>}
         
         <div className="mt-3 border-t border-dashed border-gray-400 pt-2 px-1">
           <div className="flex justify-between items-center mb-1">
@@ -138,7 +141,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               <div className="font-black">No: {billNumber}</div>
               <div className="font-black text-[9px]">{billDate}</div>
             </div>
-            {((kotNumbers && kotNumbers.length > 0) || (tokenNumber && tokenNumber !== "---" && tokenNumber !== "")) && (
+            {(((kotNumbers && kotNumbers.length > 0) || (tokenNumber && tokenNumber !== "---" && tokenNumber !== "")) && s('showToken')) && (
               <div className="flex flex-col items-end border-l border-black pl-2 py-0.5">
                 <div className="text-[7px] font-black uppercase tracking-tighter text-black leading-none mb-0.5">Token</div>
                 <div 
@@ -152,7 +155,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         </div>
 
-        {(customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && (
+        {((customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && s('showCustomerDetails')) && (
           <div className="mt-2 text-[10px] font-black border-t-2 border-dashed border-black pt-1">
             {customerName && <div>Customer: {customerName}</div>}
             {customerPhone && <div>Phone: {customerPhone}</div>}
@@ -244,7 +247,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         </div>
 
-        {(taxActive || perProductEnabled) && taxBreakup.length > 0 && (
+        {(taxActive || perProductEnabled) && taxBreakup.length > 0 && s('showTaxBreakup') && (
           <div className="mt-3">
             <div className="text-[10px] font-black border-b border-dashed border-black mb-1 pb-0.5">GST TAX BREAKUP</div>
             <table className="w-full text-[10px] border-collapse font-bold">
@@ -283,14 +286,18 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         )}
 
-        <div className="mt-2 text-[10px] italic font-bold">
-          Amount in Words: {numberToWords(finalTotal)}
-        </div>
+        {s('showAmountInWords') && (
+          <div className="mt-2 text-[10px] italic font-bold">
+            Amount in Words: {numberToWords(finalTotal)}
+          </div>
+        )}
 
-        <div className="mt-3 border-t-2 border-dashed border-black pt-1 flex justify-between text-[11px] font-bold">
-          <span>Payment: {paymentMode}</span>
-          <span>Status: {paymentStatus}</span>
-        </div>
+        {s('showPaymentStatus') && (
+          <div className="mt-3 border-t-2 border-dashed border-black pt-1 flex justify-between text-[11px] font-bold">
+            <span>Payment: {paymentMode}</span>
+            <span>Status: {paymentStatus}</span>
+          </div>
+        )}
         
         {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
           <div className="mt-2 text-center text-[10px] font-bold border-t border-dashed border-black pt-2">
@@ -345,9 +352,11 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         )}
 
         <div className="mt-4 border-t-2 border-black pt-2 text-center">
-          <div className="text-[12px] font-black italic tracking-widest uppercase mb-1">
-            {business?.greetingMessage || "Thank You!"}
-          </div>
+          {s('showGreetings') && (
+            <div className="text-[12px] font-black italic tracking-widest uppercase mb-1">
+              {business?.greetingMessage || "Thank You!"}
+            </div>
+          )}
           <div className="text-[9px] font-bold">Visit Again for Fresh Food</div>
           <div className="text-[8px] mt-3 font-bold">Powered by Kravy</div>
         </div>
@@ -369,31 +378,35 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
              selectedTable === "DELIVERY" ? "DELIVERY" : 
              `TABLE: ${selectedTable}`}
           </div>
-          <div className="text-right leading-none">
-            <div className="text-[8px] font-black uppercase tracking-tighter">Token No.</div>
-            <div 
-              className="font-black"
-              style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
-            >
-              #{(() => {
-                if (Array.isArray(kotNumbers) && kotNumbers.length > 0) {
-                  return kotNumbers.filter(n => n != null).join(', ');
-                }
-                if (tokenNumber != null && tokenNumber !== "" && tokenNumber !== "---") {
-                  return tokenNumber;
-                }
-                return "---";
-              })()}
+          {s('showKOTToken') && (
+            <div className="text-right leading-none">
+              <div className="text-[8px] font-black uppercase tracking-tighter">Token No.</div>
+              <div 
+                className="font-black"
+                style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
+              >
+                #{(() => {
+                  if (Array.isArray(kotNumbers) && kotNumbers.length > 0) {
+                    return kotNumbers.filter(n => n != null).join(', ');
+                  }
+                  if (tokenNumber != null && tokenNumber !== "" && tokenNumber !== "---") {
+                    return tokenNumber;
+                  }
+                  return "---";
+                })()}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="border-y border-dashed border-black py-1 mb-2 text-[10px] font-bold">
-          <div className="flex justify-between">
-            <span>Bill: {billNumber}</span>
-            <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-          </div>
-          {customerName && <div className="mt-0.5 truncate">Cust: {customerName}</div>}
+          {s('showKOTBillNo') && (
+            <div className="flex justify-between">
+              <span>Bill: {billNumber}</span>
+              <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          )}
+          {(customerName && s('showKOTCustomer')) && <div className="mt-0.5 truncate">Cust: {customerName}</div>}
         </div>
 
         <table className="w-full border-collapse font-black text-[11px]">
@@ -424,7 +437,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </tbody>
         </table>
 
-        {orderNotes && (
+        {(orderNotes && s('showKOTInstructions')) && (
           <div className="mt-3 p-2 border-2 border-black bg-black/5 rounded-sm">
             <div className="text-[9px] font-black uppercase mb-1 border-b border-black">Chef Instructions:</div>
             <div className="text-[11px] font-bold italic leading-tight">{orderNotes}</div>
