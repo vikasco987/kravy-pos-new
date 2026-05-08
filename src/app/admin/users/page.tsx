@@ -21,6 +21,7 @@ type User = {
   clerkId: string;
   createdAt: string;
   isStaffModel?: boolean;
+  loginType: "CLERK" | "CUSTOM" | "STAFF";
 };
 
 const roleStyles: Record<Role, { bg: string; text: string; icon: any }> = {
@@ -214,8 +215,9 @@ export default function AdminUsersPage() {
                            u.email.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
       const matchesLoginType = loginTypeFilter === "ALL" || 
-                              (loginTypeFilter === "CUSTOM" && u.isStaffModel) ||
-                              (loginTypeFilter === "CLERK" && !u.isStaffModel);
+                              (loginTypeFilter === "CUSTOM" && u.loginType === "CUSTOM") ||
+                              (loginTypeFilter === "CLERK" && u.loginType === "CLERK") ||
+                              (loginTypeFilter === "CUSTOM" && u.loginType === "STAFF"); // Staff is also custom-ish
       return matchesSearch && matchesRole && matchesLoginType;
     });
   }, [users, searchQuery, roleFilter, loginTypeFilter]);
@@ -468,8 +470,12 @@ export default function AdminUsersPage() {
                                         </button>
                                        <div className="text-xs text-slate-400 font-medium flex items-center gap-2">
                                           {u.email}
-                                          <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${u.isStaffModel ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
-                                             {u.isStaffModel ? 'Custom' : 'Clerk'}
+                                          <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${
+                                            u.loginType === 'STAFF' ? 'bg-amber-100 text-amber-600' : 
+                                            u.loginType === 'CUSTOM' ? 'bg-orange-100 text-orange-600' : 
+                                            'bg-blue-100 text-blue-600'
+                                          }`}>
+                                             {u.loginType}
                                           </span>
                                        </div>
                                     </div>

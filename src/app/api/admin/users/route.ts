@@ -24,7 +24,7 @@ export async function GET(req: Request) {
       );
     }
 
-    // 1. Fetch from User model
+    // 1. Fetch from User model (Clerk + Custom OTP Users)
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -38,7 +38,13 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // 2. Fetch from Staff model
+    const mappedUsers = users.map(u => ({
+        ...u,
+        isStaffModel: false,
+        loginType: u.clerkId.startsWith("custom_") ? "CUSTOM" : "CLERK"
+    }));
+
+    // 2. Fetch from Staff model (Local Staff)
     const staff = await prisma.staff.findMany({
         select: {
             id: true,
@@ -57,15 +63,16 @@ export async function GET(req: Request) {
         clerkId: `staff_${s.id}`, // Pseudo clerkId for UI keys
         name: s.name,
         email: s.email,
-        role: "USER" as const, // Treat as USER role in the main list
+        role: "STAFF" as any, 
         isDisabled: s.status !== "active",
         createdAt: s.createdAt,
-        isStaffModel: true, // Tag for potential specific actions
+        isStaffModel: true,
+        loginType: "STAFF",
         businessId: s.businessId
     }));
 
     // Combine both
-    const allUsers = [...users, ...mappedStaff].sort((a, b) => 
+    const allUsers = [...mappedUsers, ...mappedStaff].sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
