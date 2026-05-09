@@ -694,20 +694,27 @@ function KravyPOS() {
         }
     };
 
+    const [isSettling, setIsSettling] = useState(false);
+
     const handleCheckout = async (targetOrderId: string, silent = false) => {
+        if (isSettling) return;
+        
         const order = orders.find(o => o.id === targetOrderId);
         if (!order) return;
 
         const { subtotal: orderSubtotal, gst: orderGst, total: orderTotal } = calculateOrderTotals(order.items, isTaxEnabled, globalRate, perProductEnabled);
 
         try {
+            setIsSettling(true);
             if (payMethod === "wallet") {
                 if (!selectedParty) {
                     toast.error("Please link a customer to use Wallet payment");
+                    setIsSettling(false);
                     return;
                 }
                 if ((selectedParty.walletBalance || 0) < orderTotal) {
                     toast.error("Insufficient wallet balance");
+                    setIsSettling(false);
                     return;
                 }
 
@@ -759,16 +766,20 @@ function KravyPOS() {
                 kravy.payment();
                 toast.success("Transaction Finalized! 💰");
                 setSelectedTableId(null);
+                setActiveTab("dashboard"); // ✅ Automatically go back to Terminal
             }
             fetchData(false, true); // ✅ Force refresh
             
             // Important: return the bill so the caller (like BillPreview) can use the real billNumber
             if (savedBill) {
                 setPrintOrder(prev => prev ? { ...prev, ...savedBill } : savedBill);
+                setIsSettling(false);
                 return savedBill;
             }
+            setIsSettling(false);
             return null;
-        } catch {
+        } catch (error) {
+            setIsSettling(false);
             if (!silent) {
                 kravy.error();
                 toast.error("Checkout failed");
@@ -1698,9 +1709,14 @@ function KravyPOS() {
                                             </div>
                                             <button
                                                 onClick={() => handleCheckout(activeOrderForSelected.id)}
-                                                className="flex-1 h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 active:scale-95 transition-all"
+                                                disabled={isSettling}
+                                                className={`flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest shadow-lg transition-all ${isSettling ? "bg-slate-400 cursor-not-allowed" : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-slate-900/20 active:scale-95"}`}
                                             >
-                                                Finalize Settlement <ArrowRight size={16} />
+                                                {isSettling ? (
+                                                    <>Processing... <RefreshCw size={16} className="animate-spin" /></>
+                                                ) : (
+                                                    <>Finalize Settlement <ArrowRight size={16} /></>
+                                                )}
                                             </button>
                                         </div>
                                     </div>
