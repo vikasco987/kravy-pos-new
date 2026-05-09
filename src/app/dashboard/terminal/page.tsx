@@ -180,6 +180,7 @@ function KravyPOS() {
     const userRole = authUser?.type || null;
     const userPermissions = authUser?.permissions || [];
     const [tableFilter, setTableFilter] = useState<"ALL" | "RUNNING" | "READY">("ALL");
+    const [activeZone, setActiveZone] = useState<string>("ALL");
     const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
     const [isMobile, setIsMobile] = useState(false);
     const [selectedParty, setSelectedParty] = useState<any>(null);
@@ -790,11 +791,22 @@ function KravyPOS() {
 
     const upiLink = business?.upi ? `upi://pay?pa=${business.upi}&pn=${encodeURIComponent(business.businessName || "Store")}&am=${grandTotal.toFixed(2)}&cu=INR` : "";
     const qrUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}` : "";
-    const filteredTables = useMemo(() => tablesList.filter(t => {
-        const matchSearch = t.name.toLowerCase().includes(tableSearch.toLowerCase());
-        const matchFilter = tableFilter === "ALL" || (tableFilter === "RUNNING" && t.status === "PREPARING") || (tableFilter === "READY" && t.status === "READY");
-        return matchSearch && matchFilter;
-    }), [tablesList, tableSearch, tableFilter]);
+    const filteredTables = useMemo(() => {
+        return tablesList
+            .filter(t => {
+                const matchSearch = t.name.toLowerCase().includes(tableSearch.toLowerCase());
+                const matchFilter = tableFilter === "ALL" || (tableFilter === "RUNNING" && t.status === "PREPARING") || (tableFilter === "READY" && t.status === "READY");
+                const matchZone = activeZone === "ALL" || t.zone === activeZone;
+                return matchSearch && matchFilter && matchZone;
+            })
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+    }, [tablesList, tableSearch, tableFilter, activeZone]);
+
+    const availableZones = useMemo(() => {
+        const zones = new Set<string>();
+        tablesList.forEach(t => { if (t.zone) zones.add(t.zone); });
+        return Array.from(zones).sort();
+    }, [tablesList]);
 
     const stats = {
         running: orders.filter(o => o.status === "PREPARING" && !o.isDeleted).length,
@@ -1047,7 +1059,7 @@ function KravyPOS() {
                                     </div>
 
                                     {/* Filter Pills */}
-                                    <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+                                    <div className="flex gap-1.5 overflow-x-auto no-scrollbar mb-4">
                                         {(["ALL", "RUNNING", "READY"] as const).map(f => (
                                             <button
                                                 key={f}
@@ -1058,6 +1070,33 @@ function KravyPOS() {
                                             </button>
                                         ))}
                                     </div>
+
+                                    {/* Floor/Zone Selection */}
+                                    {availableZones.length > 0 && (
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-1 h-3 bg-indigo-500 rounded-full" />
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Floor Management</span>
+                                            </div>
+                                            <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                                                <button
+                                                    onClick={() => { kravy.click(); setActiveZone("ALL"); }}
+                                                    className={`px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-tight transition-all border whitespace-nowrap ${activeZone === "ALL" ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20" : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-500 hover:border-slate-300"}`}
+                                                >
+                                                    All Floors
+                                                </button>
+                                                {availableZones.map(z => (
+                                                    <button
+                                                        key={z}
+                                                        onClick={() => { kravy.click(); setActiveZone(z); }}
+                                                        className={`px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-tight transition-all border whitespace-nowrap ${activeZone === z ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20" : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-500 hover:border-slate-300"}`}
+                                                    >
+                                                        {z}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Tables Grid */}
@@ -1074,7 +1113,6 @@ function KravyPOS() {
 
                                             return (
                                                 <motion.button
-                                                    layout
                                                     key={t.id}
                                                     title={displayName} // Tooltip on hover
                                                     onClick={() => { 
