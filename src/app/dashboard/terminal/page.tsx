@@ -844,7 +844,7 @@ function KravyPOS() {
 
     return (
         <div 
-            className={`flex flex-col h-screen overflow-y-auto overflow-x-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300 relative scale-[0.98] origin-top`}
+            className={`flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300 relative scale-[0.98] origin-top`}
             style={{
                 backgroundImage: 'radial-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)',
                 backgroundSize: '24px 24px'
@@ -1035,7 +1035,7 @@ function KravyPOS() {
                             className="flex flex-col md:flex-row h-full gap-3 p-3 overflow-hidden"
                         >
                             {/* LEFT PANEL */}
-                            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-slate-800/40 rounded-3xl shadow-sm w-full md:w-[340px] shrink-0 flex flex-col overflow-hidden max-h-[500px] md:max-h-full transition-colors duration-300">
+                            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-slate-800/40 rounded-3xl shadow-sm w-full md:w-[340px] shrink-0 flex flex-col overflow-hidden h-[45vh] md:h-full transition-colors duration-300">
                                 {/* Panel Header */}
                                 <div className="p-5 border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
                                     <div className="flex items-center justify-between mb-4">
