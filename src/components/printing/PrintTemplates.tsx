@@ -74,7 +74,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         style={{ 
           width: '48mm', 
           margin: '0 auto',
-          padding: '4mm 2mm 8mm 2mm', 
+          padding: '0mm 2mm 8mm 2mm', 
           boxSizing: 'border-box',
           WebkitFontSmoothing: 'none',
           fontSmooth: 'never',
@@ -82,7 +82,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         }}
       >
         {(business?.logoUrl && s('showLogo')) && (
-          <div className="flex justify-center mb-2">
+          <div className="flex justify-center mb-1">
             <img 
               src={business.logoUrl} 
               alt="Logo" 
@@ -382,7 +382,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         ref={kotRef}
         data-paper="58"
         className="hidden print:block kot kot-container font-mono text-[10px] leading-tight text-black bg-white"
-        style={{ width: '48mm', margin: '0 auto', padding: '4mm 2mm 8mm 2mm', boxSizing: 'border-box', overflow: 'hidden' }}
+        style={{ width: '48mm', margin: '0 auto', padding: '0mm 2mm 8mm 2mm', boxSizing: 'border-box', overflow: 'hidden' }}
       >
         <div className="text-center font-black text-[22px] border-b-2 border-black pb-1 mb-2">K.O.T</div>
         
