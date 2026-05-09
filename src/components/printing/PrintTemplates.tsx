@@ -108,11 +108,6 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             {business.businessTagLine}
           </div>
         )}
-        {((business?.contactPersonPhone || business?.contactPhone || business?.businessPhone) && s('showContact')) && (
-          <div className="text-center font-bold text-[12px] mt-0.5">
-            {business?.phonePrefixType?.toString().toUpperCase() === 'SYMBOL' ? '📞 ' : 'Mob: '} {business.contactPersonPhone || business.contactPhone || business.businessPhone}
-          </div>
-        )}
         {((business?.businessAddress || business?.district || business?.state || business?.pinCode) && s('showAddress')) && (
           <div 
             className="text-center font-bold leading-tight mt-1"
@@ -122,6 +117,11 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             {business?.district && `, ${business.district}`}
             {business?.state && `, ${business.state}`}
             {business?.pinCode && ` - ${business.pinCode}`}
+          </div>
+        )}
+        {((business?.contactPersonPhone || business?.contactPhone || business?.businessPhone) && s('showContact')) && (
+          <div className="text-center font-bold text-[12px] mt-0.5">
+            {business?.phonePrefixType?.toString().toUpperCase() === 'SYMBOL' ? '📞 ' : 'Mob: '} {business.contactPersonPhone || business.contactPhone || business.businessPhone}
           </div>
         )}
         {(business?.gstNumber && s('showGST')) && <div className="text-center text-[10px] font-bold border-y border-black py-1 mt-2 mb-1">GSTIN: {business.gstNumber}</div>}
