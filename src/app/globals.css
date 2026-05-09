@@ -127,16 +127,14 @@
 
 /* 🚀 ENTERPRISE POS SCROLL FIX */
 html, body {
-  overflow: auto !important;
   min-height: 100% !important;
-  height: auto !important;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  overscroll-behavior-y: none; /* Prevent pull-to-refresh and bounce */
 }
 
-/* Ensure main layout containers don't block scroll */
+/* Ensure main layout containers don't block scroll by default */
 main, .min-h-screen {
-  overflow-y: auto !important;
   overflow-x: hidden !important;
 }
 
