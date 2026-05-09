@@ -1136,17 +1136,17 @@ function KravyPOS() {
                                                                 {cfg.label}
                                                             </div>
 
-                                                            {/* 🔥 Premium QR Download Trigger */}
+                                                            {/* 🔥 Premium QR Download Trigger - Always visible for easy access */}
                                                             <button 
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     setQrContext({ tableId: t.id, tableName: displayName });
                                                                     setShowQRTemplate(true);
                                                                 }}
-                                                                className="absolute right-0 top-0 w-6 h-6 rounded-lg bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-slate-900 dark:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"
+                                                                className="absolute right-0 top-0 w-7 h-7 rounded-lg bg-indigo-600/10 dark:bg-white/10 hover:bg-indigo-600 dark:hover:bg-indigo-600 flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:text-white transition-all shadow-sm z-30"
                                                                 title="Download Menu Card"
                                                             >
-                                                                <QrCode size={12} strokeWidth={3} />
+                                                                <QrCode size={14} strokeWidth={3} />
                                                             </button>
                                                         </div>
 
