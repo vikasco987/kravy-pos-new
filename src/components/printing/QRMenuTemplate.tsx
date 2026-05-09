@@ -32,6 +32,12 @@ const QRMenuTemplate: React.FC<QRMenuTemplateProps> = ({ isOpen, onClose, busine
                 backgroundColor: null,
                 useCORS: true,
                 logging: false,
+                onclone: (clonedDoc) => {
+                    // Suppress modern color function issues for html2canvas
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = `* { color-scheme: light !important; }`;
+                    clonedDoc.head.appendChild(style);
+                }
             });
             const link = document.createElement("a");
             link.download = `${customName}_Table_${tableName || "Menu"}.png`;
