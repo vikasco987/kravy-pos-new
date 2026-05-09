@@ -991,7 +991,10 @@ function KravyPOS() {
                             </div>
                         </div>
                         <button
-                            onClick={() => { kravy.click(); setActiveTab("dashboard"); }}
+                            onClick={() => { 
+                                kravy.click(); 
+                                router.push("/dashboard/billing/checkout?returnTo=/dashboard/terminal"); 
+                            }}
                             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-600 to-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-rose-600/20 hover:scale-[1.02] active:scale-95 transition-all border border-white/10"
                         >
                             <Plus size={16} strokeWidth={3} />
@@ -1267,7 +1270,7 @@ function KravyPOS() {
                                                         kravy.click();
                                                         if (activeOrderForSelected) {
                                                             sessionStorage.setItem("quick_pos_handoff_order", JSON.stringify(activeOrderForSelected));
-                                                            router.push(`/dashboard/billing/checkout?orderId=${activeOrderForSelected.id}&tableId=${selectedTable.id}&tableName=${selectedTable.name}&returnTo=terminal`);
+                                                            router.push(`/dashboard/billing/checkout?orderId=${activeOrderForSelected.id}&tableId=${selectedTable.id}&tableName=${selectedTable.name}&returnTo=/dashboard/terminal`);
                                                         } else {
                                                             toast.error("Please select a table/order first");
                                                         }
