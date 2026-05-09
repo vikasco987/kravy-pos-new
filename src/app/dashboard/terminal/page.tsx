@@ -1015,7 +1015,7 @@ function KravyPOS() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.2 }}
-                            className="flex flex-col md:flex-row h-full gap-3 p-3 overflow-y-auto md:overflow-hidden"
+                            className="flex flex-col md:flex-row h-full gap-3 p-3 overflow-hidden"
                         >
                             {/* LEFT PANEL */}
                             <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-slate-800/40 rounded-3xl shadow-sm w-full md:w-[340px] shrink-0 flex flex-col overflow-hidden max-h-[500px] md:max-h-full transition-colors duration-300">
@@ -1302,7 +1302,7 @@ function KravyPOS() {
                                             </div>
                                         )}
 
-                                        {/* Items */}
+                                        {/* Items - SCROLLABLE ONLY THIS AREA */}
                                         <div className="flex-1 overflow-y-auto px-6 py-4 scrollbar-hide">
                                             {activeOrderForSelected ? (
                                                     <div className="space-y-4">
@@ -1447,8 +1447,8 @@ function KravyPOS() {
                                             )}
                                         </div>
 
-                                        {/* Premium Hero Footer Actions */}
-                                        <div className="p-8 border-t border-white/40 bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl">
+                                        {/* Premium Hero Footer Actions - FIXED AT BOTTOM */}
+                                        <div className="flex-shrink-0 p-8 border-t border-white/40 bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl">
                                             <div className="flex gap-6 mb-6">
                                                 {/* Advanced Workflow Control */}
                                                 <div className="flex-1 bg-white/80 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.02)] flex flex-col justify-between">
