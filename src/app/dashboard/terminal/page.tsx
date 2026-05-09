@@ -768,10 +768,15 @@ function KravyPOS() {
             if (!silent) {
                 kravy.payment();
                 toast.success("Transaction Finalized! 💰");
-                setSelectedTableId(null);
-                setActiveTab("dashboard"); // ✅ Automatically go back to Terminal
+                // ✅ IMPORTANT: Switch tab BEFORE clearing selection to avoid render crash
+                setActiveTab("dashboard"); 
+                setTimeout(() => {
+                    setSelectedTableId(null);
+                    fetchData(false, true); 
+                }, 100);
+            } else {
+                fetchData(false, true); 
             }
-            fetchData(false, true); // ✅ Force refresh
             
             // Important: return the bill so the caller (like BillPreview) can use the real billNumber
             if (savedBill) {
@@ -1706,7 +1711,7 @@ function KravyPOS() {
                                                 <div className="flex items-center gap-6 animate-in fade-in slide-in-from-bottom-4">
                                                     <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-white/10">📱</div>
                                                     <div>
-                                                        <p className="text-lg font-black text-white leading-none uppercase italic mb-1.5">Scan to Pay ₹{activeOrderForSelected.total}</p>
+                                                        <p className="text-lg font-black text-white leading-none uppercase italic mb-1.5">Scan to Pay ₹{activeOrderForSelected?.total || 0}</p>
                                                         <div className="flex items-center gap-2 text-emerald-400">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                                                             <span className="text-[8px] font-black uppercase tracking-[0.2em] italic">Live Sync Active</span>
@@ -1750,7 +1755,9 @@ function KravyPOS() {
                                             <button
                                                 onClick={async () => {
                                                     kravy.click();
-                                                    await handleCheckout(activeOrderForSelected.id);
+                                                    if (activeOrderForSelected?.id) {
+                                                        await handleCheckout(activeOrderForSelected.id);
+                                                    }
                                                 }}
                                                 disabled={isSettling}
                                                 className={`flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest shadow-lg transition-all ${isSettling ? "bg-slate-400 cursor-not-allowed" : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-slate-900/20 active:scale-95"}`}
