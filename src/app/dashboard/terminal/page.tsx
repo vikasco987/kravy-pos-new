@@ -14,8 +14,9 @@ import {
     RotateCcw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
     Wifi, Battery, Signal, Smartphone, Timer, AlertTriangle, ChevronUp, Package2,
     Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut, Phone, MessageSquare,
-    Crown, Building, Wind, Monitor, Layout, Navigation
+    Crown, Building, Wind, Monitor, Layout, Navigation, QrCode
 } from "lucide-react";
+import QRMenuTemplate from "@/components/printing/QRMenuTemplate";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { 
     DndContext, 
@@ -182,6 +183,8 @@ function KravyPOS() {
     const [tableFilter, setTableFilter] = useState<"ALL" | "RUNNING" | "READY">("ALL");
     const [activeZone, setActiveZone] = useState<string>("ALL");
     const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
+    const [showQRTemplate, setShowQRTemplate] = useState(false);
+    const [qrContext, setQrContext] = useState<{ tableId: string, tableName: string } | null>(null);
     const [isMobile, setIsMobile] = useState(false);
     const [selectedParty, setSelectedParty] = useState<any>(null);
     const [clock, setClock] = useState("");
@@ -1132,6 +1135,19 @@ function KravyPOS() {
                                                                 <div className={`w-1 h-1 rounded-full ${cfg.dot} ${isActive || t.status !== 'FREE' ? 'animate-pulse' : ''}`} />
                                                                 {cfg.label}
                                                             </div>
+
+                                                            {/* 🔥 Premium QR Download Trigger */}
+                                                            <button 
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setQrContext({ tableId: t.id, tableName: displayName });
+                                                                    setShowQRTemplate(true);
+                                                                }}
+                                                                className="absolute right-0 top-0 w-6 h-6 rounded-lg bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-slate-900 dark:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"
+                                                                title="Download Menu Card"
+                                                            >
+                                                                <QrCode size={12} strokeWidth={3} />
+                                                            </button>
                                                         </div>
 
                                                         {/* Table Number - Multi-line Support */}
@@ -1781,6 +1797,18 @@ function KravyPOS() {
                     )}
 
                 </AnimatePresence>
+
+                {/* QR MENU TEMPLATE MODAL */}
+                {showQRTemplate && qrContext && (
+                    <QRMenuTemplate 
+                        isOpen={showQRTemplate}
+                        onClose={() => setShowQRTemplate(false)}
+                        businessName={business?.businessName || "Kravy POS"}
+                        tableId={qrContext.tableId}
+                        tableName={qrContext.tableName}
+                        qrUrl={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/menu?tableId=${qrContext.tableId}`)}`}
+                    />
+                )}
             </main>
 
 
