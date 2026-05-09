@@ -299,7 +299,14 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 
     const bill = await prisma.billManager.findFirst({ where: { id, clerkUserId: effectiveId } });
     if (bill) {
-      await prisma.billManager.update({ where: { id }, data: { isDeleted: true, deletedAt: new Date() } });
+      await prisma.billManager.update({ 
+        where: { id }, 
+        data: { 
+          isDeleted: true, 
+          deletedAt: new Date(),
+          deletedSnapshot: bill as any // ✅ Save full snapshot for history
+        } 
+      });
       return NextResponse.json({ success: true, type: "bill" });
     }
 

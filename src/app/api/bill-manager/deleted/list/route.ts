@@ -13,7 +13,6 @@ export async function GET(req: NextRequest) {
       prisma.billManager.findMany({
         where: { clerkUserId: effectiveId, isDeleted: true },
         orderBy: { deletedAt: "desc" },
-        select: { id: true, deletedAt: true, deletedSnapshot: true },
       }),
       prisma.order.findMany({
         where: { clerkUserId: effectiveId, isDeleted: true },
@@ -22,15 +21,32 @@ export async function GET(req: NextRequest) {
       })
     ]);
 
-    const formattedBills = deletedBills
-      .filter(b => b.deletedSnapshot)
-      .map((b) => ({
+    const formattedBills = deletedBills.map((b: any) => {
+      // 1. Get snapshot (or raw data fallback)
+      const rawSnap = b.deletedSnapshot || b;
+      
+      // 2. Normalize snapshot for frontend
+      const snapshot = {
+        billNumber: rawSnap.billNumber,
+        total: rawSnap.total,
+        paymentMode: rawSnap.paymentMode,
+        paymentStatus: rawSnap.paymentStatus,
+        isHeld: rawSnap.isHeld,
+        tableName: rawSnap.tableName,
+        customer: { 
+          name: rawSnap.customerName || (rawSnap.customer?.name) || "Walk-in Customer" 
+        },
+        items: rawSnap.items
+      };
+
+      return {
         id: b.id,
         billId: b.id,
         createdAt: b.deletedAt,
-        snapshot: b.deletedSnapshot,
+        snapshot: snapshot,
         type: "bill"
-      }));
+      };
+    });
 
     const formattedOrders = deletedOrders.map((o: any) => ({
       id: o.id,
