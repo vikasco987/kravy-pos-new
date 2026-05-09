@@ -27,6 +27,7 @@ const isPublicRoute = createRouteMatcher([
   "/menu/(.*)",
   "/order-tracking/(.*)",
   "/track",
+  "/demo",
   "/api/public/(.*)",
   "/api/external/(.*)",
   "/auth/custom(.*)", // Added
