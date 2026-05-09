@@ -1445,7 +1445,7 @@ export default function CheckoutClient() {
               if (currentOrderId) query.set("orderId", currentOrderId);
               query.set("refresh", Date.now().toString());
 
-              router.push(`/dashboard/terminal?${query.toString()}`);
+              router.push(`${returnTo.split('?')[0]}?${query.toString()}`);
             }, 100);
             return;
           }
@@ -1713,7 +1713,18 @@ export default function CheckoutClient() {
               <div className="flex items-center gap-2 min-w-0">
                 {searchParams.get("returnTo") && (
                   <button 
-                    onClick={() => { kravy.click(); router.push(searchParams.get("returnTo")!); }}
+                    onClick={() => { 
+                      kravy.click(); 
+                      const returnTo = searchParams.get("returnTo");
+                      if (returnTo) {
+                        const tableId = searchParams.get("tableId");
+                        const orderId = searchParams.get("orderId") || syncedOrderId;
+                        const query = new URLSearchParams();
+                        if (tableId) query.set("tableId", tableId);
+                        if (orderId) query.set("orderId", orderId);
+                        router.push(`${returnTo.split('?')[0]}?${query.toString()}`);
+                      }
+                    }}
                     className="h-8 px-3 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-all flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider shrink-0 shadow-sm"
                   >
                     <ArrowLeft size={14} strokeWidth={3} /> Back
@@ -2747,6 +2758,16 @@ export default function CheckoutClient() {
                         const bill = await saveBill();
                         if (!bill) return;
                         kravy.success(); 
+                        const returnTo = searchParams.get("returnTo");
+                        if (returnTo) {
+                          const tableId = searchParams.get("tableId");
+                          const orderId = searchParams.get("orderId") || syncedOrderId || bill.id;
+                          const query = new URLSearchParams();
+                          if (tableId) query.set("tableId", tableId);
+                          if (orderId) query.set("orderId", orderId);
+                          router.push(`${returnTo.split('?')[0]}?${query.toString()}`);
+                          return;
+                        }
                         resetForm();
                         if (resumeBillId) router.replace("/dashboard/billing/checkout");
                       }}
@@ -2798,6 +2819,16 @@ export default function CheckoutClient() {
                 // Wait slightly for state to settle and DOM to update
                 setTimeout(() => {
                   printReceipt(false);
+                  const returnTo = searchParams.get("returnTo");
+                  if (returnTo) {
+                    const tableId = searchParams.get("tableId");
+                    const query = new URLSearchParams();
+                    if (tableId) query.set("tableId", tableId);
+                    // After settling a bill, we usually don't want to re-select the COMPLETED order
+                    // but we might want to stay on the same table.
+                    router.push(`${returnTo.split('?')[0]}?${query.toString()}`);
+                    return;
+                  }
                   resetForm();
                   if (resumeBillId) router.replace("/dashboard/billing/checkout");
                 }, 500);
