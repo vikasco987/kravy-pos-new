@@ -177,7 +177,9 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           return (
             <div key={idx} className="mb-2 border-b border-dotted border-black/20 pb-1">
               <div className="flex justify-between items-start text-[11px] font-bold">
-                <span className="flex-1 min-w-0 pr-1 break-words leading-[1.2]">{i.name}</span>
+                <span className="flex-1 min-w-0 pr-1 break-words leading-[1.2]">
+                  {s('showFoodTypeSuffix') ? i.name : i.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
+                </span>
                 <span className="w-[12mm] text-right shrink-0">₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-[11px] font-bold mt-0.5">
@@ -438,7 +440,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               return itemsToPrint.map((i, idx) => (
                 <tr key={idx} className="border-b border-dotted border-black/30">
                   <td className="py-2 pr-2 leading-[1.1] uppercase">
-                     {i.name}
+                  {s('showFoodTypeSuffix') ? i.name : i.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
                      {i.variants && i.variants.length > 0 && (
                        <div className="text-[9px] font-bold lowercase">
                           ({i.variants.map((v:any) => v.name).join(', ')})

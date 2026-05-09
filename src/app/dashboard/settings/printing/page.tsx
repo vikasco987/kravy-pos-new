@@ -32,6 +32,7 @@ export default function PrintingSettings() {
         showGreetings: true,
         showAmountInWords: true,
         showPaymentStatus: true,
+        showFoodTypeSuffix: true,
         // KOT Settings
         showKOTToken: true,
         showKOTCustomer: true,
@@ -221,6 +222,7 @@ export default function PrintingSettings() {
                             <SettingToggle icon={MessageSquare} label="Greetings" sKey="showGreetings" desc="Thank you message" color="bg-teal-500" />
                             <SettingToggle icon={FileText} label="Amt in Words" sKey="showAmountInWords" desc="Convert total to text" color="bg-slate-500" />
                             <SettingToggle icon={Receipt} label="Payment Info" sKey="showPaymentStatus" desc="Mode & Status" color="bg-blue-600" />
+                            <SettingToggle icon={Type} label="Food Type Suffix" sKey="showFoodTypeSuffix" desc="Show (V), (NV) or (R)" color="bg-rose-600" />
                         </div>
                     </div>
 

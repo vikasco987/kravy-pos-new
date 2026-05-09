@@ -169,7 +169,9 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
               {items.map((i, idx) => (
                 <div key={idx} className="mb-1.5 border-b border-dotted border-gray-100 pb-1">
                   <div className="flex justify-between items-start text-[9px] font-bold">
-                    <span className="flex-1 min-w-0 pr-1 break-words">{i.name}</span>
+                    <span className="flex-1 min-w-0 pr-1 break-words">
+                      {s('showFoodTypeSuffix') ? i.name : i.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
+                    </span>
                     <span className="w-[11mm] text-right shrink-0">{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-[8px] text-gray-600">
