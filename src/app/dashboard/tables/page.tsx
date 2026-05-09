@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { kravy } from "@/lib/sounds";
+import QRMenuTemplate from "@/components/printing/QRMenuTemplate";
 
 interface TableRecord {
   id: string;
@@ -32,6 +33,8 @@ export default function TablesPage() {
   const [editName, setEditName] = useState("");
   const [editZone, setEditZone] = useState("");
   const [search, setSearch] = useState("");
+  const [showQRTemplate, setShowQRTemplate] = useState(false);
+  const [qrContext, setQrContext] = useState<{ tableId: string, tableName: string } | null>(null);
 
   const getBase = () => (typeof window !== "undefined" ? window.location.origin : "");
 
@@ -495,7 +498,10 @@ export default function TablesPage() {
 
                   {/* Download QR */}
                   <button
-                    onClick={() => downloadTableQR(table)}
+                    onClick={() => {
+                        setQrContext({ tableId: table.id, tableName: table.name });
+                        setShowQRTemplate(true);
+                    }}
                     className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl
                       border border-[var(--kravy-border)] bg-[var(--kravy-bg)]
                       text-[var(--kravy-text-secondary)] font-black text-xs
@@ -705,6 +711,17 @@ export default function TablesPage() {
         );
       })()}
 
+      {/* QR MENU TEMPLATE MODAL */}
+      {showQRTemplate && qrContext && (
+        <QRMenuTemplate 
+            isOpen={showQRTemplate}
+            onClose={() => setShowQRTemplate(false)}
+            businessName={user?.businessName || "Kravy POS"}
+            tableId={qrContext.tableId}
+            tableName={qrContext.tableName}
+            qrUrl={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(generateTableUrl(qrContext.tableId, qrContext.tableName))}`}
+        />
+      )}
     </div>
   );
 }
