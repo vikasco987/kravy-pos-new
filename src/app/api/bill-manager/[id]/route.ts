@@ -310,9 +310,19 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
       return NextResponse.json({ success: true, type: "bill" });
     }
 
-    const order = await prisma.order.findFirst({ where: { id, clerkUserId: effectiveId } });
+    const order = await prisma.order.findFirst({ 
+      where: { id, clerkUserId: effectiveId },
+      include: { table: true }
+    });
     if (order) {
-      await prisma.order.update({ where: { id }, data: { isDeleted: true } });
+      await prisma.order.update({ 
+        where: { id }, 
+        data: { 
+          isDeleted: true,
+          deletedAt: new Date(),
+          deletedSnapshot: order as any
+        } 
+      });
       return NextResponse.json({ success: true, type: "order" });
     }
     return NextResponse.json({ error: "Not found" }, { status: 404 });

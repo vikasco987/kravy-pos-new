@@ -83,42 +83,72 @@ export default function DeletedBillsPage() {
             {bills.map((b) => {
               const snap = b.snapshot;
               return (
-                <tr key={b.id} className="border-t border-[var(--kravy-border)] hover:bg-[var(--kravy-bg-2)]/30 transition-colors">
-                  <td className="p-4 font-black text-[var(--kravy-text-primary)]">
-                    {snap.billNumber}
-                  </td>
+                <React.Fragment key={b.id}>
+                  <tr className="border-t border-[var(--kravy-border)] hover:bg-[var(--kravy-bg-2)]/30 transition-colors">
+                    <td className="p-4 font-black text-[var(--kravy-text-primary)]">
+                      <div className="flex flex-col">
+                        <span>{snap.billNumber}</span>
+                        <span className="text-[10px] font-black text-violet-500 uppercase tracking-widest">{b.type}</span>
+                      </div>
+                    </td>
 
-                  <td className="p-4 font-bold text-[var(--kravy-text-primary)]">
-                    {snap.customer?.name ?? "Walk-in Customer"}
-                  </td>
+                    <td className="p-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-[var(--kravy-text-primary)]">{snap.customer?.name ?? "Walk-in"}</span>
+                        <span className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest">{snap.tableName}</span>
+                      </div>
+                    </td>
 
-                  <td className="p-4 text-[var(--kravy-text-muted)] font-medium font-mono text-xs">
-                    {new Date(b.createdAt).toLocaleString()}
-                  </td>
+                    <td className="p-4 text-[var(--kravy-text-muted)] font-medium font-mono text-xs">
+                      {new Date(b.createdAt).toLocaleString()}
+                    </td>
 
-                  <td className="p-4 font-black text-[var(--kravy-text-primary)]">
-                    ₹{Number(snap.total).toFixed(2)}
-                  </td>
+                    <td className="p-4 font-black text-[var(--kravy-text-primary)]">
+                      ₹{Number(snap.total).toFixed(2)}
+                    </td>
 
-                  <td className="p-4">
-                    <span className="px-3 py-1 bg-indigo-500/10 text-indigo-500 rounded-full text-[10px] font-black uppercase tracking-wider">
-                      {snap.paymentMode}
-                    </span>
-                  </td>
+                    <td className="p-4">
+                      <span className="px-3 py-1 bg-indigo-500/10 text-indigo-500 rounded-full text-[10px] font-black uppercase tracking-wider">
+                        {snap.paymentMode}
+                      </span>
+                    </td>
 
-                  <td className="p-4 text-center">
-                    <DeletedStatusBadge snap={snap} />
-                  </td>
+                    <td className="p-4 text-center">
+                      <DeletedStatusBadge snap={snap} />
+                    </td>
 
-                  <td className="p-4 text-right">
-                    <button
-                      onClick={() => restore(b.id)}
-                      className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-xl text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
-                    >
-                      Restore
-                    </button>
-                  </td>
-                </tr>
+                    <td className="p-4 text-right">
+                      <button
+                        onClick={() => restore(b.id)}
+                        className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-xl text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
+                      >
+                        Restore
+                      </button>
+                    </td>
+                  </tr>
+                  
+                  {/* PURI INFO: ITEMS BREAKDOWN */}
+                  {snap.items && snap.items.length > 0 && (
+                    <tr className="bg-[var(--kravy-bg-2)]/20">
+                      <td colSpan={7} className="p-4">
+                        <div className="bg-white/50 dark:bg-black/20 rounded-xl p-4 border border-[var(--kravy-border)] shadow-inner">
+                          <p className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em] mb-3">Items in this {b.type}</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {snap.items.map((it: any, i: number) => (
+                              <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-white/80 dark:bg-white/5 border border-black/5">
+                                <div className="flex items-center gap-3">
+                                  <span className="w-6 h-6 rounded bg-violet-100 dark:bg-violet-500/10 text-violet-600 flex items-center justify-center text-[10px] font-black">{it.qty || it.quantity}x</span>
+                                  <span className="text-xs font-bold text-[var(--kravy-text-primary)]">{it.name}</span>
+                                </div>
+                                <span className="text-xs font-black text-[var(--kravy-text-muted)]">₹{((it.qty || it.quantity) * (it.rate || it.price)).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               );
             })}
 

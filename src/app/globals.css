@@ -122,16 +122,22 @@
 
   body {
     @apply bg-background text-foreground;
-    overflow: hidden !important;
-    height: 100% !important;
   }
 }
 
 /* 🚀 ENTERPRISE POS SCROLL FIX */
 html, body {
-  overflow: hidden;
-  height: 100%;
+  overflow: auto !important;
+  min-height: 100% !important;
+  height: auto !important;
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Ensure main layout containers don't block scroll */
+main, .min-h-screen {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 /* 🔥 PREMIUM MINIMALIST SCROLLBAR */

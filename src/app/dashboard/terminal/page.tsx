@@ -832,7 +832,7 @@ function KravyPOS() {
 
     return (
         <div 
-            className={`flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300 relative scale-[0.98] origin-top`}
+            className={`flex flex-col h-screen overflow-y-auto overflow-x-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300 relative scale-[0.98] origin-top`}
             style={{
                 backgroundImage: 'radial-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)',
                 backgroundSize: '24px 24px'
@@ -1708,12 +1708,18 @@ function KravyPOS() {
                                                 </button>
                                             </div>
                                             <button
-                                                onClick={() => handleCheckout(activeOrderForSelected.id)}
+                                                onClick={async () => {
+                                                    kravy.click();
+                                                    await handleCheckout(activeOrderForSelected.id);
+                                                }}
                                                 disabled={isSettling}
                                                 className={`flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest shadow-lg transition-all ${isSettling ? "bg-slate-400 cursor-not-allowed" : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-slate-900/20 active:scale-95"}`}
                                             >
                                                 {isSettling ? (
-                                                    <>Processing... <RefreshCw size={16} className="animate-spin" /></>
+                                                    <div className="flex items-center gap-3">
+                                                        <span>Finalizing...</span>
+                                                        <RefreshCw size={16} className="animate-spin" />
+                                                    </div>
                                                 ) : (
                                                     <>Finalize Settlement <ArrowRight size={16} /></>
                                                 )}

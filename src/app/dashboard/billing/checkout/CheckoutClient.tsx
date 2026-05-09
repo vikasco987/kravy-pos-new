@@ -2762,9 +2762,12 @@ export default function CheckoutClient() {
                     <button
                       type="button"
                       onClick={async () => {
+                        kravy.click();
                         const bill = await saveBill();
                         if (!bill) return;
                         kravy.success(); 
+                        toast.success("Bill Saved Successfully! 💾");
+                        
                         const returnTo = searchParams.get("returnTo");
                         if (returnTo) {
                           const tableId = searchParams.get("tableId");
@@ -2772,7 +2775,7 @@ export default function CheckoutClient() {
                           const query = new URLSearchParams();
                           if (tableId) query.set("tableId", tableId);
                           if (orderId) query.set("orderId", orderId);
-                          router.push(`${returnTo.split('?')[0]}?${query.toString()}`);
+                          router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
                           return;
                         }
                         resetForm();
@@ -2822,23 +2825,27 @@ export default function CheckoutClient() {
                 }
                 const bill = await saveBill();
                 if (!bill) return;
+                
                 kravy.payment(); 
-                // Wait slightly for state to settle and DOM to update
-                setTimeout(() => {
-                  printReceipt(false);
-                  const returnTo = searchParams.get("returnTo");
-                  if (returnTo) {
-                    const tableId = searchParams.get("tableId");
-                    const query = new URLSearchParams();
-                    if (tableId) query.set("tableId", tableId);
-                    // After settling a bill, we usually don't want to re-select the COMPLETED order
-                    // but we might want to stay on the same table.
-                    router.push(`${returnTo.split('?')[0]}?${query.toString()}`);
-                    return;
-                  }
-                  resetForm();
-                  if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                }, 500);
+                toast.success("Settlement Finalized! 💰");
+                
+                // Print immediately
+                printReceipt(false);
+
+                // Quick Redirection
+                const returnTo = searchParams.get("returnTo");
+                if (returnTo) {
+                  const tableId = searchParams.get("tableId");
+                  const query = new URLSearchParams();
+                  if (tableId) query.set("tableId", tableId);
+                  
+                  // Use replace for faster navigation and to clean history
+                  router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
+                  return;
+                }
+                
+                resetForm();
+                if (resumeBillId) router.replace("/dashboard/billing/checkout");
               }}
               disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl

@@ -82,7 +82,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         }}
       >
         {(business?.logoUrl && s('showLogo')) && (
-          <div className="flex justify-center mb-1">
+          <div className="flex justify-center mb-0 mt-0 pt-0">
             <img 
               src={business.logoUrl} 
               alt="Logo" 

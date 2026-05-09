@@ -305,6 +305,8 @@ model Order {
   isMerged      Boolean   @default(false)
   mergedAt      DateTime?
   isDeleted     Boolean   @default(false)
+  deletedAt     DateTime?
+  deletedSnapshot Json?
 
   // For Case 2 (Separate) - Track related orders
   relatedOrders String[] @db.ObjectId // Array of order IDs in same session

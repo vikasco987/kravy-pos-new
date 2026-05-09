@@ -16,8 +16,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.order.findMany({
         where: { clerkUserId: effectiveId, isDeleted: true },
-        orderBy: { updatedAt: "desc" },
-        include: { table: true }
+        orderBy: { deletedAt: "desc" },
       })
     ]);
 
@@ -25,43 +24,43 @@ export async function GET(req: NextRequest) {
       // 1. Get snapshot (or raw data fallback)
       const rawSnap = b.deletedSnapshot || b;
       
-      // 2. Normalize snapshot for frontend
-      const snapshot = {
-        billNumber: rawSnap.billNumber,
-        total: rawSnap.total,
-        paymentMode: rawSnap.paymentMode,
-        paymentStatus: rawSnap.paymentStatus,
-        isHeld: rawSnap.isHeld,
-        tableName: rawSnap.tableName,
-        customer: { 
-          name: rawSnap.customerName || (rawSnap.customer?.name) || "Walk-in Customer" 
-        },
-        items: rawSnap.items
-      };
-
       return {
         id: b.id,
-        billId: b.id,
-        createdAt: b.deletedAt,
-        snapshot: snapshot,
-        type: "bill"
+        createdAt: b.deletedAt || b.updatedAt || b.createdAt,
+        type: "bill",
+        snapshot: {
+          billNumber: rawSnap.billNumber,
+          total: rawSnap.total,
+          paymentMode: rawSnap.paymentMode,
+          paymentStatus: rawSnap.paymentStatus,
+          isHeld: rawSnap.isHeld,
+          tableName: rawSnap.tableName,
+          customer: { 
+            name: rawSnap.customerName || (rawSnap.customer?.name) || "Walk-in Customer" 
+          },
+          items: rawSnap.items || []
+        }
       };
     });
 
-    const formattedOrders = deletedOrders.map((o: any) => ({
-      id: o.id,
-      billId: o.id,
-      createdAt: o.updatedAt,
-      type: "order",
-      snapshot: {
-        billNumber: `ORD-${o.id.slice(-4).toUpperCase()}`,
-        total: o.total,
-        paymentMode: "Pending",
-        paymentStatus: o.status,
-        customer: { name: o.customerName || "Walk-in" },
-        tableName: o.table?.name || "Counter"
-      }
-    }));
+    const formattedOrders = deletedOrders.map((o: any) => {
+      const rawSnap = o.deletedSnapshot || o;
+
+      return {
+        id: o.id,
+        createdAt: o.deletedAt || o.updatedAt || o.createdAt,
+        type: "order",
+        snapshot: {
+          billNumber: rawSnap.billNumber || `ORD-${o.id.slice(-4).toUpperCase()}`,
+          total: rawSnap.total,
+          paymentMode: rawSnap.paymentMode || "Pending",
+          paymentStatus: rawSnap.status || rawSnap.paymentStatus || "Deleted",
+          customer: { name: rawSnap.customerName || "Walk-in" },
+          tableName: rawSnap.tableName || (rawSnap.table?.name) || "Counter",
+          items: rawSnap.items || []
+        }
+      };
+    });
 
     const combined = [...formattedBills, ...formattedOrders].sort((a, b) => 
       new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
