@@ -131,8 +131,8 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
     // Initial fetch
     useEffect(() => {
         fetchData();
-        // Background polling every 30 seconds
-        const interval = setInterval(() => fetchData(false), 30000);
+        // Background polling every 10 seconds (increased frequency for better POS sync)
+        const interval = setInterval(() => fetchData(false), 10000);
         return () => clearInterval(interval);
     }, [fetchData]);
 

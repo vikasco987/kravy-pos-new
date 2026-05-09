@@ -173,12 +173,19 @@ export async function POST(req: NextRequest) {
                 nextToken = 1;
             }
 
-            // Sync with BusinessProfile
-            await prisma.businessProfile.update({
+            // Sync with BusinessProfile (using upsert to prevent errors if profile missing)
+            await prisma.businessProfile.upsert({
                 where: { userId: effectiveId },
-                data: {
+                update: {
                     lastTokenNumber: nextToken,
                     lastTokenDate: new Date()
+                },
+                create: {
+                    userId: effectiveId,
+                    lastTokenNumber: nextToken,
+                    lastTokenDate: new Date(),
+                    businessName: "My Restaurant",
+                    contactPersonEmail: effectiveId.includes("user_") ? "" : effectiveId // Fallback
                 }
             });
         } catch (tokenErr) {
@@ -187,7 +194,15 @@ export async function POST(req: NextRequest) {
         }
 
         const processedItems = (items && Array.isArray(items)) 
-            ? items.map((it: any) => ({ ...it, isNew: false, kotNumber: nextToken }))
+            ? items.map((it: any) => ({ 
+                ...it, 
+                isNew: false, 
+                kotNumber: nextToken,
+                quantity: Number(it.quantity || it.qty || 0),
+                price: Number(it.price || it.rate || 0),
+                rate: Number(it.rate || it.price || 0),
+                qty: Number(it.qty || it.quantity || 0)
+            }))
             : items;
 
         // ✅ 3. CREATE ORDER WITH PERSISTENT TOKEN

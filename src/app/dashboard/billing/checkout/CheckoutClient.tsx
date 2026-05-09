@@ -1405,19 +1405,26 @@ export default function CheckoutClient() {
 
         if (res.ok) {
           const data = await res.json();
-          if (!syncedOrderId) setSyncedOrderId(data.id || data._id);
+          // Support both legacy (data.id) and wrapped (data.order.id) response formats
+          const finalOrderId = data.id || data.order?.id || data._id;
+          
+          if (!syncedOrderId && finalOrderId) {
+            setSyncedOrderId(finalOrderId);
+          }
           
           // ✅ Sync tokens from server
           if (data.kotNumbers && Array.isArray(data.kotNumbers)) {
             setKotNumbers(data.kotNumbers);
           }
-          if (data.tokenNumber != null) {
-            setTokenNumber(data.tokenNumber);
+          const serverToken = data.tokenNumber ?? data.order?.tokenNumber;
+          if (serverToken != null) {
+            setTokenNumber(serverToken);
           }
 
           // ✅ Sync items from server to clear isNew flags
-          if (data.items && Array.isArray(data.items)) {
-            setItems(data.items.map((it: any) => ({
+          const serverItems = data.items || data.order?.items;
+          if (serverItems && Array.isArray(serverItems)) {
+            setItems(serverItems.map((it: any) => ({
               ...it,
               id: it.itemId || it.id,
               rate: it.price || it.rate,
@@ -1435,7 +1442,7 @@ export default function CheckoutClient() {
           const returnTo = searchParams.get("returnTo");
           if (returnTo) {
             setTimeout(() => {
-              const currentOrderId = data.id || syncedOrderId || data._id;
+              const currentOrderId = finalOrderId || syncedOrderId;
               const tableId = searchParams.get("tableId");
               const tableName = searchParams.get("tableName");
               

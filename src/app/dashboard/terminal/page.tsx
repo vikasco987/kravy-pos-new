@@ -52,14 +52,11 @@ type OrderItem = {
 
 
 const TableTimer = ({ startTime, className = "" }: { startTime?: string, className?: string }) => {
-    const [elapsed, setElapsed] = useState("");
+    const [timeData, setTimeData] = useState<{ h: number, m: number }>({ h: 0, m: 0 });
     const [ageStatus, setAgeStatus] = useState<"fresh" | "medium" | "old">("fresh");
 
     useEffect(() => {
-        if (!startTime) {
-            setElapsed("");
-            return;
-        }
+        if (!startTime) return;
 
         const update = () => {
             const now = new Date();
@@ -67,43 +64,37 @@ const TableTimer = ({ startTime, className = "" }: { startTime?: string, classNa
             const diff = Math.floor((now.getTime() - start.getTime()) / 1000);
             const mins = Math.floor(diff / 60);
             
-            // Age status logic (Updated: 30m, 60m)
             if (mins < 30) setAgeStatus("fresh");
             else if (mins < 60) setAgeStatus("medium");
             else setAgeStatus("old");
 
-            if (diff < 0) {
-                setElapsed("00:00");
-                return;
-            }
-
             const h = Math.floor(mins / 60);
             const m = mins % 60;
-            
-            if (h > 0) {
-                setElapsed(`${h}h ${m.toString().padStart(2, '0')}m`);
-            } else {
-                setElapsed(`${m}m`);
-            }
+            setTimeData({ h, m });
         };
 
         update();
-        const interval = setInterval(update, 10000); // Update every 10s is enough
+        const interval = setInterval(update, 10000);
         return () => clearInterval(interval);
     }, [startTime]);
 
     if (!startTime) return null;
 
     const ageColors = {
-        fresh: "text-emerald-700 bg-emerald-50/80 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20",
-        medium: "text-amber-700 bg-amber-50/80 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20",
-        old: "text-rose-600 bg-rose-50/90 dark:bg-rose-500/15 border-rose-100 dark:border-rose-500/20 font-black animate-pulse"
+        fresh: "text-emerald-600 bg-emerald-50/50 border-emerald-100",
+        medium: "text-amber-600 bg-amber-50/50 border-amber-100",
+        old: "text-rose-600 bg-rose-50/80 border-rose-100"
     };
 
     return (
-        <div className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full border shadow-sm backdrop-blur-md transition-all duration-300 ${ageColors[ageStatus]} ${className}`}>
-            <span className="text-base">⏰</span>
-            <span className="text-base font-black tracking-tighter">{elapsed}</span>
+        <div className={`flex items-center gap-3 px-4 py-2.5 rounded-[2rem] border shadow-sm backdrop-blur-md transition-all duration-300 ${ageColors[ageStatus]} ${className}`}>
+            <div className="text-2xl shrink-0">⏰</div>
+            <div className="flex flex-col items-start leading-none">
+                {timeData.h > 0 && (
+                    <span className="text-2xl font-black tracking-tighter">{timeData.h}h</span>
+                )}
+                <span className="text-2xl font-black tracking-tighter">{timeData.m}m</span>
+            </div>
         </div>
     );
 };
@@ -830,7 +821,7 @@ function KravyPOS() {
 
     return (
         <div 
-            className={`flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300 relative`}
+            className={`flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300 relative scale-[0.98] origin-top`}
             style={{
                 backgroundImage: 'radial-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)',
                 backgroundSize: '24px 24px'
@@ -925,7 +916,7 @@ function KravyPOS() {
             </AnimatePresence>
             <OrderAlertLoop pendingCount={stats.incoming} />
             {/* ── HEADER ── */}
-            <header className="flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8 min-h-[72px] lg:h-[72px] shrink-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/40 dark:border-slate-800/40 shadow-lg z-[50] py-3 lg:py-0 gap-4 lg:gap-8 transition-colors duration-300">
+            <header className="flex flex-col lg:flex-row items-center justify-between px-4 lg:px-6 min-h-[60px] lg:h-[60px] shrink-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/40 dark:border-slate-800/40 shadow-lg z-[50] py-2 lg:py-0 gap-4 lg:gap-6 transition-colors duration-300">
                 {/* Brand & Navigation */}
                 <div className="flex items-center gap-8">
                     <div className="flex items-center gap-4">
@@ -952,11 +943,11 @@ function KravyPOS() {
                                 <button
                                     key={t.key}
                                     onClick={() => { kravy.click(); setActiveTab(t.key as TabKey); }}
-                                    className={`relative flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${isActive ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+                                    className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isActive ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
                                 >
-                                    <Icon size={14} />
+                                    <Icon size={12} />
                                     <span>{t.label}</span>
-                                    {isActive && <motion.div layoutId="nav-ind" className="absolute -bottom-[25px] left-3 right-3 h-0.5 bg-slate-900 dark:bg-white rounded-t-full shadow-[0_-4px_10px_rgba(0,0,0,0.1)]" />}
+                                    {isActive && <motion.div layoutId="nav-ind" className="absolute -bottom-[20px] left-3 right-3 h-0.5 bg-slate-900 dark:bg-white rounded-t-full shadow-[0_-4px_10px_rgba(0,0,0,0.1)]" />}
                                 </button>
                             );
                         })}
@@ -1059,8 +1050,8 @@ function KravyPOS() {
                                 </div>
 
                                 {/* Tables Grid */}
-                                <div className="flex-1 overflow-y-auto p-4 scrollbar-hide bg-[#F8FAFC]/50 dark:bg-slate-950/50 backdrop-blur-sm">
-                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-4">
+                                <div className="flex-1 overflow-y-auto p-3 scrollbar-hide bg-[#F8FAFC]/50 dark:bg-slate-950/50 backdrop-blur-sm">
+                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
                                         {filteredTables.map((t) => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
@@ -1080,22 +1071,22 @@ function KravyPOS() {
                                                         setSelectedTableId(t.id); 
                                                         setSelectedOrderId(null); 
                                                     }}
-                                                    className={`relative group h-[185px] flex flex-col rounded-[32px] transition-all duration-300 ${isActive ? "z-20 scale-[1.04] -translate-y-2" : "z-10 hover:scale-[1.02] hover:-translate-y-1"}`}
+                                                    className={`relative group h-[210px] flex flex-col rounded-3xl transition-all duration-300 ${isActive ? "z-20 scale-[1.04] -translate-y-1" : "z-10 hover:scale-[1.02] hover:-translate-y-0.5"}`}
                                                     whileTap={{ scale: 0.98 }}
                                                 >
-                                                    <div className={`w-full h-full rounded-[32px] flex flex-col items-center justify-between p-4 border transition-all duration-300 overflow-hidden relative ${cfg.bg} ${cfg.border} ${isActive ? "ring-8 ring-purple-400/10 shadow-[0_0_60px_rgba(168,85,247,0.18)]" : cfg.glow}`}>
+                                                    <div className={`w-full h-full rounded-3xl flex flex-col items-center justify-between p-3 border transition-all duration-300 overflow-hidden relative ${cfg.bg} ${cfg.border} ${isActive ? "ring-4 ring-purple-400/10 shadow-[0_0_40px_rgba(168,85,247,0.12)]" : cfg.glow}`}>
                                                         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent)', backgroundSize: '20px 20px' }} />
                                                         
                                                         {/* Compact Status Badge - Clean Centered */}
                                                         <div className="w-full flex justify-center relative">
-                                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/40 backdrop-blur-xl shadow-md text-[10px] font-bold uppercase tracking-wider ${cfg.glass} ${cfg.text}`}>
-                                                                <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${isActive || t.status !== 'FREE' ? 'animate-pulse' : ''}`} />
+                                                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full border border-white/40 backdrop-blur-xl shadow-md text-[8px] font-bold uppercase tracking-wider ${cfg.glass} ${cfg.text}`}>
+                                                                <div className={`w-1 h-1 rounded-full ${cfg.dot} ${isActive || t.status !== 'FREE' ? 'animate-pulse' : ''}`} />
                                                                 {cfg.label}
                                                             </div>
                                                         </div>
 
                                                         {/* Table Number - Multi-line Support */}
-                                                        <div className="flex flex-col items-center justify-center flex-1 w-full min-h-[70px] px-2 py-2">
+                                                        <div className="flex flex-col items-center justify-center flex-1 w-full min-h-[40px] px-2 py-0.5">
                                                             <span 
                                                                 className="text-center font-black leading-tight tracking-tighter text-slate-900 dark:text-white drop-shadow-sm break-normal whitespace-normal"
                                                                 style={{
@@ -1187,25 +1178,25 @@ function KravyPOS() {
                                         className="h-full flex flex-col"
                                     >
                                         {/* Order Header: Horizontal Flow Design */}
-                                        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-4 transition-colors duration-300">
+                                        <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 transition-colors duration-300">
                                             {/* 1. Avatar (Table ID) */}
                                             <motion.div
                                                 initial={{ rotate: -10, scale: 0.8 }}
                                                 animate={{ rotate: 0, scale: 1 }}
-                                                className="w-12 h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center justify-center font-black italic shadow-lg shadow-slate-900/10 shrink-0"
+                                                className="w-10 h-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl flex items-center justify-center font-black italic shadow-lg shadow-slate-900/10 shrink-0 text-lg"
                                             >
                                                 {selectedTable.name}
                                             </motion.div>
 
                                             {/* 2. Customer Info */}
                                             <div className="flex flex-col gap-0.5 min-w-0">
-                                                <h2 className="text-sm font-black text-slate-900 dark:text-white leading-none truncate uppercase tracking-tight">
+                                                <h2 className="text-xs font-black text-slate-900 dark:text-white leading-none truncate uppercase tracking-tight">
                                                     {activeOrderForSelected?.customerName || "Walk-in Customer"}
                                                 </h2>
-                                                <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">
-                                                    <span className="flex items-center gap-1"><User size={10} /> 4 GUESTS</span>
-                                                    <span className="w-1 h-1 rounded-full bg-slate-200" />
-                                                    <span className="flex items-center gap-1"><ShieldCheck size={10} /> RAHUL S.</span>
+                                                <div className="flex items-center gap-1.5 text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">
+                                                    <span className="flex items-center gap-1"><User size={8} /> 4 GUESTS</span>
+                                                    <span className="w-0.5 h-0.5 rounded-full bg-slate-200" />
+                                                    <span className="flex items-center gap-1"><ShieldCheck size={8} /> RAHUL S.</span>
                                                 </div>
                                             </div>
 
@@ -1310,21 +1301,21 @@ function KravyPOS() {
                                             {activeOrderForSelected ? (
                                                     <div className="space-y-4">
                                                         {/* Enterprise Workflow Stepper */}
-                                                        <div className="flex items-center justify-between mb-8 px-5 py-4 bg-white dark:bg-slate-800/40 rounded-[2rem] border border-slate-200/50 dark:border-slate-700/50 shadow-[0_8px_30px_rgba(15,23,42,0.02)]">
+                                                        <div className="flex items-center justify-between mb-3 px-4 py-2 bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-[0_4px_20px_rgba(15,23,42,0.02)] h-[60px]">
                                                             {[
                                                                 { label: "Accepted", active: true },
                                                                 { label: "Cooking", active: activeOrderForSelected?.status === "PREPARING" || activeOrderForSelected?.status === "READY" },
                                                                 { label: "Ready", active: activeOrderForSelected?.status === "READY" }
                                                             ].map((step, i, arr) => (
                                                                 <React.Fragment key={step.label}>
-                                                                    <div className="flex flex-col items-center gap-2">
-                                                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black transition-all duration-700 ${step.active ? "bg-[#0B1B48] text-white shadow-xl scale-110" : "bg-slate-50 text-slate-300 border border-slate-100"}`}>
+                                                                    <div className="flex flex-col items-center gap-1">
+                                                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black transition-all duration-700 ${step.active ? "bg-[#0B1B48] text-white shadow-xl scale-110" : "bg-slate-50 text-slate-300 border border-slate-100"}`}>
                                                                             {step.active ? "✓" : i + 1}
                                                                         </div>
-                                                                        <span className={`text-[9px] font-black uppercase tracking-[0.1em] ${step.active ? "text-[#0B1B48]" : "text-slate-300"}`}>{step.label}</span>
+                                                                        <span className={`text-[8px] font-black uppercase tracking-[0.1em] ${step.active ? "text-[#0B1B48]" : "text-slate-300"}`}>{step.label}</span>
                                                                     </div>
                                                                     {i < arr.length - 1 && (
-                                                                        <div className={`flex-1 h-0.5 max-w-[60px] mx-2 rounded-full transition-all duration-1000 ${step.active && arr[i+1].active ? "bg-[#0B1B48]" : "bg-slate-100"}`} />
+                                                                        <div className={`flex-1 h-0.5 max-w-[40px] mx-1 rounded-full transition-all duration-1000 ${step.active && arr[i+1].active ? "bg-[#0B1B48]" : "bg-slate-100"}`} />
                                                                     )}
                                                                 </React.Fragment>
                                                             ))}
@@ -1370,20 +1361,20 @@ function KravyPOS() {
                                                                         initial={{ opacity: 0, y: 8 }}
                                                                         animate={{ opacity: 1, y: 0 }}
                                                                         transition={{ delay: idx * 0.03 }}
-                                                                        className={`flex items-center justify-between px-3 py-2 min-h-[64px] rounded-[1.25rem] border transition-all duration-300 group bg-white dark:bg-slate-900/70 border-slate-100 dark:border-slate-800 hover:border-[#6D3BFF]/20 hover:shadow-[0_8px_30px_rgba(15,23,42,0.04)] ${roundObj.id === "New Items" ? "ring-1 ring-amber-200/40" : ""}`}
+                                                                        className={`flex items-center justify-between px-3 py-1.5 min-h-[52px] rounded-xl border transition-all duration-300 group bg-white dark:bg-slate-900/70 border-slate-100 dark:border-slate-800 hover:border-[#6D3BFF]/20 hover:shadow-[0_8px_30px_rgba(15,23,42,0.04)] ${roundObj.id === "New Items" ? "ring-1 ring-amber-200/40" : ""}`}
                                                                     >
                                                                         <div className="flex items-center gap-3 flex-1 min-w-0">
                                                                             {(() => {
                                                                                 const isNonVeg = item.isVeg === false || item.name?.toUpperCase().includes("(NV)");
                                                                                 return (
                                                                                     <>
-                                                                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-base shadow-sm border border-white/50 dark:border-slate-800 shrink-0 ${isNonVeg ? "bg-rose-50 text-rose-500" : "bg-emerald-50 text-emerald-500"}`}>
+                                                                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm shadow-sm border border-white/50 dark:border-slate-800 shrink-0 ${isNonVeg ? "bg-rose-50 text-rose-500" : "bg-emerald-50 text-emerald-500"}`}>
                                                                                             {isNonVeg ? "🍗" : "🥗"}
                                                                                         </div>
                                                                                         <div className="flex-1 min-w-0">
                                                                                             <div className="flex items-center gap-1.5">
-                                                                                                <p className="text-[12px] font-black text-[#0B1B48] dark:text-white truncate leading-tight uppercase tracking-tight">{item.name}</p>
-                                                                                                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${activeOrderForSelected?.status === "READY" ? "bg-emerald-500" : "bg-amber-400"}`} />
+                                                                                                <p className="text-[11px] font-black text-[#0B1B48] dark:text-white truncate leading-tight uppercase tracking-tight">{item.name}</p>
+                                                                                                <div className={`w-1 h-1 rounded-full shrink-0 ${activeOrderForSelected?.status === "READY" ? "bg-emerald-500" : "bg-amber-400"}`} />
                                                                                             </div>
                                                                                             <div className="flex items-center gap-2 mt-0.5">
                                                                                                 <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-md ${isNonVeg ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"} uppercase tracking-widest border border-current/10`}>
@@ -1399,33 +1390,33 @@ function KravyPOS() {
                                                                             })()}
                                                                         </div>
 
-                                                                        <div className="flex items-center gap-4">
-                                                                            <div className="font-mono text-[13px] font-black text-[#0B1B48] dark:text-white min-w-[50px] text-right">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="font-mono text-xs font-black text-[#0B1B48] dark:text-white min-w-[45px] text-right">
                                                                                 ₹{item.price}
                                                                             </div>
                                                                             <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
                                                                                 <button 
                                                                                     onClick={() => handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity - 1)}
-                                                                                    className="w-5 h-5 rounded flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 text-slate-400 transition-all font-black"
+                                                                                    className="w-4 h-4 rounded flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 text-slate-400 transition-all font-black text-[10px]"
                                                                                 >
                                                                                     −
                                                                                 </button>
-                                                                                <span className="w-5 text-center text-[11px] font-black text-[#0B1B48] dark:text-white">
+                                                                                <span className="w-4 text-center text-[10px] font-black text-[#0B1B48] dark:text-white">
                                                                                     {item.quantity}
                                                                                 </span>
                                                                                 <button 
                                                                                     onClick={() => handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity + 1)}
-                                                                                    className="w-5 h-5 rounded flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 text-[#6D3BFF] transition-all font-black"
+                                                                                    className="w-4 h-4 rounded flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 text-[#6D3BFF] transition-all font-black text-[10px]"
                                                                                 >
                                                                                     +
                                                                                 </button>
                                                                             </div>
-                                                                            <span className="w-14 text-right text-[12px] font-black text-slate-900">₹{item.price * item.quantity}</span>
+                                                                            <span className="w-12 text-right text-[11px] font-black text-slate-900">₹{item.price * item.quantity}</span>
                                                                             <button 
                                                                                 onClick={() => handleRemoveItem(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item))}
-                                                                                className="w-6 h-6 rounded flex items-center justify-center text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
+                                                                                className="w-5 h-5 rounded flex items-center justify-center text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
                                                                             >
-                                                                                <Trash2 size={12} />
+                                                                                <Trash2 size={10} />
                                                                             </button>
                                                                         </div>
                                                                     </motion.div>
@@ -1451,24 +1442,24 @@ function KravyPOS() {
                                         </div>
 
                                         {/* Premium Hero Footer Actions - FIXED AT BOTTOM */}
-                                        <div className="flex-shrink-0 p-8 border-t border-white/40 bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl">
-                                            <div className="flex gap-6 mb-6">
+                                        <div className="flex-shrink-0 p-4 border-t border-white/40 bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl">
+                                            <div className="flex gap-3 mb-3">
                                                 {/* Advanced Workflow Control */}
-                                                <div className="flex-1 bg-white/80 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.02)] flex flex-col justify-between">
-                                                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] flex items-center gap-2 mb-4">
-                                                        <ChefHat size={12} className="text-[#6D3BFF]" /> 
+                                                <div className="flex-1 bg-white/80 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-2xl p-3 shadow-[0_4px_20px_rgba(15,23,42,0.02)] flex flex-col justify-between">
+                                                    <span className="text-[8px] font-black uppercase text-slate-400 tracking-[0.2em] flex items-center gap-1.5 mb-2">
+                                                        <ChefHat size={10} className="text-[#6D3BFF]" /> 
                                                         Kitchen Operations
                                                     </span>
-                                                    <div className="flex gap-3">
+                                                    <div className="flex gap-2">
                                                         {[
-                                                            { s: "PREPARING", label: "Start Cooking", icon: <ChefHat size={14} />, active: activeOrderForSelected?.status === "PENDING", color: "bg-[#0B1B48] text-white shadow-[#0B1B48]/20" },
-                                                            { s: "READY", label: "Mark Ready", icon: <Check size={14} />, active: activeOrderForSelected?.status === "PREPARING", color: "bg-emerald-600 text-white shadow-emerald-600/20" },
+                                                            { s: "PREPARING", label: "Start Cooking", icon: <ChefHat size={11} />, active: activeOrderForSelected?.status === "PENDING", color: "bg-[#0B1B48] text-white shadow-[#0B1B48]/20" },
+                                                            { s: "READY", label: "Mark Ready", icon: <Check size={11} />, active: activeOrderForSelected?.status === "PREPARING", color: "bg-emerald-600 text-white shadow-emerald-600/20" },
                                                         ].map((btn, i) => (
                                                             <button
                                                                 key={i}
                                                                 disabled={!activeOrderForSelected || !btn.active}
                                                                 onClick={() => updateOrderStatus(activeOrderForSelected!.id, btn.s)}
-                                                                className={`flex-1 h-12 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${btn.active ? `${btn.color} shadow-xl hover:scale-[1.02] active:scale-95` : "bg-slate-50 dark:bg-slate-800/50 text-slate-300 dark:text-slate-600 opacity-40 cursor-not-allowed"}`}
+                                                                className={`flex-1 h-9 rounded-lg flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${btn.active ? `${btn.color} shadow-lg hover:scale-[1.02] active:scale-95` : "bg-slate-50 dark:bg-slate-800/50 text-slate-300 dark:text-slate-600 opacity-40 cursor-not-allowed"}`}
                                                             >
                                                                 {btn.icon} {btn.label}
                                                             </button>
@@ -1477,32 +1468,32 @@ function KravyPOS() {
                                                 </div>
 
                                                 {/* Hero Total Card */}
-                                                <div className="w-[280px] bg-gradient-to-br from-[#0B1739] via-[#111C44] to-[#1E293B] text-white rounded-[2.5rem] p-8 shadow-[0_20px_60px_rgba(15,23,42,0.4)] flex flex-col justify-between relative overflow-hidden group transition-all duration-500 hover:shadow-[0_25px_80px_rgba(15,23,42,0.6)]">
-                                                    <div className="absolute -top-10 -right-10 w-48 h-48 bg-indigo-500/20 blur-[80px] group-hover:bg-indigo-500/30 transition-all duration-700" />
+                                                <div className="w-[200px] h-[100px] bg-gradient-to-br from-[#0B1739] via-[#111C44] to-[#1E293B] text-white rounded-2xl p-4 shadow-[0_15px_40px_rgba(15,23,42,0.4)] flex flex-col justify-between relative overflow-hidden group transition-all duration-500 hover:shadow-[0_20px_60px_rgba(15,23,42,0.6)]">
+                                                    <div className="absolute -top-10 -right-10 w-24 h-24 bg-indigo-500/20 blur-[50px] group-hover:bg-indigo-500/30 transition-all duration-700" />
                                                     <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#6D3BFF]/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                                     <div className="flex justify-between items-start relative z-10">
-                                                        <span className="text-[11px] font-black uppercase tracking-[0.3em] opacity-40">Grand Total</span>
-                                                        <div className="px-2 py-1 bg-white/10 rounded-lg text-[9px] font-black uppercase tracking-tighter backdrop-blur-sm border border-white/10">TAX INCLUDED</div>
+                                                        <span className="text-[8px] font-black uppercase tracking-[0.3em] opacity-40">Grand Total</span>
+                                                        <div className="px-1 py-0.5 bg-white/10 rounded text-[6px] font-black uppercase tracking-tighter backdrop-blur-sm border border-white/10">TAX INCLUDED</div>
                                                     </div>
                                                     <div className="relative z-10 flex items-baseline gap-1">
-                                                        <span className="text-3xl font-light opacity-50">₹</span>
-                                                        <strong className="text-7xl font-black italic tracking-tighter drop-shadow-[0_8px_20px_rgba(0,0,0,0.3)]">{activeOrderForSelected?.total ?? "0"}</strong>
+                                                        <span className="text-xl font-light opacity-50">₹</span>
+                                                        <strong className="text-4xl font-black italic tracking-tighter drop-shadow-[0_8px_20px_rgba(0,0,0,0.3)]">{activeOrderForSelected?.total ?? "0"}</strong>
                                                     </div>
                                                 </div>
                                             </div>
                                             
-                                            <div className="flex gap-4">
-                                                <div className="flex-1 flex gap-3">
+                                            <div className="flex gap-2.5">
+                                                <div className="flex-1 flex gap-2">
                                                     <button
                                                         onClick={() => { 
                                                             if (activeOrderForSelected) setPrintOrder(activeOrderForSelected);
                                                             setPreviewMode("KOT"); 
                                                             setShowPreview(true); 
                                                         }}
-                                                        className="w-14 h-14 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 hover:text-white hover:bg-[#0B1B48] hover:border-[#0B1B48] transition-all bg-white dark:bg-slate-900 shadow-sm"
+                                                        className="w-11 h-11 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 hover:text-white hover:bg-[#0B1B48] hover:border-[#0B1B48] transition-all bg-white dark:bg-slate-900 shadow-sm"
                                                         title="Preview KOT"
                                                     >
-                                                        <Eye size={18} />
+                                                        <Eye size={14} />
                                                     </button>
                                                     <button
                                                         onClick={() => {
@@ -1513,9 +1504,9 @@ function KravyPOS() {
                                                                 setTimeout(() => handlePrint("KOT", activeOrderForSelected, tbl || undefined), 100);
                                                             }
                                                         }}
-                                                        className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-wider bg-white border border-slate-200 text-slate-900 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+                                                        className="flex-1 h-11 rounded-xl flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-wider bg-white border border-slate-200 text-slate-900 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
                                                     >
-                                                        <Printer size={16} /> KOT
+                                                        <Printer size={12} /> KOT
                                                     </button>
                                                     <button
                                                         onClick={() => {
@@ -1527,9 +1518,9 @@ function KravyPOS() {
                                                                 setTimeout(() => handlePrint(printType, activeOrderForSelected, tbl || undefined), 100);
                                                             }
                                                         }}
-                                                        className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-wider bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-xl active:scale-95"
+                                                        className="flex-1 h-11 rounded-xl flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-wider bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-xl active:scale-95"
                                                     >
-                                                        <Printer size={16} /> {business?.enableKOTWithBill ? "KOT + BILL" : "PRINT BILL"}
+                                                        <Printer size={12} /> {business?.enableKOTWithBill ? "KOT + BILL" : "PRINT BILL"}
                                                     </button>
                                                 </div>
                                                 <button
@@ -1540,10 +1531,10 @@ function KravyPOS() {
                                                         setSelectedOrderId(activeOrderForSelected.id);
                                                         setActiveTab("payment");
                                                     }}
-                                                    className="flex-[1.5] h-14 rounded-full flex items-center justify-center gap-4 bg-[#6D3BFF] text-white font-black text-xs uppercase tracking-[0.25em] shadow-[0_15px_40px_rgba(109,59,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20 group"
+                                                    className="flex-[1.5] h-11 rounded-full flex items-center justify-center gap-3 bg-[#6D3BFF] text-white font-black text-[10px] uppercase tracking-[0.25em] shadow-[0_8px_20px_rgba(109,59,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20 group"
                                                 >
                                                     <span>Print Final Bill</span>
-                                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                                                 </button>
                                             </div>
                                         </div>
