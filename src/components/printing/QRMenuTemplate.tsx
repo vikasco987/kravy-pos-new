@@ -2,7 +2,7 @@
 import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, Edit3, Check, Sparkles, Coffee, Pizza, Utensils, Zap } from "lucide-react";
-import html2canvas from "html2canvas";
+import { domToPng } from "modern-screenshot";
 
 interface QRMenuTemplateProps {
     isOpen: boolean;
@@ -27,21 +27,17 @@ const QRMenuTemplate: React.FC<QRMenuTemplateProps> = ({ isOpen, onClose, busine
         if (!cardRef.current) return;
         setIsDownloading(true);
         try {
-            const canvas = await html2canvas(cardRef.current, {
+            const dataUrl = await domToPng(cardRef.current, {
                 scale: 3,
-                backgroundColor: null,
-                useCORS: true,
-                logging: false,
-                onclone: (clonedDoc) => {
-                    // Suppress modern color function issues for html2canvas
-                    const style = clonedDoc.createElement('style');
-                    style.innerHTML = `* { color-scheme: light !important; }`;
-                    clonedDoc.head.appendChild(style);
+                quality: 1,
+                features: {
+                    // Disable complex features that might cause issues if needed
+                    // but modern-screenshot usually handles oklab fine
                 }
             });
             const link = document.createElement("a");
             link.download = `${customName}_Table_${tableName || "Menu"}.png`;
-            link.href = canvas.toDataURL("image/png");
+            link.href = dataUrl;
             link.click();
         } catch (err) {
             console.error("Download failed:", err);
