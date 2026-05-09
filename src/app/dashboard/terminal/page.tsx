@@ -1115,7 +1115,7 @@ function KravyPOS() {
                                             const fontSize = nameLength <= 3 ? "text-5xl" : nameLength <= 8 ? "text-4xl" : "text-2xl";
 
                                             return (
-                                                <motion.button
+                                                <motion.div
                                                     key={t.id}
                                                     title={displayName} // Tooltip on hover
                                                     onClick={() => { 
@@ -1123,7 +1123,7 @@ function KravyPOS() {
                                                         setSelectedTableId(t.id); 
                                                         setSelectedOrderId(null); 
                                                     }}
-                                                    className={`relative group h-[210px] flex flex-col rounded-3xl transition-all duration-300 ${isActive ? "z-20 scale-[1.04] -translate-y-1" : "z-10 hover:scale-[1.02] hover:-translate-y-0.5"}`}
+                                                    className={`relative group h-[210px] flex flex-col rounded-3xl transition-all duration-300 cursor-pointer ${isActive ? "z-20 scale-[1.04] -translate-y-1" : "z-10 hover:scale-[1.02] hover:-translate-y-0.5"}`}
                                                     whileTap={{ scale: 0.98 }}
                                                 >
                                                     <div className={`w-full h-full rounded-3xl flex flex-col items-center justify-between p-3 border transition-all duration-300 overflow-hidden relative ${cfg.bg} ${cfg.border} ${isActive ? "ring-4 ring-purple-400/10 shadow-[0_0_40px_rgba(168,85,247,0.12)]" : cfg.glow}`}>
@@ -1186,7 +1186,7 @@ function KravyPOS() {
                                                             </div>
                                                         </div>
                                                     )}
-                                                </motion.button>
+                                                </motion.div>
                                             );
                                         })}
                                     </div>
