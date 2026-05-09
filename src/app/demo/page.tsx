@@ -68,7 +68,7 @@ export default function DemoPage() {
     }, [activeTab]);
 
     return (
-        <div className="min-h-screen bg-[#0A0F1E] text-slate-100 font-sans selection:bg-orange-500/30 overflow-x-hidden">
+        <div className="h-screen overflow-y-auto scroll-smooth bg-[#0A0F1E] text-slate-100 font-sans selection:bg-orange-500/30">
             {/* Animated Background Gradients */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-600/10 blur-[120px] rounded-full animate-pulse" />
