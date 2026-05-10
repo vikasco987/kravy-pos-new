@@ -21,7 +21,8 @@ export default function ClientLayout({
   const pathname = usePathname();
   const isTerminal = pathname === "/dashboard/terminal";
   const isCheckout = pathname === "/dashboard/billing/checkout";
-  const isPOS = isTerminal || isCheckout;
+  const isKitchen = pathname === "/dashboard/kitchen" || pathname === "/dashboard/workflow";
+  const isPOS = isTerminal || isCheckout || isKitchen;
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -109,7 +110,7 @@ export default function ClientLayout({
         )}
 
         <div className="flex flex-1 overflow-hidden relative">
-          {!isTerminal && (
+          {!isTerminal && !isKitchen && (
             <div className={`
               ${isMobile ? 'fixed' : 'relative'}
               ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}
