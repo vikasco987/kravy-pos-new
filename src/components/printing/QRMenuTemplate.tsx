@@ -22,6 +22,8 @@ const QRMenuTemplate: React.FC<QRMenuTemplateProps> = ({ isOpen, onClose, busine
     const [customName, setCustomName] = useState(businessName);
     const [tagline, setTagline] = useState("A Place to Feel at Home");
     const [logoEmoji, setLogoEmoji] = useState("☕");
+    const [customTableNo, setCustomTableNo] = useState(tableName || "00");
+    const [showTableNo, setShowTableNo] = useState(true);
 
     const handleDownload = async () => {
         if (!cardRef.current) return;
@@ -36,7 +38,7 @@ const QRMenuTemplate: React.FC<QRMenuTemplateProps> = ({ isOpen, onClose, busine
                 }
             });
             const link = document.createElement("a");
-            link.download = `${customName}_Table_${tableName || "Menu"}.png`;
+            link.download = `${customName}_Table_${customTableNo || "Menu"}.png`;
             link.href = dataUrl;
             link.click();
         } catch (err) {
@@ -124,7 +126,7 @@ const QRMenuTemplate: React.FC<QRMenuTemplateProps> = ({ isOpen, onClose, busine
                             <div className="h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent mb-4" />
 
                             <div className="text-[9px] text-white/30 tracking-widest uppercase">
-                                Powered by <span className="text-yellow-400/60 font-black">{customName}</span> • Table {tableName || "00"}
+                                Powered by <span className="text-yellow-400/60 font-black">{customName}</span> {showTableNo && `• Table ${customTableNo}`}
                             </div>
                         </div>
                     </div>
@@ -151,6 +153,26 @@ const QRMenuTemplate: React.FC<QRMenuTemplateProps> = ({ isOpen, onClose, busine
                                     className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all"
                                 />
                             </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Table Number</label>
+                                    <input 
+                                        type="text" 
+                                        value={customTableNo}
+                                        onChange={(e) => setCustomTableNo(e.target.value)}
+                                        className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all"
+                                        placeholder="e.g. 01"
+                                    />
+                                </div>
+                                <div className="flex flex-col justify-end">
+                                    <button 
+                                        onClick={() => setShowTableNo(!showTableNo)}
+                                        className={`h-11 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border ${showTableNo ? "bg-yellow-400 border-yellow-400 text-slate-900 shadow-lg shadow-yellow-400/10" : "bg-slate-800 border-slate-700 text-slate-400"}`}
+                                    >
+                                        {showTableNo ? "Hide Table" : "Show Table"}
+                                    </button>
+                                </div>
+                            </div>
                             <div>
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Slogan / Tagline</label>
                                 <input 
@@ -175,7 +197,6 @@ const QRMenuTemplate: React.FC<QRMenuTemplateProps> = ({ isOpen, onClose, busine
                                 </div>
                             </div>
                         </div>
-
                         <div className="mt-10 flex flex-col gap-3">
                             <button 
                                 onClick={handleDownload}
