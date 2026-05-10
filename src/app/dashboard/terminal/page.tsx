@@ -406,9 +406,10 @@ function KravyPOS() {
             if (type === "BILL" && business?.enableKOTWithBill) {
                 handlePrint("KOT", targetOrder, targetTable);
             }
-        };
+        }, 50);
+    };
 
-        startPrint();
+    startPrint();
 
             setTimeout(() => {
                 if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
