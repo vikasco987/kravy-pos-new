@@ -771,9 +771,11 @@ function KravyPOS() {
             
             // Important: return the bill so the caller (like BillPreview) can use the real billNumber
             if (savedBill) {
-                setPrintOrder(prev => prev ? { ...prev, ...savedBill } : savedBill);
+                // Merge savedBill with order to keep tokenNumber if savedBill doesn't have it
+                const mergedBill = { ...order, ...savedBill };
+                setPrintOrder(mergedBill);
                 setIsSettling(false);
-                return savedBill;
+                return mergedBill;
             }
             setIsSettling(false);
             return null;
