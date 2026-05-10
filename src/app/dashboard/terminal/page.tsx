@@ -334,29 +334,13 @@ function KravyPOS() {
             const isBill = type === "BILL" || type === "COMBINED_BILL" || type === "MANUAL_COMBINE" || type === "KOT_BILL";
             // ONLY print both if explicitly asked (KOT_BILL) or if it's a standard BILL and the setting is on
             // BUT the user wants "Bill click -> Only Bill", so we'll make BILL strictly Only Bill if it's from the settlement button
-            const autoBoth = type === "KOT_BILL" || (type === "BILL" && business?.enableKOTWithBill);
+            const targetRef = isBill ? billReceiptRef.current : kotReceiptRef.current;
             
-            let printHTML = "";
-            if (autoBoth) {
-                const kotContent = kotReceiptRef.current?.innerHTML || "";
-                const billContent = billReceiptRef.current?.innerHTML || "";
-                printHTML = `
-                    <div class="kot-section">${kotContent}</div>
-                    <div style="border-top: 2px dashed #000; margin: 30px 0; position: relative;">
-                        <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #fff; padding: 0 10px; font-size: 8px; font-weight: bold; text-transform: uppercase;">Final Bill Follows</span>
-                    </div>
-                    <div class="bill-section">${billContent}</div>
-                `;
-                console.log("[PRINT] Combined KOT + Bill triggered via Auto-Both setting");
-            } else {
-                const targetRef = isBill ? billReceiptRef.current : kotReceiptRef.current;
-                
-                if (!targetRef) {
-                    console.error(`[PRINT ERROR] No DOM reference found for ${type}. Check if printer zone is rendered.`);
-                    return;
-                }
-                printHTML = targetRef.innerHTML;
+            if (!targetRef) {
+                console.error(`[PRINT ERROR] No DOM reference found for ${type}. Check if printer zone is rendered.`);
+                return;
             }
+            printHTML = targetRef.innerHTML;
 
             console.log(`[PRINT] Template Found. HTML size: ${printHTML.length} chars`);
 
@@ -418,6 +402,13 @@ function KravyPOS() {
 
             kravy.print();
             window.print();
+
+            // 🔥 Separate KOT + Bill Logic: If Auto-Both is enabled, trigger the OTHER print immediately after
+            if (type === "BILL" && business?.enableKOTWithBill) {
+                setTimeout(() => {
+                    handlePrint("KOT", targetOrder, targetTable);
+                }, 500);
+            }
 
             setTimeout(() => {
                 if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
