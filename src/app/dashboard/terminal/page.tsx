@@ -326,66 +326,30 @@ function KravyPOS() {
             if (customTable) setPrintTable(customTable);
         }
 
-        // ✅ No more long timeouts - execute immediately
-        const startPrint = () => {
-
+        // ✅ Print Execution
         setTimeout(() => {
             const isBill = type === "BILL" || type === "COMBINED_BILL" || type === "MANUAL_COMBINE" || type === "KOT_BILL";
-            // ONLY print both if explicitly asked (KOT_BILL) or if it's a standard BILL and the setting is on
-            // BUT the user wants "Bill click -> Only Bill", so we'll make BILL strictly Only Bill if it's from the settlement button
             const targetRef = isBill ? billReceiptRef.current : kotReceiptRef.current;
             
             if (!targetRef) {
-                console.error(`[PRINT ERROR] No DOM reference found for ${type}. Check if printer zone is rendered.`);
+                console.error(`[PRINT ERROR] No DOM reference found for ${type}.`);
                 return;
             }
-            printHTML = targetRef.innerHTML;
 
-            console.log(`[PRINT] Template Found. HTML size: ${printHTML.length} chars`);
-
-            if (printHTML.length < 50) {
-                console.warn(`[PRINT WARNING] Template seems empty or too small. Receipt might be blank.`);
-            }
-
+            const printHTML = targetRef.innerHTML;
             const printStyles = `
                 @media print {
-                    html, body { 
-                        height: auto !important; 
-                        overflow: visible !important; 
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        background: #fff !important;
-                    }
+                    html, body { height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
                     body > *:not(#print-receipt-container) { display: none !important; }
                     @page { margin: 0; size: auto; }
                     #print-receipt-container {
-                        display: block !important;
-                        width: 100% !important;
-                        max-width: 58mm !important;
-                        height: auto !important;
-                        overflow: visible !important;
-                        margin: 0 auto !important;
-                        padding: 0mm 4% 20px 4% !important; 
-                        background: #fff !important;
-                        color: #000 !important;
-                        font-family: 'Courier New', Courier, monospace !important;
-                        font-weight: 700 !important;
-                        position: relative !important;
-                        box-sizing: border-box !important;
+                        display: block !important; width: 100% !important; max-width: 58mm !important; height: auto !important;
+                        overflow: visible !important; margin: 0 auto !important; padding: 0mm 4% 20px 4% !important; 
+                        background: #fff !important; color: #000 !important; font-family: 'Courier New', Courier, monospace !important;
+                        font-weight: 700 !important; position: relative !important; box-sizing: border-box !important;
                     }
-                    * { 
-                        color: #000 !important; 
-                        border-color: #000 !important; 
-                        -webkit-print-color-adjust: exact !important; 
-                        print-color-adjust: exact !important;
-                        overflow: visible !important;
-                    }
-                    img { 
-                        filter: grayscale(100%) contrast(300%) !important; 
-                        max-width: 100% !important;
-                        display: block !important;
-                        margin: 0 auto !important;
-                    }
+                    * { color: #000 !important; border-color: #000 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                    img { filter: grayscale(100%) contrast(300%) !important; max-width: 100% !important; display: block !important; margin: 0 auto !important; }
                 }
             `;
 
@@ -438,9 +402,6 @@ function KravyPOS() {
             }
         }, 50);
     };
-
-    startPrint();
-};
 
     const handleSaveAction = async (type: "KOT" | "BILL", order: Order) => {
         kravy.click();
