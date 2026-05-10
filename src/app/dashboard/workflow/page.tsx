@@ -1551,21 +1551,6 @@ export default function KravyPOS() {
                             exit={{ opacity: 0 }}
                             className="h-full flex flex-col p-5 gap-5 items-center"
                         >
-                            <div className="flex items-center justify-between w-full max-w-[1000px]">
-                                <div>
-                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight italic">Kitchen Display</h2>
-                                    <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live from Chef Hub
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                        <Flame size={15} className="text-rose-500" />
-                                        <span>{stats.running} Active</span>
-                                    </div>
-                                    <button onClick={fetchData} className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"><RotateCcw size={16} /></button>
-                                </div>
-                            </div>
 
                             <div className="flex-1 w-full overflow-x-auto pb-6 no-scrollbar px-4">
                                 <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
