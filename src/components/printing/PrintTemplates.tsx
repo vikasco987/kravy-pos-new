@@ -398,24 +398,31 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         className="hidden print:block kot kot-container font-mono text-[10px] leading-tight text-black bg-white"
         style={{ width: '48mm', margin: '0 auto', padding: '0mm 2mm 8mm 2mm', boxSizing: 'border-box', overflow: 'hidden' }}
       >
-        {/* 🔥 MINIMAL CLEAN KOT TOKEN DISPLAY 🔥 */}
-        <div style={{
-          textAlign: 'center',
-          margin: '8px 0',
-          fontFamily: 'Arial, sans-serif',
-          color: '#000',
-          borderBottom: '1px dashed #000',
-          paddingBottom: '8px'
-        }}>
-          <div style={{ fontSize: '16px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' }}>
+        <div className="text-center font-black text-[22px] border-b-2 border-black pb-1 mb-2">K.O.T</div>
+        
+        <div className="flex flex-wrap justify-between items-center font-black text-[11px] mb-2 px-0.5 gap-y-1">
+          <div className="border-2 border-black text-black px-1.5 py-1 rounded-sm font-black whitespace-nowrap text-[10px]">
             {selectedTable === "POS" ? "COUNTER" : 
              selectedTable === "TAKEAWAY" ? "TAKEAWAY" : 
              selectedTable === "DELIVERY" ? "DELIVERY" : 
              `TABLE: ${selectedTable}`}
           </div>
-          <div style={{ fontSize: '18px', fontWeight: '700', textTransform: 'uppercase' }}>
-            TOKEN NO - <span style={{ fontSize: '24px' }}>{tokenNumber || "---"}</span>
-          </div>
+          {s('showKOTToken') && (
+            <div className="text-right leading-none">
+              <div className="text-[8px] font-black uppercase tracking-tighter">Token No.</div>
+              <div 
+                className="font-black"
+                style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
+              >
+                #{(() => {
+                  if (tokenNumber != null && tokenNumber !== "" && tokenNumber !== "---") {
+                    return tokenNumber;
+                  }
+                  return "---";
+                })()}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="border-y border-dashed border-black py-1 mb-2 text-[10px] font-bold">
