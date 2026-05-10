@@ -146,7 +146,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         </div>
 
         {/* 🔥 SIMPLE CLEAN TOKEN DISPLAY 🔥 */}
-        {((tokenNumber && tokenNumber !== "---" && tokenNumber !== "") && s('showToken')) && (
+        {(tokenNumber != null && tokenNumber !== "---" && tokenNumber !== "" && s('showToken')) && (
           <div style={{ textAlign: 'center', margin: '10px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '6px 0' }}>
             <div style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Token No.</div>
             <div style={{ fontSize: '28px', fontWeight: '900', lineHeight: '1', marginTop: '4px' }}>#{tokenNumber}</div>
