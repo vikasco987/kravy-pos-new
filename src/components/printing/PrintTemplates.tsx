@@ -145,12 +145,30 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         </div>
 
-        {/* 🔥 HIGH VISIBILITY TOKEN NUMBER 🔥 */}
+        {/* 🔥 PREMIUM HIGH-VISIBILITY TOKEN/TABLE BOX 🔥 */}
         {((tokenNumber && tokenNumber !== "---" && tokenNumber !== "") && s('showToken')) && (
-          <div className="mt-2 mb-2 text-center">
-            <div className="inline-block border-2 border-black px-6 py-1 rounded-md">
-                <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Token Number</p>
-                <p className="text-3xl font-black leading-none">{tokenNumber}</p>
+          <div className="mt-3 mb-3 flex justify-center">
+            <div style={{
+                width: '180px',
+                border: '2.5px solid #000',
+                borderRadius: '12px',
+                padding: '10px 5px',
+                textAlign: 'center',
+                backgroundColor: '#fff'
+            }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    {selectedTable ? `TABLE : ${selectedTable === "POS" ? "COUNTER" : selectedTable.replace("TYPE: ", "")}` : 'TOKEN NUMBER'}
+                </div>
+                <div style={{ borderTop: '1px dashed #000', margin: '4px 20px' }} />
+                <div style={{ 
+                    fontSize: tokenNumber.length === 1 ? '65px' : 
+                              tokenNumber.length === 2 ? '55px' : '45px', 
+                    fontWeight: '900', 
+                    lineHeight: '1',
+                    marginTop: '5px'
+                }}>
+                    {tokenNumber}
+                </div>
             </div>
           </div>
         )}
@@ -386,34 +404,36 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         className="hidden print:block kot kot-container font-mono text-[10px] leading-tight text-black bg-white"
         style={{ width: '48mm', margin: '0 auto', padding: '0mm 2mm 8mm 2mm', boxSizing: 'border-box', overflow: 'hidden' }}
       >
-        <div className="text-center font-black text-[22px] border-b-2 border-black pb-1 mb-2">K.O.T</div>
+        <div className="text-center font-black text-[18px] border-b border-black pb-0.5 mb-2 tracking-widest">K.O.T</div>
         
-        <div className="flex flex-wrap justify-between items-center font-black text-[11px] mb-2 px-0.5 gap-y-1">
-          <div className="border-2 border-black text-black px-1.5 py-1 rounded-sm font-black whitespace-nowrap text-[10px]">
-            {selectedTable === "POS" ? "COUNTER" : 
-             selectedTable === "TAKEAWAY" ? "TAKEAWAY" : 
-             selectedTable === "DELIVERY" ? "DELIVERY" : 
-             `TABLE: ${selectedTable}`}
-          </div>
-          {s('showKOTToken') && (
-            <div className="text-right leading-none">
-              <div className="text-[8px] font-black uppercase tracking-tighter">Token No.</div>
-              <div 
-                className="font-black"
-                style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
-              >
-                #{(() => {
-                  if (Array.isArray(kotNumbers) && kotNumbers.length > 0) {
-                    return kotNumbers.filter(n => n != null).join(', ');
-                  }
-                  if (tokenNumber != null && tokenNumber !== "" && tokenNumber !== "---") {
-                    return tokenNumber;
-                  }
-                  return "---";
-                })()}
+        <div className="flex justify-center mb-3">
+          <div style={{
+              width: '180px',
+              border: '2px solid #000',
+              borderRadius: '10px',
+              padding: '8px 5px',
+              textAlign: 'center',
+              backgroundColor: '#fff'
+          }}>
+              <div style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '3px' }}>
+                {selectedTable === "POS" ? "COUNTER" : 
+                 selectedTable === "TAKEAWAY" ? "TAKEAWAY" : 
+                 selectedTable === "DELIVERY" ? "DELIVERY" : 
+                 `TABLE: ${selectedTable}`}
               </div>
-            </div>
-          )}
+              <div style={{ borderTop: '1px dashed #000', margin: '3px 15px' }} />
+              <div style={{ 
+                  fontSize: (() => {
+                    const t = tokenNumber || "---";
+                    return t.length === 1 ? '60px' : t.length === 2 ? '50px' : '40px';
+                  })(),
+                  fontWeight: '900', 
+                  lineHeight: '1',
+                  marginTop: '4px'
+              }}>
+                {tokenNumber || "---"}
+              </div>
+          </div>
         </div>
 
         <div className="border-y border-dashed border-black py-1 mb-2 text-[10px] font-bold">
