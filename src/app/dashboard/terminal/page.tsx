@@ -402,41 +402,25 @@ function KravyPOS() {
             kravy.print();
             window.print();
 
-            // 🔥 Separate KOT + Bill Logic
-            if (type === "BILL" && business?.enableKOTWithBill) {
-                handlePrint("KOT", targetOrder, targetTable);
-            }
-        }, 50);
-    };
-
-    startPrint();
-
+            // Cleanup
             setTimeout(() => {
                 if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
                 if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
             }, 1000);
 
+            // 🔥 Post-Print Updates
             if (targetOrder && type !== "MANUAL_COMBINE") {
                 const body: any = { orderId: (targetOrder as any).id.includes("Combined") ? customOrder?.id || printOrder?.id : targetOrder.id };
                 const autoBoth = isBill && business?.enableKOTWithBill && type !== "MANUAL_COMBINE" && type !== "COMBINED_BILL";
 
                 if (type === "KOT" || autoBoth) {
                     body.isKotPrinted = true;
-                    // Mark all items as not new after KOT print
-                    if (targetOrder.items) {
-                        body.items = targetOrder.items.map((it: any) => ({ ...it, isNew: false }));
-                    }
-                    // Auto transition PENDING/ACCEPTED -> PREPARING
-                    if (targetOrder.status === "PENDING" || targetOrder.status === "ACCEPTED") {
-                        body.status = "PREPARING";
-                    }
+                    if (targetOrder.items) body.items = targetOrder.items.map((it: any) => ({ ...it, isNew: false }));
+                    if (targetOrder.status === "PENDING" || targetOrder.status === "ACCEPTED") body.status = "PREPARING";
                 }
                 if (isBill || autoBoth) {
                     body.isBillPrinted = true;
-                    // Auto transition READY -> COMPLETED
-                    if (targetOrder.status === "READY") {
-                        body.status = "COMPLETED";
-                    }
+                    if (targetOrder.status === "READY") body.status = "COMPLETED";
                 }
 
                 fetch("/api/orders", {
@@ -444,16 +428,19 @@ function KravyPOS() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(body)
                 }).then(() => {
-                    // ✅ Local update
                     setOrders(prev => prev.map(o => o.id === (body.orderId || targetOrder.id) ? { ...o, ...body } : o));
-
-                    if (body.status === "COMPLETED") {
-                        handleCheckout(body.orderId || targetOrder.id, true);
-                    }
+                    if (body.status === "COMPLETED") handleCheckout(body.orderId || targetOrder.id, true);
                 });
             }
-        }, 400);
+
+            if (type === "BILL" && business?.enableKOTWithBill) {
+                handlePrint("KOT", targetOrder, targetTable);
+            }
+        }, 50);
     };
+
+    startPrint();
+};
 
     const handleSaveAction = async (type: "KOT" | "BILL", order: Order) => {
         kravy.click();
