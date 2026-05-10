@@ -326,9 +326,8 @@ function KravyPOS() {
             if (customTable) setPrintTable(customTable);
         }
 
-        // Wait for state update
-        console.log(`[PRINT] Starting ${type} flow...`);
-        console.log(`[PRINT] Context: Order=${targetOrder?.id}, Table=${targetTable?.name || "None"}`);
+        // ✅ No more long timeouts - execute immediately
+        const startPrint = () => {
 
         setTimeout(() => {
             const isBill = type === "BILL" || type === "COMBINED_BILL" || type === "MANUAL_COMBINE" || type === "KOT_BILL";
@@ -403,12 +402,13 @@ function KravyPOS() {
             kravy.print();
             window.print();
 
-            // 🔥 Separate KOT + Bill Logic: If Auto-Both is enabled, trigger the OTHER print immediately after
+            // 🔥 Separate KOT + Bill Logic
             if (type === "BILL" && business?.enableKOTWithBill) {
-                setTimeout(() => {
-                    handlePrint("KOT", targetOrder, targetTable);
-                }, 500);
+                handlePrint("KOT", targetOrder, targetTable);
             }
+        };
+
+        startPrint();
 
             setTimeout(() => {
                 if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
@@ -1021,9 +1021,6 @@ function KravyPOS() {
             {/* ═══ MAIN ═══ */}
             <main className="flex-1 overflow-hidden">
                 <AnimatePresence mode="wait">
-
-
-
                     {/* ── TERMINAL TAB ── */}
                     {activeTab === "dashboard" && (
                         <motion.div
