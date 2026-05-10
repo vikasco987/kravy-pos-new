@@ -78,11 +78,12 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           boxSizing: 'border-box',
           WebkitFontSmoothing: 'none',
           fontSmooth: 'never',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          marginTop: '-10px'
         }}
       >
         {(business?.logoUrl && s('showLogo')) && (
-          <div className="flex justify-center mb-0 mt-0 pt-0">
+          <div className="flex justify-center mb-0 mt-0 pt-0" style={{ marginTop: '-4mm' }}>
             <img 
               src={business.logoUrl} 
               alt="Logo" 
@@ -141,19 +142,18 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               <div className="font-black">No: {billNumber}</div>
               <div className="font-black text-[9px]">{billDate}</div>
             </div>
-            {(((kotNumbers && kotNumbers.length > 0) || (tokenNumber && tokenNumber !== "---" && tokenNumber !== "")) && s('showToken')) && (
-              <div className="flex flex-col items-end border-l border-black pl-2 py-0.5">
-                <div className="text-[7px] font-black uppercase tracking-tighter text-black leading-none mb-0.5">Token</div>
-                <div 
-                  className="font-black leading-none"
-                  style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
-                >
-                  {kotNumbers && kotNumbers.length > 0 ? kotNumbers.join(',') : `#${tokenNumber}`}
-                </div>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* 🔥 HIGH VISIBILITY TOKEN NUMBER 🔥 */}
+        {((tokenNumber && tokenNumber !== "---" && tokenNumber !== "") && s('showToken')) && (
+          <div className="mt-2 mb-2 text-center">
+            <div className="inline-block border-2 border-black px-6 py-1 rounded-md">
+                <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Token Number</p>
+                <p className="text-3xl font-black leading-none">{tokenNumber}</p>
+            </div>
+          </div>
+        )}
 
         {((customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && s('showCustomerDetails')) && (
           <div className={`mt-2 text-[10px] font-black ${s('sepCustomer') ? 'border-t-2 border-dashed border-black' : ''} pt-1`}>

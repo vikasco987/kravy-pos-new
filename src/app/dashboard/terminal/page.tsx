@@ -334,7 +334,7 @@ function KravyPOS() {
             const isBill = type === "BILL" || type === "COMBINED_BILL" || type === "MANUAL_COMBINE" || type === "KOT_BILL";
             // ONLY print both if explicitly asked (KOT_BILL) or if it's a standard BILL and the setting is on
             // BUT the user wants "Bill click -> Only Bill", so we'll make BILL strictly Only Bill if it's from the settlement button
-            const autoBoth = type === "KOT_BILL";
+            const autoBoth = type === "KOT_BILL" || (type === "BILL" && business?.enableKOTWithBill);
             
             let printHTML = "";
             if (autoBoth) {
@@ -382,7 +382,7 @@ function KravyPOS() {
                         height: auto !important;
                         overflow: visible !important;
                         margin: 0 auto !important;
-                        padding: 2mm 4% 20px 4% !important; 
+                        padding: 0mm 4% 20px 4% !important; 
                         background: #fff !important;
                         color: #000 !important;
                         font-family: 'Courier New', Courier, monospace !important;
