@@ -1702,7 +1702,7 @@ export default function CheckoutClient() {
                   userPermissions.includes("EDIT_POS");
 
   return (
-    <div className="fixed inset-0 top-[64px] bg-[var(--kravy-bg)] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 top-0 bg-[var(--kravy-bg)] flex flex-col overflow-hidden">
 
       {/* ════════════════════════════════════════════
           MAIN LAYOUT

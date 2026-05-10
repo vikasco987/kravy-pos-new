@@ -20,6 +20,8 @@ export default function ClientLayout({
   const { user: authUser, loading: authLoading } = useAuthContext();
   const pathname = usePathname();
   const isTerminal = pathname === "/dashboard/terminal";
+  const isCheckout = pathname === "/dashboard/billing/checkout";
+  const isPOS = isTerminal || isCheckout;
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -107,7 +109,7 @@ export default function ClientLayout({
         )}
 
         <div className="flex flex-1 overflow-hidden relative">
-          {!isTerminal && (
+          {!isPOS && (
             <div className={`
               ${isMobile ? 'fixed' : 'relative'}
               ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}
@@ -120,7 +122,7 @@ export default function ClientLayout({
 
           {/* Main Content */}
           <div className="flex flex-col flex-1 min-w-0">
-            {!isTerminal && (
+            {!isPOS && (
               <Navbar
                 isMobile={isMobile}
                 onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
@@ -129,15 +131,15 @@ export default function ClientLayout({
             )}
 
             <main
-              className={`flex-1 ${isTerminal ? 'overflow-hidden' : 'overflow-y-auto'} transition-all duration-400`}
+              className={`flex-1 ${isPOS ? 'overflow-hidden' : 'overflow-y-auto'} transition-all duration-400`}
               style={{
                 background: "var(--kravy-bg)",
-                minHeight: isTerminal ? "100vh" : "calc(100vh - 72px)",
+                minHeight: isPOS ? "100vh" : "calc(100vh - 72px)",
                 transition: "background 0.4s ease"
               }}
             >
               <div
-                className={`w-full mx-auto ${isTerminal ? 'p-0 h-full' : 'p-4 sm:p-6 lg:p-8 kravy-page-fade'}`}
+                className={`w-full mx-auto ${isPOS ? 'p-0 h-full' : 'p-4 sm:p-6 lg:p-8 kravy-page-fade'}`}
                 style={{ minHeight: "100%" }}
               >
                 {children}
