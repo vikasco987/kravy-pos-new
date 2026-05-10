@@ -981,7 +981,7 @@ function KravyPOS() {
                             className="flex flex-col md:flex-row h-full gap-3 p-3 overflow-hidden"
                         >
                             {/* LEFT PANEL */}
-                            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-slate-800/40 rounded-3xl shadow-sm w-full md:w-[340px] shrink-0 flex flex-col overflow-hidden h-[45vh] md:h-full transition-colors duration-300">
+                            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-slate-800/40 rounded-3xl shadow-sm w-full md:w-[280px] lg:w-[300px] xl:w-[340px] shrink-0 flex flex-col overflow-hidden h-[45vh] md:h-full transition-all duration-300">
                                 {/* Panel Header */}
                                 <div className="p-5 border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
                                     <div className="flex items-center justify-between mb-4">
@@ -1173,15 +1173,15 @@ function KravyPOS() {
                                         className="h-full flex flex-col"
                                     >
                                         {/* Order Header: Horizontal Flow Design */}
-                                        <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 transition-colors duration-300">
+                                        <div className="px-3 sm:px-5 py-2 sm:py-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1.5 sm:gap-3 transition-colors duration-300">
                                             {/* 1. Avatar (Table ID) */}
-                                            <motion.div
-                                                initial={{ rotate: -10, scale: 0.8 }}
-                                                animate={{ rotate: 0, scale: 1 }}
-                                                className="w-10 h-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl flex items-center justify-center font-black italic shadow-lg shadow-slate-900/10 shrink-0 text-lg"
-                                            >
-                                                {selectedTable.name}
-                                            </motion.div>
+                                                <motion.div
+                                                    initial={{ rotate: -10, scale: 0.8 }}
+                                                    animate={{ rotate: 0, scale: 1 }}
+                                                    className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl flex items-center justify-center font-black italic shadow-lg shadow-slate-900/10 shrink-0 text-base sm:text-lg"
+                                                >
+                                                    {selectedTable.name}
+                                                </motion.div>
 
                                             {/* 2. Customer Info */}
                                             <div className="flex flex-col gap-0.5 min-w-0">
@@ -1199,8 +1199,8 @@ function KravyPOS() {
                                             <div className="h-8 w-[1.5px] bg-slate-100 dark:bg-slate-800 mx-1" />
 
                                             {/* 4. Status Tags */}
-                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                <span className="flex items-center gap-1 text-[8px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100/50">● LIVE</span>
+                                            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 overflow-x-auto no-scrollbar">
+                                                <span className="flex items-center gap-1 text-[7px] sm:text-[8px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-1.5 sm:px-2 py-1 rounded-lg border border-emerald-100/50">● LIVE</span>
                                                 {activeOrderForSelected?.isKotPrinted && (
                                                     <span className="flex items-center gap-1 text-[8px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100/50">
                                                         <Printer size={10} /> KOT PRINTED
