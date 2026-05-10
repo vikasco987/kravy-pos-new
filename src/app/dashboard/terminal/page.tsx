@@ -11,7 +11,7 @@ import {
     Flame, UtensilsCrossed, Plus, Trash2, Eye,
     Printer, X, Filter, Search, User, ChevronRight,
     Edit3, LogOut, Table as TableIcon, History,
-    RotateCcw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
+    RotateCcw, RefreshCw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
     Wifi, Battery, Signal, Smartphone, Timer, AlertTriangle, ChevronUp, Package2,
     Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut, Phone, MessageSquare,
     Crown, Building, Wind, Monitor, Layout, Navigation
