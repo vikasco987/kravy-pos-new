@@ -109,7 +109,7 @@ export default function ClientLayout({
         )}
 
         <div className="flex flex-1 overflow-hidden relative">
-          {!isPOS && (
+          {!isTerminal && (
             <div className={`
               ${isMobile ? 'fixed' : 'relative'}
               ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}
