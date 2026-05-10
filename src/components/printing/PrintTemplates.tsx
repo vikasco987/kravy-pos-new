@@ -145,25 +145,11 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         </div>
 
-        {/* 🔥 MINIMAL CLEAN TOKEN DISPLAY 🔥 */}
+        {/* 🔥 SIMPLE CLEAN TOKEN DISPLAY 🔥 */}
         {((tokenNumber && tokenNumber !== "---" && tokenNumber !== "") && s('showToken')) && (
-          <div style={{
-            textAlign: 'center',
-            margin: '10px 0',
-            fontFamily: 'Arial, sans-serif',
-            color: '#000',
-            borderTop: '1px dashed #000',
-            borderBottom: '1px dashed #000',
-            padding: '6px 0'
-          }}>
-            <span style={{ fontSize: '20px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                TOKEN NO - <span style={{ fontSize: '26px' }}>{tokenNumber}</span>
-            </span>
-            {selectedTable && (
-              <div style={{ fontSize: '10px', fontWeight: '800', marginTop: '2px', textTransform: 'uppercase', opacity: 0.8 }}>
-                {selectedTable === "POS" ? "COUNTER" : selectedTable.replace("TYPE: ", "")}
-              </div>
-            )}
+          <div style={{ textAlign: 'center', margin: '10px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '6px 0' }}>
+            <div style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Token No.</div>
+            <div style={{ fontSize: '28px', fontWeight: '900', lineHeight: '1', marginTop: '4px' }}>#{tokenNumber}</div>
           </div>
         )}
 
