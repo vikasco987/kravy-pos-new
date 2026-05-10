@@ -87,13 +87,13 @@ const TableTimer = ({ startTime, className = "" }: { startTime?: string, classNa
     };
 
     return (
-        <div className={`flex items-center gap-3 px-4 py-2.5 rounded-[2rem] border shadow-sm backdrop-blur-md transition-all duration-300 ${ageColors[ageStatus]} ${className}`}>
-            <div className="text-2xl shrink-0">⏰</div>
-            <div className="flex flex-col items-start leading-none">
+        <div className={`flex items-center gap-2 px-2 py-1 rounded-full border shadow-sm backdrop-blur-md transition-all duration-300 ${ageColors[ageStatus]} ${className}`}>
+            <Clock size={12} className="shrink-0 opacity-70" />
+            <div className="flex items-baseline gap-0.5 leading-none">
                 {timeData.h > 0 && (
-                    <span className="text-2xl font-black tracking-tighter">{timeData.h}h</span>
+                    <span className="text-[11px] font-black tracking-tight">{timeData.h}H</span>
                 )}
-                <span className="text-2xl font-black tracking-tighter">{timeData.m}m</span>
+                <span className="text-[11px] font-black tracking-tight">{timeData.m}M</span>
             </div>
         </div>
     );
