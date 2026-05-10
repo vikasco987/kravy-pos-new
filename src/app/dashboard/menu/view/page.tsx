@@ -558,7 +558,7 @@ export default function ViewMenuPage() {
               typeof it.sellingPrice === "number"
                 ? it.sellingPrice
                 : it.price ?? null,
-            imageUrl: it.imageUrl ?? null,
+            imageUrl: it.imageUrl || it.image || null,
             unit: it.unit ?? null,
             categoryId: catId,
             isVeg: it.isVeg ?? true,
@@ -1140,7 +1140,12 @@ export default function ViewMenuPage() {
             {tab === "image" && (
               <div className="space-y-6 flex flex-col items-center">
                  <div className="w-full h-48 rounded-[2rem] border-2 border-dashed border-[var(--kravy-border)] bg-[var(--kravy-bg)] relative overflow-hidden flex items-center justify-center group">
-                    {local.imageUrl ? (
+                    {uploading ? (
+                      <div className="flex flex-col items-center gap-3">
+                         <RotateCcw className="animate-spin text-indigo-500" size={24} />
+                         <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Uploading to Cloudinary...</p>
+                      </div>
+                    ) : local.imageUrl ? (
                       <>
                         <Image src={local.imageUrl} alt="Preview" fill className="object-cover" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -1148,9 +1153,11 @@ export default function ViewMenuPage() {
                         </div>
                       </>
                     ) : (
-                      <div className="text-center p-4">
-                        <Plus size={32} className="mx-auto text-indigo-400 mb-2" />
-                        <p className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest">No Image Set</p>
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                           <Plus size={24} strokeWidth={3} />
+                        </div>
+                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Click to Upload Photo</p>
                       </div>
                     )}
                     <input 

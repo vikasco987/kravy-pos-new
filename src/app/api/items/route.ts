@@ -384,6 +384,7 @@ export async function POST(req: Request) {
             : Number(body.price),
         unit: body.unit || null,
         imageUrl: body.imageUrl || null,
+        image: body.imageUrl || null,
         description: body.description || null,
         clerkId: effectiveId,
         categoryId: (body.categoryId && isValidObjectId(String(body.categoryId))) 
@@ -494,6 +495,7 @@ export async function PUT(req: Request) {
           sellingPrice !== undefined ? Number(sellingPrice) : undefined,
         unit: unit ?? undefined,
         imageUrl: imageUrl ?? undefined,
+        image: imageUrl ?? undefined,
         description: description ?? undefined,
         categoryId: (categoryId && isValidObjectId(String(categoryId))) 
           ? String(categoryId) 
