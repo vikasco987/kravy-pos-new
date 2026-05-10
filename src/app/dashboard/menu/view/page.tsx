@@ -1572,19 +1572,6 @@ export default function ViewMenuPage() {
                       {cat.name}
                       <div className="flex-1 h-[2px] bg-gradient-to-r from-[var(--kravy-border-strong)] to-transparent opacity-30" />
                     </h3>
-                    <button 
-                      onClick={() => {
-                        const next = new Set(selectedIds);
-                        const catItemIds = cat.items.map(it => it.id);
-                        const allPresent = catItemIds.every(id => next.has(id));
-                        if (allPresent) catItemIds.forEach(id => next.delete(id));
-                        else catItemIds.forEach(id => next.add(id));
-                        setSelectedIds(next);
-                      }}
-                      className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-800 transition-colors"
-                    >
-                      {cat.items.every(it => selectedIds.has(it.id)) ? "Deselect All" : "Select All"}
-                    </button>
                   </div>
 
                 {cat.items.length === 0 ? (
@@ -1594,32 +1581,7 @@ export default function ViewMenuPage() {
                     {cat.items.map((item) => {
                       const inCart = cart[item.id]?.quantity ?? 0;
                       return (
-                        <motion.div key={item.id} layout whileHover={{ scale: 1.03, y: -4 }} className={`bg-[var(--kravy-surface)] p-4 rounded-2xl border border-[var(--kravy-border)] shadow-sm relative cursor-pointer min-w-0 transition-all ${selectedIds.has(item.id) ? "ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/30" : inCart > 0 ? "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/30" : "hover:border-indigo-400/50"}`} onClick={() => {
-                          if (isBulkMode || selectedIds.size > 0) {
-                            const next = new Set(selectedIds);
-                            if (next.has(item.id)) next.delete(item.id);
-                            else next.add(item.id);
-                            setSelectedIds(next);
-                          } else {
-                            addToCart(item);
-                          }
-                        }}>
-                          {/* Selection Checkbox */}
-                          <div className={`absolute top-4 right-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all z-20 ${selectedIds.has(item.id) ? "bg-indigo-600 border-indigo-600 scale-110" : isBulkMode || selectedIds.size > 0 ? "bg-white border-gray-300 opacity-100" : "bg-white/80 border-gray-300 opacity-0 group-hover:opacity-100"}`} onClick={(e) => {
-                            e.stopPropagation();
-                            const next = new Set(selectedIds);
-                            if (next.has(item.id)) next.delete(item.id);
-                            else next.add(item.id);
-                            setSelectedIds(next);
-                          }}>
-                            {selectedIds.has(item.id) ? (
-                              <Check size={14} strokeWidth={4} className="text-white" />
-                            ) : (
-                              <div className="w-2 h-2 bg-white/40 rounded-full" />
-                            )}
-                          </div>
-
-                          {inCart > 0 && selectedIds.size === 0 && <div className="absolute top-3 left-3 bg-emerald-600 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-lg z-10">{inCart}</div>}
+                        <motion.div key={item.id} layout whileHover={{ scale: 1.03, y: -4 }} className="bg-[var(--kravy-surface)] p-4 rounded-2xl border border-[var(--kravy-border)] shadow-sm relative cursor-pointer min-w-0 transition-all hover:border-indigo-400/50">
 
                           <div className="w-full h-40 mb-4 relative rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center min-w-0 shadow-inner">
                             {item.imageUrl ? (
@@ -1631,11 +1593,11 @@ export default function ViewMenuPage() {
 
                           <div className="flex flex-col items-start gap-1">
                             <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-2 truncate max-w-[65%]">
+                              <div className="flex items-center gap-2 flex-1">
                                 <div className={`w-3 h-3 border-[1.2px] rounded-sm flex items-center justify-center shrink-0 ${item.isVeg ? "border-green-600" : item.isEgg ? "border-amber-500" : "border-red-600"}`}>
                                     <div className={`w-1 h-1 rounded-full ${item.isVeg ? "bg-green-600" : item.isEgg ? "bg-amber-500" : "bg-red-600"}`} />
                                 </div>
-                                <h4 className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base truncate group-hover:text-indigo-500 transition-colors">{item.name}</h4>
+                                <h4 className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base group-hover:text-indigo-500 transition-colors">{item.name}</h4>
                               </div>
                               <div className="flex items-center gap-1.5">
                                 <button onClick={(e) => { e.stopPropagation(); setEditingItem(item); }} className="p-1.5 text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:scale-110 transition-transform">Edit</button>
@@ -1673,35 +1635,6 @@ export default function ViewMenuPage() {
         </main>
       </div>
 
-      {totalItems > 0 && (
-        <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed left-4 right-4 bottom-6 z-50 bg-[var(--kravy-surface)] border border-indigo-500/30 backdrop-blur-xl rounded-2xl shadow-2xl px-6 py-4 flex items-center justify-between max-w-5xl mx-auto ring-1 ring-white/10">
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col">
-              <span className="text-[var(--kravy-text-primary)] font-black text-lg">{totalItems} <span className="text-sm font-medium text-[var(--kravy-text-muted)]">Selected</span></span>
-              <span className="text-indigo-600 dark:text-indigo-400 font-extrabold text-xl">{formatPrice(totalPrice)}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                try {
-                  localStorage.setItem("pendingCart", JSON.stringify(cart));
-                  localStorage.setItem("pendingTotal", totalPrice.toString());
-                  window.location.href = "/billing/checkout";
-                } catch (e) {
-                  console.error(e);
-                  setToast("Unable to go to billing");
-                }
-              }}
-              className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition-all active:scale-95 flex items-center gap-2"
-            >
-              Proceed to Bill
-              <div className="w-5 h-5 flex items-center justify-center bg-white/20 rounded-full text-xs">→</div>
-            </button>
-          </div>
-        </motion.div>
-      )}
 
       {/* 🚀 BULK ACTIONS FLOATING BAR */}
       <AnimatePresence>
