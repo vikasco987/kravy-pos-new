@@ -145,31 +145,25 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         </div>
 
-        {/* 🔥 PREMIUM HIGH-VISIBILITY TOKEN/TABLE BOX 🔥 */}
+        {/* 🔥 MINIMAL CLEAN TOKEN DISPLAY 🔥 */}
         {((tokenNumber && tokenNumber !== "---" && tokenNumber !== "") && s('showToken')) && (
-          <div className="mt-3 mb-3 flex justify-center">
-            <div style={{
-                width: '180px',
-                border: '2.5px solid #000',
-                borderRadius: '12px',
-                padding: '10px 5px',
-                textAlign: 'center',
-                backgroundColor: '#fff'
-            }}>
-                <div style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    {selectedTable ? `TABLE : ${selectedTable === "POS" ? "COUNTER" : selectedTable.replace("TYPE: ", "")}` : 'TOKEN NUMBER'}
-                </div>
-                <div style={{ borderTop: '1px dashed #000', margin: '4px 20px' }} />
-                <div style={{ 
-                    fontSize: tokenNumber.length === 1 ? '65px' : 
-                              tokenNumber.length === 2 ? '55px' : '45px', 
-                    fontWeight: '900', 
-                    lineHeight: '1',
-                    marginTop: '5px'
-                }}>
-                    {tokenNumber}
-                </div>
-            </div>
+          <div style={{
+            textAlign: 'center',
+            margin: '10px 0',
+            fontFamily: 'Arial, sans-serif',
+            color: '#000',
+            borderTop: '1px dashed #000',
+            borderBottom: '1px dashed #000',
+            padding: '6px 0'
+          }}>
+            <span style={{ fontSize: '20px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                TOKEN NO - <span style={{ fontSize: '26px' }}>{tokenNumber}</span>
+            </span>
+            {selectedTable && (
+              <div style={{ fontSize: '10px', fontWeight: '800', marginTop: '2px', textTransform: 'uppercase', opacity: 0.8 }}>
+                {selectedTable === "POS" ? "COUNTER" : selectedTable.replace("TYPE: ", "")}
+              </div>
+            )}
           </div>
         )}
 
@@ -404,35 +398,23 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         className="hidden print:block kot kot-container font-mono text-[10px] leading-tight text-black bg-white"
         style={{ width: '48mm', margin: '0 auto', padding: '0mm 2mm 8mm 2mm', boxSizing: 'border-box', overflow: 'hidden' }}
       >
-        <div className="text-center font-black text-[18px] border-b border-black pb-0.5 mb-2 tracking-widest">K.O.T</div>
-        
-        <div className="flex justify-center mb-3">
-          <div style={{
-              width: '180px',
-              border: '2px solid #000',
-              borderRadius: '10px',
-              padding: '8px 5px',
-              textAlign: 'center',
-              backgroundColor: '#fff'
-          }}>
-              <div style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '3px' }}>
-                {selectedTable === "POS" ? "COUNTER" : 
-                 selectedTable === "TAKEAWAY" ? "TAKEAWAY" : 
-                 selectedTable === "DELIVERY" ? "DELIVERY" : 
-                 `TABLE: ${selectedTable}`}
-              </div>
-              <div style={{ borderTop: '1px dashed #000', margin: '3px 15px' }} />
-              <div style={{ 
-                  fontSize: (() => {
-                    const t = tokenNumber || "---";
-                    return t.length === 1 ? '60px' : t.length === 2 ? '50px' : '40px';
-                  })(),
-                  fontWeight: '900', 
-                  lineHeight: '1',
-                  marginTop: '4px'
-              }}>
-                {tokenNumber || "---"}
-              </div>
+        {/* 🔥 MINIMAL CLEAN KOT TOKEN DISPLAY 🔥 */}
+        <div style={{
+          textAlign: 'center',
+          margin: '8px 0',
+          fontFamily: 'Arial, sans-serif',
+          color: '#000',
+          borderBottom: '1px dashed #000',
+          paddingBottom: '8px'
+        }}>
+          <div style={{ fontSize: '16px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' }}>
+            {selectedTable === "POS" ? "COUNTER" : 
+             selectedTable === "TAKEAWAY" ? "TAKEAWAY" : 
+             selectedTable === "DELIVERY" ? "DELIVERY" : 
+             `TABLE: ${selectedTable}`}
+          </div>
+          <div style={{ fontSize: '18px', fontWeight: '700', textTransform: 'uppercase' }}>
+            TOKEN NO - <span style={{ fontSize: '24px' }}>{tokenNumber || "---"}</span>
           </div>
         </div>
 
