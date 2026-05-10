@@ -1962,7 +1962,7 @@ export default function CheckoutClient() {
                             {catItems.length} Items
                           </span>
                         </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 mb-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-3 mb-6">
                           {catItems.map(m => (
                             <MenuItemCard key={m.id} m={m} items={items} addToCart={addToCart} reduceFromCart={reduceFromCart} />
                           ))}
@@ -2038,7 +2038,7 @@ export default function CheckoutClient() {
                   })
                 ) : (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
                       {filteredMenuItems.map((m) => (
                         <MenuItemCard key={m.id} m={m} items={items} addToCart={addToCart} reduceFromCart={reduceFromCart} />
                       ))}
