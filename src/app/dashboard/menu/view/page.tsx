@@ -522,7 +522,7 @@ export default function ViewMenuPage() {
         }
 
         const items = await res.json();
-        console.log("MENU ITEMS:", items);
+        console.log("🚀 [FRONTEND_FETCH] Raw Items from API:", items);
 
         if (!Array.isArray(items)) {
           throw new Error("Menu API did not return array");
@@ -672,6 +672,7 @@ export default function ViewMenuPage() {
   const totalItems = Object.values(cart).reduce((sum, it) => sum + it.quantity, 0);
 
   async function saveEdit(updated: MenuItem) {
+    console.log("🚀 [FRONTEND_SAVE_EDIT] Payload:", JSON.stringify(updated, null, 2));
     if (!updated?.id) return;
     try {
       const res = await fetch("/api/items", {
@@ -960,7 +961,10 @@ export default function ViewMenuPage() {
     const [uploading, setUploading] = useState(false);
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
-    useEffect(() => setLocal(item), [item]);
+    useEffect(() => {
+      console.log("🔄 [EDIT_MODAL_INIT] Setting local state from item:", item.name, item.imageUrl);
+      setLocal(item);
+    }, [item.id]); // Only reset if the actual ID changes, not just any property
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files?.[0]) return;
@@ -1322,7 +1326,10 @@ export default function ViewMenuPage() {
               Cancel
             </button>
             <button
-              onClick={() => onSave(local)}
+              onClick={() => {
+                console.log("💎 [EDIT_MODAL_ON_SAVE] Final Local State:", JSON.stringify(local, null, 2));
+                onSave(local);
+              }}
               className="px-8 py-3 font-black rounded-xl bg-indigo-600 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/30 text-white active:scale-95"
             >
               Save Changes

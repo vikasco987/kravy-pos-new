@@ -253,7 +253,9 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
-import { request } from "http";
+
+console.log("🚀 [ITEMS_API_INIT] Loaded at:", new Date().toISOString());
+console.log("🛠️ [ITEMS_API_DB] URL Prefix:", process.env.DATABASE_URL?.split('@')[1]?.substring(0, 30));
 
 /* --------------------------------
    Helper: find or create DB user
@@ -361,6 +363,8 @@ export async function POST(req: Request) {
     const dbUser = await findOrCreateDBUser(effectiveId);
     const body = await req.json();
 
+    console.log("🚀 [API_ITEMS_POST] Incoming Body:", JSON.stringify(body, null, 2));
+
     if (!body?.name || body.price == null || !body.categoryId) {
       console.log("ITEM CREATE VALIDATION FAILED:", {
         name: !!body?.name,
@@ -419,6 +423,8 @@ export async function POST(req: Request) {
       }
     });
 
+    console.log("✅ [API_ITEMS_POST] Saved Item:", JSON.stringify(item, null, 2));
+
     return NextResponse.json(item, { status: 201 });
   } catch (err: any) {
     console.error("POST /api/items error:", err);
@@ -441,6 +447,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
+    console.log("🚀 [API_ITEMS_PUT] Incoming Body:", JSON.stringify(body, null, 2));
     const { id, name, sellingPrice, unit, categoryId, imageUrl, description } = body;
 
     // 🟢 BULK UPDATE SUPPORT
@@ -494,8 +501,8 @@ export async function PUT(req: Request) {
         sellingPrice:
           sellingPrice !== undefined ? Number(sellingPrice) : undefined,
         unit: unit ?? undefined,
-        imageUrl: imageUrl ?? undefined,
-        image: imageUrl ?? undefined,
+        imageUrl: imageUrl === undefined ? undefined : imageUrl,
+        image: imageUrl === undefined ? undefined : imageUrl,
         description: description ?? undefined,
         categoryId: (categoryId && isValidObjectId(String(categoryId))) 
           ? String(categoryId) 
@@ -527,6 +534,8 @@ export async function PUT(req: Request) {
         addonGroups: true
       }
     });
+
+    console.log("✅ [API_ITEMS_PUT] Updated Item:", JSON.stringify(updated, null, 2));
 
     return NextResponse.json(updated);
   } catch (err) {
