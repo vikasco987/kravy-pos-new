@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Database, Download, Upload, RefreshCw, Shield, Clock, CheckCircle, AlertCircle, HardDrive, Cloud, FileText, Calendar, Search, FileCode, ChevronRight } from "lucide-react";
+import { Database, Download, Upload, RefreshCw, Shield, Clock, CheckCircle, AlertCircle, HardDrive, Cloud, FileText, Calendar, Search, FileCode, ChevronRight, Trash2 } from "lucide-react";
 
 type BackupRecord = {
   id: string;
@@ -63,6 +63,25 @@ export default function BackupPage() {
         setIsCreatingBackup(false);
         setBackupProgress(0);
       }, 1000);
+    }
+  };
+
+  const handleDeleteBackup = async (id: string, fileName: string) => {
+    if (!confirm(`Are you sure you want to delete backup "${fileName}"?`)) return;
+
+    try {
+      const res = await fetch("/api/admin/backups/delete", {
+        method: "POST",
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+
+      alert("Backup deleted successfully");
+      fetchBackups();
+    } catch (err: any) {
+      alert("Delete failed: " + err.message);
     }
   };
 
@@ -409,6 +428,18 @@ export default function BackupPage() {
                           <Search size={14} /> Inspect
                         </button>
                         <DownloadButton fileName={backup.filename} />
+                        <button 
+                          onClick={() => handleDeleteBackup(backup.id, backup.filename)}
+                          style={{
+                            background: "rgba(239, 68, 68, 0.1)",
+                            color: "#EF4444",
+                            border: "none", borderRadius: "8px", padding: "6px", cursor: "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px"
+                          }}
+                          title="Delete Backup"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
