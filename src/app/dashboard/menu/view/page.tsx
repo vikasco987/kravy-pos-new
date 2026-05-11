@@ -955,11 +955,6 @@ export default function ViewMenuPage() {
     }
   };
 
-  if (loading) return <p className="p-6 text-center">Loading items...</p>;
-  if (error) return <p className="p-6 text-center text-red-600">Error: {error}</p>;
-
-    );
-  }
 
   if (loading) return <p className="p-6 text-center">Loading items...</p>;
   if (error) return <p className="p-6 text-center text-red-600">Error: {error}</p>;
