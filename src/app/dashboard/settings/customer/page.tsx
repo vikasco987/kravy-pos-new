@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { 
     Users, CheckCircle2, AlertCircle, Save, ArrowLeft, 
-    User, Phone, MapPin, Check
+    User, Phone, MapPin, Check, Zap, Clock
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
