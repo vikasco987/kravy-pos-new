@@ -1215,7 +1215,11 @@ export default function CheckoutClient() {
       }
 
       const payload = {
-        items, 
+        items: items.map(i => ({
+          ...i,
+          // 🛡️ Snapshot: If global tax is active and item has no specific GST, lock the current global rate
+          gst: (i.gst === undefined || i.gst === null) ? (taxActive ? globalRate : 0) : i.gst
+        })), 
         subtotal: Number(totalTaxable.toFixed(2)), 
         tax: Number(totalGst.toFixed(2)), 
         deliveryCharges: deliveryCharge,
