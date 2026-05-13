@@ -37,6 +37,7 @@ type MenuItem = {
   zones?: string[];
   isVeg?: boolean;
   isEgg?: boolean;
+  isActive?: boolean;
 };
 
 type BillItem = {
@@ -692,6 +693,7 @@ export default function CheckoutClient() {
 
   const filteredMenuItems = useMemo(() => {
     return menuItems
+      .filter((i) => i.isActive !== false) // 🛡️ Filter Offline Items
       .filter((i) => activeCategory === "All" ? true : i.category?.name === activeCategory)
       .filter((i) => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
       .filter((i) => {
@@ -2185,7 +2187,7 @@ export default function CheckoutClient() {
               {/* Note & Held Bills Buttons */}
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setShowNotesModal(true)}
+                  onClick={() => { kravy.click(); setShowNotesModal(true); }}
                   className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${orderNotes ? "bg-blue-500/10 border-blue-500/25 text-blue-500" : "bg-[var(--kravy-surface)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)]"}`}
                   title="Add Order Note"
                 >
@@ -2193,7 +2195,7 @@ export default function CheckoutClient() {
                 </button>
 
                 <button
-                  onClick={() => { setShowHeldBills(true); fetchHeldBills(); }}
+                  onClick={() => { kravy.click(); setShowHeldBills(true); fetchHeldBills(); }}
                   className="relative group flex items-center gap-2 px-3 py-2 bg-amber-500/10 text-amber-500
                     border border-amber-500/25 rounded-xl hover:bg-amber-500/20 transition-all"
                   title="View Held Bills"
@@ -2267,7 +2269,7 @@ export default function CheckoutClient() {
           <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar flex flex-col">
             {/* Customer Section Toggle */}
             <button
-              onClick={() => setShowCustomer(!showCustomer)}
+              onClick={() => { kravy.click(); setShowCustomer(!showCustomer); }}
               className="px-4 md:px-5 py-3 text-left border-b border-[var(--kravy-border)]
                 flex items-center justify-between hover:bg-[var(--kravy-bg)] transition-colors flex-shrink-0"
             >

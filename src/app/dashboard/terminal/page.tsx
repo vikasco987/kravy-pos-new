@@ -171,6 +171,11 @@ function KravyPOS() {
         setOrders
     } = useTerminalContext();
 
+    const switchTab = (tab: TabKey) => {
+        kravy.click();
+        setActiveTab(tab);
+    };
+
     const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
     const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
     const [payMethod, setPayMethod] = useState("upi");
@@ -269,6 +274,22 @@ function KravyPOS() {
     const [itemSearch, setItemSearch] = useState("");
     const [selectedItemForAdd, setSelectedItemForAdd] = useState<any>(null);
     const [addQty, setAddQty] = useState(1);
+
+    // ✅ Fetch Menu Items for "Add Item" Modal
+    useEffect(() => {
+        const fetchItems = async () => {
+            try {
+                const res = await fetch("/api/menu/items");
+                if (res.ok) {
+                    const data = await res.json();
+                    setMenuItems(Array.isArray(data) ? data : []);
+                }
+            } catch (err) {
+                console.error("Failed to fetch menu items for terminal", err);
+            }
+        };
+        fetchItems();
+    }, []);
 
     // Manual Combination States
     const [showCombineModal, setShowCombineModal] = useState(false);
@@ -1391,7 +1412,7 @@ function KravyPOS() {
                                                                             </div>
                                                                             <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
                                                                                 <button 
-                                                                                    onClick={() => handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity - 1)}
+                                                                                    onClick={() => { kravy.remove(); handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity - 1); }}
                                                                                     className="w-4 h-4 rounded flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 text-slate-400 transition-all font-black text-[10px]"
                                                                                 >
                                                                                     −
@@ -1400,7 +1421,7 @@ function KravyPOS() {
                                                                                     {item.quantity}
                                                                                 </span>
                                                                                 <button 
-                                                                                    onClick={() => handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity + 1)}
+                                                                                    onClick={() => { kravy.click(); handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity + 1); }}
                                                                                     className="w-4 h-4 rounded flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 text-[#6D3BFF] transition-all font-black text-[10px]"
                                                                                 >
                                                                                     +
@@ -1408,7 +1429,7 @@ function KravyPOS() {
                                                                             </div>
                                                                             <span className="w-12 text-right text-[11px] font-black text-slate-900">₹{item.price * item.quantity}</span>
                                                                             <button 
-                                                                                onClick={() => handleRemoveItem(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item))}
+                                                                                onClick={() => { kravy.trash(); handleRemoveItem(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item)); }}
                                                                                 className="w-5 h-5 rounded flex items-center justify-center text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
                                                                             >
                                                                                 <Trash2 size={10} />
@@ -1773,6 +1794,7 @@ function KravyPOS() {
 
                             <div className="flex-1 overflow-y-auto p-4 space-y-3">
                                 {menuItems
+                                    .filter(it => it.isActive !== false) // 🛡️ Hide Offline Items
                                     .filter(it => !itemSearch || it.name.toLowerCase().includes(itemSearch.toLowerCase()))
                                     .map(it => (
                                         <div 

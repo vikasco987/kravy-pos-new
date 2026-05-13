@@ -3,8 +3,21 @@
 import { SignUp } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { UtensilsCrossed, Rocket, Globe, BarChart3 } from "lucide-react";
+import { useEffect } from "react";
+import { kravy } from "@/lib/sounds";
 
 export default function Page() {
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("button") || target.closest('a') || target.tagName === 'BUTTON') {
+        kravy.click();
+      }
+    };
+    window.addEventListener("click", handleGlobalClick);
+    return () => window.removeEventListener("click", handleGlobalClick);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#0F0F23] flex flex-col lg:flex-row-reverse relative overflow-hidden">
       

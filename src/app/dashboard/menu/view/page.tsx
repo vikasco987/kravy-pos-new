@@ -424,6 +424,7 @@ type MenuItem = {
   taxStatus?: string | null;
   gst?: number | null;
   hsnCode?: string | null;
+  isActive: boolean;
 };
 
 type MenuCategory = {
@@ -668,8 +669,29 @@ export default function ViewMenuPage() {
     });
   };
 
-  const totalPrice = Object.values(cart).reduce((sum, it) => sum + ((it.price ?? 0) * it.quantity), 0);
   const totalItems = Object.values(cart).reduce((sum, it) => sum + it.quantity, 0);
+
+  async function handleToggleStatus(item: MenuItem) {
+    try {
+      const newStatus = !item.isActive;
+      const res = await fetch("/api/items", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, isActive: newStatus }),
+      });
+
+      if (!res.ok) throw new Error(await res.text().catch(() => `Failed (${res.status})`));
+      
+      setMenus(prev => prev.map(cat => ({
+        ...cat,
+        items: cat.items.map(it => it.id === item.id ? { ...it, isActive: newStatus } : it)
+      })));
+      setToast(`Item ${item.name} is now ${newStatus ? "Online" : "Offline"}`);
+    } catch (err: any) {
+      console.error(err);
+      setToast(err?.message ?? "Toggle failed");
+    }
+  }
 
   async function saveEdit(updated: MenuItem) {
     console.log("🚀 [FRONTEND_SAVE_EDIT] Payload:", JSON.stringify(updated, null, 2));
@@ -1190,10 +1212,24 @@ export default function ViewMenuPage() {
 
                           <div className="w-full h-40 mb-4 relative rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center min-w-0 shadow-inner">
                             {item.imageUrl ? (
-                              <Image src={item.imageUrl} alt={item.name} fill className="object-cover transition-transform duration-500 group-hover:scale-110" sizes="(max-width: 768px) 50vw, 25vw" />
+                              <Image src={item.imageUrl} alt={item.name} fill className={`object-cover transition-transform duration-500 group-hover:scale-110 ${!item.isActive ? "grayscale opacity-50" : ""}`} sizes="(max-width: 768px) 50vw, 25vw" />
                             ) : (
                               <div className="text-[var(--kravy-text-faint)] font-bold text-xs uppercase tracking-widest">No Image</div>
                             )}
+                            
+                            {/* Status Badge */}
+                            <div className="absolute top-2 left-2 z-10">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleToggleStatus(item); }}
+                                className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm transition-all ${
+                                  item.isActive 
+                                    ? "bg-emerald-500 text-white hover:bg-emerald-600" 
+                                    : "bg-rose-500 text-white hover:bg-rose-600"
+                                }`}
+                              >
+                                {item.isActive ? "● Online" : "○ Offline"}
+                              </button>
+                            </div>
                           </div>
 
                           <div className="flex flex-col items-start gap-1">

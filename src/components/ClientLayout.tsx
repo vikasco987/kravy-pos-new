@@ -9,6 +9,7 @@ import { OrderNotificationProvider } from "@/components/OrderNotificationProvide
 import { useAuthContext } from "@/components/AuthContext";
 import { Lock, Loader2 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { kravy } from "@/lib/sounds";
 
 export default function ClientLayout({
   children,
@@ -26,6 +27,24 @@ export default function ClientLayout({
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Only play if it's a likely interactive element and doesn't already have a manual sound call (best effort)
+      if (
+        target.closest("button") || 
+        target.closest("a") || 
+        target.closest("[role='button']") ||
+        (target.tagName === "INPUT" && (target as HTMLInputElement).type === "checkbox")
+      ) {
+        // We allow some double-triggering as kravy.click() is short and layers well
+        kravy.click();
+      }
+    };
+    window.addEventListener("click", handleGlobalClick);
+    return () => window.removeEventListener("click", handleGlobalClick);
+  }, []);
 
   useEffect(() => {
     setMounted(true);

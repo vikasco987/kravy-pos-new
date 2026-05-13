@@ -160,11 +160,16 @@ async function play(fn: (c: AudioContext) => void) {
 // ── Sound Library ──────────────────────────────────────────────────────────────
 export const kravy = {
 
-    /** 🖱️ Subtle button/nav click */
+    /** 🖱️ Subtle button/nav click — Satisfying Mechanical Feel */
     click() {
         play(c => {
             const t = c.currentTime;
-            tone(c, 800, t, 0.08, 0.1);
+            // Sharp high-frequency "tack"
+            tone(c, 1200, t, 0.04, 0.12, "sine");
+            // Low-frequency "thump" for body
+            tone(c, 300,  t, 0.06, 0.08, "sine");
+            // Tiny noise burst for texture (the "jhan" part)
+            noise(c, t, 0.03, 0.02);
         });
     },
 
