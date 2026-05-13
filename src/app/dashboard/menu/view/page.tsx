@@ -877,7 +877,8 @@ export default function ViewMenuPage() {
       description: description || null,
       imageUrl: imageUrl || null,
       taxStatus: quickAddTaxStatus,
-      gst: Number(quickAddGst)
+      gst: Number(quickAddGst),
+      isActive: true
     };
 
     // 🚀 OPTIMISTIC UPDATE: Update UI immediately
