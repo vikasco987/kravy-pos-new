@@ -471,15 +471,11 @@ export async function PUT(req: Request) {
       return NextResponse.json({ success: true, count: ids.length });
     }
 
-    if (!id || !name) {
+    if (!id) {
       return NextResponse.json(
-        { error: "Item id and name are required" },
+        { error: "Item id is required" },
         { status: 400 }
       );
-    }
-
-    if (!id) {
-      return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
     }
 
     const existing = await prisma.item.findFirst({
@@ -497,7 +493,7 @@ export async function PUT(req: Request) {
     const updated = await prisma.item.update({
       where: { id },
       data: {
-        name,
+        name: name ?? undefined,
         sellingPrice:
           sellingPrice !== undefined ? Number(sellingPrice) : undefined,
         unit: unit ?? undefined,
