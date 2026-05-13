@@ -50,6 +50,7 @@ export default function CustomerDataSettings() {
     }, []);
 
     const handleSave = async () => {
+        console.log("DEBUG: Saving Settings:", settings);
         setSaving(true);
         try {
             const res = await fetch(`/api/profile`, {

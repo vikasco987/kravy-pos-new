@@ -65,6 +65,13 @@ export async function POST(request: Request) {
 
     const updateData: any = {};
     
+    // ✅ QR Ordering Status & Timing (MOVE TO TOP FOR PRIORITY)
+    console.log("SERVER DEBUG: body.isOnline =", body.isOnline, "Type =", typeof body.isOnline);
+    if (body.isOnline !== undefined) updateData.isOnline = b(body.isOnline);
+    if (body.openingTime !== undefined) updateData.openingTime = s(body.openingTime);
+    if (body.closingTime !== undefined) updateData.closingTime = s(body.closingTime);
+    if (body.offlineMessage !== undefined) updateData.offlineMessage = s(body.offlineMessage);
+
     // Basic Info
     if (body.businessType !== undefined) updateData.businessType = s(body.businessType);
     if (body.businessName !== undefined) updateData.businessName = s(body.businessName);
@@ -163,11 +170,8 @@ export async function POST(request: Request) {
     if (body.printSettings !== undefined) updateData.printSettings = body.printSettings;
     if (body.reviewUrl !== undefined) updateData.reviewUrl = s(body.reviewUrl);
 
-    // ✅ QR Ordering Status & Timing
-    if (body.isOnline !== undefined) updateData.isOnline = b(body.isOnline);
-    if (body.openingTime !== undefined) updateData.openingTime = s(body.openingTime);
-    if (body.closingTime !== undefined) updateData.closingTime = s(body.closingTime);
-    if (body.offlineMessage !== undefined) updateData.offlineMessage = s(body.offlineMessage);
+    if (body.printSettings !== undefined) updateData.printSettings = body.printSettings;
+    if (body.reviewUrl !== undefined) updateData.reviewUrl = s(body.reviewUrl);
 
     console.log("SERVER DEBUG: Final Update Data:", JSON.stringify(updateData, null, 2));
 
