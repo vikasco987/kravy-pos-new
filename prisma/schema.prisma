@@ -475,6 +475,13 @@ model BusinessProfile {
   phonePrefixType         String? @default("TEXT") // "TEXT" (Mob:) or "SYMBOL"
   printSettings           Json?   @default("{}")
   reviewUrl               String?
+
+  // ✅ QR Ordering Status & Timing
+  isOnline       Boolean @default(true)
+  openingTime    String? @default("00:00")
+  closingTime    String? @default("23:59")
+  offlineMessage String? @default("Restaurant is currently closed or not accepting orders.")
+
   updatedAt DateTime @updatedAt
 }
 

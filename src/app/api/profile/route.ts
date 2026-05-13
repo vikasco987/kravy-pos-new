@@ -163,6 +163,12 @@ export async function POST(request: Request) {
     if (body.printSettings !== undefined) updateData.printSettings = body.printSettings;
     if (body.reviewUrl !== undefined) updateData.reviewUrl = s(body.reviewUrl);
 
+    // ✅ QR Ordering Status & Timing
+    if (body.isOnline !== undefined) updateData.isOnline = b(body.isOnline);
+    if (body.openingTime !== undefined) updateData.openingTime = s(body.openingTime);
+    if (body.closingTime !== undefined) updateData.closingTime = s(body.closingTime);
+    if (body.offlineMessage !== undefined) updateData.offlineMessage = s(body.offlineMessage);
+
     console.log("SERVER DEBUG: Final Update Data:", JSON.stringify(updateData, null, 2));
 
     // ✅ FIX: Use separate find/update/create instead of upsert to avoid MongoDB Atlas pipeline length limit (50 stages)

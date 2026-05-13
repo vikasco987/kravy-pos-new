@@ -18,7 +18,11 @@ export async function GET(req: NextRequest) {
                 logoUrl: true,
                 upi: true,
                 businessAddress: true,
-                contactPersonPhone: true
+                contactPersonPhone: true,
+                isOnline: true,
+                openingTime: true,
+                closingTime: true,
+                offlineMessage: true
             }
         });
 

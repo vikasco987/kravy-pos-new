@@ -35,6 +35,35 @@ export async function POST(req: NextRequest) {
             where: { userId: clerkUserId }
         });
 
+        if (!profile) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+
+        // ✅ CHECK ONLINE STATUS & TIMING
+        if (profile.isOnline === false) {
+            return NextResponse.json({ error: profile.offlineMessage || "Restaurant is currently offline." }, { status: 403 });
+        }
+
+        if (profile.openingTime && profile.closingTime) {
+            const now = new Date();
+            // Convert everything to minutes for easy comparison
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const [openH, openM] = profile.openingTime.split(':').map(Number);
+            const [closeH, closeM] = profile.closingTime.split(':').map(Number);
+            const openMinutes = openH * 60 + openM;
+            const closeMinutes = closeH * 60 + closeM;
+
+            let isWithinTime = false;
+            if (openMinutes < closeMinutes) {
+                isWithinTime = currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
+            } else {
+                // Overnight shift
+                isWithinTime = currentMinutes >= openMinutes || currentMinutes <= closeMinutes;
+            }
+
+            if (!isWithinTime) {
+                return NextResponse.json({ error: profile.offlineMessage || "Restaurant is currently closed." }, { status: 403 });
+            }
+        }
+
         const isInclusive = profile?.qrMenuPriceInclusive ?? false;
         const enrichedRequestItems = items.map((i: any) => ({ 
             ...i, 

@@ -46,6 +46,10 @@ interface BusinessProfile {
     businessName?: string;
     logoUrl?: string;
     businessTagLine?: string;
+    isOnline?: boolean;
+    openingTime?: string;
+    closingTime?: string;
+    offlineMessage?: string;
 }
 
 function QRMenuContent() {
@@ -240,6 +244,33 @@ function QRMenuContent() {
         );
     };
 
+    const checkIsOnline = () => {
+        if (!profile) return true;
+        if (profile.isOnline === false) return false;
+
+        const now = new Date();
+        const currentTime = now.getHours() * 60 + now.getMinutes();
+
+        if (profile.openingTime && profile.closingTime) {
+            const [openH, openM] = profile.openingTime.split(':').map(Number);
+            const [closeH, closeM] = profile.closingTime.split(':').map(Number);
+            const openTime = openH * 60 + openM;
+            const closeTime = closeH * 60 + closeM;
+
+            if (openTime < closeTime) {
+                // Same day operation
+                return currentTime >= openTime && currentTime <= closeTime;
+            } else {
+                // Overnight operation (e.g., 18:00 to 02:00)
+                return currentTime >= openTime || currentTime <= closeTime;
+            }
+        }
+
+        return true;
+    };
+
+    const isOnline = checkIsOnline();
+
     const filteredItems = selectedCategory === "All" 
         ? items 
         : items.filter(item => item.category?.name === selectedCategory);
@@ -284,6 +315,18 @@ function QRMenuContent() {
             </div>
 
             <div className="max-w-6xl mx-auto px-4 py-6">
+                {!isOnline && (
+                    <div className="mb-6 p-6 bg-red-50 border-2 border-red-200 rounded-[2rem] flex flex-col items-center text-center gap-3">
+                        <Clock className="h-10 w-10 text-red-500 animate-pulse" />
+                        <div>
+                            <h2 className="text-xl font-black text-red-900 uppercase tracking-tighter">Currently Closed</h2>
+                            <p className="text-sm text-red-600 font-medium">
+                                {profile?.offlineMessage || "Restaurant is currently closed or not accepting orders."}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Menu Items */}
                     <div className="lg:col-span-2">
@@ -486,10 +529,10 @@ function QRMenuContent() {
                                         </div>
                                         <Button
                                             onClick={placeOrder}
-                                            disabled={placingOrder || !customerName.trim()}
-                                            className="w-full bg-orange-500 hover:bg-orange-600"
+                                            disabled={placingOrder || !customerName.trim() || !isOnline}
+                                            className={`w-full ${isOnline ? "bg-orange-500 hover:bg-orange-600" : "bg-gray-400 cursor-not-allowed"}`}
                                         >
-                                            {placingOrder ? "Placing Order..." : "Place Order"}
+                                            {!isOnline ? "Ordering Unavailable" : (placingOrder ? "Placing Order..." : "Place Order")}
                                         </Button>
                                     </>
                                 )}
