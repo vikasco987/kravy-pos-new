@@ -313,9 +313,12 @@ export default function CheckoutClient() {
   const [selectedTable, setSelectedTable] = useState<string>("POS");
   const [orderType, setOrderType] = useState<"DINING" | "TAKEAWAY" | "DELIVERY">("DINING");
   const [showTableSelect, setShowTableSelect] = useState(false);
-  const [serviceCharge, setServiceCharge] = useState<number>(0);
   const [manualDeliveryCharge, setManualDeliveryCharge] = useState<number>(0);
+  const [deliveryChargeType, setDeliveryChargeType] = useState<'FLAT' | 'PERCENT'>('FLAT');
   const [manualPackagingCharge, setManualPackagingCharge] = useState<number>(0);
+  const [packagingChargeType, setPackagingChargeType] = useState<'FLAT' | 'PERCENT'>('FLAT');
+  const [serviceCharge, setServiceCharge] = useState<number>(0);
+  const [serviceChargeType, setServiceChargeType] = useState<'FLAT' | 'PERCENT'>('FLAT');
 
   const resetForm = () => {
     setItems([]);
@@ -336,8 +339,11 @@ export default function CheckoutClient() {
     setTokenNumber(null);
     setKotNumbers([]);
     setServiceCharge(0);
+    setServiceChargeType('FLAT');
     setManualDeliveryCharge(0);
+    setDeliveryChargeType('FLAT');
     setManualPackagingCharge(0);
+    setPackagingChargeType('FLAT');
     setSelectedTable("POS");
     setOrderType("DINING");
     
@@ -1089,14 +1095,18 @@ export default function CheckoutClient() {
     setDiscountAmt(0);
   };
 
-  // Additional Charges Calculation
-  const deliveryCharge = manualDeliveryCharge || ((orderType === "DELIVERY" && business?.enableDeliveryCharges) ? (business?.deliveryChargeAmount || 0) : 0);
+  // Additional Charges Calculation with Percentage Support
+  const rawDelivery = manualDeliveryCharge || ((orderType === "DELIVERY" && business?.enableDeliveryCharges) ? (business?.deliveryChargeAmount || 0) : 0);
+  const deliveryCharge = (manualDeliveryCharge > 0 && deliveryChargeType === 'PERCENT') ? (totalTaxable * manualDeliveryCharge / 100) : rawDelivery;
   const deliveryGst = (deliveryCharge > 0 && business?.deliveryGstEnabled) ? (deliveryCharge * (business?.deliveryGstRate || 0) / 100) : 0;
-
-  const packagingCharge = manualPackagingCharge || (((orderType === "DELIVERY" || orderType === "TAKEAWAY") && business?.enablePackagingCharges) ? (business?.packagingChargeAmount || 0) : 0);
+ 
+  const rawPackaging = manualPackagingCharge || (((orderType === "DELIVERY" || orderType === "TAKEAWAY") && business?.enablePackagingCharges) ? (business?.packagingChargeAmount || 0) : 0);
+  const packagingCharge = (manualPackagingCharge > 0 && packagingChargeType === 'PERCENT') ? (totalTaxable * manualPackagingCharge / 100) : rawPackaging;
   const packagingGst = (packagingCharge > 0 && business?.packagingGstEnabled) ? (packagingCharge * (business?.packagingGstRate || 0) / 100) : 0;
+  
+  const finalServiceCharge = (serviceCharge > 0 && serviceChargeType === 'PERCENT') ? (totalTaxable * serviceCharge / 100) : serviceCharge;
 
-  const totalCharges = deliveryCharge + packagingCharge + serviceCharge;
+  const totalCharges = deliveryCharge + packagingCharge + finalServiceCharge;
   const totalChargesGst = deliveryGst + packagingGst;
 
   // Final total is now simply net taxable + GST + additional charges + tax on charges
@@ -1244,7 +1254,7 @@ export default function CheckoutClient() {
         discountCode: appliedOffer?.code || null,
         deliveryCharges: deliveryCharge,
         packagingCharges: packagingCharge,
-        serviceCharge: serviceCharge,
+        serviceCharge: finalServiceCharge,
         kotNumbers,
         tokenNumber,
       };
@@ -2409,35 +2419,23 @@ export default function CheckoutClient() {
 
 
             {/* Cart Items List */}
-            <div className="flex-1 px-4 md:px-5 py-3 space-y-2">
+            <div className="px-4 md:px-5 py-2 space-y-1.5">
               {items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center py-10">
-                  <div className="w-20 h-20 rounded-[32px] bg-[var(--kravy-brand)]/5 flex items-center justify-center mb-6 animate-pulse">
-                    <ShoppingBag size={40} className="text-[var(--kravy-brand)]/20" />
+                <div className="flex flex-col items-center justify-center h-full text-center py-6">
+                  <div className="w-16 h-16 rounded-[28px] bg-[var(--kravy-brand)]/5 flex items-center justify-center mb-4 animate-pulse">
+                    <ShoppingBag size={32} className="text-[var(--kravy-brand)]/20" />
                   </div>
-                  <p className="font-black text-[var(--kravy-text-primary)] text-sm tracking-tight">Cart is empty</p>
-                  <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-1 max-w-[180px] mx-auto uppercase tracking-widest leading-relaxed">
-                    Select items from the menu to start a new billing session
+                  <p className="font-black text-[var(--kravy-text-primary)] text-xs tracking-tight">Cart is empty</p>
+                  <p className="text-[9px] font-bold text-[var(--kravy-text-muted)] mt-1 max-w-[160px] mx-auto uppercase tracking-widest leading-relaxed">
+                    Select items from the menu
                   </p>
-                  
-                  {/* Quick Insights (Placeholder for density) */}
-                  <div className="mt-10 grid grid-cols-2 gap-3 w-full">
-                    <div className="bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl p-3 text-left">
-                       <p className="text-[8px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.1em] mb-1">Today's Sales</p>
-                       <p className="text-sm font-black text-[var(--kravy-text-primary)] tracking-tighter">₹{subtotal.toFixed(0)}+</p>
-                    </div>
-                    <div className="bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl p-3 text-left">
-                       <p className="text-[8px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.1em] mb-1">Active KOTs</p>
-                       <p className="text-sm font-black text-[var(--kravy-text-primary)] tracking-tighter">Running</p>
-                    </div>
-                  </div>
                 </div>
               ) : (
                 <>
                   {items.map((i) => (
                     <div
                       key={i.id}
-                      className="flex items-center gap-3 py-2.5 px-3 rounded-xl
+                      className="flex items-center gap-2.5 py-1.5 px-2.5 rounded-xl
                         bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
                         hover:border-[var(--kravy-brand)]/30 transition-all group shrink-0 shadow-sm"
                     >
@@ -2503,7 +2501,7 @@ export default function CheckoutClient() {
           </div>
 
           {/* Checkout Footer (Pinned at Bottom) */}
-          <div className="border-t border-[var(--kravy-border)] px-4 md:px-5 py-2.5 bg-[var(--kravy-surface)] space-y-2.5 shrink-0 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
+          <div className="border-t border-[var(--kravy-border)] px-4 md:px-5 py-2 bg-[var(--kravy-surface)] space-y-2 shrink-0 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
 
             {/* Totals - Dynamic Height */}
             <div className="space-y-0.5">
@@ -2522,17 +2520,17 @@ export default function CheckoutClient() {
                   </div>
                 )}
               </div>
-            <div className="flex justify-between items-center border-b border-dashed border-[var(--kravy-border)] pb-2 gap-4">
-              <div className="flex flex-wrap gap-x-3 gap-y-0.5 flex-1">
-                <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter leading-none">Sub: ₹{subtotal.toFixed(2)}</p>
-                {discountAmt > 0 && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tighter leading-none">Disc: -₹{discountAmt.toFixed(2)}</p>}
-                {(taxActive || perProductEnabled) && <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter leading-none">Tax: ₹{gstAmount.toFixed(2)}</p>}
-                {deliveryCharge > 0 && <p className="text-[10px] font-bold text-blue-500 uppercase tracking-tighter leading-none">Del: ₹{deliveryCharge.toFixed(2)}</p>}
-                {packagingCharge > 0 && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tighter leading-none">Pkg: ₹{packagingCharge.toFixed(2)}</p>}
+            <div className="flex justify-between items-center border-b border-dashed border-[var(--kravy-border)] pb-1.5 gap-4">
+              <div className="flex flex-wrap gap-x-2 gap-y-0.5 flex-1">
+                <p className="text-[9px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter leading-none">Sub: ₹{subtotal.toFixed(2)}</p>
+                {discountAmt > 0 && <p className="text-[9px] font-bold text-rose-500 uppercase tracking-tighter leading-none">Disc: -₹{discountAmt.toFixed(2)}</p>}
+                {(taxActive || perProductEnabled) && <p className="text-[9px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter leading-none">Tax: ₹{gstAmount.toFixed(2)}</p>}
+                {deliveryCharge > 0 && <p className="text-[9px] font-bold text-blue-500 uppercase tracking-tighter leading-none">Del: ₹{deliveryCharge.toFixed(2)}</p>}
+                {packagingCharge > 0 && <p className="text-[9px] font-bold text-rose-500 uppercase tracking-tighter leading-none">Pkg: ₹{packagingCharge.toFixed(2)}</p>}
               </div>
               <div className="text-right shrink-0">
-                <p className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest leading-none mb-0.5">PAYABLE</p>
-                <p className="text-2xl font-black text-[var(--kravy-brand)] leading-none">₹{finalTotal.toFixed(2)}</p>
+                <p className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest leading-none mb-0.5">PAYABLE</p>
+                <p className="text-xl font-black text-[var(--kravy-brand)] leading-none">₹{finalTotal.toFixed(2)}</p>
               </div>
             </div>
 
@@ -2572,38 +2570,66 @@ export default function CheckoutClient() {
               </div>
 
               {discountMode === 'CHARGES' ? (
-                <div className="grid grid-cols-3 gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <div className="flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
-                    <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
-                      <Truck size={10} className="text-slate-500" />
+                <div className="grid grid-cols-1 gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="flex gap-2">
+                    <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                      <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
+                        <Truck size={10} className="text-slate-500" />
+                      </div>
+                      <select 
+                        value={deliveryChargeType}
+                        onChange={(e) => { kravy.click(); setDeliveryChargeType(e.target.value as 'FLAT' | 'PERCENT'); }}
+                        className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-1.5 text-[9px] font-black outline-none cursor-pointer"
+                      >
+                        <option value="FLAT">₹</option>
+                        <option value="PERCENT">%</option>
+                      </select>
+                      <input 
+                        type="number"
+                        placeholder="Delivery Charge..."
+                        value={manualDeliveryCharge || ""}
+                        onChange={e => setManualDeliveryCharge(Number(e.target.value))}
+                        className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
+                      />
                     </div>
-                    <input 
-                      type="number"
-                      placeholder="Delivery..."
-                      value={manualDeliveryCharge || ""}
-                      onChange={e => setManualDeliveryCharge(Number(e.target.value))}
-                      className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
-                    />
-                  </div>
-                  <div className="flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
-                    <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
-                      <ShoppingBag size={10} className="text-slate-500" />
+
+                    <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                      <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
+                        <ShoppingBag size={10} className="text-slate-500" />
+                      </div>
+                      <select 
+                        value={packagingChargeType}
+                        onChange={(e) => { kravy.click(); setPackagingChargeType(e.target.value as 'FLAT' | 'PERCENT'); }}
+                        className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-1.5 text-[9px] font-black outline-none cursor-pointer"
+                      >
+                        <option value="FLAT">₹</option>
+                        <option value="PERCENT">%</option>
+                      </select>
+                      <input 
+                        type="number"
+                        placeholder="Package Charge..."
+                        value={manualPackagingCharge || ""}
+                        onChange={e => setManualPackagingCharge(Number(e.target.value))}
+                        className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
+                      />
                     </div>
-                    <input 
-                      type="number"
-                      placeholder="Package..."
-                      value={manualPackagingCharge || ""}
-                      onChange={e => setManualPackagingCharge(Number(e.target.value))}
-                      className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
-                    />
                   </div>
+
                   <div className="flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
                     <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
                       <Star size={10} className="text-slate-500" />
                     </div>
+                    <select 
+                      value={serviceChargeType}
+                      onChange={(e) => { kravy.click(); setServiceChargeType(e.target.value as 'FLAT' | 'PERCENT'); }}
+                      className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-2 text-[9px] font-black outline-none cursor-pointer"
+                    >
+                      <option value="FLAT">₹ Flat Service Charge</option>
+                      <option value="PERCENT">% Percentage Service Charge</option>
+                    </select>
                     <input 
                       type="number"
-                      placeholder="Service..."
+                      placeholder="Amount..."
                       value={serviceCharge || ""}
                       onChange={e => setServiceCharge(Number(e.target.value))}
                       className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
@@ -2655,7 +2681,7 @@ export default function CheckoutClient() {
 
             {/* 💳 PAYMENT METHODS (Compact Grid) */}
             <div 
-              className="grid gap-2 mb-4"
+              className="grid gap-1.5 mb-2"
               style={{ 
                 gridTemplateColumns: `repeat(${
                   (["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const).filter(mode => {
@@ -2682,12 +2708,12 @@ export default function CheckoutClient() {
                 <button
                   key={mode}
                   onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
-                  className={`py-2 px-1 rounded-xl border-2 font-black text-[8px] transition-all flex flex-col items-center justify-center gap-1 ${paymentMode === mode
+                  className={`py-1.5 px-0.5 rounded-xl border-2 font-black text-[7px] transition-all flex flex-col items-center justify-center gap-1 ${paymentMode === mode
                     ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20"
                     : "bg-white border-slate-200 text-slate-900 hover:border-indigo-400 hover:bg-indigo-50/30"
                     }`}
                 >
-                  <span className="text-[14px] leading-none">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
+                  <span className="text-[12px] leading-none">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
                   <span className="truncate w-full text-center uppercase tracking-tighter">{mode === "Pay on Counter" ? "Counter" : mode}</span>
                 </button>
               ))}
@@ -2852,12 +2878,12 @@ export default function CheckoutClient() {
                 if (resumeBillId) router.replace("/dashboard/billing/checkout");
               }}
               disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl
                 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 bg-[length:200%_auto] hover:bg-right transition-all duration-500
-                text-white font-black text-xs uppercase tracking-widest
+                text-white font-black text-[10px] uppercase tracking-widest
                 shadow-lg shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSaving ? <RefreshCw size={18} className="animate-spin" /> : <Printer size={18} strokeWidth={3} />} 
+              {isSaving ? <RefreshCw size={14} className="animate-spin" /> : <Printer size={14} strokeWidth={3} />} 
               {business?.enableKOTWithBill ? "KOT & Print Bill" : "Print Bill / Receipt"}
             </motion.button>
           </div>

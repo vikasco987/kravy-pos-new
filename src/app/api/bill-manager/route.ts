@@ -136,6 +136,9 @@ export async function POST(req: NextRequest) {
     if (offer) {
       serverDiscountAmt = calculateDiscount(offer as any, finalSubtotal, items);
       validatedDiscountCode = offer.code;
+    } else if (discountAmount > 0) {
+      // 🛡️ TRUST MANUAL DISCOUNT IF NO CODE IS USED
+      serverDiscountAmt = Number(discountAmount);
     }
 
     const finalDeliveryCharge = Number(deliveryCharges) || 0;
