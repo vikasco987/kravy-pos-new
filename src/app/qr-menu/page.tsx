@@ -17,9 +17,13 @@ import {
     Utensils,
     Leaf,
     MapPin,
-    Locate
+    Locate,
+    X,
+    Moon,
+    AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface MenuItem {
     id: string;
@@ -69,6 +73,7 @@ function QRMenuContent() {
     const [customerPhone, setCustomerPhone] = useState("");
     const [customerAddress, setCustomerAddress] = useState("");
     const [isLocating, setIsLocating] = useState(false);
+    const [dismissOfflineAlert, setDismissOfflineAlert] = useState(false);
 
     useEffect(() => {
         if (clerkId) {
@@ -312,20 +317,82 @@ function QRMenuContent() {
                         )}
                     </div>
                 </div>
-            </div>
+            <AnimatePresence mode="wait">
+                {!isOnline && dismissOfflineAlert && (
+                    <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="bg-rose-600 text-white py-3 px-4 text-center font-bold sticky top-0 z-[60] flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+                        onClick={() => setDismissOfflineAlert(false)}
+                    >
+                        <AlertTriangle size={18} className="animate-bounce" />
+                        <span className="text-sm">ORDERING IS CURRENTLY DISABLED</span>
+                        <span className="text-[10px] ml-2 opacity-70 underline">READ MORE</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <div className="max-w-6xl mx-auto px-4 py-6">
-                {!isOnline && (
-                    <div className="mb-6 p-6 bg-red-50 border-2 border-red-200 rounded-[2rem] flex flex-col items-center text-center gap-3">
-                        <Clock className="h-10 w-10 text-red-500 animate-pulse" />
-                        <div>
-                            <h2 className="text-xl font-black text-red-900 uppercase tracking-tighter">Currently Closed</h2>
-                            <p className="text-sm text-red-600 font-medium">
-                                {profile?.offlineMessage || "Restaurant is currently closed or not accepting orders."}
-                            </p>
-                        </div>
-                    </div>
-                )}
+                <AnimatePresence>
+                    {!isOnline && !dismissOfflineAlert && (
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                        >
+                            <motion.div 
+                                initial={{ scale: 0.9, y: 20 }}
+                                animate={{ scale: 1, y: 0 }}
+                                exit={{ scale: 0.9, y: 20 }}
+                                className="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden relative shadow-2xl border border-white/20"
+                            >
+                                {/* Close Button */}
+                                <button 
+                                    onClick={() => setDismissOfflineAlert(true)}
+                                    className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 transition-colors z-10"
+                                >
+                                    <X size={20} />
+                                </button>
+
+                                {/* Background Graphic */}
+                                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-rose-500 to-purple-600 opacity-10" />
+
+                                <div className="p-8 pt-12 flex flex-col items-center text-center">
+                                    <div className="w-20 h-20 rounded-3xl bg-rose-500/10 flex items-center justify-center text-rose-500 mb-6 relative">
+                                        <div className="absolute inset-0 bg-rose-500/20 rounded-3xl animate-ping opacity-20" />
+                                        <Moon size={40} className="relative z-10" />
+                                    </div>
+
+                                    <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Currently Closed</h2>
+                                    <p className="text-gray-600 mb-8 leading-relaxed font-medium">
+                                        {profile?.offlineMessage || "Restaurant is currently closed or not accepting orders."}
+                                    </p>
+
+                                    <div className="w-full space-y-3">
+                                        <button 
+                                            onClick={() => setDismissOfflineAlert(true)}
+                                            className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 group"
+                                        >
+                                            View Menu Anyway
+                                            <Utensils size={18} className="group-hover:rotate-12 transition-transform" />
+                                        </button>
+                                        
+                                        <div className="flex items-center justify-center gap-2 text-rose-500 text-xs font-bold uppercase tracking-widest">
+                                            <div className="w-1 h-1 rounded-full bg-rose-500 animate-pulse" />
+                                            Ordering is Disabled
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-4 bg-gray-50 border-t border-gray-100 text-center">
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Check back later for online ordering</p>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Menu Items */}
@@ -530,10 +597,26 @@ function QRMenuContent() {
                                         <Button
                                             onClick={placeOrder}
                                             disabled={placingOrder || !customerName.trim() || !isOnline}
-                                            className={`w-full ${isOnline ? "bg-orange-500 hover:bg-orange-600" : "bg-gray-400 cursor-not-allowed"}`}
+                                            className={`w-full h-12 rounded-xl text-base font-bold shadow-lg transition-all ${
+                                                isOnline 
+                                                ? "bg-orange-500 hover:bg-orange-600 shadow-orange-500/20" 
+                                                : "bg-gray-400 cursor-not-allowed grayscale"
+                                            }`}
                                         >
-                                            {!isOnline ? "Ordering Unavailable" : (placingOrder ? "Placing Order..." : "Place Order")}
+                                            {!isOnline ? (
+                                                <div className="flex items-center gap-2">
+                                                    <Moon size={18} />
+                                                    Ordering Closed
+                                                </div>
+                                            ) : (
+                                                placingOrder ? "Placing Order..." : "Place Order"
+                                            )}
                                         </Button>
+                                        {!isOnline && (
+                                            <p className="text-[10px] text-rose-500 font-bold text-center mt-2 uppercase tracking-widest">
+                                                Resturant is currently not accepting orders
+                                            </p>
+                                        )}
                                     </>
                                 )}
                             </CardContent>
