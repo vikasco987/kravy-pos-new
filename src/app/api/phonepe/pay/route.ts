@@ -39,7 +39,8 @@ export async function POST(req: Request) {
 
     const host = req.headers.get("host");
     const protocol = req.headers.get("x-forwarded-proto") || (host?.includes("localhost") ? "http" : "https");
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`;
+    // Force using the working domain for PhonePe initiation to bypass whitelisting issues
+    const baseUrl = "https://www.kravy.in"; 
 
     const token = await getAccessToken();
     const merchantOrderId = "OMO" + Date.now();

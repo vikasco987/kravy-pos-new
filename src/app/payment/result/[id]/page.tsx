@@ -161,13 +161,13 @@ export default function PaymentResultPage({ params: paramsPromise }: { params: P
                     Print Invoice
                   </button>
                 </div>
-                <Link
-                  href="/dashboard"
+                <a
+                  href="https://billing.kravy.in/dashboard"
                   className="flex items-center justify-center gap-3 px-8 py-5 rounded-2xl font-black bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition-all transform hover:scale-[1.01] shadow-2xl text-xs uppercase tracking-[3px]"
                 >
                   Return to Dashboard
                   <ArrowRight size={18} />
-                </Link>
+                </a>
               </>
             ) : status === "FAILED" ? (
               <>
