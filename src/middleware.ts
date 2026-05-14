@@ -34,6 +34,7 @@ const isPublicRoute = createRouteMatcher([
   "/auth/custom(.*)", // Added
   "/api/auth/(.*)",   // Added
   "/api/invoice/(.*)", // Added
+  "/api/phonepe/webhook", // Added
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/staff/login",
