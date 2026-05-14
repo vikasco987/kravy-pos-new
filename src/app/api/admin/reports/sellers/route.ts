@@ -33,11 +33,11 @@ export async function GET(req: NextRequest) {
 
     // Optimization: Get all revenue in one go
     const revenueStats = await prisma.billManager.groupBy({
-      by: ['userId'],
+      by: ['clerkUserId'],
       where: { isDeleted: false },
       _sum: { total: true }
     });
-    const revenueMap = Object.fromEntries(revenueStats.map(s => [s.userId, s._sum.total || 0]));
+    const revenueMap = Object.fromEntries(revenueStats.map(s => [s.clerkUserId, s._sum.total || 0]));
 
     const reportData = sellers.map((seller) => {
       const profile = seller.profiles[0];
