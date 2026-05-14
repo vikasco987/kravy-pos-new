@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { 
   ArrowLeft,
   Calendar,
@@ -32,7 +32,8 @@ import {
   Area
 } from "recharts";
 
-export default function MerchantDetailPage({ params }: { params: { id: string } }) {
+export default function MerchantDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -45,7 +46,7 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
   });
 
   useEffect(() => {
-    fetch(`/api/admin/reports/sellers/${params.id}`)
+    fetch(`/api/admin/reports/sellers/${id}`)
       .then(res => res.json())
       .then(d => {
         setData(d);
@@ -58,12 +59,12 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
         }
         setLoading(false);
       });
-  }, [params.id]);
+  }, [id]);
 
   const handleUpdate = async () => {
     setUpdating(true);
     try {
-        const res = await fetch(`/api/admin/reports/sellers/${params.id}`, {
+        const res = await fetch(`/api/admin/reports/sellers/${id}`, {
             method: 'POST',
             body: JSON.stringify(controls)
         });
