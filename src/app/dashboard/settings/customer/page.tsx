@@ -88,14 +88,14 @@ export default function CustomerDataSettings() {
         collectKey: keyof typeof settings, 
         requireKey: keyof typeof settings 
     }) => (
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 transition-all hover:border-blue-500/30">
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 transition-all hover:border-blue-500/30 shadow-sm">
             <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600">
                     <Icon size={24} />
                 </div>
                 <div>
-                    <h3 className="text-lg font-bold text-white capitalize">{label}</h3>
-                    <p className="text-xs text-white/40 font-mono">Configure how you collect {label} from QR Menu</p>
+                    <h3 className="text-lg font-bold text-slate-900 capitalize">{label}</h3>
+                    <p className="text-xs text-slate-500 font-mono">Configure how you collect {label} from QR Menu</p>
                 </div>
             </div>
 
@@ -105,8 +105,8 @@ export default function CustomerDataSettings() {
                     onClick={() => toggle(collectKey)}
                     className={`flex flex-col gap-2 p-4 rounded-2xl border transition-all text-left ${
                         settings[collectKey] 
-                        ? "bg-blue-600/10 border-blue-500/50 text-blue-400" 
-                        : "bg-white/5 border-white/5 text-white/40"
+                        ? "bg-blue-600/10 border-blue-500/50 text-blue-600" 
+                        : "bg-slate-50 border-slate-200 text-slate-400"
                     }`}
                 >
                     <div className="flex items-center justify-between w-full">
@@ -122,10 +122,10 @@ export default function CustomerDataSettings() {
                     onClick={() => toggle(requireKey)}
                     className={`flex flex-col gap-2 p-4 rounded-2xl border transition-all text-left ${
                         !settings[collectKey] 
-                        ? "opacity-30 cursor-not-allowed bg-black/20 border-white/5" 
+                        ? "opacity-30 cursor-not-allowed bg-slate-100 border-slate-200" 
                         : settings[requireKey] 
-                            ? "bg-emerald-600/10 border-emerald-500/50 text-emerald-400" 
-                            : "bg-white/5 border-white/5 text-white/40"
+                            ? "bg-emerald-600/10 border-emerald-500/50 text-emerald-600" 
+                            : "bg-slate-50 border-slate-200 text-slate-400"
                     }`}
                 >
                     <div className="flex items-center justify-between w-full">
@@ -142,12 +142,12 @@ export default function CustomerDataSettings() {
         <div className="max-w-4xl mx-auto space-y-8 kravy-page-fade">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Link href="/dashboard/settings" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all">
+                    <Link href="/dashboard/settings" className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-all text-slate-600">
                         <ArrowLeft size={18} />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-black text-white tracking-tight">Customer Setup</h1>
-                        <p className="text-xs text-white/40 font-mono uppercase tracking-widest">QR Menu Data Collection Rules</p>
+                        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Customer Setup</h1>
+                        <p className="text-xs text-slate-500 font-mono uppercase tracking-widest">QR Menu Data Collection Rules</p>
                     </div>
                 </div>
 
@@ -162,10 +162,10 @@ export default function CustomerDataSettings() {
             </div>
 
             <div className="bg-blue-600/10 border border-blue-500/20 p-6 rounded-3xl flex gap-4 items-start">
-                <AlertCircle size={20} className="text-blue-400 mt-1 shrink-0" />
+                <AlertCircle size={20} className="text-blue-600 mt-1 shrink-0" />
                 <div className="space-y-1">
-                    <p className="text-sm font-bold text-white">Why configure this?</p>
-                    <p className="text-xs text-white/60 leading-relaxed font-mono">
+                    <p className="text-sm font-bold text-slate-900">Why configure this?</p>
+                    <p className="text-xs text-slate-600 leading-relaxed font-mono">
                         Har restaurant ki zaroorat alag hoti hai. Agar aap chahte hain ki orders se pehle customers apna <b>Address</b> bhi dein, to niche toggles ka istemal karein. Mandatory karne pe customer bina detail bhare order nahi kar payega.
                     </p>
                 </div>
@@ -178,15 +178,15 @@ export default function CustomerDataSettings() {
             </div>
 
             {/* ✅ RESTAURANT TIMING & ONLINE STATUS */}
-            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 space-y-8">
-                <div className="flex items-center justify-between border-b border-white/5 pb-6">
+            <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 space-y-8 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-6">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-400">
+                        <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-600">
                             <Zap size={24} />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-white">Ordering Status & Timing</h3>
-                            <p className="text-xs text-white/40 font-mono">Set when customers can place orders via QR</p>
+                            <h3 className="text-xl font-bold text-slate-900">Ordering Status & Timing</h3>
+                            <p className="text-xs text-slate-500 font-mono">Set when customers can place orders via QR</p>
                         </div>
                     </div>
 
@@ -194,8 +194,8 @@ export default function CustomerDataSettings() {
                         onClick={() => toggle("isOnline")}
                         className={`h-12 px-6 rounded-2xl border transition-all font-bold flex items-center gap-2 ${
                             settings.isOnline 
-                            ? "bg-emerald-600/10 border-emerald-500/50 text-emerald-400" 
-                            : "bg-rose-600/10 border-rose-500/50 text-rose-400"
+                            ? "bg-emerald-600/10 border-emerald-500/50 text-emerald-600" 
+                            : "bg-rose-600/10 border-rose-500/50 text-rose-600"
                         }`}
                     >
                         <div className={`w-2 h-2 rounded-full ${settings.isOnline ? "bg-emerald-400 animate-pulse" : "bg-rose-400"}`} />
@@ -205,46 +205,46 @@ export default function CustomerDataSettings() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
-                        <label className="text-[10px] uppercase font-black tracking-widest text-white/40 block">Operational Hours (24H Format)</label>
+                        <label className="text-[10px] uppercase font-black tracking-widest text-slate-500 block">Operational Hours (24H Format)</label>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <span className="text-[10px] text-white/20 font-black uppercase">Open At</span>
+                                <span className="text-[10px] text-slate-400 font-black uppercase">Open At</span>
                                 <input 
                                     type="time" 
                                     value={settings.openingTime}
                                     onChange={(e) => setSettings(prev => ({ ...prev, openingTime: e.target.value }))}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white font-black text-xl focus:border-orange-500/50 outline-none transition-all"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 font-black text-xl focus:border-orange-500/50 outline-none transition-all"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <span className="text-[10px] text-white/20 font-black uppercase">Close At</span>
+                                <span className="text-[10px] text-slate-400 font-black uppercase">Close At</span>
                                 <input 
                                     type="time" 
                                     value={settings.closingTime}
                                     onChange={(e) => setSettings(prev => ({ ...prev, closingTime: e.target.value }))}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white font-black text-xl focus:border-orange-500/50 outline-none transition-all"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 font-black text-xl focus:border-orange-500/50 outline-none transition-all"
                                 />
                             </div>
                         </div>
-                        <p className="text-[10px] text-white/30 italic">Note: Customers can only order within these hours.</p>
+                        <p className="text-[10px] text-slate-400 italic">Note: Customers can only order within these hours.</p>
                     </div>
 
                     <div className="space-y-4">
-                        <label className="text-[10px] uppercase font-black tracking-widest text-white/40 block">Offline Notice Message</label>
+                        <label className="text-[10px] uppercase font-black tracking-widest text-slate-500 block">Offline Notice Message</label>
                         <textarea 
                             value={settings.offlineMessage}
                             onChange={(e) => setSettings(prev => ({ ...prev, offlineMessage: e.target.value }))}
                             rows={4}
                             placeholder="Restaurant is closed..."
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white/80 focus:border-orange-500/50 outline-none transition-all resize-none"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm text-slate-700 focus:border-orange-500/50 outline-none transition-all resize-none"
                         />
-                        <p className="text-[10px] text-white/30 italic">Visible to customers when ordering is disabled.</p>
+                        <p className="text-[10px] text-slate-400 italic">Visible to customers when ordering is disabled.</p>
                     </div>
                 </div>
             </div>
 
-            <div className="pt-10 border-t border-white/5 text-center">
-                <p className="text-[10px] text-white/20 uppercase tracking-[4px] font-black italic">
+            <div className="pt-10 border-t border-slate-100 text-center">
+                <p className="text-[10px] text-slate-400 uppercase tracking-[4px] font-black italic">
                     Kravy POS · Customer Experience Configuration
                 </p>
             </div>
