@@ -1080,7 +1080,7 @@ function PublicMenu() {
                                     )}
                                 </div>
                                 <div className="px-3.5 py-3">
-                                    <div className="text-[1.25rem] font-[900] mb-0.5">{profile?.businessName || "Masala House"}</div>
+                                    <div className="text-[1.25rem] font-[900] mb-0.5">{profile?.businessName || "Restaurant"}</div>
                                     <div className="text-[0.75rem] text-[#696969] font-[600] mb-2">North Indian, Mughlai, Biryani</div>
                                     <div className="flex items-center gap-1.5 flex-wrap mb-2">
                                         <div className="flex items-center gap-1 border border-[#b2dfc8] bg-[#F0FDF4] rounded-md px-2 py-1 text-[0.72rem] font-[700] text-[#22C55E]">★ 4.3 (2.1K)</div>
@@ -1720,7 +1720,7 @@ function PublicMenu() {
                                 <div className="relative z-10">
                                     <span className="text-3xl mb-2.5 block">👑</span>
                                     <div className="font-[Syne] text-2xl font-[800] text-[#F0EAD6] mb-1">Gold Member</div>
-                                    <div className="text-[0.8rem] text-[#F0EAD6]/55 mb-4 px-10 leading-relaxed">Masala House Rewards - Earn points on every order!</div>
+                                    <div className="text-[0.8rem] text-[#F0EAD6]/55 mb-4 px-10 leading-relaxed">Restaurant Rewards - Earn points on every order!</div>
                                     <div className="inline-flex items-baseline gap-1 mt-2">
                                         <span className="font-[Syne] text-5xl font-[800] bg-gradient-to-br from-[#F0C060] to-[#D4A353] bg-clip-text text-transparent">{loyaltyPoints}</span>
                                         <span className="text-[0.85rem] font-[800] text-[#D4A353]">pts</span>
