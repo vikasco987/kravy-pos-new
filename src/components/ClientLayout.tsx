@@ -79,6 +79,13 @@ export default function ClientLayout({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // 4. SaaS / Premium Check & Redirect Hook (Moved to top to follow Rules of Hooks)
+  useEffect(() => {
+    if (profile && profile.showPremiumPopup && !profile.isPremium && pathname !== "/upgrade") {
+      router.push("/upgrade");
+    }
+  }, [profile, pathname, router]);
+
   // 1. Show loader while anything is still loading
   if (!mounted || !clerkLoaded || authLoading) {
     return (
@@ -93,13 +100,7 @@ export default function ClientLayout({
     return <RedirectToSignIn />;
   }
 
-  // 4. SaaS / Premium Check & Redirect
-  useEffect(() => {
-    if (profile && profile.showPremiumPopup && !profile.isPremium && pathname !== "/upgrade") {
-      router.push("/upgrade");
-    }
-  }, [profile, pathname, router]);
-
+  // 3. SaaS / Premium UI Blocker (Early Return)
   if (profile && profile.showPremiumPopup && !profile.isPremium && pathname !== "/upgrade") {
     return (
         <div className="h-screen flex items-center justify-center bg-[#0F172A]">
