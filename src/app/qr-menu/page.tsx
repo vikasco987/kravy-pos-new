@@ -317,6 +317,7 @@ function QRMenuContent() {
                         )}
                     </div>
                 </div>
+            </div>
             <AnimatePresence mode="wait">
                 {!isOnline && dismissOfflineAlert && (
                     <motion.div 
