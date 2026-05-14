@@ -30,6 +30,7 @@ const isPublicRoute = createRouteMatcher([
   "/demo",
   "/api/public/(.*)",
   "/api/external/(.*)",
+  "/api/bill-manager/(.*)/pdf",
   "/auth/custom(.*)", // Added
   "/api/auth/(.*)",   // Added
   "/sign-in(.*)",
