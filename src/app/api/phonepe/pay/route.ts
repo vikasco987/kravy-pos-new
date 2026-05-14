@@ -4,13 +4,35 @@ import { prisma } from "@/lib/prisma";
 import { getAccessToken } from "@/lib/phonepe";
 import { auth } from "@clerk/nextjs/server";
 
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
+
 const PAY_URL = "https://api.phonepe.com/apis/pg/checkout/v2/pay";
+const JWT_SECRET = process.env.JWT_SECRET || "kravy_pos_secret_key_123";
 
 export async function POST(req: Request) {
   try {
-    const { userId: clerkUserId } = await auth();
+    // 1. Check Clerk Auth
+    const { userId: clerkIdFromClerk } = await auth();
+    let clerkUserId = clerkIdFromClerk;
+
+    // 2. If no Clerk ID, check Custom Auth Cookie
     if (!clerkUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const cookieStore = await cookies();
+      const token = cookieStore.get("kravy_auth_token")?.value;
+      
+      if (token) {
+        try {
+          const decoded: any = jwt.verify(token, JWT_SECRET);
+          clerkUserId = decoded.clerkId || decoded.userId; // Use clerkId from token
+        } catch (err) {
+          console.error("JWT Verify Error in Pay Route:", err);
+        }
+      }
+    }
+
+    if (!clerkUserId) {
+      return NextResponse.json({ error: "Unauthorized - Please login first" }, { status: 401 });
     }
 
     const { amount, customer, items } = await req.json();
