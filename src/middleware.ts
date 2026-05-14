@@ -33,6 +33,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/bill-manager/(.*)/pdf",
   "/auth/custom(.*)", // Added
   "/api/auth/(.*)",   // Added
+  "/api/invoice/(.*)", // Added
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/staff/login",

@@ -196,7 +196,7 @@ export default function UpgradePage() {
                                 </ul>
 
                                 <button
-                                    onClick={() => handleWhatsApp(plan.name)}
+                                    onClick={() => router.push(`/checkout?plan=${plan.key}`)}
                                     className={`mt-auto py-4 rounded-2xl font-black text-xs uppercase tracking-[2px] flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg
                                     ${
                                         plan.highlight
@@ -257,10 +257,10 @@ export default function UpgradePage() {
                                         ))}
                                     </div>
                                     <button 
-                                        onClick={() => handleWhatsApp(addon.name)}
+                                        onClick={() => router.push(`/checkout?plan=year1`)}
                                         className="w-full py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl font-black text-[10px] uppercase tracking-[3px] hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all"
                                     >
-                                        Inquire Now
+                                        Order Now
                                     </button>
                                 </div>
                             </motion.div>

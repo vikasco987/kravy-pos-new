@@ -752,3 +752,20 @@ model ExpenseCategory {
   @@unique([userId, name])
   @@index([userId])
 }
+
+model SubscriptionOrder {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  merchantOrderId String   @unique
+  phonepeOrderId  String?
+  clerkUserId     String
+  customer        Json     // { name, phone, email, house, addressLine, district, state, pincode }
+  items           Json     // Array of { id, name, price, quantity }
+  amount          Float
+  paymentStatus   String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  invoiceNumber   String?  @unique
+  paidAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([clerkUserId])
+}
