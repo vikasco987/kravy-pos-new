@@ -80,24 +80,39 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
                             {/* Plans Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                                 {[
-                                    { name: "1 Year", price: "3,999", original: "7,000", off: "43%", color: "bg-slate-50", text: "text-slate-900" },
-                                    { name: "2 Year", price: "5,999", original: "14,000", off: "57%", color: "bg-slate-900", text: "text-white", popular: true },
-                                    { name: "3 Year", price: "7,499", original: "21,000", off: "64%", color: "bg-indigo-600", text: "text-white", best: true }
+                                    { name: "1 Year", price: "3,999", printer: "5,999", original: "7,000", off: "43%", color: "bg-slate-50", text: "text-slate-900" },
+                                    { name: "2 Year", price: "5,999", printer: "7,999", original: "14,000", off: "57%", color: "bg-slate-900", text: "text-white", popular: true },
+                                    { name: "3 Year", price: "7,499", printer: "9,499", original: "21,000", off: "64%", color: "bg-indigo-600", text: "text-white", best: true }
                                 ].map((plan, i) => (
                                     <div 
                                         key={i} 
-                                        className={`${plan.color} ${plan.text} rounded-3xl p-5 border border-black/5 relative flex flex-col items-center justify-center transition-transform hover:scale-[1.02] shadow-lg`}
+                                        className={`${plan.color} ${plan.text} rounded-3xl p-5 border border-black/5 relative flex flex-col items-center justify-center transition-transform hover:scale-[1.02] shadow-lg overflow-hidden`}
                                     >
                                         {plan.best && (
                                             <div className="absolute -top-3 bg-amber-400 text-amber-950 text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-wider">Best Value</div>
                                         )}
-                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">{plan.name}</p>
-                                        <div className="flex items-baseline gap-1 mb-1">
-                                            <span className="text-xs font-bold opacity-60">₹</span>
-                                            <span className="text-2xl font-black">{plan.price}</span>
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-2">{plan.name} Plan</p>
+                                        
+                                        <div className="mb-3 text-center">
+                                            <div className="flex items-baseline justify-center gap-1">
+                                                <span className="text-[10px] font-bold opacity-60">₹</span>
+                                                <span className="text-2xl font-black">{plan.price}</span>
+                                            </div>
+                                            <p className="text-[8px] font-bold uppercase tracking-tight opacity-40">Software Only</p>
                                         </div>
-                                        <p className="text-[9px] line-through opacity-40 mb-2">₹{plan.original}</p>
-                                        <div className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-500 text-[8px] font-black">SAVE {plan.off}</div>
+
+                                        <div className="w-full h-[1px] bg-black/5 mb-3"></div>
+
+                                        <div className="mb-3 text-center">
+                                            <div className="flex items-baseline justify-center gap-1 text-emerald-500">
+                                                <span className="text-[10px] font-bold">₹</span>
+                                                <span className="text-xl font-black">{plan.printer}</span>
+                                            </div>
+                                            <p className="text-[8px] font-black uppercase tracking-tight text-emerald-500/80">+ Thermal Printer</p>
+                                        </div>
+
+                                        <p className="text-[9px] line-through opacity-40 mb-2">Was ₹{plan.original}</p>
+                                        <div className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-500 text-[8px] font-black italic">Upto {plan.off} OFF</div>
                                     </div>
                                 ))}
                             </div>
