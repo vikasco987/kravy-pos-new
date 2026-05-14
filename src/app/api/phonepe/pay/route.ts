@@ -58,7 +58,7 @@ export async function POST(req: Request) {
         merchantUrls: {
           redirectUrl: `${baseUrl}/payment/result/${merchantOrderId}`,
           callbackUrl: `${baseUrl}/api/phonepe/webhook`,
-          redirectMode: "POST"
+          redirectMode: "REDIRECT"
         }
       }
     };
