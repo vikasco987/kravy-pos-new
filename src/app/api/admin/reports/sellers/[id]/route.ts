@@ -67,7 +67,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const updateData: any = {};
     if (body.isPremium !== undefined) updateData.isPremium = body.isPremium;
     if (body.showPremiumPopup !== undefined) updateData.showPremiumPopup = body.showPremiumPopup;
-    if (body.trialStartedAt !== undefined) updateData.trialStartedAt = new Date(body.trialStartedAt);
+    
+    if (body.trialStartedAt) {
+      const date = new Date(body.trialStartedAt);
+      if (!isNaN(date.getTime())) {
+        updateData.trialStartedAt = date;
+      }
+    }
 
     await prisma.businessProfile.update({
       where: { userId: id },

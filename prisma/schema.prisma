@@ -485,7 +485,7 @@ model BusinessProfile {
   // SaaS Subscription & Premium Popups
   trialStartedAt    DateTime? @default(now())
   isPremium         Boolean?  @default(false)
-  showPremiumPopup  Boolean?  @default(true)
+  showPremiumPopup  Boolean?  @default(false)
 
   updatedAt DateTime @updatedAt
 }
