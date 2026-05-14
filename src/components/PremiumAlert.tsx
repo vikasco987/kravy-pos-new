@@ -38,10 +38,10 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
             {isOpen && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.95, y: 30 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="bg-white rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl relative border border-white/20"
+                        exit={{ opacity: 0, scale: 0.95, y: 30 }}
+                        className="bg-white rounded-[3rem] w-full max-w-4xl overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] relative border border-white/20"
                     >
                         {/* Premium Header Decoration */}
                         <div className="h-32 bg-gradient-to-br from-indigo-600 via-purple-600 to-rose-500 relative flex items-center justify-center overflow-hidden">
