@@ -16,23 +16,6 @@ import Link from "next/link";
 
 export const plans = [
   {
-    key: "trial",
-    name: "Free Trial",
-    price: 0,
-    originalPrice: null,
-    description: "Explore the billing platform with a full feature trial.",
-    features: [
-      "3 Day full access trial",
-      "Unlimited invoices during trial",
-      "Analytics dashboard",
-      "Customer management",
-      "Invoice with logo & QR",
-      "3 click billing system",
-      "Basic inventory management",
-      "Chat support",
-    ],
-  },
-  {
     key: "year1",
     name: "1 Year Plan",
     price: 3999,
