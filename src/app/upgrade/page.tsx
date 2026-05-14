@@ -9,7 +9,10 @@ import {
   ShieldCheck, 
   Zap, 
   LayoutDashboard,
-  ArrowLeft
+  ArrowLeft,
+  Printer,
+  CreditCard,
+  Plus
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -75,12 +78,35 @@ export const plans = [
   },
 ];
 
+const addons = [
+    {
+        id: "printer",
+        name: "Thermal Printer",
+        subtitle: "58mm Bluetooth + USB",
+        price: 1999,
+        originalPrice: 2999,
+        icon: <Printer className="w-6 h-6" />,
+        description: "Professional billing hardware for your counter. High-speed printing, easy setup.",
+        features: ["58mm paper size", "Bluetooth & USB", "No ink required", "1 Year Warranty"]
+    },
+    {
+        id: "gateway",
+        name: "Payment Gateway",
+        subtitle: "One-time Activation",
+        price: 1499,
+        originalPrice: 2500,
+        icon: <CreditCard className="w-6 h-6" />,
+        description: "Accept Online Payments (UPI, Cards) directly from your bills. Instant settlement.",
+        features: ["UPI / QR Payments", "Credit/Debit Cards", "Auto-reconciliation", "Instant Activation"]
+    }
+];
+
 export default function UpgradePage() {
     const router = useRouter();
     const supportPhone = "+91 9289507882";
 
-    const handleWhatsApp = (planName: string) => {
-        const message = encodeURIComponent(`Hi, I'm interested in the ${planName} of Kravy POS. Please help me with the activation.`);
+    const handleWhatsApp = (productName: string) => {
+        const message = encodeURIComponent(`Hi, I'm interested in the ${productName} for my business. Please share more details.`);
         window.open(`https://wa.me/919289507882?text=${message}`, '_blank');
     };
 
@@ -102,6 +128,11 @@ export default function UpgradePage() {
 
             <main className="max-w-7xl mx-auto px-6 py-12">
                 <div className="text-center mb-16">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                        <div className="h-px w-8 bg-indigo-500/20" />
+                        <span className="text-[10px] font-black uppercase tracking-[4px] text-indigo-500">Premium Upgrade</span>
+                        <div className="h-px w-8 bg-indigo-500/20" />
+                    </div>
                     <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight">
                         Choose Your Plan
                     </h1>
@@ -111,7 +142,7 @@ export default function UpgradePage() {
                 </div>
 
                 {/* Plans Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-24 max-w-6xl mx-auto">
                     {plans.map((plan) => {
                         const saving = plan.originalPrice && plan.originalPrice - plan.price;
                         const savePercent = plan.originalPrice && Math.round((saving / plan.originalPrice) * 100);
@@ -123,7 +154,7 @@ export default function UpgradePage() {
                                 className={`relative flex flex-col rounded-[2.5rem] p-8 border transition-all duration-300 shadow-sm
                                 ${
                                     plan.highlight
-                                    ? "bg-gradient-to-br from-indigo-600 to-indigo-800 text-white border-none shadow-xl shadow-indigo-500/20"
+                                    ? "bg-gradient-to-br from-indigo-600 to-indigo-800 text-white border-none shadow-xl shadow-indigo-500/20 scale-[1.05] z-10"
                                     : "bg-white dark:bg-zinc-900 border-neutral-200 dark:border-white/5"
                                 }`}
                             >
@@ -181,14 +212,70 @@ export default function UpgradePage() {
                     })}
                 </div>
 
+                {/* Add-ons Section */}
+                <div className="mb-24">
+                    <div className="text-center mb-12">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-500 text-[10px] font-black uppercase tracking-widest mb-4">
+                            <Plus size={12} strokeWidth={3} /> Professional Add-ons
+                        </div>
+                        <h2 className="text-3xl font-black tracking-tight mb-2">Enhance Your Business</h2>
+                        <p className="text-xs text-gray-500 dark:text-neutral-400 font-bold uppercase tracking-widest">Hardware & Service Solutions</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                        {addons.map((addon) => (
+                            <motion.div
+                                key={addon.id}
+                                whileHover={{ y: -5 }}
+                                className="group bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-white/5 rounded-[2.5rem] p-8 md:p-10 flex flex-col md:flex-row gap-8 items-center md:items-start transition-all hover:border-indigo-500/30"
+                            >
+                                <div className="w-20 h-20 shrink-0 bg-white dark:bg-white/5 rounded-[1.8rem] flex items-center justify-center text-indigo-500 shadow-xl border border-slate-100 dark:border-white/5 group-hover:scale-110 transition-transform">
+                                    {addon.icon}
+                                </div>
+                                <div className="flex-1 text-center md:text-left">
+                                    <div className="mb-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+                                            <div>
+                                                <h3 className="text-xl font-black tracking-tight">{addon.name}</h3>
+                                                <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">{addon.subtitle}</p>
+                                            </div>
+                                            <div className="flex flex-col items-center sm:items-end">
+                                                <div className="text-2xl font-black">₹{addon.price.toLocaleString()}</div>
+                                                <div className="text-[10px] font-bold line-through opacity-40">₹{addon.originalPrice.toLocaleString()}</div>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-slate-500 dark:text-neutral-400 font-medium leading-relaxed mb-6">
+                                            {addon.description}
+                                        </p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 mb-8">
+                                        {addon.features.map((f, i) => (
+                                            <div key={i} className="flex items-center gap-2">
+                                                <div className="w-1 h-1 rounded-full bg-indigo-500" />
+                                                <span className="text-[10px] font-black uppercase tracking-wider opacity-60">{f}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button 
+                                        onClick={() => handleWhatsApp(addon.name)}
+                                        className="w-full py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl font-black text-[10px] uppercase tracking-[3px] hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all"
+                                    >
+                                        Inquire Now
+                                    </button>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Support Section */}
                 <div className="max-w-4xl mx-auto">
-                    <div className="bg-slate-50 dark:bg-white/5 rounded-[3rem] p-8 md:p-12 border border-slate-200 dark:border-white/5 relative overflow-hidden group">
+                    <div className="bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-[3rem] p-8 md:p-12 relative overflow-hidden group shadow-sm">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2" />
                         
                         <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                             <div className="flex items-center gap-6">
-                                <div className="w-16 h-16 rounded-[2rem] bg-white dark:bg-white/10 flex items-center justify-center shadow-xl border border-slate-100 dark:border-white/5">
+                                <div className="w-16 h-16 rounded-[2rem] bg-white dark:bg-white/5 flex items-center justify-center shadow-xl border border-slate-100 dark:border-white/5">
                                     <Phone size={28} className="text-indigo-500" />
                                 </div>
                                 <div className="text-center md:text-left">
