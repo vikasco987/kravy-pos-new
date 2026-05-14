@@ -42,7 +42,9 @@ export async function POST(req: Request) {
 
     /* ---------- PHONEPE PAYLOAD ---------- */
     const payload = {
+      merchantId: process.env.PHONEPE_MERCHANT_ID,
       merchantOrderId,
+      merchantUserId: clerkUserId,
       amount: Math.round(amount * 100),
       paymentFlow: {
         type: "PG_CHECKOUT",
