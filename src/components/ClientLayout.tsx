@@ -79,12 +79,12 @@ export default function ClientLayout({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // 4. SaaS / Premium Check & Redirect Hook (Moved to top to follow Rules of Hooks)
+  // 4. SaaS / Premium Check & Redirect Hook
   useEffect(() => {
-    if (profile && profile.showPremiumPopup && !profile.isPremium && pathname !== "/upgrade") {
-      router.push("/upgrade");
+    if (profile && profile.showPremiumPopup && !profile.isPremium) {
+      window.location.href = "https://www.kravy.in/pricing";
     }
-  }, [profile, pathname, router]);
+  }, [profile]);
 
   // 1. Show loader while anything is still loading
   if (!mounted || !clerkLoaded || authLoading) {
@@ -101,12 +101,12 @@ export default function ClientLayout({
   }
 
   // 3. SaaS / Premium UI Blocker (Early Return)
-  if (profile && profile.showPremiumPopup && !profile.isPremium && pathname !== "/upgrade") {
+  if (profile && profile.showPremiumPopup && !profile.isPremium) {
     return (
         <div className="h-screen flex items-center justify-center bg-[#0F172A]">
             <div className="text-center">
                 <Loader2 className="animate-spin text-indigo-500 mx-auto mb-4" size={40} />
-                <h2 className="text-white font-black tracking-widest uppercase text-sm">Securing Your Session...</h2>
+                <h2 className="text-white font-black tracking-widest uppercase text-sm">Redirecting to Pricing...</h2>
             </div>
         </div>
     );
