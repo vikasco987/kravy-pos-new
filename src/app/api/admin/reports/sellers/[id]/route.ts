@@ -41,6 +41,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         businessName: profile?.businessName || seller.name,
         businessAddress: profile?.businessAddress,
         contactPhone: profile?.contactPhone,
+        // SaaS Fields
+        isPremium: profile?.isPremium,
+        showPremiumPopup: profile?.showPremiumPopup,
+        trialStartedAt: profile?.trialStartedAt,
       },
       stats: {
         totalBills: seller.bills.length,
@@ -52,5 +56,27 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   } catch (err) {
     console.error("ADMIN SELLER DETAIL ERROR:", err);
     return NextResponse.json({ error: "Failed to fetch details" }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const { id } = params;
+    const body = await req.json();
+    
+    const updateData: any = {};
+    if (body.isPremium !== undefined) updateData.isPremium = body.isPremium;
+    if (body.showPremiumPopup !== undefined) updateData.showPremiumPopup = body.showPremiumPopup;
+    if (body.trialStartedAt !== undefined) updateData.trialStartedAt = new Date(body.trialStartedAt);
+
+    await prisma.businessProfile.update({
+      where: { userId: id },
+      data: updateData
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("ADMIN SELLER UPDATE ERROR:", err);
+    return NextResponse.json({ error: "Failed to update seller" }, { status: 500 });
   }
 }

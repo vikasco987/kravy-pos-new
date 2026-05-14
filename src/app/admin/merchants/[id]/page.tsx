@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { 
   LineChart, 
   Line, 
@@ -34,15 +35,49 @@ import {
 export default function MerchantDetailPage({ params }: { params: { id: string } }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+
+  // SaaS Controls State
+  const [controls, setControls] = useState({
+    isPremium: false,
+    showPremiumPopup: true,
+    trialStartedAt: ""
+  });
 
   useEffect(() => {
     fetch(`/api/admin/reports/sellers/${params.id}`)
       .then(res => res.json())
       .then(d => {
         setData(d);
+        if (d?.seller) {
+            setControls({
+                isPremium: d.seller.isPremium ?? false,
+                showPremiumPopup: d.seller.showPremiumPopup ?? true,
+                trialStartedAt: d.seller.trialStartedAt ? new Date(d.seller.trialStartedAt).toISOString().split('T')[0] : ""
+            });
+        }
         setLoading(false);
       });
   }, [params.id]);
+
+  const handleUpdate = async () => {
+    setUpdating(true);
+    try {
+        const res = await fetch(`/api/admin/reports/sellers/${params.id}`, {
+            method: 'POST',
+            body: JSON.stringify(controls)
+        });
+        if (res.ok) {
+            toast.success("Merchant system flags updated!");
+        } else {
+            toast.error("Failed to update merchant flags.");
+        }
+    } catch (err) {
+        toast.error("Something went wrong.");
+    } finally {
+        setUpdating(false);
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -103,6 +138,72 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
                 <p className="text-2xl font-black text-indigo-600">{stats.totalBills}</p>
              </div>
           </div>
+        </div>
+
+        {/* 🚀 SYSTEM FUNNEL CONTROL (Manual Management) */}
+        <div className="mb-8 bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden border border-white/10 shadow-2xl">
+            <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-500/10 blur-[100px] -ml-32 -mt-32 rounded-full"></div>
+            <div className="absolute bottom-0 right-0 w-64 h-64 bg-rose-500/10 blur-[100px] -mr-32 -mb-32 rounded-full"></div>
+
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-indigo-400">
+                        <Zap size={28} />
+                    </div>
+                    <div>
+                        <h3 className="text-2xl font-black tracking-tight">System Funnel Control</h3>
+                        <p className="text-white/40 text-xs font-mono uppercase tracking-widest">Manual SaaS Override</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full lg:w-auto">
+                    {/* Premium Toggle */}
+                    <button 
+                        onClick={() => setControls(prev => ({ ...prev, isPremium: !prev.isPremium }))}
+                        className={`p-4 rounded-2xl border transition-all text-left flex flex-col gap-1 ${
+                            controls.isPremium 
+                            ? "bg-indigo-600/20 border-indigo-500/50 text-indigo-400" 
+                            : "bg-white/5 border-white/10 text-white/40"
+                        }`}
+                    >
+                        <span className="text-[8px] font-black uppercase tracking-[2px]">Premium Account</span>
+                        <span className="font-bold">{controls.isPremium ? "ACTIVE" : "INACTIVE"}</span>
+                    </button>
+
+                    {/* Popup Toggle */}
+                    <button 
+                        onClick={() => setControls(prev => ({ ...prev, showPremiumPopup: !prev.showPremiumPopup }))}
+                        className={`p-4 rounded-2xl border transition-all text-left flex flex-col gap-1 ${
+                            controls.showPremiumPopup 
+                            ? "bg-rose-600/20 border-rose-500/50 text-rose-400" 
+                            : "bg-white/5 border-white/10 text-white/40"
+                        }`}
+                    >
+                        <span className="text-[8px] font-black uppercase tracking-[2px]">Force Popup</span>
+                        <span className="font-bold">{controls.showPremiumPopup ? "SHOWING" : "HIDDEN"}</span>
+                    </button>
+
+                    {/* Trial Date */}
+                    <div className="p-4 rounded-2xl border border-white/10 bg-white/5 flex flex-col gap-1 min-w-[150px]">
+                        <span className="text-[8px] font-black uppercase tracking-[2px] text-white/40">Trial Started</span>
+                        <input 
+                            type="date"
+                            value={controls.trialStartedAt}
+                            onChange={(e) => setControls(prev => ({ ...prev, trialStartedAt: e.target.value }))}
+                            className="bg-transparent text-white font-bold text-sm outline-none border-none p-0 [color-scheme:dark]"
+                        />
+                    </div>
+
+                    {/* Save Button */}
+                    <button 
+                        onClick={handleUpdate}
+                        disabled={updating}
+                        className="p-4 rounded-2xl bg-white text-slate-900 font-black hover:bg-white/90 transition-all flex items-center justify-center gap-2 shadow-xl shadow-white/5 disabled:opacity-50"
+                    >
+                        {updating ? "Saving..." : <><Check size={20} /> Save System Changes</>}
+                    </button>
+                </div>
+            </div>
         </div>
 
         {/* Charts & Activity */}

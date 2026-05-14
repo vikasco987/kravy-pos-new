@@ -482,6 +482,11 @@ model BusinessProfile {
   closingTime    String? @default("23:59")
   offlineMessage String? @default("Restaurant is currently closed or not accepting orders.")
 
+  // SaaS Subscription & Premium Popups
+  trialStartedAt    DateTime @default(now())
+  isPremium         Boolean  @default(false)
+  showPremiumPopup  Boolean  @default(true)
+
   updatedAt DateTime @updatedAt
 }
 

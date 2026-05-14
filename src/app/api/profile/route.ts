@@ -148,6 +148,11 @@ export async function POST(request: Request) {
     if (body.posCashEnabled !== undefined) updateData.posCashEnabled = b(body.posCashEnabled);
     if (body.posUpiEnabled !== undefined) updateData.posUpiEnabled = b(body.posUpiEnabled);
     if (body.posCardEnabled !== undefined) updateData.posCardEnabled = b(body.posCardEnabled);
+
+    // ✅ SaaS Subscription & Premium Popups
+    if (body.isPremium !== undefined) updateData.isPremium = b(body.isPremium);
+    if (body.showPremiumPopup !== undefined) updateData.showPremiumPopup = b(body.showPremiumPopup);
+    if (body.trialStartedAt !== undefined) updateData.trialStartedAt = new Date(body.trialStartedAt);
     if (body.posHoldEnabled !== undefined) updateData.posHoldEnabled = b(body.posHoldEnabled);
     if (body.posSaveEnabled !== undefined) updateData.posSaveEnabled = b(body.posSaveEnabled);
     if (body.posPreviewEnabled !== undefined) updateData.posPreviewEnabled = b(body.posPreviewEnabled);

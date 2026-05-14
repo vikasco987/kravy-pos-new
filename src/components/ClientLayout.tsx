@@ -10,6 +10,7 @@ import { useAuthContext } from "@/components/AuthContext";
 import { Lock, Loader2 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { kravy } from "@/lib/sounds";
+import PremiumAlert from "@/components/PremiumAlert";
 
 export default function ClientLayout({
   children,
@@ -27,6 +28,25 @@ export default function ClientLayout({
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch("/api/profile");
+        if (res.ok) {
+          const data = await res.json();
+          setProfile(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile in ClientLayout:", err);
+      }
+    };
+
+    if (isSignedIn || authUser) {
+      fetchProfile();
+    }
+  }, [isSignedIn, authUser]);
 
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
@@ -115,6 +135,9 @@ export default function ClientLayout({
     <>
       {/* 🔔 Real-time order sound + popup notifications */}
       <OrderNotificationProvider />
+      
+      {/* 👑 Premium Subscription Modal */}
+      <PremiumAlert profile={profile} />
 
       <div
         className="h-screen flex flex-col overflow-hidden relative"
