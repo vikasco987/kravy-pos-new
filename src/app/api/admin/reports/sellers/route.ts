@@ -20,18 +20,29 @@ export async function GET(req: NextRequest) {
       },
       include: {
         profiles: true,
+        _count: {
+          select: { bills: { where: { isDeleted: false } } }
+        },
         bills: {
           where: { isDeleted: false },
           orderBy: { createdAt: "desc" },
-        },
+          take: 1, // Only need the latest bill for status
+        }
       },
     });
 
-    const reportData = sellers.map((seller) => {
+    const reportData = await Promise.all(sellers.map(async (seller) => {
       const profile = seller.profiles[0];
       const businessName = profile?.businessName || seller.name || "Unknown Business";
-      const totalBills = seller.bills.length;
-      const totalRevenue = seller.bills.reduce((sum, bill) => sum + (bill.total || 0), 0);
+      const totalBills = seller._count.bills;
+      
+      // Calculate total revenue using aggregate for this seller
+      const revenueAgg = await prisma.bill.aggregate({
+        where: { userId: seller.clerkId, isDeleted: false },
+        _sum: { total: true }
+      });
+      
+      const totalRevenue = revenueAgg._sum.total || 0;
       const lastBillDate = seller.bills.length > 0 ? seller.bills[0].createdAt : null;
       
       const sevenDaysAgo = new Date();
@@ -47,7 +58,7 @@ export async function GET(req: NextRequest) {
         lastBill: lastBillDate,
         status: isActive ? "ACTIVE" : "INACTIVE",
       };
-    });
+    }));
 
     // Summary Stats
     const stats = {
