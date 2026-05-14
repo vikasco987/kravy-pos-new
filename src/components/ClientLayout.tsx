@@ -8,7 +8,7 @@ import { useUser, RedirectToSignIn } from "@clerk/nextjs";
 import { OrderNotificationProvider } from "@/components/OrderNotificationProvider";
 import { useAuthContext } from "@/components/AuthContext";
 import { Lock, Loader2 } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { kravy } from "@/lib/sounds";
 import PremiumAlert from "@/components/PremiumAlert";
 
@@ -21,6 +21,7 @@ export default function ClientLayout({
   const { isLoaded: clerkLoaded, isSignedIn } = useUser();
   const { user: authUser, loading: authLoading } = useAuthContext();
   const pathname = usePathname();
+  const router = useRouter();
   const isTerminal = pathname === "/dashboard/terminal";
   const isCheckout = pathname === "/dashboard/billing/checkout";
   const isKitchen = pathname === "/dashboard/kitchen" || pathname === "/dashboard/workflow";
@@ -92,7 +93,25 @@ export default function ClientLayout({
     return <RedirectToSignIn />;
   }
 
-  // 3. Staff Authorization Check
+  // 4. SaaS / Premium Check & Redirect
+  useEffect(() => {
+    if (profile && profile.showPremiumPopup && !profile.isPremium && pathname !== "/upgrade") {
+      router.push("/upgrade");
+    }
+  }, [profile, pathname, router]);
+
+  if (profile && profile.showPremiumPopup && !profile.isPremium && pathname !== "/upgrade") {
+    return (
+        <div className="h-screen flex items-center justify-center bg-[#0F172A]">
+            <div className="text-center">
+                <Loader2 className="animate-spin text-indigo-500 mx-auto mb-4" size={40} />
+                <h2 className="text-white font-black tracking-widest uppercase text-sm">Securing Your Session...</h2>
+            </div>
+        </div>
+    );
+  }
+
+  // 5. Staff Authorization Check
   if (!isSignedIn && authUser) {
     const permissions = authUser.permissions || [];
     
@@ -137,7 +156,6 @@ export default function ClientLayout({
       <OrderNotificationProvider />
       
       {/* 👑 Premium Subscription Modal */}
-      <PremiumAlert profile={profile} />
 
       <div
         className="h-screen flex flex-col overflow-hidden relative"
