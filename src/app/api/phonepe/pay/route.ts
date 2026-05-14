@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     const { amount, customer, items } = await req.json();
 
     const token = await getAccessToken();
-    const merchantOrderId = "KPOS" + Date.now();
+    const merchantOrderId = "OMO" + Date.now();
 
     /* ---------- PHONEPE PAYLOAD ---------- */
     const payload = {
@@ -46,6 +46,7 @@ export async function POST(req: Request) {
       merchantOrderId,
       merchantUserId: clerkUserId,
       amount: Math.round(amount * 100),
+      mobileNumber: customer.phone, // Added
       paymentFlow: {
         type: "PG_CHECKOUT",
         merchantUrls: {
