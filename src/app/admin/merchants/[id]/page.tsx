@@ -15,7 +15,9 @@ import {
   BarChart,
   ChevronRight,
   Clock,
-  Printer
+  Printer,
+  Zap,
+  Check
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
