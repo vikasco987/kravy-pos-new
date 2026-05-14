@@ -80,11 +80,11 @@ export default function ClientLayout({
   }, []);
 
   // 4. SaaS / Premium Check & Redirect Hook
-  useEffect(() => {
+  /* useEffect(() => {
     if (profile && profile.showPremiumPopup && !profile.isPremium) {
       window.location.href = "https://www.kravy.in/pricing";
     }
-  }, [profile]);
+  }, [profile]); */
 
   // 1. Show loader while anything is still loading
   if (!mounted || !clerkLoaded || authLoading) {
@@ -101,7 +101,7 @@ export default function ClientLayout({
   }
 
   // 3. SaaS / Premium UI Blocker (Early Return)
-  if (profile && profile.showPremiumPopup && !profile.isPremium) {
+  /* if (profile && profile.showPremiumPopup && !profile.isPremium) {
     return (
         <div className="h-screen flex items-center justify-center bg-[#0F172A]">
             <div className="text-center">
@@ -110,7 +110,7 @@ export default function ClientLayout({
             </div>
         </div>
     );
-  }
+  } */
 
   // 5. Staff Authorization Check
   if (!isSignedIn && authUser) {
@@ -157,6 +157,7 @@ export default function ClientLayout({
       <OrderNotificationProvider />
       
       {/* 👑 Premium Subscription Modal */}
+      <PremiumAlert profile={profile} />
 
       <div
         className="h-screen flex flex-col overflow-hidden relative"

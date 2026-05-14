@@ -39,6 +39,8 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/staff/login",
   "/api/staff/login",
+  "/qr-menu",
+  "/qr-menu/(.*)",
   "/"
 ]);
 

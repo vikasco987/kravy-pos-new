@@ -20,6 +20,21 @@ export async function GET(request: Request) {
       where: { userId: effectiveId },
     });
 
+    // SaaS Logic: Auto-trigger popup after 3 days of trial
+    if (profile && !profile.isPremium && !profile.showPremiumPopup) {
+      const trialStartedAt = profile.trialStartedAt || profile.createdAt;
+      const trialEndsAt = new Date(trialStartedAt);
+      trialEndsAt.setDate(trialEndsAt.getDate() + 3); // 3-day trial
+
+      if (new Date() > trialEndsAt) {
+        await prisma.businessProfile.update({
+          where: { id: profile.id },
+          data: { showPremiumPopup: true }
+        });
+        profile.showPremiumPopup = true;
+      }
+    }
+
     return NextResponse.json(profile, { status: 200 });
   } catch (error) {
     console.error("GET /api/profile error:", error);
