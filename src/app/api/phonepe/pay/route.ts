@@ -37,8 +37,14 @@ export async function POST(req: Request) {
 
     const { amount, customer, items } = await req.json();
 
+    const host = req.headers.get("host");
+    const protocol = req.headers.get("x-forwarded-proto") || (host?.includes("localhost") ? "http" : "https");
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`;
+
     const token = await getAccessToken();
     const merchantOrderId = "OMO" + Date.now();
+
+    const cleanPhone = customer.phone.replace(/\D/g, '').slice(-10);
 
     /* ---------- PHONEPE PAYLOAD ---------- */
     const payload = {
@@ -46,11 +52,11 @@ export async function POST(req: Request) {
       merchantOrderId,
       merchantUserId: clerkUserId,
       amount: Math.round(amount * 100),
-      mobileNumber: customer.phone, // Added
+      mobileNumber: cleanPhone,
       paymentFlow: {
         type: "PG_CHECKOUT",
         merchantUrls: {
-          redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/result/${merchantOrderId}`
+          redirectUrl: `${baseUrl}/payment/result/${merchantOrderId}`
         }
       }
     };
