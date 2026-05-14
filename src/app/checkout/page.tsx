@@ -71,6 +71,32 @@ function CheckoutContent() {
     }
   }, [retryId]);
 
+  // Pincode Auto-fetch
+  const [fetchingPincode, setFetchingPincode] = useState(false);
+  useEffect(() => {
+    if (customer.pincode.length === 6) {
+      const fetchPincodeDetails = async () => {
+        setFetchingPincode(true);
+        try {
+          const res = await axios.get(`https://api.postalpincode.in/pincode/${customer.pincode}`);
+          if (res.data[0].Status === "Success") {
+            const data = res.data[0].PostOffice[0];
+            setCustomer(prev => ({
+              ...prev,
+              district: data.District,
+              state: data.State
+            }));
+          }
+        } catch (err) {
+          console.error("Pincode fetch error:", err);
+        } finally {
+          setFetchingPincode(false);
+        }
+      };
+      fetchPincodeDetails();
+    }
+  }, [customer.pincode]);
+
   const toggleAddon = (id: keyof typeof addonsData) => {
     if (selectedAddons.find(a => a.id === id)) {
       setSelectedAddons(selectedAddons.filter(a => a.id !== id));
@@ -187,15 +213,20 @@ function CheckoutContent() {
                     <div className="grid grid-cols-3 gap-4 md:col-span-2">
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">District *</label>
-                            <input type="text" name="district" placeholder="City" value={customer.district} onChange={handleCustomerChange} className="w-full px-5 py-4 rounded-2xl border bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-white/5 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm" />
+                            <input type="text" name="district" placeholder="City" value={customer.district} onChange={handleCustomerChange} className={`w-full px-5 py-4 rounded-2xl border bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-white/5 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm ${fetchingPincode ? 'opacity-50' : ''}`} />
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">State *</label>
-                            <input type="text" name="state" placeholder="State" value={customer.state} onChange={handleCustomerChange} className="w-full px-5 py-4 rounded-2xl border bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-white/5 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm" />
+                            <input type="text" name="state" placeholder="State" value={customer.state} onChange={handleCustomerChange} className={`w-full px-5 py-4 rounded-2xl border bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-white/5 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm ${fetchingPincode ? 'opacity-50' : ''}`} />
                         </div>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 relative">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Pincode *</label>
-                            <input type="text" name="pincode" placeholder="6-digit" value={customer.pincode} onChange={handleCustomerChange} className="w-full px-5 py-4 rounded-2xl border bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-white/5 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm" />
+                            <input type="text" name="pincode" placeholder="6-digit" maxLength={6} value={customer.pincode} onChange={handleCustomerChange} className="w-full px-5 py-4 rounded-2xl border bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-white/5 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm" />
+                            {fetchingPincode && (
+                                <div className="absolute right-4 bottom-4">
+                                    <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
