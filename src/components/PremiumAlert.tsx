@@ -73,44 +73,61 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
                             </div>
 
                             <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Upgrade to Premium</h2>
-                            <p className="text-slate-500 text-sm mb-6 leading-relaxed max-w-sm mx-auto">
-                                To continue using Kravy POS and access your dashboard, please upgrade your account to premium.
+                            <p className="text-slate-500 text-sm mb-8 leading-relaxed max-w-sm mx-auto">
+                                Select a plan to continue using Kravy POS. Activate instantly via WhatsApp or call our support.
                             </p>
 
-                            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 mb-8">
-                                <p className="text-amber-800 text-[10px] font-black uppercase tracking-[2px] mb-2">Activation Support</p>
-                                <a 
-                                    href="tel:9289507882"
-                                    className="text-amber-900 font-black text-2xl flex items-center justify-center gap-2 hover:scale-105 transition-transform"
-                                >
-                                    <Phone size={24} className="fill-amber-900/10" /> 9289507882
-                                </a>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-3 mb-8 text-left max-w-xs mx-auto">
+                            {/* Plans Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                                 {[
-                                    "Unlimited Orders & KOTs",
-                                    "Advanced Sales Analytics",
-                                    "WhatsApp Report Automation",
-                                    "Multi-User & Role Management"
-                                ].map((feature, i) => (
-                                    <div key={i} className="flex items-center gap-3 text-sm font-medium text-slate-700">
-                                        <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                                            <Check size={12} strokeWidth={3} />
+                                    { name: "1 Year", price: "3,999", original: "7,000", off: "43%", color: "bg-slate-50", text: "text-slate-900" },
+                                    { name: "2 Year", price: "5,999", original: "14,000", off: "57%", color: "bg-slate-900", text: "text-white", popular: true },
+                                    { name: "3 Year", price: "7,499", original: "21,000", off: "64%", color: "bg-indigo-600", text: "text-white", best: true }
+                                ].map((plan, i) => (
+                                    <div 
+                                        key={i} 
+                                        className={`${plan.color} ${plan.text} rounded-3xl p-5 border border-black/5 relative flex flex-col items-center justify-center transition-transform hover:scale-[1.02] shadow-lg`}
+                                    >
+                                        {plan.best && (
+                                            <div className="absolute -top-3 bg-amber-400 text-amber-950 text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-wider">Best Value</div>
+                                        )}
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">{plan.name}</p>
+                                        <div className="flex items-baseline gap-1 mb-1">
+                                            <span className="text-xs font-bold opacity-60">₹</span>
+                                            <span className="text-2xl font-black">{plan.price}</span>
                                         </div>
-                                        {feature}
+                                        <p className="text-[9px] line-through opacity-40 mb-2">₹{plan.original}</p>
+                                        <div className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-500 text-[8px] font-black">SAVE {plan.off}</div>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="flex flex-col gap-3">
+                            <div className="bg-amber-50 border border-amber-100 rounded-[2rem] p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div className="text-left">
+                                    <p className="text-amber-800 text-[10px] font-black uppercase tracking-[2px] mb-1">Activation Support</p>
+                                    <a href="tel:9289507882" className="text-amber-950 font-black text-2xl hover:scale-105 transition-transform inline-block">9289507882</a>
+                                </div>
+                                <div className="h-10 w-[1px] bg-amber-200 hidden md:block"></div>
                                 <button
                                     onClick={() => window.open('https://wa.me/919289507882', '_blank')}
-                                    className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 flex items-center justify-center gap-2 group"
+                                    className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
                                 >
-                                    Activate via WhatsApp
-                                    <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                    Activate via WhatsApp <ChevronRight size={16} />
                                 </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-left max-w-md mx-auto">
+                                {[
+                                    "Unlimited Invoices",
+                                    "Analytics Dashboard",
+                                    "Inventory Tracking",
+                                    "WhatsApp Automation"
+                                ].map((feature, i) => (
+                                    <div key={i} className="flex items-center gap-2 text-[11px] font-bold text-slate-600">
+                                        <CheckCircle2 size={14} className="text-emerald-500" />
+                                        {feature}
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
