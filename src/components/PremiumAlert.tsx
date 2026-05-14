@@ -10,7 +10,8 @@ import {
     X,
     Lock,
     Crown,
-    CheckCircle2
+    CheckCircle2,
+    Phone
 } from "lucide-react";
 
 interface PremiumAlertProps {
@@ -24,27 +25,13 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
         if (!profile) return;
 
         // Logic: Show if NOT premium AND (forced by admin OR 3+ days passed) AND NOT explicitly hidden by admin
-        const trialDate = new Date(profile.trialStartedAt || profile.createdAt);
-        const diffTime = Math.abs(new Date().getTime() - trialDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
         const isPremium = profile.isPremium === true;
         const forceShow = profile.showPremiumPopup === true;
-        const forceHide = profile.showPremiumPopup === false;
 
-        if (!isPremium && !forceHide && (forceShow || diffDays >= 3)) {
-            // Check session storage so it only pops up once per session
-            const dismissed = sessionStorage.getItem("premium_dismissed");
-            if (!dismissed) {
-                setIsOpen(true);
-            }
+        if (!isPremium && forceShow) {
+            setIsOpen(true);
         }
     }, [profile]);
-
-    const handleDismiss = () => {
-        setIsOpen(false);
-        sessionStorage.setItem("premium_dismissed", "true");
-    };
 
     return (
         <AnimatePresence>
@@ -82,13 +69,23 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
                         <div className="p-8 pt-10 text-center">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest mb-4">
                                 <Sparkles size={12} />
-                                Trial Period Ended
+                                Account Subscription Required
                             </div>
 
                             <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Upgrade to Premium</h2>
-                            <p className="text-slate-500 text-sm mb-8 leading-relaxed max-w-sm mx-auto">
-                                Your free trial has expired. Upgrade now to keep using premium features and take your business to the next level.
+                            <p className="text-slate-500 text-sm mb-6 leading-relaxed max-w-sm mx-auto">
+                                To continue using Kravy POS and access your dashboard, please upgrade your account to premium.
                             </p>
+
+                            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 mb-8">
+                                <p className="text-amber-800 text-[10px] font-black uppercase tracking-[2px] mb-2">Activation Support</p>
+                                <a 
+                                    href="tel:9289507882"
+                                    className="text-amber-900 font-black text-2xl flex items-center justify-center gap-2 hover:scale-105 transition-transform"
+                                >
+                                    <Phone size={24} className="fill-amber-900/10" /> 9289507882
+                                </a>
+                            </div>
 
                             <div className="grid grid-cols-1 gap-3 mb-8 text-left max-w-xs mx-auto">
                                 {[
@@ -108,18 +105,11 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
 
                             <div className="flex flex-col gap-3">
                                 <button
-                                    onClick={() => window.open('https://kravy.in/pricing', '_blank')}
+                                    onClick={() => window.open('https://wa.me/919289507882', '_blank')}
                                     className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 flex items-center justify-center gap-2 group"
                                 >
-                                    Activate Premium Account
+                                    Activate via WhatsApp
                                     <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
-                                
-                                <button
-                                    onClick={handleDismiss}
-                                    className="w-full py-3 text-slate-400 text-xs font-bold hover:text-slate-600 transition-colors"
-                                >
-                                    Maybe Later
                                 </button>
                             </div>
                         </div>
