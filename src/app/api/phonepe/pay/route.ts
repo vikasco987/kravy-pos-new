@@ -48,17 +48,12 @@ export async function POST(req: Request) {
 
     /* ---------- PHONEPE PAYLOAD ---------- */
     const payload = {
-      merchantId: process.env.PHONEPE_MERCHANT_ID,
       merchantOrderId,
-      merchantUserId: clerkUserId,
       amount: Math.round(amount * 100),
-      mobileNumber: cleanPhone,
       paymentFlow: {
         type: "PG_CHECKOUT",
         merchantUrls: {
-          redirectUrl: `${baseUrl}/payment/result/${merchantOrderId}`,
-          callbackUrl: `${baseUrl}/api/phonepe/webhook`,
-          redirectMode: "REDIRECT"
+          redirectUrl: `${baseUrl}/payment/result/${merchantOrderId}`
         }
       }
     };
