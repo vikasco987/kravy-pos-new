@@ -12,13 +12,18 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    console.log("PDF Generation Request for:", body.customerName);
+    
     const pdfBytes = await generateManualInvoicePDF(body);
+    const pdfBuffer = Buffer.from(pdfBytes);
+    console.log("PDF Generated Successfully, size:", pdfBuffer.length);
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="invoice-${Date.now()}.pdf"`,
+        "Content-Length": pdfBuffer.length.toString(),
       },
     });
   } catch (error: any) {

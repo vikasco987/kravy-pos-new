@@ -1,5 +1,7 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import QRCode from "qrcode";
+import fs from "fs";
+import path from "path";
 
 export async function generateManualInvoicePDF(data: any) {
   const pdfDoc = await PDFDocument.create();
@@ -47,6 +49,24 @@ export async function generateManualInvoicePDF(data: any) {
     height: headerHeight,
     color: brandColor,
   });
+
+  /* ---------- LOGO ---------- */
+  const logoPath = path.join(process.cwd(), "public/logo.png");
+  if (fs.existsSync(logoPath)) {
+    try {
+      const logoBytes = fs.readFileSync(logoPath);
+      const logo = await pdfDoc.embedPng(logoBytes);
+      const logoSize = 75;
+      page.drawImage(logo, {
+        x: 45,
+        y: height - headerHeight + 18,
+        width: logoSize,
+        height: logoSize,
+      });
+    } catch (e) {
+      console.log("Logo error:", e);
+    }
+  }
 
   /* ---------- COMPANY INFO (TOP RIGHT) ---------- */
   const companyName = "Kravy Software";
@@ -166,6 +186,22 @@ export async function generateManualInvoicePDF(data: any) {
   page.drawText("Grand Total", { x: summaryX, y: itemY, size: 13, font: bold });
   page.drawText(formatRS(finalTotal), { x: valX, y: itemY, size: 13, font: bold, color: brandColor });
 
+  /* ---------- QR CODE (CENTERED) ---------- */
+  try {
+    const qrText = `INV:${data.invoiceNumber || "N/A"}\nAMT:${finalTotal}\nDATE:${new Date().toLocaleDateString()}`;
+    const qrDataUrl = await QRCode.toDataURL(qrText);
+    const qrImageBytes = Buffer.from(qrDataUrl.split(",")[1], "base64");
+    const qrImage = await pdfDoc.embedPng(qrImageBytes);
+    page.drawImage(qrImage, {
+      x: 595 / 2 - 40,
+      y: 110,
+      width: 80,
+      height: 80,
+    });
+  } catch (e) {
+    console.log("QR Error:", e);
+  }
+
   /* ---------- FOOTER TEXT ---------- */
   const disclaimer = "This is a computer generated tax invoice and does not require signature.";
   const disclaimerWidth = font.widthOfTextAtSize(disclaimer, 8);
@@ -175,6 +211,26 @@ export async function generateManualInvoicePDF(data: any) {
     size: 8,
     font,
     color: greyTextColor,
+  });
+
+  /* ---------- BOTTOM BAR ---------- */
+  const footerHeight = 35;
+  page.drawRectangle({
+    x: 0,
+    y: 0,
+    width: 595,
+    height: footerHeight,
+    color: brandColor,
+  });
+
+  const contactText = "Phone: 9289507882 | www.kravy.in | support@kravy.in";
+  const contactWidth = font.widthOfTextAtSize(contactText, 9);
+  page.drawText(contactText, {
+    x: (595 - contactWidth) / 2,
+    y: 13,
+    size: 9,
+    font,
+    color: textColor,
   });
 
   const pdfBytes = await pdfDoc.save();
