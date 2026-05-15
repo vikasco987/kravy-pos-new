@@ -93,8 +93,8 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
                                             }
                                             const amount = plan.price.replace(',', '');
                                             const bridgeUrl = window.location.hostname === 'localhost' 
-                                                ? `http://localhost:3000/upgrade` // Fallback for local testing
-                                                : `https://www.kravy.in/upgrade`;
+                                                ? `http://localhost:3000/bridge` // Fallback for local testing
+                                                : `https://www.kravy.in/bridge`;
                                                 
                                             window.location.href = `${bridgeUrl}?source=billing&clerkId=${profile.clerkId}&amount=${amount}`;
                                         }}
