@@ -84,10 +84,19 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
                                     { name: "2 Year", price: "5,999", printer: "7,999", original: "14,000", off: "57%", color: "bg-slate-900", text: "text-white", popular: true },
                                     { name: "3 Year", price: "7,499", printer: "9,499", original: "21,000", off: "64%", color: "bg-indigo-600", text: "text-white", best: true }
                                 ].map((plan, i) => (
-                                    <div 
+                                    <button 
                                         key={i} 
-                                        className={`${plan.color} ${plan.text} rounded-3xl p-5 border border-black/5 relative flex flex-col items-center justify-center transition-transform hover:scale-[1.02] shadow-lg overflow-hidden`}
+                                        onClick={() => {
+                                            const amount = plan.price.replace(',', '');
+                                            window.location.href = `https://www.kravy.in/upgrade?source=billing&clerkId=${profile?.clerkId}&amount=${amount}`;
+                                        }}
+                                        className={`${plan.color} ${plan.text} w-full rounded-3xl p-5 border border-black/5 relative flex flex-col items-center justify-center transition-transform hover:scale-[1.05] active:scale-95 shadow-lg overflow-hidden group`}
                                     >
+                                        {plan.popular && (
+                                            <div className="absolute top-2 right-2">
+                                                <Zap size={14} className="text-amber-400 fill-amber-400" />
+                                            </div>
+                                        )}
                                         {plan.best && (
                                             <div className="absolute -top-3 bg-amber-400 text-amber-950 text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-wider">Best Value</div>
                                         )}
@@ -101,7 +110,7 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
                                             <p className="text-[8px] font-bold uppercase tracking-tight opacity-40">Software Only</p>
                                         </div>
 
-                                        <div className="w-full h-[1px] bg-black/5 mb-3"></div>
+                                        <div className="w-full h-[1px] bg-black/5 mb-3 group-hover:bg-white/10 transition-colors"></div>
 
                                         <div className="mb-3 text-center">
                                             <div className="flex items-baseline justify-center gap-1 text-emerald-500">
@@ -113,7 +122,11 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
 
                                         <p className="text-[9px] line-through opacity-40 mb-2">Was ₹{plan.original}</p>
                                         <div className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-500 text-[8px] font-black italic">Upto {plan.off} OFF</div>
-                                    </div>
+                                        
+                                        <div className="mt-4 text-[8px] font-black uppercase tracking-[2px] py-2 px-4 rounded-full border border-current opacity-0 group-hover:opacity-100 transition-all">
+                                            Select & Pay
+                                        </div>
+                                    </button>
                                 ))}
                             </div>
 
