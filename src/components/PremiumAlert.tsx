@@ -87,8 +87,16 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
                                     <button 
                                         key={i} 
                                         onClick={() => {
+                                            if (!profile?.clerkId) {
+                                                console.error("No clerkId found for redirect");
+                                                return;
+                                            }
                                             const amount = plan.price.replace(',', '');
-                                            window.location.href = `https://www.kravy.in/upgrade?source=billing&clerkId=${profile?.clerkId}&amount=${amount}`;
+                                            const bridgeUrl = window.location.hostname === 'localhost' 
+                                                ? `http://localhost:3000/upgrade` // Fallback for local testing
+                                                : `https://www.kravy.in/upgrade`;
+                                                
+                                            window.location.href = `${bridgeUrl}?source=billing&clerkId=${profile.clerkId}&amount=${amount}`;
                                         }}
                                         className={`${plan.color} ${plan.text} w-full rounded-3xl p-5 border border-black/5 relative flex flex-col items-center justify-center transition-transform hover:scale-[1.05] active:scale-95 shadow-lg overflow-hidden group`}
                                     >
