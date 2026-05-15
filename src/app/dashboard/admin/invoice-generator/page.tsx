@@ -20,6 +20,7 @@ import {
     ShieldCheck,
     Loader2
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 export default function InvoiceGenerator() {
     const [loading, setLoading] = useState(false);
