@@ -6,8 +6,9 @@ export async function POST(req: NextRequest) {
   try {
     const { sessionClaims } = await auth();
     const role = (sessionClaims?.metadata as { role?: string })?.role;
+    console.log("Current user role for PDF generation:", role);
 
-    if (role !== "ADMIN") {
+    if (role?.toUpperCase() !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
