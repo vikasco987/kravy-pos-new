@@ -17,15 +17,11 @@ import {
     Calendar,
     Hash,
     Zap,
-    ShieldCheck
+    ShieldCheck,
+    Loader2
 } from "lucide-react";
-import { toast } from "react-hot-toast";
-
-// @ts-ignore
-import html2pdf from "html2pdf.js";
 
 export default function InvoiceGenerator() {
-    const invoiceRef = useRef<HTMLDivElement>(null);
     const [loading, setLoading] = useState(false);
     
     const [invoiceData, setInvoiceData] = useState({
@@ -95,29 +91,44 @@ export default function InvoiceGenerator() {
         return invoiceData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     };
 
-    const handleDownload = () => {
-        if (!invoiceRef.current) return;
+    const handleDownload = async () => {
         setLoading(true);
-
-        const element = invoiceRef.current;
-        const opt = {
-            margin: 0,
-            filename: `${invoiceData.invoiceNumber}_${invoiceData.customer.name || 'Invoice'}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opt).from(element).save()
-            .then(() => {
-                setLoading(false);
-                toast.success("Invoice Downloaded!");
-            })
-            .catch((err: any) => {
-                setLoading(false);
-                console.error(err);
-                toast.error("Download failed");
+        try {
+            const response = await fetch("/api/admin/generate-invoice", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...invoiceData,
+                    customerName: invoiceData.customer.name,
+                    customerPhone: invoiceData.customer.phone,
+                    customerEmail: invoiceData.customer.email,
+                    customerAddress: invoiceData.customer.address,
+                    customerDistrict: invoiceData.customer.city,
+                    customerState: invoiceData.customer.state,
+                    customerPincode: invoiceData.customer.pincode,
+                    total: calculateSubtotal(),
+                    taxType: "inclusive"
+                })
             });
+
+            if (!response.ok) throw new Error("Failed to generate PDF");
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Invoice_${invoiceData.invoiceNumber}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            
+            toast.success("Invoice Generated Successfully!");
+        } catch (err: any) {
+            console.error(err);
+            toast.error("Download failed: " + err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -299,7 +310,7 @@ export default function InvoiceGenerator() {
                     {/* Preview Side */}
                     <div className="lg:col-span-7">
                         <div className="bg-white rounded-3xl shadow-2xl p-0 overflow-hidden sticky top-8 border border-slate-200" style={{ minHeight: '842px' }}>
-                            <div id="invoice-capture" ref={invoiceRef} className="p-12 text-slate-800 bg-white" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto' }}>
+                            <div id="invoice-capture" className="p-12 text-slate-800 bg-white" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto' }}>
                                 
                                 {/* Invoice Header */}
                                 <div className="flex justify-between items-start mb-12">
@@ -419,8 +430,3 @@ export default function InvoiceGenerator() {
     );
 }
 
-const Loader2 = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-    </svg>
-);
