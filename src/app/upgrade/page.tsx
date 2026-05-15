@@ -104,6 +104,31 @@ const addons = [
 export default function UpgradePage() {
     const router = useRouter();
     const supportPhone = "+91 9289507882";
+    const [profile, setProfile] = (require("react").useState)(null);
+
+    (require("react").useEffect)(() => {
+        const fetchProfile = async () => {
+            try {
+                const res = await fetch("/api/profile");
+                const data = await res.json();
+                if (data.profile) setProfile(data.profile);
+            } catch (err) { console.error(err); }
+        };
+        fetchProfile();
+    }, []);
+
+    const handlePlanSelect = (planKey: string, price: number) => {
+        if (!profile?.clerkId) {
+            alert("Please login first to upgrade.");
+            return;
+        }
+        const amount = price;
+        const bridgeUrl = window.location.hostname === 'localhost' 
+            ? `http://localhost:3000/bridge` 
+            : `https://www.kravy.in/bridge`;
+            
+        window.location.href = `${bridgeUrl}?source=billing&clerkId=${profile.clerkId}&amount=${amount}&plan=${planKey}`;
+    };
 
     const handleWhatsApp = (productName: string) => {
         const message = encodeURIComponent(`Hi, I'm interested in the ${productName} for my business. Please share more details.`);
@@ -196,7 +221,7 @@ export default function UpgradePage() {
                                 </ul>
 
                                 <button
-                                    onClick={() => router.push(`/checkout?plan=${plan.key}`)}
+                                    onClick={() => handlePlanSelect(plan.key, plan.price)}
                                     className={`mt-auto py-4 rounded-2xl font-black text-xs uppercase tracking-[2px] flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg
                                     ${
                                         plan.highlight
