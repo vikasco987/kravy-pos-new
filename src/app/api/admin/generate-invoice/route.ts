@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateManualInvoicePDF } from "@/lib/pdf/invoice-pdf";
-import { auth } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
+import prisma from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
-    const { sessionClaims } = await auth();
-    const role = (sessionClaims?.metadata as { role?: string })?.role;
-    console.log("Current user role for PDF generation:", role);
-
-    if (role?.toUpperCase() !== "ADMIN") {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify admin role in DB
+    const me = await prisma.user.findUnique({
+      where: { clerkId: effectiveId },
+      select: { role: true },
+    });
+
+    if (!me || me.role?.toUpperCase() !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await req.json();
