@@ -84,8 +84,16 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
         }
     }, [profile]);
 
-    const handlePlanSelect = () => {
-        window.location.href = "/upgrade";
+    const handlePlanSelect = (planKey: string, price: string) => {
+        // Use clerkId or userId if available
+        const identifier = profile?.clerkId || profile?.userId;
+        const amount = price.replace(',', '');
+        const bridgeUrl = window.location.hostname === 'localhost' 
+            ? `http://localhost:3000/bridge` 
+            : `https://www.kravy.in/bridge`;
+            
+        // Even if not logged in (no identifier), redirect to bridge to handle there
+        window.location.href = `${bridgeUrl}?source=billing&clerkId=${identifier || 'guest'}&amount=${amount}&plan=${planKey}`;
     };
 
     return (
@@ -156,7 +164,7 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
                                 {plans.map((plan) => (
                                     <button
                                         key={plan.key}
-                                        onClick={() => handlePlanSelect()}
+                                        onClick={() => handlePlanSelect(plan.key, plan.price)}
                                         className={`group relative flex flex-col rounded-[2.5rem] p-6 border transition-all text-left hover:scale-[1.02] active:scale-95
                                         ${plan.highlight 
                                             ? "bg-indigo-600 text-white border-none shadow-xl shadow-indigo-500/30" 
