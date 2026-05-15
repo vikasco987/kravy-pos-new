@@ -11,171 +11,223 @@ import {
     Lock,
     Crown,
     CheckCircle2,
-    Phone
+    Phone,
+    Plus,
+    Printer,
+    CreditCard,
+    ArrowRight
 } from "lucide-react";
 
 interface PremiumAlertProps {
     profile: any;
 }
 
+const plans = [
+    {
+      key: "year1",
+      name: "1 Year Plan",
+      price: "3,999",
+      originalPrice: "7,000",
+      description: "Perfect for restaurants and small businesses.",
+      features: [
+        "Unlimited invoices",
+        "Analytics dashboard",
+        "Inventory management",
+        "Tax / GST management",
+        "Invoice with logo & QR",
+        "Chat & Email support",
+      ],
+    },
+    {
+      key: "year2",
+      name: "2 Year Plan",
+      price: "5,999",
+      originalPrice: "14,000",
+      description: "Best choice for growing businesses.",
+      features: [
+        "Everything in 1 Year plan",
+        "Advanced Kitchen workflow",
+        "Coupons & Loyalty system",
+        "Table QR ordering system",
+        "Inventory alerts",
+        "Priority support",
+      ],
+      popular: true
+    },
+    {
+      key: "year3",
+      name: "3 Year Plan",
+      price: "7,499",
+      originalPrice: "21,000",
+      description: "Maximum savings for long-term businesses.",
+      features: [
+        "Everything in 2 Year plan",
+        "Kitchen automation",
+        "Smart inventory tracking",
+        "Advanced tax reports",
+        "Lifetime priority support",
+        "VIP Onboarding",
+      ],
+      highlight: true,
+    },
+];
+
 export default function PremiumAlert({ profile }: PremiumAlertProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
         if (!profile) return;
-
-        // Logic: Show if NOT premium AND (forced by admin OR 3+ days passed) AND NOT explicitly hidden by admin
         const isPremium = profile.isPremium === true;
         const forceShow = profile.showPremiumPopup === true;
-
         if (!isPremium && forceShow) {
             setIsOpen(true);
         }
     }, [profile]);
 
+    const handlePlanSelect = (planKey: string, price: string) => {
+        if (!profile?.clerkId) return;
+        const amount = price.replace(',', '');
+        const bridgeUrl = window.location.hostname === 'localhost' 
+            ? `http://localhost:3000/bridge` 
+            : `https://www.kravy.in/bridge`;
+            
+        window.location.href = `${bridgeUrl}?source=billing&clerkId=${profile.clerkId}&amount=${amount}&plan=${planKey}`;
+    };
+
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xl">
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                        initial={{ opacity: 0, scale: 0.9, y: 40 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                        className="bg-white rounded-[3rem] w-full max-w-4xl overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] relative border border-white/20"
+                        exit={{ opacity: 0, scale: 0.9, y: 40 }}
+                        className="bg-white dark:bg-[#09090b] rounded-[3.5rem] w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] relative border border-white/5 flex flex-col md:flex-row"
                     >
-                        {/* Premium Header Decoration */}
-                        <div className="h-32 bg-gradient-to-br from-indigo-600 via-purple-600 to-rose-500 relative flex items-center justify-center overflow-hidden">
-                            <div className="absolute inset-0 opacity-20">
-                                <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
-                            </div>
-                            <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                                className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-3xl"
-                            />
-                            <motion.div
-                                animate={{ rotate: -360 }}
-                                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                                className="absolute -bottom-12 -left-12 w-48 h-48 bg-rose-400/10 rounded-full blur-3xl"
-                            />
-                            <div className="relative z-10 flex flex-col items-center">
-                                <div className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center text-white border border-white/30 shadow-lg">
-                                    <Crown size={32} />
+                        {/* Left Side: Features & Support */}
+                        <div className="w-full md:w-[35%] bg-slate-50 dark:bg-zinc-900/50 p-10 flex flex-col border-r border-slate-100 dark:border-white/5">
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                                    <Crown size={24} className="text-white" />
                                 </div>
+                                <div>
+                                    <h3 className="text-xl font-black tracking-tight dark:text-white">Kravy Premium</h3>
+                                    <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Growth Engine</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6 mb-10 flex-1">
+                                {[
+                                    { title: "Unlimited Billing", desc: "No limits on invoices or orders", icon: <CheckCircle2 size={16} /> },
+                                    { title: "Smart Inventory", desc: "Track stock & get low alerts", icon: <CheckCircle2 size={16} /> },
+                                    { title: "Advanced Reports", desc: "Sales, GST & Profit insights", icon: <CheckCircle2 size={16} /> },
+                                    { title: "24/7 Support", desc: "Priority assistance for you", icon: <CheckCircle2 size={16} /> },
+                                ].map((item, i) => (
+                                    <div key={i} className="flex gap-4">
+                                        <div className="mt-1 text-emerald-500">{item.icon}</div>
+                                        <div>
+                                            <h4 className="text-sm font-bold dark:text-white">{item.title}</h4>
+                                            <p className="text-xs text-slate-500 dark:text-zinc-400">{item.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="bg-white dark:bg-black/20 rounded-3xl p-6 border border-slate-100 dark:border-white/5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Need Help?</p>
+                                <a href="tel:9289507882" className="text-xl font-black block mb-4 hover:text-indigo-500 transition-colors dark:text-white">9289507882</a>
+                                <button 
+                                    onClick={() => window.open('https://wa.me/919289507882', '_blank')}
+                                    className="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                                >
+                                    <Phone size={14} fill="currentColor" /> WhatsApp
+                                </button>
                             </div>
                         </div>
 
-                        {/* Content */}
-                        <div className="p-8 pt-10 text-center">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest mb-4">
-                                <Sparkles size={12} />
-                                Account Subscription Required
+                        {/* Right Side: Plans */}
+                        <div className="flex-1 p-10 overflow-y-auto">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-3xl font-black tracking-tight dark:text-white">Choose Your Plan</h2>
+                                    <p className="text-sm text-slate-500 dark:text-zinc-400">Select a plan to activate instant premium access.</p>
+                                </div>
+                                <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Active Discounts</span>
+                                </div>
                             </div>
 
-                            <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Upgrade to Premium</h2>
-                            <p className="text-slate-500 text-sm mb-8 leading-relaxed max-w-sm mx-auto">
-                                Select a plan to continue using Kravy POS. Activate instantly via WhatsApp or call our support.
-                            </p>
-
-                            {/* Plans Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                                {[
-                                    { name: "1 Year", price: "3,999", printer: "5,999", original: "7,000", off: "43%", color: "bg-slate-50", text: "text-slate-900" },
-                                    { name: "2 Year", price: "5,999", printer: "7,999", original: "14,000", off: "57%", color: "bg-slate-900", text: "text-white", popular: true },
-                                    { name: "3 Year", price: "7,499", printer: "9,499", original: "21,000", off: "64%", color: "bg-indigo-600", text: "text-white", best: true }
-                                ].map((plan, i) => (
-                                    <button 
-                                        key={i} 
-                                        onClick={() => {
-                                            if (!profile?.clerkId) {
-                                                console.error("No clerkId found for redirect");
-                                                return;
-                                            }
-                                            const amount = plan.price.replace(',', '');
-                                            const bridgeUrl = window.location.hostname === 'localhost' 
-                                                ? `http://localhost:3000/bridge` // Fallback for local testing
-                                                : `https://www.kravy.in/bridge`;
-                                                
-                                            window.location.href = `${bridgeUrl}?source=billing&clerkId=${profile.clerkId}&amount=${amount}`;
-                                        }}
-                                        className={`${plan.color} ${plan.text} w-full rounded-3xl p-5 border border-black/5 relative flex flex-col items-center justify-center transition-transform hover:scale-[1.05] active:scale-95 shadow-lg overflow-hidden group`}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {plans.map((plan) => (
+                                    <button
+                                        key={plan.key}
+                                        onClick={() => handlePlanSelect(plan.key, plan.price)}
+                                        className={`group relative flex flex-col rounded-[2.5rem] p-6 border transition-all text-left hover:scale-[1.02] active:scale-95
+                                        ${plan.highlight 
+                                            ? "bg-indigo-600 text-white border-none shadow-xl shadow-indigo-500/30" 
+                                            : "bg-slate-50 dark:bg-zinc-900 border-slate-100 dark:border-white/5 hover:border-indigo-500/30"
+                                        }`}
                                     >
+                                        {plan.highlight && (
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-white/10">Best Value</div>
+                                        )}
                                         {plan.popular && (
-                                            <div className="absolute top-2 right-2">
-                                                <Zap size={14} className="text-amber-400 fill-amber-400" />
+                                            <div className="absolute top-4 right-4 bg-amber-400 rounded-full p-1.5 text-amber-950">
+                                                <Zap size={14} fill="currentColor" />
                                             </div>
                                         )}
-                                        {plan.best && (
-                                            <div className="absolute -top-3 bg-amber-400 text-amber-950 text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-wider">Best Value</div>
-                                        )}
-                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-2">{plan.name} Plan</p>
+
+                                        <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${plan.highlight ? 'text-indigo-200' : 'text-indigo-500'}`}>
+                                            {plan.name}
+                                        </p>
                                         
-                                        <div className="mb-3 text-center">
-                                            <div className="flex items-baseline justify-center gap-1">
-                                                <span className="text-[10px] font-bold opacity-60">₹</span>
-                                                <span className="text-2xl font-black">{plan.price}</span>
-                                            </div>
-                                            <p className="text-[8px] font-bold uppercase tracking-tight opacity-40">Software Only</p>
+                                        <div className="flex items-baseline gap-2 mb-4">
+                                            <div className="text-3xl font-black">₹{plan.price}</div>
+                                            <div className={`text-xs line-through opacity-40`}>₹{plan.originalPrice}</div>
                                         </div>
 
-                                        <div className="w-full h-[1px] bg-black/5 mb-3 group-hover:bg-white/10 transition-colors"></div>
+                                        <ul className="space-y-2.5 mb-8 flex-1">
+                                            {plan.features.map((f, i) => (
+                                                <li key={i} className="flex items-start gap-2">
+                                                    <Check size={14} className={`mt-0.5 ${plan.highlight ? 'text-indigo-200' : 'text-emerald-500'}`} />
+                                                    <span className="text-[11px] font-bold leading-tight">{f}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
 
-                                        <div className="mb-3 text-center">
-                                            <div className="flex items-baseline justify-center gap-1 text-emerald-500">
-                                                <span className="text-[10px] font-bold">₹</span>
-                                                <span className="text-xl font-black">{plan.printer}</span>
-                                            </div>
-                                            <p className="text-[8px] font-black uppercase tracking-tight text-emerald-500/80">+ Thermal Printer</p>
-                                        </div>
-
-                                        <p className="text-[9px] line-through opacity-40 mb-2">Was ₹{plan.original}</p>
-                                        <div className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-500 text-[8px] font-black italic">Upto {plan.off} OFF</div>
-                                        
-                                        <div className="mt-4 text-[8px] font-black uppercase tracking-[2px] py-2 px-4 rounded-full border border-current opacity-0 group-hover:opacity-100 transition-all">
-                                            Select & Pay
+                                        <div className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-[2px] flex items-center justify-center gap-2 shadow-lg transition-all
+                                        ${plan.highlight 
+                                            ? "bg-white text-indigo-900" 
+                                            : "bg-slate-900 dark:bg-white text-white dark:text-slate-900"
+                                        }`}>
+                                            Pay Now <ArrowRight size={14} />
                                         </div>
                                     </button>
                                 ))}
                             </div>
 
-                            <div className="bg-amber-50 border border-amber-100 rounded-[2rem] p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
-                                <div className="text-left">
-                                    <p className="text-amber-800 text-[10px] font-black uppercase tracking-[2px] mb-1">Activation Support</p>
-                                    <a href="tel:9289507882" className="text-amber-950 font-black text-2xl hover:scale-105 transition-transform inline-block">9289507882</a>
-                                </div>
-                                <div className="h-10 w-[1px] bg-amber-200 hidden md:block"></div>
-                                <button
-                                    onClick={() => window.open('https://wa.me/919289507882', '_blank')}
-                                    className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20"
-                                >
-                                    Activate via WhatsApp <ChevronRight size={16} />
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-left max-w-md mx-auto">
-                                {[
-                                    "Unlimited Invoices",
-                                    "Analytics Dashboard",
-                                    "Inventory Tracking",
-                                    "WhatsApp Automation"
-                                ].map((feature, i) => (
-                                    <div key={i} className="flex items-center gap-2 text-[11px] font-bold text-slate-600">
-                                        <CheckCircle2 size={14} className="text-emerald-500" />
-                                        {feature}
+                            <div className="mt-8 p-6 bg-slate-50 dark:bg-zinc-900/50 rounded-3xl border border-dashed border-slate-200 dark:border-white/10 flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-white dark:bg-white/5 rounded-2xl flex items-center justify-center shadow-sm">
+                                        <Printer size={20} className="text-slate-400" />
                                     </div>
-                                ))}
+                                    <div>
+                                        <p className="text-xs font-black dark:text-white uppercase tracking-widest">Hardware Pack</p>
+                                        <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">Add Printer + Gateway for ₹2,999</p>
+                                    </div>
+                                </div>
+                                <button className="text-xs font-black text-indigo-500 uppercase tracking-widest hover:underline">Learn More</button>
                             </div>
                         </div>
 
-                        {/* Footer Info */}
-                        <div className="bg-slate-50 p-4 flex items-center justify-center gap-4 border-t border-slate-100">
-                            <div className="flex -space-x-2">
-                                {[1,2,3].map(i => (
-                                    <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm" />
-                                ))}
-                            </div>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Trusted by 500+ restaurants</p>
-                        </div>
+                        {/* Close Button */}
+                        <button 
+                            onClick={() => setIsOpen(false)}
+                            className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
                     </motion.div>
                 </div>
             )}
