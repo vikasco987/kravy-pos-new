@@ -118,16 +118,20 @@ export default function UpgradePage() {
     }, []);
 
     const handlePlanSelect = (planKey: string, price: number) => {
-        if (!profile?.clerkId) {
+        // Use clerkId if available, otherwise fallback to userId (MongoDB ID)
+        const identifier = profile?.clerkId || profile?.userId;
+        
+        if (!identifier) {
             alert("Please login first to upgrade.");
             return;
         }
+        
         const amount = price;
         const bridgeUrl = window.location.hostname === 'localhost' 
             ? `http://localhost:3000/bridge` 
             : `https://www.kravy.in/bridge`;
             
-        window.location.href = `${bridgeUrl}?source=billing&clerkId=${profile.clerkId}&amount=${amount}&plan=${planKey}`;
+        window.location.href = `${bridgeUrl}?source=billing&clerkId=${identifier}&amount=${amount}&plan=${planKey}`;
     };
 
     const handleWhatsApp = (productName: string) => {

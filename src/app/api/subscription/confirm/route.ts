@@ -17,12 +17,13 @@ export async function POST(req: Request) {
     }
 
     if (!clerkId) {
-      return NextResponse.json({ error: "Missing clerkId" }, { status: 400 });
+      return NextResponse.json({ error: "Missing identifier" }, { status: 400 });
     }
 
     // Update the business profile to Premium
+    // 'userId' in BusinessProfile is the unique field that can be either clerkId or MongoDB ID
     const updatedProfile = await prisma.businessProfile.update({
-      where: { clerkId },
+      where: { userId: clerkId },
       data: {
         isPremium: true,
         showPremiumPopup: false,
@@ -36,8 +37,8 @@ export async function POST(req: Request) {
         clerkUserId: clerkId,
         amount: parseFloat(amount) || 0,
         paymentStatus: "SUCCESS",
-        customer: { name: updatedProfile.businessName },
-        items: [{ name: "Premium Subscription", price: amount }]
+        customer: { name: updatedProfile.businessName || "Premium User" },
+        items: [{ name: "Premium Subscription", price: parseFloat(amount) }]
       }
     });
 
