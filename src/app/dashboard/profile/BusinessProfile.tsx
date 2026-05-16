@@ -137,9 +137,10 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
+import { Pencil, Activity } from "lucide-react";
 
 import BusinessProfileForm from "./_components/BusinessProfileForm";
+import UserActivityHeatmap from "@/components/profile/UserActivityHeatmap";
 
 export default function BusinessProfile({
   data,
@@ -286,6 +287,14 @@ export default function BusinessProfile({
               </span>
             )}
           </div>
+        </div>
+
+        {/* ================= DIVIDER ================= */}
+        <div className="border-t border-[var(--kravy-border)] mx-8" />
+
+        {/* ================= ACTIVITY HEATMAP ================= */}
+        <div className="px-8 py-10">
+          <UserActivityHeatmap clerkId={data.userId} />
         </div>
 
         {/* ================= DIVIDER ================= */}
