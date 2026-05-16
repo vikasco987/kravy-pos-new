@@ -44,7 +44,8 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
   const [controls, setControls] = useState({
     isPremium: false,
     showPremiumPopup: true,
-    trialStartedAt: ""
+    trialStartedAt: "",
+    isFrozen: false
   });
 
   useEffect(() => {
@@ -56,7 +57,8 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
             setControls({
                 isPremium: d.seller.isPremium ?? false,
                 showPremiumPopup: d.seller.showPremiumPopup ?? true,
-                trialStartedAt: d.seller.trialStartedAt ? new Date(d.seller.trialStartedAt).toISOString().split('T')[0] : ""
+                trialStartedAt: d.seller.trialStartedAt ? new Date(d.seller.trialStartedAt).toISOString().split('T')[0] : "",
+                isFrozen: d.seller.isFrozen ?? false
             });
         }
         setLoading(false);
@@ -184,6 +186,19 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
                     >
                         <span className="text-[8px] font-black uppercase tracking-[2px]">Force Popup</span>
                         <span className="font-bold">{controls.showPremiumPopup ? "SHOWING" : "HIDDEN"}</span>
+                    </button>
+
+                    {/* Freeze Toggle */}
+                    <button 
+                        onClick={() => setControls(prev => ({ ...prev, isFrozen: !prev.isFrozen }))}
+                        className={`p-4 rounded-2xl border transition-all text-left flex flex-col gap-1 ${
+                            controls.isFrozen 
+                            ? "bg-slate-600 border-slate-400 text-white shadow-[0_0_20px_rgba(255,255,255,0.1)]" 
+                            : "bg-white/5 border-white/10 text-white/40"
+                        }`}
+                    >
+                        <span className="text-[8px] font-black uppercase tracking-[2px]">Account Status</span>
+                        <span className="font-bold">{controls.isFrozen ? "FROZEN (LOCKED)" : "NORMAL"}</span>
                     </button>
 
                     {/* Trial Date */}

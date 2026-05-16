@@ -79,7 +79,8 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
         if (!profile) return;
         const isPremium = profile.isPremium === true;
         const forceShow = profile.showPremiumPopup === true;
-        if (!isPremium && forceShow) {
+        const isFrozen = profile.isFrozen === true;
+        if (isFrozen || (!isPremium && forceShow)) {
             setIsOpen(true);
         }
     }, [profile]);
@@ -151,8 +152,15 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
                         <div className="flex-1 p-10 overflow-y-auto">
                             <div className="flex items-center justify-between mb-8">
                                 <div>
-                                    <h2 className="text-3xl font-black tracking-tight dark:text-white">Choose Your Plan</h2>
-                                    <p className="text-sm text-slate-500 dark:text-zinc-400">Select a plan to activate instant premium access.</p>
+                                    <h2 className="text-3xl font-black tracking-tight dark:text-white">
+                                        {profile?.isFrozen ? "Account Frozen" : "Choose Your Plan"}
+                                    </h2>
+                                    <p className="text-sm text-slate-500 dark:text-zinc-400">
+                                        {profile?.isFrozen 
+                                            ? "Your account has been frozen. Please select a plan to resume operations."
+                                            : "Select a plan to activate instant premium access."
+                                        }
+                                    </p>
                                 </div>
                                 <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full">
                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -224,12 +232,14 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
                         </div>
 
                         {/* Close Button */}
-                        <button 
-                            onClick={() => setIsOpen(false)}
-                            className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors"
-                        >
-                            <X size={20} />
-                        </button>
+                        {!profile?.isFrozen && (
+                            <button 
+                                onClick={() => setIsOpen(false)}
+                                className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        )}
                     </motion.div>
                 </div>
             )}

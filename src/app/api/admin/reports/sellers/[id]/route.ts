@@ -45,6 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         isPremium: profile?.isPremium,
         showPremiumPopup: profile?.showPremiumPopup,
         trialStartedAt: profile?.trialStartedAt,
+        isFrozen: profile?.isFrozen,
       },
       stats: {
         totalBills: seller.bills.length,
@@ -67,6 +68,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const updateData: any = {};
     if (body.isPremium !== undefined) updateData.isPremium = body.isPremium;
     if (body.showPremiumPopup !== undefined) updateData.showPremiumPopup = body.showPremiumPopup;
+    if (body.isFrozen !== undefined) updateData.isFrozen = body.isFrozen;
     
     if (body.trialStartedAt) {
       const date = new Date(body.trialStartedAt);

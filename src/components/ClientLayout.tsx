@@ -112,6 +112,41 @@ export default function ClientLayout({
     );
   } */
 
+  // 6. Frozen Account Check
+  if (profile?.isFrozen) {
+    return (
+        <div className="h-screen flex items-center justify-center bg-slate-900 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(79,70,229,0.1),transparent)] pointer-events-none" />
+            
+            <PremiumAlert profile={profile} />
+            
+            <div className="text-center p-12 bg-slate-800/50 backdrop-blur-3xl rounded-[3.5rem] border border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] max-w-md relative z-10 mx-4">
+                <div className="w-24 h-24 bg-rose-500/20 text-rose-500 rounded-[2rem] flex items-center justify-center mx-auto mb-8 border border-rose-500/30 animate-pulse">
+                    <Lock size={48} />
+                </div>
+                <h2 className="text-4xl font-black text-white tracking-tight mb-4">Software Locked</h2>
+                <p className="text-slate-400 text-base mb-10 leading-relaxed font-medium">
+                    Access to Kravy POS has been restricted. Please clear your dues or upgrade your plan to resume business operations.
+                </p>
+                
+                <div className="space-y-4">
+                    <div className="p-6 bg-white/5 rounded-3xl border border-white/10 group hover:border-white/20 transition-all">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Priority Support</p>
+                        <a href="tel:9289507882" className="text-2xl font-black text-white hover:text-indigo-400 transition-colors">9289507882</a>
+                    </div>
+                    
+                    <button 
+                        onClick={() => window.location.reload()}
+                        className="w-full py-4 bg-white text-slate-900 font-black rounded-2xl hover:bg-slate-100 transition-all text-xs uppercase tracking-widest"
+                    >
+                        Check Status Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+  }
+
   // 5. Staff Authorization Check
   if (!isSignedIn && authUser) {
     const permissions = authUser.permissions || [];

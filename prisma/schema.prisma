@@ -486,6 +486,7 @@ model BusinessProfile {
   trialStartedAt    DateTime? @default(now())
   isPremium         Boolean?  @default(false)
   showPremiumPopup  Boolean?  @default(false)
+  isFrozen          Boolean?  @default(false)
 
   updatedAt DateTime @updatedAt
 }
@@ -762,7 +763,7 @@ model SubscriptionOrder {
   items           Json     // Array of { id, name, price, quantity }
   amount          Float
   paymentStatus   String   @default("PENDING") // PENDING, SUCCESS, FAILED
-  invoiceNumber   String?  @unique
+  invoiceNumber   String?
   paidAt          DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
