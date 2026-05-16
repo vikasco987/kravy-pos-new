@@ -124,9 +124,9 @@ export default function ClientLayout({
                 <div className="w-24 h-24 bg-rose-500/20 text-rose-500 rounded-[2rem] flex items-center justify-center mx-auto mb-8 border border-rose-500/30 animate-pulse">
                     <Lock size={48} />
                 </div>
-                <h2 className="text-4xl font-black text-white tracking-tight mb-4">Software Locked</h2>
+                <h2 className="text-4xl font-black text-white tracking-tight mb-4">Subscription Required</h2>
                 <p className="text-slate-400 text-base mb-10 leading-relaxed font-medium">
-                    Access to Kravy POS has been restricted. Please clear your dues or upgrade your plan to resume business operations.
+                    Your trial or subscription has expired. Please choose a plan to continue using Kravy POS and resume your business operations.
                 </p>
                 
                 <div className="space-y-4">

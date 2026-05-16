@@ -153,11 +153,11 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
                             <div className="flex items-center justify-between mb-8">
                                 <div>
                                     <h2 className="text-3xl font-black tracking-tight dark:text-white">
-                                        {profile?.isFrozen ? "Account Frozen" : "Choose Your Plan"}
+                                        {profile?.isFrozen ? "Subscription Required" : "Choose Your Plan"}
                                     </h2>
                                     <p className="text-sm text-slate-500 dark:text-zinc-400">
                                         {profile?.isFrozen 
-                                            ? "Your account has been frozen. Please select a plan to resume operations."
+                                            ? "Your trial or subscription has expired. Please choose a plan below to continue using Kravy POS."
                                             : "Select a plan to activate instant premium access."
                                         }
                                     </p>
@@ -217,17 +217,46 @@ export default function PremiumAlert({ profile }: PremiumAlertProps) {
                                 ))}
                             </div>
 
-                            <div className="mt-8 p-6 bg-slate-50 dark:bg-zinc-900/50 rounded-3xl border border-dashed border-slate-200 dark:border-white/10 flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-white dark:bg-white/5 rounded-2xl flex items-center justify-center shadow-sm">
-                                        <Printer size={20} className="text-slate-400" />
+                            <div className="mt-8 p-8 bg-slate-900 dark:bg-zinc-900/50 rounded-[2.5rem] border border-slate-800 dark:border-white/5 shadow-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-3xl -mr-16 -mt-16 group-hover:bg-indigo-500/20 transition-all duration-700"></div>
+                                
+                                <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+                                    <div className="flex items-center gap-6">
+                                        <div className="w-16 h-16 bg-white/10 dark:bg-white/5 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/10 dark:border-white/5 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                                            <Printer size={28} className="text-indigo-400" />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <p className="text-sm font-black text-white uppercase tracking-widest">Hardware Bundle</p>
+                                                <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[8px] font-black rounded-full border border-emerald-500/20 uppercase tracking-tighter">Recommended</span>
+                                            </div>
+                                            <p className="text-xs text-indigo-200/60 font-medium">Add physical terminal for just ₹2,999</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-xs font-black dark:text-white uppercase tracking-widest">Hardware Pack</p>
-                                        <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">Add Printer + Gateway for ₹2,999</p>
+
+                                    <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-6 gap-y-2">
+                                        {[
+                                            { icon: <Check size={12} />, label: "Thermal Printer" },
+                                            { icon: <Check size={12} />, label: "IoT Gateway" },
+                                            { icon: <Check size={12} />, label: "1 Year Warranty" },
+                                            { icon: <Check size={12} />, label: "Free Setup" },
+                                        ].map((item, i) => (
+                                            <div key={i} className="flex items-center gap-2">
+                                                <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                                    {item.icon}
+                                                </div>
+                                                <span className="text-[10px] font-bold text-white/70">{item.label}</span>
+                                            </div>
+                                        ))}
                                     </div>
+
+                                    <button 
+                                        onClick={() => window.open('https://wa.me/919289507882?text=I%20am%20interested%20in%20Hardware%20Pack', '_blank')}
+                                        className="px-8 py-3 bg-white dark:bg-white text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/5"
+                                    >
+                                        Order Now
+                                    </button>
                                 </div>
-                                <button className="text-xs font-black text-indigo-500 uppercase tracking-widest hover:underline">Learn More</button>
                             </div>
                         </div>
 
