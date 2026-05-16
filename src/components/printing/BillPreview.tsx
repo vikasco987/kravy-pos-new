@@ -362,7 +362,6 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
               kravy.payment(); 
               console.log("[BILL_PREVIEW_DEBUG] Calling printReceipt with bill token:", bill.tokenNumber);
               printReceipt(business?.enableKOTWithBill, bill);
-              setShowPreview(false);
               
               resetForm();
               if (resumeBillId) router.replace("/dashboard/billing/checkout");

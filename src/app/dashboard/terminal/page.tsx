@@ -735,10 +735,8 @@ function KravyPOS() {
                 toast.success("Transaction Finalized! 💰");
                 // ✅ IMPORTANT: Switch tab BEFORE clearing selection to avoid render crash
                 setActiveTab("dashboard"); 
-                setTimeout(() => {
-                    setSelectedTableId(null);
-                    fetchData(false, true); 
-                }, 100);
+                setSelectedTableId(null);
+                fetchData(false, true); 
             } else {
                 fetchData(false, true); 
             }
@@ -1893,7 +1891,7 @@ function KravyPOS() {
                 billNumber={printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
                 billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}
                 tokenNumber={(() => {
-                    const tn = printOrder?.tokenNumber;
+                    const tn = printOrder?.tokenNumber || activeOrderForSelected?.tokenNumber;
                     if (tn == null || tn === "" || tn === 0) return "---";
                     if (typeof tn === 'object' && (tn as any).$numberLong) return (tn as any).$numberLong.toString().padStart(3, '0');
                     return tn.toString().padStart(3, '0');
