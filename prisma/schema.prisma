@@ -770,3 +770,9 @@ model SubscriptionOrder {
 
   @@index([clerkUserId])
 }
+
+model SystemSettings {
+  id               String @id @default(auto()) @map("_id") @db.ObjectId
+  defaultTrialDays Int    @default(3)
+  updatedAt        DateTime @updatedAt
+}

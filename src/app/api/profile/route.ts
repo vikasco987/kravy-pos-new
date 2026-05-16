@@ -20,18 +20,25 @@ export async function GET(request: Request) {
       where: { userId: effectiveId },
     });
 
-    // SaaS Logic: Auto-trigger popup after 3 days of trial
+    // SaaS Logic: Auto-trigger popup after trial period
     if (profile && !profile.isPremium && !profile.showPremiumPopup) {
+      const settings = await prisma.systemSettings.findFirst();
+      const trialDays = settings?.defaultTrialDays ?? 3;
+
       const trialStartedAt = profile.trialStartedAt || profile.createdAt;
       const trialEndsAt = new Date(trialStartedAt);
-      trialEndsAt.setDate(trialEndsAt.getDate() + 3); // 3-day trial
+      trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
 
       if (new Date() > trialEndsAt) {
         await prisma.businessProfile.update({
           where: { id: profile.id },
-          data: { showPremiumPopup: true }
+          data: { 
+            showPremiumPopup: true,
+            isFrozen: true 
+          }
         });
         profile.showPremiumPopup = true;
+        profile.isFrozen = true;
       }
     }
 

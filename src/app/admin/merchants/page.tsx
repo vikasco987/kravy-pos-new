@@ -17,7 +17,9 @@ import {
   XCircle,
   ChevronRight,
   History as HistoryIcon,
-  Store
+  Store,
+  Settings as SettingsIcon,
+  Clock
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -46,6 +48,9 @@ export default function AdminMerchantsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [trialDays, setTrialDays] = useState(3);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -65,7 +70,33 @@ export default function AdminMerchantsPage() {
 
   useEffect(() => {
     fetchData();
+    // Fetch global settings
+    fetch("/api/admin/settings")
+      .then(res => res.json())
+      .then(data => {
+        if (data.defaultTrialDays) setTrialDays(data.defaultTrialDays);
+      });
   }, []);
+
+  const saveGlobalSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        body: JSON.stringify({ defaultTrialDays: trialDays })
+      });
+      if (res.ok) {
+        toast.success("Global trial settings updated!");
+        setShowSettings(false);
+      } else {
+        toast.error("Failed to update settings");
+      }
+    } catch (err) {
+      toast.error("Something went wrong");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const handleExport = async () => {
     setExporting(true);
@@ -114,6 +145,14 @@ export default function AdminMerchantsPage() {
             className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all text-slate-600 shadow-sm"
           >
             <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
+          </button>
+          
+          <button 
+            onClick={() => setShowSettings(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl font-black shadow-lg shadow-slate-900/20 transition-all"
+          >
+            <SettingsIcon size={18} />
+            SAAS SETTINGS
           </button>
           <button 
             onClick={handleExport}
@@ -256,6 +295,63 @@ export default function AdminMerchantsPage() {
           </table>
         </div>
       </div>
+
+      {/* SaaS Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl border border-slate-200"
+          >
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+                <Clock size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-800">Global SaaS Settings</h2>
+                <p className="text-xs text-slate-500 font-bold">Auto-lock configuration for new merchants</p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
+                  Default Trial Period (Days)
+                </label>
+                <div className="flex items-center gap-4">
+                  <input 
+                    type="number" 
+                    value={trialDays}
+                    onChange={(e) => setTrialDays(Number(e.target.value))}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-black text-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  />
+                  <span className="text-slate-400 font-bold">Days</span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2 italic font-medium leading-relaxed">
+                  * All new accounts will automatically see the premium popup after these many days from registration.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setShowSettings(false)}
+                  className="flex-1 px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={saveGlobalSettings}
+                  disabled={savingSettings}
+                  className="flex-1 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+                >
+                  {savingSettings ? "Saving..." : "Save Settings"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
