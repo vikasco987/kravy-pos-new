@@ -146,12 +146,24 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         </div>
 
         {/* 🔥 SIMPLE CLEAN TOKEN DISPLAY 🔥 */}
-        {(tokenNumber != null && tokenNumber !== "---" && tokenNumber !== "" && s('showToken')) && (
-          <div style={{ textAlign: 'center', margin: '10px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '6px 0' }}>
-            <div style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Token No.</div>
-            <div style={{ fontSize: '28px', fontWeight: '900', lineHeight: '1', marginTop: '4px' }}>#{tokenNumber}</div>
-          </div>
-        )}
+        {(() => {
+          const tn = tokenNumber;
+          const displayToken = (() => {
+            if (tn == null || tn === "" || tn === "---" || tn === 0) return null;
+            if (typeof tn === 'object' && tn.$numberLong) return tn.$numberLong.toString().padStart(3, '0');
+            return tn.toString().padStart(3, '0');
+          })();
+
+          if (displayToken && s('showToken')) {
+            return (
+              <div style={{ textAlign: 'center', margin: '10px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '6px 0' }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Token No.</div>
+                <div style={{ fontSize: '28px', fontWeight: '900', lineHeight: '1', marginTop: '4px' }}>#{displayToken}</div>
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         {((customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && s('showCustomerDetails')) && (
           <div className={`mt-2 text-[10px] font-black ${s('sepCustomer') ? 'border-t-2 border-dashed border-black' : ''} pt-1`}>

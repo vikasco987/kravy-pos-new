@@ -39,7 +39,7 @@ interface BillPreviewProps {
   kravy: any;
   // Actions
   printKOT: () => void;
-  printReceipt: (enableKOT: boolean) => void;
+  printReceipt: (enableKOT: boolean, customBill?: any) => void;
   saveBill: () => Promise<any>;
   resetForm: () => void;
   isSaving: boolean;
@@ -355,7 +355,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
               if (!bill) return;
 
               kravy.payment(); 
-              printReceipt(business?.enableKOTWithBill);
+              printReceipt(business?.enableKOTWithBill, bill);
               setShowPreview(false);
               
               resetForm();

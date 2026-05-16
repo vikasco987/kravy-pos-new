@@ -1833,7 +1833,12 @@ function KravyPOS() {
                 business={business}
                 billNumber={printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
                 billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -') : new Date().toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -')}
-                tokenNumber={printOrder?.tokenNumber ? printOrder.tokenNumber.toString().padStart(3, '0') : "---"}
+                tokenNumber={(() => {
+                    const tn = printOrder?.tokenNumber;
+                    if (tn == null || tn === "" || tn === 0) return "---";
+                    if (typeof tn === 'object' && (tn as any).$numberLong) return (tn as any).$numberLong.toString().padStart(3, '0');
+                    return tn.toString().padStart(3, '0');
+                })()}
                 selectedTable={printOrder?.table?.name || "Counter"}
                 customerName={printOrder?.customerName?.trim() || "Walk-in Customer"}
                 customerPhone={printOrder?.customerPhone || ""}
@@ -1882,7 +1887,12 @@ function KravyPOS() {
                 business={business}
                 billNumber={printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
                 billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}
-                tokenNumber={printOrder?.tokenNumber ? printOrder.tokenNumber.toString().padStart(3, '0') : "---"}
+                tokenNumber={(() => {
+                    const tn = printOrder?.tokenNumber;
+                    if (tn == null || tn === "" || tn === 0) return "---";
+                    if (typeof tn === 'object' && (tn as any).$numberLong) return (tn as any).$numberLong.toString().padStart(3, '0');
+                    return tn.toString().padStart(3, '0');
+                })()}
                 selectedTable={printOrder?.table?.name || "Counter"}
                 customerName={printOrder?.customerName?.trim() || "Walk-in Customer"}
                 customerPhone={printOrder?.customerPhone || ""}
@@ -1917,7 +1927,7 @@ function KravyPOS() {
                 kotNumbers={printOrder?.kotNumbers || []}
                 // Actions - Adapting for workflow
                 printKOT={() => handlePrint("KOT", printOrder || undefined)}
-                printReceipt={(enableKOT) => handlePrint("BILL", printOrder || undefined)}
+                printReceipt={(enableKOT, customBill) => handlePrint("BILL", customBill || printOrder || undefined)}
                 saveBill={async () => {
                     if (printOrder?.id) {
                         return await handleCheckout(printOrder.id, true);
