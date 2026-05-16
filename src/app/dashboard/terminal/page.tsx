@@ -1930,7 +1930,10 @@ function KravyPOS() {
                 kotNumbers={printOrder?.kotNumbers || []}
                 // Actions - Adapting for workflow
                 printKOT={() => handlePrint("KOT", printOrder || undefined)}
-                printReceipt={(enableKOT, customBill) => handlePrint("BILL", customBill || printOrder || undefined)}
+                printReceipt={(enableKOT, customBill) => {
+                    handlePrint("BILL", customBill || printOrder || undefined);
+                    setTimeout(resetForm, 500);
+                }}
                 saveBill={async () => {
                     if (printOrder?.id) {
                         return await handleCheckout(printOrder.id, true);

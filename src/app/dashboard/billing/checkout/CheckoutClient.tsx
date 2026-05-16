@@ -1347,20 +1347,20 @@ export default function CheckoutClient() {
   }
 
   /* ================= PRINT RECEIPT ================= */
-  function printReceipt(forceBoth = false) {
+  function printReceipt(forceBoth = false, customBill?: any) {
+    console.log("[CHECKOUT_PRINT_DEBUG] printReceipt called. forceBoth:", forceBoth, "customBill:", !!customBill);
     if (!receiptRef.current) { alert("Nothing to print"); return; }
     
-    // Capture content IMMEDIATELY before state can be cleared by the caller
+    // Capture content. If customBill is provided, we might want to wait for DOM, 
+    // but the BillPreview modal is currently showing the correct data usually.
     const billHtml = receiptRef.current.innerHTML;
     const kotHtml = kotRef.current?.innerHTML || "";
 
-    const isKOTEnabled = forceBoth; // Strictly follow the flag now
+    const isKOTEnabled = forceBoth;
     console.log("PRINT TRIGGERED - KOT:", isKOTEnabled);
 
     if (isKOTEnabled && kotHtml) {
-      // 1. Print KOT
       runPrintJob("kot", kotHtml, () => {
-        // 2. Print Bill after KOT
         setTimeout(() => {
           runPrintJob("bill", billHtml);
         }, 1000); 
@@ -2898,7 +2898,12 @@ export default function CheckoutClient() {
           business={business}
           billNumber={billNumber}
           billDate={billDate}
-          tokenNumber={tokenNumber}
+          tokenNumber={(() => {
+            const tn = tokenNumber;
+            if (tn == null || tn === "" || tn === 0) return "---";
+            if (typeof tn === 'object' && (tn as any).$numberLong) return (tn as any).$numberLong.toString().padStart(3, '0');
+            return tn.toString().padStart(3, '0');
+          })()}
           selectedTable={selectedTable}
           customerName={customerName}
           customerPhone={customerPhone}
@@ -3228,7 +3233,12 @@ export default function CheckoutClient() {
         business={business}
         billNumber={billNumber}
         billDate={billDate}
-        tokenNumber={tokenNumber}
+        tokenNumber={(() => {
+          const tn = tokenNumber;
+          if (tn == null || tn === "" || tn === 0) return "---";
+          if (typeof tn === 'object' && (tn as any).$numberLong) return (tn as any).$numberLong.toString().padStart(3, '0');
+          return tn.toString().padStart(3, '0');
+        })()}
         selectedTable={selectedTable}
         customerName={customerName}
         customerPhone={customerPhone}
@@ -3256,7 +3266,10 @@ export default function CheckoutClient() {
         kravy={kravy}
         kotNumbers={kotNumbers}
         printKOT={printKOT}
-        printReceipt={printReceipt}
+        printReceipt={(enableKOT, customBill) => {
+          printReceipt(enableKOT, customBill);
+          setTimeout(resetForm, 500);
+        }}
         saveBill={saveBill}
         resetForm={resetForm}
         isSaving={isSaving}

@@ -363,7 +363,6 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
               console.log("[BILL_PREVIEW_DEBUG] Calling printReceipt with bill token:", bill.tokenNumber);
               printReceipt(business?.enableKOTWithBill, bill);
               
-              resetForm();
               if (resumeBillId) router.replace("/dashboard/billing/checkout");
             }}
             disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
