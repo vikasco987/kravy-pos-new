@@ -351,10 +351,16 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
             onClick={async () => {
               if (!business) { alert("Business profile not loaded yet"); return; }
               
+              console.log("[BILL_PREVIEW_DEBUG] Save Bill Initiated...");
               const bill = await saveBill();
-              if (!bill) return;
+              console.log("[BILL_PREVIEW_DEBUG] Save Bill Result:", bill);
+              if (!bill) {
+                console.warn("[BILL_PREVIEW_DEBUG] Save bill failed or returned null.");
+                return;
+              }
 
               kravy.payment(); 
+              console.log("[BILL_PREVIEW_DEBUG] Calling printReceipt with bill token:", bill.tokenNumber);
               printReceipt(business?.enableKOTWithBill, bill);
               setShowPreview(false);
               

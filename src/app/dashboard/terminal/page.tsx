@@ -298,8 +298,10 @@ function KravyPOS() {
     const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL" | "MANUAL_COMBINE" | "KOT_BILL", customOrder?: Order, customTable?: Table) => {
         kravy.click();
 
+        console.log(`[PRINT_DEBUG] handlePrint called. Type: ${type}`, { customOrder, customTable });
         let targetOrder = customOrder || printOrder || activeOrderForSelected;
         let targetTable = customTable || printTable || selectedTable;
+        console.log(`[PRINT_DEBUG] Target Order Token:`, targetOrder?.tokenNumber);
 
         if (type === "COMBINED_BILL" && targetOrder) {
             try {
@@ -353,9 +355,10 @@ function KravyPOS() {
             const targetRef = isBill ? billReceiptRef.current : kotReceiptRef.current;
             
             if (!targetRef) {
-                console.error(`[PRINT ERROR] No DOM reference found for ${type}.`);
+                console.error(`[PRINT ERROR] No DOM reference found for ${type}. billReceiptRef: ${!!billReceiptRef.current}, kotReceiptRef: ${!!kotReceiptRef.current}`);
                 return;
             }
+            console.log(`[PRINT_DEBUG] targetRef found. Starting print sequence...`);
 
             const printHTML = targetRef.innerHTML;
             const printStyles = `
@@ -719,6 +722,7 @@ function KravyPOS() {
             };
             const res = await fetch("/api/bill-manager", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(billData) });
             const data = await res.json();
+            console.log("[CHECKOUT_DEBUG] Bill-Manager Response:", data);
             const savedBill = data.bill || data;
             
             // Only update status if not already COMPLETED (to avoid loop)
@@ -743,6 +747,7 @@ function KravyPOS() {
             if (savedBill) {
                 // Merge savedBill with order to keep tokenNumber if savedBill doesn't have it
                 const mergedBill = { ...order, ...savedBill };
+                console.log("[CHECKOUT_DEBUG] Merged Bill with Token:", mergedBill.tokenNumber);
                 setPrintOrder(mergedBill);
                 setIsSettling(false);
                 return mergedBill;
