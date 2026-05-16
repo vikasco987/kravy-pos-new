@@ -193,6 +193,7 @@ export default function ProfilePage() {
   };
 
   return (
+    <div className="p-6 max-w-4xl mx-auto space-y-8">
       {/* PERSONAL INFORMATION (Matching Screenshot) */}
       <div className="border border-[var(--kravy-border)] rounded-[40px] bg-[#0a0a0a] overflow-hidden shadow-2xl">
         <div className="p-8 border-b border-[var(--kravy-border)]">
