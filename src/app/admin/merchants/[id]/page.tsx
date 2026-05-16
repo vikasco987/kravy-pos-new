@@ -131,6 +131,22 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
                  <MapPin size={16} className="text-indigo-400" /> {seller.businessAddress || "No Address"}
                </div>
             </div>
+
+            {/* Secondary Identifiers (Login Methods) */}
+            {(seller.secondaryEmails?.length > 0 || seller.secondaryPhones?.length > 0) && (
+               <div className="mt-4 flex flex-wrap gap-2">
+                   {seller.secondaryEmails.map((e: string) => (
+                       <div key={e} className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold border border-slate-200">
+                           <Mail size={10} /> {e}
+                       </div>
+                   ))}
+                   {seller.secondaryPhones.map((p: string) => (
+                       <div key={p} className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold border border-slate-200">
+                           <Phone size={10} /> {p}
+                       </div>
+                   ))}
+               </div>
+            )}
           </div>
 
           <div className="flex flex-row md:flex-col justify-end gap-3 border-t md:border-t-0 md:border-l border-slate-100 pt-6 md:pt-0 md:pl-8">

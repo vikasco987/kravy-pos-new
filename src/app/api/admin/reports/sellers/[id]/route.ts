@@ -46,6 +46,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         showPremiumPopup: profile?.showPremiumPopup,
         trialStartedAt: profile?.trialStartedAt,
         isFrozen: profile?.isFrozen,
+        secondaryEmails: seller.secondaryEmails || [],
+        secondaryPhones: seller.secondaryPhones || [],
       },
       stats: {
         totalBills: seller.bills.length,
