@@ -6,6 +6,7 @@ import Link from "next/navigation";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Mail, Phone, Plus, Trash2, User as UserIcon, Shield, Camera, X } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -128,109 +129,256 @@ export default function ProfilePage() {
   ---------------------------------*/
   const name = (user as any).name || (user as any).fullName || "User";
   const email = (user as any).email || (clerkUser?.primaryEmailAddress?.emailAddress) || "No email";
+  const phone = (user as any).phone || (clerkUser?.primaryPhoneNumber?.phoneNumber) || "";
   const avatar = (clerkUser as any)?.imageUrl || "https://avatar.iran.liara.run/public/38";
 
+  const [identifiers, setIdentifiers] = useState<{ secondaryEmails: string[], secondaryPhones: string[] }>({
+    secondaryEmails: [],
+    secondaryPhones: []
+  });
+  const [showAddModal, setShowAddModal] = useState<{ show: boolean, type: 'email' | 'phone' }>({ show: false, type: 'email' });
+  const [newValue, setNewValue] = useState("");
+
+  const fetchIdentifiers = async () => {
+    try {
+        const res = await fetch("/api/user/identifiers");
+        if (res.ok) {
+            const data = await res.json();
+            setIdentifiers({
+                secondaryEmails: data.secondaryEmails || [],
+                secondaryPhones: data.secondaryPhones || []
+            });
+        }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    fetchIdentifiers();
+  }, []);
+
+  const handleAddIdentifier = async () => {
+    if (!newValue) return;
+    try {
+        const res = await fetch("/api/user/identifiers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: showAddModal.type, value: newValue })
+        });
+        if (res.ok) {
+            toast.success(`${showAddModal.type === 'email' ? 'Email' : 'Phone'} added`);
+            setNewValue("");
+            setShowAddModal({ ...showAddModal, show: false });
+            fetchIdentifiers();
+        } else {
+            const err = await res.json();
+            toast.error(err.error || "Failed to add");
+        }
+    } catch (e) {
+        toast.error("Network error");
+    }
+  };
+
+  const handleDeleteIdentifier = async (type: 'email' | 'phone', value: string) => {
+    try {
+        const res = await fetch("/api/user/identifiers", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type, value })
+        });
+        if (res.ok) {
+            toast.success("Removed successfully");
+            fetchIdentifiers();
+        }
+    } catch (e) {}
+  };
+
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-8">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-center sm:text-left">
-          Profile Settings
-        </h1>
-
-        <div className="flex justify-center sm:justify-end">
-          <button
-            onClick={() => toast.info("Profile editing coming soon to custom dashboard")}
-            className="border rounded-md px-5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800"
-          >
-            Edit Profile
-          </button>
+      {/* PERSONAL INFORMATION (Matching Screenshot) */}
+      <div className="border border-[var(--kravy-border)] rounded-[40px] bg-[#0a0a0a] overflow-hidden shadow-2xl">
+        <div className="p-8 border-b border-[var(--kravy-border)]">
+            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em] opacity-50">Personal Information</h2>
+        </div>
+        <div className="p-10 space-y-12">
+            <div className="flex flex-col sm:flex-row items-center gap-8">
+                <div className="relative group">
+                    <div className="w-32 h-32 rounded-[32px] bg-indigo-500/10 flex items-center justify-center border-2 border-dashed border-indigo-500/20 group-hover:border-indigo-500/40 transition-all overflow-hidden">
+                        <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
+                    </div>
+                    <button className="absolute -bottom-2 -right-2 bg-indigo-600 text-white p-2.5 rounded-2xl shadow-xl hover:bg-indigo-500 transition-colors border-4 border-[#0a0a0a]">
+                        <Camera size={14} />
+                    </button>
+                </div>
+                <div className="flex-1 grid sm:grid-cols-2 gap-8 w-full">
+                    <div className="space-y-3">
+                        <label className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-1">Full Name</label>
+                        <div className="bg-[#141414] border border-white/5 rounded-2xl px-6 py-4 text-white font-bold text-sm focus-within:border-indigo-500/50 transition-all">
+                            {name}
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        <label className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-1">Contact Phone</label>
+                        <div className="bg-[#141414] border border-white/5 rounded-2xl px-6 py-4 text-white font-bold text-sm focus-within:border-indigo-500/50 transition-all">
+                            {phone || "Not Set"}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="flex justify-end pt-4">
+                <button className="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest px-10 py-4 rounded-2xl transition-all shadow-xl shadow-indigo-500/20">
+                    Edit Details
+                </button>
+            </div>
         </div>
       </div>
 
-      {/* PROFILE CARD */}
-      <div className="border rounded-xl p-6 bg-[var(--kravy-surface)]">
-        <div className="flex flex-col sm:flex-row items-center gap-6">
-          <img
-            src={avatar}
-            alt="profile"
-            className="h-24 w-24 rounded-full border shadow-sm"
-          />
-
-          <div className="text-center sm:text-left">
-            <p className="text-xl font-bold">{name}</p>
-            <p className="text-sm text-gray-500 break-all font-medium">
-              {email}
-            </p>
-            {customUser && <span className="inline-block mt-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-black uppercase rounded-md tracking-wider">Custom Auth</span>}
-          </div>
+      {/* CONTACT METHODS (Clerk Style) */}
+      <div className="border border-[var(--kravy-border)] rounded-[40px] bg-[#0a0a0a] overflow-hidden shadow-2xl">
+        <div className="p-8 border-b border-[var(--kravy-border)] flex items-center justify-between">
+            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em] opacity-50">Contact Methods</h2>
+            <div className="flex gap-2">
+                <button 
+                    onClick={() => setShowAddModal({ show: true, type: 'email' })}
+                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 transition-colors"
+                >
+                    <Plus size={16} />
+                </button>
+            </div>
         </div>
+        <div className="p-8 space-y-6">
+            {/* Primary Email */}
+            <div className="flex items-center justify-between bg-[#141414] p-5 rounded-3xl border border-white/5">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                        <Mail size={18} />
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-white">{email}</p>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-indigo-500/80">Primary Email</span>
+                    </div>
+                </div>
+            </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 text-sm">
-          <div>
-            <p className="text-gray-500 font-medium mb-0.5">Name</p>
-            <p className="font-bold">{(user as any).name || (user as any).firstName || "—"}</p>
-          </div>
+            {/* Secondary Emails */}
+            {identifiers.secondaryEmails.map(e => (
+                <div key={e} className="flex items-center justify-between bg-[#141414] p-5 rounded-3xl border border-white/5 group">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40">
+                            <Mail size={18} />
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-white">{e}</p>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-white/30">Secondary Email</span>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => handleDeleteIdentifier('email', e)}
+                        className="p-2 rounded-lg text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10"
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                </div>
+            ))}
 
-          <div>
-            <p className="text-gray-500 font-medium mb-0.5">Role</p>
-            <p className="font-bold text-indigo-600">
-              {dbRole || "—"}
-            </p>
-          </div>
+            {/* Secondary Phones */}
+            {identifiers.secondaryPhones.map(p => (
+                <div key={p} className="flex items-center justify-between bg-[#141414] p-5 rounded-3xl border border-white/5 group">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40">
+                            <Phone size={18} />
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-white">{p}</p>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-white/30">Secondary Phone</span>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => handleDeleteIdentifier('phone', p)}
+                        className="p-2 rounded-lg text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10"
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                </div>
+            ))}
 
-          <div>
-            <p className="text-gray-500 font-medium mb-0.5">Business ID</p>
-            <p className="font-mono text-xs opacity-70">{(user as any).businessId || "—"}</p>
-          </div>
-
-          <div>
-            <p className="text-gray-500 font-medium mb-0.5">Account Status</p>
-            <p className="font-bold text-emerald-600 flex items-center gap-1.5">
-               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Verified
-            </p>
-          </div>
+            {/* Add Phone Button */}
+            <button 
+                onClick={() => setShowAddModal({ show: true, type: 'phone' })}
+                className="w-full py-4 border border-dashed border-white/10 rounded-3xl text-[10px] font-black uppercase tracking-widest text-white/30 hover:border-white/20 hover:text-white/50 transition-all"
+            >
+                Add another phone number
+            </button>
         </div>
       </div>
+
+      {/* MODAL (Simple Add) */}
+      <AnimatePresence>
+        {showAddModal.show && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                <div className="bg-[#0a0a0a] border border-white/10 rounded-[40px] p-10 w-full max-w-md shadow-2xl">
+                    <div className="flex justify-between items-center mb-8">
+                        <h3 className="text-sm font-black text-white uppercase tracking-widest">Add {showAddModal.type}</h3>
+                        <button onClick={() => setShowAddModal({ ...showAddModal, show: false })} className="text-white/40 hover:text-white">
+                            <X size={18} />
+                        </button>
+                    </div>
+                    <input 
+                        autoFocus
+                        type={showAddModal.type === 'email' ? 'email' : 'text'}
+                        value={newValue}
+                        onChange={(e) => setNewValue(e.target.value)}
+                        placeholder={`Enter ${showAddModal.type}...`}
+                        className="w-full bg-[#141414] border border-white/5 rounded-2xl px-6 py-4 text-white font-bold text-sm focus:outline-none focus:border-indigo-500/50 mb-6"
+                    />
+                    <button 
+                        onClick={handleAddIdentifier}
+                        className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest py-4 rounded-2xl transition-all"
+                    >
+                        Confirm Addition
+                    </button>
+                </div>
+            </div>
+        )}
+      </AnimatePresence>
 
       {/* SECURITY CARD */}
-      <div className="border rounded-xl p-6 space-y-4 bg-[var(--kravy-surface)]">
-        <h2 className="font-bold text-lg flex items-center gap-2">
-          Security & Identifiers
-        </h2>
-
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <p className="text-sm text-gray-500 font-medium">Unique Identifier (UID)</p>
-            <p className="font-mono text-[11px] break-all opacity-60">{(user as any).id}</p>
-          </div>
-
-          <button
-            onClick={copyId}
-            className="border px-4 py-2 rounded-lg text-xs font-black uppercase hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all"
-          >
-            {copied ? "Copied" : "Copy UID"}
-          </button>
+      <div className="border border-[var(--kravy-border)] rounded-[40px] bg-[#0a0a0a] overflow-hidden shadow-2xl">
+        <div className="p-8 border-b border-[var(--kravy-border)]">
+            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em] opacity-50 flex items-center gap-2">
+                <Shield size={14} className="text-indigo-500" />
+                Security & Identifiers
+            </h2>
+        </div>
+        <div className="p-10 space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 bg-[#141414] p-6 rounded-3xl border border-white/5">
+                <div>
+                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">Unique Identifier (UID)</p>
+                    <p className="font-mono text-[10px] break-all text-indigo-500">{(user as any).id}</p>
+                </div>
+                <button
+                    onClick={copyId}
+                    className="bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl text-white/60 transition-all border border-white/5"
+                >
+                    {copied ? "Copied" : "Copy UID"}
+                </button>
+            </div>
         </div>
       </div>
 
       {/* ACTIONS CARD */}
-      <div className="border rounded-xl p-6 space-y-4 bg-[var(--kravy-surface)]">
-        <h2 className="font-bold text-lg text-rose-600 flex items-center gap-2">
-          Account Actions
-        </h2>
-
-        <div className="flex flex-col sm:flex-row gap-3">
+      <div className="border border-[var(--kravy-border)] rounded-[40px] bg-[#0a0a0a] overflow-hidden shadow-2xl border-rose-500/20">
+        <div className="p-8 border-b border-rose-500/10">
+            <h2 className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] opacity-80">Danger Zone</h2>
+        </div>
+        <div className="p-10 flex flex-col sm:flex-row gap-4">
           <button
             onClick={handleLogout}
-            className="flex-1 border px-4 py-3 rounded-xl text-sm font-bold hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all flex items-center justify-center gap-2"
+            className="flex-1 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest py-4 rounded-2xl transition-all border border-white/5"
           >
             Logout Securely
           </button>
-
           <button
             onClick={deleteAccount}
-            className="flex-1 border border-rose-200 text-rose-600 px-4 py-3 rounded-xl text-sm font-bold hover:bg-rose-50 transition-all"
+            className="flex-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-widest py-4 rounded-2xl transition-all border border-rose-500/10"
           >
             Delete Account
           </button>
