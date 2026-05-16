@@ -73,7 +73,19 @@ export async function getEffectiveClerkId(): Promise<string | null> {
   if (token) {
       try {
           const decoded: any = jwt.verify(token, JWT_SECRET);
-          // For new custom auth, we use 'clerkId' or 'businessId'
+          const userId = decoded.userId || decoded.staffId;
+          
+          // 🔍 Fetch latest user data to get the correct business ID (clerkId/ownerId)
+          const user = await prisma.user.findUnique({ 
+            where: { id: userId },
+            select: { clerkId: true, ownerId: true }
+          });
+
+          if (user) {
+            return user.ownerId || user.clerkId;
+          }
+
+          // Fallback to decoded data
           return decoded.clerkId || decoded.businessId || decoded.userId; 
       } catch (err) {
           return null;
