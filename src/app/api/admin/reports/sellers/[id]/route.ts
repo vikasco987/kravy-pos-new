@@ -79,9 +79,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
-    await prisma.businessProfile.update({
+    await prisma.businessProfile.upsert({
       where: { userId: id },
-      data: updateData
+      update: updateData,
+      create: {
+        userId: id,
+        ...updateData
+      }
     });
 
     return NextResponse.json({ success: true });
