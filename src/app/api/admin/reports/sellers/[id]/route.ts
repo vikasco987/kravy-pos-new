@@ -40,7 +40,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         email: seller.email,
         businessName: profile?.businessName || seller.name,
         businessAddress: profile?.businessAddress,
-        contactPhone: profile?.contactPhone,
+        contactPhone: profile?.contactPersonPhone || seller.phone,
         // SaaS Fields
         isPremium: profile?.isPremium,
         showPremiumPopup: profile?.showPremiumPopup,

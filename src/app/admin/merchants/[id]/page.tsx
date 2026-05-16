@@ -114,8 +114,8 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
         
         {/* Profile Card */}
         <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-8 flex flex-col md:flex-row gap-8 mb-8 relative z-10">
-          <div className="w-32 h-32 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-4xl font-black shadow-inner">
-            {seller.businessName[0]}
+          <div className="w-32 h-32 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-4xl font-black shadow-inner uppercase">
+            {(seller.businessName || seller.name || seller.email || "?")[0]}
           </div>
           
           <div className="flex-1">
