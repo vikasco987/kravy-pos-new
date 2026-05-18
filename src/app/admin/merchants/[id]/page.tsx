@@ -17,10 +17,12 @@ import {
   Clock,
   Printer,
   Zap,
-  Check
+  Check,
+  Code,
+  X
 } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { 
   LineChart, 
@@ -39,6 +41,7 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [showJson, setShowJson] = useState(false);
 
   // SaaS Controls State
   const [controls, setControls] = useState({
@@ -102,10 +105,22 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
       {/* Top Background Banner */}
       <div className="h-48 bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-        <div className="absolute top-8 left-8">
+         <div className="absolute top-8 left-8 flex items-center gap-4">
            <Link href="/admin/merchants" className="flex items-center gap-2 text-white/80 hover:text-white font-bold transition-all">
              <ArrowLeft size={18} /> Back to Ecosystem
            </Link>
+        </div>
+
+        <div className="absolute top-8 right-8 flex items-center gap-3">
+            <button 
+                onClick={() => setShowJson(true)}
+                className="px-5 py-2.5 bg-slate-900/40 backdrop-blur-md border border-white/10 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-slate-900/60 transition-all flex items-center gap-2"
+            >
+                <Code size={14} /> Show JSON
+            </button>
+            <button className="px-5 py-2.5 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all flex items-center gap-2">
+                Actions <ChevronRight size={14} />
+            </button>
         </div>
       </div>
 
@@ -362,8 +377,53 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
               </table>
            </div>
         </div>
-
+        </div>
       </div>
+
+      {/* JSON Inspection Modal */}
+      <AnimatePresence>
+        {showJson && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md">
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    className="bg-[#0D1117] border border-white/10 w-full max-w-4xl h-[80vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden"
+                >
+                    <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                        <div>
+                            <h3 className="text-white font-black text-lg tracking-tight">Raw Merchant Data</h3>
+                            <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-0.5">Clerk-style JSON Inspector</p>
+                        </div>
+                        <button 
+                            onClick={() => setShowJson(false)}
+                            className="w-10 h-10 rounded-full bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-auto p-8 font-mono text-sm leading-relaxed custom-scrollbar">
+                        <pre className="text-indigo-300">
+                            {JSON.stringify(data, null, 2)}
+                        </pre>
+                    </div>
+
+                    <div className="px-8 py-4 bg-white/[0.02] border-t border-white/5 flex justify-end">
+                        <button 
+                            onClick={() => {
+                                navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+                                toast.success("JSON copied to clipboard!");
+                            }}
+                            className="px-6 py-2 bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-white/20 transition-all"
+                        >
+                            Copy to Clipboard
+                        </button>
+                    </div>
+                </motion.div>
+            </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -198,7 +198,8 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { userId, name, password, isStaffModel } = await req.json();
+    const body = await req.json();
+    const { userId, name, password, isStaffModel } = body;
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
@@ -208,6 +209,7 @@ export async function PUT(req: Request) {
     if (isStaffModel) {
       let updateData: any = {};
       if (name) updateData.name = name;
+      if (body.role) updateData.role = body.role;
       if (password) {
         const bcrypt = await import("bcryptjs");
         updateData.password = await bcrypt.hash(password, 10);
@@ -226,6 +228,8 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const { publicMetadata, privateMetadata, unsafeMetadata } = body;
+
     const client = await clerkClient();
     let clerkUpdate: any = {};
     if (name) {
@@ -233,11 +237,49 @@ export async function PUT(req: Request) {
       clerkUpdate.firstName = parts[0];
       clerkUpdate.lastName = parts.slice(1).join(" ") || "User";
     }
+
+    // Update Clerk metadata if applicable
+    if (publicMetadata) clerkUpdate.publicMetadata = publicMetadata;
+    if (privateMetadata) clerkUpdate.privateMetadata = privateMetadata;
+    if (unsafeMetadata) clerkUpdate.unsafeMetadata = unsafeMetadata;
+
     if (user.clerkId && !user.clerkId.startsWith("custom_")) {
       await client.users.updateUser(user.clerkId, clerkUpdate);
+      
+      // Handle Clerk Session Revocation
+      if (body.revokeSessions) {
+        try {
+          const sessions = await client.sessions.getSessionList({ userId: user.clerkId });
+          for (const session of sessions.data) {
+            await client.sessions.revokeSession(session.id);
+          }
+        } catch (error) {
+          console.error("Error revoking clerk sessions:", error);
+        }
+      }
     }
 
-    let dbUpdate: any = { name: name || undefined };
+    // Handle Local Session Revocation
+    if (body.revokeSessions) {
+      try {
+        await prisma.userSession.deleteMany({
+          where: { userId: user.id }
+        });
+      } catch (error) {
+        console.error("Error revoking local sessions:", error);
+      }
+    }
+
+    let dbUpdate: any = { 
+      name: name || undefined,
+      secondaryEmails: body.secondaryEmails !== undefined ? body.secondaryEmails : undefined,
+      secondaryPhones: body.secondaryPhones !== undefined ? body.secondaryPhones : undefined,
+      publicMetadata: publicMetadata !== undefined ? publicMetadata : undefined,
+      privateMetadata: privateMetadata !== undefined ? privateMetadata : undefined,
+      unsafeMetadata: unsafeMetadata !== undefined ? unsafeMetadata : undefined,
+      role: body.role !== undefined ? body.role : undefined,
+      isDisabled: body.isDisabled !== undefined ? body.isDisabled : undefined,
+    };
     if (password && user.clerkId?.startsWith("custom_")) {
       const bcrypt = await import("bcryptjs");
       dbUpdate.password = await bcrypt.hash(password, 10);

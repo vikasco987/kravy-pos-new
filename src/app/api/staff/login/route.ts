@@ -72,6 +72,26 @@ export async function POST(req: Request) {
     // 6. Return response
     const { password: _, ...staffData } = staff;
 
+    // 🔐 6. Track Session
+    try {
+      const userAgent = req.headers.get("user-agent") || "";
+      const ip = req.headers.get("x-forwarded-for") || (req as any).ip || "unknown";
+      
+      await prisma.userSession.create({
+        data: {
+          staffId: staff.id,
+          ipAddress: ip,
+          userAgent: userAgent,
+          deviceType: /mobile|android|iphone/i.test(userAgent) ? "mobile" : "desktop",
+          browser: /chrome/i.test(userAgent) ? "Chrome" : /safari/i.test(userAgent) ? "Safari" : /firefox/i.test(userAgent) ? "Firefox" : /edg/i.test(userAgent) ? "Edge" : "Other",
+          os: /windows/i.test(userAgent) ? "Windows" : /mac/i.test(userAgent) ? "macOS" : /linux/i.test(userAgent) ? "Linux" : /android/i.test(userAgent) ? "Android" : /iphone|ipad/i.test(userAgent) ? "iOS" : "Other",
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        }
+      });
+    } catch (sessionErr) {
+      console.error("Failed to track staff session:", sessionErr);
+    }
+
     return NextResponse.json({
       success: true,
       message: "Login successful",

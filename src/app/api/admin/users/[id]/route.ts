@@ -19,34 +19,114 @@ export async function GET(
     }
 
     // 1. Try Staff Model
-    try {
-      const staff = await prisma.staff.findUnique({
-        where: { id }
-      });
-      if (staff) {
-        return NextResponse.json({
-          ...staff,
-          isStaffModel: true,
-          loginType: "STAFF",
-          source: "prisma"
+    const staff = await prisma.staff.findUnique({
+      where: { id }
+    });
+
+    if (staff) {
+      let sessions: any[] = [];
+      try {
+        // Fetch local sessions for staff
+        const localSessions = await prisma.userSession.findMany({
+          where: { staffId: id },
+          orderBy: { createdAt: 'desc' },
+          take: 5
         });
+        sessions = localSessions.map(s => ({
+          id: s.id,
+          status: 'active',
+          lastActiveAt: s.lastActive,
+          browserName: s.browser,
+          osName: s.os,
+          deviceType: s.deviceType,
+          ipAddress: s.ipAddress,
+          isLocal: true
+        }));
+      } catch (err) {
+        console.error("Error fetching staff sessions:", err);
       }
-    } catch (e) {}
+
+      return NextResponse.json({
+        ...staff,
+        isStaffModel: true,
+        loginType: "STAFF",
+        source: "prisma",
+        sessions
+      });
+    }
 
     // 2. Try User Model
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id }
-      });
-      if (user) {
-        return NextResponse.json({
-          ...user,
-          isStaffModel: false,
-          loginType: user.clerkId?.startsWith("custom_") ? "CUSTOM" : "CLERK",
-          source: "clerk"
-        });
+    const user = await prisma.user.findUnique({
+      where: { id }
+    });
+
+    if (user) {
+      let sessions: any[] = [];
+      
+      // Fetch sessions and metadata from Clerk if it's a Clerk user
+      if (user.clerkId && !user.clerkId.startsWith("custom_")) {
+        try {
+          const { clerkClient } = await import('@clerk/nextjs/server');
+          const client = await clerkClient();
+          const clerkUser = await client.users.getUser(user.clerkId);
+          
+          // Merge metadata from Clerk
+          user.publicMetadata = clerkUser.publicMetadata;
+          user.privateMetadata = clerkUser.privateMetadata;
+          user.unsafeMetadata = clerkUser.unsafeMetadata;
+
+          const sessionList = await client.sessions.getSessionList({
+            userId: user.clerkId
+          });
+          sessions = sessionList.data.map(s => ({
+            id: s.id,
+            status: s.status,
+            lastActiveAt: s.lastActiveAt,
+            expireAt: s.expireAt,
+            browserName: s.browserName,
+            browserVersion: s.browserVersion,
+            deviceType: s.deviceType,
+            osName: s.osName,
+            osVersion: s.osVersion,
+            ipAddress: s.ipAddress,
+          }));
+        } catch (sessionErr) {
+          console.error("Failed to fetch Clerk data:", sessionErr);
+        }
       }
-    } catch (e) {}
+
+      try {
+        // Fetch local sessions from Prisma
+        const localSessions = await prisma.userSession.findMany({
+          where: { userId: id },
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        });
+
+        const formattedLocal = localSessions.map(s => ({
+          id: s.id,
+          status: 'active',
+          lastActiveAt: s.lastActive,
+          browserName: s.browser,
+          osName: s.os,
+          deviceType: s.deviceType,
+          ipAddress: s.ipAddress,
+          isLocal: true
+        }));
+        
+        sessions = [...sessions, ...formattedLocal];
+      } catch (err) {
+        console.error("Error fetching local sessions:", err);
+      }
+
+      return NextResponse.json({
+        ...user,
+        isStaffModel: false,
+        loginType: user.clerkId?.startsWith("custom_") ? "CUSTOM" : "CLERK",
+        source: "clerk",
+        sessions
+      });
+    }
 
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   } catch (error: any) {
