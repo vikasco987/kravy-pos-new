@@ -199,6 +199,7 @@ const navGroups = [
           { label: "System Funnel", href: "/admin/dashboard", badge: "Live" },
           { label: "Merchant Data", href: "/admin/merchants", badge: "Report" },
           { label: "Onboard Dealer", href: "/admin/onboarding" },
+          { label: "Custom Auth", href: "/admin/onboarding-custom" },
         ]
       },
       { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup", roles: ["ADMIN", "SELLER", "STAFF"] },
