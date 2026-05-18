@@ -377,7 +377,6 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
               </table>
            </div>
         </div>
-        </div>
       </div>
 
       {/* JSON Inspection Modal */}

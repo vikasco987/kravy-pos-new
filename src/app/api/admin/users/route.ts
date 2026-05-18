@@ -208,8 +208,10 @@ export async function PUT(req: Request) {
     // 1. Handle Staff Model Users
     if (isStaffModel) {
       let updateData: any = {};
-      if (name) updateData.name = name;
-      if (body.role) updateData.role = body.role;
+      if (name !== undefined) updateData.name = name;
+      if (body.role !== undefined) updateData.role = body.role;
+      if (body.isDisabled !== undefined) updateData.status = body.isDisabled ? 'suspended' : 'active';
+      if (body.privateMetadata !== undefined) updateData.privateMetadata = body.privateMetadata;
       if (password) {
         const bcrypt = await import("bcryptjs");
         updateData.password = await bcrypt.hash(password, 10);
@@ -244,17 +246,25 @@ export async function PUT(req: Request) {
     if (unsafeMetadata) clerkUpdate.unsafeMetadata = unsafeMetadata;
 
     if (user.clerkId && !user.clerkId.startsWith("custom_")) {
-      await client.users.updateUser(user.clerkId, clerkUpdate);
-      
-      // Handle Clerk Session Revocation
-      if (body.revokeSessions) {
-        try {
-          const sessions = await client.sessions.getSessionList({ userId: user.clerkId });
-          for (const session of sessions.data) {
-            await client.sessions.revokeSession(session.id);
+      try {
+        await client.users.updateUser(user.clerkId, clerkUpdate);
+        
+        // Handle Clerk Session Revocation
+        if (body.revokeSessions) {
+          try {
+            const sessions = await client.sessions.getSessionList({ userId: user.clerkId });
+            for (const session of sessions.data) {
+              await client.sessions.revokeSession(session.id);
+            }
+          } catch (error) {
+            console.error("Error revoking clerk sessions:", error);
           }
-        } catch (error) {
-          console.error("Error revoking clerk sessions:", error);
+        }
+      } catch (clerkError: any) {
+        if (clerkError.status === 404) {
+           console.warn(`Clerk user ${user.clerkId} not found. Proceeding with local DB update only.`);
+        } else {
+           console.error("Clerk updateUser error:", clerkError);
         }
       }
     }

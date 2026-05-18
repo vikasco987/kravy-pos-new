@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { CheckSquare, Square } from "lucide-react";
 
 type UserData = {
   id: string;
@@ -57,6 +58,9 @@ type UserData = {
   secondaryEmails?: string[];
   secondaryPhones?: string[];
   unsafeMetadata?: any;
+  privateMetadata?: any;
+  allowedPaths?: string[]; // For User model
+  permissions?: string[]; // For Staff model
 };
 
 const playSound = (type: 'pop' | 'success' | 'error' | 'warning') => {
@@ -111,6 +115,44 @@ const playSound = (type: 'pop' | 'success' | 'error' | 'warning') => {
   }
 };
 
+const ALL_PATHS = [
+  { group: "Operations", name: "Store Dashboard", path: "/dashboard" },
+  { group: "Operations", name: "Quick POS Billing", path: "/dashboard/billing/checkout" },
+  { group: "Operations", name: "POS Terminal", path: "/dashboard/terminal" },
+  { group: "Operations", name: "Kitchen Workflow", path: "/dashboard/kitchen" },
+  { group: "Operations", name: "Table Status", path: "/dashboard/tables" },
+  { group: "Operations", name: "Bill History", path: "/dashboard/billing" },
+  { group: "Operations", name: "Expense Manager", path: "/dashboard/expenses" },
+  
+  { group: "Store Catalog", name: "Browse Products", path: "/dashboard/menu/view" },
+  { group: "Store Catalog", name: "Interactive Editor", path: "/dashboard/menu-editor" },
+  { group: "Store Catalog", name: "Add-on Clusters", path: "/dashboard/menu/addons" },
+  { group: "Store Catalog", name: "AI Menu Scraper", path: "/dashboard/ai-scraper" },
+  { group: "Store Catalog", name: "Add Single Item", path: "/dashboard/menu/upload" },
+  { group: "Store Catalog", name: "Bulk Import", path: "/dashboard/store-item-upload" },
+  { group: "Store Catalog", name: "Category Editor", path: "/dashboard/menu/edit" },
+
+  { group: "Resources & Marketing", name: "Parties (Customers)", path: "/dashboard/parties" },
+  { group: "Resources & Marketing", name: "Staff Management", path: "/dashboard/staff" },
+  { group: "Resources & Marketing", name: "Inventory Stock", path: "/dashboard/inventory" },
+  { group: "Resources & Marketing", name: "QR Terminal", path: "/dashboard/qr-orders" },
+  { group: "Resources & Marketing", name: "Marketing & Combos", path: "/dashboard/combos" },
+  { group: "Resources & Marketing", name: "Gallery", path: "/dashboard/gallery" },
+
+  { group: "Reports & Insights", name: "Daily Sales Report", path: "/dashboard/reports/sales/daily" },
+  { group: "Reports & Insights", name: "GST Reports", path: "/dashboard/reports/gst" },
+  { group: "Reports & Insights", name: "Expense Reports", path: "/dashboard/expenses/reports" },
+  { group: "Reports & Insights", name: "Profit & Loss", path: "/dashboard/expenses/pnl" },
+
+  { group: "Administration", name: "Business Profile", path: "/dashboard/profile" },
+  { group: "Administration", name: "POS Settings", path: "/dashboard/settings" },
+  { group: "Administration", name: "Tax Settings", path: "/dashboard/settings/tax" },
+  { group: "Administration", name: "Role & Access Control", path: "/admin/users" },
+  { group: "Administration", name: "Security & Backup", path: "/dashboard/backup" },
+  { group: "Administration", name: "Trash & Archive", path: "/dashboard/billing/deleted" },
+  { group: "Administration", name: "Help & Support", path: "/dashboard/help" },
+];
+
 export default function UserDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -127,6 +169,11 @@ export default function UserDetailPage() {
   const [newPhone, setNewPhone] = useState("");
   const [showAddEmail, setShowAddEmail] = useState(false);
   const [showAddPhone, setShowAddPhone] = useState(false);
+
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [globalRoles, setGlobalRoles] = useState<Record<string, string[]>>({});
+  const [userPaths, setUserPaths] = useState<string[]>([]);
+  const [hasOverrides, setHasOverrides] = useState(false);
 
   const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
@@ -165,18 +212,50 @@ export default function UserDetailPage() {
 
   const fetchUser = async () => {
     try {
-      const res = await fetch(`/api/admin/users/${params.id}`);
+      const [res, rolesRes] = await Promise.all([
+        fetch(`/api/admin/users/${params.id}`),
+        fetch('/api/admin/roles')
+      ]);
+
+      let rolesData: Record<string, string[]> = {};
+      if (rolesRes.ok) {
+        const d = await rolesRes.json();
+        if (Array.isArray(d)) {
+          d.forEach(p => {
+             if(p.role && p.allowedPaths) rolesData[p.role] = p.allowedPaths;
+          });
+          setGlobalRoles(rolesData);
+        }
+      }
+
       if (res.ok) {
         const data = await res.json();
         setUser(data);
         setEditData({ name: data.name || "", phone: data.phone || "", password: "" });
+        
+        // Parse permissions logic
+        const currentRole = data.role || data.accessType || "USER";
+        
+        // ONLY check privateMetadata.allowedPaths for explicit overrides.
+        // We ignore data.permissions or data.allowedPaths because Staff model may have a default `[]` array 
+        // which incorrectly triggers the override state.
+        const customPaths = data.privateMetadata?.allowedPaths;
+        
+        if (customPaths && Array.isArray(customPaths)) {
+           setUserPaths(customPaths);
+           setHasOverrides(true);
+        } else {
+           // Use default role permissions
+           setUserPaths(rolesData[currentRole] || []);
+           setHasOverrides(false);
+        }
       } else {
         const data = await res.json();
         toast.error(data?.error || "User not found");
         router.push("/admin/users");
       }
     } catch (error) {
-      toast.error("Error loading user");
+      toast.error("Error loading user data");
     } finally {
       setLoading(false);
     }
@@ -333,6 +412,13 @@ export default function UserDetailPage() {
     );
   };
 
+  const handleCopy = (text: string, label: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    playSound('pop');
+    toast.success(`${label} copied to clipboard!`, { id: `copy-${text}` });
+  };
+
   const handleRevokeAllSessions = async () => {
     if (!user) return;
 
@@ -402,6 +488,83 @@ export default function UserDetailPage() {
     }
   };
 
+  const saveCustomPermissions = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          isStaffModel: user.isStaffModel,
+          privateMetadata: {
+            ...user.privateMetadata,
+            allowedPaths: userPaths
+          }
+        })
+      });
+
+      if (res.ok) {
+        playSound('success');
+        toast.success("Custom permissions saved!");
+        setShowPermissionsModal(false);
+        setHasOverrides(true);
+        fetchUser();
+      } else {
+        playSound('error');
+        const err = await res.json();
+        toast.error(err.error || "Failed to save");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const revertToRoleDefaults = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const newMetadata = { ...user.privateMetadata };
+      delete newMetadata.allowedPaths; // Remove the override
+      
+      const res = await fetch("/api/admin/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          isStaffModel: user.isStaffModel,
+          privateMetadata: newMetadata
+        })
+      });
+
+      if (res.ok) {
+        playSound('pop');
+        toast.success("Reverted to role defaults!");
+        setShowPermissionsModal(false);
+        fetchUser();
+      } else {
+        toast.error("Failed to revert");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTogglePath = (path: string) => {
+    setUserPaths(prev => {
+       if (prev.includes(path)) {
+         return prev.filter(p => p !== path);
+       } else {
+         return [...prev, path];
+       }
+    });
+  };
+
   const handleImpersonate = async () => {
     if (!user) return;
     setImpersonating(true);
@@ -433,6 +596,26 @@ export default function UserDetailPage() {
   );
 
   if (!user) return null;
+
+  // Compute analytics
+  const activeHours = new Array(24).fill(0);
+  let lastLoginDate: Date | null = null;
+  
+  if (user.sessions && user.sessions.length > 0) {
+    const timestamps = user.sessions.map(s => {
+      const d = new Date(s.lastActiveAt);
+      if (!isNaN(d.getTime())) {
+        activeHours[d.getHours()]++;
+        return d.getTime();
+      }
+      return 0;
+    }).filter(t => t > 0);
+    
+    if (timestamps.length > 0) {
+      lastLoginDate = new Date(Math.max(...timestamps));
+    }
+  }
+  const maxHourValue = Math.max(...activeHours, 1);
 
   return (
     <div className="min-h-screen bg-[#0f0f12] text-slate-200 font-sans selection:bg-indigo-500/30">
@@ -496,32 +679,46 @@ export default function UserDetailPage() {
                 {/* ACTIVITY SECTION */}
                 <section className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 shadow-2xl">
                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                     <Activity size={14} className="text-indigo-500" /> User Activity
-                  </h2>
-                  <select className="bg-white/5 border border-white/5 rounded-lg px-2 py-0.5 text-[9px] font-bold outline-none text-slate-400">
-                     <option>2026</option>
-                  </select>
-               </div>
-               {/* Mock Heatmap */}
-               <div className="grid grid-cols-52 gap-0.5 h-24">
-                  {Array.from({length: 364}).map((_, i) => (
-                    <div key={i} className={`rounded-[1px] ${i === 120 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]' : 'bg-white/5'}`} />
-                  ))}
-               </div>
-               <div className="flex items-center justify-between mt-3 text-[8px] text-slate-500 font-bold uppercase tracking-widest">
-                  <div className="flex gap-3">
-                     <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                  <div>
+                    <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                       <Activity size={14} className="text-indigo-500" /> User Activity
+                    </h2>
+                    {lastLoginDate && (
+                      <p className="text-[9px] font-bold text-slate-500 mt-1.5 flex items-center gap-1.5">
+                        <History size={10} /> Last Login: {lastLoginDate.toLocaleString()}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                     <span>Less</span>
-                     <div className="flex gap-0.5">
-                        {[0, 1, 2, 3].map(v => (
-                          <div key={v} className={`w-1.5 h-1.5 rounded-[1px] ${v === 0 ? 'bg-white/5' : v === 1 ? 'bg-indigo-900' : v === 2 ? 'bg-indigo-700' : 'bg-indigo-500'}`} />
-                        ))}
-                     </div>
-                     <span>More</span>
+                  <div className="bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-lg">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Most Active Hours</span>
                   </div>
+               </div>
+               
+               {/* 24-Hour Activity Graph */}
+               <div className="flex items-end h-32 gap-1.5 pt-4">
+                  {activeHours.map((val, hour) => {
+                    const heightPercent = (val / maxHourValue) * 100;
+                    return (
+                      <div key={hour} className="flex-1 flex flex-col justify-end items-center group relative">
+                        {val > 0 && (
+                          <div className="absolute -top-6 bg-white text-black text-[8px] font-black px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            {val}
+                          </div>
+                        )}
+                        <div 
+                          className={`w-full rounded-t-sm transition-all duration-500 ${val > 0 ? 'bg-indigo-500 group-hover:bg-indigo-400 cursor-pointer shadow-[0_0_8px_rgba(99,102,241,0.3)]' : 'bg-white/[0.03]'}`}
+                          style={{ height: val > 0 ? `${Math.max(10, heightPercent)}%` : '10%' }}
+                        />
+                      </div>
+                    );
+                  })}
+               </div>
+               <div className="flex justify-between mt-3 text-[8px] font-black text-slate-500 uppercase tracking-widest border-t border-white/5 pt-2">
+                 <span>12 AM</span>
+                 <span>6 AM</span>
+                 <span>12 PM</span>
+                 <span>6 PM</span>
+                 <span>11 PM</span>
                </div>
             </section>
 
@@ -563,29 +760,50 @@ export default function UserDetailPage() {
                      </div>
                    </div>
 
-                   {/* ROLE MANAGEMENT */}
-                   <div className="pt-6 border-t border-white/5 space-y-4">
-                      <div className="flex items-center justify-between">
-                         <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">System Role</h3>
-                         {user.isStaffModel && <span className="text-[8px] font-black px-1.5 py-0.5 bg-orange-500/10 text-orange-400 rounded-md border border-orange-500/20 uppercase">Staff Account</span>}
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                         {["ADMIN", "SELLER", "CASHIER", "STAFF", "USER"].map((role) => (
-                           <button
-                             key={role}
-                             onClick={() => handleChangeRole(role)}
-                             disabled={saving}
-                             className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
-                               user.role === role 
-                               ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20' 
-                               : 'bg-white/5 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-white/10'
-                             }`}
-                           >
-                              {role}
-                           </button>
-                         ))}
-                      </div>
-                   </div>
+                    {/* ROLE MANAGEMENT */}
+                    <div className="pt-6 border-t border-white/5 space-y-4">
+                       <div className="flex items-center justify-between">
+                          <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">System Role</h3>
+                          {user.isStaffModel && <span className="text-[8px] font-black px-1.5 py-0.5 bg-orange-500/10 text-orange-400 rounded-md border border-orange-500/20 uppercase">Staff Account</span>}
+                       </div>
+                       <div className="flex flex-wrap gap-2">
+                          {["ADMIN", "SELLER", "CASHIER", "STAFF", "USER"].map((role) => (
+                            <button
+                              key={role}
+                              onClick={() => handleChangeRole(role)}
+                              disabled={saving}
+                              className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
+                                (user.role || user.accessType) === role 
+                                ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20' 
+                                : 'bg-white/5 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-white/10'
+                              }`}
+                            >
+                               {role}
+                            </button>
+                          ))}
+                       </div>
+                       
+                       <div className="mt-4 p-4 bg-white/[0.02] border border-white/5 rounded-xl flex items-center justify-between">
+                          <div>
+                            <p className="text-[11px] font-bold text-slate-300">Role Permissions</p>
+                            <p className="text-[9px] text-slate-500 font-bold mt-1 max-w-sm">
+                              {hasOverrides 
+                                ? "This user has custom permission overrides applied." 
+                                : `This user's access is currently managed by their default ${user.role || user.accessType} role.`}
+                            </p>
+                          </div>
+                          <button 
+                            onClick={() => setShowPermissionsModal(true)}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
+                              hasOverrides 
+                              ? "bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20" 
+                              : "bg-white/5 text-slate-300 border-white/10 hover:bg-white/10"
+                            }`}
+                          >
+                            {hasOverrides ? "Edit Overrides" : "Customize"}
+                          </button>
+                       </div>
+                    </div>
 
                    <div className="pt-2 flex justify-end gap-3">
                      {!isEditing ? (
@@ -640,6 +858,13 @@ export default function UserDetailPage() {
                               <span className="text-xs font-bold text-white">{user.email}</span>
                               <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-widest rounded-md border border-emerald-500/20">Primary</span>
                            </div>
+                           <button 
+                             onClick={() => handleCopy(user.email, 'Email address')}
+                             className="p-1.5 text-slate-600 hover:text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                             title="Copy email"
+                           >
+                             <Copy size={12} />
+                           </button>
                         </div>
                         {/* Secondaries */}
                         {user.secondaryEmails?.map(email => (
@@ -648,12 +873,22 @@ export default function UserDetailPage() {
                                  <Mail size={14} className="text-slate-500" />
                                  <span className="text-xs font-bold text-slate-300">{email}</span>
                               </div>
-                              <button 
-                                onClick={() => handleRemoveIdentifier('email', email)}
-                                className="p-1.5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                              >
-                                 <Trash2 size={12} />
-                              </button>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                <button 
+                                  onClick={() => handleCopy(email, 'Email address')}
+                                  className="p-1.5 text-slate-600 hover:text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-all"
+                                  title="Copy email"
+                                >
+                                  <Copy size={12} />
+                                </button>
+                                <button 
+                                  onClick={() => handleRemoveIdentifier('email', email)}
+                                  className="p-1.5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                                  title="Remove email"
+                                >
+                                   <Trash2 size={12} />
+                                </button>
+                              </div>
                            </div>
                         ))}
                      </div>
@@ -679,6 +914,13 @@ export default function UserDetailPage() {
                                  <span className="text-xs font-bold text-white">{user.phone}</span>
                                  <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-widest rounded-md border border-emerald-500/20">Primary</span>
                               </div>
+                              <button 
+                                onClick={() => handleCopy(user.phone!, 'Phone number')}
+                                className="p-1.5 text-slate-600 hover:text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                title="Copy phone"
+                              >
+                                <Copy size={12} />
+                              </button>
                            </div>
                         )}
                         {/* Secondaries */}
@@ -688,12 +930,22 @@ export default function UserDetailPage() {
                                  <Phone size={14} className="text-slate-500" />
                                  <span className="text-xs font-bold text-slate-300">{phone}</span>
                               </div>
-                              <button 
-                                onClick={() => handleRemoveIdentifier('phone', phone)}
-                                className="p-1.5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                              >
-                                 <Trash2 size={12} />
-                              </button>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                <button 
+                                  onClick={() => handleCopy(phone, 'Phone number')}
+                                  className="p-1.5 text-slate-600 hover:text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-all"
+                                  title="Copy phone"
+                                >
+                                  <Copy size={12} />
+                                </button>
+                                <button 
+                                  onClick={() => handleRemoveIdentifier('phone', phone)}
+                                  className="p-1.5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                                  title="Remove phone"
+                                >
+                                   <Trash2 size={12} />
+                                </button>
+                              </div>
                            </div>
                         ))}
                      </div>
@@ -1121,6 +1373,90 @@ export default function UserDetailPage() {
                     </div>
                 </motion.div>
             </div>
+        )}
+      </AnimatePresence>
+
+      {/* CUSTOM PERMISSIONS MODAL */}
+      <AnimatePresence>
+        {showPermissionsModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-[#121214] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/[0.02]">
+                <div>
+                  <h2 className="text-xl font-black text-white">Custom Permissions: {user.name}</h2>
+                  <p className="text-sm text-slate-400 mt-1">Select specific modules this user is allowed to access.</p>
+                </div>
+                <button onClick={() => setShowPermissionsModal(false)} className="p-2 text-slate-400 hover:text-white transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 overflow-y-auto flex-1">
+                {(user.role || user.accessType) === "ADMIN" && (
+                   <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex gap-3 text-red-400 text-sm">
+                      <ShieldAlert size={20} className="shrink-0" />
+                      <p><strong>ADMIN roles</strong> cannot be limited via routing visibility. They will always have complete access to the system. You can change their role first to apply limitations.</p>
+                   </div>
+                )}
+                
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+                   {Array.from(new Set(ALL_PATHS.map(p => p.group))).map(group => (
+                      <div key={group} className="space-y-3">
+                        <h4 className="text-[10px] font-black uppercase text-indigo-400 tracking-widest border-b border-white/10 pb-2 mb-3">{group}</h4>
+                        {ALL_PATHS.filter(p => p.group === group).map(item => {
+                            const isAdmin = (user.role || user.accessType) === "ADMIN";
+                            const checked = isAdmin || userPaths.includes(item.path);
+                            return (
+                               <label 
+                                 key={item.path} 
+                                 className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer ${checked ? "bg-white/5 border-indigo-500/30 text-white" : "bg-transparent border-transparent text-slate-500 hover:bg-white/5"}`}
+                               >
+                                 <div onClick={(e) => { e.preventDefault(); if(!isAdmin) handleTogglePath(item.path); }}>
+                                   {checked ? <CheckSquare size={18} className="text-indigo-500" /> : <Square size={18} className="text-slate-600" />}
+                                 </div>
+                                 <span className="text-sm font-bold flex-1">{item.name}</span>
+                               </label>
+                            )
+                        })}
+                      </div>
+                   ))}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-white/5 bg-white/[0.01] flex items-center justify-between">
+                 <button 
+                   onClick={revertToRoleDefaults}
+                   disabled={!hasOverrides || saving || (user.role || user.accessType) === "ADMIN"}
+                   className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors disabled:opacity-50"
+                 >
+                   Revert to Default
+                 </button>
+                 <div className="flex items-center gap-3">
+                   <button 
+                     onClick={() => setShowPermissionsModal(false)}
+                     className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                   >
+                     Cancel
+                   </button>
+                   <button 
+                     onClick={saveCustomPermissions}
+                     disabled={saving || (user.role || user.accessType) === "ADMIN"}
+                     className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all disabled:opacity-50"
+                   >
+                     <Save size={14} /> {saving ? "Saving..." : "Save Overrides"}
+                   </button>
+                 </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
