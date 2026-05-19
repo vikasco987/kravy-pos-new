@@ -63,7 +63,7 @@ export async function POST(req: Request) {
           businessAddress: profileData.businessAddress || "",
           businessType: formData.get("businessType")?.toString() || "food",
           contactPersonPhone: phone,
-          taxEnabled: true,
+          taxEnabled: false,
           taxRate: 5.0,
           perProductTaxEnabled: false
         }

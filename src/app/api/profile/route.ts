@@ -245,7 +245,7 @@ export async function POST(request: Request) {
           userId: effectiveId,
           // Ensure mandatory fields have defaults if missing in updateData
           businessName: updateData.businessName ?? s(body.businessName) ?? "My Business",
-          taxEnabled: updateData.taxEnabled ?? b(body.taxEnabled) ?? true,
+          taxEnabled: updateData.taxEnabled ?? b(body.taxEnabled) ?? false,
           taxRate: updateData.taxRate ?? n(body.taxRate) ?? 5.0,
           upiQrEnabled: updateData.upiQrEnabled ?? b(body.upiQrEnabled) ?? true,
           menuLinkEnabled: updateData.menuLinkEnabled ?? b(body.menuLinkEnabled) ?? true,

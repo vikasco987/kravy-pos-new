@@ -431,7 +431,7 @@ model BusinessProfile {
   state                String?
   district             String?
   pinCode              String?
-  taxEnabled           Boolean @default(true)
+  taxEnabled           Boolean @default(false)
   taxRate              Float   @default(5.0)
   gstType              String? @default("PRODUCT") // "PRODUCT" or "UNIVERSAL"
   perProductTaxEnabled Boolean @default(false)
