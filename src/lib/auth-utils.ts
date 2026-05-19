@@ -140,6 +140,12 @@ export async function getAuthUser(): Promise<AuthUser | null> {
             const user = await prisma.user.findUnique({ where: { id: userId } });
             
             if (user) {
+                // 🛑 Enforce session revocation
+                const revokedAt = (user.privateMetadata as any)?.sessionsRevokedAt;
+                if (revokedAt && decoded.iat && (decoded.iat * 1000) < revokedAt) {
+                    return null; 
+                }
+
                 return {
                     id: user.id,
                     type: user.role, // Latest role from DB
@@ -152,15 +158,24 @@ export async function getAuthUser(): Promise<AuthUser | null> {
             }
 
             // Fallback for legacy staff model if not in User table
-            return {
-                id: userId,
-                type: decoded.role || 'STAFF',
-                businessId: decoded.clerkId || decoded.businessId || "",
-                permissions: decoded.permissions || [],
-                name: decoded.name,
-                email: decoded.email,
-                role: decoded.role
-            };
+            const staff = await prisma.staff.findUnique({ where: { id: userId } });
+            if (staff) {
+                // 🛑 Enforce session revocation
+                const revokedAt = (staff.privateMetadata as any)?.sessionsRevokedAt;
+                if (revokedAt && decoded.iat && (decoded.iat * 1000) < revokedAt) {
+                    return null; 
+                }
+
+                return {
+                    id: staff.id,
+                    type: (staff.accessType as any) || 'STAFF',
+                    businessId: staff.businessId || "",
+                    permissions: staff.permissions || [],
+                    name: staff.name,
+                    email: staff.email,
+                    role: 'STAFF'
+                };
+            }
         } catch (err) {
             return null;
         }

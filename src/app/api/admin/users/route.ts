@@ -217,6 +217,23 @@ export async function PUT(req: Request) {
         updateData.password = await bcrypt.hash(password, 10);
       }
 
+      if (body.revokeSessions) {
+        try {
+          await prisma.userSession.deleteMany({ where: { staffId: userId } });
+          const staffUser = await prisma.staff.findUnique({ where: { id: userId } });
+          if (staffUser) {
+            const currentMeta = typeof staffUser.privateMetadata === 'object' && staffUser.privateMetadata !== null 
+              ? staffUser.privateMetadata 
+              : {};
+            updateData.privateMetadata = { 
+              ...currentMeta, 
+              ...(updateData.privateMetadata || {}), 
+              sessionsRevokedAt: Date.now() 
+            };
+          }
+        } catch (e) { console.error("Error revoking staff sessions:", e); }
+      }
+
       const updated = await prisma.staff.update({
         where: { id: userId },
         data: updateData
@@ -275,6 +292,16 @@ export async function PUT(req: Request) {
         await prisma.userSession.deleteMany({
           where: { userId: user.id }
         });
+        
+        // Add timestamp to invalidate older JWTs
+        const currentMeta = typeof user.privateMetadata === 'object' && user.privateMetadata !== null 
+          ? user.privateMetadata 
+          : {};
+        privateMetadata = { 
+          ...currentMeta, 
+          ...(privateMetadata || {}), 
+          sessionsRevokedAt: Date.now() 
+        };
       } catch (error) {
         console.error("Error revoking local sessions:", error);
       }
