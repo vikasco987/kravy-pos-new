@@ -95,7 +95,7 @@ export async function fetchPlatformEmails(clerkUserId: string, accessToken: stri
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
     const dateStr = threeDaysAgo.toISOString().split("T")[0].replace(/-/g, "/");
 
-    const query = `(from:zomato.com OR from:swiggy.in) after:${dateStr}`;
+    const query = `(from:zomato.com OR from:swiggy.in OR subject:"Zomato" OR subject:"Swiggy") after:${dateStr}`;
 
     try {
         const listRes = await gmail.users.messages.list({
