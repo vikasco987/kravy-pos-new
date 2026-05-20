@@ -185,6 +185,7 @@ const navGroups = [
     group: "ADMINISTRATION",
     items: [
       { icon: <UserCircle size={18} />, label: "Business Profile", href: "/dashboard/profile", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Mail size={18} />, label: "Gmail Integration", href: "/dashboard/integration/gmail", roles: ["ADMIN", "SELLER"] },
       { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings", roles: ["ADMIN", "SELLER", "STAFF"] },
       { icon: <Printer size={18} />, label: "Printing Setup", href: "/dashboard/settings/printing", roles: ["ADMIN", "SELLER", "STAFF"], badge: "New", badgeColor: "#8B5CF6" },
       { icon: <Zap size={18} />, label: "Advanced Controls", href: "/dashboard/settings/advanced", roles: ["ADMIN", "SELLER", "STAFF"], badge: "Setup", badgeColor: "#8B5CF6" },
@@ -407,17 +408,17 @@ function SidebarItem({ item, index, isActive, collapsed, isDark, pathname }: any
               whileTap={{ scale: 0.98 }}
               style={{
                 padding: '10px',
-                background: pathname === '/dashboard/offers' ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)',
+                background: pathname.startsWith('/dashboard/offers') ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)',
                 borderRadius: '12px',
-                border: `1px solid ${pathname === '/dashboard/offers' ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                border: `1px solid ${pathname.startsWith('/dashboard/offers') ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.05)'}`,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: '4px'
               }}
             >
-              <Percent size={16} color={pathname === '/dashboard/offers' ? '#10B981' : '#64748B'} />
-              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pathname === '/dashboard/offers' ? '#10B981' : '#64748B' }}>OFFERS</span>
+              <Percent size={16} color={pathname.startsWith('/dashboard/offers') ? '#10B981' : '#64748B'} />
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pathname.startsWith('/dashboard/offers') ? '#10B981' : '#64748B' }}>OFFERS</span>
             </motion.div>
           </Link>
           <Link href="/dashboard/gallery" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => { kravy.click(); }}>

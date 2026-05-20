@@ -58,13 +58,23 @@ export default function ProfitLossPage() {
                 fetch("/api/expenses"),
                 fetch("/api/bill-manager")
             ]);
+            
+            if (!expRes.ok) {
+                const text = await expRes.text();
+                throw new Error(`Expenses API failed (${expRes.status}): ${text}`);
+            }
+            if (!billRes.ok) {
+                const text = await billRes.text();
+                throw new Error(`Bill Manager API failed (${billRes.status}): ${text}`);
+            }
+
             const expData = await expRes.json();
             const billData = await billRes.json();
             
             setExpenses(expData);
             setOrders(billData.bills || []); // Using bills as the source of revenue
         } catch (error) {
-            console.error("Failed to fetch data");
+            console.error("Failed to fetch data:", error);
             toast.error("Failed to load financial data");
         } finally {
             setLoading(false);

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const { userId: clerkId } = await auth();
+  const clerkId = await getEffectiveClerkId();
   if (!clerkId) return new NextResponse("Unauthorized", { status: 401 });
 
   try {
@@ -35,7 +35,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const { userId: clerkId } = await auth();
+  const clerkId = await getEffectiveClerkId();
   if (!clerkId) return new NextResponse("Unauthorized", { status: 401 });
 
   try {

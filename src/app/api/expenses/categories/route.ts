@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-    const { userId } = await auth();
+    const userId = await getEffectiveClerkId();
     if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
     try {
@@ -25,7 +25,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-    const { userId } = await auth();
+    const userId = await getEffectiveClerkId();
     if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
     try {

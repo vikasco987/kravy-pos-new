@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
     Plus,
     Tag,
@@ -16,7 +17,9 @@ import {
     AlertCircle,
     X,
     CheckCircle2,
-    Gift
+    Gift,
+    Sparkles,
+    Star
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -198,304 +201,317 @@ export default function OffersPage() {
                     <p className="text-[var(--kravy-text-muted)] font-medium mt-1">Manage discounts and seasonal promotions</p>
                 </div>
 
-                <Sheet open={isSheetOpen} onOpenChange={(open) => {
-                    setIsSheetOpen(open);
-                    if (!open) {
-                        setEditingOffer(null);
-                        setFormData({
-                            title: "",
-                            description: "",
-                            code: "",
-                            discountType: "PERCENTAGE",
-                            discountValue: "",
-                            minOrderValue: "",
-                            maxDiscount: "",
-                            startDate: "",
-                            endDate: "",
-                            usageLimit: "",
-                            buyItemId: "",
-                            buyQty: 1,
-                            getItemOffId: "",
-                            getQty: 1,
-                            getDiscount: 100,
-                            isActive: true,
-                        });
-                    }
-                }}>
-                    <SheetTrigger asChild>
-                        <Button className="bg-amber-500 hover:bg-amber-600 text-white rounded-2xl px-6 h-12 font-bold shadow-lg shadow-amber-500/20 transition-all active:scale-95 flex items-center gap-2">
-                            <Plus size={20} /> Create New Offer
+                <div className="flex flex-wrap items-center gap-3">
+                    <Link href="/dashboard/offers/generator">
+                        <Button variant="outline" className="border-amber-500/30 text-amber-600 hover:bg-amber-50 rounded-2xl px-6 h-12 font-bold transition-all active:scale-95 flex items-center gap-2">
+                            <Sparkles size={18} className="text-amber-500 animate-pulse" /> Marketing Card Generator
                         </Button>
-                    </SheetTrigger>
-                    <SheetContent className="sm:max-w-4xl bg-[var(--kravy-surface)] border-[var(--kravy-border)] p-0 overflow-hidden flex flex-col md:flex-row">
-                        {/* Editor Side */}
-                        <div className="flex-1 overflow-y-auto p-6 border-r border-[var(--kravy-border)]">
-                            <SheetHeader>
-                                <SheetTitle className="text-2xl font-black">{editingOffer ? "Edit Offer" : "New Promotion"}</SheetTitle>
-                                <SheetDescription className="font-medium text-[var(--kravy-text-muted)]">
-                                    Define discount rules and codes for your customers.
-                                </SheetDescription>
-                            </SheetHeader>
-                            <form onSubmit={handleSubmit} className="space-y-6 mt-8">
-                                <div className="space-y-2">
-                                    <Label className="font-black text-xs uppercase tracking-widest opacity-60">Offer Title</Label>
-                                    <Input
-                                        placeholder="e.g. Diwali Dhamaka 25%"
-                                        value={formData.title}
-                                        onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                        required
-                                        className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
-                                    />
-                                </div>
+                    </Link>
+                    <Link href="/dashboard/offers/reviews">
+                        <Button variant="outline" className="border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 rounded-2xl px-6 h-12 font-bold transition-all active:scale-95 flex items-center gap-2">
+                            <Star size={18} className="text-emerald-500 fill-emerald-500 animate-bounce" /> Google Review Generator
+                        </Button>
+                    </Link>
 
-                                <div className="grid grid-cols-2 gap-4">
+                    <Sheet open={isSheetOpen} onOpenChange={(open) => {
+                        setIsSheetOpen(open);
+                        if (!open) {
+                            setEditingOffer(null);
+                            setFormData({
+                                title: "",
+                                description: "",
+                                code: "",
+                                discountType: "PERCENTAGE",
+                                discountValue: "",
+                                minOrderValue: "",
+                                maxDiscount: "",
+                                startDate: "",
+                                endDate: "",
+                                usageLimit: "",
+                                buyItemId: "",
+                                buyQty: 1,
+                                getItemOffId: "",
+                                getQty: 1,
+                                getDiscount: 100,
+                                isActive: true,
+                            });
+                        }
+                    }}>
+                        <SheetTrigger asChild>
+                            <Button className="bg-amber-500 hover:bg-amber-600 text-white rounded-2xl px-6 h-12 font-bold shadow-lg shadow-amber-500/20 transition-all active:scale-95 flex items-center gap-2">
+                                <Plus size={20} /> Create New Offer
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent className="sm:max-w-4xl bg-[var(--kravy-surface)] border-[var(--kravy-border)] p-0 overflow-hidden flex flex-col md:flex-row">
+                            {/* Editor Side */}
+                            <div className="flex-1 overflow-y-auto p-6 border-r border-[var(--kravy-border)]">
+                                <SheetHeader>
+                                    <SheetTitle className="text-2xl font-black">{editingOffer ? "Edit Offer" : "New Promotion"}</SheetTitle>
+                                    <SheetDescription className="font-medium text-[var(--kravy-text-muted)]">
+                                        Define discount rules and codes for your customers.
+                                    </SheetDescription>
+                                </SheetHeader>
+                                <form onSubmit={handleSubmit} className="space-y-6 mt-8">
                                     <div className="space-y-2">
-                                        <Label className="font-black text-xs uppercase tracking-widest opacity-60">Coupon Code</Label>
+                                        <Label className="font-black text-xs uppercase tracking-widest opacity-60">Offer Title</Label>
                                         <Input
-                                            placeholder="SAVE25"
-                                            value={formData.code}
-                                            onChange={e => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                                            className="rounded-xl border-[var(--kravy-border)] h-12 font-black uppercase"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="font-black text-xs uppercase tracking-widest opacity-60">Type</Label>
-                                        <select
-                                            value={formData.discountType}
-                                            onChange={e => setFormData({ ...formData, discountType: e.target.value })}
-                                            className="w-full h-12 rounded-xl border-[var(--kravy-border)] bg-transparent px-3 font-bold focus:ring-2 focus:ring-amber-500 outline-none"
-                                        >
-                                            <option value="PERCENTAGE">Percentage (%)</option>
-                                            <option value="FLAT">Flat Amount (₹)</option>
-                                            <option value="BOGO">BOGO (Buy X Get Y)</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    {formData.discountType !== "BOGO" && (
-                                        <div className="space-y-2">
-                                            <Label className="font-black text-xs uppercase tracking-widest opacity-60">Value</Label>
-                                            <Input
-                                                type="number"
-                                                placeholder="25"
-                                                value={formData.discountValue}
-                                                onChange={e => setFormData({ ...formData, discountValue: e.target.value })}
-                                                required
-                                                className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
-                                            />
-                                        </div>
-                                    )}
-                                    <div className="space-y-2">
-                                        <Label className="font-black text-xs uppercase tracking-widest opacity-60">Min. Billing</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="500"
-                                            value={formData.minOrderValue}
-                                            onChange={e => setFormData({ ...formData, minOrderValue: e.target.value })}
+                                            placeholder="e.g. Diwali Dhamaka 25%"
+                                            value={formData.title}
+                                            onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                            required
                                             className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
                                         />
                                     </div>
-                                </div>
 
-                                {formData.discountType === "BOGO" && (
-                                    <div className="space-y-6 p-5 bg-amber-50/50 rounded-2xl border border-amber-200">
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">BOGO Configuration</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="font-black text-xs uppercase tracking-widest opacity-60">Coupon Code</Label>
+                                            <Input
+                                                placeholder="SAVE25"
+                                                value={formData.code}
+                                                onChange={e => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                                                className="rounded-xl border-[var(--kravy-border)] h-12 font-black uppercase"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="font-black text-xs uppercase tracking-widest opacity-60">Type</Label>
+                                            <select
+                                                value={formData.discountType}
+                                                onChange={e => setFormData({ ...formData, discountType: e.target.value })}
+                                                className="w-full h-12 rounded-xl border-[var(--kravy-border)] bg-transparent px-3 font-bold focus:ring-2 focus:ring-amber-500 outline-none"
+                                            >
+                                                <option value="PERCENTAGE">Percentage (%)</option>
+                                                <option value="FLAT">Flat Amount (₹)</option>
+                                                <option value="BOGO">BOGO (Buy X Get Y)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {formData.discountType !== "BOGO" && (
                                             <div className="space-y-2">
-                                                <Label className="font-black text-[10px] uppercase opacity-60">Customer Buys</Label>
-                                                <select
-                                                    value={formData.buyItemId}
-                                                    onChange={e => setFormData({ ...formData, buyItemId: e.target.value })}
-                                                    className="w-full h-11 rounded-xl border border-amber-200 bg-white px-3 text-xs font-bold outline-none"
-                                                >
-                                                    <option value="">Select Item...</option>
-                                                    {menuItems.map(item => (
-                                                        <option key={item.id} value={item.id}>{item.name}</option>
-                                                    ))}
-                                                </select>
-                                                <div className="flex items-center gap-2 mt-2">
-                                                    <span className="text-[9px] font-bold text-amber-600/60 uppercase">Qty:</span>
-                                                    <Input
-                                                        type="number"
-                                                        value={formData.buyQty}
-                                                        onChange={e => setFormData({ ...formData, buyQty: parseInt(e.target.value) })}
-                                                        className="w-20 h-8 text-xs font-bold rounded-lg"
-                                                    />
-                                                </div>
+                                                <Label className="font-black text-xs uppercase tracking-widest opacity-60">Value</Label>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="25"
+                                                    value={formData.discountValue}
+                                                    onChange={e => setFormData({ ...formData, discountValue: e.target.value })}
+                                                    required
+                                                    className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
+                                                />
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label className="font-black text-[10px] uppercase opacity-60">Customer Gets</Label>
-                                                <select
-                                                    value={formData.getItemOffId}
-                                                    onChange={e => setFormData({ ...formData, getItemOffId: e.target.value })}
-                                                    className="w-full h-11 rounded-xl border border-amber-200 bg-white px-3 text-xs font-bold outline-none"
-                                                >
-                                                    <option value="">Select Item...</option>
-                                                    {menuItems.map(item => (
-                                                        <option key={item.id} value={item.id}>{item.name}</option>
-                                                    ))}
-                                                </select>
-                                                <div className="flex items-center justify-between gap-2 mt-2">
-                                                    <div className="flex items-center gap-2">
+                                        )}
+                                        <div className="space-y-2">
+                                            <Label className="font-black text-xs uppercase tracking-widest opacity-60">Min. Billing</Label>
+                                            <Input
+                                                type="number"
+                                                placeholder="500"
+                                                value={formData.minOrderValue}
+                                                onChange={e => setFormData({ ...formData, minOrderValue: e.target.value })}
+                                                className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {formData.discountType === "BOGO" && (
+                                        <div className="space-y-6 p-5 bg-amber-50/50 rounded-2xl border border-amber-200">
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">BOGO Configuration</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="font-black text-[10px] uppercase opacity-60">Customer Buys</Label>
+                                                    <select
+                                                        value={formData.buyItemId}
+                                                        onChange={e => setFormData({ ...formData, buyItemId: e.target.value })}
+                                                        className="w-full h-11 rounded-xl border border-amber-200 bg-white px-3 text-xs font-bold outline-none"
+                                                    >
+                                                        <option value="">Select Item...</option>
+                                                        {menuItems.map(item => (
+                                                            <option key={item.id} value={item.id}>{item.name}</option>
+                                                        ))}
+                                                    </select>
+                                                    <div className="flex items-center gap-2 mt-2">
                                                         <span className="text-[9px] font-bold text-amber-600/60 uppercase">Qty:</span>
                                                         <Input
                                                             type="number"
-                                                            value={formData.getQty}
-                                                            onChange={e => setFormData({ ...formData, getQty: parseInt(e.target.value) })}
-                                                            className="w-16 h-8 text-xs font-bold rounded-lg"
+                                                            value={formData.buyQty}
+                                                            onChange={e => setFormData({ ...formData, buyQty: parseInt(e.target.value) })}
+                                                            className="w-20 h-8 text-xs font-bold rounded-lg"
                                                         />
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[9px] font-bold text-amber-600/60 uppercase">Off:</span>
-                                                        <Input
-                                                            type="number"
-                                                            value={formData.getDiscount}
-                                                            onChange={e => setFormData({ ...formData, getDiscount: parseFloat(e.target.value) })}
-                                                            placeholder="100%"
-                                                            className="w-16 h-8 text-xs font-bold rounded-lg"
-                                                        />
-                                                        <span className="text-[9px] font-black">%</span>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="font-black text-[10px] uppercase opacity-60">Customer Gets</Label>
+                                                    <select
+                                                        value={formData.getItemOffId}
+                                                        onChange={e => setFormData({ ...formData, getItemOffId: e.target.value })}
+                                                        className="w-full h-11 rounded-xl border border-amber-200 bg-white px-3 text-xs font-bold outline-none"
+                                                    >
+                                                        <option value="">Select Item...</option>
+                                                        {menuItems.map(item => (
+                                                            <option key={item.id} value={item.id}>{item.name}</option>
+                                                        ))}
+                                                    </select>
+                                                    <div className="flex items-center justify-between gap-2 mt-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[9px] font-bold text-amber-600/60 uppercase">Qty:</span>
+                                                            <Input
+                                                                type="number"
+                                                                value={formData.getQty}
+                                                                onChange={e => setFormData({ ...formData, getQty: parseInt(e.target.value) })}
+                                                                className="w-16 h-8 text-xs font-bold rounded-lg"
+                                                            />
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[9px] font-bold text-amber-600/60 uppercase">Off:</span>
+                                                            <Input
+                                                                type="number"
+                                                                value={formData.getDiscount}
+                                                                onChange={e => setFormData({ ...formData, getDiscount: parseFloat(e.target.value) })}
+                                                                placeholder="100%"
+                                                                className="w-16 h-8 text-xs font-bold rounded-lg"
+                                                            />
+                                                            <span className="text-[9px] font-black">%</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label className="font-black text-xs uppercase tracking-widest opacity-60">Valid From</Label>
-                                        <Input
-                                            type="date"
-                                            value={formData.startDate.split('T')[0]}
-                                            onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-                                            className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="font-black text-xs uppercase tracking-widest opacity-60">Valid Until</Label>
-                                        <Input
-                                            type="date"
-                                            value={formData.endDate.split('T')[0]}
-                                            onChange={e => setFormData({ ...formData, endDate: e.target.value })}
-                                            className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label className="font-black text-xs uppercase tracking-widest opacity-60">Max Uses</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="Unlimited"
-                                            value={formData.usageLimit}
-                                            onChange={e => setFormData({ ...formData, usageLimit: e.target.value })}
-                                            className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
-                                        />
-                                    </div>
-                                    {formData.discountType === "PERCENTAGE" && (
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label className="font-black text-xs uppercase tracking-widest opacity-60">Max Discount (₹)</Label>
+                                            <Label className="font-black text-xs uppercase tracking-widest opacity-60">Valid From</Label>
                                             <Input
-                                                type="number"
-                                                placeholder="150"
-                                                value={formData.maxDiscount}
-                                                onChange={e => setFormData({ ...formData, maxDiscount: e.target.value })}
+                                                type="date"
+                                                value={formData.startDate.split('T')[0]}
+                                                onChange={e => setFormData({ ...formData, startDate: e.target.value })}
                                                 className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
                                             />
                                         </div>
-                                    )}
-                                </div>
+                                        <div className="space-y-2">
+                                            <Label className="font-black text-xs uppercase tracking-widest opacity-60">Valid Until</Label>
+                                            <Input
+                                                type="date"
+                                                value={formData.endDate.split('T')[0]}
+                                                onChange={e => setFormData({ ...formData, endDate: e.target.value })}
+                                                className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
+                                            />
+                                        </div>
+                                    </div>
 
-                                <div className="space-y-2">
-                                    <Label className="font-black text-xs uppercase tracking-widest opacity-60">Offer Status</Label>
-                                    <Button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
-                                        variant="outline"
-                                        className={`w-full h-12 rounded-xl border-[var(--kravy-border)] font-bold flex justify-between px-4 ${formData.isActive ? 'bg-amber-50 text-amber-600 border-amber-200' : ''}`}
-                                    >
-                                        {formData.isActive ? 'Active on Store' : 'Draft / Paused'}
-                                        <div className={`w-3 h-3 rounded-full ${formData.isActive ? 'bg-amber-500 animate-pulse' : 'bg-gray-300'}`} />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="font-black text-xs uppercase tracking-widest opacity-60">Max Uses</Label>
+                                            <Input
+                                                type="number"
+                                                placeholder="Unlimited"
+                                                value={formData.usageLimit}
+                                                onChange={e => setFormData({ ...formData, usageLimit: e.target.value })}
+                                                className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
+                                            />
+                                        </div>
+                                        {formData.discountType === "PERCENTAGE" && (
+                                            <div className="space-y-2">
+                                                <Label className="font-black text-xs uppercase tracking-widest opacity-60">Max Discount (₹)</Label>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="150"
+                                                    value={formData.maxDiscount}
+                                                    onChange={e => setFormData({ ...formData, maxDiscount: e.target.value })}
+                                                    className="rounded-xl border-[var(--kravy-border)] h-12 font-bold"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="font-black text-xs uppercase tracking-widest opacity-60">Offer Status</Label>
+                                        <Button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
+                                            variant="outline"
+                                            className={`w-full h-12 rounded-xl border-[var(--kravy-border)] font-bold flex justify-between px-4 ${formData.isActive ? 'bg-amber-50 text-amber-600 border-amber-200' : ''}`}
+                                        >
+                                            {formData.isActive ? 'Active on Store' : 'Draft / Paused'}
+                                            <div className={`w-3 h-3 rounded-full ${formData.isActive ? 'bg-amber-500 animate-pulse' : 'bg-gray-300'}`} />
+                                        </Button>
+                                    </div>
+
+                                    <Button type="submit" disabled={submitting} className="w-full bg-amber-500 hover:bg-amber-600 text-white h-14 rounded-2xl font-black text-lg shadow-xl shadow-amber-500/20 disabled:opacity-50">
+                                        {submitting ? "Launching..." : (editingOffer ? "Update Offer" : "Launch Promotion 🚀")}
                                     </Button>
-                                </div>
-
-                                <Button type="submit" disabled={submitting} className="w-full bg-amber-500 hover:bg-amber-600 text-white h-14 rounded-2xl font-black text-lg shadow-xl shadow-amber-500/20 disabled:opacity-50">
-                                    {submitting ? "Launching..." : (editingOffer ? "Update Offer" : "Launch Promotion 🚀")}
-                                </Button>
-                            </form>
-                        </div>
-
-                        {/* Live Preview Side */}
-                        <div className="w-[380px] bg-gray-50 flex flex-col items-center justify-center p-6 shrink-0 relative overflow-hidden group">
-                            <div className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4 bg-amber-50 px-3 py-1 rounded-full border border-amber-100 flex items-center gap-2">
-                                <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-                                Customer View Preview
+                                </form>
                             </div>
 
-                            {/* Mobile Frame */}
-                            <div className="w-full aspect-[9/18.5] bg-white rounded-[3rem] border-[8px] border-gray-900 shadow-2xl relative overflow-hidden flex flex-col">
-                                <div className="h-6 w-full bg-gray-900" />
+                            {/* Live Preview Side */}
+                            <div className="w-[380px] bg-gray-50 flex flex-col items-center justify-center p-6 shrink-0 relative overflow-hidden group">
+                                <div className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4 bg-amber-50 px-3 py-1 rounded-full border border-amber-100 flex items-center gap-2">
+                                    <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                                    Customer View Preview
+                                </div>
 
-                                <div className="flex-1 overflow-y-auto no-scrollbar bg-gray-50/50 p-4 space-y-6">
-                                    {/* Cart Coupon Section Preview */}
-                                    <div className="space-y-3">
-                                        <div className="text-[0.6rem] font-black uppercase text-gray-300">Cart Coupon Preview</div>
-                                        <div className="bg-white rounded-2xl border-2 border-dashed border-amber-500/20 p-4 flex flex-col items-center justify-center gap-1 shadow-sm relative overflow-hidden">
-                                            <div className="absolute top-0 right-0 w-8 h-8 bg-amber-500/5 -mr-4 -mt-4 rounded-full" />
-                                            <div className="text-amber-500 font-black text-[0.85rem] tracking-tighter uppercase">
-                                                {formData.code || "SAVE25"}
-                                            </div>
-                                            <div className="text-[0.55rem] font-bold text-gray-400">
-                                                {formData.discountType === 'PERCENTAGE' ? `${formData.discountValue || '0'}% OFF` : `₹${formData.discountValue || '0'} OFF`}
-                                            </div>
-                                            <div className="text-[0.45rem] font-black text-emerald-500 mt-1 italic">
-                                                {formData.minOrderValue ? `Valid on orders above ₹${formData.minOrderValue}` : 'No minimum order'}
+                                {/* Mobile Frame */}
+                                <div className="w-full aspect-[9/18.5] bg-white rounded-[3rem] border-[8px] border-gray-900 shadow-2xl relative overflow-hidden flex flex-col">
+                                    <div className="h-6 w-full bg-gray-900" />
+
+                                    <div className="flex-1 overflow-y-auto no-scrollbar bg-gray-50/50 p-4 space-y-6">
+                                        {/* Cart Coupon Section Preview */}
+                                        <div className="space-y-3">
+                                            <div className="text-[0.6rem] font-black uppercase text-gray-300">Cart Coupon Preview</div>
+                                            <div className="bg-white rounded-2xl border-2 border-dashed border-amber-500/20 p-4 flex flex-col items-center justify-center gap-1 shadow-sm relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-8 h-8 bg-amber-500/5 -mr-4 -mt-4 rounded-full" />
+                                                <div className="text-amber-500 font-black text-[0.85rem] tracking-tighter uppercase">
+                                                    {formData.code || "SAVE25"}
+                                                </div>
+                                                <div className="text-[0.55rem] font-bold text-gray-400">
+                                                    {formData.discountType === 'PERCENTAGE' ? `${formData.discountValue || '0'}% OFF` : `₹${formData.discountValue || '0'} OFF`}
+                                                </div>
+                                                <div className="text-[0.45rem] font-black text-emerald-500 mt-1 italic">
+                                                    {formData.minOrderValue ? `Valid on orders above ₹${formData.minOrderValue}` : 'No minimum order'}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Banner Preview */}
-                                    <div className="space-y-3 pt-4 border-t border-dashed border-gray-200">
-                                        <div className="text-[0.6rem] font-black uppercase text-gray-300 italic">Menu Promo Bar</div>
-                                        <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-3 text-white flex items-center justify-between shadow-lg shadow-amber-200">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-                                                    <Tag size={12} className="text-white" />
-                                                </div>
-                                                <div>
-                                                    <div className="text-[0.65rem] font-black leading-tight truncate max-w-[120px]">
-                                                        {formData.title || "Offer Title"}
+                                        {/* Banner Preview */}
+                                        <div className="space-y-3 pt-4 border-t border-dashed border-gray-200">
+                                            <div className="text-[0.6rem] font-black uppercase text-gray-300 italic">Menu Promo Bar</div>
+                                            <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-3 text-white flex items-center justify-between shadow-lg shadow-amber-200">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
+                                                        <Tag size={12} className="text-white" />
                                                     </div>
-                                                    <div className="text-[0.5rem] font-bold opacity-80 italic">Use code: {formData.code || "----"}</div>
+                                                    <div>
+                                                        <div className="text-[0.65rem] font-black leading-tight truncate max-w-[120px]">
+                                                            {formData.title || "Offer Title"}
+                                                        </div>
+                                                        <div className="text-[0.5rem] font-bold opacity-80 italic">Use code: {formData.code || "----"}</div>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight size={14} className="opacity-60" />
+                                            </div>
+                                        </div>
+
+                                        {/* Mock Order Summary */}
+                                        <div className="space-y-2 mt-4 opacity-40">
+                                            <div className="h-2 w-1/2 bg-gray-200 rounded" />
+                                            <div className="bg-white p-3 rounded-xl border border-gray-100 space-y-2">
+                                                <div className="flex justify-between"><div className="w-12 h-1.5 bg-gray-100 rounded" /><div className="w-8 h-1.5 bg-gray-100 rounded" /></div>
+                                                <div className="flex justify-between border-t pt-2 border-gray-50">
+                                                    <div className="w-10 h-2 bg-amber-100 rounded" />
+                                                    <div className="w-6 h-2 bg-amber-500 rounded" />
                                                 </div>
                                             </div>
-                                            <ChevronRight size={14} className="opacity-60" />
                                         </div>
                                     </div>
 
-                                    {/* Mock Order Summary */}
-                                    <div className="space-y-2 mt-4 opacity-40">
-                                        <div className="h-2 w-1/2 bg-gray-200 rounded" />
-                                        <div className="bg-white p-3 rounded-xl border border-gray-100 space-y-2">
-                                            <div className="flex justify-between"><div className="w-12 h-1.5 bg-gray-100 rounded" /><div className="w-8 h-1.5 bg-gray-100 rounded" /></div>
-                                            <div className="flex justify-between border-t pt-2 border-gray-50">
-                                                <div className="w-10 h-2 bg-amber-100 rounded" />
-                                                <div className="w-6 h-2 bg-amber-500 rounded" />
-                                            </div>
-                                        </div>
+                                    <div className="h-4 w-full bg-white flex justify-center items-center pb-1">
+                                        <div className="w-16 h-1 bg-gray-200 rounded-full" />
                                     </div>
-                                </div>
-
-                                <div className="h-4 w-full bg-white flex justify-center items-center pb-1">
-                                    <div className="w-16 h-1 bg-gray-200 rounded-full" />
                                 </div>
                             </div>
-                        </div>
-                    </SheetContent>
-                </Sheet>
+                        </SheetContent>
+                    </Sheet>
+                </div>
             </div>
 
             {/* Search & Stats */}

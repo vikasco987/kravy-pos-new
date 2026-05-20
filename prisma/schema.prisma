@@ -803,3 +803,36 @@ model SystemSettings {
   defaultTrialDays Int    @default(3)
   updatedAt        DateTime @updatedAt
 }
+
+model GmailConnection {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkUserId    String   @unique
+  accessToken    String?
+  refreshToken   String?
+  connectedEmail String?
+  isConnected    Boolean  @default(false)
+  lastSynced     DateTime?
+  lastEmailId    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ExternalSales {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkUserId     String
+  date            DateTime
+  platform        String   // "zomato" or "swiggy"
+  totalOrders     Int      @default(0)
+  totalRevenue    Float    @default(0.0)
+  cancelledOrders Int      @default(0)
+  avgOrderValue   Float    @default(0.0)
+  rating          Float?
+  sourceEmailId   String?
+  parsedAt        DateTime @default(now())
+  rawSnippet      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([clerkUserId, platform, date])
+  @@index([date])
+}

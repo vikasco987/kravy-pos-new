@@ -168,6 +168,14 @@ export default async function DailySalesReportPage({
     orderBy: { createdAt: "desc" }
   });
 
+  // Fetch External (Swiggy/Zomato) Sales for the range
+  const externalSales = await prisma.externalSales.findMany({
+    where: {
+      clerkUserId: effectiveId,
+      date: { gte: startRange, lte: endRange }
+    }
+  });
+
   // Previous Range for Growth calculation
   const rangeDuration = endRange.getTime() - startRange.getTime();
   const prevStart = new Date(startRange.getTime() - rangeDuration - 1);
@@ -177,11 +185,42 @@ export default async function DailySalesReportPage({
     where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: prevStart, lte: prevEnd } }
   });
 
-  const totalRevenue = bills.reduce((s, b) => s + b.total, 0);
-  const prevRevenue = prevBills.reduce((s, b) => s + b.total, 0);
+  const prevExternalSales = await prisma.externalSales.findMany({
+    where: {
+      clerkUserId: effectiveId,
+      date: { gte: prevStart, lte: prevEnd }
+    }
+  });
+
+  // Combined metrics calculation
+  const offlineRevenue = bills.reduce((s, b) => s + b.total, 0);
+  const externalRevenue = externalSales.reduce((s, x) => s + x.totalRevenue, 0);
+  const totalRevenue = offlineRevenue + externalRevenue;
+
+  const prevOfflineRevenue = prevBills.reduce((s, b) => s + b.total, 0);
+  const prevExternalRevenue = prevExternalSales.reduce((s, x) => s + x.totalRevenue, 0);
+  const prevRevenue = prevOfflineRevenue + prevExternalRevenue;
+
   const growth = prevRevenue === 0 ? 100 : ((totalRevenue - prevRevenue) / prevRevenue) * 100;
   const totalTax = bills.reduce((s, b) => s + (b.tax || 0), 0);
-  const avgOrder = bills.length > 0 ? totalRevenue / bills.length : 0;
+
+  const totalOfflineOrders = bills.length;
+  const totalExternalOrders = externalSales.reduce((s, x) => s + x.totalOrders, 0);
+  const combinedOrdersCount = totalOfflineOrders + totalExternalOrders;
+
+  const prevOfflineOrders = prevBills.length;
+  const prevExternalOrders = prevExternalSales.reduce((s, x) => s + x.totalOrders, 0);
+  const prevOrdersCount = prevOfflineOrders + prevExternalOrders;
+
+  const avgOrder = combinedOrdersCount > 0 ? totalRevenue / combinedOrdersCount : 0;
+
+  const zomatoSales = externalSales.filter(s => s.platform === "zomato");
+  const zomatoRevenue = zomatoSales.reduce((s, x) => s + x.totalRevenue, 0);
+  const zomatoOrders = zomatoSales.reduce((s, x) => s + x.totalOrders, 0);
+
+  const swiggySales = externalSales.filter(s => s.platform === "swiggy");
+  const swiggyRevenue = swiggySales.reduce((s, x) => s + x.totalRevenue, 0);
+  const swiggyOrders = swiggySales.reduce((s, x) => s + x.totalOrders, 0);
 
   // Analytics mapping
   const hourCounts = Array(24).fill(0);
@@ -245,8 +284,8 @@ export default async function DailySalesReportPage({
 
       {/* --- Stats Cards --- */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
-        <StatsCard label="Net revenue" value={`₹${format(totalRevenue)}`} badge={`${growth >= 0 ? "+" : ""}${Math.abs(growth).toFixed(0)}%`} subtext="vs prev period" />
-        <StatsCard label="Total orders" value={bills.length} badge={`${bills.length >= prevBills.length ? "+" : ""}${bills.length - prevBills.length}`} subtext="vs prev period" />
+        <StatsCard label="Net revenue (Combined)" value={`₹${format(totalRevenue)}`} badge={`${growth >= 0 ? "+" : ""}${Math.abs(growth).toFixed(0)}%`} subtext="vs prev period" />
+        <StatsCard label="Total orders" value={combinedOrdersCount} badge={`${combinedOrdersCount >= prevOrdersCount ? "+" : ""}${combinedOrdersCount - prevOrdersCount}`} subtext="vs prev period" />
         <StatsCard label="Avg order value" value={`₹${format(avgOrder)}`} badge="+3%" subtext="this week" />
         <StatsCard label="Total tax collected" value={`₹${format(totalTax)}`} subtext="GST 5% + 18%" />
       </div>
@@ -263,9 +302,13 @@ export default async function DailySalesReportPage({
         </div>
         <div style={{ background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", borderRadius: "32px", padding: "32px" }}>
           <h3 style={{ fontSize: "1.1rem", fontWeight: 800, marginBottom: "24px", color: "var(--kravy-text-primary)" }}>Summary breakdowns</h3>
-          <BreakdownRow dotColor="#3B82F6" label="Delivery" count={types.DELIVERY.c} revenue={types.DELIVERY.r} />
+          <BreakdownRow dotColor="#3B82F6" label="Counter Delivery" count={types.DELIVERY.c} revenue={types.DELIVERY.r} />
           <BreakdownRow dotColor="#10B981" label="Dine-in" count={types.DINEIN.c} revenue={types.DINEIN.r} />
           <BreakdownRow dotColor="#F59E0B" label="Takeaway" count={types.TAKEAWAY.c} revenue={types.TAKEAWAY.r} />
+          <div style={{ height: "1px", background: "var(--kravy-border)", margin: "16px 0" }} />
+          <h4 style={{ fontSize: "0.8rem", fontWeight: 800, marginBottom: "12px", color: "#FF6B35", textTransform: "uppercase", letterSpacing: "0.5px" }}>External Platforms (Gmail Synced)</h4>
+          <BreakdownRow dotColor="#EA4335" label="Zomato" count={zomatoOrders} revenue={zomatoRevenue} />
+          <BreakdownRow dotColor="#FC8019" label="Swiggy" count={swiggyOrders} revenue={swiggyRevenue} />
           <div style={{ height: "1px", background: "var(--kravy-border)", margin: "16px 0" }} />
           <BreakdownRow dotColor="#10B981" label="Cash Payments" count={payments.CASH.c} revenue={payments.CASH.r} />
           <BreakdownRow dotColor="#8B5CF6" label="UPI Payments" count={payments.UPI.c} revenue={payments.UPI.r} />
