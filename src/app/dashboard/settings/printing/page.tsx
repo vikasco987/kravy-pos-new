@@ -953,7 +953,7 @@ export default function PrintingSettings() {
                 </div>
 
                 {/* Right: Live Preview */}
-                <div className={`xl:col-span-4 xl:sticky xl:top-24 xl:h-[calc(100vh-140px)] flex flex-col w-full relative ${activeTab === 'preview' ? 'block' : 'hidden xl:block'}`}>
+                <div className={`xl:col-span-4 xl:sticky xl:top-24 h-[calc(100vh-220px)] xl:h-[calc(100vh-140px)] w-full relative flex flex-col ${activeTab === 'preview' ? 'flex' : 'hidden xl:flex'}`}>
                     
                     {/* Sleek Vertical/Horizontal Floating Controller Dock - Gutter Positioned on Desktop, Floating on Mobile */}
                     <div className="absolute xl:-left-16 xl:right-auto right-4 top-4 xl:top-8 flex xl:flex-col flex-row gap-2.5 z-30 select-none bg-slate-900/95 dark:bg-zinc-950/95 backdrop-blur-md border border-slate-800 dark:border-zinc-800/80 rounded-[1.25rem] p-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
@@ -1041,7 +1041,7 @@ export default function PrintingSettings() {
                         <div className="h-1 bg-black border-b border-slate-900 relative z-10 shadow-[inset_0_2px_4px_rgba(0,0,0,1)] shrink-0" />
 
                         {/* Interactive Paper Tray Area (Fully Height Adaptive) */}
-                        <div className="flex-1 overflow-y-auto overflow-x-hidden pt-4 pb-12 px-4 flex flex-col items-center scrollbar-none">
+                        <div className="flex-1 overflow-y-auto overflow-x-hidden pt-4 pb-12 px-4 flex flex-col items-center scrollbar-none overscroll-contain touch-pan-y">
                             
                             {/* THE PREVIEW WRAPPER */}
                             <div 
