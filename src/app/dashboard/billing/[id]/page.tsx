@@ -497,7 +497,7 @@ export default function ViewBillPage() {
 
     const ps = (business as any)?.printSettings || {};
     const is80 = ps.paperWidth === '80mm';
-    const paperWidth = is80 ? '80mm' : '58mm';
+    const paperWidth = is80 ? '74mm' : '58mm';
     const paperBottomPadding = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
 
     // --- Dynamic Typography Configurations with Thermal Safety Limits ---
@@ -554,7 +554,10 @@ export default function ViewBillPage() {
           padding: 0 !important;
         }
         body > *:not(#${containerId}) { display: none !important; }
-        @page { margin: 0; size: auto; }
+        @page { 
+          margin: 0; 
+          size: ${is80 ? '80mm auto' : 'auto'}; 
+        }
         #${containerId} {
           display: block !important;
           width: 100% !important;
@@ -562,13 +565,15 @@ export default function ViewBillPage() {
           height: auto !important;
           overflow: visible !important;
           margin: 0 auto !important;
-          padding: 2mm 4% ${paperBottomPadding} 4% !important; 
+          padding: ${is80 ? `2mm 6mm ${paperBottomPadding} 6mm` : `2mm 4% ${paperBottomPadding} 4%`} !important; 
           background: #fff !important;
           color: #000 !important;
           position: relative !important;
           box-sizing: border-box !important;
+          ${is80 ? '' : `
           page-break-after: always !important;
           break-after: page !important;
+          `}
         }
 
         /* Inject CSS custom variables to override custom elements correctly */

@@ -55,8 +55,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
 
   // --- Dynamic Typography Configurations with Thermal Safety Limits ---
   const is80 = ps.paperWidth === '80mm';
-  const paperWidthStr = is80 ? '80mm' : '58mm';
-  const printableWidthStr = is80 ? '70mm' : '48mm';
+  const paperWidthStr = is80 ? '74mm' : '58mm';
+  const printableWidthStr = is80 ? '74mm' : '48mm';
 
   // Thermal safety feed spacing
   const paperBottomPaddingVal = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
@@ -134,19 +134,26 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
     }
     
     @media print {
-      @page { margin: 0 !important; }
+      @page { 
+        margin: 0 !important; 
+        ${is80 ? 'size: 80mm auto !important;' : ''}
+      }
       body { margin: 0 !important; padding: 0 !important; }
       .receipt-container { 
         width: ${paperWidthStr} !important; 
         margin: 0 auto !important; 
+        ${is80 ? '' : `
         page-break-after: always !important;
         break-after: page !important;
+        `}
       }
       .kot-container { 
         width: ${paperWidthStr} !important; 
         margin: 0 auto !important; 
+        ${is80 ? '' : `
         page-break-after: always !important;
         break-after: page !important;
+        `}
       }
     }
     ${fontWeightVal ? `
@@ -174,7 +181,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         style={{ 
           width: printableWidthStr, 
           margin: '0 auto',
-          padding: is80 ? `0mm 4mm ${paperBottomPaddingVal} 4mm` : `0mm 2mm ${paperBottomPaddingVal} 2mm`, 
+          padding: is80 ? `0mm 6mm ${paperBottomPaddingVal} 6mm` : `0mm 2mm ${paperBottomPaddingVal} 2mm`, 
           boxSizing: 'border-box',
           WebkitFontSmoothing: 'antialiased',
           overflow: 'hidden',
@@ -545,7 +552,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         style={{ 
           width: printableWidthStr, 
           margin: '0 auto', 
-          padding: is80 ? `0mm 4mm ${paperBottomPaddingVal} 4mm` : `0mm 2mm ${paperBottomPaddingVal} 2mm`, 
+          padding: is80 ? `0mm 6mm ${paperBottomPaddingVal} 6mm` : `0mm 2mm ${paperBottomPaddingVal} 2mm`, 
           boxSizing: 'border-box', 
           overflow: 'hidden',
           // KOT safety features
