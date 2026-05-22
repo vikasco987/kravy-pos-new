@@ -8,7 +8,53 @@ export const dynamic = "force-dynamic";
 /* =============================
    GET BUSINESS PROFILE
 ============================= */
+async function ensureValidDates() {
+  try {
+    // We execute a raw MongoDB update command to fix null/missing fields directly in the DB
+    // without fetching them to the client (which prevents type-conversion serialization crashes).
+    await prisma.$runCommandRaw({
+      update: "BusinessProfile",
+      updates: [
+        {
+          q: { 
+            $or: [ 
+              { createdAt: null }, 
+              { createdAt: { $exists: false } } 
+            ] 
+          },
+          u: { 
+            $set: { createdAt: { $date: new Date().toISOString() } } 
+          },
+          multi: true
+        }
+      ]
+    });
+
+    await prisma.$runCommandRaw({
+      update: "BusinessProfile",
+      updates: [
+        {
+          q: { 
+            $or: [ 
+              { updatedAt: null }, 
+              { updatedAt: { $exists: false } } 
+            ] 
+          },
+          u: { 
+            $set: { updatedAt: { $date: new Date().toISOString() } } 
+          },
+          multi: true
+        }
+      ]
+    });
+    console.log("✨ Self-healed BusinessProfile dates.");
+  } catch (err) {
+    console.error("⚠️ Self-healing BusinessProfile dates failed:", err);
+  }
+}
+
 export async function GET(request: Request) {
+  await ensureValidDates();
   try {
     const effectiveId = await getEffectiveClerkId();
 
@@ -54,6 +100,7 @@ export async function GET(request: Request) {
 ============================= */
 export async function POST(request: Request) {
   console.log("API VERSION: 1.0.6 - Debug Status");
+  await ensureValidDates();
   try {
     const effectiveId = await getEffectiveClerkId();
 
