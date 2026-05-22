@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
     ArrowLeft, Save, Printer, Eye, Settings, 
     Image as ImageIcon, Type, Phone, MapPin, 
@@ -43,6 +43,19 @@ const defaults: any = {
     printDensity: "balanced",
     fontFamily: "",
     kotFontFamily: "",
+    fontWeight: "",
+    kotFontWeight: "",
+    businessNameWeight: "",
+    businessAddressWeight: "",
+    taglineWeight: "",
+    receiptTokenWeight: "",
+    itemsWeight: "",
+    totalWeight: "",
+    detailsWeight: "",
+    greetingWeight: "",
+    kotTokenWeight: "",
+    kotItemsWeight: "",
+    kotQtyWeight: "",
     businessNameSize: 18,
     businessAddressSize: 11,
     taglineSize: 11,
@@ -70,7 +83,20 @@ const TYPOGRAPHY_PRESETS = {
         kotItemsFontSize: 11,
         kotQtyFontSize: 14,
         fontFamily: "",
-        kotFontFamily: ""
+        kotFontFamily: "",
+        fontWeight: "",
+        kotFontWeight: "",
+        businessNameWeight: "",
+        businessAddressWeight: "",
+        taglineWeight: "",
+        receiptTokenWeight: "",
+        itemsWeight: "",
+        totalWeight: "",
+        detailsWeight: "",
+        greetingWeight: "",
+        kotTokenWeight: "",
+        kotItemsWeight: "",
+        kotQtyWeight: ""
     },
     compact: {
         businessNameSize: 14,
@@ -85,7 +111,20 @@ const TYPOGRAPHY_PRESETS = {
         kotItemsFontSize: 9,
         kotQtyFontSize: 11,
         fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
-        kotFontFamily: '"Courier New", Courier, monospace'
+        kotFontFamily: '"Courier New", Courier, monospace',
+        fontWeight: "400",
+        kotFontWeight: "400",
+        businessNameWeight: "",
+        businessAddressWeight: "",
+        taglineWeight: "",
+        receiptTokenWeight: "",
+        itemsWeight: "",
+        totalWeight: "",
+        detailsWeight: "",
+        greetingWeight: "",
+        kotTokenWeight: "",
+        kotItemsWeight: "",
+        kotQtyWeight: ""
     },
     bold: {
         businessNameSize: 24,
@@ -100,7 +139,20 @@ const TYPOGRAPHY_PRESETS = {
         kotItemsFontSize: 13,
         kotQtyFontSize: 16,
         fontFamily: 'Georgia, Cambria, "Times New Roman", serif',
-        kotFontFamily: '"Courier New", Courier, monospace'
+        kotFontFamily: '"Courier New", Courier, monospace',
+        fontWeight: "700",
+        kotFontWeight: "700",
+        businessNameWeight: "",
+        businessAddressWeight: "",
+        taglineWeight: "",
+        receiptTokenWeight: "",
+        itemsWeight: "",
+        totalWeight: "",
+        detailsWeight: "",
+        greetingWeight: "",
+        kotTokenWeight: "",
+        kotItemsWeight: "",
+        kotQtyWeight: ""
     },
     minimal: {
         businessNameSize: 16,
@@ -115,7 +167,20 @@ const TYPOGRAPHY_PRESETS = {
         kotItemsFontSize: 10,
         kotQtyFontSize: 12,
         fontFamily: '"Trebuchet MS", Helvetica, sans-serif',
-        kotFontFamily: '"Courier New", Courier, monospace'
+        kotFontFamily: '"Courier New", Courier, monospace',
+        fontWeight: "500",
+        kotFontWeight: "500",
+        businessNameWeight: "",
+        businessAddressWeight: "",
+        taglineWeight: "",
+        receiptTokenWeight: "",
+        itemsWeight: "",
+        totalWeight: "",
+        detailsWeight: "",
+        greetingWeight: "",
+        kotTokenWeight: "",
+        kotItemsWeight: "",
+        kotQtyWeight: ""
     }
 };
 
@@ -127,6 +192,16 @@ const fonts = [
     { name: "Georgia / Classic Serif", value: 'Georgia, Cambria, "Times New Roman", serif', desc: "Formal Print", safe: false }
 ];
 
+const fontWeights = [
+    { name: "Default (Style Standard)", value: "", desc: "Default bolding" },
+    { name: "Light (300)", value: "300", desc: "Fine weight" },
+    { name: "Regular / Normal (400)", value: "400", desc: "Standard weight" },
+    { name: "Medium (500)", value: "500", desc: "Medium weight" },
+    { name: "Semi Bold (600)", value: "600", desc: "Moderately bold" },
+    { name: "Bold (700)", value: "700", desc: "High contrast bold" },
+    { name: "Extra Bold (900)", value: "900", desc: "Heavy block weight" }
+];
+
 export default function PrintingSettings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -134,8 +209,23 @@ export default function PrintingSettings() {
     const [previewGst, setPreviewGst] = useState(true);
     const [showStyling, setShowStyling] = useState(true);
     const [printSettings, setPrintSettings] = useState<any>({ ...defaults });
+    const [previewZoom, setPreviewZoom] = useState(0.95);
+    const [activeTab, setActiveTab] = useState<"configure" | "preview">("configure");
+    const [showFloatSave, setShowFloatSave] = useState(false);
 
     const receiptRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 150) {
+                setShowFloatSave(true);
+            } else {
+                setShowFloatSave(false);
+            }
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
     const kotRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -268,7 +358,7 @@ export default function PrintingSettings() {
         </button>
     );
 
-    const Sizer = ({ label, icon: Icon, sKey, min, max, descMap }: any) => {
+    const Sizer = ({ label, icon: Icon, sKey, weightKey, min, max, descMap }: any) => {
         const value = printSettings[sKey] !== undefined && printSettings[sKey] !== "" ? Number(printSettings[sKey]) : defaults[sKey];
         
         const getLabel = (val: number) => {
@@ -306,6 +396,22 @@ export default function PrintingSettings() {
                     onChange={(e) => setPrintSettings((prev: any) => ({ ...prev, [sKey]: Number(e.target.value) }))}
                     className="w-full h-1.5 bg-slate-100 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-violet-600 focus:outline-none"
                 />
+
+                {weightKey && (
+                    <div className="flex items-center justify-between gap-4 pt-3 border-t border-slate-100/50 dark:border-white/5">
+                        <span className="text-[9px] font-black text-slate-400 dark:text-white/30 uppercase tracking-widest">Weight Override</span>
+                        <select
+                            value={printSettings[weightKey] || ""}
+                            onChange={(e) => setPrintSettings((prev: any) => ({ ...prev, [weightKey]: e.target.value }))}
+                            className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-1 text-[10px] font-black outline-none cursor-pointer text-slate-700 dark:text-slate-300"
+                        >
+                            <option value="">Default style</option>
+                            {fontWeights.map((w, idx) => (
+                                <option key={idx} value={w.value}>{w.name.split(" (")[0]}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
             </div>
         );
     };
@@ -334,9 +440,33 @@ export default function PrintingSettings() {
                 </button>
             </div>
 
+            {/* Mobile / Tablet Tab Switcher (hidden on desktop) */}
+            <div className="xl:hidden flex bg-slate-100 dark:bg-white/5 p-1 rounded-2xl gap-1 mx-4 shadow-sm border border-slate-200/50 dark:border-white/5">
+                <button
+                    onClick={() => setActiveTab("configure")}
+                    className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                        activeTab === "configure" 
+                        ? 'bg-white dark:bg-white/10 shadow-sm text-violet-600 dark:text-violet-400' 
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'
+                    }`}
+                >
+                    <Settings size={14} /> Configure Details
+                </button>
+                <button
+                    onClick={() => setActiveTab("preview")}
+                    className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                        activeTab === "preview" 
+                        ? 'bg-white dark:bg-white/10 shadow-sm text-violet-600 dark:text-violet-400' 
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'
+                    }`}
+                >
+                    <Eye size={14} /> Realtime Preview
+                </button>
+            </div>
+
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start px-4">
                 {/* Left: Controls */}
-                <div className="xl:col-span-8 space-y-10">
+                <div className={`xl:col-span-8 space-y-10 ${activeTab === 'configure' ? 'block' : 'hidden xl:block'}`}>
                     
                     {/* Bill Settings */}
                     <div className="space-y-6">
@@ -614,6 +744,38 @@ export default function PrintingSettings() {
                                                 ))}
                                             </select>
                                         </div>
+
+                                        {/* Receipt Font Weight */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Receipt/Bill Font Weight</label>
+                                            <select 
+                                                value={printSettings.fontWeight || ""}
+                                                onChange={(e) => setPrintSettings((p: any) => ({ ...p, fontWeight: e.target.value }))}
+                                                className="h-12 px-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-black focus:ring-2 focus:ring-violet-500 outline-none transition-all cursor-pointer"
+                                            >
+                                                {fontWeights.map((w, idx) => (
+                                                    <option key={idx} value={w.value} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-xs">
+                                                        {w.name} ({w.desc})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* KOT Font Weight */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">KOT (Kitchen Slip) Font Weight</label>
+                                            <select 
+                                                value={printSettings.kotFontWeight || ""}
+                                                onChange={(e) => setPrintSettings((p: any) => ({ ...p, kotFontWeight: e.target.value }))}
+                                                className="h-12 px-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-black focus:ring-2 focus:ring-violet-500 outline-none transition-all cursor-pointer"
+                                            >
+                                                {fontWeights.map((w, idx) => (
+                                                    <option key={idx} value={w.value} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-xs">
+                                                        {w.name} ({w.desc})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -627,6 +789,7 @@ export default function PrintingSettings() {
                                             label="Business Name Font Size" 
                                             icon={Type} 
                                             sKey="businessNameSize" 
+                                            weightKey="businessNameWeight"
                                             min={14} 
                                             max={32} 
                                             descMap={{ 14: "Small", 18: "Medium", 24: "Large", 32: "Extra Large" }} 
@@ -635,6 +798,7 @@ export default function PrintingSettings() {
                                             label="Address Font Size" 
                                             icon={MapPin} 
                                             sKey="businessAddressSize" 
+                                            weightKey="businessAddressWeight"
                                             min={8} 
                                             max={16} 
                                             descMap={{ 8: "Very Compact", 11: "Standard", 14: "Highly Readable", 16: "Large" }} 
@@ -643,6 +807,7 @@ export default function PrintingSettings() {
                                             label="Tagline Font Size" 
                                             icon={Type} 
                                             sKey="taglineSize" 
+                                            weightKey="taglineWeight"
                                             min={8} 
                                             max={14} 
                                             descMap={{ 8: "Compact", 11: "Standard", 14: "Large" }} 
@@ -651,6 +816,7 @@ export default function PrintingSettings() {
                                             label="Receipt Token Size" 
                                             icon={Clock} 
                                             sKey="receiptTokenSize" 
+                                            weightKey="receiptTokenWeight"
                                             min={18} 
                                             max={40} 
                                             descMap={{ 18: "Normal", 28: "Bold Standout", 40: "Giant Block" }} 
@@ -659,6 +825,7 @@ export default function PrintingSettings() {
                                             label="Items List Font Size" 
                                             icon={Receipt} 
                                             sKey="itemsFontSize" 
+                                            weightKey="itemsWeight"
                                             min={9} 
                                             max={18} 
                                             descMap={{ 9: "Compact POS", 11: "Standard", 14: "Medium", 18: "Extra Large" }} 
@@ -667,6 +834,7 @@ export default function PrintingSettings() {
                                             label="Grand Total Font Size" 
                                             icon={Receipt} 
                                             sKey="totalFontSize" 
+                                            weightKey="totalWeight"
                                             min={11} 
                                             max={24} 
                                             descMap={{ 11: "Regular", 13: "Standard Highlight", 18: "Bold Large", 24: "Screaming Total" }} 
@@ -675,6 +843,7 @@ export default function PrintingSettings() {
                                             label="Details & Metadata Size" 
                                             icon={FileText} 
                                             sKey="detailsFontSize" 
+                                            weightKey="detailsWeight"
                                             min={8} 
                                             max={14} 
                                             descMap={{ 8: "Dense", 10: "Standard", 14: "Large" }} 
@@ -683,6 +852,7 @@ export default function PrintingSettings() {
                                             label="Greetings Footer Size" 
                                             icon={MessageSquare} 
                                             sKey="greetingFontSize" 
+                                            weightKey="greetingWeight"
                                             min={9} 
                                             max={18} 
                                             descMap={{ 9: "Compact", 12: "Standard", 18: "Large" }} 
@@ -700,6 +870,7 @@ export default function PrintingSettings() {
                                             label="KOT Token Size" 
                                             icon={Clock} 
                                             sKey="kotTokenSize" 
+                                            weightKey="kotTokenWeight"
                                             min={12} 
                                             max={28} 
                                             descMap={{ 12: "Regular", 16: "Standard", 28: "Large Block" }} 
@@ -708,6 +879,7 @@ export default function PrintingSettings() {
                                             label="KOT Items Font Size" 
                                             icon={ChefHat} 
                                             sKey="kotItemsFontSize" 
+                                            weightKey="kotItemsWeight"
                                             min={9} 
                                             max={18} 
                                             descMap={{ 9: "Compact", 11: "Standard Mono", 18: "Spacious Large" }} 
@@ -716,6 +888,7 @@ export default function PrintingSettings() {
                                             label="KOT Quantity Font Size" 
                                             icon={ChefHat} 
                                             sKey="kotQtyFontSize" 
+                                            weightKey="kotQtyWeight"
                                             min={10} 
                                             max={22} 
                                             descMap={{ 10: "Standard", 14: "Bold Standout", 22: "Giant Bold" }} 
@@ -742,7 +915,16 @@ export default function PrintingSettings() {
                                                     itemsFontSize: defaults.itemsFontSize,
                                                     totalFontSize: defaults.totalFontSize,
                                                     greetingFontSize: defaults.greetingFontSize,
-                                                    fontFamily: defaults.fontFamily
+                                                    fontFamily: defaults.fontFamily,
+                                                    fontWeight: defaults.fontWeight,
+                                                    businessNameWeight: defaults.businessNameWeight,
+                                                    businessAddressWeight: defaults.businessAddressWeight,
+                                                    taglineWeight: defaults.taglineWeight,
+                                                    receiptTokenWeight: defaults.receiptTokenWeight,
+                                                    itemsWeight: defaults.itemsWeight,
+                                                    totalWeight: defaults.totalWeight,
+                                                    detailsWeight: defaults.detailsWeight,
+                                                    greetingWeight: defaults.greetingWeight
                                                 }));
                                                 kravy.success();
                                                 toast.success("Receipt typography reset to default!");
@@ -759,7 +941,11 @@ export default function PrintingSettings() {
                                                     kotTokenSize: defaults.kotTokenSize,
                                                     kotItemsFontSize: defaults.kotItemsFontSize,
                                                     kotQtyFontSize: defaults.kotQtyFontSize,
-                                                    kotFontFamily: defaults.kotFontFamily
+                                                    kotFontFamily: defaults.kotFontFamily,
+                                                    kotFontWeight: defaults.kotFontWeight,
+                                                    kotTokenWeight: defaults.kotTokenWeight,
+                                                    kotItemsWeight: defaults.kotItemsWeight,
+                                                    kotQtyWeight: defaults.kotQtyWeight
                                                 }));
                                                 kravy.success();
                                                 toast.success("KOT typography reset to default!");
@@ -776,70 +962,162 @@ export default function PrintingSettings() {
                 </div>
 
                 {/* Right: Live Preview */}
-                <div className="xl:col-span-4 sticky top-24 space-y-6">
-                    <div className="flex items-center justify-between px-4">
-                        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Live Preview</h2>
-                        <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1">
-                            <button 
-                                onClick={() => setPreviewGst(true)}
-                                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${previewGst ? 'bg-white dark:bg-white/10 shadow-sm text-violet-600' : 'text-slate-400'}`}
-                            >
-                                GST
-                            </button>
-                            <button 
-                                onClick={() => setPreviewGst(false)}
-                                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${!previewGst ? 'bg-white dark:bg-white/10 shadow-sm text-violet-600' : 'text-slate-400'}`}
-                            >
-                                Non-GST
-                            </button>
-                        </div>
+                <div className={`xl:col-span-4 xl:sticky xl:top-24 xl:h-[calc(100vh-140px)] flex flex-col w-full relative ${activeTab === 'preview' ? 'block' : 'hidden xl:block'}`}>
+                    
+                    {/* Sleek Vertical/Horizontal Floating Controller Dock - Gutter Positioned on Desktop, Floating on Mobile */}
+                    <div className="absolute xl:-left-16 xl:right-auto right-4 top-4 xl:top-8 flex xl:flex-col flex-row gap-2.5 z-30 select-none bg-slate-900/95 dark:bg-zinc-950/95 backdrop-blur-md border border-slate-800 dark:border-zinc-800/80 rounded-[1.25rem] p-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+                        {/* GST / Non-GST Switcher */}
+                        <button 
+                            onClick={() => setPreviewGst(!previewGst)} 
+                            className={`w-9 h-9 rounded-xl flex flex-col items-center justify-center border font-black transition-all active:scale-90 outline-none ${
+                                previewGst 
+                                ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-600/30' 
+                                : 'bg-slate-800 dark:bg-zinc-900 border-slate-700 dark:border-zinc-800 text-slate-400'
+                            }`}
+                            title="Toggle GST / Non-GST Mode"
+                        >
+                            <span className="leading-none text-[8px] uppercase">GST</span>
+                            <span className="text-[6px] font-bold opacity-80 mt-0.5">{previewGst ? 'ON' : 'OFF'}</span>
+                        </button>
+
+                        {/* Paper Width 58mm / 80mm Switcher */}
+                        <button 
+                            onClick={() => setPrintSettings((p: any) => ({ ...p, paperWidth: printSettings.paperWidth === '80mm' ? '58mm' : '80mm' }))} 
+                            className="w-9 h-9 rounded-xl flex flex-col items-center justify-center border font-black transition-all active:scale-90 outline-none bg-slate-800 dark:bg-zinc-900 border-slate-700 dark:border-zinc-800 text-slate-300 hover:text-white"
+                            title="Toggle Paper Width (58mm / 80mm)"
+                        >
+                            <span className="leading-none text-[8px] uppercase">SIZE</span>
+                            <span className="text-[7px] font-bold mt-0.5">{printSettings.paperWidth === '80mm' ? '3"' : '2"'}</span>
+                        </button>
+
+                        {/* Separator line */}
+                        <div className="xl:w-full xl:h-[1px] w-[1px] h-6 bg-slate-800 dark:bg-zinc-800 my-0.5" />
+
+                        {/* Zoom In */}
+                        <button
+                            type="button"
+                            onClick={() => setPreviewZoom(z => Math.min(1.5, Number((z + 0.05).toFixed(2))))}
+                            className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-300 flex items-center justify-center font-bold text-sm transition-all active:scale-90 outline-none"
+                            title="Zoom In"
+                        >
+                            +
+                        </button>
+                        
+                        {/* Percentage Indicator */}
+                        <span className="text-[8px] font-black text-slate-400 select-none py-0.5 xl:block hidden text-center">
+                            {Math.round(previewZoom * 100)}%
+                        </span>
+
+                        {/* Zoom Out */}
+                        <button
+                            type="button"
+                            onClick={() => setPreviewZoom(z => Math.max(0.5, Number((z - 0.05).toFixed(2))))}
+                            className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-300 flex items-center justify-center font-bold text-sm transition-all active:scale-90 outline-none"
+                            title="Zoom Out"
+                        >
+                            -
+                        </button>
+
+                        {/* Reset Zoom */}
+                        <button
+                            type="button"
+                            onClick={() => setPreviewZoom(0.95)}
+                            className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-200 flex items-center justify-center transition-all active:scale-90 outline-none"
+                            title="Reset Zoom"
+                        >
+                            <RefreshCw size={11} />
+                        </button>
                     </div>
 
-                    <div className="bg-slate-200/50 dark:bg-black/40 rounded-[2.5rem] p-8 border border-slate-300 dark:border-white/10 shadow-inner flex flex-col items-center gap-10 min-h-[600px] overflow-hidden">
+                    <div className="bg-slate-950 dark:bg-black rounded-[2.5rem] border border-slate-800 dark:border-zinc-800/80 shadow-2xl flex-1 flex flex-col relative overflow-hidden">
                         
-                        {/* THE PREVIEW WRAPPER */}
-                        <div 
-                            className={`flex flex-col gap-8 w-full transition-all duration-300 border-x-2 border-dashed border-slate-400/20 px-4 relative ${
-                                printSettings.paperWidth === '80mm' ? 'max-w-[330px]' : 'max-w-[260px]'
-                            }`}
-                        >
-                            {/* Width Badge Indicator */}
-                            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-violet-600 text-white font-black text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg whitespace-nowrap">
-                                {printSettings.paperWidth === '80mm' ? '80mm (3") Printable Width' : '58mm (2") Printable Width'}
+                        {/* Realistic Thermal Printer Dispenser Top-Bezel Mockup */}
+                        <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-b border-slate-800 px-4 py-3.5 flex items-center justify-between shadow-[0_4px_12px_rgba(0,0,0,0.6)] z-10 select-none relative h-12 shrink-0">
+                            <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]" />
+                                <span className="text-[9px] font-black tracking-[0.2em] text-slate-200 uppercase">PRINTER ON-LINE</span>
                             </div>
+                            
+                            {/* Realistic metallic dispenser cut line */}
+                            <div className="w-16 h-1 bg-slate-800 rounded-full border border-slate-700 shadow-inner opacity-60" />
+                            
+                            <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[8px] font-black tracking-wider text-slate-400 uppercase">
+                                {printSettings.paperWidth === '80mm' ? '80MM / 3"' : '58MM / 2"'}
+                            </span>
+                        </div>
+                        
+                        {/* Feed Dispenser Cut slot */}
+                        <div className="h-1 bg-black border-b border-slate-900 relative z-10 shadow-[inset_0_2px_4px_rgba(0,0,0,1)] shrink-0" />
 
-                            {/* Bill Preview */}
-                            <div className="space-y-3 mt-4">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Customer Receipt</p>
-                                <div className="bg-white p-4 rounded-lg shadow-2xl scale-[0.95] origin-top">
+                        {/* Interactive Paper Tray Area (Fully Height Adaptive) */}
+                        <div className="flex-1 overflow-y-auto overflow-x-hidden pt-4 pb-12 px-4 flex flex-col items-center scrollbar-none">
+                            
+                            {/* THE PREVIEW WRAPPER */}
+                            <div 
+                                className={`flex flex-col w-full transition-all duration-300 relative ${
+                                    printSettings.paperWidth === '80mm' ? 'max-w-[340px]' : 'max-w-[270px]'
+                                }`}
+                            >
+                                {/* Bill Preview with Smooth Transform Scale */}
+                                <div className="w-full origin-top transition-transform duration-200" style={{ transform: `scale(${previewZoom})` }}>
                                    <PrintTemplates {...dummyProps} />
-                                   {/* Manual Overrides for CSS to show in preview instead of hidden */}
+                                   
+                                   {/* Advanced Receipt Mockup CSS Overrides */}
                                    <style dangerouslySetInnerHTML={{ __html: `
                                         .hidden-print .receipt, .hidden-print .kot { 
                                             display: block !important; 
                                             width: 100% !important;
-                                            box-shadow: none !important;
-                                            padding: 0 !important;
-                                            visibility: visible !important;
-                                            opacity: 1 !important;
+                                            background-color: #fafbf9 !important;
+                                            color: #111413 !important;
+                                            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.35), 0 10px 15px -6px rgba(0, 0, 0, 0.25) !important;
+                                            padding: 24px 16px !important;
+                                            margin-bottom: 40px !important;
+                                            position: relative !important;
+                                            border: none !important;
+                                            clip-path: polygon(
+                                              0% 4px, 2% 0px, 4% 4px, 6% 0px, 8% 4px, 10% 0px, 12% 4px, 14% 0px, 16% 4px, 18% 0px, 20% 4px, 22% 0px, 24% 4px, 26% 0px, 28% 4px, 30% 0px, 32% 4px, 34% 0px, 36% 4px, 38% 0px, 40% 4px, 42% 0px, 44% 4px, 46% 0px, 48% 4px, 50% 0px, 52% 4px, 54% 0px, 56% 4px, 58% 0px, 60% 4px, 62% 0px, 64% 4px, 66% 0px, 68% 4px, 70% 0px, 72% 4px, 74% 0px, 76% 4px, 78% 0px, 80% 4px, 82% 0px, 84% 4px, 86% 0px, 88% 4px, 90% 0px, 92% 4px, 94% 0px, 96% 4px, 98% 0px, 100% 4px,
+                                              100% calc(100% - 4px), 98% 100%, 96% calc(100% - 4px), 94% 100%, 92% calc(100% - 4px), 90% 100%, 88% calc(100% - 4px), 86% 100%, 84% calc(100% - 4px), 82% 100%, 80% calc(100% - 4px), 78% 100%, 76% calc(100% - 4px), 74% 100%, 72% calc(100% - 4px), 70% 100%, 68% calc(100% - 4px), 66% 100%, 64% calc(100% - 4px), 62% 100%, 60% calc(100% - 4px), 58% 100%, 56% calc(100% - 4px), 55% 100%, 52% calc(100% - 4px), 50% 100%, 48% calc(100% - 4px), 46% 100%, 44% calc(100% - 4px), 42% 100%, 40% calc(100% - 4px), 38% 100%, 36% calc(100% - 4px), 34% 100%, 32% calc(100% - 4px), 30% 100%, 28% calc(100% - 4px), 26% 100%, 24% calc(100% - 4px), 22% 100%, 20% calc(100% - 4px), 19% 100%, 18% calc(100% - 4px), 16% 100%, 14% calc(100% - 4px), 13% 100%, 12% calc(100% - 4px), 10% 100%, 8% calc(100% - 4px), 6% 100%, 4% calc(100% - 4px), 2% 100%, 0% calc(100% - 4px)
+                                            ) !important;
                                         }
-                                        .hidden-print .receipt { margin-bottom: 20px !important; border-bottom: 2px dashed #000; }
+                                        .hidden-print .receipt::before, .hidden-print .kot::before {
+                                            content: '';
+                                            position: absolute;
+                                            top: 0;
+                                            left: 0;
+                                            right: 0;
+                                            height: 4px;
+                                            background: linear-gradient(to bottom, rgba(0,0,0,0.03), transparent);
+                                            pointer-events: none;
+                                        }
                                    `}} />
                                 </div>
-                            </div>
-                            
-                            {/* KOT Preview is included in PrintTemplates, the CSS above shows both */}
-                            <div className="text-center">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Kitchen KOT Above</p>
                             </div>
                         </div>
                     </div>
                     
-                    <p className="text-center text-[10px] text-slate-400 font-bold px-10 leading-relaxed uppercase tracking-widest">
-                        * Note: Preview might look slightly different from actual 58mm thermal print.
+                    <p className="text-center text-[10px] text-slate-500 font-bold px-10 leading-relaxed uppercase tracking-widest select-none">
+                        * Note: Preview shows actual thermal printer slot behavior.
                     </p>
                 </div>
-            </div>
+        
+            <AnimatePresence>
+                {showFloatSave && (
+                    <motion.button
+                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 50, scale: 0.9 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 h-14 px-8 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black uppercase tracking-widest text-xs flex items-center gap-3 shadow-[0_10px_35px_rgba(124,58,237,0.5)] border border-violet-500/30 hover:scale-105 active:scale-95 disabled:opacity-50 transition-all select-none group"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                            <Save size={14} className="text-white" />
+                        </div>
+                        <span>{saving ? "Saving..." : "Save Preferences"}</span>
+                    </motion.button>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

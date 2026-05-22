@@ -60,6 +60,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
 
   const fontFamilyVal = ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   const kotFontFamilyVal = ps.kotFontFamily || '"Courier New", Courier, monospace';
+  const fontWeightVal = ps.fontWeight || '';
+  const kotFontWeightVal = ps.kotFontWeight || '';
   
   // Custom font size resolver with min/max safety constraints
   const getClamped = (val: any, def: number, min: number, max: number) => {
@@ -128,6 +130,16 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
       .receipt-container { width: ${paperWidthStr} !important; margin: 0 auto !important; }
       .kot-container { width: ${paperWidthStr} !important; margin: 0 auto !important; }
     }
+    ${fontWeightVal ? `
+    .receipt-container-dynamic, .receipt-container-dynamic * {
+      font-weight: ${fontWeightVal} !important;
+    }
+    ` : ''}
+    ${kotFontWeightVal ? `
+    .kot-container-dynamic, .kot-container-dynamic * {
+      font-weight: ${kotFontWeightVal} !important;
+    }
+    ` : ''}
   `;
 
   return (
@@ -170,14 +182,20 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         )}
         <div 
           className="text-center font-bold leading-tight mb-1"
-          style={{ fontSize: 'var(--r-business-size)' }}
+          style={{ 
+            fontSize: 'var(--r-business-size)',
+            fontWeight: ps.businessNameWeight || undefined
+          }}
         >
           {business?.businessName}
         </div>
         {(business?.businessTagLine && s('showTagline')) && (
           <div 
             className="text-center font-bold italic opacity-90 mb-1 leading-none uppercase tracking-tight"
-            style={{ fontSize: 'var(--r-tagline-size)' }}
+            style={{ 
+              fontSize: 'var(--r-tagline-size)',
+              fontWeight: ps.taglineWeight || undefined
+            }}
           >
             {business.businessTagLine}
           </div>
@@ -185,7 +203,10 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         {((business?.businessAddress || business?.district || business?.state || business?.pinCode) && s('showAddress')) && (
           <div 
             className="text-center font-bold leading-tight mt-1"
-            style={{ fontSize: 'var(--r-address-size)' }}
+            style={{ 
+              fontSize: 'var(--r-address-size)',
+              fontWeight: ps.businessAddressWeight || undefined
+            }}
           >
             {business?.businessAddress}
             {business?.district && `, ${business.district}`}
@@ -194,17 +215,17 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         )}
         {((business?.contactPersonPhone || business?.contactPhone || business?.businessPhone) && s('showContact')) && (
-          <div className="text-center font-bold mt-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
+          <div className="text-center font-bold mt-0.5" style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
             {business?.phonePrefixType?.toString().toUpperCase() === 'SYMBOL' ? '📞 ' : 'Mob: '} {business.contactPersonPhone || business.contactPhone || business.businessPhone}
           </div>
         )}
         {(business?.gstNumber && s('showGST')) && (
-          <div className="text-center font-bold border-y border-black py-1 mt-2 mb-1" style={{ fontSize: 'var(--r-details-size)' }}>
+          <div className="text-center font-bold border-y border-black py-1 mt-2 mb-1" style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
             GSTIN: {business.gstNumber}
           </div>
         )}
         {(business?.fssaiNumber && business?.fssaiEnabled && s('showFSSAI')) && (
-          <div className="text-center font-bold mt-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
+          <div className="text-center font-bold mt-0.5" style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
             FSSAI: {business.fssaiNumber}
           </div>
         )}
@@ -238,8 +259,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           if (displayToken && s('showToken')) {
             return (
               <div style={{ textAlign: 'center', margin: '10px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '6px 0' }}>
-                <div style={{ fontSize: 'calc(var(--r-details-size) - 1px)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Token No.</div>
-                <div style={{ fontSize: 'var(--r-token-size)', fontWeight: '900', lineHeight: '1', marginTop: '4px' }}>#{displayToken}</div>
+                <div style={{ fontSize: 'calc(var(--r-details-size) - 1px)', fontWeight: ps.receiptTokenWeight || '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Token No.</div>
+                <div style={{ fontSize: 'var(--r-token-size)', fontWeight: ps.receiptTokenWeight || '900', lineHeight: '1', marginTop: '4px' }}>#{displayToken}</div>
               </div>
             );
           }
@@ -247,7 +268,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         })()}
 
         {((customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && s('showCustomerDetails')) && (
-          <div className={`mt-2 font-black ${s('sepCustomer') ? 'border-t-2 border-dashed border-black' : ''} pt-1`} style={{ fontSize: 'var(--r-details-size)' }}>
+          <div className={`mt-2 font-black ${s('sepCustomer') ? 'border-t-2 border-dashed border-black' : ''} pt-1`} style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
             {customerName && <div>Customer: {customerName}</div>}
             {customerPhone && <div>Phone: {customerPhone}</div>}
             {buyerGSTIN && <div className="uppercase">Buyer GST: {buyerGSTIN}</div>}
@@ -256,11 +277,11 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         )}
 
-        <div className="mt-1 text-center font-bold" style={{ fontSize: 'var(--r-details-size)' }}>
+        <div className="mt-1 text-center font-bold" style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
           {placeOfSupply && <div>Place of Supply: {placeOfSupply}</div>}
         </div>
         
-        <div className={`flex justify-between font-bold uppercase ${s('sepItemsHeader') ? 'border-b border-dashed border-black py-1 my-1' : 'my-1'}`} style={{ fontSize: 'var(--r-details-size)' }}>
+        <div className={`flex justify-between font-bold uppercase ${s('sepItemsHeader') ? 'border-b border-dashed border-black py-1 my-1' : 'my-1'}`} style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.itemsWeight || undefined }}>
           <span className="flex-1 min-w-0 pr-1">Item Description</span>
           {is80 && <span className="w-[22mm] text-center shrink-0 pr-2">Qty x Rate</span>}
           <span className="w-[12mm] text-right shrink-0">Total</span>
@@ -272,7 +293,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             <div key={idx} className="mb-2 border-b border-dotted border-black/20 pb-1" style={{ fontSize: 'var(--r-items-size)' }}>
               {is80 ? (
                 /* Spacious 80mm/3-inch Row Design: Proper columns */
-                <div className="flex justify-between items-start font-bold">
+                <div className="flex justify-between items-start font-bold" style={{ fontWeight: ps.itemsWeight || undefined }}>
                   <span className="flex-1 min-w-0 pr-1 break-words leading-[1.2]">
                     {s('showFoodTypeSuffix') ? i.name : i.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
                     {((business?.hsnEnabled && i.hsnCode) ? ` (HSN: ${i.hsnCode})` : "")}
@@ -283,13 +304,13 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               ) : (
                 /* Compact 58mm/2-inch Row Design */
                 <>
-                  <div className="flex justify-between items-start font-bold">
+                  <div className="flex justify-between items-start font-bold" style={{ fontWeight: ps.itemsWeight || undefined }}>
                     <span className="flex-1 min-w-0 pr-1 break-words leading-[1.2]">
                       {s('showFoodTypeSuffix') ? i.name : i.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
                     </span>
                     <span className="w-[12mm] text-right shrink-0">₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center font-bold mt-0.5" style={{ fontSize: 'calc(var(--r-items-size) - 1px)' }}>
+                  <div className="flex justify-between items-center font-bold mt-0.5" style={{ fontSize: 'calc(var(--r-items-size) - 1px)', fontWeight: ps.itemsWeight || undefined }}>
                     <span>{i.qty} x ₹{Number(i.rate ?? 0).toFixed(2)}</span>
                     <span className="font-bold">
                       {((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} 
@@ -354,7 +375,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           {s('sepTotalTop') && <div className="border-t-2 border-dashed border-black my-1" />}
           <div 
             className={`flex justify-between font-black ${s('sepTotalBottom') ? 'border-y-2 border-black py-2 my-1.5' : 'my-1.5'} uppercase bg-white px-1`} 
-            style={{ fontSize: 'var(--r-total-size)' }}
+            style={{ fontSize: 'var(--r-total-size)', fontWeight: ps.totalWeight || undefined }}
           >
             <span>GRAND TOTAL</span>
             <span>₹{finalTotal.toFixed(2)}</span>
@@ -485,7 +506,10 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
 
         <div className={`mt-4 ${s('sepFooter') ? 'border-t-2 border-black' : ''} pt-2 text-center`}>
           {s('showGreetings') && (
-            <div className="font-black italic tracking-widest uppercase mb-1" style={{ fontSize: 'var(--r-greeting-size)' }}>
+            <div 
+              className="font-black italic tracking-widest uppercase mb-1" 
+              style={{ fontSize: 'var(--r-greeting-size)', fontWeight: ps.greetingWeight || undefined }}
+            >
               {business?.greetingMessage || "Thank You!"}
             </div>
           )}
@@ -524,7 +548,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               <div style={{ fontSize: 'calc(var(--k-items-size) - 3px)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Token No.</div>
               <div 
                 className="font-black"
-                style={{ fontSize: 'var(--k-token-size)' }}
+                style={{ fontSize: 'var(--k-token-size)', fontWeight: ps.kotTokenWeight || undefined }}
               >
                 #{(() => {
                   if (tokenNumber != null && tokenNumber !== "" && tokenNumber !== "---") {
@@ -559,7 +583,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               const newItems = items.filter(i => i.isNew);
               const itemsToPrint = newItems.length > 0 ? newItems : items;
               return itemsToPrint.map((i, idx) => (
-                <tr key={idx} className="border-b border-dotted border-black/30">
+                <tr key={idx} className="border-b border-dotted border-black/30" style={{ fontWeight: ps.kotItemsWeight || undefined }}>
                   <td className="py-2 pr-2 leading-[1.1] uppercase">
                   {s('showFoodTypeSuffix') ? i.name : i.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
                      {i.variants && i.variants.length > 0 && (
@@ -568,7 +592,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                        </div>
                      )}
                   </td>
-                  <td className="text-right py-2 align-top font-black" style={{ fontSize: 'var(--k-qty-size)' }}>x{i.qty}</td>
+                  <td className="text-right py-2 align-top font-black" style={{ fontSize: 'var(--k-qty-size)', fontWeight: ps.kotQtyWeight || undefined }}>x{i.qty}</td>
                 </tr>
               ));
             })()}
