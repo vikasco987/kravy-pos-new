@@ -1379,7 +1379,7 @@ export default function CheckoutClient() {
     console.log("PRINT TRIGGERED - KOT:", isKOTEnabled);
 
     const ps = (business as any)?.printSettings || {};
-    const spoolerDelay = ps.spoolerDelay !== undefined && ps.spoolerDelay !== null ? Number(ps.spoolerDelay) : 1500;
+    const spoolerDelay = ps.spoolerDelay !== undefined && ps.spoolerDelay !== null ? Number(ps.spoolerDelay) : 2500;
 
     if (isKOTEnabled && kotHtml) {
       runPrintJob("kot", kotHtml, () => {
@@ -1511,9 +1511,10 @@ export default function CheckoutClient() {
     const containerId = `print-container-${type}`;
     const styleId = `print-style-${type}`;
 
-    // Clean any existing ones
-    document.getElementById(containerId)?.remove();
-    document.getElementById(styleId)?.remove();
+    // Clean ALL potential print containers and styles to prevent CSS conflicts
+    document.querySelectorAll("[id^='print-container-']").forEach(el => el.remove());
+    document.querySelectorAll("[id^='print-style-']").forEach(el => el.remove());
+    document.getElementById("print-receipt-container")?.remove();
 
     const ps = (business as any)?.printSettings || {};
     const is80 = ps.paperWidth === '80mm';
@@ -1590,55 +1591,55 @@ export default function CheckoutClient() {
           color: #000 !important;
           position: relative !important;
           box-sizing: border-box !important;
-          ${is80 ? '' : `
+          \${is80 ? '' : \`
           page-break-after: always !important;
           break-after: page !important;
-          `}
+          \`}
         }
 
         /* Inject CSS custom variables to override custom elements correctly */
-        #${containerId}.receipt-container-dynamic {
-          --r-font-family: ${fontFamilyVal};
-          --r-business-size: ${finalBusinessNameSize}px;
-          --r-address-size: ${finalAddressSize}px;
-          --r-tagline-size: ${taglineSize}px;
-          --r-items-size: ${itemsFontSize}px;
-          --r-total-size: ${totalFontSize}px;
-          --r-token-size: ${receiptTokenSize}px;
-          --r-details-size: ${detailsFontSize}px;
-          --r-greeting-size: ${greetingFontSize}px;
+        #\${containerId}.receipt-container-dynamic {
+          --r-font-family: \${fontFamilyVal};
+          --r-business-size: \${finalBusinessNameSize}px;
+          --r-address-size: \${finalAddressSize}px;
+          --r-tagline-size: \${taglineSize}px;
+          --r-items-size: \${itemsFontSize}px;
+          --r-total-size: \${totalFontSize}px;
+          --r-token-size: \${receiptTokenSize}px;
+          --r-details-size: \${detailsFontSize}px;
+          --r-greeting-size: \${greetingFontSize}px;
           font-family: var(--r-font-family) !important;
           font-size: var(--r-details-size) !important;
         }
 
-        #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
+        #\${containerId}.receipt-container-dynamic, #\${containerId}.receipt-container-dynamic * {
           font-family: var(--r-font-family) !important;
         }
 
-        #${containerId}.kot-container-dynamic {
-          --k-font-family: ${kotFontFamilyVal};
-          --k-items-size: ${kotItemsFontSize}px;
-          --k-qty-size: ${kotQtyFontSize}px;
-          --k-token-size: ${kotTokenSize}px;
+        #\${containerId}.kot-container-dynamic {
+          --k-font-family: \${kotFontFamilyVal};
+          --k-items-size: \${kotItemsFontSize}px;
+          --k-qty-size: \${kotQtyFontSize}px;
+          --k-token-size: \${kotTokenSize}px;
           font-family: var(--k-font-family) !important;
           font-size: var(--k-items-size) !important;
         }
 
-        #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
+        #\${containerId}.kot-container-dynamic, #\${containerId}.kot-container-dynamic * {
           font-family: var(--k-font-family) !important;
         }
 
-        ${fontWeightVal ? `
-        #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
-          font-weight: ${fontWeightVal} !important;
+        \${fontWeightVal ? \`
+        #\${containerId}.receipt-container-dynamic, #\${containerId}.receipt-container-dynamic * {
+          font-weight: \${fontWeightVal} !important;
         }
-        ` : ''}
+        \` : ''}
 
-        ${kotFontWeightVal ? `
-        #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
-          font-weight: ${kotFontWeightVal} !important;
+        \${kotFontWeightVal ? \`
+        #\${containerId}.kot-container-dynamic, #\${containerId}.kot-container-dynamic * {
+          font-weight: \${kotFontWeightVal} !important;
         }
-        ` : ''}
+        \` : ''}
 
         * { 
           color: #000 !important; 
@@ -1651,7 +1652,7 @@ export default function CheckoutClient() {
           display: block !important;
         }
       }
-    `;
+    \`;
     document.head.appendChild(style);
 
     // Create Container
@@ -1665,17 +1666,29 @@ export default function CheckoutClient() {
 
     if (type === "kot") setIsKotPrinted(true);
 
-    // Give more time (300ms) for items to render and images to prepare
-    setTimeout(() => {
-      window.print();
-      
-      // Delay cleanup to ensure spooler finishes reading the DOM
+    // Dynamic Image Preloader: Ensure all images are 100% loaded before showing the print dialog
+    const images = container.querySelectorAll("img");
+    const imagePromises = Array.from(images).map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve(); // continue even if an image fails
+      });
+    });
+
+    Promise.all(imagePromises).then(() => {
+      // Give more time (300ms) for items to render and images to prepare
       setTimeout(() => {
-        if (document.body.contains(container)) container.remove();
-        if (document.head.contains(style)) style.remove();
-        if (callback) callback();
-      }, 2500); 
-    }, 300);
+        window.print();
+        
+        // Delay cleanup to ensure spooler finishes reading the DOM
+        setTimeout(() => {
+          if (document.body.contains(container)) container.remove();
+          if (document.head.contains(style)) style.remove();
+          if (callback) callback();
+        }, 2500); 
+      }, 300);
+    });
   };
 
   /* ================= QUICK ADD ITEM ================= */
