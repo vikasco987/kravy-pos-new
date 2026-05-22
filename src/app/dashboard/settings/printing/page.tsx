@@ -209,23 +209,11 @@ export default function PrintingSettings() {
     const [previewGst, setPreviewGst] = useState(true);
     const [showStyling, setShowStyling] = useState(true);
     const [printSettings, setPrintSettings] = useState<any>({ ...defaults });
+    const [originalSettings, setOriginalSettings] = useState<any>(null);
     const [previewZoom, setPreviewZoom] = useState(0.95);
     const [activeTab, setActiveTab] = useState<"configure" | "preview">("configure");
-    const [showFloatSave, setShowFloatSave] = useState(false);
 
     const receiptRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            if (window.scrollY > 150) {
-                setShowFloatSave(true);
-            } else {
-                setShowFloatSave(false);
-            }
-        };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
     const kotRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -234,12 +222,12 @@ export default function PrintingSettings() {
             .then(data => {
                 if (data) {
                     setBusiness(data);
-                    if (data.printSettings) {
-                        setPrintSettings({
-                            ...printSettings,
-                            ...data.printSettings
-                        });
-                    }
+                    const merged = {
+                        ...defaults,
+                        ...(data.printSettings || {})
+                    };
+                    setPrintSettings(merged);
+                    setOriginalSettings(merged);
                 }
             })
             .catch(() => toast.error("Failed to load settings"))
@@ -254,10 +242,11 @@ export default function PrintingSettings() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ 
                     printSettings,
-                    reviewUrl: business.reviewUrl 
+                    reviewUrl: business?.reviewUrl || "" 
                 }),
             });
             if (res.ok) {
+                setOriginalSettings(printSettings);
                 kravy.success();
                 toast.success("Printing preferences saved!");
             } else {
@@ -269,6 +258,8 @@ export default function PrintingSettings() {
             setSaving(false);
         }
     };
+
+    const isDirty = originalSettings ? JSON.stringify(printSettings) !== JSON.stringify(originalSettings) : false;
 
     const toggle = (key: string) => {
         setPrintSettings((prev: any) => ({ ...prev, [key]: !prev[key] }));
@@ -1099,24 +1090,49 @@ export default function PrintingSettings() {
                         * Note: Preview shows actual thermal printer slot behavior.
                     </p>
                 </div>
+            </div> {/* Closing the grid grid-cols-12 */}
         
             <AnimatePresence>
-                {showFloatSave && (
-                    <motion.button
-                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 50, scale: 0.9 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 h-14 px-8 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black uppercase tracking-widest text-xs flex items-center gap-3 shadow-[0_10px_35px_rgba(124,58,237,0.5)] border border-violet-500/30 hover:scale-105 active:scale-95 disabled:opacity-50 transition-all select-none group"
-                    >
-                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                <motion.button
+                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    onClick={handleSave}
+                    disabled={saving}
+                    className={`fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 h-14 px-8 rounded-full flex items-center gap-3 border transition-all select-none group ${
+                        isDirty
+                        ? "bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 text-white shadow-[0_10px_35px_rgba(139,92,246,0.4)] border-violet-500/30 hover:scale-105 active:scale-95 cursor-pointer"
+                        : "bg-slate-900/90 dark:bg-zinc-950/90 backdrop-blur-md text-emerald-400 border-emerald-500/20 shadow-lg hover:scale-102 cursor-default"
+                    } disabled:opacity-50`}
+                >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                        isDirty 
+                        ? "bg-white/10 group-hover:rotate-12" 
+                        : "bg-emerald-500/10"
+                    }`}>
+                        {isDirty ? (
                             <Save size={14} className="text-white" />
-                        </div>
-                        <span>{saving ? "Saving..." : "Save Preferences"}</span>
-                    </motion.button>
-                )}
+                        ) : (
+                            <Check size={14} className="text-emerald-400" />
+                        )}
+                    </div>
+                    <span className="font-black uppercase tracking-widest text-xs">
+                        {saving 
+                            ? "Saving..." 
+                            : isDirty 
+                                ? "Save Preferences" 
+                                : "Preferences Saved"
+                        }
+                    </span>
+                    
+                    {/* Subtle pulsing indicator ring for unsaved changes */}
+                    {isDirty && (
+                        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-fuchsia-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-fuchsia-500"></span>
+                        </span>
+                    )}
+                </motion.button>
             </AnimatePresence>
         </div>
     );
