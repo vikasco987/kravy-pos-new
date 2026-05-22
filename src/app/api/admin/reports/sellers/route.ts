@@ -1,53 +1,92 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
-    // Check if user is admin (Optional but recommended)
-    // const effectiveId = await getEffectiveClerkId();
-    // const user = await prisma.user.findUnique({ where: { clerkId: effectiveId } });
-    // if (user?.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Use $queryRaw to skip rows where createdAt IS NULL (bad legacy data)
+    // which causes Prisma P2032 type-conversion crash on findMany
+    const rawSellers = await prisma.$queryRaw<
+      {
+        id: string;
+        clerkId: string;
+        name: string | null;
+        email: string | null;
+        role: string;
+        createdAt: Date | null;
+      }[]
+    >`
+      SELECT id, "clerkId", name, email, role, "createdAt"
+      FROM "User"
+      WHERE (role = 'SELLER' OR role = 'USER')
+        AND "createdAt" IS NOT NULL
+    `;
 
-    const sellers = await prisma.user.findMany({
-      where: {
-        OR: [
-          { role: "SELLER" },
-          { role: "USER" },
-        ],
-      },
-      include: {
-        profiles: true,
-        _count: {
-          select: { bills: { where: { isDeleted: false } } }
+    if (!rawSellers || rawSellers.length === 0) {
+      return NextResponse.json({
+        sellers: [],
+        stats: {
+          totalMerchants: 0,
+          activeMerchants: 0,
+          inactiveMerchants: 0,
+          totalRevenue: 0,
+          totalBills: 0,
         },
-        bills: {
-          where: { isDeleted: false },
-          orderBy: { createdAt: "desc" },
-          take: 1, // Only need the latest bill for status
-        }
-      },
-    });
+      });
+    }
 
-    // Optimization: Get all revenue in one go
+    const clerkIds = rawSellers.map((s) => s.clerkId);
+
+    // Fetch business profiles for these users
+    const profiles = await prisma.businessProfile.findMany({
+      where: { clerkUserId: { in: clerkIds } },
+      select: { clerkUserId: true, businessName: true },
+    });
+    const profileMap = Object.fromEntries(
+      profiles.map((p) => [p.clerkUserId, p.businessName])
+    );
+
+    // Fetch bill counts per user
+    const billCounts = await prisma.billManager.groupBy({
+      by: ["clerkUserId"],
+      where: { isDeleted: false, clerkUserId: { in: clerkIds } },
+      _count: { id: true },
+    });
+    const billCountMap = Object.fromEntries(
+      billCounts.map((b) => [b.clerkUserId, b._count.id])
+    );
+
+    // Fetch total revenue per user
     const revenueStats = await prisma.billManager.groupBy({
-      by: ['clerkUserId'],
-      where: { isDeleted: false },
-      _sum: { total: true }
+      by: ["clerkUserId"],
+      where: { isDeleted: false, clerkUserId: { in: clerkIds } },
+      _sum: { total: true },
     });
-    const revenueMap = Object.fromEntries(revenueStats.map(s => [s.clerkUserId, s._sum.total || 0]));
+    const revenueMap = Object.fromEntries(
+      revenueStats.map((s) => [s.clerkUserId, s._sum.total || 0])
+    );
 
-    const reportData = sellers.map((seller) => {
-      const profile = seller.profiles[0];
-      const businessName = profile?.businessName || seller.name || "Unknown Business";
-      const totalBills = seller._count.bills;
+    // Fetch latest bill date per user
+    const latestBills = await prisma.billManager.findMany({
+      where: { isDeleted: false, clerkUserId: { in: clerkIds } },
+      orderBy: { createdAt: "desc" },
+      select: { clerkUserId: true, createdAt: true },
+      distinct: ["clerkUserId"],
+    });
+    const lastBillMap = Object.fromEntries(
+      latestBills.map((b) => [b.clerkUserId, b.createdAt])
+    );
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const reportData = rawSellers.map((seller) => {
+      const businessName =
+        profileMap[seller.clerkId] || seller.name || "Unknown Business";
+      const totalBills = billCountMap[seller.clerkId] || 0;
       const totalRevenue = revenueMap[seller.clerkId] || 0;
-      const lastBillDate = seller.bills.length > 0 ? seller.bills[0].createdAt : null;
-      
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const lastBillDate = lastBillMap[seller.clerkId] || null;
       const isActive = lastBillDate && lastBillDate > sevenDaysAgo;
 
       return {
@@ -61,7 +100,6 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // Summary Stats
     const stats = {
       totalMerchants: reportData.length,
       activeMerchants: reportData.filter((s) => s.status === "ACTIVE").length,

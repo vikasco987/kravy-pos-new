@@ -58,6 +58,9 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
   const paperWidthStr = is80 ? '80mm' : '58mm';
   const printableWidthStr = is80 ? '70mm' : '48mm';
 
+  // Thermal safety feed spacing
+  const paperBottomPaddingVal = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
+
   const fontFamilyVal = ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   const kotFontFamilyVal = ps.kotFontFamily || '"Courier New", Courier, monospace';
   const fontWeightVal = ps.fontWeight || '';
@@ -115,6 +118,9 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
       font-family: var(--r-font-family) !important;
       font-size: var(--r-details-size);
     }
+    .receipt-container-dynamic, .receipt-container-dynamic * {
+      font-family: var(--r-font-family) !important;
+    }
     .kot-container-dynamic {
       --k-font-family: ${kotFontFamilyVal};
       --k-items-size: ${kotItemsFontSize}px;
@@ -123,12 +129,25 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
       font-family: var(--k-font-family) !important;
       font-size: var(--k-items-size);
     }
+    .kot-container-dynamic, .kot-container-dynamic * {
+      font-family: var(--k-font-family) !important;
+    }
     
     @media print {
       @page { margin: 0 !important; }
       body { margin: 0 !important; padding: 0 !important; }
-      .receipt-container { width: ${paperWidthStr} !important; margin: 0 auto !important; }
-      .kot-container { width: ${paperWidthStr} !important; margin: 0 auto !important; }
+      .receipt-container { 
+        width: ${paperWidthStr} !important; 
+        margin: 0 auto !important; 
+        page-break-after: always !important;
+        break-after: page !important;
+      }
+      .kot-container { 
+        width: ${paperWidthStr} !important; 
+        margin: 0 auto !important; 
+        page-break-after: always !important;
+        break-after: page !important;
+      }
     }
     ${fontWeightVal ? `
     .receipt-container-dynamic, .receipt-container-dynamic * {
@@ -155,7 +174,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         style={{ 
           width: printableWidthStr, 
           margin: '0 auto',
-          padding: is80 ? '0mm 4mm 8mm 4mm' : '0mm 2mm 8mm 2mm', 
+          padding: is80 ? `0mm 4mm ${paperBottomPaddingVal} 4mm` : `0mm 2mm ${paperBottomPaddingVal} 2mm`, 
           boxSizing: 'border-box',
           WebkitFontSmoothing: 'antialiased',
           overflow: 'hidden',
@@ -526,7 +545,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         style={{ 
           width: printableWidthStr, 
           margin: '0 auto', 
-          padding: is80 ? '0mm 4mm 8mm 4mm' : '0mm 2mm 8mm 2mm', 
+          padding: is80 ? `0mm 4mm ${paperBottomPaddingVal} 4mm` : `0mm 2mm ${paperBottomPaddingVal} 2mm`, 
           boxSizing: 'border-box', 
           overflow: 'hidden',
           // KOT safety features

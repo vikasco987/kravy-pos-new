@@ -34,6 +34,7 @@ interface BillPreviewProps {
   finalTotal: number;
   paymentMode: string;
   paymentStatus: string;
+  upiTxnRef?: string;
   qrUrl: string;
   numberToWords: (num: number) => string;
   kravy: any;
@@ -58,13 +59,74 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
     orderNotes, placeOfSupply, items, subtotal, discountAmt, appliedOffer,
     taxActive, perProductEnabled, totalTaxable, totalGst, taxBreakup,
     deliveryCharge, deliveryGst, packagingCharge, packagingGst, finalTotal,
-    paymentMode, paymentStatus, qrUrl, numberToWords, kravy,
+    paymentMode, paymentStatus, upiTxnRef, qrUrl, numberToWords, kravy,
     printKOT, printReceipt, saveBill, resetForm, isSaving, lastSavedBillId,
     userRole, userPermissions, resumeBillId, router, kotNumbers
   } = props;
 
   const ps = business?.printSettings || {};
   const s = (key: string) => ps[key] !== false; // Default to true if not set
+
+  // --- Dynamic Typography Configurations with safety limits ---
+  const is80 = ps.paperWidth === '80mm';
+  const fontFamilyVal = ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  const fontWeightVal = ps.fontWeight || '';
+
+  const getClamped = (val: any, def: number, min: number, max: number) => {
+    if (val === undefined || val === null || val === "") return def;
+    return Math.max(min, Math.min(max, Number(val)));
+  };
+
+  const rawBusinessNameSize = getClamped(ps.businessNameSize, 18, 14, 32);
+  const businessAddressSize = getClamped(ps.businessAddressSize, 11, 8, 16);
+  const taglineSize = getClamped(ps.taglineSize, 11, 8, 14);
+  const receiptTokenSize = getClamped(ps.receiptTokenSize, 28, 18, 40);
+  const detailsFontSize = getClamped(ps.detailsFontSize, 10, 8, 14);
+  const itemsFontSize = getClamped(ps.itemsFontSize, 11, 9, 18);
+  const totalFontSize = getClamped(ps.totalFontSize, 13, 11, 24);
+  const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
+
+  const getAutoShrunkNameSize = () => {
+    let size = rawBusinessNameSize;
+    const nameLen = (business?.businessName || "").length;
+    if (nameLen > 25) size -= 2;
+    if (nameLen > 35) size -= 2;
+    return Math.max(14, size);
+  };
+  const finalBusinessNameSize = getAutoShrunkNameSize();
+
+  const getAutoShrunkAddressSize = () => {
+    let size = businessAddressSize;
+    const addrLen = (business?.businessAddress || "").length;
+    if (addrLen > 60) size -= 1;
+    if (addrLen > 100) size -= 1;
+    return Math.max(8, size);
+  };
+  const finalAddressSize = getAutoShrunkAddressSize();
+
+  const previewCss = `
+    .bill-preview-dynamic {
+      --r-font-family: ${fontFamilyVal};
+      --r-business-size: ${finalBusinessNameSize}px;
+      --r-address-size: ${finalAddressSize}px;
+      --r-tagline-size: ${taglineSize}px;
+      --r-items-size: ${itemsFontSize}px;
+      --r-total-size: ${totalFontSize}px;
+      --r-token-size: ${receiptTokenSize}px;
+      --r-details-size: ${detailsFontSize}px;
+      --r-greeting-size: ${greetingFontSize}px;
+      font-family: var(--r-font-family) !important;
+      font-size: var(--r-details-size);
+    }
+    .bill-preview-dynamic, .bill-preview-dynamic * {
+      font-family: var(--r-font-family) !important;
+    }
+    ${fontWeightVal ? `
+    .bill-preview-dynamic, .bill-preview-dynamic * {
+      font-weight: ${fontWeightVal} !important;
+    }
+    ` : ''}
+  `;
 
   if (!showPreview) return null;
 
@@ -93,76 +155,111 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
 
         {/* Preview Area (Rendered like paper) */}
         <div className="flex-1 overflow-auto bg-[#E5E5E5] dark:bg-[#1A1A1A] p-6 flex flex-col items-center justify-start">
+          {/* Dynamic styles injected locally for preview container */}
+          <style dangerouslySetInnerHTML={{ __html: previewCss }} />
+          
           <div 
             className="bg-white text-black p-4 shadow-xl transition-transform origin-top mx-auto"
             style={{ 
-              width: '58mm', 
+              width: is80 ? '80mm' : '58mm', 
               minHeight: '100px',
               transform: `scale(${previewZoom * 1.5})`, // 1.5x base scale so it's readable on screen
               marginBottom: `${previewZoom * 100}px` // extra space for transform
             }}
           >
-            {/* Clone of receiptRef content but visible */}
-            <div className="font-mono text-[10px] leading-tight">
+            {/* Dynamic style representation */}
+            <div className="bill-preview-dynamic leading-tight">
               {s('showLogo') && business?.logoUrl && (
                 <div className="flex justify-center mb-1">
                   <img src={business?.logoUrl} alt="Logo" className="max-h-[28mm] object-contain" />
                 </div>
               )}
-              <div className="text-center font-bold text-[12px]">{business?.businessName}</div>
-              {s('showTagline') && business?.businessTagLine && <div className="text-center text-[9px] italic opacity-80 mb-0.5">{business.businessTagLine}</div>}
+              <div 
+                className="text-center font-bold mb-1"
+                style={{ 
+                  fontSize: 'var(--r-business-size)',
+                  fontWeight: ps.businessNameWeight || undefined
+                }}
+              >
+                {business?.businessName}
+              </div>
+              {s('showTagline') && business?.businessTagLine && (
+                <div 
+                  className="text-center font-bold italic opacity-90 mb-1 leading-none uppercase tracking-tight"
+                  style={{ 
+                    fontSize: 'var(--r-tagline-size)',
+                    fontWeight: ps.taglineWeight || undefined
+                  }}
+                >
+                  {business.businessTagLine}
+                </div>
+              )}
               {s('showAddress') && (business?.businessAddress || business?.district || business?.state || business?.pinCode) && (
-                <div className="text-center text-[9px]">
+                <div 
+                  className="text-center font-bold leading-tight mt-1"
+                  style={{ 
+                    fontSize: 'var(--r-address-size)',
+                    fontWeight: ps.businessAddressWeight || undefined
+                  }}
+                >
                   {business?.businessAddress}
                   {business?.district && `, ${business.district}`}
                   {business?.state && `, ${business.state}`}
                   {business?.pinCode && ` - ${business.pinCode}`}
                 </div>
               )}
-              {s('showContact') && (business?.contactPersonPhone || business?.contactPhone) && (
-                <div className="text-center text-[9px] font-bold">Mob: {business.contactPersonPhone || business.contactPhone}</div>
+              {s('showContact') && (business?.contactPersonPhone || business?.contactPhone || business?.businessPhone) && (
+                <div className="text-center font-bold mt-0.5" style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
+                  {business?.phonePrefixType?.toString().toUpperCase() === 'SYMBOL' ? '📞 ' : 'Mob: '} {business.contactPersonPhone || business.contactPhone || business?.businessPhone}
+                </div>
               )}
-              {s('showGST') && business?.gstNumber && <div className="text-center text-[9px]">GSTIN: {business.gstNumber}</div>}
-              {s('showFSSAI') && (business?.fssaiNumber && business?.fssaiEnabled) && <div className="text-center text-[9px]">FSSAI: {business.fssaiNumber}</div>}
+              {s('showGST') && business?.gstNumber && (
+                <div className="text-center font-bold border-y border-black py-0.5 mt-2 mb-1" style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
+                  GSTIN: {business.gstNumber}
+                </div>
+              )}
+              {s('showFSSAI') && (business?.fssaiNumber && business?.fssaiEnabled) && (
+                <div className="text-center font-bold mt-0.5" style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
+                  FSSAI: {business.fssaiNumber}
+                </div>
+              )}
               {s('sepTop') && <div className="my-1 border-t border-dashed border-gray-400" />}
               
-              <div className="flex justify-between items-start mt-2 px-1">
-                <div className="text-[9px] space-y-0.5">
-                  <div className="font-bold uppercase tracking-tighter">Bill Info</div>
-                  <div className="font-medium opacity-80">No: {billNumber}</div>
-                  <div className="font-medium opacity-80">Date: {billDate}</div>
+              <div className="mt-3 border-t border-dashed border-gray-400 pt-2 px-1" style={{ fontSize: 'var(--r-details-size)' }}>
+                <div className="flex justify-between items-center mb-1">
+                  <div className="font-black uppercase tracking-tight">Bill Summary</div>
                   {selectedTable && (
-                    <div className="font-black uppercase text-[7px] bg-black text-white px-1 py-0.5 inline-block mt-1">
-                      {selectedTable === "POS" ? "DINING / COUNTER" : 
-                       selectedTable === "TAKEAWAY" ? "🛍️ TAKEAWAY" : 
-                       selectedTable === "DELIVERY" ? "🚚 DELIVERY" : 
-                       `DINING (TABLE: ${selectedTable})`}
+                    <div className="font-black uppercase border border-black text-black px-1 py-0.5 rounded-sm" style={{ fontSize: 'calc(var(--r-details-size) - 2px)' }}>
+                      {selectedTable === "POS" ? "COUNTER" : selectedTable.replace("TYPE: ", "")}
                     </div>
                   )}
                 </div>
-
-                {s('showToken') && ((kotNumbers && kotNumbers.length > 0) || (tokenNumber || business?.lastTokenNumber !== undefined)) && (
-                  <div className="flex flex-col items-end py-0.5">
-                    <div className="text-[7px] font-black uppercase tracking-tighter opacity-60">Token No.</div>
-                    <div className="text-[12px] font-black leading-none py-0.5">
-                      {kotNumbers && kotNumbers.length > 0 ? kotNumbers.join(',') : `#${tokenNumber || "---"}`}
-                    </div>
+                <div className="flex justify-between items-start">
+                  <div className="space-y-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
+                    <div className="font-black">No: {billNumber}</div>
+                    <div className="font-black">{billDate}</div>
                   </div>
-                )}
+                </div>
               </div>
+
+              {/* Centered Token block matching physical ticket */}
+              {s('showToken') && ((kotNumbers && kotNumbers.length > 0) || (tokenNumber || business?.lastTokenNumber !== undefined)) && (
+                <div style={{ textAlign: 'center', margin: '10px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '6px 0' }}>
+                  <div style={{ fontSize: 'calc(var(--r-details-size) - 1px)', fontWeight: ps.receiptTokenWeight || '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Token No.</div>
+                  <div style={{ fontSize: 'var(--r-token-size)', fontWeight: ps.receiptTokenWeight || '900', lineHeight: '1', marginTop: '4px' }}>
+                    {kotNumbers && kotNumbers.length > 0 ? kotNumbers.join(', ') : `#${tokenNumber || "---"}`}
+                  </div>
+                </div>
+              )}
 
               {s('sepCustomer') && <div className="my-1 border-t border-dashed border-gray-400" />}
               {s('showCustomerDetails') && (customerName || customerPhone || customerAddress) && (
-                <div className="text-[9px]">
-                  <div>Customer: {customerName || "Walk-in Customer"}</div>
+                <div className="font-black pt-1" style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
+                  {customerName && <div>Customer: {customerName}</div>}
                   {customerPhone && <div>Phone: {customerPhone}</div>}
-                  {customerAddress && <div>Addr: {customerAddress}</div>}
-                  {placeOfSupply && <div>POS: {placeOfSupply}</div>}
-                  {(orderNotes) && (
-                    <div className="mt-1 pt-1 border-t border-dotted border-gray-300 italic text-gray-700">
-                      Note: {orderNotes}
-                    </div>
-                  )}
+                  {customerAddress && <div className="mt-0.5" style={{ wordWrap: 'break-word', whiteSpace: 'pre-wrap' }}>Addr: {customerAddress}</div>}
+                  {placeOfSupply && <div className="uppercase">POS: {placeOfSupply}</div>}
+                  {orderNotes && <div className="mt-0.5 italic">Note: {orderNotes}</div>}
                 </div>
               )}
               {s('sepItemsHeader') && <div className="my-1 border-t border-dashed border-gray-400" />}

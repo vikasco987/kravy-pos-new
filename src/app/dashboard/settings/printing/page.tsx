@@ -38,6 +38,10 @@ const defaults: any = {
     // QR Settings
     showReviewQR: false,
     
+    // Printer Queue & Feed Spacing Safety Settings
+    paperBottomPadding: 80,
+    spoolerDelay: 1500,
+    
     // Typography Customization Defaults
     paperWidth: "58mm",
     printDensity: "balanced",
@@ -655,6 +659,55 @@ export default function PrintingSettings() {
                                                         {mode}
                                                     </button>
                                                 ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Thermal Printer Safety & Feed Spacing */}
+                                        <div className="flex flex-col gap-2 col-span-1 md:col-span-2 border-t border-slate-100 dark:border-white/5 pt-4 mt-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                                                Printer Queue & Feed Spacing Safety (Prevents Cutter Jams / Queue Freezes)
+                                            </label>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="flex flex-col gap-1.5">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Receipt Bottom Padding (Feed Spacing)</span>
+                                                        <span className="text-xs font-black text-violet-600">{(printSettings.paperBottomPadding !== undefined && printSettings.paperBottomPadding !== null) ? printSettings.paperBottomPadding : 80}px</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range"
+                                                        min="20"
+                                                        max="200"
+                                                        step="10"
+                                                        value={(printSettings.paperBottomPadding !== undefined && printSettings.paperBottomPadding !== null) ? printSettings.paperBottomPadding : 80}
+                                                        onChange={(e) => setPrintSettings((p: any) => ({ ...p, paperBottomPadding: Number(e.target.value) }))}
+                                                        className="w-full h-1 bg-slate-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-violet-600"
+                                                    />
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">
+                                                        Feeds paper past the cutter. Increase this if text cuts off or prints overlap.
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex flex-col gap-1.5">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Consecutive Print Spooler Delay</span>
+                                                        <span className="text-xs font-black text-violet-600">{((printSettings.spoolerDelay !== undefined && printSettings.spoolerDelay !== null) ? printSettings.spoolerDelay : 1500) / 1000}s</span>
+                                                    </div>
+                                                    <select 
+                                                        value={(printSettings.spoolerDelay !== undefined && printSettings.spoolerDelay !== null) ? printSettings.spoolerDelay : 1500}
+                                                        onChange={(e) => setPrintSettings((p: any) => ({ ...p, spoolerDelay: Number(e.target.value) }))}
+                                                        className="py-1.5 px-3 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500"
+                                                    >
+                                                        <option value="500">0.5s (Ultra Fast Spooler)</option>
+                                                        <option value="1000">1.0s (Fast Printer)</option>
+                                                        <option value="1500">1.5s (Balanced Standard)</option>
+                                                        <option value="2000">2.0s (Recommended for Slow Printers)</option>
+                                                        <option value="3000">3.0s (Extra Safe Queue)</option>
+                                                        <option value="4000">4.0s (Slow Spooler Cooldown)</option>
+                                                    </select>
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">
+                                                        Cooldown time between KOT and Bill prints to prevent spooler freezes.
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

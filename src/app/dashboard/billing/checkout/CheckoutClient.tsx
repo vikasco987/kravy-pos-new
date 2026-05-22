@@ -240,6 +240,17 @@ export default function CheckoutClient() {
     posSaveEnabled?: boolean;
     posPreviewEnabled?: boolean;
     posKotEnabled?: boolean;
+    posCounterEnabled?: boolean;
+    posWalletEnabled?: boolean;
+    greetingMessage?: string;
+    contactPersonPhone?: string;
+    contactPhone?: string;
+    businessPhone?: string;
+    businessAddressSize?: number;
+    tokenNumberSize?: number;
+    businessNameSize?: number;
+    phonePrefixType?: string;
+    printSettings?: any;
   } | null>({
     businessName: "Kravy POS",
     taxEnabled: true,
@@ -1367,11 +1378,14 @@ export default function CheckoutClient() {
     const isKOTEnabled = forceBoth;
     console.log("PRINT TRIGGERED - KOT:", isKOTEnabled);
 
+    const ps = (business as any)?.printSettings || {};
+    const spoolerDelay = ps.spoolerDelay !== undefined && ps.spoolerDelay !== null ? Number(ps.spoolerDelay) : 1500;
+
     if (isKOTEnabled && kotHtml) {
       runPrintJob("kot", kotHtml, () => {
         setTimeout(() => {
           runPrintJob("bill", billHtml);
-        }, 1000); 
+        }, spoolerDelay); 
       });
     } else {
       runPrintJob("bill", billHtml);
@@ -1501,6 +1515,53 @@ export default function CheckoutClient() {
     document.getElementById(containerId)?.remove();
     document.getElementById(styleId)?.remove();
 
+    const ps = (business as any)?.printSettings || {};
+    const is80 = ps.paperWidth === '80mm';
+    const paperWidth = is80 ? '80mm' : '58mm';
+    const paperBottomPadding = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
+
+    // --- Dynamic Typography Configurations with Thermal Safety Limits ---
+    const fontFamilyVal = ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    const kotFontFamilyVal = ps.kotFontFamily || '"Courier New", Courier, monospace';
+    const fontWeightVal = ps.fontWeight || '';
+    const kotFontWeightVal = ps.kotFontWeight || '';
+
+    const getClamped = (val: any, def: number, min: number, max: number) => {
+      if (val === undefined || val === null || val === "") return def;
+      return Math.max(min, Math.min(max, Number(val)));
+    };
+
+    const rawBusinessNameSize = getClamped(ps.businessNameSize, 18, 14, 32);
+    const businessAddressSize = getClamped(ps.businessAddressSize, 11, 8, 16);
+    const taglineSize = getClamped(ps.taglineSize, 11, 8, 14);
+    const receiptTokenSize = getClamped(ps.receiptTokenSize, 28, 18, 40);
+    const detailsFontSize = getClamped(ps.detailsFontSize, 10, 8, 14);
+    const itemsFontSize = getClamped(ps.itemsFontSize, 11, 9, 18);
+    const totalFontSize = getClamped(ps.totalFontSize, 13, 11, 24);
+    const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
+    
+    const kotTokenSize = getClamped(ps.kotTokenSize, 16, 12, 28);
+    const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 18);
+    const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 22);
+
+    const getAutoShrunkNameSize = () => {
+      let size = rawBusinessNameSize;
+      const nameLen = (business?.businessName || "").length;
+      if (nameLen > 25) size -= 2;
+      if (nameLen > 35) size -= 2;
+      return Math.max(14, size);
+    };
+    const finalBusinessNameSize = getAutoShrunkNameSize();
+
+    const getAutoShrunkAddressSize = () => {
+      let size = businessAddressSize;
+      const addrLen = (business?.businessAddress || "").length;
+      if (addrLen > 60) size -= 1;
+      if (addrLen > 100) size -= 1;
+      return Math.max(8, size);
+    };
+    const finalAddressSize = getAutoShrunkAddressSize();
+
     // Create Style
     const style = document.createElement("style");
     style.id = styleId;
@@ -1517,18 +1578,63 @@ export default function CheckoutClient() {
         #${containerId} {
           display: block !important;
           width: 100% !important;
-          max-width: 58mm !important;
+          max-width: ${paperWidth} !important;
           height: auto !important;
           overflow: visible !important;
           margin: 0 auto !important;
-          padding: 2mm 4% 20px 4% !important; 
+          padding: 2mm 4% ${paperBottomPadding} 4% !important; 
           background: #fff !important;
           color: #000 !important;
-          font-family: 'Courier New', Courier, monospace !important;
-          font-weight: 700 !important;
           position: relative !important;
           box-sizing: border-box !important;
+          page-break-after: always !important;
+          break-after: page !important;
         }
+
+        /* Inject CSS custom variables to override custom elements correctly */
+        #${containerId}.receipt-container-dynamic {
+          --r-font-family: ${fontFamilyVal};
+          --r-business-size: ${finalBusinessNameSize}px;
+          --r-address-size: ${finalAddressSize}px;
+          --r-tagline-size: ${taglineSize}px;
+          --r-items-size: ${itemsFontSize}px;
+          --r-total-size: ${totalFontSize}px;
+          --r-token-size: ${receiptTokenSize}px;
+          --r-details-size: ${detailsFontSize}px;
+          --r-greeting-size: ${greetingFontSize}px;
+          font-family: var(--r-font-family) !important;
+          font-size: var(--r-details-size) !important;
+        }
+
+        #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
+          font-family: var(--r-font-family) !important;
+        }
+
+        #${containerId}.kot-container-dynamic {
+          --k-font-family: ${kotFontFamilyVal};
+          --k-items-size: ${kotItemsFontSize}px;
+          --k-qty-size: ${kotQtyFontSize}px;
+          --k-token-size: ${kotTokenSize}px;
+          font-family: var(--k-font-family) !important;
+          font-size: var(--k-items-size) !important;
+        }
+
+        #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
+          font-family: var(--k-font-family) !important;
+        }
+
+        ${fontWeightVal ? `
+        #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
+          font-weight: ${fontWeightVal} !important;
+        }
+        ` : ''}
+
+        ${kotFontWeightVal ? `
+        #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
+          font-weight: ${kotFontWeightVal} !important;
+        }
+        ` : ''}
+
         * { 
           color: #000 !important; 
           border-color: #000 !important; 
@@ -1546,7 +1652,9 @@ export default function CheckoutClient() {
     // Create Container
     const container = document.createElement("div");
     container.id = containerId;
-    container.className = "font-mono text-[11px] leading-tight font-bold";
+    container.className = type === "kot"
+      ? "kot kot-container kot-container-dynamic text-black bg-white"
+      : "receipt receipt-container receipt-container-dynamic text-black bg-white";
     container.innerHTML = html;
     document.body.appendChild(container);
 
@@ -1563,7 +1671,7 @@ export default function CheckoutClient() {
         if (callback) callback();
       }, 2500); 
     }, 300);
-  }
+  };
 
   /* ================= QUICK ADD ITEM ================= */
   const handleQuickAdd = async (e: React.FormEvent<HTMLFormElement>) => {

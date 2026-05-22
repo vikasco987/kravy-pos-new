@@ -397,6 +397,8 @@ import {
 import { formatWhatsAppNumber } from "@/lib/whatsapp";
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 import { useAuthContext } from "@/components/AuthContext";
+import PrintTemplates from "@/components/printing/PrintTemplates";
+import { toast } from "sonner";
 import type {
   BillManager,
   BusinessProfile as PrismaBusinessProfile,
@@ -407,6 +409,36 @@ type BillItem = {
   name: string;
   qty: number;
   rate: number;
+  gst?: number;
+  hsnCode?: string | null;
+  variants?: any[];
+  isNew?: boolean;
+};
+
+const numberToWords = (num: number): string => {
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  
+  const convert = (n: number, depth = 0): string => {
+    if (depth > 10) return "";
+    if (n < 20) return ones[n];
+    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' and ' + convert(n % 100, depth + 1) : '');
+    if (n < 100000) return convert(Math.floor(n / 1000), depth + 1) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000, depth + 1) : '');
+    if (n < 10000000) return convert(Math.floor(n / 100000), depth + 1) + ' Lakh' + (n % 100000 !== 0 ? ' ' + convert(n % 100000, depth + 1) : '');
+    return convert(Math.floor(n / 10000000), depth + 1) + ' Crore' + (n % 10000000 !== 0 ? ' ' + convert(n % 10000000, depth + 1) : '');
+  };
+
+  if (isNaN(num) || !isFinite(num)) return '';
+  if (num === 0) return 'Zero Only';
+  const integerPart = Math.floor(Math.abs(num));
+  const decimalPart = Math.round((Math.abs(num) - integerPart) * 100);
+  
+  let result = convert(integerPart) + ' Rupees';
+  if (decimalPart > 0) {
+    result += ' and ' + convert(decimalPart) + ' Paise';
+  }
+  return result + ' Only';
 };
 
 type BusinessProfile = {
@@ -439,6 +471,7 @@ export default function ViewBillPage() {
   const [business, setBusiness] = useState<PrismaBusinessProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const receiptRef = useRef<HTMLDivElement>(null);
+  const kotRef = useRef<HTMLDivElement>(null);
 
 
   // ✅ Fetch from BillManager API
@@ -453,13 +486,175 @@ export default function ViewBillPage() {
   }, [id]);
 
 
-  // ✅ Print receipt function    
+  // ✅ Print receipt function using dynamic spooler configurations and variables
+  const runPrintJob = (type: "kot" | "bill", html: string) => {
+    const containerId = `print-container-${type}`;
+    const styleId = `print-style-${type}`;
 
+    // Clean any existing ones
+    document.getElementById(containerId)?.remove();
+    document.getElementById(styleId)?.remove();
+
+    const ps = (business as any)?.printSettings || {};
+    const is80 = ps.paperWidth === '80mm';
+    const paperWidth = is80 ? '80mm' : '58mm';
+    const paperBottomPadding = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
+
+    // --- Dynamic Typography Configurations with Thermal Safety Limits ---
+    const fontFamilyVal = ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    const kotFontFamilyVal = ps.kotFontFamily || '"Courier New", Courier, monospace';
+    const fontWeightVal = ps.fontWeight || '';
+    const kotFontWeightVal = ps.kotFontWeight || '';
+
+    const getClamped = (val: any, def: number, min: number, max: number) => {
+      if (val === undefined || val === null || val === "") return def;
+      return Math.max(min, Math.min(max, Number(val)));
+    };
+
+    const rawBusinessNameSize = getClamped(ps.businessNameSize, 18, 14, 32);
+    const businessAddressSize = getClamped(ps.businessAddressSize, 11, 8, 16);
+    const taglineSize = getClamped(ps.taglineSize, 11, 8, 14);
+    const receiptTokenSize = getClamped(ps.receiptTokenSize, 28, 18, 40);
+    const detailsFontSize = getClamped(ps.detailsFontSize, 10, 8, 14);
+    const itemsFontSize = getClamped(ps.itemsFontSize, 11, 9, 18);
+    const totalFontSize = getClamped(ps.totalFontSize, 13, 11, 24);
+    const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
+    
+    const kotTokenSize = getClamped(ps.kotTokenSize, 16, 12, 28);
+    const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 18);
+    const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 22);
+
+    const getAutoShrunkNameSize = () => {
+      let size = rawBusinessNameSize;
+      const nameLen = (business?.businessName || "").length;
+      if (nameLen > 25) size -= 2;
+      if (nameLen > 35) size -= 2;
+      return Math.max(14, size);
+    };
+    const finalBusinessNameSize = getAutoShrunkNameSize();
+
+    const getAutoShrunkAddressSize = () => {
+      let size = businessAddressSize;
+      const addrLen = (business?.businessAddress || "").length;
+      if (addrLen > 60) size -= 1;
+      if (addrLen > 100) size -= 1;
+      return Math.max(8, size);
+    };
+    const finalAddressSize = getAutoShrunkAddressSize();
+
+    // Create Style
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.innerHTML = `
+      @media print {
+        html, body { 
+          height: auto !important; 
+          overflow: visible !important; 
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        body > *:not(#${containerId}) { display: none !important; }
+        @page { margin: 0; size: auto; }
+        #${containerId} {
+          display: block !important;
+          width: 100% !important;
+          max-width: ${paperWidth} !important;
+          height: auto !important;
+          overflow: visible !important;
+          margin: 0 auto !important;
+          padding: 2mm 4% ${paperBottomPadding} 4% !important; 
+          background: #fff !important;
+          color: #000 !important;
+          position: relative !important;
+          box-sizing: border-box !important;
+          page-break-after: always !important;
+          break-after: page !important;
+        }
+
+        /* Inject CSS custom variables to override custom elements correctly */
+        #${containerId}.receipt-container-dynamic {
+          --r-font-family: ${fontFamilyVal};
+          --r-business-size: ${finalBusinessNameSize}px;
+          --r-address-size: ${finalAddressSize}px;
+          --r-tagline-size: ${taglineSize}px;
+          --r-items-size: ${itemsFontSize}px;
+          --r-total-size: ${totalFontSize}px;
+          --r-token-size: ${receiptTokenSize}px;
+          --r-details-size: ${detailsFontSize}px;
+          --r-greeting-size: ${greetingFontSize}px;
+          font-family: var(--r-font-family) !important;
+          font-size: var(--r-details-size) !important;
+        }
+
+        #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
+          font-family: var(--r-font-family) !important;
+        }
+
+        #${containerId}.kot-container-dynamic {
+          --k-font-family: ${kotFontFamilyVal};
+          --k-items-size: ${kotItemsFontSize}px;
+          --k-qty-size: ${kotQtyFontSize}px;
+          --k-token-size: ${kotTokenSize}px;
+          font-family: var(--k-font-family) !important;
+          font-size: var(--k-items-size) !important;
+        }
+
+        #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
+          font-family: var(--k-font-family) !important;
+        }
+
+        ${fontWeightVal ? `
+        #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
+          font-weight: ${fontWeightVal} !important;
+        }
+        ` : ''}
+
+        ${kotFontWeightVal ? `
+        #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
+          font-weight: ${kotFontWeightVal} !important;
+        }
+        ` : ''}
+
+        * { 
+          color: #000 !important; 
+          border-color: #000 !important; 
+          overflow: visible !important;
+        }
+        img { 
+          filter: grayscale(100%) contrast(300%) !important; 
+          max-width: 100% !important;
+          display: block !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Create Container
+    const container = document.createElement("div");
+    container.id = containerId;
+    container.className = type === "kot"
+      ? "kot kot-container kot-container-dynamic text-black bg-white"
+      : "receipt receipt-container receipt-container-dynamic text-black bg-white";
+    container.innerHTML = html;
+    document.body.appendChild(container);
+
+    setTimeout(() => {
+      window.print();
+      
+      // Delay cleanup to ensure spooler finishes reading the DOM
+      setTimeout(() => {
+        if (document.body.contains(container)) container.remove();
+        if (document.head.contains(style)) style.remove();
+      }, 2500); 
+    }, 300);
+  };
 
   function printReceipt() {
-    // We already have @media print styles that handle visibility
-    // No need to swap body.innerHTML, which breaks React state.
-    window.print();
+    if (receiptRef.current) {
+      runPrintJob("bill", receiptRef.current.innerHTML);
+    } else {
+      toast.error("Nothing to print");
+    }
   }
 
   const handleWhatsApp = async () => {
@@ -518,8 +713,87 @@ export default function ViewBillPage() {
       name: i.name || "Unknown Item",
       qty: Number(i.qty ?? i.quantity ?? 0),
       rate: Number(i.rate ?? i.price ?? 0),
+      gst: i.gst !== undefined ? Number(i.gst) : undefined,
+      hsnCode: i.hsnCode || null,
+      variants: i.variants || [],
+      isNew: i.isNew ?? false,
     }))
     : [];
+
+  // ── Precise Print-Time Calculations matching POS Checkout spooler ──
+  const taxActive = business?.taxEnabled ?? true;
+  const perProductEnabled = business?.perProductTaxEnabled ?? false;
+  const globalRate = business?.taxRate ?? 5.0;
+  const discountAmt = bill.discountAmount || 0;
+  
+  // Recalculate discount ratio
+  const discountRatio = bill.subtotal > 0 ? (bill.subtotal - discountAmt) / bill.subtotal : 1;
+
+  const taxGroups = billItems.reduce((acc: any, item: any) => {
+    const rawItem = (bill.items as any[]).find((it: any) => (it.name === item.name || it.id === item.id)) || {};
+    
+    let rate = 0;
+    if (perProductEnabled && rawItem.gst !== undefined && rawItem.gst !== null) {
+      rate = Number(rawItem.gst);
+    } else if (taxActive) {
+      rate = globalRate;
+    }
+    
+    const gross = (item.qty * item.rate) * discountRatio;
+    let taxable = gross;
+    let gst = 0;
+
+    const taxStatus = rawItem.taxStatus || "Without Tax";
+    if (taxStatus === "With Tax") {
+      taxable = gross / (1 + rate / 100);
+      gst = gross - taxable;
+    } else {
+      taxable = gross;
+      gst = (gross * rate) / 100;
+    }
+
+    const isInterState = (bill as any).placeOfSupply && business?.state && 
+      (bill as any).placeOfSupply.trim().toLowerCase() !== business.state.trim().toLowerCase();
+
+    if (!acc[rate]) acc[rate] = { rate, taxable: 0, cgst: 0, sgst: 0, igst: 0, totalTax: 0 };
+    acc[rate].taxable += taxable;
+    
+    if (isInterState) {
+      acc[rate].igst += gst;
+    } else {
+      acc[rate].cgst += gst / 2;
+      acc[rate].sgst += gst / 2;
+    }
+    acc[rate].totalTax += gst;
+    return acc;
+  }, {});
+
+  const taxBreakup = Object.values(taxGroups).map((g: any) => ({
+    rate: g.rate,
+    taxable: Number(g.taxable.toFixed(2)),
+    cgst: Number(g.cgst.toFixed(2)),
+    sgst: Number(g.sgst.toFixed(2)),
+    igst: Number((g.igst || 0).toFixed(2)),
+    totalTax: Number(g.totalTax.toFixed(2))
+  }));
+
+  const totalTaxable = Number(taxBreakup.reduce((a, b) => a + b.taxable, 0).toFixed(2));
+  const totalGst = Number(taxBreakup.reduce((a, b) => a + b.totalTax, 0).toFixed(2));
+
+  /* ================= Delivery / Packaging / Service Charges ================= */
+  const deliveryCharge = (bill as any).deliveryCharges || 0;
+  const packagingCharge = (bill as any).packagingCharges || 0;
+  const serviceCharge = (bill as any).serviceCharge || 0;
+  const deliveryGst = (deliveryCharge > 0 && business?.deliveryGstEnabled)
+    ? (deliveryCharge * (business?.deliveryGstRate || 0) / 100)
+    : 0;
+  const packagingGst = (packagingCharge > 0 && business?.packagingGstEnabled)
+    ? (packagingCharge * (business?.packagingGstRate || 0) / 100)
+    : 0;
+
+  /* ================= UPI ================= */
+  const upiLink = `upi://pay?pa=${business?.upi || ""}&pn=${encodeURIComponent(business?.businessName || "Store")}&am=${bill.total.toFixed(2)}&cu=INR`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}`;
 
 
   return (
@@ -760,355 +1034,52 @@ export default function ViewBillPage() {
         </div>
       </div>
 
-      {/* PRINT RECEIPT (Optimized for 2-inch / 58mm Thermal Printers) */}
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: 58mm auto;
-            margin: 0;
-          }
-          body {
-            margin: 0;
-            padding: 0;
-            width: 58mm;
-            background: white;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          /* Hide everything except the receipt */
-          body * {
-            visibility: hidden;
-          }
-          .thermal-receipt, .thermal-receipt * {
-            visibility: visible;
-          }
-          .thermal-receipt {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 58mm;
-            padding: 0 4%;
-            box-sizing: border-box;
-            font-family: sans-serif !important;
-            -webkit-font-smoothing: none;
-          }
-          /* Remove browser headers/footers */
-          header, footer { display: none !important; }
-        }
-      `}</style>
+      {/* PRINT RECEIPT — Unified PrintTemplates (honours all printSettings) */}
 
-      <div
-        ref={receiptRef}
-        className="hidden print:block thermal-receipt w-[58mm] text-[10px] leading-tight font-sans text-black"
-      >
-        {business?.logoUrl && (
-          <div className="flex justify-center mb-2">
-            <img
-              src={business.logoUrl}
-              alt={business.businessName ?? "Business logo"}
-              className="max-h-[35mm] object-contain"
-              style={{ 
-                imageRendering: 'pixelated', 
-                filter: 'contrast(1000%) grayscale(100%) brightness(1.1)' 
-              }}
-            />
-          </div>
-        )}
-
-        <div 
-          className="text-center font-bold"
-          style={{ 
-            fontSize: business?.businessNameSize === 'medium' ? '12px' : 
-                      business?.businessNameSize === 'xlarge' ? '22px' : '18px',
-            lineHeight: '1.1'
-          }}
-        >
-          {business?.businessName}
-        </div>
-
-        {(business?.businessAddress ||
-          business?.district ||
-          business?.state ||
-          business?.pinCode) && (
-            <div className="text-center text-[12px] font-bold mt-1">
-              {business.businessAddress}
-              {business.district && `, ${business.district}`}
-              {business.state && `, ${business.state}`}
-              {business.pinCode && ` - ${business.pinCode}`}
-            </div>
-          )}
-
-        {business?.gstNumber && (
-          <div className="text-center text-[9px]">
-            GSTIN: {business.gstNumber}
-          </div>
-        )}
-        {/* BILL META */}
-        <div className="text-center text-[9px]">
-          Date: {new Date(bill.createdAt).toLocaleString()}
-        </div>
-
-        {/* TOKEN NUMBER */}
-        {((bill.kotNumbers && bill.kotNumbers.length > 0) || bill.tokenNumber) && (
-          <div className="mt-2 flex flex-col items-center border-2 border-black py-1.5 px-6 mx-auto w-fit bg-white">
-            <div className="text-[10px] font-bold uppercase tracking-widest border-b border-black mb-1">
-              {bill.kotNumbers && bill.kotNumbers.length > 0 ? "Token Numbers" : "Token Number"}
-            </div>
-            <div 
-              className="font-bold leading-none tracking-tighter"
-              style={{ 
-                fontSize: `${bill.kotNumbers && bill.kotNumbers.length > 0 
-                  ? (business?.tokenNumberSize || 22) * 0.9 
-                  : (business?.tokenNumberSize || 28)}px` 
-              }}
-            >
-              {bill.kotNumbers && bill.kotNumbers.length > 0 
-                ? bill.kotNumbers.join(', ') 
-                : `#${bill.tokenNumber}`}
-            </div>
-          </div>
-        )}
-
-        {/* ✅ ADD BUYER GSTIN & POS */}
-        {(bill as any).buyerGSTIN && (
-          <div className="text-center text-[10px] font-bold mt-1">
-            Buyer GSTIN: {(bill as any).buyerGSTIN}
-          </div>
-        )}
-        {(bill as any).placeOfSupply && (
-          <div className="text-center text-[9px]">
-            POS: {(bill as any).placeOfSupply}
-          </div>
-        )}
-
-        <hr />
-
-        <hr />
-        {(bill.customerName || bill.customerPhone) && (
-          <>
-            <div>Customer: {bill.customerName || "Walk-in Customer"}</div>
-            {bill.customerPhone && <div>Phone: {bill.customerPhone}</div>}
-            <hr />
-          </>
-        )}
-        {/* ITEM HEADER */}
-        <div className="flex justify-between font-bold text-[11px] border-b border-dashed pb-1 mb-1">
-          <span className="w-[24mm]">Item</span>
-          <span className="w-[6mm] text-right">Qty</span>
-          <span className="w-[9mm] text-right">Rate</span>
-          <span className="w-[11mm] text-right">Amt</span>
-        </div>
-
-        {/* ITEMS */}
-        {billItems.map((i, idx) => {
-          const itemData = (bill.items as any[])?.[idx] || {};
-          const hsnCode = itemData.hsnCode ? ` (${itemData.hsnCode})` : "";
-          
-          return (
-            <div
-              key={idx}
-              className="flex justify-between text-[11px] mt-1 leading-tight font-bold"
-            >
-              <span className="w-[24mm] break-words">
-                {i.name}{hsnCode}
-              </span>
-              <span className="w-[6mm] text-right">
-                {i.qty}
-              </span>
-              <span className="w-[9mm] text-right">
-                {Number(i.rate ?? 0).toFixed(0)}
-              </span>
-              <span className="w-[11mm] text-right">
-                {(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(0)}
-              </span>
-            </div>
-          );
-        })}
-        <div className="border-t border-dashed my-1" />
-
-        {/* SUBTOTAL */}
-        <div className="flex justify-between text-[10px] font-medium">
-          <span>Subtotal</span>
-          <span>₹{Number(bill.subtotal ?? 0).toFixed(2)}</span>
-        </div>
-
-        {/* GST BREAKUP */}
-        {(() => {
-          const items = Array.isArray(bill.items) ? bill.items : [];
-          const placeOfSupply = (bill as any).placeOfSupply;
-          const isInterState = placeOfSupply && business?.state && 
-            placeOfSupply.trim().toLowerCase() !== business.state.trim().toLowerCase();
-          
-          const taxGroups: Record<number, any> = {};
-          items.forEach((item: any) => {
-            const qty = Number(item.qty ?? item.quantity ?? 0);
-            const rate = Number(item.rate ?? item.price ?? 0);
-            const gstRate = Number(item.gst || (business?.taxRate ?? 0));
-            const taxStatus = item.taxStatus || "Without Tax";
-            const gross = qty * rate;
-            
-            let taxable = gross;
-            let gst = 0;
-            if (taxStatus === "With Tax") {
-              taxable = gross / (1 + gstRate / 100);
-              gst = gross - taxable;
-            } else {
-              gst = (gross * gstRate) / 100;
-            }
-
-            if (!taxGroups[gstRate]) taxGroups[gstRate] = { rate: gstRate, taxable: 0, cgst: 0, sgst: 0, igst: 0 };
-            taxGroups[gstRate].taxable += taxable;
-            if (isInterState) {
-              taxGroups[gstRate].igst += gst;
-            } else {
-              taxGroups[gstRate].cgst += gst / 2;
-              taxGroups[gstRate].sgst += gst / 2;
-            }
-          });
-
-          const groups = Object.values(taxGroups).filter(g => g.rate > 0);
-          if (groups.length === 0) return (
-            <div className="flex justify-between text-[10px] font-medium">
-              <span>GST</span>
-              <span>₹{(bill.tax ?? 0).toFixed(2)}</span>
-            </div>
-          );
-
-          return (
-            <div className="mt-1">
-              {Object.values(taxGroups).filter((g:any) => g.rate > 0).map((g: any, idx) => (
-                <div key={idx} className="space-y-0.5">
-                  {g.igst > 0 ? (
-                    <div className="flex justify-between text-[9px] text-gray-600">
-                      <span>IGST ({g.rate}%)</span>
-                      <span>₹{g.igst.toFixed(2)}</span>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex justify-between text-[9px] text-gray-600">
-                        <span>CGST ({g.rate/2}%)</span>
-                        <span>₹{g.cgst.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-[9px] text-gray-600">
-                        <span>SGST ({g.rate/2}%)</span>
-                        <span>₹{g.sgst.toFixed(2)}</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-              <div className="flex justify-between text-[10px] font-bold mt-0.5 pt-0.5 border-t border-dashed">
-                <span>Total GST</span>
-                <span>₹{(bill.tax ?? 0).toFixed(2)}</span>
-              </div>
-            </div>
-          );
+      <PrintTemplates
+        receiptRef={receiptRef}
+        kotRef={kotRef}
+        business={business}
+        billNumber={bill.billNumber}
+        billDate={new Date(bill.createdAt).toLocaleString('en-IN')}
+        tokenNumber={(() => {
+          const tn = (bill as any).tokenNumber;
+          if (tn == null || tn === '' || tn === 0) return '---';
+          if (typeof tn === 'object' && (tn as any).$numberLong) return (tn as any).$numberLong.toString().padStart(3, '0');
+          return tn.toString().padStart(3, '0');
         })()}
-
-        {/* CHARGES BREAKDOWN */}
-        <div className="space-y-0.5 mt-1">
-          {Number(bill.deliveryCharges ?? 0) > 0 && (
-            <div className="flex justify-between text-[10px] font-medium text-gray-700">
-              <span>Delivery Charges</span>
-              <span>₹{Number(bill.deliveryCharges).toFixed(2)}</span>
-            </div>
-          )}
-          {Number(bill.packagingCharges ?? 0) > 0 && (
-            <div className="flex justify-between text-[10px] font-medium text-gray-700">
-              <span>Packaging Charges</span>
-              <span>₹{Number(bill.packagingCharges).toFixed(2)}</span>
-            </div>
-          )}
-          {Number(bill.serviceCharge ?? 0) > 0 && (
-            <div className="flex justify-between text-[10px] font-medium text-gray-700">
-              <span>Service Charge</span>
-              <span>₹{Number(bill.serviceCharge).toFixed(2)}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="border-t border-dashed my-1" />
-
-        {/* GRAND TOTAL */}
-        <div className="flex justify-between font-bold text-[13px]">
-          <span>TOTAL</span>
-          <span>₹{Number(bill.total ?? 0).toFixed(2)}</span>
-        </div>
-
-        <div className="border-t border-dashed my-1" />
-
-        {/* PAYMENT MODE */}
-        <div className="text-center text-[10px] font-bold">
-          Payment Method: {bill.paymentMode}
-        </div>
-
-        {/* UPI QR INSIDE RECEIPT */}
-        {bill.paymentMode === "UPI" && business?.upi && (
-          <>
-            <div className="flex justify-center my-2">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
-                  `upi://pay?pa=${business.upi}&pn=${encodeURIComponent(
-                    business.businessName ?? ""
-                  )}&am=${bill.total}&cu=INR`
-                )}`}
-                alt="UPI QR"
-                className="w-[32mm] h-[32mm]"
-                style={{ 
-                  imageRendering: 'pixelated', 
-                  filter: 'contrast(1000%) grayscale(100%)' 
-                }}
-              />
-            </div>
-
-            <div className="text-center text-[10px] font-bold">
-              Scan & Pay via UPI
-            </div>
-
-            {bill.upiTxnRef && (
-              <div className="text-center text-[9px]">
-                Txn Ref: {bill.upiTxnRef}
-              </div>
-            )}
-          </>
-        )}
-
-        {business?.businessTagLine && (
-          <div className="text-center text-[9px] mt-1">
-            {business.businessTagLine}
-          </div>
-        )}
-
-        <div className="text-center font-semibold text-[10px] mt-1 mb-8 whitespace-pre-wrap">
-          {business?.greetingMessage || "Thank you 🙏"}
-        </div>
-        
-        {/* Extra space for physical cutter */}
-        <div className="h-[15mm] block print:block" />
-
-      </div>
-    </div>
-  );
-}
-
-/* ---------- SAFE ROW ---------- */
-
-function Row({
-  label,
-  value,
-  bold,
-}: {
-  label: string;
-  value?: number;
-  bold?: boolean;
-}) {
-  return (
-    <div
-      className={`flex justify-between ${bold ? "font-semibold text-base" : ""
-        }`}
-    >
-      <span>{label}</span>
-      <span>₹{(value ?? 0).toFixed(2)}</span>
+        selectedTable={(bill as any).tableName || 'POS'}
+        customerName={(bill as any).customerName || ''}
+        customerPhone={(bill as any).customerPhone || ''}
+        customerAddress={(bill as any).customerAddress || ''}
+        orderNotes={(bill as any).notes || (bill as any).auditNote || ''}
+        buyerGSTIN={(bill as any).buyerGSTIN || ''}
+        placeOfSupply={(bill as any).placeOfSupply || ''}
+        items={billItems}
+        subtotal={bill.subtotal}
+        discountAmt={discountAmt}
+        appliedOffer={(bill as any).discountCode ? { code: (bill as any).discountCode } : null}
+        taxActive={taxActive}
+        perProductEnabled={perProductEnabled}
+        globalRate={globalRate}
+        totalTaxable={totalTaxable}
+        totalGst={totalGst}
+        taxBreakup={taxBreakup}
+        deliveryCharge={deliveryCharge}
+        deliveryGst={deliveryGst}
+        packagingCharge={packagingCharge}
+        packagingGst={packagingGst}
+        serviceCharge={serviceCharge}
+        finalTotal={bill.total}
+        paymentMode={(bill as any).paymentMode || ''}
+        paymentStatus={bill.paymentStatus || ''}
+        upiTxnRef={(bill as any).upiTxnRef || ''}
+        qrUrl={qrUrl}
+        prevWalletBalance={null}
+        selectedParty={null}
+        kotNumbers={(bill as any).kotNumbers || []}
+        numberToWords={numberToWords}
+      />
     </div>
   );
 }

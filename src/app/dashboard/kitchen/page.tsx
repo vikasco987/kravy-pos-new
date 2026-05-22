@@ -387,6 +387,46 @@ function KravyPOS() {
                 printHTML = targetRef.innerHTML;
             }
 
+            // ✅ Read printSettings dynamically — same as CheckoutClient runPrintJob
+            const ps = (business as any)?.printSettings || {};
+            const is80 = ps.paperWidth === '80mm';
+            const paperWidth = is80 ? '80mm' : '58mm';
+            const paperBottomPadding = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
+
+            const fontFamilyVal = ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            const kotFontFamilyVal = ps.kotFontFamily || '"Courier New", Courier, monospace';
+            const fontWeightVal = ps.fontWeight || '';
+            const kotFontWeightVal = ps.kotFontWeight || '';
+
+            const getClamped = (val: any, def: number, min: number, max: number) => {
+                if (val === undefined || val === null || val === '') return def;
+                return Math.max(min, Math.min(max, Number(val)));
+            };
+            const rawBusinessNameSize = getClamped(ps.businessNameSize, 18, 14, 32);
+            const finalBusinessNameSize = (() => {
+                let size = rawBusinessNameSize;
+                const nameLen = (business?.businessName || '').length;
+                if (nameLen > 25) size -= 2;
+                if (nameLen > 35) size -= 2;
+                return Math.max(14, size);
+            })();
+            const finalAddressSize = (() => {
+                let size = getClamped(ps.businessAddressSize, 11, 8, 16);
+                const addrLen = (business?.businessAddress || '').length;
+                if (addrLen > 60) size -= 1;
+                if (addrLen > 100) size -= 1;
+                return Math.max(8, size);
+            })();
+            const taglineSize = getClamped(ps.taglineSize, 11, 8, 14);
+            const receiptTokenSize = getClamped(ps.receiptTokenSize, 28, 18, 40);
+            const detailsFontSize = getClamped(ps.detailsFontSize, 10, 8, 14);
+            const itemsFontSize = getClamped(ps.itemsFontSize, 11, 9, 18);
+            const totalFontSize = getClamped(ps.totalFontSize, 13, 11, 24);
+            const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
+            const kotTokenSize = getClamped(ps.kotTokenSize, 16, 12, 28);
+            const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 18);
+            const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 22);
+
             const printStyles = `
                 @media print {
                     html, body { 
@@ -401,21 +441,66 @@ function KravyPOS() {
                     #print-receipt-container {
                         display: block !important;
                         width: 100% !important;
-                        max-width: 58mm !important;
+                        max-width: ${paperWidth} !important;
                         height: auto !important;
                         overflow: visible !important;
                         margin: 0 auto !important;
-                        padding: 2mm 4% 20px 4% !important; 
+                        padding: 2mm 4% ${paperBottomPadding} 4% !important; 
                         background: #fff !important;
                         color: #000 !important;
-                        font-family: 'Courier New', Courier, monospace !important;
-                        font-weight: 700 !important;
                         position: relative !important;
                         box-sizing: border-box !important;
                     }
+
+                    /* Receipt dynamic CSS vars */
+                    #print-receipt-container.receipt-container-dynamic {
+                        --r-font-family: ${fontFamilyVal};
+                        --r-business-size: ${finalBusinessNameSize}px;
+                        --r-address-size: ${finalAddressSize}px;
+                        --r-tagline-size: ${taglineSize}px;
+                        --r-items-size: ${itemsFontSize}px;
+                        --r-total-size: ${totalFontSize}px;
+                        --r-token-size: ${receiptTokenSize}px;
+                        --r-details-size: ${detailsFontSize}px;
+                        --r-greeting-size: ${greetingFontSize}px;
+                        font-family: var(--r-font-family) !important;
+                        font-size: var(--r-details-size) !important;
+                    }
+                    #print-receipt-container.receipt-container-dynamic,
+                    #print-receipt-container.receipt-container-dynamic * {
+                        font-family: var(--r-font-family) !important;
+                    }
+
+                    /* KOT dynamic CSS vars */
+                    #print-receipt-container.kot-container-dynamic {
+                        --k-font-family: ${kotFontFamilyVal};
+                        --k-items-size: ${kotItemsFontSize}px;
+                        --k-qty-size: ${kotQtyFontSize}px;
+                        --k-token-size: ${kotTokenSize}px;
+                        font-family: var(--k-font-family) !important;
+                        font-size: var(--k-items-size) !important;
+                    }
+                    #print-receipt-container.kot-container-dynamic,
+                    #print-receipt-container.kot-container-dynamic * {
+                        font-family: var(--k-font-family) !important;
+                    }
+
+                    ${fontWeightVal ? `
+                    #print-receipt-container.receipt-container-dynamic,
+                    #print-receipt-container.receipt-container-dynamic * {
+                        font-weight: ${fontWeightVal} !important;
+                    }` : ''}
+
+                    ${kotFontWeightVal ? `
+                    #print-receipt-container.kot-container-dynamic,
+                    #print-receipt-container.kot-container-dynamic * {
+                        font-weight: ${kotFontWeightVal} !important;
+                    }` : ''}
+
                     * { 
                         color: #000 !important; 
                         border-color: #000 !important; 
+                        overflow: visible !important;
                         -webkit-print-color-adjust: exact !important; 
                         print-color-adjust: exact !important;
                     }
@@ -434,7 +519,9 @@ function KravyPOS() {
 
             const printContainer = document.createElement("div");
             printContainer.id = "print-receipt-container";
-            printContainer.className = "font-mono text-[11px] leading-tight font-bold";
+            // Apply dynamic class: receipt gets receipt-container-dynamic, KOT gets kot-container-dynamic
+            const containerClass = isBill ? "receipt-container-dynamic" : "kot-container-dynamic";
+            printContainer.className = containerClass;
             printContainer.innerHTML = printHTML;
             document.body.appendChild(printContainer);
 
