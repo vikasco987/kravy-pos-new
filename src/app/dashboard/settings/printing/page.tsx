@@ -6,41 +6,134 @@ import {
     ArrowLeft, Save, Printer, Eye, Settings, 
     Image as ImageIcon, Type, Phone, MapPin, 
     Hash, User, Users, Percent, MessageSquare, QrCode,
-    Receipt, ChefHat, Clock, FileText, Check, Zap, MoreVertical
+    Receipt, ChefHat, Clock, FileText, Check, Zap, MoreVertical,
+    ChevronDown, ChevronUp, RefreshCw
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { kravy } from "@/lib/sounds";
 import PrintTemplates from "@/components/printing/PrintTemplates";
 
+// --- Professional Thermal Sizing & Styling Configurations ---
+const defaults: any = {
+    // Bill Settings
+    showLogo: true,
+    showTagline: true,
+    showContact: true,
+    showAddress: true,
+    showGST: true,
+    showFSSAI: true,
+    showToken: true,
+    showCustomerDetails: true,
+    showTaxBreakup: true,
+    showGreetings: true,
+    showAmountInWords: true,
+    showPaymentStatus: true,
+    showFoodTypeSuffix: true,
+    // KOT Settings
+    showKOTToken: true,
+    showKOTCustomer: true,
+    showKOTBillNo: true,
+    showKOTInstructions: true,
+    // QR Settings
+    showReviewQR: false,
+    
+    // Typography Customization Defaults
+    paperWidth: "58mm",
+    printDensity: "balanced",
+    fontFamily: "",
+    kotFontFamily: "",
+    businessNameSize: 18,
+    businessAddressSize: 11,
+    taglineSize: 11,
+    receiptTokenSize: 28,
+    detailsFontSize: 10,
+    itemsFontSize: 11,
+    totalFontSize: 13,
+    greetingFontSize: 12,
+    kotTokenSize: 16,
+    kotItemsFontSize: 11,
+    kotQtyFontSize: 14
+};
+
+const TYPOGRAPHY_PRESETS = {
+    balanced: {
+        businessNameSize: 18,
+        businessAddressSize: 11,
+        taglineSize: 11,
+        receiptTokenSize: 28,
+        detailsFontSize: 10,
+        itemsFontSize: 11,
+        totalFontSize: 13,
+        greetingFontSize: 12,
+        kotTokenSize: 16,
+        kotItemsFontSize: 11,
+        kotQtyFontSize: 14,
+        fontFamily: "",
+        kotFontFamily: ""
+    },
+    compact: {
+        businessNameSize: 14,
+        businessAddressSize: 9,
+        taglineSize: 9,
+        receiptTokenSize: 20,
+        detailsFontSize: 8,
+        itemsFontSize: 9,
+        totalFontSize: 11,
+        greetingFontSize: 9,
+        kotTokenSize: 12,
+        kotItemsFontSize: 9,
+        kotQtyFontSize: 11,
+        fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+        kotFontFamily: '"Courier New", Courier, monospace'
+    },
+    bold: {
+        businessNameSize: 24,
+        businessAddressSize: 13,
+        taglineSize: 12,
+        receiptTokenSize: 34,
+        detailsFontSize: 12,
+        itemsFontSize: 13,
+        totalFontSize: 16,
+        greetingFontSize: 14,
+        kotTokenSize: 20,
+        kotItemsFontSize: 13,
+        kotQtyFontSize: 16,
+        fontFamily: 'Georgia, Cambria, "Times New Roman", serif',
+        kotFontFamily: '"Courier New", Courier, monospace'
+    },
+    minimal: {
+        businessNameSize: 16,
+        businessAddressSize: 10,
+        taglineSize: 10,
+        receiptTokenSize: 24,
+        detailsFontSize: 9,
+        itemsFontSize: 10,
+        totalFontSize: 12,
+        greetingFontSize: 10,
+        kotTokenSize: 14,
+        kotItemsFontSize: 10,
+        kotQtyFontSize: 12,
+        fontFamily: '"Trebuchet MS", Helvetica, sans-serif',
+        kotFontFamily: '"Courier New", Courier, monospace'
+    }
+};
+
+const fonts = [
+    { name: "Default (System Sans)", value: "", desc: "Clean & fast", safe: true },
+    { name: "Courier New / Monospace", value: '"Courier New", Courier, monospace', desc: "Thermal Classic", safe: true },
+    { name: "Helvetica / Clean Sans", value: '"Helvetica Neue", Helvetica, Arial, sans-serif', desc: "Modern Sans", safe: true },
+    { name: "Verdana / Wide Sans", value: 'Verdana, Geneva, sans-serif', desc: "Broad Sans", safe: true },
+    { name: "Georgia / Classic Serif", value: 'Georgia, Cambria, "Times New Roman", serif', desc: "Formal Print", safe: false }
+];
+
 export default function PrintingSettings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [business, setBusiness] = useState<any>(null);
     const [previewGst, setPreviewGst] = useState(true);
-    const [printSettings, setPrintSettings] = useState<any>({
-        // Bill Settings
-        showLogo: true,
-        showTagline: true,
-        showContact: true,
-        showAddress: true,
-        showGST: true,
-        showFSSAI: true,
-        showToken: true,
-        showCustomerDetails: true,
-        showTaxBreakup: true,
-        showGreetings: true,
-        showAmountInWords: true,
-        showPaymentStatus: true,
-        showFoodTypeSuffix: true,
-        // KOT Settings
-        showKOTToken: true,
-        showKOTCustomer: true,
-        showKOTBillNo: true,
-        showKOTInstructions: true,
-        // QR Settings
-        showReviewQR: false,
-    });
+    const [showStyling, setShowStyling] = useState(true);
+    const [printSettings, setPrintSettings] = useState<any>({ ...defaults });
 
     const receiptRef = useRef<HTMLDivElement>(null);
     const kotRef = useRef<HTMLDivElement>(null);
@@ -174,6 +267,48 @@ export default function PrintingSettings() {
             </div>
         </button>
     );
+
+    const Sizer = ({ label, icon: Icon, sKey, min, max, descMap }: any) => {
+        const value = printSettings[sKey] !== undefined && printSettings[sKey] !== "" ? Number(printSettings[sKey]) : defaults[sKey];
+        
+        const getLabel = (val: number) => {
+            if (descMap) {
+                const keys = Object.keys(descMap).map(Number).sort((a,b) => a-b);
+                for (let i = keys.length - 1; i >= 0; i--) {
+                    if (val >= keys[i]) return descMap[keys[i]];
+                }
+            }
+            return `${val}px`;
+        };
+
+        return (
+            <div className="p-5 rounded-2xl bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 space-y-3">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-violet-500/10 text-violet-600 flex items-center justify-center">
+                            <Icon size={14} />
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">{label}</h4>
+                            <p className="text-[10px] text-slate-400 font-medium">Range: {min}px - {max}px</p>
+                        </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-violet-500/10 text-violet-600 text-xs font-black">
+                        {getLabel(value)}
+                    </span>
+                </div>
+                
+                <input 
+                    type="range" 
+                    min={min} 
+                    max={max} 
+                    value={value} 
+                    onChange={(e) => setPrintSettings((prev: any) => ({ ...prev, [sKey]: Number(e.target.value) }))}
+                    className="w-full h-1.5 bg-slate-100 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-violet-600 focus:outline-none"
+                />
+            </div>
+        );
+    };
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-20 kravy-page-fade">
@@ -323,6 +458,321 @@ export default function PrintingSettings() {
                             </motion.div>
                         )}
                     </div>
+
+                    {/* Typography & Styling Customization Accordion */}
+                    <div className="space-y-6 pt-4">
+                        <button 
+                            onClick={() => setShowStyling(!showStyling)}
+                            className="w-full flex items-center justify-between px-4 py-2 hover:opacity-80 transition-all text-left"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-violet-500" />
+                                <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Typography & Styling</h2>
+                            </div>
+                            <div className="text-slate-400">
+                                {showStyling ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            </div>
+                        </button>
+
+                        {showStyling && (
+                            <motion.div 
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                className="mx-4 p-6 rounded-3xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-8"
+                            >
+                                {/* Paper Settings Row */}
+                                <div className="space-y-4">
+                                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Printer size={12} /> Paper Width & Density
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Paper Width Toggle */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Paper Width</label>
+                                            <div className="grid grid-cols-2 bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1">
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setPrintSettings((p: any) => ({ ...p, paperWidth: "58mm" }))}
+                                                    className={`py-2 rounded-lg text-xs font-black uppercase transition-all ${printSettings.paperWidth !== "80mm" ? 'bg-white dark:bg-white/10 shadow-sm text-violet-600' : 'text-slate-400'}`}
+                                                >
+                                                    58mm (2" Thermal)
+                                                </button>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setPrintSettings((p: any) => ({ ...p, paperWidth: "80mm" }))}
+                                                    className={`py-2 rounded-lg text-xs font-black uppercase transition-all ${printSettings.paperWidth === "80mm" ? 'bg-white dark:bg-white/10 shadow-sm text-violet-600' : 'text-slate-400'}`}
+                                                >
+                                                    80mm (3" Thermal)
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Density presets */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Print Density Mode</label>
+                                            <div className="grid grid-cols-3 bg-slate-100 dark:bg-white/5 p-1 rounded-xl gap-1">
+                                                {(["compact", "balanced", "spacious"] as const).map((mode) => (
+                                                    <button 
+                                                        key={mode}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setPrintSettings((p: any) => ({ 
+                                                                ...p, 
+                                                                printDensity: mode,
+                                                                ...TYPOGRAPHY_PRESETS[mode === 'compact' ? 'compact' : mode === 'spacious' ? 'bold' : 'balanced']
+                                                            }));
+                                                            kravy.success();
+                                                            toast.success(`Applied ${mode} presets!`);
+                                                        }}
+                                                        className={`py-2 rounded-lg text-[10px] font-black uppercase transition-all ${
+                                                            (printSettings.printDensity === mode || 
+                                                            (mode === 'balanced' && !printSettings.printDensity)) 
+                                                            ? 'bg-white dark:bg-white/10 shadow-sm text-violet-600' 
+                                                            : 'text-slate-400'
+                                                        }`}
+                                                    >
+                                                        {mode}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Typography Presets Row */}
+                                <div className="space-y-4">
+                                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Zap size={12} /> Styling Presets
+                                    </h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {[
+                                            { id: "balanced", label: "Balanced Standard", desc: "Default layout" },
+                                            { id: "compact", label: "Compact POS", desc: "Dense & paper-saving" },
+                                            { id: "bold", label: "Restaurant Bold", desc: "High readability" },
+                                            { id: "minimal", label: "Minimal Cafe", desc: "Clean modern design" }
+                                        ].map((preset) => (
+                                            <button
+                                                key={preset.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setPrintSettings((prev: any) => ({
+                                                        ...prev,
+                                                        printDensity: preset.id === "balanced" ? "balanced" : preset.id === "bold" ? "spacious" : preset.id,
+                                                        ...TYPOGRAPHY_PRESETS[preset.id as keyof typeof TYPOGRAPHY_PRESETS]
+                                                    }));
+                                                    kravy.success();
+                                                    toast.success(`Preset "${preset.label}" loaded!`);
+                                                }}
+                                                className={`p-3 rounded-2xl border text-left transition-all hover:scale-[1.02] ${
+                                                    (printSettings.printDensity === preset.id || 
+                                                     (preset.id === "balanced" && (printSettings.printDensity === "balanced" || !printSettings.printDensity)))
+                                                    ? "bg-violet-600/5 border-violet-500/20 text-violet-600" 
+                                                    : "bg-white dark:bg-white/5 border-slate-100 dark:border-white/5 text-slate-600 dark:text-slate-300"
+                                                }`}
+                                            >
+                                                <div className="text-xs font-black uppercase tracking-wider">{preset.label}</div>
+                                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{preset.desc}</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Font Selector Row */}
+                                <div className="space-y-4">
+                                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Type size={12} /> Typography & Fonts
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Receipt Font */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Receipt/Bill Font Family</label>
+                                            <select 
+                                                value={printSettings.fontFamily || ""}
+                                                onChange={(e) => setPrintSettings((p: any) => ({ ...p, fontFamily: e.target.value }))}
+                                                className="h-12 px-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-black focus:ring-2 focus:ring-violet-500 outline-none transition-all cursor-pointer"
+                                            >
+                                                {fonts.map((f, idx) => (
+                                                    <option key={idx} value={f.value} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-xs">
+                                                        {f.name} {f.safe ? " (✔ Thermal Safe)" : ""}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* KOT Font */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">KOT (Kitchen Slip) Font Family</label>
+                                            <select 
+                                                value={printSettings.kotFontFamily || ""}
+                                                onChange={(e) => setPrintSettings((p: any) => ({ ...p, kotFontFamily: e.target.value }))}
+                                                className="h-12 px-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-black focus:ring-2 focus:ring-violet-500 outline-none transition-all cursor-pointer"
+                                            >
+                                                {fonts.map((f, idx) => (
+                                                    <option key={idx} value={f.value} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-xs">
+                                                        {f.name} {f.safe ? " (✔ Thermal Safe)" : ""}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Slider Grid: Receipt */}
+                                <div className="space-y-4">
+                                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 border-b border-dashed border-slate-200 dark:border-white/10 pb-2">
+                                        <Receipt size={12} /> Receipt Element Sizing (Thermal Safe Constrained)
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Sizer 
+                                            label="Business Name Font Size" 
+                                            icon={Type} 
+                                            sKey="businessNameSize" 
+                                            min={14} 
+                                            max={32} 
+                                            descMap={{ 14: "Small", 18: "Medium", 24: "Large", 32: "Extra Large" }} 
+                                        />
+                                        <Sizer 
+                                            label="Address Font Size" 
+                                            icon={MapPin} 
+                                            sKey="businessAddressSize" 
+                                            min={8} 
+                                            max={16} 
+                                            descMap={{ 8: "Very Compact", 11: "Standard", 14: "Highly Readable", 16: "Large" }} 
+                                        />
+                                        <Sizer 
+                                            label="Tagline Font Size" 
+                                            icon={Type} 
+                                            sKey="taglineSize" 
+                                            min={8} 
+                                            max={14} 
+                                            descMap={{ 8: "Compact", 11: "Standard", 14: "Large" }} 
+                                        />
+                                        <Sizer 
+                                            label="Receipt Token Size" 
+                                            icon={Clock} 
+                                            sKey="receiptTokenSize" 
+                                            min={18} 
+                                            max={40} 
+                                            descMap={{ 18: "Normal", 28: "Bold Standout", 40: "Giant Block" }} 
+                                        />
+                                        <Sizer 
+                                            label="Items List Font Size" 
+                                            icon={Receipt} 
+                                            sKey="itemsFontSize" 
+                                            min={9} 
+                                            max={18} 
+                                            descMap={{ 9: "Compact POS", 11: "Standard", 14: "Medium", 18: "Extra Large" }} 
+                                        />
+                                        <Sizer 
+                                            label="Grand Total Font Size" 
+                                            icon={Receipt} 
+                                            sKey="totalFontSize" 
+                                            min={11} 
+                                            max={24} 
+                                            descMap={{ 11: "Regular", 13: "Standard Highlight", 18: "Bold Large", 24: "Screaming Total" }} 
+                                        />
+                                        <Sizer 
+                                            label="Details & Metadata Size" 
+                                            icon={FileText} 
+                                            sKey="detailsFontSize" 
+                                            min={8} 
+                                            max={14} 
+                                            descMap={{ 8: "Dense", 10: "Standard", 14: "Large" }} 
+                                        />
+                                        <Sizer 
+                                            label="Greetings Footer Size" 
+                                            icon={MessageSquare} 
+                                            sKey="greetingFontSize" 
+                                            min={9} 
+                                            max={18} 
+                                            descMap={{ 9: "Compact", 12: "Standard", 18: "Large" }} 
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Slider Grid: KOT */}
+                                <div className="space-y-4">
+                                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 border-b border-dashed border-slate-200 dark:border-white/10 pb-2">
+                                        <ChefHat size={12} /> Kitchen Slip (KOT) Element Sizing
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Sizer 
+                                            label="KOT Token Size" 
+                                            icon={Clock} 
+                                            sKey="kotTokenSize" 
+                                            min={12} 
+                                            max={28} 
+                                            descMap={{ 12: "Regular", 16: "Standard", 28: "Large Block" }} 
+                                        />
+                                        <Sizer 
+                                            label="KOT Items Font Size" 
+                                            icon={ChefHat} 
+                                            sKey="kotItemsFontSize" 
+                                            min={9} 
+                                            max={18} 
+                                            descMap={{ 9: "Compact", 11: "Standard Mono", 18: "Spacious Large" }} 
+                                        />
+                                        <Sizer 
+                                            label="KOT Quantity Font Size" 
+                                            icon={ChefHat} 
+                                            sKey="kotQtyFontSize" 
+                                            min={10} 
+                                            max={22} 
+                                            descMap={{ 10: "Standard", 14: "Bold Standout", 22: "Giant Bold" }} 
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Resets Row */}
+                                <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                        * Element sizing fallbacks are applied automatically when limits are set.
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setPrintSettings((p: any) => ({
+                                                    ...p,
+                                                    businessNameSize: defaults.businessNameSize,
+                                                    businessAddressSize: defaults.businessAddressSize,
+                                                    taglineSize: defaults.taglineSize,
+                                                    receiptTokenSize: defaults.receiptTokenSize,
+                                                    detailsFontSize: defaults.detailsFontSize,
+                                                    itemsFontSize: defaults.itemsFontSize,
+                                                    totalFontSize: defaults.totalFontSize,
+                                                    greetingFontSize: defaults.greetingFontSize,
+                                                    fontFamily: defaults.fontFamily
+                                                }));
+                                                kravy.success();
+                                                toast.success("Receipt typography reset to default!");
+                                            }}
+                                            className="h-10 px-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-transparent text-xs font-black text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-all flex items-center gap-2"
+                                        >
+                                            <RefreshCw size={12} /> Reset Receipt Styling
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setPrintSettings((p: any) => ({
+                                                    ...p,
+                                                    kotTokenSize: defaults.kotTokenSize,
+                                                    kotItemsFontSize: defaults.kotItemsFontSize,
+                                                    kotQtyFontSize: defaults.kotQtyFontSize,
+                                                    kotFontFamily: defaults.kotFontFamily
+                                                }));
+                                                kravy.success();
+                                                toast.success("KOT typography reset to default!");
+                                            }}
+                                            className="h-10 px-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-transparent text-xs font-black text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-all flex items-center gap-2"
+                                        >
+                                            <RefreshCw size={12} /> Reset KOT Styling
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Right: Live Preview */}
@@ -348,11 +798,20 @@ export default function PrintingSettings() {
                     <div className="bg-slate-200/50 dark:bg-black/40 rounded-[2.5rem] p-8 border border-slate-300 dark:border-white/10 shadow-inner flex flex-col items-center gap-10 min-h-[600px] overflow-hidden">
                         
                         {/* THE PREVIEW WRAPPER */}
-                        <div className="flex flex-col gap-12 w-full max-w-[280px]">
+                        <div 
+                            className={`flex flex-col gap-8 w-full transition-all duration-300 border-x-2 border-dashed border-slate-400/20 px-4 relative ${
+                                printSettings.paperWidth === '80mm' ? 'max-w-[330px]' : 'max-w-[260px]'
+                            }`}
+                        >
+                            {/* Width Badge Indicator */}
+                            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-violet-600 text-white font-black text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg whitespace-nowrap">
+                                {printSettings.paperWidth === '80mm' ? '80mm (3") Printable Width' : '58mm (2") Printable Width'}
+                            </div>
+
                             {/* Bill Preview */}
-                            <div className="space-y-3">
+                            <div className="space-y-3 mt-4">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Customer Receipt</p>
-                                <div className="bg-white p-4 rounded-lg shadow-2xl scale-[0.85] origin-top">
+                                <div className="bg-white p-4 rounded-lg shadow-2xl scale-[0.95] origin-top">
                                    <PrintTemplates {...dummyProps} />
                                    {/* Manual Overrides for CSS to show in preview instead of hidden */}
                                    <style dangerouslySetInnerHTML={{ __html: `

@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface PrintTemplatesProps {
@@ -54,32 +53,106 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
   const ps = business?.printSettings || {};
   const s = (key: string) => ps[key] !== false; // Default to true if not set
 
+  // --- Dynamic Typography Configurations with Thermal Safety Limits ---
+  const is80 = ps.paperWidth === '80mm';
+  const paperWidthStr = is80 ? '80mm' : '58mm';
+  const printableWidthStr = is80 ? '70mm' : '48mm';
+
+  const fontFamilyVal = ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  const kotFontFamilyVal = ps.kotFontFamily || '"Courier New", Courier, monospace';
+  
+  // Custom font size resolver with min/max safety constraints
+  const getClamped = (val: any, def: number, min: number, max: number) => {
+    if (val === undefined || val === null || val === "") return def;
+    return Math.max(min, Math.min(max, Number(val)));
+  };
+
+  const rawBusinessNameSize = getClamped(ps.businessNameSize, 18, 14, 32);
+  const businessAddressSize = getClamped(ps.businessAddressSize, 11, 8, 16);
+  const taglineSize = getClamped(ps.taglineSize, 11, 8, 14);
+  const receiptTokenSize = getClamped(ps.receiptTokenSize, 28, 18, 40);
+  const detailsFontSize = getClamped(ps.detailsFontSize, 10, 8, 14);
+  const itemsFontSize = getClamped(ps.itemsFontSize, 11, 9, 18);
+  const totalFontSize = getClamped(ps.totalFontSize, 13, 11, 24);
+  const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
+  
+  const kotTokenSize = getClamped(ps.kotTokenSize, 16, 12, 28);
+  const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 18);
+  const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 22);
+
+  // --- Auto-Shrink Logic for Long Texts ---
+  const getAutoShrunkNameSize = () => {
+    let size = rawBusinessNameSize;
+    const nameLen = (business?.businessName || "").length;
+    if (nameLen > 25) size -= 2;
+    if (nameLen > 35) size -= 2;
+    return Math.max(14, size);
+  };
+  const finalBusinessNameSize = getAutoShrunkNameSize();
+
+  const getAutoShrunkAddressSize = () => {
+    let size = businessAddressSize;
+    const addrLen = (business?.businessAddress || "").length;
+    if (addrLen > 60) size -= 1;
+    if (addrLen > 100) size -= 1;
+    return Math.max(8, size);
+  };
+  const finalAddressSize = getAutoShrunkAddressSize();
+
+  const dynamicCss = `
+    .receipt-container-dynamic {
+      --r-font-family: ${fontFamilyVal};
+      --r-business-size: ${finalBusinessNameSize}px;
+      --r-address-size: ${finalAddressSize}px;
+      --r-tagline-size: ${taglineSize}px;
+      --r-items-size: ${itemsFontSize}px;
+      --r-total-size: ${totalFontSize}px;
+      --r-token-size: ${receiptTokenSize}px;
+      --r-details-size: ${detailsFontSize}px;
+      --r-greeting-size: ${greetingFontSize}px;
+      font-family: var(--r-font-family) !important;
+      font-size: var(--r-details-size);
+    }
+    .kot-container-dynamic {
+      --k-font-family: ${kotFontFamilyVal};
+      --k-items-size: ${kotItemsFontSize}px;
+      --k-qty-size: ${kotQtyFontSize}px;
+      --k-token-size: ${kotTokenSize}px;
+      font-family: var(--k-font-family) !important;
+      font-size: var(--k-items-size);
+    }
+    
+    @media print {
+      @page { margin: 0 !important; }
+      body { margin: 0 !important; padding: 0 !important; }
+      .receipt-container { width: ${paperWidthStr} !important; margin: 0 auto !important; }
+      .kot-container { width: ${paperWidthStr} !important; margin: 0 auto !important; }
+    }
+  `;
+
   return (
     <div className="hidden-print">
-      {/* Universal Print Style Reset */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media print {
-          @page { margin: 0 !important; }
-          body { margin: 0 !important; padding: 0 !important; }
-          .receipt-container { width: 58mm !important; margin: 0 auto !important; }
-          .kot-container { width: 58mm !important; margin: 0 auto !important; }
-        }
-      `}} />
+      {/* Dynamic Styling and Print Scale Adjustments */}
+      <style dangerouslySetInnerHTML={{ __html: dynamicCss }} />
 
-      {/* ================= PRINT RECEIPT (58mm Content) ================= */}
+      {/* ================= PRINT RECEIPT ================= */}
       <div
         ref={receiptRef}
-        data-paper="58"
-        className="hidden print:block receipt receipt-container font-sans text-[11px] leading-tight text-black bg-white"
+        data-paper={is80 ? "80" : "58"}
+        className="hidden print:block receipt receipt-container receipt-container-dynamic text-black bg-white"
         style={{ 
-          width: '48mm', 
+          width: printableWidthStr, 
           margin: '0 auto',
-          padding: '0mm 2mm 8mm 2mm', 
+          padding: is80 ? '0mm 4mm 8mm 4mm' : '0mm 2mm 8mm 2mm', 
           boxSizing: 'border-box',
-          WebkitFontSmoothing: 'none',
-          fontSmooth: 'never',
+          WebkitFontSmoothing: 'antialiased',
           overflow: 'hidden',
-          marginTop: '-10px'
+          marginTop: '-10px',
+          overflowWrap: 'break-word',
+          wordBreak: 'break-word',
+          // Thermal safety variables
+          WebkitPrintColorAdjust: 'exact',
+          printColorAdjust: 'exact'
         }}
       >
         {(business?.logoUrl && s('showLogo')) && (
@@ -96,23 +169,23 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         )}
         <div 
-          className="text-center font-bold leading-none mb-1"
-          style={{ 
-            fontSize: business?.businessNameSize === 'medium' ? '12px' : 
-                      business?.businessNameSize === 'xlarge' ? '22px' : '18px' 
-          }}
+          className="text-center font-bold leading-tight mb-1"
+          style={{ fontSize: 'var(--r-business-size)' }}
         >
           {business?.businessName}
         </div>
         {(business?.businessTagLine && s('showTagline')) && (
-          <div className="text-center text-[11px] font-bold italic opacity-90 mb-1 leading-none uppercase tracking-tight">
+          <div 
+            className="text-center font-bold italic opacity-90 mb-1 leading-none uppercase tracking-tight"
+            style={{ fontSize: 'var(--r-tagline-size)' }}
+          >
             {business.businessTagLine}
           </div>
         )}
         {((business?.businessAddress || business?.district || business?.state || business?.pinCode) && s('showAddress')) && (
           <div 
             className="text-center font-bold leading-tight mt-1"
-            style={{ fontSize: `${business?.businessAddressSize || 12}px` }}
+            style={{ fontSize: 'var(--r-address-size)' }}
           >
             {business?.businessAddress}
             {business?.district && `, ${business.district}`}
@@ -121,26 +194,34 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         )}
         {((business?.contactPersonPhone || business?.contactPhone || business?.businessPhone) && s('showContact')) && (
-          <div className="text-center font-bold text-[12px] mt-0.5">
+          <div className="text-center font-bold mt-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
             {business?.phonePrefixType?.toString().toUpperCase() === 'SYMBOL' ? '📞 ' : 'Mob: '} {business.contactPersonPhone || business.contactPhone || business.businessPhone}
           </div>
         )}
-        {(business?.gstNumber && s('showGST')) && <div className="text-center text-[10px] font-bold border-y border-black py-1 mt-2 mb-1">GSTIN: {business.gstNumber}</div>}
-        {(business?.fssaiNumber && business?.fssaiEnabled && s('showFSSAI')) && <div className="text-center text-[10px] font-bold mt-0.5">FSSAI: {business.fssaiNumber}</div>}
+        {(business?.gstNumber && s('showGST')) && (
+          <div className="text-center font-bold border-y border-black py-1 mt-2 mb-1" style={{ fontSize: 'var(--r-details-size)' }}>
+            GSTIN: {business.gstNumber}
+          </div>
+        )}
+        {(business?.fssaiNumber && business?.fssaiEnabled && s('showFSSAI')) && (
+          <div className="text-center font-bold mt-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
+            FSSAI: {business.fssaiNumber}
+          </div>
+        )}
         
-        <div className="mt-3 border-t border-dashed border-gray-400 pt-2 px-1">
+        <div className="mt-3 border-t border-dashed border-gray-400 pt-2 px-1" style={{ fontSize: 'var(--r-details-size)' }}>
           <div className="flex justify-between items-center mb-1">
-            <div className="font-black uppercase text-[10px] tracking-tight">Bill Summary</div>
+            <div className="font-black uppercase tracking-tight">Bill Summary</div>
             {selectedTable && (
-              <div className="font-black uppercase text-[7px] border-2 border-black text-black px-1.5 py-0.5 rounded-sm">
+              <div className="font-black uppercase border-2 border-black text-black px-1.5 py-0.5 rounded-sm" style={{ fontSize: 'calc(var(--r-details-size) - 2px)' }}>
                 {selectedTable === "POS" ? "COUNTER" : selectedTable.replace("TYPE: ", "")}
               </div>
             )}
           </div>
           <div className="flex justify-between items-start">
-            <div className="text-[10px] space-y-0.5">
+            <div className="space-y-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
               <div className="font-black">No: {billNumber}</div>
-              <div className="font-black text-[9px]">{billDate}</div>
+              <div className="font-black">{billDate}</div>
             </div>
           </div>
         </div>
@@ -157,8 +238,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           if (displayToken && s('showToken')) {
             return (
               <div style={{ textAlign: 'center', margin: '10px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '6px 0' }}>
-                <div style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Token No.</div>
-                <div style={{ fontSize: '28px', fontWeight: '900', lineHeight: '1', marginTop: '4px' }}>#{displayToken}</div>
+                <div style={{ fontSize: 'calc(var(--r-details-size) - 1px)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Token No.</div>
+                <div style={{ fontSize: 'var(--r-token-size)', fontWeight: '900', lineHeight: '1', marginTop: '4px' }}>#{displayToken}</div>
               </div>
             );
           }
@@ -166,66 +247,84 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         })()}
 
         {((customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && s('showCustomerDetails')) && (
-          <div className={`mt-2 text-[10px] font-black ${s('sepCustomer') ? 'border-t-2 border-dashed border-black' : ''} pt-1`}>
+          <div className={`mt-2 font-black ${s('sepCustomer') ? 'border-t-2 border-dashed border-black' : ''} pt-1`} style={{ fontSize: 'var(--r-details-size)' }}>
             {customerName && <div>Customer: {customerName}</div>}
             {customerPhone && <div>Phone: {customerPhone}</div>}
             {buyerGSTIN && <div className="uppercase">Buyer GST: {buyerGSTIN}</div>}
             {customerAddress && <div className="mt-0.5" style={{ wordWrap: 'break-word', whiteSpace: 'pre-wrap' }}>Addr: {customerAddress}</div>}
-            {orderNotes && <div className="mt-0.5 italic text-[10px]">Note: {orderNotes}</div>}
+            {orderNotes && <div className="mt-0.5 italic">Note: {orderNotes}</div>}
           </div>
         )}
 
-        <div className="mt-1 text-center text-[10px] font-bold">
+        <div className="mt-1 text-center font-bold" style={{ fontSize: 'var(--r-details-size)' }}>
           {placeOfSupply && <div>Place of Supply: {placeOfSupply}</div>}
         </div>
-        <div className={`flex justify-between font-bold text-[10px] uppercase ${s('sepItemsHeader') ? 'border-b border-dashed border-black py-1 my-1' : 'my-1'}`}>
+        
+        <div className={`flex justify-between font-bold uppercase ${s('sepItemsHeader') ? 'border-b border-dashed border-black py-1 my-1' : 'my-1'}`} style={{ fontSize: 'var(--r-details-size)' }}>
           <span className="flex-1 min-w-0 pr-1">Item Description</span>
-          <span className="w-[10mm] text-right shrink-0">Total</span>
+          {is80 && <span className="w-[22mm] text-center shrink-0 pr-2">Qty x Rate</span>}
+          <span className="w-[12mm] text-right shrink-0">Total</span>
         </div>
+        
         {items.map((i, idx) => {
           const itemRate = (perProductEnabled && i.gst !== undefined && i.gst !== null) ? i.gst : (taxActive ? globalRate : 0);
           return (
-            <div key={idx} className="mb-2 border-b border-dotted border-black/20 pb-1">
-              <div className="flex justify-between items-start text-[11px] font-bold">
-                <span className="flex-1 min-w-0 pr-1 break-words leading-[1.2]">
-                  {s('showFoodTypeSuffix') ? i.name : i.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
-                </span>
-                <span className="w-[12mm] text-right shrink-0">₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center text-[11px] font-bold mt-0.5">
-                <span>{i.qty} x ₹{Number(i.rate ?? 0).toFixed(2)}</span>
-                <span className="text-[10px] font-bold">
-                  {((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} 
-                  {(taxActive || perProductEnabled) ? ` | GST: ${itemRate}%` : ""}
-                </span>
-              </div>
+            <div key={idx} className="mb-2 border-b border-dotted border-black/20 pb-1" style={{ fontSize: 'var(--r-items-size)' }}>
+              {is80 ? (
+                /* Spacious 80mm/3-inch Row Design: Proper columns */
+                <div className="flex justify-between items-start font-bold">
+                  <span className="flex-1 min-w-0 pr-1 break-words leading-[1.2]">
+                    {s('showFoodTypeSuffix') ? i.name : i.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
+                    {((business?.hsnEnabled && i.hsnCode) ? ` (HSN: ${i.hsnCode})` : "")}
+                  </span>
+                  <span className="w-[22mm] text-center shrink-0 pr-2">{i.qty} x ₹{Number(i.rate ?? 0).toFixed(2)}</span>
+                  <span className="w-[12mm] text-right shrink-0">₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
+                </div>
+              ) : (
+                /* Compact 58mm/2-inch Row Design */
+                <>
+                  <div className="flex justify-between items-start font-bold">
+                    <span className="flex-1 min-w-0 pr-1 break-words leading-[1.2]">
+                      {s('showFoodTypeSuffix') ? i.name : i.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
+                    </span>
+                    <span className="w-[12mm] text-right shrink-0">₹{(Number(i.qty ?? 0) * Number(i.rate ?? 0)).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center font-bold mt-0.5" style={{ fontSize: 'calc(var(--r-items-size) - 1px)' }}>
+                    <span>{i.qty} x ₹{Number(i.rate ?? 0).toFixed(2)}</span>
+                    <span className="font-bold">
+                      {((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} 
+                      {(taxActive || perProductEnabled) ? ` | GST: ${itemRate}%` : ""}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           );
         })}
         {s('sepTotalTop') && <div className="my-1 border-t-2 border-black" />}
         
-        <div className="space-y-1">
-          {s('showSubtotal') && <div className="flex justify-between text-[11px] font-bold"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>}
+        <div className="space-y-1" style={{ fontSize: 'var(--r-items-size)' }}>
+          {s('showSubtotal') && <div className="flex justify-between font-bold"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>}
           {(discountAmt > 0 && s('showDiscount')) && (
-            <div className="flex justify-between text-[11px] font-bold italic">
+            <div className="flex justify-between font-bold italic">
               <span>Discount ({appliedOffer?.code})</span>
               <span>- ₹{discountAmt.toFixed(2)}</span>
             </div>
           )}
           {(taxActive || perProductEnabled) && (
             <>
-              {s('showTaxableAmt') && <div className="flex justify-between text-[10px] font-bold"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>}
-              {s('showTotalTax') && <div className="flex justify-between text-[10px] font-bold"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>}
+              {s('showTaxableAmt') && <div className="flex justify-between font-bold" style={{ fontSize: 'var(--r-details-size)' }}><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>}
+              {s('showTotalTax') && <div className="flex justify-between font-bold" style={{ fontSize: 'var(--r-details-size)' }}><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>}
             </>
           )}
           {(deliveryCharge > 0 && s('showDeliveryCharges')) && (
             <>
-              <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
+              <div className="flex justify-between items-center font-bold mt-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
                 <span>DELIVERY CHARGES</span>
                 <span>₹{deliveryCharge.toFixed(2)}</span>
               </div>
               {deliveryGst > 0 && (
-                <div className="flex justify-between items-center text-[8px] font-bold italic">
+                <div className="flex justify-between items-center font-bold italic" style={{ fontSize: 'calc(var(--r-details-size) - 2px)' }}>
                   <span className="pl-2">└ Tax on Delivery ({business?.deliveryGstRate}%)</span>
                   <span>₹{deliveryGst.toFixed(2)}</span>
                 </div>
@@ -234,12 +333,12 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           )}
           {(packagingCharge > 0 && s('showPackagingCharges')) && (
             <>
-              <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
+              <div className="flex justify-between items-center font-bold mt-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
                 <span>PACKAGING CHARGES</span>
                 <span>₹{packagingCharge.toFixed(2)}</span>
               </div>
               {packagingGst > 0 && (
-                <div className="flex justify-between items-center text-[8px] font-bold italic">
+                <div className="flex justify-between items-center font-bold italic" style={{ fontSize: 'calc(var(--r-details-size) - 2px)' }}>
                   <span className="pl-2">└ Tax on Packaging ({business?.packagingGstRate}%)</span>
                   <span>₹{packagingGst.toFixed(2)}</span>
                 </div>
@@ -247,22 +346,25 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             </>
           )}
           {(serviceCharge > 0 && s('showServiceCharge')) && (
-            <div className="flex justify-between items-center text-[10px] font-bold mt-0.5">
+            <div className="flex justify-between items-center font-bold mt-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
               <span>SERVICE CHARGE</span>
               <span>₹{serviceCharge.toFixed(2)}</span>
             </div>
           )}
           {s('sepTotalTop') && <div className="border-t-2 border-dashed border-black my-1" />}
-          <div className={`flex justify-between font-black text-[13px] ${s('sepTotalBottom') ? 'border-y-2 border-black py-2 my-1.5' : 'my-1.5'} uppercase bg-white px-1`}>
+          <div 
+            className={`flex justify-between font-black ${s('sepTotalBottom') ? 'border-y-2 border-black py-2 my-1.5' : 'my-1.5'} uppercase bg-white px-1`} 
+            style={{ fontSize: 'var(--r-total-size)' }}
+          >
             <span>GRAND TOTAL</span>
             <span>₹{finalTotal.toFixed(2)}</span>
           </div>
         </div>
 
         {(taxActive || perProductEnabled) && taxBreakup.length > 0 && s('showTaxBreakup') && (
-          <div className="mt-3">
-            <div className="text-[10px] font-black border-b border-dashed border-black mb-1 pb-0.5">GST TAX BREAKUP</div>
-            <table className="w-full text-[10px] border-collapse font-bold">
+          <div className="mt-3" style={{ fontSize: 'var(--r-details-size)' }}>
+            <div className="font-black border-b border-dashed border-black mb-1 pb-0.5">GST TAX BREAKUP</div>
+            <table className="w-full border-collapse font-bold" style={{ fontSize: 'calc(var(--r-details-size) - 1px)' }}>
               <thead>
                 <tr className="border-b-2 border-black">
                   <th className="text-left font-bold">Rate</th>
@@ -299,39 +401,42 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         )}
 
         {s('showAmountInWords') && (
-          <div className="mt-2 text-[10px] italic font-bold">
+          <div className="mt-2 italic font-bold" style={{ fontSize: 'var(--r-details-size)' }}>
             Amount in Words: {numberToWords(finalTotal)}
           </div>
         )}
 
         {s('showPaymentStatus') && (
-          <div className={`mt-3 ${s('sepPayment') ? 'border-t-2 border-dashed border-black' : ''} pt-1 flex justify-between text-[11px] font-bold`}>
+          <div 
+            className={`mt-3 ${s('sepPayment') ? 'border-t-2 border-dashed border-black' : ''} pt-1 flex justify-between font-bold`}
+            style={{ fontSize: 'var(--r-items-size)' }}
+          >
             <span>Payment: {paymentMode}</span>
             <span>Status: {paymentStatus}</span>
           </div>
         )}
         
         {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
-          <div className="mt-2 text-center text-[10px] font-bold border-t border-dashed border-black pt-2">
+          <div className="mt-2 text-center font-bold border-t border-dashed border-black pt-2" style={{ fontSize: 'var(--r-details-size)' }}>
             {(business?.upi && business?.upiQrEnabled !== false) && (
               <>
-                <div className="font-bold text-[11px] mb-1">SCAN & PAY</div>
+                <div className="font-bold mb-1" style={{ fontSize: 'var(--r-items-size)' }}>SCAN & PAY</div>
                 <div className="my-2 text-center">
                   <div className="inline-block border-2 border-black p-1 bg-white">
                     <img src={qrUrl} alt="UPI QR" className="w-[30mm] h-[30mm] object-contain block" style={{ imageRendering: 'pixelated', filter: 'contrast(1000%) grayscale(100%)' }} />
                   </div>
                 </div>
-                <div className="mb-2 text-[11px] font-bold">UPI: {business.upi}</div>
+                <div className="mb-2 font-bold" style={{ fontSize: 'var(--r-items-size)' }}>UPI: {business.upi}</div>
               </>
             )}
             {paymentMode === "UPI" && (
-              <div className="text-center text-[10px]">Txn Ref: {upiTxnRef || "Pending"}</div>
+              <div className="text-center" style={{ fontSize: 'var(--r-details-size)' }}>Txn Ref: {upiTxnRef || "Pending"}</div>
             )}
           </div>
         )}
         {business?.enableMenuQRInBill && (
           <div className="mt-2 text-center border-t-2 border-black pt-2">
-            <div className="text-[11px] font-black mb-1 uppercase tracking-tighter">Scan to View Digital Menu</div>
+            <div className="font-black mb-1 uppercase tracking-tighter" style={{ fontSize: 'var(--r-items-size)' }}>Scan to View Digital Menu</div>
             <div className="my-2 text-center">
               <div className="inline-block border-2 border-black p-1 bg-white">
                 <img 
@@ -346,7 +451,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         )}
         {s('showReviewQR') && business?.reviewUrl && (
           <div className="mt-2 text-center border-t-2 border-black pt-2">
-            <div className="text-[11px] font-black mb-1 uppercase tracking-tighter">Rate Your Experience</div>
+            <div className="font-black mb-1 uppercase tracking-tighter" style={{ fontSize: 'var(--r-items-size)' }}>Rate Your Experience</div>
             <div className="my-2 text-center">
               <div className="inline-block border-2 border-black p-1 bg-white">
                 <img 
@@ -360,7 +465,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
         )}
         {selectedParty && (
-          <div className="mt-2 border-t border-dashed border-black pt-2 text-[10px] font-bold space-y-0.5">
+          <div className="mt-2 border-t border-dashed border-black pt-2 font-bold space-y-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
             <div className="flex justify-between uppercase">
               <span>Wallet (Opening)</span>
               <span>₹{(prevWalletBalance ?? selectedParty.walletBalance + (paymentMode === 'Wallet' ? finalTotal : 0)).toFixed(2)}</span>
@@ -380,26 +485,35 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
 
         <div className={`mt-4 ${s('sepFooter') ? 'border-t-2 border-black' : ''} pt-2 text-center`}>
           {s('showGreetings') && (
-            <div className="text-[12px] font-black italic tracking-widest uppercase mb-1">
+            <div className="font-black italic tracking-widest uppercase mb-1" style={{ fontSize: 'var(--r-greeting-size)' }}>
               {business?.greetingMessage || "Thank You!"}
             </div>
           )}
-          {s('showVisitAgain') && <div className="text-[9px] font-bold">Visit Again for Fresh Food</div>}
-          {s('showPoweredBy') && <div className="text-[8px] mt-3 font-bold">Powered by Kravy</div>}
+          {s('showVisitAgain') && <div className="font-bold" style={{ fontSize: 'calc(var(--r-details-size) - 1px)' }}>Visit Again for Fresh Food</div>}
+          {s('showPoweredBy') && <div className="mt-3 font-bold" style={{ fontSize: 'calc(var(--r-details-size) - 2px)' }}>Powered by Kravy</div>}
         </div>
       </div>
 
-      {/* ================= KOT TEMPLATE (58mm Content) ================= */}
+      {/* ================= KOT TEMPLATE ================= */}
       <div
         ref={kotRef}
-        data-paper="58"
-        className="hidden print:block kot kot-container font-mono text-[10px] leading-tight text-black bg-white"
-        style={{ width: '48mm', margin: '0 auto', padding: '0mm 2mm 8mm 2mm', boxSizing: 'border-box', overflow: 'hidden' }}
+        data-paper={is80 ? "80" : "58"}
+        className="hidden print:block kot kot-container kot-container-dynamic text-black bg-white"
+        style={{ 
+          width: printableWidthStr, 
+          margin: '0 auto', 
+          padding: is80 ? '0mm 4mm 8mm 4mm' : '0mm 2mm 8mm 2mm', 
+          boxSizing: 'border-box', 
+          overflow: 'hidden',
+          // KOT safety features
+          WebkitPrintColorAdjust: 'exact',
+          printColorAdjust: 'exact'
+        }}
       >
-        <div className="text-center font-black text-[22px] border-b-2 border-black pb-1 mb-2">K.O.T</div>
+        <div className="text-center font-black border-b-2 border-black pb-1 mb-2" style={{ fontSize: 'calc(var(--k-items-size) * 1.8)' }}>K.O.T</div>
         
-        <div className="flex flex-wrap justify-between items-center font-black text-[11px] mb-2 px-0.5 gap-y-1">
-          <div className="border-2 border-black text-black px-1.5 py-1 rounded-sm font-black whitespace-nowrap text-[10px]">
+        <div className="flex flex-wrap justify-between items-center font-black mb-2 px-0.5 gap-y-1" style={{ fontSize: 'var(--k-items-size)' }}>
+          <div className="border-2 border-black text-black px-1.5 py-1 rounded-sm font-black whitespace-nowrap" style={{ fontSize: 'calc(var(--k-items-size) - 1px)' }}>
             {selectedTable === "POS" ? "COUNTER" : 
              selectedTable === "TAKEAWAY" ? "TAKEAWAY" : 
              selectedTable === "DELIVERY" ? "DELIVERY" : 
@@ -407,10 +521,10 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
           {s('showKOTToken') && (
             <div className="text-right leading-none">
-              <div className="text-[8px] font-black uppercase tracking-tighter">Token No.</div>
+              <div style={{ fontSize: 'calc(var(--k-items-size) - 3px)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Token No.</div>
               <div 
                 className="font-black"
-                style={{ fontSize: `${business?.tokenNumberSize || 16}px` }}
+                style={{ fontSize: 'var(--k-token-size)' }}
               >
                 #{(() => {
                   if (tokenNumber != null && tokenNumber !== "" && tokenNumber !== "---") {
@@ -423,7 +537,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           )}
         </div>
 
-        <div className="border-y border-dashed border-black py-1 mb-2 text-[10px] font-bold">
+        <div className="border-y border-dashed border-black py-1 mb-2 font-bold" style={{ fontSize: 'calc(var(--k-items-size) - 1px)' }}>
           {s('showKOTBillNo') && (
             <div className="flex justify-between">
               <span>Bill: {billNumber}</span>
@@ -433,7 +547,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           {(customerName && s('showKOTCustomer')) && <div className="mt-0.5 truncate">Cust: {customerName}</div>}
         </div>
 
-        <table className="w-full border-collapse font-black text-[11px]">
+        <table className="w-full border-collapse font-black" style={{ fontSize: 'var(--k-items-size)' }}>
           <thead>
             <tr className="border-b-2 border-black">
               <th className="text-left py-1 uppercase">Item Description</th>
@@ -449,12 +563,12 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                   <td className="py-2 pr-2 leading-[1.1] uppercase">
                   {s('showFoodTypeSuffix') ? i.name : i.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
                      {i.variants && i.variants.length > 0 && (
-                       <div className="text-[9px] font-bold lowercase">
+                       <div className="font-bold lowercase" style={{ fontSize: 'calc(var(--k-items-size) - 2px)' }}>
                           ({i.variants.map((v:any) => v.name).join(', ')})
                        </div>
                      )}
                   </td>
-                  <td className="text-right py-2 align-top text-[14px]">x{i.qty}</td>
+                  <td className="text-right py-2 align-top font-black" style={{ fontSize: 'var(--k-qty-size)' }}>x{i.qty}</td>
                 </tr>
               ));
             })()}
@@ -463,14 +577,14 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
 
         {(orderNotes && s('showKOTInstructions')) && (
           <div className={`mt-3 p-2 ${s('sepKOTInstructions') ? 'border-2 border-black bg-black/5' : ''} rounded-sm`}>
-            <div className="text-[9px] font-black uppercase mb-1 border-b border-black">Chef Instructions:</div>
-            <div className="text-[11px] font-bold italic leading-tight">{orderNotes}</div>
+            <div className="font-black uppercase mb-1 border-b border-black" style={{ fontSize: 'calc(var(--k-items-size) - 2px)' }}>Chef Instructions:</div>
+            <div className="font-bold italic leading-tight" style={{ fontSize: 'var(--k-items-size)' }}>{orderNotes}</div>
           </div>
         )}
 
-        <div className="mt-4 border-t-2 border-black pt-2 text-center">
-          <div className="text-[9px] font-black uppercase">End of KOT</div>
-          <div className="text-[10px] font-bold mt-1">{billDate}</div>
+        <div className="mt-4 border-t-2 border-black pt-2 text-center" style={{ fontSize: 'calc(var(--k-items-size) - 2px)' }}>
+          <div className="font-black uppercase">End of KOT</div>
+          <div className="font-bold mt-1">{billDate}</div>
         </div>
       </div>
     </div>
