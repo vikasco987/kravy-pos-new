@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
-import { ChevronLeft, Users, UserPlus, UserCheck, Heart, Search, Download, Calendar, User, Phone, Zap, Star, ShieldCheck, Clock, ArrowRight } from "lucide-react";
+import { ChevronLeft, Users, UserPlus, UserCheck, Heart, Search, Download, Calendar, User, Phone, Zap, Star, ShieldCheck, Clock, ArrowRight, BadgePercent } from "lucide-react";
 import Link from "next/link";
 
 export const revalidate = 0;
@@ -19,7 +19,7 @@ export default async function CustomerReportPage({
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const [allBills, pastBills] = await Promise.all([
+  const [allBills, pastBills, historicalBills, parties] = await Promise.all([
      prisma.billManager.findMany({
         where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startOfDay } },
         orderBy: { createdAt: "desc" }
@@ -27,10 +27,57 @@ export default async function CustomerReportPage({
      prisma.billManager.findMany({
         where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { lt: startOfDay } },
         select: { customerPhone: true }
+     }),
+     prisma.billManager.findMany({
+        where: { clerkUserId: effectiveId, isDeleted: false },
+        select: { customerName: true, customerPhone: true, total: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 500
+     }),
+     prisma.party.findMany({
+        where: { createdBy: effectiveId },
+        select: { name: true, phone: true, loyaltyPoints: true }
      })
   ]);
 
   const pastPhones = new Set(pastBills.map(b => b.customerPhone).filter(Boolean));
+  const cleanPhone = (phone?: string | null) => phone ? phone.replace(/[\s\-\(\)\+]/g, "").slice(-10) : "";
+  const partyMap = new Map(parties.map(p => [cleanPhone(p.phone), p]));
+  const crmMap = new Map<string, { name: string; phone: string; visits: number; totalSpend: number; lastVisit: Date; loyaltyPoints: number }>();
+
+  historicalBills.forEach((bill) => {
+     const phone = cleanPhone(bill.customerPhone);
+     if (!phone) return;
+     const party = partyMap.get(phone);
+     const existing = crmMap.get(phone);
+     const name = bill.customerName || party?.name || "Guest";
+     if (!existing) {
+        crmMap.set(phone, {
+          name,
+          phone,
+          visits: 1,
+          totalSpend: bill.total || 0,
+          lastVisit: bill.createdAt,
+          loyaltyPoints: party?.loyaltyPoints || 0
+        });
+        return;
+     }
+     existing.visits += 1;
+     existing.totalSpend += bill.total || 0;
+     if (bill.createdAt > existing.lastVisit) existing.lastVisit = bill.createdAt;
+     existing.loyaltyPoints = party?.loyaltyPoints || existing.loyaltyPoints;
+  });
+
+  const repeatOfferCandidates = Array.from(crmMap.values())
+    .filter(c => c.visits >= 2)
+    .map(c => {
+      const inactiveDays = Math.floor((now.getTime() - c.lastVisit.getTime()) / (1000 * 60 * 60 * 24));
+      const suggestedCode = inactiveDays >= 30 ? "WINBACK10" : c.visits >= 5 ? "LOYAL15" : "REPEAT10";
+      const reason = inactiveDays >= 30 ? `${inactiveDays} days inactive` : c.visits >= 5 ? "high repeat visitor" : "repeat customer";
+      return { ...c, inactiveDays, suggestedCode, reason };
+    })
+    .sort((a, b) => (b.visits - a.visits) || (b.totalSpend - a.totalSpend))
+    .slice(0, 6);
   
   // Categorize
   const customers = allBills.map(bill => {
@@ -100,6 +147,47 @@ export default async function CustomerReportPage({
                <div style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginTop: "8px" }}>{s.label}</div>
             </Link>
          ))}
+      </div>
+
+      {/* ── Repeat Offer Candidates ── */}
+      <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "32px", padding: "28px", boxShadow: "0 20px 50px rgba(0,0,0,0.04)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", marginBottom: "22px", flexWrap: "wrap" }}>
+          <div>
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 950, color: "var(--kravy-text-primary)", margin: 0 }}>Repeat Visit Offers</h2>
+            <p style={{ fontSize: "0.8rem", color: "var(--kravy-text-muted)", marginTop: "6px", fontWeight: 700 }}>Customers who should receive a comeback or loyalty coupon.</p>
+          </div>
+          <Link href="/dashboard/offers" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px", padding: "10px 14px", borderRadius: "14px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", color: "var(--kravy-text-primary)", fontSize: "0.75rem", fontWeight: 900, textTransform: "uppercase" }}>
+            <BadgePercent size={16} /> Manage Offers
+          </Link>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+          {repeatOfferCandidates.length === 0 ? (
+            <div style={{ gridColumn: "1 / -1", padding: "28px", borderRadius: "22px", background: "var(--kravy-bg-2)", color: "var(--kravy-text-muted)", fontWeight: 800, textAlign: "center" }}>
+              Repeat customer data will appear after identifiable customers place more than one order.
+            </div>
+          ) : repeatOfferCandidates.map(c => (
+            <div key={c.phone} style={{ border: "1px solid var(--kravy-border)", borderRadius: "22px", padding: "20px", background: "var(--kravy-bg)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ fontSize: "1rem", fontWeight: 950, color: "var(--kravy-text-primary)" }}>{c.name}</div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--kravy-text-faint)", marginTop: "4px", display: "flex", alignItems: "center", gap: "6px" }}><Phone size={12} /> {c.phone}</div>
+                </div>
+                <span style={{ padding: "6px 10px", borderRadius: "999px", background: "#FFF7ED", color: "#EA580C", fontSize: "0.68rem", fontWeight: 950 }}>{c.suggestedCode}</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "18px" }}>
+                <div style={{ padding: "12px", borderRadius: "16px", background: "var(--kravy-surface)" }}>
+                  <div style={{ fontSize: "0.65rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Visits</div>
+                  <div style={{ fontSize: "1.25rem", fontWeight: 950, color: "var(--kravy-text-primary)" }}>{c.visits}</div>
+                </div>
+                <div style={{ padding: "12px", borderRadius: "16px", background: "var(--kravy-surface)" }}>
+                  <div style={{ fontSize: "0.65rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Spend</div>
+                  <div style={{ fontSize: "1.25rem", fontWeight: 950, color: "var(--kravy-text-primary)" }}>₹{format(c.totalSpend)}</div>
+                </div>
+              </div>
+              <div style={{ marginTop: "14px", fontSize: "0.72rem", color: "var(--kravy-text-muted)", fontWeight: 800 }}>{c.reason} • {c.loyaltyPoints} loyalty pts</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── Analytics Ledger ── */}

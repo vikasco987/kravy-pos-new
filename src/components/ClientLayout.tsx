@@ -25,6 +25,7 @@ export default function ClientLayout({
   const isTerminal = pathname === "/dashboard/terminal";
   const isCheckout = pathname === "/dashboard/billing/checkout";
   const isKitchen = pathname === "/dashboard/kitchen" || pathname === "/dashboard/workflow";
+  const isExpenses = pathname.startsWith("/dashboard/expenses");
   const isPOS = isTerminal || isCheckout || isKitchen;
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -220,7 +221,7 @@ export default function ClientLayout({
 
           {/* Main Content */}
           <div className="flex flex-col flex-1 min-w-0">
-            {!isPOS && (
+            {!isPOS && !isExpenses && (
               <Navbar
                 isMobile={isMobile}
                 onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
@@ -228,16 +229,26 @@ export default function ClientLayout({
               />
             )}
 
+            {/* Floating Mobile Toggle for Navbar-less Pages */}
+            {isMobile && isExpenses && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="fixed top-4 left-4 z-40 bg-slate-900 dark:bg-white text-white dark:text-black w-10 h-10 rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-all"
+              >
+                <Menu size={20} />
+              </button>
+            )}
+
             <main
-              className={`flex-1 ${isPOS ? 'overflow-hidden' : 'overflow-y-auto'} transition-all duration-400`}
+              className={`flex-1 ${(isPOS || isExpenses) ? 'overflow-y-auto' : 'overflow-y-auto'} transition-all duration-400`}
               style={{
                 background: "var(--kravy-bg)",
-                minHeight: isPOS ? "100vh" : "calc(100vh - 72px)",
+                minHeight: (isPOS || isExpenses) ? "100vh" : "calc(100vh - 72px)",
                 transition: "background 0.4s ease"
               }}
             >
               <div
-                className={`w-full mx-auto ${isPOS ? 'p-0 h-full' : 'p-4 sm:p-6 lg:p-8 kravy-page-fade'}`}
+                className={`w-full mx-auto ${isPOS ? 'p-0 h-full' : isExpenses ? 'p-3 sm:p-5 lg:p-6 kravy-page-fade' : 'p-4 sm:p-6 lg:p-8 kravy-page-fade'}`}
                 style={{ minHeight: "100%" }}
               >
                 {children}

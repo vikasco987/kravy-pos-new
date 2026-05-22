@@ -540,13 +540,15 @@ export default function CheckoutClient() {
         const bill = data.bill ?? data;
         setActiveBillId(bill.id);
         setItems(bill.items.map((i: any) => ({ 
-          id: i.id, 
+          id: i.id || i.itemId || i._id || `item-${Math.random().toString(36).substr(2, 9)}`, 
           name: i.name, 
           qty: i.qty, 
           rate: i.rate,
           gst: i.gst,
           hsnCode: i.hsnCode,
-          taxStatus: i.taxStatus || "Without Tax"
+          taxStatus: i.taxStatus || "Without Tax",
+          kotNumber: i.kotNumber,
+          addedAt: i.addedAt
         })));
         setCustomerName(bill.customerName || "");
         setCustomerPhone(bill.customerPhone || "");
@@ -592,13 +594,15 @@ export default function CheckoutClient() {
             if (cachedOrder.id === orderId) {
               setSyncedOrderId(cachedOrder.id);
               setItems(cachedOrder.items.map((i: any) => ({
-                id: i.itemId || i.id,
+                id: i.itemId || i.id || i._id || `item-${Math.random().toString(36).substr(2, 9)}`,
                 name: i.name,
                 qty: Number(i.quantity || i.qty || 0),
                 rate: Number(i.price || i.rate || 0),
                 gst: i.gst,
                 taxStatus: i.taxStatus || "Without Tax",
-                isNew: false
+                isNew: false,
+                kotNumber: i.kotNumber,
+                addedAt: i.addedAt
               })));
               setCustomerName(cachedOrder.customerName || "");
               setCustomerPhone(cachedOrder.customerPhone || "");
@@ -621,13 +625,15 @@ export default function CheckoutClient() {
           
           setSyncedOrderId(order.id);
           setItems(order.items.map((i: any) => ({
-            id: i.itemId || i.id,
+            id: i.itemId || i.id || i._id || `item-${Math.random().toString(36).substr(2, 9)}`,
             name: i.name,
             qty: Number(i.quantity || i.qty || 0),
             rate: Number(i.price || i.rate || 0),
             gst: i.gst,
             taxStatus: i.taxStatus || "Without Tax",
-            isNew: false 
+            isNew: false,
+            kotNumber: i.kotNumber,
+            addedAt: i.addedAt
           })));
           setCustomerName(order.customerName || "");
           setCustomerPhone(order.customerPhone || "");
@@ -1281,13 +1287,15 @@ export default function CheckoutClient() {
       const savedBill = data.bill ?? data;
       if (Array.isArray(savedBill?.items)) {
         const serverItems = savedBill.items.map((i: any) => ({
-          id: i.id,
+          id: i.id || i.itemId || i._id || `item-${Math.random().toString(36).substr(2, 9)}`,
           name: i.name,
           qty: i.qty,
           rate: i.rate,
           gst: i.gst,
           hsnCode: i.hsnCode,
           taxStatus: i.taxStatus || "Without Tax",
+          kotNumber: i.kotNumber,
+          addedAt: i.addedAt,
         }));
         const pricesChanged = serverItems.some((serverItem: BillItem) => {
           const localItem = items.find((item) => item.id === serverItem.id);
@@ -1312,7 +1320,7 @@ export default function CheckoutClient() {
           await fetch("/api/orders", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId: syncedOrderId, status: "COMPLETED" })
+            body: JSON.stringify({ orderId: syncedOrderId, status: "COMPLETED", skipInventoryDeduction: true })
           });
         } catch (compErr) {
           console.error("Failed to complete linked order:", compErr);
@@ -1397,7 +1405,7 @@ export default function CheckoutClient() {
           quantity: Number(it.qty || 0),
           rate: Number(it.rate || 0),
           qty: Number(it.qty || 0),
-          addedAt: new Date().toISOString(),
+          addedAt: it.addedAt || new Date().toISOString(),
           taxStatus: it.taxStatus || "Without Tax",
           gst: it.gst ?? 0,
           isNew: !!it.isNew,
@@ -1442,7 +1450,7 @@ export default function CheckoutClient() {
           if (serverItems && Array.isArray(serverItems)) {
             setItems(serverItems.map((it: any) => ({
               ...it,
-              id: it.itemId || it.id,
+              id: it.itemId || it.id || it._id || `item-${Math.random().toString(36).substr(2, 9)}`,
               rate: it.price || it.rate,
               qty: it.quantity || it.qty,
               isNew: false // Explicitly clear local isNew flag
@@ -2434,9 +2442,9 @@ export default function CheckoutClient() {
                 </div>
               ) : (
                 <>
-                  {items.map((i) => (
+                  {items.map((i, idx) => (
                     <div
-                      key={i.id}
+                      key={`${i.id || i.itemId || 'item'}-${idx}`}
                       className="flex items-center gap-2.5 py-1.5 px-2.5 rounded-xl
                         bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
                         hover:border-[var(--kravy-brand)]/30 transition-all group shrink-0 shadow-sm"

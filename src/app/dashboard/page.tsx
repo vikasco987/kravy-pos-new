@@ -500,76 +500,76 @@ export default async function DashboardPage({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <a 
           href="/dashboard/reports/tokens"
-          className="bg-white border border-[var(--kravy-border)] rounded-[24px] p-6 flex flex-col gap-4 hover:shadow-xl transition-all hover:-translate-y-1 group"
+          className="kravy-card p-6 flex flex-col gap-4 hover:shadow-xl transition-all hover:-translate-y-1 group"
         >
           <div className="flex justify-between items-start">
-            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+            <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
               <Ticket size={24} />
             </div>
-            <div className="bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-1 rounded-md uppercase">Daily Logs</div>
+            <div className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-black px-2 py-1 rounded-md uppercase">Daily Logs</div>
           </div>
           <div>
-            <h3 className="font-black text-slate-900 text-lg">Token History</h3>
-            <p className="text-[11px] text-slate-500 font-bold uppercase mt-1">Check daily token printing count</p>
+            <h3 className="font-black text-[var(--kravy-text-primary)] text-lg">Token History</h3>
+            <p className="text-[11px] text-[var(--kravy-text-muted)] font-bold uppercase mt-1">Check daily token printing count</p>
           </div>
-          <div className="mt-2 flex items-center text-emerald-600 font-black text-xs gap-2">
+          <div className="mt-2 flex items-center text-emerald-600 dark:text-emerald-400 font-black text-xs gap-2">
             View Reports <ArrowRight size={14} />
           </div>
         </a>
 
         <a 
           href="/dashboard/reports/gst"
-          className="bg-white border border-[var(--kravy-border)] rounded-[24px] p-6 flex flex-col gap-4 hover:shadow-xl transition-all hover:-translate-y-1 group"
+          className="kravy-card p-6 flex flex-col gap-4 hover:shadow-xl transition-all hover:-translate-y-1 group"
         >
           <div className="flex justify-between items-start">
-            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+            <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
               <FileText size={24} />
             </div>
-            <div className="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2 py-1 rounded-md uppercase">Tax Center</div>
+            <div className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-[10px] font-black px-2 py-1 rounded-md uppercase">Tax Center</div>
           </div>
           <div>
-            <h3 className="font-black text-slate-900 text-lg">GST Reports</h3>
-            <p className="text-[11px] text-slate-500 font-bold uppercase mt-1">GSTR-1, 3B and HSN Summaries</p>
+            <h3 className="font-black text-[var(--kravy-text-primary)] text-lg">GST Reports</h3>
+            <p className="text-[11px] text-[var(--kravy-text-muted)] font-bold uppercase mt-1">GSTR-1, 3B and HSN Summaries</p>
           </div>
-          <div className="mt-2 flex items-center text-indigo-600 font-black text-xs gap-2">
+          <div className="mt-2 flex items-center text-indigo-600 dark:text-indigo-400 font-black text-xs gap-2">
             Audit Center <ArrowRight size={14} />
           </div>
         </a>
 
         <a 
           href="/dashboard/parties"
-          className="bg-white border border-[var(--kravy-border)] rounded-[24px] p-6 flex flex-col gap-4 hover:shadow-xl transition-all hover:-translate-y-1 group"
+          className="kravy-card p-6 flex flex-col gap-4 hover:shadow-xl transition-all hover:-translate-y-1 group"
         >
           <div className="flex justify-between items-start">
-            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+            <div className="w-12 h-12 bg-amber-50 dark:bg-amber-950/40 rounded-2xl flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:bg-amber-600 group-hover:text-white transition-colors">
               <Fingerprint size={24} />
             </div>
-            <div className="bg-amber-50 text-amber-700 text-[10px] font-black px-2 py-1 rounded-md uppercase">CRM</div>
+            <div className="bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-black px-2 py-1 rounded-md uppercase">CRM</div>
           </div>
           <div>
-            <h3 className="font-black text-slate-900 text-lg">Customers</h3>
-            <p className="text-[11px] text-slate-500 font-bold uppercase mt-1">Manage parties and wallet balances</p>
+            <h3 className="font-black text-[var(--kravy-text-primary)] text-lg">Customers</h3>
+            <p className="text-[11px] text-[var(--kravy-text-muted)] font-bold uppercase mt-1">Manage parties and wallet balances</p>
           </div>
-          <div className="mt-2 flex items-center text-amber-600 font-black text-xs gap-2">
+          <div className="mt-2 flex items-center text-amber-600 dark:text-amber-400 font-black text-xs gap-2">
             Open CRM <ArrowRight size={14} />
           </div>
         </a>
 
         <a 
           href="/dashboard/tables"
-          className="bg-white border border-[var(--kravy-border)] rounded-[24px] p-6 flex flex-col gap-4 hover:shadow-xl transition-all hover:-translate-y-1 group"
+          className="kravy-card p-6 flex flex-col gap-4 hover:shadow-xl transition-all hover:-translate-y-1 group"
         >
           <div className="flex justify-between items-start">
-            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+            <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/40 rounded-2xl flex items-center justify-center text-rose-600 dark:text-rose-400 group-hover:bg-rose-600 group-hover:text-white transition-colors">
               <Grid size={24} />
             </div>
-            <div className="bg-rose-50 text-rose-700 text-[10px] font-black px-2 py-1 rounded-md uppercase">Layout</div>
+            <div className="bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-[10px] font-black px-2 py-1 rounded-md uppercase">Layout</div>
           </div>
           <div>
-            <h3 className="font-black text-slate-900 text-lg">Tables & Area</h3>
-            <p className="text-[11px] text-slate-500 font-bold uppercase mt-1">Manage your dining floor layout</p>
+            <h3 className="font-black text-[var(--kravy-text-primary)] text-lg">Tables & Area</h3>
+            <p className="text-[11px] text-[var(--kravy-text-muted)] font-bold uppercase mt-1">Manage your dining floor layout</p>
           </div>
-          <div className="mt-2 flex items-center text-rose-600 font-black text-xs gap-2">
+          <div className="mt-2 flex items-center text-rose-600 dark:text-rose-400 font-black text-xs gap-2">
             Manage Floor <ArrowRight size={14} />
           </div>
         </a>

@@ -4,7 +4,9 @@ import React, { useState } from "react";
 import { 
   ChevronDown, ChevronRight, Filter, Clock, CheckCircle2, 
   Smartphone, CreditCard, Wallet, Banknote, MoreVertical, 
-  Eye, Printer, FileText, MessageCircle, Trash2, XCircle, CheckCircle, X
+  Eye, Printer, FileText, MessageCircle, Trash2, XCircle, CheckCircle, X,
+  User, Phone, Calendar, Layers, UtensilsCrossed, Receipt, Plus, MapPin, UserCheck,
+  ShoppingBag, Truck, Monitor, Utensils
 } from "lucide-react";
 import { formatWhatsAppNumber } from "@/lib/whatsapp";
 import { toast } from "react-hot-toast";
@@ -87,7 +89,7 @@ const MenuOption = ({ icon, label, onClick, isDestructive }: any) => (
   </button>
 );
 
-const BillActions = ({ bill, refresh, business, userRole, userPermissions, openMenuId, setOpenMenuId, setPreviewBill }: any) => {
+const BillActions = ({ bill, refresh, business, userRole, userPermissions, openMenuId, setOpenMenuId, setPreviewBill, setViewBillDetails }: any) => {
   const isOpen = openMenuId === bill.id;
   const router = useRouter();
   const buttonRef = React.useRef<HTMLButtonElement>(null);
@@ -177,6 +179,7 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
               background: "white", borderRadius: "18px", border: "1px solid #F3F4F6",
               boxShadow: "0 10px 40px rgba(0,0,0,0.15)", padding: "8px", zIndex: 99999, display: "flex", flexDirection: "column", gap: "2px"
             }}>
+              <MenuOption icon={<Eye size={14} color="#3B82F6" />} label="View Details" onClick={() => { setOpenMenuId(null); setViewBillDetails(bill); }} />
               <MenuOption icon={<Eye size={14} color="#8B5CF6" />} label="Preview" onClick={() => { setOpenMenuId(null); setPreviewBill(bill); }} />
               <MenuOption icon={<Printer size={14} color="#6B7280" />} label="Reprint Bill" onClick={() => { setOpenMenuId(null); router.push(`/dashboard/billing/${bill.id}`); }} />
               <MenuOption icon={<FileText size={14} color="#3B82F6" />} label="Edit Bill" onClick={() => { setOpenMenuId(null); router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`); }} />
@@ -216,6 +219,7 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [previewBill, setPreviewBill] = useState<any>(null);
+  const [viewBillDetails, setViewBillDetails] = useState<any>(null);
 
   // Auto-close menu on table scroll
   React.useEffect(() => {
@@ -354,6 +358,7 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
                       openMenuId={openMenuId}
                       setOpenMenuId={setOpenMenuId}
                       setPreviewBill={setPreviewBill}
+                      setViewBillDetails={setViewBillDetails}
                     />
                   </td>
                 </tr>
@@ -435,6 +440,18 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
 
       {previewBill && (
         <BillPreviewModal bill={previewBill} business={business} onClose={() => setPreviewBill(null)} />
+      )}
+
+      {viewBillDetails && (
+        <OrderDetailsPanel 
+          bill={viewBillDetails} 
+          business={business} 
+          onClose={() => setViewBillDetails(null)} 
+          onUpdate={(updatedBill) => {
+            setViewBillDetails(updatedBill);
+            if (typeof refresh === "function") refresh(true);
+          }}
+        />
       )}
     </div>
   );
@@ -774,4 +791,724 @@ const Th = ({ label, isRight, color = "#9CA3AF", width }: any) => (
   <th style={{ padding: "16px 20px", textAlign: isRight ? "right" : "left", fontSize: "0.7rem", fontWeight: 900, color: color, letterSpacing: "1px", width }}>
     {label}
   </th>
+);
+
+const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, business: any, onClose: () => void, onUpdate?: (updated: any) => void }) => {
+  const [activeTab, setActiveTab] = useState<string>("order_info");
+  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
+
+  const [showEditCustomer, setShowEditCustomer] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  React.useEffect(() => {
+    if (bill) {
+      setEditName(bill.customerName || "");
+      setEditPhone(bill.customerPhone || "");
+    }
+  }, [bill]);
+
+  const handleSaveCustomer = async () => {
+    setEditSaving(true);
+    try {
+      const res = await fetch(`/api/bill-manager/${bill.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerName: editName, customerPhone: editPhone }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const updatedBill = data.bill ?? data;
+        toast.success("Customer details updated! 🎉");
+        if (onUpdate) onUpdate(updatedBill);
+        setShowEditCustomer(false);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        toast.error(errData.error || "Failed to update details");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error updating customer details");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  if (!bill) return null;
+  if (!mounted) return null;
+
+  const dt = new Date(bill.createdAt);
+  const dateStr = dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  const timeStr = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+  const getOrderTitle = () => {
+    const t = bill.tableName || "POS";
+    if (t === "POS") return "Counter Order Details";
+    if (t.includes("TAKEAWAY")) return "Takeaway Order Details";
+    if (t.includes("DELIVERY")) return "Delivery Order Details";
+    return `Dine In Order Details (${t})`;
+  };
+
+  const getStatusLabel = () => {
+    if (bill.isOrder) return bill.orderStatus || "ACTIVE";
+    return bill.paymentStatus || "SETTLED";
+  };
+
+  const isSettled = bill.paymentStatus === "Paid" || !bill.isOrder;
+
+  // KOT details grouping
+  const kGroups = (() => {
+    const kMap: any = {};
+    const items = bill.items || [];
+
+    // Group items by their KOT / token round if available
+    items.forEach((it: any) => {
+      const kot = it.kotNumber || it.tokenNumber || "Round 1";
+      if (!kMap[kot]) {
+        kMap[kot] = {
+          kotNumber: kot,
+          timestamp: it.addedAt ? new Date(it.addedAt) : new Date(bill.createdAt),
+          items: []
+        };
+      }
+      kMap[kot].items.push(it);
+    });
+
+    let groups = Object.values(kMap);
+
+    // Fallback using bill's kotNumbers list
+    if (groups.length === 0 && bill.kotNumbers && bill.kotNumbers.length > 0) {
+      bill.kotNumbers.forEach((kotNum: number) => {
+        groups.push({
+          kotNumber: kotNum,
+          timestamp: new Date(bill.createdAt),
+          items: items
+        });
+      });
+    }
+
+    // Fallback using single tokenNumber
+    if (groups.length === 0) {
+      groups.push({
+        kotNumber: bill.tokenNumber || "01",
+        timestamp: new Date(bill.createdAt),
+        items: items
+      });
+    }
+
+    // Sort KOT rounds in reverse chronological order (newest first)
+    groups.sort((a: any, b: any) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    return groups;
+  })();
+
+  const format = (num: number) => new Intl.NumberFormat("en-IN").format(Math.round(num));
+
+  return createPortal(
+    <div style={{ position: "fixed", inset: 0, zIndex: 999999, display: "flex", justifyContent: "flex-end", background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)" }}>
+      {/* Backdrop closer click hook */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 1 }} onClick={onClose} />
+      
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .orderDetailsPanel {
+          animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .tabBtn {
+          transition: all 0.2s;
+        }
+        .tabBtn:hover {
+          color: #0F172A !important;
+          background: #F1F5F9;
+        }
+        .orderItemCard {
+          transition: all 0.2s;
+        }
+        .orderItemCard:hover {
+          border-color: #CBD5E1 !important;
+          background: #F8FAFC !important;
+        }
+        .orderItemRow {
+          transition: all 0.2s;
+        }
+        .orderItemRow:hover {
+          background: #F8FAFC !important;
+        }
+      `}</style>
+
+      {/* Slide-over Content Drawer */}
+      <div 
+        className="orderDetailsPanel"
+        style={{
+          position: "relative", zIndex: 2, width: "100%", maxWidth: "580px", height: "100%",
+          background: "#FFFFFF", borderLeft: "1px solid #E2E8F0",
+          boxShadow: "-10px 0 40px rgba(15, 23, 42, 0.1)", display: "flex", flexDirection: "column", overflow: "hidden"
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px", borderBottom: "1px solid #E2E8F0", background: "#FFFFFF" }}>
+          <div>
+            <h3 style={{ fontSize: "1.15rem", fontWeight: 900, color: "#0F172A", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+              <Receipt size={18} style={{ color: "#2563EB" }} /> {getOrderTitle()}
+            </h3>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
+              <span style={{
+                padding: "3px 10px", borderRadius: "6px", fontSize: "0.65rem", fontWeight: 800,
+                background: isSettled ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
+                color: isSettled ? "#10B981" : "#F59E0B", textTransform: "uppercase"
+              }}>
+                {getStatusLabel()}
+              </span>
+              <span style={{ fontSize: "0.72rem", color: "#64748B", fontWeight: 600 }}>{dateStr} · {timeStr}</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <button
+              onClick={() => {
+                onClose();
+                router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`);
+              }}
+              style={{
+                display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", borderRadius: "10px",
+                border: "none", background: "#2563EB", color: "white", fontSize: "0.75rem", fontWeight: 800, cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.15)", transition: "0.2s"
+              }}
+              className="hover:bg-blue-600"
+            >
+              <Plus size={14} /> Add Items
+            </button>
+            <button 
+              onClick={onClose} 
+              style={{
+                width: "36px", height: "36px", borderRadius: "10px", background: "#F1F5F9",
+                border: "none", color: "#64748B", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s"
+              }}
+              className="hover:bg-red-100 hover:text-red-600"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Customer Quick Header Box */}
+        <div style={{ padding: "20px 24px", background: "#FFFFFF", borderBottom: "1px solid #E2E8F0" }}>
+          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "16px", padding: "16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: "rgba(37, 99, 235, 0.08)", color: "#2563EB", display: "flex", alignItems: "center", justifyItems: "center", justifyContent: "center" }}>
+                  <User size={20} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "0.95rem", fontWeight: 850, color: "#0F172A" }}>
+                    {bill.customerName || "Walk-in Customer"}
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: "#64748B", marginTop: "2px", fontWeight: 700, fontFamily: "monospace" }}>
+                    {bill.customerPhone ? `Mob: ${bill.customerPhone}` : "No Contact Details"}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setEditName(bill.customerName || "");
+                  setEditPhone(bill.customerPhone || "");
+                  setShowEditCustomer(true);
+                }}
+                style={{
+                  padding: "6px 12px", borderRadius: "8px", border: "1px solid #E2E8F0",
+                  background: "#FFFFFF", color: "#475569", fontSize: "0.72rem", fontWeight: 800, cursor: "pointer", transition: "0.2s"
+                }}
+                className="hover:border-slate-400 hover:text-slate-900"
+              >
+                Edit Details
+              </button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginTop: "16px", paddingTop: "12px", borderTop: "1px solid #E2E8F0" }}>
+              <div>
+                <span style={{ fontSize: "0.65rem", color: "#64748B", fontWeight: 800, textTransform: "uppercase" }}>Bill Number</span>
+                <div style={{ fontSize: "0.85rem", color: "#2563EB", fontWeight: 900, fontFamily: "monospace", marginTop: "2px" }}>#{bill.billNumber}</div>
+              </div>
+              <div>
+                <span style={{ fontSize: "0.65rem", color: "#64748B", fontWeight: 800, textTransform: "uppercase" }}>Source Table</span>
+                <div style={{ fontSize: "0.85rem", color: "#EA580C", fontWeight: 900, textTransform: "uppercase", marginTop: "2px" }}>
+                  {(bill.tableName || "POS") === "POS" ? "Counter (Direct)" : bill.tableName}
+                </div>
+              </div>
+              <div>
+                <span style={{ fontSize: "0.65rem", color: "#64748B", fontWeight: 800, textTransform: "uppercase" }}>Order Type</span>
+                <div style={{ 
+                  fontSize: "0.85rem", 
+                  fontWeight: 900, 
+                  textTransform: "uppercase", 
+                  marginTop: "2px",
+                  color: bill.tableName === "TAKEAWAY" 
+                    ? "#F59E0B" // Amber
+                    : bill.tableName === "DELIVERY" 
+                      ? "#8B5CF6" // Purple
+                      : (!bill.tableName || bill.tableName === "POS") 
+                        ? "#64748B" // Slate
+                        : "#10B981" // Emerald
+                }}>
+                  {bill.tableName === "TAKEAWAY" ? "TAKEAWAY" : bill.tableName === "DELIVERY" ? "DELIVERY" : (!bill.tableName || bill.tableName === "POS") ? "COUNTER" : "DINE-IN"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab Headers */}
+        <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid #E2E8F0", padding: "0 16px" }}>
+          <button
+            onClick={() => setActiveTab("order_info")}
+            className="tabBtn"
+            style={{
+              padding: "14px 20px", background: "transparent", border: "none",
+              borderBottom: activeTab === "order_info" ? "3px solid #2563EB" : "3px solid transparent",
+              color: activeTab === "order_info" ? "#2563EB" : "#64748B", fontSize: "0.82rem", fontWeight: 800, cursor: "pointer",
+              borderRadius: "6px 6px 0 0"
+            }}
+          >
+            Order Info
+          </button>
+          <button
+            onClick={() => setActiveTab("kot_history")}
+            className="tabBtn"
+            style={{
+              padding: "14px 20px", background: "transparent", border: "none",
+              borderBottom: activeTab === "kot_history" ? "3px solid #2563EB" : "3px solid transparent",
+              color: activeTab === "kot_history" ? "#2563EB" : "#64748B", fontSize: "0.82rem", fontWeight: 800, cursor: "pointer",
+              borderRadius: "6px 6px 0 0"
+            }}
+          >
+            KOT History
+          </button>
+          <button
+            onClick={() => setActiveTab("customer_details")}
+            className="tabBtn"
+            style={{
+              padding: "14px 20px", background: "transparent", border: "none",
+              borderBottom: activeTab === "customer_details" ? "3px solid #2563EB" : "3px solid transparent",
+              color: activeTab === "customer_details" ? "#2563EB" : "#64748B", fontSize: "0.82rem", fontWeight: 800, cursor: "pointer",
+              borderRadius: "6px 6px 0 0"
+            }}
+          >
+            Customer Details
+          </button>
+        </div>
+
+        {/* Scrollable Container Body */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", background: "#FFFFFF" }}>
+          
+          {/* TAB 1: ORDER INFO */}
+          {activeTab === "order_info" && (
+            <>
+              {/* Items Grid Table */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <span style={{ fontSize: "0.72rem", color: "#64748B", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" }}>Items Summary</span>
+                
+                <div style={{ 
+                  width: "100%", 
+                  overflow: "hidden", 
+                  border: "1px solid #E2E8F0", 
+                  borderRadius: "12px",
+                  background: "#FFFFFF"
+                }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
+                    <thead>
+                      <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
+                        <th style={{ padding: "14px 18px", fontWeight: 700, color: "#475569", borderRight: "1px solid #E2E8F0" }}>Item Name</th>
+                        <th style={{ padding: "14px 8px", fontWeight: 700, color: "#475569", textAlign: "center", width: "65px", borderRight: "1px solid #E2E8F0" }}>Qty</th>
+                        <th style={{ padding: "14px 8px", fontWeight: 700, color: "#475569", textAlign: "center", width: "95px", borderRight: "1px solid #E2E8F0" }}>Price</th>
+                        <th style={{ padding: "14px 18px", fontWeight: 700, color: "#475569", textAlign: "center", width: "105px" }}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bill.items?.map((it: any, i: number) => {
+                        const q = Number(it.qty || it.quantity || 0);
+                        const r = Number(it.rate || it.price || 0);
+                        return (
+                          <tr key={i} className="orderItemRow" style={{ borderBottom: i === bill.items.length - 1 ? "none" : "1px solid #E2E8F0" }}>
+                            <td style={{ padding: "14px 18px", fontWeight: 500, color: "#0F172A", borderRight: "1px solid #E2E8F0" }}>
+                              {it.name}
+                            </td>
+                            <td style={{ padding: "14px 8px", textAlign: "center", color: "#334155", fontWeight: 500, borderRight: "1px solid #E2E8F0" }}>
+                              {q}
+                            </td>
+                            <td style={{ padding: "14px 8px", textAlign: "center", color: "#334155", fontWeight: 500, borderRight: "1px solid #E2E8F0" }}>
+                              ₹ {format(r)}
+                            </td>
+                            <td style={{ padding: "14px 18px", textAlign: "center", fontWeight: 600, color: "#0F172A" }}>
+                              ₹ {format(q * r)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Order Calculations Summary Box */}
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "20px", padding: "20px", marginTop: "8px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderBottom: "1px dashed #E2E8F0", paddingBottom: "14px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", fontWeight: 700, color: "#475569" }}>
+                    <span>Subtotal</span>
+                    <span style={{ color: "#0F172A", fontWeight: 800 }}>₹{format(bill.subtotal || bill.total)}</span>
+                  </div>
+                  {bill.discountAmount > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", fontWeight: 700, color: "#DC2626" }}>
+                      <span>Discount</span>
+                      <span style={{ fontWeight: 800 }}>-₹{format(bill.discountAmount)}</span>
+                    </div>
+                  )}
+                  {bill.tax > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", fontWeight: 700, color: "#D97706" }}>
+                      <span>GST (Tax)</span>
+                      <span style={{ fontWeight: 800 }}>+₹{format(bill.tax)}</span>
+                    </div>
+                  )}
+                  {bill.deliveryCharges > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", fontWeight: 700, color: "#475569" }}>
+                      <span>Delivery Charges</span>
+                      <span style={{ color: "#0F172A", fontWeight: 800 }}>+₹{format(bill.deliveryCharges)}</span>
+                    </div>
+                  )}
+                  {bill.packagingCharges > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", fontWeight: 700, color: "#475569" }}>
+                      <span>Packaging Charges</span>
+                      <span style={{ color: "#0F172A", fontWeight: 800 }}>+₹{format(bill.packagingCharges)}</span>
+                    </div>
+                  )}
+                  {bill.serviceCharge > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", fontWeight: 700, color: "#475569" }}>
+                      <span>Service Charge</span>
+                      <span style={{ color: "#0F172A", fontWeight: 800 }}>+₹{format(bill.serviceCharge)}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "14px" }}>
+                  <div>
+                    <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748B", textTransform: "uppercase" }}>Total Payable Amount</span>
+                    <div style={{ fontSize: "1.5rem", fontWeight: 1000, color: "#0F172A", marginTop: "2px" }}>₹{format(bill.total)}</div>
+                  </div>
+                  <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                    <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748B", textTransform: "uppercase", marginBottom: "4px" }}>Payment Mode</span>
+                    <div style={{ position: "relative", display: "inline-block" }}>
+                      <select
+                        value={bill.paymentMode || "Cash"}
+                        onChange={async (e) => {
+                          const newMode = e.target.value;
+                          try {
+                            const res = await fetch(`/api/bill-manager/${bill.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ paymentMode: newMode })
+                            });
+                            if (!res.ok) throw new Error("Failed to update payment mode");
+                            const data = await res.json();
+                            const updated = data.bill ?? data;
+                            toast.success(`Payment mode updated to ${newMode}! 🎉`);
+                            if (onUpdate) onUpdate(updated);
+                          } catch (err) {
+                            console.error(err);
+                            toast.error("Failed to update payment mode");
+                          }
+                        }}
+                        style={{
+                          appearance: "none",
+                          WebkitAppearance: "none",
+                          background: "#EFF6FF",
+                          border: "1px solid #BFDBFE",
+                          padding: "6px 28px 6px 12px",
+                          borderRadius: "10px",
+                          fontSize: "0.75rem",
+                          fontWeight: 900,
+                          color: "#2563EB",
+                          textTransform: "uppercase",
+                          cursor: "pointer",
+                          outline: "none",
+                          fontFamily: "inherit",
+                          transition: "all 0.2s"
+                        }}
+                        className="hover:bg-blue-100 hover:border-blue-300"
+                      >
+                        <option value="Cash">💵 Cash</option>
+                        <option value="UPI">📱 UPI</option>
+                        <option value="Card">💳 Card</option>
+                        <option value="Wallet">👛 Wallet</option>
+                      </select>
+                      <div style={{ position: "absolute", top: "50%", right: "10px", transform: "translateY(-50%)", pointerEvents: "none", display: "flex", alignItems: "center", color: "#2563EB" }}>
+                        <ChevronDown size={12} strokeWidth={3} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Footer */}
+              <div style={{ marginTop: "12px" }}>
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`);
+                  }}
+                  style={{
+                    width: "100%", padding: "14px", borderRadius: "14px", border: "none",
+                    background: "#2563EB", color: "white", fontSize: "0.85rem", fontWeight: 900,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", cursor: "pointer",
+                    boxShadow: "0 6px 20px rgba(37, 99, 235, 0.15)", transition: "0.2s"
+                  }}
+                  className="hover:bg-blue-600"
+                >
+                  Proceed to Billing <ChevronRight size={16} />
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* TAB 2: KOT HISTORY */}
+          {activeTab === "kot_history" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <span style={{ fontSize: "0.72rem", color: "#64748B", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" }}>Tokens / Rounds Placed</span>
+              
+              {kGroups.map((group: any, idx: number) => {
+                const grTime = new Date(group.timestamp);
+                const showTime = grTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                const showDate = grTime.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+
+                return (
+                  <div key={idx} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    
+                    {/* Centered Timestamp Marker */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}>
+                      <div style={{ flex: 1, height: "1px", background: "#E2E8F0" }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#475569" }}>
+                        <Clock size={12} style={{ color: "#64748B" }} />
+                        <span style={{ fontSize: "0.72rem", fontWeight: 800 }}>{showDate} {showTime}</span>
+                      </div>
+                      <div style={{ flex: 1, height: "1px", background: "#E2E8F0" }} />
+                    </div>
+
+                    {/* KOT Round Card */}
+                    <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "16px", padding: "16px", overflow: "hidden" }}>
+                      
+                      {/* Round Header */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#F0FDFA", border: "1px solid #CCFBF1", padding: "4px 10px", borderRadius: "8px", fontSize: "0.72rem", fontWeight: 900, color: "#0D9488", textTransform: "uppercase" }}>
+                          <Layers size={12} /> KOT #{String(group.kotNumber).padStart(4, '0')}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.7rem", color: "#64748B", fontWeight: 700 }}>
+                          <span>Placed By Cashier</span>
+                          <Printer size={12} style={{ cursor: "pointer", color: "#64748B" }} />
+                        </div>
+                      </div>
+
+                      {/* Items table exactly styled */}
+                      <div style={{ 
+                        width: "100%", 
+                        overflow: "hidden", 
+                        border: "1px solid #E2E8F0", 
+                        borderRadius: "12px",
+                        background: "#FFFFFF",
+                        marginTop: "8px"
+                      }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
+                          <thead>
+                            <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
+                              <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569", borderRight: "1px solid #E2E8F0" }}>Item Name</th>
+                              <th style={{ padding: "12px 8px", fontWeight: 700, color: "#475569", textAlign: "center", width: "65px", borderRight: "1px solid #E2E8F0" }}>Qty</th>
+                              <th style={{ padding: "12px 8px", fontWeight: 700, color: "#475569", textAlign: "center", width: "95px", borderRight: "1px solid #E2E8F0" }}>Price</th>
+                              <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569", textAlign: "center", width: "105px" }}>Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {group.items.map((it: any, i: number) => {
+                              const q = Number(it.qty || it.quantity || 0);
+                              const r = Number(it.rate || it.price || 0);
+                              return (
+                                <tr key={i} className="orderItemRow" style={{ borderBottom: i === group.items.length - 1 ? "none" : "1px solid #E2E8F0" }}>
+                                  <td style={{ padding: "12px 16px", fontWeight: 500, color: "#0F172A", borderRight: "1px solid #E2E8F0" }}>
+                                    {it.name}
+                                  </td>
+                                  <td style={{ padding: "12px 8px", textAlign: "center", color: "#334155", fontWeight: 500, borderRight: "1px solid #E2E8F0" }}>
+                                    {q}
+                                  </td>
+                                  <td style={{ padding: "12px 8px", textAlign: "center", color: "#334155", fontWeight: 500, borderRight: "1px solid #E2E8F0" }}>
+                                    ₹ {format(r)}
+                                  </td>
+                                  <td style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, color: "#0F172A" }}>
+                                    ₹ {format(q * r)}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* TAB 3: CUSTOMER DETAILS */}
+          {activeTab === "customer_details" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <span style={{ fontSize: "0.72rem", color: "#64748B", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" }}>Full Customer Credentials</span>
+              
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                
+                <DetailRow label="Customer Name" value={bill.customerName || "Walk-in Customer"} icon={<User size={16} color="#10B981" />} />
+                <DetailRow label="Contact Number" value={bill.customerPhone || "—"} icon={<Phone size={16} color="#2563EB" />} />
+                <DetailRow label="Table / Source" value={(bill.tableName || "POS") === "POS" ? "Counter (POS)" : bill.tableName} icon={<UtensilsCrossed size={16} color="#EA580C" />} />
+                <DetailRow 
+                  label="Order Type" 
+                  value={bill.tableName === "TAKEAWAY" ? "TAKEAWAY" : bill.tableName === "DELIVERY" ? "DELIVERY" : (!bill.tableName || bill.tableName === "POS") ? "COUNTER" : "DINE-IN"} 
+                  icon={
+                    bill.tableName === "TAKEAWAY" 
+                      ? <ShoppingBag size={16} color="#F59E0B" /> 
+                      : bill.tableName === "DELIVERY" 
+                        ? <Truck size={16} color="#8B5CF6" /> 
+                        : (!bill.tableName || bill.tableName === "POS") 
+                          ? <Monitor size={16} color="#64748B" /> 
+                          : <Utensils size={16} color="#10B981" />
+                  } 
+                />
+                
+                {bill.zoneName && (
+                  <DetailRow label="Service Zone" value={bill.zoneName} icon={<Layers size={16} color="#8B5CF6" />} />
+                )}
+
+                {bill.buyerGSTIN && (
+                  <DetailRow label="Buyer GSTIN" value={bill.buyerGSTIN} icon={<Receipt size={16} color="#D97706" />} />
+                )}
+
+                {bill.placeOfSupply && (
+                  <DetailRow label="Place of Supply" value={bill.placeOfSupply} icon={<MapPin size={16} color="#0891B2" />} />
+                )}
+
+                <DetailRow label="Billing Date & Time" value={`${dateStr} at ${timeStr}`} icon={<Calendar size={16} color="#4F46E5" />} />
+
+                {bill.clerkUserId && (
+                  <DetailRow label="Handled By (Clerk ID)" value={bill.clerkUserId} icon={<UserCheck size={16} color="#DB2777" />} />
+                )}
+
+                {/* Notes box exactly styled as a premium instructions badge */}
+                {(bill.notes || bill.auditNote) && (
+                  <div style={{ borderTop: "1px solid #E2E8F0", paddingTop: "14px", marginTop: "4px" }}>
+                    <span style={{ fontSize: "0.65rem", color: "#64748B", fontWeight: 800, textTransform: "uppercase" }}>Special Instructions / Audit Notes</span>
+                    <div style={{ fontSize: "0.8rem", color: "#92400E", background: "#FFFBEB", border: "1px solid #FEF3C7", borderRadius: "10px", padding: "12px", marginTop: "6px", fontStyle: "italic", lineHeight: 1.4 }}>
+                      "{bill.notes || bill.auditNote}"
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {showEditCustomer && (
+          <div style={{ position: "absolute", inset: 0, zIndex: 10, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+            <div style={{ position: "absolute", inset: 0, zIndex: 1 }} onClick={() => setShowEditCustomer(false)} />
+            
+            <div 
+              style={{ 
+                position: "relative", zIndex: 2, background: "#FFFFFF", borderRadius: "20px", padding: "28px", 
+                width: "100%", maxWidth: "380px", boxShadow: "0 20px 50px rgba(15, 23, 42, 0.15)", 
+                display: "flex", flexDirection: "column", gap: "20px", border: "1px solid #E2E8F0",
+                animation: "slideInRight 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards"
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontWeight: 900, fontSize: "1.05rem", color: "#0F172A", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <User size={18} style={{ color: "#2563EB" }} /> Edit Customer Details
+                </div>
+                <button 
+                  onClick={() => setShowEditCustomer(false)} 
+                  style={{
+                    width: "28px", height: "28px", borderRadius: "8px", background: "#F1F5F9",
+                    border: "none", color: "#64748B", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s"
+                  }}
+                  className="hover:bg-red-100 hover:text-red-600"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "0.68rem", fontWeight: 800, color: "#64748B", textTransform: "uppercase" }}>Customer Name</label>
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Enter customer name"
+                  style={{ padding: "10px 14px", borderRadius: "10px", border: "1px solid #E2E8F0", fontSize: "0.9rem", fontWeight: 700, outline: "none", width: "100%" }}
+                  className="focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "0.68rem", fontWeight: 800, color: "#64748B", textTransform: "uppercase" }}>Phone Number</label>
+                <input
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="Enter phone number"
+                  style={{ padding: "10px 14px", borderRadius: "10px", border: "1px solid #E2E8F0", fontSize: "0.9rem", fontWeight: 700, outline: "none", width: "100%" }}
+                  className="focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+                <button 
+                  onClick={() => setShowEditCustomer(false)} 
+                  style={{ flex: 1, padding: "11px", borderRadius: "10px", border: "1px solid #E2E8F0", background: "white", fontWeight: 800, color: "#475569", cursor: "pointer", fontSize: "0.8rem", transition: "0.2s" }}
+                  className="hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleSaveCustomer} 
+                  disabled={editSaving} 
+                  style={{ 
+                    flex: 1, padding: "11px", borderRadius: "10px", border: "none", 
+                    background: "#2563EB", color: "white", fontWeight: 800, cursor: "pointer", 
+                    fontSize: "0.8rem", transition: "0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" 
+                  }}
+                  className="hover:bg-blue-600"
+                >
+                  {editSaving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+const DetailRow = ({ label, value, icon }: { label: string, value: string, icon: any }) => (
+  <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+    <div style={{ marginTop: "2px" }}>{icon}</div>
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      <span style={{ fontSize: "0.65rem", color: "#64748B", fontWeight: 800, textTransform: "uppercase" }}>{label}</span>
+      <span style={{ fontSize: "0.85rem", color: "#0F172A", fontWeight: 750, marginTop: "2px" }}>{value}</span>
+    </div>
+  </div>
 );

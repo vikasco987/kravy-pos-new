@@ -184,35 +184,35 @@ export default function ProfitLossPage() {
     };
 
     return (
-        <div className="max-w-[1600px] mx-auto p-6 md:p-10 space-y-8 min-h-screen bg-[#F8FAFC] dark:bg-slate-950 kravy-page-fade">
+        <div className="max-w-[1600px] mx-auto p-2 md:p-4 space-y-4 min-h-screen bg-[#F8FAFC] dark:bg-slate-950 kravy-page-fade">
             {/* Header */}
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8 bg-white dark:bg-white/5 p-8 rounded-[3rem] border border-slate-200 dark:border-white/10 shadow-sm">
-                <div className="flex items-center gap-5">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white dark:bg-white/5 p-4 md:p-5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
+                <div className="flex items-center gap-3">
                     <button 
                         onClick={() => { kravy.click(); router.back(); }}
-                        className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-all shadow-inner"
+                        className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-all shadow-inner"
                     >
-                        <ArrowLeft size={20} />
+                        <ArrowLeft size={16} />
                     </button>
                     <div>
-                        <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                        <nav className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">
                             <span>Analytics</span>
-                            <ChevronRight size={10} />
-                            <span className="text-emerald-500">Profit & Loss Statement</span>
+                            <ChevronRight size={8} />
+                            <span className="text-emerald-500">P&L Statement</span>
                         </nav>
-                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Financial Performance</h1>
+                        <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Financial Performance</h1>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="bg-slate-100 dark:bg-black/20 p-1.5 rounded-2xl flex items-center shadow-inner overflow-x-auto scrollbar-hide">
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="bg-slate-100 dark:bg-black/20 p-1 rounded-xl flex items-center shadow-inner overflow-x-auto scrollbar-hide">
                         {(['Day', 'Week', 'Month', 'Year', 'Custom'] as FilterMode[]).map((m) => (
                             <button
                                 key={m}
                                 onClick={() => { kravy.toggle(); setFilterMode(m); }}
-                                className={`px-4 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                                className={`px-3 h-8 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                                     filterMode === m 
-                                    ? "bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-md" 
+                                    ? "bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow" 
                                     : "text-slate-400 hover:text-slate-600"
                                 }`}
                             >
@@ -221,26 +221,26 @@ export default function ProfitLossPage() {
                         ))}
                     </div>
 
-                    <div className="flex items-center gap-3 bg-white dark:bg-white/5 p-1.5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm relative group">
+                    <div className="flex items-center gap-2 bg-white dark:bg-white/5 p-1 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm relative group">
                         {filterMode !== 'Custom' && (
-                            <button onClick={() => navigate('prev')} className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center text-slate-400 transition-all">
-                                <ChevronLeft size={20} />
+                            <button onClick={() => navigate('prev')} className="w-8 h-8 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center text-slate-400 transition-all">
+                                <ChevronLeft size={16} />
                             </button>
                         )}
                         <div 
                             onClick={() => (filterMode === 'Day' || filterMode === 'Month' || filterMode === 'Year') && dateInputRef.current?.showPicker()}
-                            className="px-4 min-w-[140px] text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-all py-1"
+                            className="px-3 min-w-[120px] text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg transition-all py-0.5"
                         >
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 flex items-center justify-center gap-1">Period Selection <Calendar size={10} /></p>
-                            <p className="text-sm font-black text-slate-900 dark:text-white whitespace-nowrap">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 flex items-center justify-center gap-1">Period <Calendar size={8} /></p>
+                            <p className="text-xs font-black text-slate-900 dark:text-white whitespace-nowrap">
                                 {filterMode === 'Day' && format(currentDate, "dd MMM yyyy")}
                                 {filterMode === 'Week' && `${format(range.start, "dd MMM")} - ${format(range.end, "dd MMM")}`}
                                 {filterMode === 'Month' && format(currentDate, "MMMM yyyy")}
                                 {filterMode === 'Year' && format(currentDate, "yyyy")}
                                 {filterMode === 'Custom' && (
-                                    <span className="flex items-center gap-2">
+                                    <span className="flex items-center gap-1">
                                         <span onClick={(e) => { e.stopPropagation(); startRangeRef.current?.showPicker(); }}>{format(parseISO(customRange.start), "dd MMM")}</span>
-                                        <ChevronRight size={12} className="text-slate-300" />
+                                        <ChevronRight size={10} className="text-slate-300" />
                                         <span onClick={(e) => { e.stopPropagation(); endRangeRef.current?.showPicker(); }}>{format(parseISO(customRange.end), "dd MMM")}</span>
                                     </span>
                                 )}
@@ -250,20 +250,20 @@ export default function ProfitLossPage() {
                             <input ref={endRangeRef} type="date" className="absolute opacity-0 pointer-events-none" onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })} />
                         </div>
                         {filterMode !== 'Custom' && (
-                            <button onClick={() => navigate('next')} className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center text-slate-400 transition-all">
-                                <ChevronRight size={20} />
+                            <button onClick={() => navigate('next')} className="w-8 h-8 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center text-slate-400 transition-all">
+                                <ChevronRight size={16} />
                             </button>
                         )}
                     </div>
 
-                    <button onClick={exportToCSV} className="h-14 px-8 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-slate-900/20">
-                        <Download size={18} /> Export Statement
+                    <button onClick={exportToCSV} className="h-10 px-5 rounded-xl bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-slate-900/20">
+                        <Download size={14} /> Export CSV
                     </button>
                 </div>
             </div>
 
             {/* P&L Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                     { label: "Gross Sales", value: `₹${totalSales.toLocaleString()}`, icon: ShoppingCart, color: "text-emerald-500", bg: "bg-emerald-500/10", trend: "Realized", trendColor: "text-emerald-500" },
                     { label: "Operational Costs", value: `₹${totalExpenses.toLocaleString()}`, icon: Wallet, color: "text-rose-500", bg: "bg-rose-500/10", trend: "Paid Out", trendColor: "text-rose-500" },
@@ -275,56 +275,56 @@ export default function ProfitLossPage() {
                         animate={{ opacity: 1, y: 0 }} 
                         transition={{ delay: i * 0.1 }} 
                         key={stat.label} 
-                        className="bg-white dark:bg-white/5 p-6 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all"
+                        className="bg-white dark:bg-white/5 p-5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all"
                     >
-                        <div className="flex items-center justify-between mb-3">
-                            <div className={`w-10 h-10 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                                <stat.icon size={18} />
+                        <div className="flex items-center justify-between mb-2">
+                            <div className={`w-8 h-8 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                                <stat.icon size={14} />
                             </div>
-                            <span className={`text-[10px] font-black uppercase tracking-widest ${stat.trendColor}`}>{stat.trend}</span>
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${stat.trendColor}`}>{stat.trend}</span>
                         </div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{stat.label}</p>
-                        <h3 className={`text-2xl font-black tracking-tighter ${stat.label === "Net Profit" ? (netProfit >= 0 ? "text-emerald-500" : "text-rose-500") : "text-slate-900 dark:text-white"}`}>{stat.value}</h3>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{stat.label}</p>
+                        <h3 className={`text-xl font-black tracking-tighter ${stat.label === "Net Profit" ? (netProfit >= 0 ? "text-emerald-500" : "text-rose-500") : "text-slate-900 dark:text-white"}`}>{stat.value}</h3>
                     </motion.div>
                 ))}
             </div>
 
             {/* Comparison Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Sales vs Expenses Comparison */}
-                <div className="bg-white dark:bg-white/5 p-10 rounded-[3rem] border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden">
-                    <div className="flex items-center justify-between mb-10">
+                <div className="bg-white dark:bg-white/5 p-5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-4">
                         <div>
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Sales vs Expenses</h3>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Comparison of inflows and outflows</p>
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tighter">Sales vs Expenses</h3>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Comparison of inflows and outflows</p>
                         </div>
                     </div>
                     
-                    <div className="h-[400px] w-full">
+                    <div className="h-[280px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={trendData}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} dy={10}/>
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} />
-                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', background: '#111827', color: '#fff' }} />
-                                <Legend verticalAlign="top" align="right" wrapperStyle={{ paddingBottom: '20px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }} />
-                                <Bar dataKey="sales" name="Sales" fill="#10B981" radius={[10, 10, 0, 0]} />
-                                <Bar dataKey="expenses" name="Expenses" fill="#F43F5E" radius={[10, 10, 0, 0]} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#94A3B8' }} dy={10}/>
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#94A3B8' }} />
+                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', background: '#111827', color: '#fff', fontSize: '11px' }} />
+                                <Legend verticalAlign="top" align="right" wrapperStyle={{ paddingBottom: '10px', fontSize: '9px', fontWeight: '900', textTransform: 'uppercase' }} />
+                                <Bar dataKey="sales" name="Sales" fill="#10B981" radius={[6, 6, 0, 0]} />
+                                <Bar dataKey="expenses" name="Expenses" fill="#F43F5E" radius={[6, 6, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* Profit Trend Chart */}
-                <div className="bg-white dark:bg-white/5 p-10 rounded-[3rem] border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden">
-                    <div className="flex items-center justify-between mb-10">
+                <div className="bg-white dark:bg-white/5 p-5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-4">
                         <div>
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Profitability Curve</h3>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Net income trend line</p>
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tighter">Profitability Curve</h3>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Net income trend line</p>
                         </div>
                     </div>
                     
-                    <div className="h-[400px] w-full">
+                    <div className="h-[280px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={trendData}>
                                 <defs>
@@ -334,10 +334,10 @@ export default function ProfitLossPage() {
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} dy={10}/>
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} />
-                                <Tooltip contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', background: '#111827', color: '#fff' }} />
-                                <Area type="monotone" dataKey="profit" name="Net Profit" stroke={netProfit >= 0 ? "#10B981" : "#F43F5E"} strokeWidth={5} fillOpacity={1} fill="url(#colorProfit)" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#94A3B8' }} dy={10}/>
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#94A3B8' }} />
+                                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', background: '#111827', color: '#fff', fontSize: '11px' }} />
+                                <Area type="monotone" dataKey="profit" name="Net Profit" stroke={netProfit >= 0 ? "#10B981" : "#F43F5E"} strokeWidth={4} fillOpacity={1} fill="url(#colorProfit)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -345,31 +345,31 @@ export default function ProfitLossPage() {
             </div>
 
             {/* Financial Breakdown Table */}
-            <div className="bg-white dark:bg-white/5 p-12 rounded-[4rem] border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
-                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mb-8">Performance Breakdown</h3>
+            <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tighter mb-4">Performance Breakdown</h3>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-slate-100 dark:border-white/5">
-                                <th className="py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Time Interval</th>
-                                <th className="py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Gross Sales</th>
-                                <th className="py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Expenses</th>
-                                <th className="py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Net Profit</th>
-                                <th className="py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Efficiency</th>
+                                <th className="py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">Time Interval</th>
+                                <th className="py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Gross Sales</th>
+                                <th className="py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Expenses</th>
+                                <th className="py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Net Profit</th>
+                                <th className="py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Efficiency</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                             {trendData.slice().reverse().map((row, i) => (
                                 <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
-                                    <td className="py-6 font-bold text-slate-600 dark:text-slate-400 uppercase text-[10px] tracking-widest">{row.name}</td>
-                                    <td className="py-6 text-right font-black text-emerald-500">₹{row.sales.toLocaleString()}</td>
-                                    <td className="py-6 text-right font-black text-rose-500">₹{row.expenses.toLocaleString()}</td>
-                                    <td className={`py-6 text-right font-black ${row.profit >= 0 ? "text-indigo-500" : "text-rose-600"}`}>₹{row.profit.toLocaleString()}</td>
-                                    <td className="py-6 text-center">
+                                    <td className="py-3.5 font-bold text-slate-600 dark:text-slate-400 uppercase text-[9px] tracking-widest">{row.name}</td>
+                                    <td className="py-3.5 text-right font-black text-emerald-500">₹{row.sales.toLocaleString()}</td>
+                                    <td className="py-3.5 text-right font-black text-rose-500">₹{row.expenses.toLocaleString()}</td>
+                                    <td className={`py-3.5 text-right font-black ${row.profit >= 0 ? "text-indigo-500" : "text-rose-600"}`}>₹{row.profit.toLocaleString()}</td>
+                                    <td className="py-3.5 text-center">
                                         <div className="flex items-center justify-center">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${row.profit >= row.sales * 0.3 ? "bg-emerald-100 text-emerald-600" : row.profit >= 0 ? "bg-amber-100 text-amber-600" : "bg-rose-100 text-rose-600"}`}>
+                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${row.profit >= row.sales * 0.3 ? "bg-emerald-100 text-emerald-600" : row.profit >= 0 ? "bg-amber-100 text-amber-600" : "bg-rose-100 text-rose-600"}`}>
                                                 {row.sales > 0 ? ((row.profit / row.sales) * 100).toFixed(0) : 0}%
-                                            </span>
+                                              </span>
                                         </div>
                                     </td>
                                 </tr>

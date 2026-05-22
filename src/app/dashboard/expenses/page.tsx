@@ -239,94 +239,94 @@ export default function ExpensesPage() {
     const totalExpense = filteredExpenses.reduce((acc, curr) => acc + curr.amount, 0);
 
     return (
-        <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 min-h-screen pb-24 kravy-page-fade">
+        <div className="max-w-7xl mx-auto p-2 md:p-4 space-y-4 pb-16 kravy-page-fade">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter flex items-center gap-3">
-                        <IndianRupee className="w-8 h-8 text-rose-500" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                    <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tighter flex items-center gap-2">
+                        <IndianRupee className="w-6 h-6 text-rose-500" />
                         Restaurant Expenses
                     </h1>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Track your daily operational costs</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Track your daily operational costs</p>
                 </div>
 
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                     <button 
                         onClick={() => { kravy.click(); setShowCategoryModal(true); }}
-                        className="h-14 px-6 rounded-[1.5rem] bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest text-[10px] flex items-center gap-3 hover:bg-slate-200 transition-all active:scale-95"
+                        className="h-10 px-4 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest text-[9px] flex items-center gap-2 hover:bg-slate-200 transition-all active:scale-95"
                     >
-                        <Settings size={18} />
+                        <Settings size={14} />
                         Categories
                     </button>
                     <button 
                         onClick={() => { kravy.click(); router.push("/dashboard/expenses/pnl"); }}
-                        className="h-14 px-6 rounded-[1.5rem] bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-3 shadow-2xl shadow-emerald-500/20 transition-all active:scale-95"
+                        className="h-10 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase tracking-widest text-[9px] flex items-center gap-2 shadow-2xl shadow-emerald-500/20 transition-all active:scale-95"
                     >
-                        <Scale size={18} />
-                        P&L Statement
+                        <Scale size={14} />
+                        P&L
                     </button>
                     <button 
                         onClick={() => { kravy.click(); router.push("/dashboard/expenses/reports"); }}
-                        className="h-14 px-8 rounded-[1.5rem] bg-indigo-500 hover:bg-indigo-400 text-white font-black uppercase tracking-widest text-xs flex items-center gap-3 shadow-2xl shadow-indigo-500/20 transition-all active:scale-95"
+                        className="h-10 px-4 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-black uppercase tracking-widest text-[9px] flex items-center gap-2 shadow-2xl shadow-indigo-500/20 transition-all active:scale-95"
                     >
-                        <PieChart size={18} strokeWidth={3} />
-                        View Reports
+                        <PieChart size={14} />
+                        Reports
                     </button>
                     <button 
                         onClick={() => { kravy.toggle(); setShowAddModal(true); }}
-                        className="h-14 px-8 rounded-[1.5rem] bg-rose-500 hover:bg-rose-400 text-white font-black uppercase tracking-widest text-xs flex items-center gap-3 shadow-2xl shadow-rose-500/20 transition-all active:scale-95"
+                        className="h-10 px-5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-black uppercase tracking-widest text-[9px] flex items-center gap-2 shadow-2xl shadow-rose-500/20 transition-all active:scale-95"
                     >
-                        <Plus size={18} strokeWidth={3} />
-                        Add New Expense
+                        <Plus size={14} />
+                        Add Expense
                     </button>
                 </div>
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-8 rounded-[2.5rem] bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform"><ArrowUpRight size={80} className="text-rose-500" /></div>
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Total Spending</p>
-                    <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">₹{totalExpense.toLocaleString()}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-5 rounded-2xl bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-5 opacity-10 group-hover:scale-110 transition-transform"><ArrowUpRight size={48} className="text-rose-500" /></div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Spending</p>
+                    <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tighter">₹{totalExpense.toLocaleString()}</h3>
                 </motion.div>
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-8 rounded-[2.5rem] bg-indigo-500 text-white shadow-2xl shadow-indigo-500/20 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:rotate-12 transition-transform"><ShoppingCart size={80} /></div>
-                    <p className="text-xs font-black opacity-60 uppercase tracking-widest mb-4">Entries Count</p>
-                    <h3 className="text-4xl font-black tracking-tighter">{filteredExpenses.length} Records</h3>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-5 rounded-2xl bg-indigo-500 text-white shadow-2xl shadow-indigo-500/20 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-5 opacity-20 group-hover:rotate-12 transition-transform"><ShoppingCart size={48} /></div>
+                    <p className="text-[10px] font-black opacity-60 uppercase tracking-widest mb-2">Entries Count</p>
+                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter">{filteredExpenses.length} Records</h3>
                 </motion.div>
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-8 rounded-[2.5rem] bg-slate-900 dark:bg-white/10 text-white shadow-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:-rotate-12 transition-transform text-emerald-500"><Banknote size={80} /></div>
-                    <p className="text-xs font-black opacity-40 uppercase tracking-widest mb-4">Primary Mode</p>
-                    <h3 className="text-4xl font-black tracking-tighter">Cash Only</h3>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-5 rounded-2xl bg-slate-900 dark:bg-white/10 text-white shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-5 opacity-10 group-hover:-rotate-12 transition-transform text-emerald-500"><Banknote size={48} /></div>
+                    <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mb-2">Primary Mode</p>
+                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter">Cash Only</h3>
                 </motion.div>
             </div>
 
             {/* Filters & Search */}
-            <div className="flex flex-col md:flex-row items-center gap-4 bg-white dark:bg-white/5 p-4 rounded-[2rem] border border-slate-100 dark:border-white/10 shadow-sm">
+            <div className="flex flex-col md:flex-row items-center gap-3 bg-white dark:bg-white/5 p-2 rounded-xl border border-slate-100 dark:border-white/10 shadow-sm">
                 <div className="relative flex-1 group w-full">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-rose-500 transition-colors" size={18} />
-                    <input type="text" placeholder="Search by description or category..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-12 pl-12 pr-4 bg-slate-50 dark:bg-black/20 border-transparent rounded-2xl text-sm focus:bg-white dark:focus:bg-black/40 focus:ring-2 focus:ring-rose-500/20 transition-all outline-none" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-rose-500 transition-colors" size={14} />
+                    <input type="text" placeholder="Search by description or category..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-black/20 border-transparent rounded-lg text-xs focus:bg-white dark:focus:bg-black/40 focus:ring-2 focus:ring-rose-500/20 transition-all outline-none" />
                 </div>
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto scrollbar-hide">
-                    <button onClick={() => { kravy.toggle(); setFilterCategory("All"); }} className={`h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterCategory === "All" ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-lg" : "bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 text-slate-400 hover:text-slate-600"}`}>All</button>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 w-full md:w-auto scrollbar-hide">
+                    <button onClick={() => { kravy.toggle(); setFilterCategory("All"); }} className={`h-8 px-4 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterCategory === "All" ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow" : "bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 text-slate-400 hover:text-slate-600"}`}>All</button>
                     {categories.map((cat) => (
-                        <button key={cat.id} onClick={() => { kravy.toggle(); setFilterCategory(cat.name); }} className={`h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterCategory === cat.name ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-lg" : "bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 text-slate-400 hover:text-slate-600"}`}>{cat.name}</button>
+                        <button key={cat.id} onClick={() => { kravy.toggle(); setFilterCategory(cat.name); }} className={`h-8 px-4 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterCategory === cat.name ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow" : "bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 text-slate-400 hover:text-slate-600"}`}>{cat.name}</button>
                     ))}
                 </div>
             </div>
 
             {/* List */}
-            <div className="bg-white dark:bg-white/5 rounded-[2.5rem] border border-slate-100 dark:border-white/10 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 dark:bg-black/20 border-b border-slate-100 dark:border-white/5">
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mode</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Actions</th>
+                                <th className="px-5 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                                <th className="px-5 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Category</th>
+                                <th className="px-5 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Description</th>
+                                <th className="px-5 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Mode</th>
+                                <th className="px-5 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
+                                <th className="px-5 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -335,22 +335,22 @@ export default function ExpensesPage() {
                                 const Icon = ICON_MAP[catInfo.icon] || MoreHorizontal;
                                 return (
                                     <motion.tr key={exp.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="group hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
-                                        <td className="px-8 py-6">
+                                        <td className="px-5 py-3.5">
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-slate-700 dark:text-white/80">{format(new Date(exp.date), "dd MMM yyyy")}</span>
-                                                <span className="text-[10px] text-slate-400 font-mono italic">{format(new Date(exp.date), "hh:mm a")}</span>
+                                                <span className="text-xs font-bold text-slate-700 dark:text-white/80">{format(new Date(exp.date), "dd MMM yyyy")}</span>
+                                                <span className="text-[9px] text-slate-400 font-mono italic">{format(new Date(exp.date), "hh:mm a")}</span>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tight" style={{ backgroundColor: `${catInfo.color}15`, color: catInfo.color }}><Icon size={12} />{exp.category}</div>
+                                        <td className="px-5 py-3.5">
+                                            <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight" style={{ backgroundColor: `${catInfo.color}15`, color: catInfo.color }}><Icon size={10} />{exp.category}</div>
                                         </td>
-                                        <td className="px-8 py-6 max-w-xs"><p className="text-sm text-slate-600 dark:text-slate-400 truncate font-medium">{exp.description || "—"}</p></td>
-                                        <td className="px-8 py-6"><div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">{exp.paymentMode === "Cash" ? <Banknote size={14} /> : <CreditCard size={14} />}<span className="text-[10px] font-black uppercase tracking-widest">{exp.paymentMode || "Cash"}</span></div></td>
-                                        <td className="px-8 py-6 text-right"><span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter">₹{exp.amount.toLocaleString()}</span></td>
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button onClick={() => { kravy.open(); setEditingExpense(exp); setFormData({ amount: exp.amount.toString(), category: exp.category, description: exp.description || "", date: format(new Date(exp.date), "yyyy-MM-dd"), paymentMode: exp.paymentMode || "Cash" }); setShowAddModal(true); }} className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-110 transition-all"><Edit3 size={16} /></button>
-                                                <button onClick={() => handleDelete(exp.id)} className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center hover:scale-110 transition-all"><Trash2 size={16} /></button>
+                                        <td className="px-5 py-3.5 max-w-xs"><p className="text-xs text-slate-600 dark:text-slate-400 truncate font-medium">{exp.description || "—"}</p></td>
+                                        <td className="px-5 py-3.5"><div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">{exp.paymentMode === "Cash" ? <Banknote size={12} /> : <CreditCard size={12} />}<span className="text-[9px] font-black uppercase tracking-widest">{exp.paymentMode || "Cash"}</span></div></td>
+                                        <td className="px-5 py-3.5 text-right"><span className="text-base font-black text-slate-900 dark:text-white tracking-tighter">₹{exp.amount.toLocaleString()}</span></td>
+                                        <td className="px-5 py-3.5">
+                                            <div className="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => { kravy.open(); setEditingExpense(exp); setFormData({ amount: exp.amount.toString(), category: exp.category, description: exp.description || "", date: format(new Date(exp.date), "yyyy-MM-dd"), paymentMode: exp.paymentMode || "Cash" }); setShowAddModal(true); }} className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center hover:scale-110 transition-all"><Edit3 size={14} /></button>
+                                                <button onClick={() => handleDelete(exp.id)} className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center hover:scale-110 transition-all"><Trash2 size={14} /></button>
                                             </div>
                                         </td>
                                     </motion.tr>

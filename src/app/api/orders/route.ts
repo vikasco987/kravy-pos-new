@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { orderId, status, isKotPrinted, isBillPrinted, items, total, isDeleted } = await req.json();
+        const { orderId, status, isKotPrinted, isBillPrinted, items, total, isDeleted, skipInventoryDeduction } = await req.json();
 
         if (!orderId) {
             return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
@@ -117,10 +117,12 @@ export async function PATCH(req: NextRequest) {
         });
 
         // ✅ AUTO-DEDUCT INVENTORY ON COMPLETION
-        if (status === "COMPLETED" && order.items && Array.isArray(order.items)) {
+        if (status === "COMPLETED" && !skipInventoryDeduction && order.items && Array.isArray(order.items)) {
             console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Triggering inventory deduction.`);
             const { deductInventory } = await import("@/lib/inventory-utils");
             await deductInventory(order.items);
+        } else if (status === "COMPLETED" && skipInventoryDeduction) {
+            console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Inventory deduction skipped by caller.`);
         } else if (status === "COMPLETED") {
             console.warn(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED but has NO items. Deduction skipped.`);
         }

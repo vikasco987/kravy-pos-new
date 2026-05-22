@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
       packagingCharges,
       serviceCharge,
       kotNumbers,
+      skipInventoryDeduction,
     } = body;
 
     // 🛑 1. ROBUST VALIDATION (Critical Fix for UI Crashes)
@@ -232,11 +233,17 @@ export async function POST(req: NextRequest) {
         }
     }
 
+    const processedItems = items.map((it: any) => ({
+      ...it,
+      kotNumber: it.kotNumber || nextToken || 1,
+      addedAt: it.addedAt || nowLocal.toISOString()
+    }));
+
     const bill = await prisma.billManager.create({
       data: {
         clerkUserId: effectiveId || "Unknown",
         billNumber: billNumber,
-        items: items,
+        items: processedItems,
         subtotal: finalSubtotal,
         tax: calculatedTax,
         total: finalTotal,
@@ -265,7 +272,7 @@ export async function POST(req: NextRequest) {
     });
 
     // ✅ AUTO-DEDUCT INVENTORY ON FINAL BILL (IF NOT HELD)
-    if (!bill.isHeld) {
+    if (!bill.isHeld && skipInventoryDeduction !== true) {
       try {
         console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Triggering inventory deduction.`);
         const { deductInventory } = await import("@/lib/inventory-utils");
@@ -273,6 +280,8 @@ export async function POST(req: NextRequest) {
       } catch (deductErr) {
         console.error("Failed to deduct inventory from bill:", deductErr);
       }
+    } else if (skipInventoryDeduction === true) {
+      console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Inventory deduction skipped by caller.`);
     }
 
     return NextResponse.json({ bill });

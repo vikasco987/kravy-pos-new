@@ -396,6 +396,7 @@ import {
 } from "lucide-react";
 import { formatWhatsAppNumber } from "@/lib/whatsapp";
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
+import { useAuthContext } from "@/components/AuthContext";
 import type {
   BillManager,
   BusinessProfile as PrismaBusinessProfile,
@@ -430,20 +431,15 @@ export default function ViewBillPage() {
   const params = useParams();
   const id = params.id as string;
 
+  const { user: authUser } = useAuthContext();
+  const userRole = authUser?.type || null;
+  const userPermissions = authUser?.permissions || [];
+
   const [bill, setBill] = useState<BillManager | null>(null);
   const [business, setBusiness] = useState<PrismaBusinessProfile | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const receiptRef = useRef<HTMLDivElement>(null);
 
-
-  // ✅ Fetch Role
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then(res => res.json())
-      .then(data => setUserRole(data.role))
-      .catch(err => console.error("Failed to fetch role", err));
-  }, []);
 
   // ✅ Fetch from BillManager API
   useEffect(() => {

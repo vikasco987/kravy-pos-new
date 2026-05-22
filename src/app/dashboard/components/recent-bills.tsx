@@ -71,14 +71,16 @@ export default function RecentBills({
     deleted?: boolean;
   }) => (
     <div style={{
-      background: "white",
-      border: "1px solid #F3F4F6",
+      background: "var(--kravy-surface)",
+      border: "1px solid var(--kravy-border)",
       borderRadius: "24px",
       padding: "24px",
       display: "flex",
       flexDirection: "column",
       gap: "16px",
-      boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
+      boxShadow: "var(--kravy-card-shadow)",
+      position: "relative",
+      overflow: "hidden"
     }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -87,7 +89,7 @@ export default function RecentBills({
             width: "40px",
             height: "40px",
             borderRadius: "12px",
-            background: `${accentColor}10`,
+            background: `${accentColor}15`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -96,8 +98,8 @@ export default function RecentBills({
             {icon}
           </div>
           <div>
-            <h3 style={{ fontSize: "1rem", fontWeight: 900, color: "#111827" }}>{title}</h3>
-            <div style={{ fontSize: "0.68rem", color: "#9CA3AF", fontWeight: 700 }}>
+            <h3 style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>{title}</h3>
+            <div style={{ fontSize: "0.68rem", color: "var(--kravy-text-muted)", fontWeight: 700 }}>
               {bills.length} record{bills.length !== 1 ? "s" : ""}
             </div>
           </div>
@@ -112,10 +114,10 @@ export default function RecentBills({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "#F9FAFB",
-            border: "1px solid #E5E7EB",
+            background: "var(--kravy-bg-2)",
+            border: "1px solid var(--kravy-border)",
             cursor: "pointer",
-            color: "#9CA3AF"
+            color: "var(--kravy-text-secondary)"
           }}
         >
           <Maximize2 size={16} />
@@ -132,7 +134,7 @@ export default function RecentBills({
         paddingRight: "4px"
       }}>
         {bills.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#9CA3AF", fontSize: "0.82rem" }}>📭 No records found</div>
+          <div style={{ textAlign: "center", padding: "40px 0", color: "var(--kravy-text-muted)", fontSize: "0.82rem" }}>📭 No records found</div>
         ) : (
           bills.map((bill, idx) => (
             <motion.div
@@ -142,8 +144,8 @@ export default function RecentBills({
               transition={{ delay: idx * 0.05 }}
               style={{
                 padding: "16px",
-                background: "#F9FAFB",
-                border: "1px solid #F3F4F6",
+                background: "var(--kravy-bg-2)",
+                border: "1px solid var(--kravy-border)",
                 borderRadius: "16px",
                 display: "flex",
                 flexDirection: "column",
@@ -154,27 +156,27 @@ export default function RecentBills({
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <div style={{ fontSize: "0.85rem", fontWeight: 900, color: "#6366F1", fontFamily: "monospace" }}>#{bill.billNumber}</div>
                   {bill.tokenNumber && (
-                    <div style={{ fontSize: "0.65rem", fontWeight: 900, color: "#10B981", background: "#ECFDF5", padding: "2px 6px", borderRadius: "4px" }}>T-{String(bill.tokenNumber).padStart(2, '0')}</div>
+                    <div style={{ fontSize: "0.65rem", fontWeight: 900, color: "#10B981", background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.2)", padding: "2px 6px", borderRadius: "4px" }}>T-{String(bill.tokenNumber).padStart(2, '0')}</div>
                   )}
                 </div>
-                <div style={{ fontSize: "1rem", fontWeight: 900, color: deleted ? "#EF4444" : "#111827" }}>₹{format(bill.total)}</div>
+                <div style={{ fontSize: "1rem", fontWeight: 900, color: deleted ? "#EF4444" : "var(--kravy-text-primary)" }}>₹{format(bill.total)}</div>
               </div>
 
               {/* Items in Card */}
               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
                 {bill.items?.map((it: any, i: number) => (
-                  <span key={i} style={{ fontSize: "0.6rem", padding: "2px 6px", background: "white", border: "1px solid #E5E7EB", borderRadius: "4px", color: "#6B7280", fontWeight: 700 }}>
+                  <span key={i} style={{ fontSize: "0.6rem", padding: "2px 6px", background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "4px", color: "var(--kravy-text-secondary)", fontWeight: 700 }}>
                     {it.name} x{it.quantity || it.qty}
                   </span>
                 ))}
               </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #E5E7EB", paddingTop: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--kravy-border)", paddingTop: "8px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                   <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "#374151" }}>{bill.customerName || "Walk-in"}</div>
+                   <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-secondary)" }}>{bill.customerName || "Walk-in"}</div>
                    <PaymentBadge mode={bill.paymentMode} />
                 </div>
-                <div style={{ fontSize: "0.65rem", color: "#9CA3AF", fontWeight: 600 }}>{new Date(bill.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                <div style={{ fontSize: "0.65rem", color: "var(--kravy-text-muted)", fontWeight: 600 }}>{new Date(bill.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
               </div>
             </motion.div>
           ))

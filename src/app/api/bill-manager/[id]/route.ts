@@ -217,13 +217,21 @@ export async function PUT(
     /* ---------- PROCESS UPDATE OR CONVERT ORDER ---------- */
     let bill;
     const existingBill = await prisma.billManager.findUnique({ where: { id } });
+    const existingOrder = !existingBill ? await prisma.order.findUnique({ where: { id } }) : null;
+
+    const finalToken = tokenNumber || (kotNumbers && Array.isArray(kotNumbers) && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : null) || existingBill?.tokenNumber || existingOrder?.tokenNumber || 1;
+    const processedItems = items.map((it: any) => ({
+      ...it,
+      kotNumber: it.kotNumber || finalToken,
+      addedAt: it.addedAt || new Date().toISOString()
+    }));
 
     if (existingBill) {
       // ✅ UPDATE BILL
       bill = await prisma.billManager.update({
         where: { id },
         data: {
-          items, subtotal: finalSubtotal, tax, total: finalTotal,
+          items: processedItems, subtotal: finalSubtotal, tax, total: finalTotal,
           paymentMode: finalPaymentMode, paymentStatus: finalPaymentStatus,
           isHeld: body.isHeld === true, upiTxnRef: upiTxnRef || null,
           customerName, customerPhone, customerAddress, partyId,
@@ -238,7 +246,6 @@ export async function PUT(
       });
     } else {
       // ✅ CONVERT ORDER TO BILL
-      const existingOrder = await prisma.order.findUnique({ where: { id } });
       if (!existingOrder) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
       // Generate Bill Number
@@ -258,7 +265,7 @@ export async function PUT(
 
       bill = await prisma.billManager.create({
         data: {
-          clerkUserId: effectiveId, billNumber, items, subtotal: finalSubtotal, tax, total: finalTotal,
+          clerkUserId: effectiveId, billNumber, items: processedItems, subtotal: finalSubtotal, tax, total: finalTotal,
           paymentMode: finalPaymentMode, paymentStatus: finalPaymentStatus,
           isHeld: body.isHeld === true, upiTxnRef: upiTxnRef || null,
           customerName: customerName || existingOrder.customerName,
@@ -333,7 +340,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 }
 
 /* ======================================================
-   PATCH → Partial update (Change Status)
+   PATCH → Partial update (Change Status / Details)
 ====================================================== */
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -342,7 +349,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     const { id } = await context.params;
     const body = await req.json();
 
-    const allowedUpdates = ["paymentStatus", "paymentMode", "upiTxnRef", "isHeld"];
+    const allowedUpdates = ["paymentStatus", "paymentMode", "upiTxnRef", "isHeld", "customerName", "customerPhone"];
     const data: any = {};
     allowedUpdates.forEach(key => {
       if (body[key] !== undefined) data[key] = body[key];
@@ -352,13 +359,90 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       data.paymentStatus = "Paid";
     }
 
-    const bill = await prisma.billManager.update({
-      where: { id },
-      data,
-    });
-    return NextResponse.json({ bill });
+    // Party upsertion logic if customer name/phone are updated
+    if (data.customerName !== undefined || data.customerPhone !== undefined) {
+      // Find current customer details in database to merge
+      let existingName = data.customerName;
+      let existingPhone = data.customerPhone;
+
+      if (existingName === undefined || existingPhone === undefined) {
+        const existingBill = await prisma.billManager.findUnique({ where: { id } });
+        if (existingBill) {
+          if (existingName === undefined) existingName = existingBill.customerName || "";
+          if (existingPhone === undefined) existingPhone = existingBill.customerPhone || "";
+        } else {
+          const existingOrder = await prisma.order.findUnique({ where: { id } });
+          if (existingOrder) {
+            if (existingName === undefined) existingName = existingOrder.customerName || "";
+            if (existingPhone === undefined) existingPhone = existingOrder.customerPhone || "";
+          }
+        }
+      }
+
+      if (existingPhone && existingName && existingName !== "Walk-in Customer") {
+        try {
+          const cleanPhone = existingPhone.replace(/[\s\-\(\)\+]/g, "").slice(-10);
+          const party = await prisma.party.upsert({
+            where: { phone_createdBy: { phone: cleanPhone, createdBy: effectiveId } },
+            update: { name: existingName },
+            create: { name: existingName, phone: cleanPhone, createdBy: effectiveId },
+          });
+          data.partyId = party.id;
+        } catch (err) {
+          console.error("Party upsert error in PATCH:", err);
+        }
+      }
+    }
+
+    // 1. Try finding and updating in BillManager
+    const existingBill = await prisma.billManager.findUnique({ where: { id } });
+    if (existingBill) {
+      const bill = await prisma.billManager.update({
+        where: { id },
+        data,
+      });
+      return NextResponse.json({ bill });
+    }
+
+    // 2. Try finding and updating in Order
+    const existingOrder = await prisma.order.findUnique({ where: { id }, include: { table: true } });
+    if (existingOrder) {
+      const orderData: any = {};
+      if (data.customerName !== undefined) orderData.customerName = data.customerName;
+      if (data.customerPhone !== undefined) orderData.customerPhone = data.customerPhone;
+      if (data.paymentMode !== undefined) orderData.paymentMode = data.paymentMode;
+      if (data.paymentStatus === "Paid") {
+        orderData.status = "COMPLETED";
+      }
+
+      const order = await prisma.order.update({
+        where: { id },
+        data: orderData,
+      });
+
+      // Map Order back to Bill-like structure
+      const mappedOrder = {
+        ...order,
+        billNumber: `ORD-${order.id.slice(-4).toUpperCase()}`,
+        tableName: existingOrder.table?.name || "Counter",
+        items: (order.items as any[]).map(it => ({
+          ...it,
+          id: it.itemId || it.id,
+          rate: it.rate ?? it.price ?? 0,
+        })),
+        auditNote: order.notes || "",
+        paymentMode: order.paymentMode || "Cash",
+        paymentStatus: order.status === "COMPLETED" ? "Paid" : "Pending",
+        kotNumbers: order.kotNumbers || [],
+        tokenNumber: order.tokenNumber || null,
+      };
+
+      return NextResponse.json({ bill: mappedOrder });
+    }
+
+    return NextResponse.json({ error: "Record not found" }, { status: 404 });
   } catch (err) {
     console.error("PATCH ERROR:", err);
-    return NextResponse.json({ error: "Failed to update status" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update record" }, { status: 500 });
   }
 }

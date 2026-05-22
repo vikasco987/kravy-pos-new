@@ -712,9 +712,13 @@ function KravyPOS() {
 
             const billData = {
                 items: order.items.map(it => ({
+                    id: it.itemId,
+                    itemId: it.itemId,
                     name: it.name,
                     price: it.price,
                     quantity: it.quantity,
+                    qty: it.quantity,
+                    rate: it.price,
                     total: it.price * it.quantity,
                     taxStatus: it.taxStatus || "Without Tax",
                     gst: (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (isTaxEnabled ? globalRate : 0)
@@ -726,7 +730,8 @@ function KravyPOS() {
                 customerName: order.customerName || "Walk-in",
                 tableName: order.table?.name || "Counter",
                 tokenNumber: order.tokenNumber,
-                kotNumbers: order.kotNumbers || []
+                kotNumbers: order.kotNumbers || [],
+                skipInventoryDeduction: true
             };
             const res = await fetch("/api/bill-manager", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(billData) });
             if (!res.ok) throw new Error("fail");

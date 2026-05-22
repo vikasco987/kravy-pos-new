@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { formatWhatsAppNumber } from "@/lib/whatsapp";
 import { useSearch } from "@/components/SearchContext";
 import {
-  Receipt, Plus, Trash2, Eye, Printer, MessageCircle, FileText, Smartphone,
+  Receipt, Plus, Trash2, Eye, EyeOff, Printer, MessageCircle, FileText, Smartphone,
   Play, MoreVertical, IndianRupee, Calendar, User, Phone,
   ChevronLeft, ChevronRight, Settings2, Check, LayoutGrid, Filter, Search, Wallet, X, ZoomIn, ZoomOut, XCircle, CheckCircle, CreditCard, CheckCircle2, UtensilsCrossed, Banknote, Clock
 } from "lucide-react";
@@ -141,6 +141,7 @@ export default function BillingPage() {
   const itemsPerPage = 10;
   const { query } = useSearch();
   const [showColPicker, setShowColPicker] = useState(false);
+  const [showStats, setShowStats] = useState(true);
   const [visibleCols, setVisibleCols] = useState({
     sno: true, billInfo: true, items: true, source: true, customer: true, customerPhone: true,
     subtotal: true, gst: true, discount: true, total: true, timeline: true, payment: true, token: true
@@ -160,7 +161,22 @@ export default function BillingPage() {
     return { start: firstDay, end: today };
   });
 
-  useEffect(() => { fetchBills(); fetchProfile(); }, []);
+  useEffect(() => {
+    fetchBills();
+    fetchProfile();
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("kravy_show_stats_cards");
+      if (saved !== null) {
+        setShowStats(saved === "true");
+      }
+    }
+  }, []);
+
+  const toggleStats = () => {
+    const next = !showStats;
+    setShowStats(next);
+    localStorage.setItem("kravy_show_stats_cards", String(next));
+  };
 
   async function fetchProfile() {
     try {
@@ -308,6 +324,11 @@ export default function BillingPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <HeaderBtn 
+            icon={showStats ? <EyeOff size={16} /> : <Eye size={16} />} 
+            label={showStats ? "Hide Stats" : "Show Stats"} 
+            onClick={toggleStats} 
+          />
           <HeaderBtn icon={<Settings2 size={16} />} label="Columns" onClick={() => setShowColPicker(!showColPicker)} />
           <HeaderBtn icon={<FileText size={16} />} label="Export Excel" color="#10B981" onClick={async () => {
              try {
@@ -348,51 +369,58 @@ export default function BillingPage() {
       </div>
 
       {/* --- Grouped Stats Row --- */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px" }}>
-        
-        {/* Revenue Card - Sleek & Modern */}
-        <div style={{ background: "white", borderRadius: "24px", padding: "28px", display: "flex", flexDirection: "column", justifyContent: "space-between", border: "1px solid #F1F5F9", boxShadow: "0 10px 30px rgba(0,0,0,0.02)" }}>
-           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div>
-                 <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#94A3B8", letterSpacing: "1px", marginBottom: "8px" }}>TOTAL REVENUE</div>
-                 <div style={{ fontSize: "2.25rem", fontWeight: 1000, color: "#1E293B", letterSpacing: "-1px" }}>₹{format(totalRevenue)}</div>
-              </div>
-              <div style={{ width: "48px", height: "48px", background: "#F0F9FF", color: "#0369A1", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}><IndianRupee size={22} /></div>
-           </div>
-           <div style={{ display: "flex", gap: "24px", marginTop: "24px" }}>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                 <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#94A3B8" }}>ACTIVE ORDERS</span>
-                 <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#EF4444" }}>{activeOrderCount}</span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                 <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#94A3B8" }}>TOTAL BILLS</span>
-                 <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#6366F1" }}>{filteredBills.length}</span>
-              </div>
-           </div>
+      <motion.div
+        initial={false}
+        animate={showStats ? { height: "auto", opacity: 1, scale: 1, marginBottom: 0 } : { height: 0, opacity: 0, scale: 0.95, marginBottom: -24 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        style={{ overflow: "hidden" }}
+      >
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px", paddingBottom: "4px" }}>
+          
+          {/* Revenue Card - Sleek & Modern */}
+          <div style={{ background: "white", borderRadius: "24px", padding: "28px", display: "flex", flexDirection: "column", justifyContent: "space-between", border: "1px solid #F1F5F9", boxShadow: "0 10px 30px rgba(0,0,0,0.02)" }}>
+             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                   <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#94A3B8", letterSpacing: "1px", marginBottom: "8px" }}>TOTAL REVENUE</div>
+                   <div style={{ fontSize: "2.25rem", fontWeight: 1000, color: "#1E293B", letterSpacing: "-1px" }}>₹{format(totalRevenue)}</div>
+                </div>
+                <div style={{ width: "48px", height: "48px", background: "#F0F9FF", color: "#0369A1", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}><IndianRupee size={22} /></div>
+             </div>
+             <div style={{ display: "flex", gap: "24px", marginTop: "24px" }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                   <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#94A3B8" }}>ACTIVE ORDERS</span>
+                   <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#EF4444" }}>{activeOrderCount}</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                   <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#94A3B8" }}>TOTAL BILLS</span>
+                   <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#6366F1" }}>{filteredBills.length}</span>
+                </div>
+             </div>
+          </div>
+
+          {/* Bill Summary Card */}
+          <GroupedCard title="BILL STATUS" icon={<Receipt size={18} color="#6366F1" />} accent="#6366F1">
+             <StatItem label="Paid" value={paidBillsCount} dot="#10B981" />
+             <StatItem label="Pending" value={pendingBillsCount} dot="#F59E0B" />
+             <StatItem label="Cancelled" value={cancelledBillsCount} dot="#EF4444" />
+          </GroupedCard>
+
+          {/* Payment Summary Card */}
+          <GroupedCard title="PAYMENT MODES" icon={<CreditCard size={18} color="#8B5CF6" />} accent="#8B5CF6">
+             <StatItem label="Cash" value={`₹${format(cashRevenue)}`} dot="#059669" />
+             <StatItem label="UPI" value={`₹${format(upiRevenue)}`} dot="#4F46E5" />
+             <StatItem label="Wallet" value={`₹${format(walletRevenue)}`} dot="#7C3AED" />
+          </GroupedCard>
+
+          {/* Order Nature Card */}
+          <GroupedCard title="ORDER NATURE" icon={<UtensilsCrossed size={18} color="#F59E0B" />} accent="#F59E0B">
+             <StatItem label="Dine-in" value={dineInCount} dot="#10B981" />
+             <StatItem label="Takeaway" value={takeawayCount} dot="#F59E0B" />
+             <StatItem label="Counter" value={counterCount} dot="#6366F1" />
+          </GroupedCard>
+
         </div>
-
-        {/* Bill Summary Card */}
-        <GroupedCard title="BILL STATUS" icon={<Receipt size={18} color="#6366F1" />} accent="#6366F1">
-           <StatItem label="Paid" value={paidBillsCount} dot="#10B981" />
-           <StatItem label="Pending" value={pendingBillsCount} dot="#F59E0B" />
-           <StatItem label="Cancelled" value={cancelledBillsCount} dot="#EF4444" />
-        </GroupedCard>
-
-        {/* Payment Summary Card */}
-        <GroupedCard title="PAYMENT MODES" icon={<CreditCard size={18} color="#8B5CF6" />} accent="#8B5CF6">
-           <StatItem label="Cash" value={`₹${format(cashRevenue)}`} dot="#059669" />
-           <StatItem label="UPI" value={`₹${format(upiRevenue)}`} dot="#4F46E5" />
-           <StatItem label="Wallet" value={`₹${format(walletRevenue)}`} dot="#7C3AED" />
-        </GroupedCard>
-
-        {/* Order Nature Card */}
-        <GroupedCard title="ORDER NATURE" icon={<UtensilsCrossed size={18} color="#F59E0B" />} accent="#F59E0B">
-           <StatItem label="Dine-in" value={dineInCount} dot="#10B981" />
-           <StatItem label="Takeaway" value={takeawayCount} dot="#F59E0B" />
-           <StatItem label="Counter" value={counterCount} dot="#6366F1" />
-        </GroupedCard>
-
-      </div>
+      </motion.div>
 
       {/* --- Filter Section --- */}
       <div style={{ display: "flex", flexDirection: "column", gap: "16px", background: "#F8FAFC", padding: "20px", borderRadius: "24px", border: "1px solid #E2E8F0" }}>
