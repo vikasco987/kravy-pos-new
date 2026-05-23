@@ -307,7 +307,13 @@ export default function PartiesPage() {
             color: #000 !important;
             font-family: 'Courier New', Courier, monospace !important;
           }
-          * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; box-shadow: none !important; text-shadow: none !important; }
+          * { 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+            color-adjust: exact !important; 
+            box-shadow: none !important; 
+            text-shadow: none !important; 
+          }
         }
       `;
       document.head.appendChild(style);
@@ -323,6 +329,8 @@ export default function PartiesPage() {
       spacer.style.minHeight = "80px";
       spacer.style.display = "block";
       spacer.style.clear = "both";
+      spacer.style.color = "transparent";
+      spacer.innerHTML = ".";
       container.appendChild(spacer);
 
       document.body.appendChild(container);
@@ -332,8 +340,8 @@ export default function PartiesPage() {
       setTimeout(() => {
         container.remove();
         style.remove();
-      }, 2000);
-    }, 300);
+      }, 15000);
+    }, 50);
   };
 
   // State for dynamic print content

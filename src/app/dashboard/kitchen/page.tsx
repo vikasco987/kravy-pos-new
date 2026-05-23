@@ -387,7 +387,13 @@ function KravyPOS() {
                 printHTML = targetRef.innerHTML;
             }
 
-            // ✅ Read printSettings dynamically — same as CheckoutClient runPrintJob
+            // 🛡️ SANITIZATION: Clean up any old print templates/styles to prevent double-printing or styling overlap
+            document.getElementById("print-receipt-container")?.remove();
+            document.getElementById("print-receipt-style")?.remove();
+            document.querySelectorAll("[id^='print-container-']").forEach(el => el.remove());
+            document.querySelectorAll("[id^='print-style-']").forEach(el => el.remove());
+
+            // ✅ Read printSettings dynamically
             const ps = (business as any)?.printSettings || {};
             const is80 = ps.paperWidth === '80mm';
             const paperWidth = is80 ? '74mm' : '58mm';
@@ -517,6 +523,7 @@ function KravyPOS() {
             `;
 
             const styleSheet = document.createElement("style");
+            styleSheet.id = "print-receipt-style";
             styleSheet.textContent = printStyles;
             document.head.appendChild(styleSheet);
 
@@ -533,6 +540,8 @@ function KravyPOS() {
             spacer.style.minHeight = paperBottomPadding;
             spacer.style.display = "block";
             spacer.style.clear = "both";
+            spacer.style.color = "transparent";
+            spacer.innerHTML = ".";
             printContainer.appendChild(spacer);
 
             document.body.appendChild(printContainer);
@@ -543,7 +552,7 @@ function KravyPOS() {
             setTimeout(() => {
                 if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
                 if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
-            }, 1000);
+            }, 15000);
 
             if (targetOrder && type !== "MANUAL_COMBINE") {
                 const body: any = { orderId: (targetOrder as any).id.includes("Combined") ? customOrder?.id || printOrder?.id : targetOrder.id };
