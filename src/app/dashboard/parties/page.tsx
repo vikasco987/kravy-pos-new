@@ -329,8 +329,6 @@ export default function PartiesPage() {
       spacer.style.minHeight = "80px";
       spacer.style.display = "block";
       spacer.style.clear = "both";
-      spacer.style.color = "transparent";
-      spacer.innerHTML = ".";
       container.appendChild(spacer);
 
       document.body.appendChild(container);

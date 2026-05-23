@@ -433,8 +433,6 @@ export default function KravyPOS() {
             spacer.style.minHeight = paperBottomPadding;
             spacer.style.display = "block";
             spacer.style.clear = "both";
-            spacer.style.color = "transparent";
-            spacer.innerHTML = ".";
             printContainer.appendChild(spacer);
 
             document.body.appendChild(printContainer);

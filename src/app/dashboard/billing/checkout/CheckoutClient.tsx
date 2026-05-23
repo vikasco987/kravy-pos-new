@@ -1660,8 +1660,6 @@ export default function CheckoutClient() {
     spacer.style.minHeight = paperBottomPadding;
     spacer.style.display = "block";
     spacer.style.clear = "both";
-    spacer.style.color = "transparent";
-    spacer.innerHTML = ".";
     container.appendChild(spacer);
 
     document.body.appendChild(container);
