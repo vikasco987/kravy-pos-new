@@ -1662,6 +1662,15 @@ export default function CheckoutClient() {
       ? "kot kot-container kot-container-dynamic text-black bg-white"
       : "receipt receipt-container receipt-container-dynamic text-black bg-white";
     container.innerHTML = html;
+
+    // Add physical bottom spacer for thermal feeds past cutter to prevent jamming
+    const spacer = document.createElement("div");
+    spacer.style.height = paperBottomPadding;
+    spacer.style.minHeight = paperBottomPadding;
+    spacer.style.display = "block";
+    spacer.style.clear = "both";
+    container.appendChild(spacer);
+
     document.body.appendChild(container);
 
     if (type === "kot") setIsKotPrinted(true);

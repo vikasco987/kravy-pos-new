@@ -316,6 +316,15 @@ export default function PartiesPage() {
       const container = document.createElement("div");
       container.id = containerId;
       container.innerHTML = html;
+
+      // Add physical bottom spacer for thermal feeds past cutter to prevent jamming
+      const spacer = document.createElement("div");
+      spacer.style.height = "80px";
+      spacer.style.minHeight = "80px";
+      spacer.style.display = "block";
+      spacer.style.clear = "both";
+      container.appendChild(spacer);
+
       document.body.appendChild(container);
 
       window.print();

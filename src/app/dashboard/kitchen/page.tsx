@@ -526,6 +526,15 @@ function KravyPOS() {
             const containerClass = isBill ? "receipt-container-dynamic" : "kot-container-dynamic";
             printContainer.className = containerClass;
             printContainer.innerHTML = printHTML;
+
+            // Add physical bottom spacer for thermal feeds past cutter to prevent jamming
+            const spacer = document.createElement("div");
+            spacer.style.height = paperBottomPadding;
+            spacer.style.minHeight = paperBottomPadding;
+            spacer.style.display = "block";
+            spacer.style.clear = "both";
+            printContainer.appendChild(spacer);
+
             document.body.appendChild(printContainer);
 
             kravy.print();
