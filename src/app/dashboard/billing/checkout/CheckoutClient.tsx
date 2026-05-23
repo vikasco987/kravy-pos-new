@@ -1365,10 +1365,9 @@ export default function CheckoutClient() {
     }
   }
 
-  /* ================= PRINT RECEIPT ================= */
-  function printReceipt(forceBoth = false, customBill?: any) {
+  function printReceipt(forceBoth = false, customBill?: any, onComplete?: () => void) {
     console.log("[CHECKOUT_PRINT_DEBUG] printReceipt called. forceBoth:", forceBoth, "customBill:", !!customBill);
-    if (!receiptRef.current) { alert("Nothing to print"); return; }
+    if (!receiptRef.current) { alert("Nothing to print"); if (onComplete) onComplete(); return; }
     
     // Capture content. If customBill is provided, we might want to wait for DOM, 
     // but the BillPreview modal is currently showing the correct data usually.
@@ -1384,13 +1383,14 @@ export default function CheckoutClient() {
     if (isKOTEnabled && kotHtml) {
       runPrintJob("kot", kotHtml, () => {
         setTimeout(() => {
-          runPrintJob("bill", billHtml);
+          runPrintJob("bill", billHtml, onComplete);
         }, spoolerDelay); 
       });
     } else {
-      runPrintJob("bill", billHtml);
+      runPrintJob("bill", billHtml, onComplete);
     }
   }
+
 
   const printActualBill = () => {
     if (receiptRef.current) runPrintJob("bill", receiptRef.current.innerHTML);
@@ -1508,13 +1508,12 @@ export default function CheckoutClient() {
   };
 
   const runPrintJob = (type: "kot" | "bill", html: string, callback?: () => void) => {
-    const containerId = `print-container-${type}`;
-    const styleId = `print-style-${type}`;
+    const containerId = `print-container-checkout-${type}`;
+    const styleId = `print-style-checkout-${type}`;
 
-    // Clean ALL potential print containers and styles to prevent CSS conflicts
-    document.querySelectorAll("[id^='print-container-']").forEach(el => el.remove());
-    document.querySelectorAll("[id^='print-style-']").forEach(el => el.remove());
-    document.getElementById("print-receipt-container")?.remove();
+    // Clean ONLY this specific type's old containers to prevent interrupting concurrent KOT/Bill spooling
+    document.getElementById(containerId)?.remove();
+    document.getElementById(styleId)?.remove();
 
     const ps = (business as any)?.printSettings || {};
     const is80 = ps.paperWidth === '80mm';
@@ -1641,16 +1640,8 @@ export default function CheckoutClient() {
         }
         ` : ''}
 
-        * { 
-          color: #000 !important; 
-          border-color: #000 !important; 
-          overflow: visible !important;
-        }
-        img { 
-          filter: grayscale(100%) contrast(300%) !important; 
-          max-width: 100% !important;
-          display: block !important;
-        }
+        * { color: #000 !important; border-color: #000 !important; overflow: visible !important;  }
+        img { filter: grayscale(100%) contrast(300%) !important; max-width: 100% !important; display: block !important; margin: 0 auto !important; }
       }
     `;
     document.head.appendChild(style);
@@ -3004,23 +2995,24 @@ export default function CheckoutClient() {
                 kravy.payment(); 
                 toast.success("Settlement Finalized! 💰");
                 
-                // Print immediately
-                printReceipt(false);
-
-                // Quick Redirection
-                const returnTo = searchParams.get("returnTo");
-                if (returnTo) {
-                  const tableId = searchParams.get("tableId");
-                  const query = new URLSearchParams();
-                  if (tableId) query.set("tableId", tableId);
-                  
-                  // Use replace for faster navigation and to clean history
-                  router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
-                  return;
-                }
-                
-                resetForm();
-                if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                // Print immediately after a short delay to let state render to DOM
+                setTimeout(() => {
+                  printReceipt(business?.enableKOTWithBill || false, null, () => {
+                    const returnTo = searchParams.get("returnTo");
+                    if (returnTo) {
+                      const tableId = searchParams.get("tableId");
+                      const query = new URLSearchParams();
+                      if (tableId) query.set("tableId", tableId);
+                      
+                      // Use replace for faster navigation and to clean history
+                      router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
+                      return;
+                    }
+                    
+                    resetForm();
+                    if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                  });
+                }, 350);
               }}
               disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
               className="w-full flex items-center justify-center gap-2 py-2 rounded-xl
@@ -3410,8 +3402,9 @@ export default function CheckoutClient() {
         kotNumbers={kotNumbers}
         printKOT={printKOT}
         printReceipt={(enableKOT, customBill) => {
-          printReceipt(enableKOT, customBill);
-          setTimeout(resetForm, 500);
+          printReceipt(enableKOT, customBill, () => {
+            resetForm();
+          });
         }}
         saveBill={saveBill}
         resetForm={resetForm}
