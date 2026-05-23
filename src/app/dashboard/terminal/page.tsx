@@ -491,7 +491,15 @@ function KravyPOS() {
             printContainer.appendChild(spacer);
 
             document.body.appendChild(printContainer);
-            kravy.print();
+            if (isKotType) {
+                try {
+                    (kravy as any).print(JSON.stringify({ cut: false }));
+                } catch (e) {
+                    kravy.print();
+                }
+            } else {
+                kravy.print();
+            }
             window.print();
 
             // Cleanup significantly delayed to ensure slow spoolers finish reading the DOM

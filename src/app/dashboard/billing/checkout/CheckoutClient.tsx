@@ -1654,9 +1654,18 @@ export default function CheckoutClient() {
 
       document.body.appendChild(container);
 
-      if (type === "kot") setIsKotPrinted(true);
+      if (type === "kot") {
+        setIsKotPrinted(true);
+        try {
+          // Attempt to pass cut config to native wrapper
+          (kravy as any).print(JSON.stringify({ cut: false }));
+        } catch (e) {
+          kravy.print();
+        }
+      } else {
+        kravy.print();
+      }
 
-      kravy.print();
       window.print();
       
       // Delay cleanup significantly to ensure slow spoolers finish reading the DOM
