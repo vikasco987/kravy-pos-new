@@ -308,8 +308,8 @@ export default function PartiesPage() {
             font-family: 'Courier New', Courier, monospace !important;
           }
           * { 
-            -webkit-print-color-adjust: exact !important; 
-            print-color-adjust: exact !important; 
+            
+             
             color-adjust: exact !important; 
             box-shadow: none !important; 
             text-shadow: none !important; 

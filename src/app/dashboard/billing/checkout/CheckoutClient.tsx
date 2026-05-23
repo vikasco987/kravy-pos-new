@@ -1640,7 +1640,7 @@ export default function CheckoutClient() {
         }
         ` : ''}
 
-        * { color: #000 !important; border-color: #000 !important; overflow: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        * { color: #000 !important; border-color: #000 !important; overflow: visible !important;  }
         img { filter: grayscale(100%) contrast(300%) !important; max-width: 100% !important; display: block !important; margin: 0 auto !important; }
       }
     `;
