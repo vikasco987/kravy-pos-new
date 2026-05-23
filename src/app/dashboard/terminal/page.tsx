@@ -366,18 +366,47 @@ function KravyPOS() {
             document.querySelectorAll("[id^='print-style-']").forEach(el => el.remove());
 
             console.log(`[PRINT_DEBUG] targetRef found. Starting print sequence...`);
+            const ps = (business as any)?.printSettings || {};
+            const is80 = ps.paperWidth === '80mm';
+            const paperWidth = is80 ? '74mm' : '58mm';
+            const paperBottomPadding = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
+
+            const fontFamilyVal = type === "KOT" 
+                ? (ps.kotFontFamily || '"Courier New", Courier, monospace') 
+                : (ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
+            const fontWeightVal = type === "KOT" 
+                ? (ps.kotFontWeight || '700') 
+                : (ps.fontWeight || '700');
 
             const printHTML = targetRef.innerHTML;
             const printStyles = `
                 @media print {
                     html, body { height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
                     body > *:not(#print-receipt-container) { display: none !important; }
-                    @page { margin: 0; size: auto; }
+                    @page { 
+                        margin: 0; 
+                        size: ${is80 ? '80mm auto' : 'auto'}; 
+                    }
                     #print-receipt-container {
-                        display: block !important; width: 100% !important; max-width: 58mm !important; height: auto !important;
-                        overflow: visible !important; margin: 0 auto !important; padding: 0mm 4% 20px 4% !important; 
-                        background: #fff !important; color: #000 !important; font-family: 'Courier New', Courier, monospace !important;
-                        font-weight: 700 !important; position: relative !important; box-sizing: border-box !important;
+                        display: block !important; 
+                        width: 100% !important; 
+                        max-width: ${paperWidth} !important; 
+                        height: auto !important;
+                        overflow: visible !important; 
+                        margin: 0 auto !important; 
+                        padding: ${is80 ? `2mm 6mm ${paperBottomPadding} 6mm` : `2mm 4% ${paperBottomPadding} 4%`} !important; 
+                        background: #fff !important; 
+                        font-family: ${fontFamilyVal} !important;
+                        font-weight: ${fontWeightVal} !important; 
+                        position: relative !important; 
+                        box-sizing: border-box !important;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+
+                    #print-receipt-container * {
+                        font-family: ${fontFamilyVal} !important;
+                        ${fontWeightVal ? `font-weight: ${fontWeightVal} !important;` : ''}
                     }
                     * { color: #000 !important; border-color: #000 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                     img { filter: grayscale(100%) contrast(300%) !important; max-width: 100% !important; display: block !important; margin: 0 auto !important; }
@@ -393,8 +422,16 @@ function KravyPOS() {
             printContainer.id = "print-receipt-container";
             printContainer.className = "font-mono text-[11px] leading-tight font-bold";
             printContainer.innerHTML = printHTML;
-            document.body.appendChild(printContainer);
 
+            // Add physical bottom spacer for thermal feeds past cutter to prevent jamming
+            const spacer = document.createElement("div");
+            spacer.style.height = paperBottomPadding;
+            spacer.style.minHeight = paperBottomPadding;
+            spacer.style.display = "block";
+            spacer.style.clear = "both";
+            printContainer.appendChild(spacer);
+
+            document.body.appendChild(printContainer);
             kravy.print();
             window.print();
 

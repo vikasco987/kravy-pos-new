@@ -1365,10 +1365,9 @@ export default function CheckoutClient() {
     }
   }
 
-  /* ================= PRINT RECEIPT ================= */
-  function printReceipt(forceBoth = false, customBill?: any) {
+  function printReceipt(forceBoth = false, customBill?: any, onComplete?: () => void) {
     console.log("[CHECKOUT_PRINT_DEBUG] printReceipt called. forceBoth:", forceBoth, "customBill:", !!customBill);
-    if (!receiptRef.current) { alert("Nothing to print"); return; }
+    if (!receiptRef.current) { alert("Nothing to print"); if (onComplete) onComplete(); return; }
     
     // Capture content. If customBill is provided, we might want to wait for DOM, 
     // but the BillPreview modal is currently showing the correct data usually.
@@ -1384,13 +1383,14 @@ export default function CheckoutClient() {
     if (isKOTEnabled && kotHtml) {
       runPrintJob("kot", kotHtml, () => {
         setTimeout(() => {
-          runPrintJob("bill", billHtml);
+          runPrintJob("bill", billHtml, onComplete);
         }, spoolerDelay); 
       });
     } else {
-      runPrintJob("bill", billHtml);
+      runPrintJob("bill", billHtml, onComplete);
     }
   }
+
 
   const printActualBill = () => {
     if (receiptRef.current) runPrintJob("bill", receiptRef.current.innerHTML);
@@ -1579,6 +1579,7 @@ export default function CheckoutClient() {
           margin: 0; 
           size: ${is80 ? '80mm auto' : 'auto'}; 
         }
+
         #${containerId} {
           display: block !important;
           width: 100% !important;
@@ -1591,10 +1592,8 @@ export default function CheckoutClient() {
           color: #000 !important;
           position: relative !important;
           box-sizing: border-box !important;
-          ${is80 ? '' : `
-          page-break-after: always !important;
-          break-after: page !important;
-          `}
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
         }
 
         /* Inject CSS custom variables to override custom elements correctly */
@@ -3006,10 +3005,7 @@ export default function CheckoutClient() {
                 
                 // Print immediately after a short delay to let state render to DOM
                 setTimeout(() => {
-                  printReceipt(business?.enableKOTWithBill || false);
-
-                  // Quick Redirection & reset delayed to allow print template capture
-                  setTimeout(() => {
+                  printReceipt(business?.enableKOTWithBill || false, null, () => {
                     const returnTo = searchParams.get("returnTo");
                     if (returnTo) {
                       const tableId = searchParams.get("tableId");
@@ -3023,7 +3019,7 @@ export default function CheckoutClient() {
                     
                     resetForm();
                     if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                  }, 1200);
+                  });
                 }, 350);
               }}
               disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
@@ -3414,8 +3410,9 @@ export default function CheckoutClient() {
         kotNumbers={kotNumbers}
         printKOT={printKOT}
         printReceipt={(enableKOT, customBill) => {
-          printReceipt(enableKOT, customBill);
-          setTimeout(resetForm, 500);
+          printReceipt(enableKOT, customBill, () => {
+            resetForm();
+          });
         }}
         saveBill={saveBill}
         resetForm={resetForm}

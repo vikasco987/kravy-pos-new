@@ -571,10 +571,8 @@ export default function ViewBillPage() {
           color: #000 !important;
           position: relative !important;
           box-sizing: border-box !important;
-          ${is80 ? '' : `
-          page-break-after: always !important;
-          break-after: page !important;
-          `}
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
         }
 
         /* Inject CSS custom variables to override custom elements correctly */

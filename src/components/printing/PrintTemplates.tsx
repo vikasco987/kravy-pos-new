@@ -142,18 +142,14 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
       .receipt-container { 
         width: ${paperWidthStr} !important; 
         margin: 0 auto !important; 
-        ${is80 ? '' : `
-        page-break-after: always !important;
-        break-after: page !important;
-        `}
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
       .kot-container { 
         width: ${paperWidthStr} !important; 
         margin: 0 auto !important; 
-        ${is80 ? '' : `
-        page-break-after: always !important;
-        break-after: page !important;
-        `}
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
     }
     ${fontWeightVal ? `
