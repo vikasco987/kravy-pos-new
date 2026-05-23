@@ -1511,9 +1511,9 @@ export default function CheckoutClient() {
     const containerId = `print-container-${type}`;
     const styleId = `print-style-${type}`;
 
-    // Clean ALL potential print containers and styles to prevent CSS conflicts
-    document.querySelectorAll("[id^='print-container-']").forEach(el => el.remove());
-    document.querySelectorAll("[id^='print-style-']").forEach(el => el.remove());
+    // Clean ONLY this specific type's old containers to prevent interrupting concurrent KOT/Bill spooling
+    document.getElementById(containerId)?.remove();
+    document.getElementById(styleId)?.remove();
     document.getElementById("print-receipt-container")?.remove();
 
     const ps = (business as any)?.printSettings || {};
@@ -1665,6 +1665,8 @@ export default function CheckoutClient() {
     spacer.style.minHeight = paperBottomPadding;
     spacer.style.display = "block";
     spacer.style.clear = "both";
+    spacer.style.color = "transparent";
+    spacer.innerHTML = ".";
     container.appendChild(spacer);
 
     document.body.appendChild(container);
@@ -1686,12 +1688,13 @@ export default function CheckoutClient() {
       setTimeout(() => {
         window.print();
         
-        // Delay cleanup to ensure spooler finishes reading the DOM
+        // Delay cleanup significantly to ensure slow spoolers finish reading the DOM
         setTimeout(() => {
           if (document.body.contains(container)) container.remove();
           if (document.head.contains(style)) style.remove();
-          if (callback) callback();
-        }, 2500); 
+        }, 15000); 
+
+        if (callback) callback();
       }, 300);
     });
   };

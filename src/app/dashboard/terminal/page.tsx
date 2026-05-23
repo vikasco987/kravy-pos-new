@@ -486,17 +486,19 @@ function KravyPOS() {
             spacer.style.minHeight = paperBottomPadding;
             spacer.style.display = "block";
             spacer.style.clear = "both";
+            spacer.style.color = "transparent";
+            spacer.innerHTML = ".";
             printContainer.appendChild(spacer);
 
             document.body.appendChild(printContainer);
             kravy.print();
             window.print();
 
-            // Cleanup
+            // Cleanup significantly delayed to ensure slow spoolers finish reading the DOM
             setTimeout(() => {
                 if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
                 if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
-            }, 1000);
+            }, 15000);
 
             // 🔥 Post-Print Updates
             if (targetOrder && type !== "MANUAL_COMBINE") {

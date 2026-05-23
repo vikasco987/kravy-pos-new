@@ -645,6 +645,8 @@ export default function ViewBillPage() {
     spacer.style.minHeight = paperBottomPadding;
     spacer.style.display = "block";
     spacer.style.clear = "both";
+    spacer.style.color = "transparent";
+    spacer.innerHTML = ".";
     container.appendChild(spacer);
 
     document.body.appendChild(container);
@@ -664,11 +666,11 @@ export default function ViewBillPage() {
       setTimeout(() => {
         window.print();
         
-        // Delay cleanup to ensure spooler finishes reading the DOM
+        // Delay cleanup significantly to ensure slow spoolers finish reading the DOM
         setTimeout(() => {
           if (document.body.contains(container)) container.remove();
           if (document.head.contains(style)) style.remove();
-        }, 2500); 
+        }, 15000); 
       }, 300);
     });
   };
