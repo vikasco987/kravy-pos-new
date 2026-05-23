@@ -311,20 +311,7 @@ function KravyPOS() {
             return;
         }
 
-        if (type === "KOT_BILL" || (type === "BILL" && business?.enableKOTWithBill)) {
-            const ps = (business as any)?.printSettings || {};
-            const delay = ps.spoolerDelay !== undefined && ps.spoolerDelay !== null ? Number(ps.spoolerDelay) : 2500;
-            
-            // Print KOT first
-            await handlePrint("KOT", customOrder, customTable);
-            
-            // Then schedule BILL
-            setTimeout(() => {
-                // Pass a special flag or just "BILL" but temporarily disable enableKOTWithBill for this call
-                // Since we can't easily disable it, we'll use a hack by passing "COMBINED_BILL" internally or we can just 
-                // use "BILL" and add a parameter or rely on the type. Let's use "BILL" but we must avoid infinite loop.
-            }, delay);
-        }
+        if (type === "COMBINED_BILL" && targetOrder) {
             try {
                 const res = await fetch(`/api/public/orders/${targetOrder.id}/combined-bill`);
                 const data = await res.json();
