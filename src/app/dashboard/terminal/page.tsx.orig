@@ -295,21 +295,8 @@ function KravyPOS() {
     const [showCombineModal, setShowCombineModal] = useState(false);
     const [combineSelection, setCombineSelection] = useState<Set<string>>(new Set());
 
-    const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL" | "MANUAL_COMBINE" | "KOT_BILL" | "FORCE_BILL_ONLY", customOrder?: Order, customTable?: Table) => {
+    const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL" | "MANUAL_COMBINE" | "KOT_BILL", customOrder?: Order, customTable?: Table) => {
         kravy.click();
-
-        const isAutoBoth = type === "KOT_BILL" || (type === "BILL" && business?.enableKOTWithBill);
-        if (isAutoBoth) {
-            const ps = (business as any)?.printSettings || {};
-            const delay = ps.spoolerDelay !== undefined && ps.spoolerDelay !== null ? Number(ps.spoolerDelay) : 2500;
-            
-            handlePrint("KOT", customOrder, customTable);
-            
-            setTimeout(() => {
-                handlePrint("FORCE_BILL_ONLY" as any, customOrder, customTable);
-            }, delay);
-            return;
-        }
 
         if (type === "KOT_BILL" || (type === "BILL" && business?.enableKOTWithBill)) {
             const ps = (business as any)?.printSettings || {};
@@ -372,8 +359,7 @@ function KravyPOS() {
 
         // ✅ Print Execution
         setTimeout(() => {
-            const actualTypeForDOM = type === "FORCE_BILL_ONLY" ? "BILL" : type;
-            const isBill = actualTypeForDOM === "BILL" || actualTypeForDOM === "COMBINED_BILL" || actualTypeForDOM === "MANUAL_COMBINE" || actualTypeForDOM === "KOT_BILL";
+            const isBill = type === "BILL" || type === "COMBINED_BILL" || type === "MANUAL_COMBINE" || type === "KOT_BILL";
             const targetRef = isBill ? billReceiptRef.current : kotReceiptRef.current;
             
             if (!targetRef) {
@@ -381,8 +367,8 @@ function KravyPOS() {
                 return;
             }
 
-            const containerId = `print-container-terminal-${actualTypeForDOM}`;
-            const styleId = `print-style-terminal-${actualTypeForDOM}`;
+            const containerId = `print-container-terminal-${type}`;
+            const styleId = `print-style-terminal-${type}`;
 
             // Clean ONLY this specific type's old containers to prevent interrupting concurrent KOT/Bill spooling
             document.getElementById(containerId)?.remove();
@@ -427,7 +413,7 @@ function KravyPOS() {
             if (addrLen > 100) finalAddressSize -= 1;
             finalAddressSize = Math.max(8, finalAddressSize);
 
-            const isKotType = actualTypeForDOM === "KOT";
+            const isKotType = type === "KOT";
 
             const printHTML = targetRef.innerHTML;
             const printStyles = `
@@ -537,7 +523,7 @@ function KravyPOS() {
             // 🔥 Post-Print Updates
             if (targetOrder && type !== "MANUAL_COMBINE") {
                 const body: any = { orderId: (targetOrder as any).id.includes("Combined") ? customOrder?.id || printOrder?.id : targetOrder.id };
-                const autoBoth = type === "FORCE_BILL_ONLY" || (isBill && business?.enableKOTWithBill && type !== "MANUAL_COMBINE" && type !== "COMBINED_BILL");
+                const autoBoth = isBill && business?.enableKOTWithBill && type !== "MANUAL_COMBINE" && type !== "COMBINED_BILL";
 
                 if (type === "KOT" || autoBoth) {
                     body.isKotPrinted = true;
@@ -557,6 +543,14 @@ function KravyPOS() {
                     setOrders(prev => prev.map(o => o.id === (body.orderId || targetOrder.id) ? { ...o, ...body } : o));
                     if (body.status === "COMPLETED") handleCheckout(body.orderId || targetOrder.id, true);
                 });
+            }
+
+            if (type === "BILL" && business?.enableKOTWithBill) {
+                const ps = (business as any)?.printSettings || {};
+                const delay = ps.spoolerDelay !== undefined && ps.spoolerDelay !== null ? Number(ps.spoolerDelay) : 2500;
+                setTimeout(() => {
+                    handlePrint("KOT", targetOrder, targetTable);
+                }, delay);
             }
         }, 50);
     };
