@@ -295,21 +295,13 @@ function KravyPOS() {
     const [showCombineModal, setShowCombineModal] = useState(false);
     const [combineSelection, setCombineSelection] = useState<Set<string>>(new Set());
 
-    const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL" | "MANUAL_COMBINE" | "KOT_BILL" | "FORCE_BILL_ONLY", customOrder?: Order, customTable?: Table) => {
+    const handlePrint = async (type: "KOT" | "BILL" | "COMBINED_BILL" | "MANUAL_COMBINE" | "KOT_BILL", customOrder?: Order, customTable?: Table) => {
         kravy.click();
 
-        const isAutoBoth = type === "KOT_BILL" || (type === "BILL" && business?.enableKOTWithBill);
-        if (isAutoBoth) {
-            const ps = (business as any)?.printSettings || {};
-            const delay = ps.spoolerDelay !== undefined && ps.spoolerDelay !== null ? Number(ps.spoolerDelay) : 2500;
-            
-            handlePrint("KOT", customOrder, customTable);
-            
-            setTimeout(() => {
-                handlePrint("FORCE_BILL_ONLY" as any, customOrder, customTable);
-            }, delay);
-            return;
-        }
+        console.log(`[PRINT_DEBUG] handlePrint called. Type: ${type}`, { customOrder, customTable });
+        let targetOrder = customOrder || printOrder || activeOrderForSelected;
+        let targetTable = customTable || printTable || selectedTable;
+        console.log(`[PRINT_DEBUG] Target Order Token:`, targetOrder?.tokenNumber);
 
         if (type === "COMBINED_BILL" && targetOrder) {
             try {
@@ -359,177 +351,55 @@ function KravyPOS() {
 
         // ✅ Print Execution
         setTimeout(() => {
-            const actualTypeForDOM = type === "FORCE_BILL_ONLY" ? "BILL" : type;
-            const isBill = actualTypeForDOM === "BILL" || actualTypeForDOM === "COMBINED_BILL" || actualTypeForDOM === "MANUAL_COMBINE" || actualTypeForDOM === "KOT_BILL";
+            const isBill = type === "BILL" || type === "COMBINED_BILL" || type === "MANUAL_COMBINE" || type === "KOT_BILL";
             const targetRef = isBill ? billReceiptRef.current : kotReceiptRef.current;
             
             if (!targetRef) {
                 console.error(`[PRINT ERROR] No DOM reference found for ${type}. billReceiptRef: ${!!billReceiptRef.current}, kotReceiptRef: ${!!kotReceiptRef.current}`);
                 return;
             }
-
-            const containerId = `print-container-terminal-${actualTypeForDOM}`;
-            const styleId = `print-style-terminal-${actualTypeForDOM}`;
-
-            // Clean ONLY this specific type's old containers to prevent interrupting concurrent KOT/Bill spooling
-            document.getElementById(containerId)?.remove();
-            document.getElementById(styleId)?.remove();
-
             console.log(`[PRINT_DEBUG] targetRef found. Starting print sequence...`);
-            const ps = (business as any)?.printSettings || {};
-            const is80 = ps.paperWidth === '80mm';
-            const paperWidth = is80 ? '74mm' : '48mm'; // 48mm printable area for 58mm paper to prevent horizontal overflow freezes
-            const paperBottomPadding = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
-
-            const fontFamilyVal = ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-            const kotFontFamilyVal = ps.kotFontFamily || '"Courier New", Courier, monospace';
-            const fontWeightVal = ps.fontWeight || '';
-            const kotFontWeightVal = ps.kotFontWeight || '';
-
-            const getClamped = (val: any, def: number, min: number, max: number) => {
-                if (val === undefined || val === null || val === "") return def;
-                return Math.max(min, Math.min(max, Number(val)));
-            };
-            const rawBusinessNameSize = getClamped(ps.businessNameSize, 18, 14, 32);
-            const businessAddressSize = getClamped(ps.businessAddressSize, 11, 8, 16);
-            const taglineSize = getClamped(ps.taglineSize, 11, 8, 14);
-            const receiptTokenSize = getClamped(ps.receiptTokenSize, 28, 18, 40);
-            const detailsFontSize = getClamped(ps.detailsFontSize, 10, 8, 14);
-            const itemsFontSize = getClamped(ps.itemsFontSize, 11, 9, 18);
-            const totalFontSize = getClamped(ps.totalFontSize, 13, 11, 24);
-            const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
-            const kotTokenSize = getClamped(ps.kotTokenSize, 16, 12, 28);
-            const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 18);
-            const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 22);
-
-            const nameLen = ((business as any)?.businessName || "").length;
-            let finalBusinessNameSize = rawBusinessNameSize;
-            if (nameLen > 25) finalBusinessNameSize -= 2;
-            if (nameLen > 35) finalBusinessNameSize -= 2;
-            finalBusinessNameSize = Math.max(14, finalBusinessNameSize);
-
-            const addrLen = ((business as any)?.businessAddress || "").length;
-            let finalAddressSize = businessAddressSize;
-            if (addrLen > 60) finalAddressSize -= 1;
-            if (addrLen > 100) finalAddressSize -= 1;
-            finalAddressSize = Math.max(8, finalAddressSize);
-
-            const isKotType = actualTypeForDOM === "KOT";
 
             const printHTML = targetRef.innerHTML;
             const printStyles = `
                 @media print {
                     html, body { height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
-                    body > *:not(#${containerId}) { display: none !important; }
-                    @page { 
-                        margin: 0; 
-                        size: ${is80 ? '80mm' : '58mm'} auto; 
+                    body > *:not(#print-receipt-container) { display: none !important; }
+                    @page { margin: 0; size: auto; }
+                    #print-receipt-container {
+                        display: block !important; width: 100% !important; max-width: 58mm !important; height: auto !important;
+                        overflow: visible !important; margin: 0 auto !important; padding: 0mm 4% 20px 4% !important; 
+                        background: #fff !important; color: #000 !important; font-family: 'Courier New', Courier, monospace !important;
+                        font-weight: 700 !important; position: relative !important; box-sizing: border-box !important;
                     }
-                    #${containerId} {
-                        display: block !important; 
-                        width: 100% !important; 
-                        max-width: ${paperWidth} !important; 
-                        height: auto !important;
-                        overflow: visible !important; 
-                        margin: 0 auto !important; 
-                        padding: ${is80 ? `2mm 6mm ${paperBottomPadding} 6mm` : `2mm 4% ${paperBottomPadding} 4%`} !important; 
-                        background: #fff !important; 
-                        color: #000 !important;
-                        position: relative !important; 
-                        box-sizing: border-box !important;
-                        ${is80 ? '' : `
-                        page-break-after: always !important;
-                        break-after: page !important;
-                        `}
-                    }
-                    #${containerId}.receipt-container-dynamic {
-                        --r-font-family: ${fontFamilyVal};
-                        --r-business-size: ${finalBusinessNameSize}px;
-                        --r-address-size: ${finalAddressSize}px;
-                        --r-tagline-size: ${taglineSize}px;
-                        --r-items-size: ${itemsFontSize}px;
-                        --r-total-size: ${totalFontSize}px;
-                        --r-token-size: ${receiptTokenSize}px;
-                        --r-details-size: ${detailsFontSize}px;
-                        --r-greeting-size: ${greetingFontSize}px;
-                        font-family: var(--r-font-family) !important;
-                        font-size: var(--r-details-size) !important;
-                    }
-                    #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
-                        font-family: var(--r-font-family) !important;
-                    }
-                    #${containerId}.kot-container-dynamic {
-                        --k-font-family: ${kotFontFamilyVal};
-                        --k-items-size: ${kotItemsFontSize}px;
-                        --k-qty-size: ${kotQtyFontSize}px;
-                        --k-token-size: ${kotTokenSize}px;
-                        font-family: var(--k-font-family) !important;
-                        font-size: var(--k-items-size) !important;
-                    }
-                    #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
-                        font-family: var(--k-font-family) !important;
-                    }
-                    ${fontWeightVal ? `
-                    #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
-                        font-weight: ${fontWeightVal} !important;
-                    }` : ''}
-                    ${kotFontWeightVal ? `
-                    #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
-                        font-weight: ${kotFontWeightVal} !important;
-                    }` : ''}
-                    * { color: #000 !important; border-color: #000 !important; overflow: visible !important;  }
+                    * { color: #000 !important; border-color: #000 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                     img { filter: grayscale(100%) contrast(300%) !important; max-width: 100% !important; display: block !important; margin: 0 auto !important; }
                 }
             `;
 
             const styleSheet = document.createElement("style");
-            styleSheet.id = styleId;
             styleSheet.textContent = printStyles;
             document.head.appendChild(styleSheet);
 
             const printContainer = document.createElement("div");
-            printContainer.id = containerId;
-            printContainer.className = isKotType
-                ? "kot kot-container kot-container-dynamic text-black bg-white"
-                : "receipt receipt-container receipt-container-dynamic text-black bg-white";
+            printContainer.id = "print-receipt-container";
+            printContainer.className = "font-mono text-[11px] leading-tight font-bold";
             printContainer.innerHTML = printHTML;
-
-            // Add physical bottom spacer for thermal feeds past cutter to prevent jamming
-            const spacer = document.createElement("div");
-            spacer.style.height = paperBottomPadding;
-            spacer.style.minHeight = paperBottomPadding;
-            spacer.style.display = "block";
-            spacer.style.clear = "both";
-            printContainer.appendChild(spacer);
-
             document.body.appendChild(printContainer);
 
-            // Dynamic Image Preloader: Ensure all images are 100% loaded before showing the print dialog
-            const images = printContainer.querySelectorAll("img");
-            const imagePromises = Array.from(images).map((img) => {
-              if (img.complete) return Promise.resolve();
-              return new Promise<void>((resolve) => {
-                img.onload = () => resolve();
-                img.onerror = () => resolve(); // continue even if an image fails
-              });
-            });
+            kravy.print();
+            window.print();
 
-            Promise.all(imagePromises).then(() => {
-                setTimeout(() => {
-                    window.print();
-                    
-                    // Cleanup significantly delayed to ensure slow spoolers finish reading the DOM
-                    setTimeout(() => {
-                        if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
-                        if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
-                    }, 2500);
-                }, 300);
-            });
+            // Cleanup
+            setTimeout(() => {
+                if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
+                if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
+            }, 1000);
 
             // 🔥 Post-Print Updates
             if (targetOrder && type !== "MANUAL_COMBINE") {
                 const body: any = { orderId: (targetOrder as any).id.includes("Combined") ? customOrder?.id || printOrder?.id : targetOrder.id };
-                const autoBoth = type === "FORCE_BILL_ONLY" || (isBill && business?.enableKOTWithBill && type !== "MANUAL_COMBINE" && type !== "COMBINED_BILL");
+                const autoBoth = isBill && business?.enableKOTWithBill && type !== "MANUAL_COMBINE" && type !== "COMBINED_BILL";
 
                 if (type === "KOT" || autoBoth) {
                     body.isKotPrinted = true;
@@ -549,6 +419,10 @@ function KravyPOS() {
                     setOrders(prev => prev.map(o => o.id === (body.orderId || targetOrder.id) ? { ...o, ...body } : o));
                     if (body.status === "COMPLETED") handleCheckout(body.orderId || targetOrder.id, true);
                 });
+            }
+
+            if (type === "BILL" && business?.enableKOTWithBill) {
+                handlePrint("KOT", targetOrder, targetTable);
             }
         }, 50);
     };
@@ -895,7 +769,7 @@ function KravyPOS() {
             .filter(t => {
                 const matchSearch = t.name.toLowerCase().includes(tableSearch.toLowerCase());
                 const matchFilter = tableFilter === "ALL" || (tableFilter === "RUNNING" && t.status === "PREPARING") || (tableFilter === "READY" && t.status === "READY");
-                const matchZone = activeZone === "ALL" || (t.zone ? t.zone.trim().toUpperCase() === activeZone.toUpperCase() : false);
+                const matchZone = activeZone === "ALL" || t.zone === activeZone;
                 return matchSearch && matchFilter && matchZone;
             })
             .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
@@ -903,14 +777,7 @@ function KravyPOS() {
 
     const availableZones = useMemo(() => {
         const zones = new Set<string>();
-        tablesList.forEach(t => { 
-            if (t.zone) {
-                const normalized = t.zone.trim().toUpperCase();
-                if (normalized) {
-                    zones.add(normalized);
-                }
-            }
-        });
+        tablesList.forEach(t => { if (t.zone) zones.add(t.zone); });
         return Array.from(zones).sort();
     }, [tablesList]);
 
@@ -1204,7 +1071,7 @@ function KravyPOS() {
 
                                 {/* Tables Grid */}
                                 <div className="flex-1 overflow-y-auto p-3 scrollbar-hide bg-[#F8FAFC]/50 dark:bg-slate-950/50 backdrop-blur-sm">
-                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-2">
+                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
                                         {filteredTables.map((t) => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
@@ -1212,6 +1079,7 @@ function KravyPOS() {
                                             
                                             // Dynamic Font Scaling
                                             const nameLength = displayName?.length || 0;
+                                            const fontSize = nameLength <= 3 ? "text-5xl" : nameLength <= 8 ? "text-4xl" : "text-2xl";
 
                                             return (
                                                 <motion.div
@@ -1222,26 +1090,26 @@ function KravyPOS() {
                                                         setSelectedTableId(t.id); 
                                                         setSelectedOrderId(null); 
                                                     }}
-                                                    className={`relative group h-[96px] flex flex-col rounded-2xl transition-all duration-300 cursor-pointer ${isActive ? "z-20 scale-[1.02] -translate-y-0.5" : "z-10 hover:scale-[1.01]"}`}
+                                                    className={`relative group h-[210px] flex flex-col rounded-3xl transition-all duration-300 cursor-pointer ${isActive ? "z-20 scale-[1.04] -translate-y-1" : "z-10 hover:scale-[1.02] hover:-translate-y-0.5"}`}
                                                     whileTap={{ scale: 0.98 }}
                                                 >
-                                                    <div className={`w-full h-full rounded-2xl flex flex-col justify-between p-2.5 border transition-all duration-300 overflow-hidden relative ${cfg.bg} ${cfg.border} ${isActive ? "ring-2 ring-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.15)]" : cfg.glow}`}>
-                                                        <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent)', backgroundSize: '16px 16px' }} />
+                                                    <div className={`w-full h-full rounded-3xl flex flex-col items-center justify-between p-3 border transition-all duration-300 overflow-hidden relative ${cfg.bg} ${cfg.border} ${isActive ? "ring-4 ring-purple-400/10 shadow-[0_0_40px_rgba(168,85,247,0.12)]" : cfg.glow}`}>
+                                                        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent)', backgroundSize: '20px 20px' }} />
                                                         
-                                                        {/* Compact Status Indicator - Top Left */}
-                                                        <div className="w-full flex items-center justify-between z-10">
-                                                            <div className={`flex items-center gap-1.5 text-[8px] font-black uppercase tracking-wider ${cfg.text}`}>
-                                                                <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${t.status !== 'FREE' ? 'animate-pulse' : ''}`} />
-                                                                <span>{cfg.label}</span>
+                                                        {/* Compact Status Badge - Clean Centered */}
+                                                        <div className="w-full flex justify-center relative">
+                                                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full border border-white/40 backdrop-blur-xl shadow-md text-[8px] font-bold uppercase tracking-wider ${cfg.glass} ${cfg.text}`}>
+                                                                <div className={`w-1 h-1 rounded-full ${cfg.dot} ${isActive || t.status !== 'FREE' ? 'animate-pulse' : ''}`} />
+                                                                {cfg.label}
                                                             </div>
                                                         </div>
 
-                                                        {/* Table Number - Dynamic & Auto-Scaling */}
-                                                        <div className="w-full flex flex-col items-center justify-center flex-1 z-10 py-1">
+                                                        {/* Table Number - Multi-line Support */}
+                                                        <div className="flex flex-col items-center justify-center flex-1 w-full min-h-[40px] px-2 py-0.5">
                                                             <span 
-                                                                className="text-center font-black leading-tight tracking-tight text-slate-900 dark:text-white drop-shadow-sm break-normal whitespace-normal"
+                                                                className="text-center font-black leading-tight tracking-tighter text-slate-900 dark:text-white drop-shadow-sm break-normal whitespace-normal"
                                                                 style={{
-                                                                    fontSize: nameLength <= 3 ? '18px' : nameLength <= 8 ? '14px' : '11px',
+                                                                    fontSize: 'clamp(16px, 5vw, 24px)',
                                                                     display: '-webkit-box',
                                                                     WebkitLineClamp: 2,
                                                                     WebkitBoxOrient: 'vertical',
@@ -1253,23 +1121,21 @@ function KravyPOS() {
                                                             </span>
                                                         </div>
 
-                                                        {/* Compact Timer - Clean Bottom */}
-                                                        <div className="w-full flex justify-center z-10">
+                                                        {/* Compact Timer - Clean Centered */}
+                                                        <div className="w-full flex justify-center pb-2">
                                                             {t.startTime ? (
-                                                                <TableTimer 
-                                                                    startTime={t.startTime} 
-                                                                    className="!bg-transparent !p-0 !border-none !shadow-none !text-[9px] !font-black"
-                                                                />
+                                                                <TableTimer startTime={t.startTime} />
                                                             ) : (
-                                                                <div className="h-[14px]" />
+                                                                <div className="h-[30px]" />
                                                             )}
                                                         </div>
 
+
                                                     </div>
-                                                    {/* Notification Badge */}
-                                                    {(t.activeCount ?? 0) > 0 && (
-                                                        <div className="absolute -top-1.5 -right-1.5 z-[40] animate-bounce">
-                                                            <div className="bg-rose-500 text-white text-[9px] font-black min-w-[20px] h-[20px] px-1 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900">
+                                                    {/* Notification Badge (Moved outside for visibility) */}
+                                                    {t.activeCount > 0 && (
+                                                        <div className="absolute -top-2 -right-2 z-[40] animate-bounce">
+                                                            <div className="bg-rose-500 text-white text-[10px] font-black min-w-[24px] h-[24px] px-1 rounded-full flex items-center justify-center shadow-xl border-2 border-white dark:border-slate-900">
                                                                 {t.activeCount}
                                                             </div>
                                                         </div>
@@ -1841,7 +1707,7 @@ function KravyPOS() {
                                                             setPrintOrder(activeOrderForSelected);
                                                             const tbl = tablesList.find(t => t.id === activeOrderForSelected.table?.id);
                                                             setPrintTable(tbl || null);
-                                                            setTimeout(() => handlePrint("BILL", activeOrderForSelected, tbl || undefined), 350);
+                                                            setTimeout(() => handlePrint("BILL", activeOrderForSelected, tbl || undefined), 100);
                                                         }
                                                     }}
                                                     className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white shadow-sm transition-all"

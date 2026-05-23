@@ -136,16 +136,24 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
     @media print {
       @page { 
         margin: 0 !important; 
-        size: ${is80 ? '80mm' : '58mm'} auto !important;
+        ${is80 ? 'size: 80mm auto !important;' : ''}
       }
       body { margin: 0 !important; padding: 0 !important; }
       .receipt-container { 
         width: ${paperWidthStr} !important; 
         margin: 0 auto !important; 
+        ${is80 ? '' : `
+        page-break-after: always !important;
+        break-after: page !important;
+        `}
       }
       .kot-container { 
         width: ${paperWidthStr} !important; 
         margin: 0 auto !important; 
+        ${is80 ? '' : `
+        page-break-after: always !important;
+        break-after: page !important;
+        `}
       }
     }
     ${fontWeightVal ? `
@@ -173,12 +181,16 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         style={{ 
           width: printableWidthStr, 
           margin: '0 auto',
+          padding: is80 ? `0mm 6mm ${paperBottomPaddingVal} 6mm` : `0mm 2mm ${paperBottomPaddingVal} 2mm`, 
           boxSizing: 'border-box',
           WebkitFontSmoothing: 'antialiased',
-          overflow: 'visible',
+          overflow: 'hidden',
           marginTop: '-10px',
           overflowWrap: 'break-word',
-          wordBreak: 'break-word'
+          wordBreak: 'break-word',
+          // Thermal safety variables
+          WebkitPrintColorAdjust: 'exact',
+          printColorAdjust: 'exact'
         }}
       >
         {(business?.logoUrl && s('showLogo')) && (
@@ -540,8 +552,12 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         style={{ 
           width: printableWidthStr, 
           margin: '0 auto', 
+          padding: is80 ? `0mm 6mm ${paperBottomPaddingVal} 6mm` : `0mm 2mm ${paperBottomPaddingVal} 2mm`, 
           boxSizing: 'border-box', 
-          overflow: 'visible'
+          overflow: 'hidden',
+          // KOT safety features
+          WebkitPrintColorAdjust: 'exact',
+          printColorAdjust: 'exact'
         }}
       >
         <div className="text-center font-black border-b-2 border-black pb-1 mb-2" style={{ fontSize: 'calc(var(--k-items-size) * 1.8)' }}>K.O.T</div>
