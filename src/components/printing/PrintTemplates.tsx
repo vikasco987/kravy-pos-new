@@ -136,20 +136,16 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
     @media print {
       @page { 
         margin: 0 !important; 
-        ${is80 ? 'size: 80mm auto !important;' : ''}
+        size: ${is80 ? '80mm' : '58mm'} auto !important;
       }
       body { margin: 0 !important; padding: 0 !important; }
       .receipt-container { 
         width: ${paperWidthStr} !important; 
         margin: 0 auto !important; 
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
       }
       .kot-container { 
         width: ${paperWidthStr} !important; 
         margin: 0 auto !important; 
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
       }
     }
     ${fontWeightVal ? `
@@ -180,7 +176,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           padding: is80 ? `0mm 6mm ${paperBottomPaddingVal} 6mm` : `0mm 2mm ${paperBottomPaddingVal} 2mm`, 
           boxSizing: 'border-box',
           WebkitFontSmoothing: 'antialiased',
-          overflow: 'hidden',
+          overflow: 'visible',
           marginTop: '-10px',
           overflowWrap: 'break-word',
           wordBreak: 'break-word',
@@ -550,7 +546,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           margin: '0 auto', 
           padding: is80 ? `0mm 6mm ${paperBottomPaddingVal} 6mm` : `0mm 2mm ${paperBottomPaddingVal} 2mm`, 
           boxSizing: 'border-box', 
-          overflow: 'hidden',
+          overflow: 'visible',
           // KOT safety features
           WebkitPrintColorAdjust: 'exact',
           printColorAdjust: 'exact'

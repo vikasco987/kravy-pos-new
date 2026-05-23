@@ -368,16 +368,13 @@ function KravyPOS() {
             console.log(`[PRINT_DEBUG] targetRef found. Starting print sequence...`);
             const ps = (business as any)?.printSettings || {};
             const is80 = ps.paperWidth === '80mm';
-            const paperWidth = is80 ? '74mm' : '58mm';
             const paperBottomPadding = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
-
-            const fontFamilyVal = type === "KOT" 
-                ? (ps.kotFontFamily || '"Courier New", Courier, monospace') 
-                : (ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             const fontWeightVal = type === "KOT" 
                 ? (ps.kotFontWeight || '700') 
                 : (ps.fontWeight || '700');
-
+            const fontFamilyVal = type === "KOT" 
+                ? (ps.kotFontFamily || '"Courier New", Courier, monospace') 
+                : (ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
             const printHTML = targetRef.innerHTML;
             const printStyles = `
                 @media print {
@@ -385,7 +382,7 @@ function KravyPOS() {
                     body > *:not(#print-receipt-container) { display: none !important; }
                     @page { 
                         margin: 0; 
-                        size: ${is80 ? '80mm auto' : 'auto'}; 
+                        size: ${is80 ? '80mm' : '58mm'} auto; 
                     }
                     #print-receipt-container {
                         display: block !important; 
@@ -400,10 +397,7 @@ function KravyPOS() {
                         font-weight: ${fontWeightVal} !important; 
                         position: relative !important; 
                         box-sizing: border-box !important;
-                        page-break-inside: avoid !important;
-                        break-inside: avoid !important;
                     }
-
                     #print-receipt-container * {
                         font-family: ${fontFamilyVal} !important;
                         ${fontWeightVal ? `font-weight: ${fontWeightVal} !important;` : ''}

@@ -557,7 +557,7 @@ export default function ViewBillPage() {
         body > *:not(#${containerId}) { display: none !important; }
         @page { 
           margin: 0; 
-          size: ${is80 ? '80mm auto' : 'auto'}; 
+          size: ${is80 ? '80mm' : '58mm'} auto; 
         }
         #${containerId} {
           display: block !important;
@@ -571,8 +571,6 @@ export default function ViewBillPage() {
           color: #000 !important;
           position: relative !important;
           box-sizing: border-box !important;
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
         }
 
         /* Inject CSS custom variables to override custom elements correctly */
