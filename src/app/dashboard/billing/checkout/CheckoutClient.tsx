@@ -1509,20 +1509,17 @@ export default function CheckoutClient() {
 
   const runPrintJob = (type: "kot" | "bill", html: string, callback?: () => void) => {
     setTimeout(() => {
-      const containerId = `print-container-${type}`;
-      const styleId = `print-style-${type}`;
-
-      // Clean ONLY this specific type's old containers to prevent interrupting concurrent KOT/Bill spooling
+      // 🛡️ SANITIZATION: Clean up ONLY the specific type's old templates to prevent overlap
       document.getElementById(containerId)?.remove();
       document.getElementById(styleId)?.remove();
-      document.getElementById("print-receipt-container")?.remove();
 
+      // Read Print Settings Dynamically
       const ps = (business as any)?.printSettings || {};
       const is80 = ps.paperWidth === '80mm';
       const paperWidth = is80 ? '74mm' : '58mm';
+      // Thermal safety feed spacing
       const paperBottomPadding = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
 
-      // --- Dynamic Typography Configurations with Thermal Safety Limits ---
       const fontFamilyVal = ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       const kotFontFamilyVal = ps.kotFontFamily || '"Courier New", Courier, monospace';
       const fontWeightVal = ps.fontWeight || '';
@@ -1532,7 +1529,6 @@ export default function CheckoutClient() {
         if (val === undefined || val === null || val === "") return def;
         return Math.max(min, Math.min(max, Number(val)));
       };
-
       const rawBusinessNameSize = getClamped(ps.businessNameSize, 18, 14, 32);
       const businessAddressSize = getClamped(ps.businessAddressSize, 11, 8, 16);
       const taglineSize = getClamped(ps.taglineSize, 11, 8, 14);
@@ -1541,11 +1537,12 @@ export default function CheckoutClient() {
       const itemsFontSize = getClamped(ps.itemsFontSize, 11, 9, 18);
       const totalFontSize = getClamped(ps.totalFontSize, 13, 11, 24);
       const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
-      
+
       const kotTokenSize = getClamped(ps.kotTokenSize, 16, 12, 28);
       const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 18);
       const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 22);
 
+      // --- Auto-Shrink Logic ---
       const getAutoShrunkNameSize = () => {
         let size = rawBusinessNameSize;
         const nameLen = (business?.businessName || "").length;
