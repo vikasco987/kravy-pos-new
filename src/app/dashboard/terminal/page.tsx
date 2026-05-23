@@ -359,11 +359,12 @@ function KravyPOS() {
                 return;
             }
 
-            // 🛡️ SANITIZATION: Clean up any old print templates/styles to prevent double-printing or styling overlap
-            document.getElementById("print-receipt-container")?.remove();
-            document.getElementById("print-receipt-style")?.remove();
-            document.querySelectorAll("[id^='print-container-']").forEach(el => el.remove());
-            document.querySelectorAll("[id^='print-style-']").forEach(el => el.remove());
+            const containerId = `print-container-terminal-${type}`;
+            const styleId = `print-style-terminal-${type}`;
+
+            // Clean ONLY this specific type's old containers to prevent interrupting concurrent KOT/Bill spooling
+            document.getElementById(containerId)?.remove();
+            document.getElementById(styleId)?.remove();
 
             console.log(`[PRINT_DEBUG] targetRef found. Starting print sequence...`);
             const ps = (business as any)?.printSettings || {};
@@ -404,7 +405,6 @@ function KravyPOS() {
             if (addrLen > 100) finalAddressSize -= 1;
             finalAddressSize = Math.max(8, finalAddressSize);
 
-            const containerId = "print-receipt-container";
             const isKotType = type === "KOT";
 
             const printHTML = targetRef.innerHTML;
@@ -469,7 +469,7 @@ function KravyPOS() {
             `;
 
             const styleSheet = document.createElement("style");
-            styleSheet.id = "print-receipt-style";
+            styleSheet.id = styleId;
             styleSheet.textContent = printStyles;
             document.head.appendChild(styleSheet);
 
@@ -489,22 +489,28 @@ function KravyPOS() {
             printContainer.appendChild(spacer);
 
             document.body.appendChild(printContainer);
-            if (isKotType) {
-                try {
-                    (kravy as any).print(JSON.stringify({ cut: false }));
-                } catch (e) {
-                    kravy.print();
-                }
-            } else {
-                kravy.print();
-            }
-            window.print();
 
-            // Cleanup significantly delayed to ensure slow spoolers finish reading the DOM
-            setTimeout(() => {
-                if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
-                if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
-            }, 15000);
+            // Dynamic Image Preloader: Ensure all images are 100% loaded before showing the print dialog
+            const images = printContainer.querySelectorAll("img");
+            const imagePromises = Array.from(images).map((img) => {
+              if (img.complete) return Promise.resolve();
+              return new Promise<void>((resolve) => {
+                img.onload = () => resolve();
+                img.onerror = () => resolve(); // continue even if an image fails
+              });
+            });
+
+            Promise.all(imagePromises).then(() => {
+                setTimeout(() => {
+                    window.print();
+                    
+                    // Cleanup significantly delayed to ensure slow spoolers finish reading the DOM
+                    setTimeout(() => {
+                        if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
+                        if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
+                    }, 2500);
+                }, 300);
+            });
 
             // 🔥 Post-Print Updates
             if (targetOrder && type !== "MANUAL_COMBINE") {
