@@ -391,7 +391,7 @@ function KravyPOS() {
             console.log(`[PRINT_DEBUG] targetRef found. Starting print sequence...`);
             const ps = (business as any)?.printSettings || {};
             const is80 = ps.paperWidth === '80mm';
-            const paperWidth = is80 ? '74mm' : '58mm';
+            const paperWidth = is80 ? '74mm' : '48mm'; // 48mm printable area for 58mm paper to prevent horizontal overflow freezes
             const paperBottomPadding = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
 
             const fontFamilyVal = ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -447,8 +447,13 @@ function KravyPOS() {
                         margin: 0 auto !important; 
                         padding: ${is80 ? `2mm 6mm ${paperBottomPadding} 6mm` : `2mm 4% ${paperBottomPadding} 4%`} !important; 
                         background: #fff !important; 
+                        color: #000 !important;
                         position: relative !important; 
                         box-sizing: border-box !important;
+                        ${is80 ? '' : `
+                        page-break-after: always !important;
+                        break-after: page !important;
+                        `}
                     }
                     #${containerId}.receipt-container-dynamic {
                         --r-font-family: ${fontFamilyVal};
@@ -1849,7 +1854,7 @@ function KravyPOS() {
                                                             setPrintOrder(activeOrderForSelected);
                                                             const tbl = tablesList.find(t => t.id === activeOrderForSelected.table?.id);
                                                             setPrintTable(tbl || null);
-                                                            setTimeout(() => handlePrint("BILL", activeOrderForSelected, tbl || undefined), 100);
+                                                            setTimeout(() => handlePrint("BILL", activeOrderForSelected, tbl || undefined), 350);
                                                         }
                                                     }}
                                                     className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white shadow-sm transition-all"
