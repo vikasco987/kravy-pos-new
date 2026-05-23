@@ -9,6 +9,9 @@ export async function GET(req: NextRequest) {
     const sellers = await prisma.user.findMany({
       where: {
         OR: [{ role: "SELLER" }, { role: "USER" }],
+        createdAt: {
+          gt: new Date(0),
+        },
       },
       include: {
         profiles: true,

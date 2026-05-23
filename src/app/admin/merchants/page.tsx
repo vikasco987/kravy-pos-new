@@ -52,17 +52,47 @@ export default function AdminMerchantsPage() {
   const [trialDays, setTrialDays] = useState(3);
   const [savingSettings, setSavingSettings] = useState(false);
 
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
+
   const fetchData = async () => {
     setLoading(true);
+    setErrorDetails(null);
+    console.log("🔍 [MerchantPage] Initiating fetch for merchant reports...");
     try {
       const res = await fetch("/api/admin/reports/sellers");
-      const data = await res.json();
+      console.log(`📡 [MerchantPage] Response status received: ${res.status} (${res.statusText})`);
+      
+      const text = await res.text();
+      console.log("📄 [MerchantPage] Raw response body:", text);
+      
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseErr) {
+        console.error("🚨 [MerchantPage] Failed to parse response as JSON:", parseErr);
+        throw new Error(`Server returned invalid JSON. Raw response: ${text.substring(0, 200)}`);
+      }
+
+      if (!res.ok) {
+        const errMsg = data.error || data.details || `Server returned status ${res.status}`;
+        console.error("🚨 [MerchantPage] API returned error status:", errMsg);
+        setErrorDetails(errMsg);
+        toast.error(`Error: ${errMsg}`);
+        return;
+      }
+
       if (data.sellers) {
+        console.log(`✅ [MerchantPage] Successfully loaded ${data.sellers.length} sellers.`);
         setSellers(data.sellers);
         setStats(data.stats);
+      } else {
+        console.warn("⚠️ [MerchantPage] Response data does not contain 'sellers' field:", data);
+        setErrorDetails("Invalid response format: 'sellers' field is missing.");
       }
-    } catch (err) {
-      toast.error("Failed to load merchant data");
+    } catch (err: any) {
+      console.error("🚨 [MerchantPage] Exception occurred during fetch:", err);
+      setErrorDetails(err.message || "Failed to load merchant data");
+      toast.error(`Connection Error: ${err.message || err}`);
     } finally {
       setLoading(false);
     }
@@ -123,8 +153,8 @@ export default function AdminMerchantsPage() {
   };
 
   const filteredSellers = sellers.filter(s => 
-    s.businessName.toLowerCase().includes(search.toLowerCase()) || 
-    s.email.toLowerCase().includes(search.toLowerCase())
+    (s.businessName || "").toLowerCase().includes(search.toLowerCase()) || 
+    (s.email || "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -199,6 +229,24 @@ export default function AdminMerchantsPage() {
 
       {/* Main Content Area */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
+        {errorDetails && (
+          <div className="p-6 m-6 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-bold flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+              <span>Diagnostic Error Logs:</span>
+            </div>
+            <pre className="bg-white p-4 rounded-xl border border-rose-100 text-xs font-mono overflow-auto max-h-40 whitespace-pre-wrap">
+              {errorDetails}
+            </pre>
+            <button 
+              onClick={fetchData} 
+              className="mt-2 self-start px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs uppercase tracking-widest transition-all"
+            >
+              Retry Connection
+            </button>
+          </div>
+        )}
+
         {/* Table Search & Filter Bar */}
         <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="relative w-full md:w-96">

@@ -4,26 +4,33 @@ import prisma from "@/lib/prisma";
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
+  console.log("🏁 [API reports/sellers] GET request initiated");
   try {
-    // Use $queryRaw to skip rows where createdAt IS NULL (bad legacy data)
-    // which causes Prisma P2032 type-conversion crash on findMany
-    const rawSellers = await prisma.$queryRaw<
-      {
-        id: string;
-        clerkId: string;
-        name: string | null;
-        email: string | null;
-        role: string;
-        createdAt: Date | null;
-      }[]
-    >`
-      SELECT id, "clerkId", name, email, role, "createdAt"
-      FROM "User"
-      WHERE (role = 'SELLER' OR role = 'USER')
-        AND "createdAt" IS NOT NULL
-    `;
+    // 1. Fetch Users
+    console.log("🕵️ [API reports/sellers] Querying prisma.user.findMany...");
+    const rawSellers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { role: "SELLER" },
+          { role: "USER" },
+        ],
+        createdAt: {
+          gt: new Date(0),
+        },
+      },
+      select: {
+        id: true,
+        clerkId: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+    console.log(`✅ [API reports/sellers] Loaded ${rawSellers.length} raw sellers from DB.`);
 
     if (!rawSellers || rawSellers.length === 0) {
+      console.log("⚠️ [API reports/sellers] No sellers found in DB.");
       return NextResponse.json({
         sellers: [],
         stats: {
@@ -36,44 +43,55 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const clerkIds = rawSellers.map((s) => s.clerkId);
+    const clerkIds = rawSellers
+      .map((s) => s.clerkId)
+      .filter((id): id is string => id !== null);
+    console.log(`ℹ️ [API reports/sellers] Extracted ${clerkIds.length} valid non-null clerkIds.`);
 
-    // Fetch business profiles for these users
+    // 2. Fetch Business Profiles
+    console.log("🕵️ [API reports/sellers] Querying prisma.businessProfile.findMany...");
     const profiles = await prisma.businessProfile.findMany({
-      where: { clerkUserId: { in: clerkIds } },
-      select: { clerkUserId: true, businessName: true },
+      where: { userId: { in: clerkIds } },
+      select: { userId: true, businessName: true },
     });
+    console.log(`✅ [API reports/sellers] Loaded ${profiles.length} business profiles.`);
     const profileMap = Object.fromEntries(
-      profiles.map((p) => [p.clerkUserId, p.businessName])
+      profiles.map((p) => [p.userId, p.businessName])
     );
 
-    // Fetch bill counts per user
+    // 3. Fetch Bill Counts
+    console.log("🕵️ [API reports/sellers] Querying prisma.billManager.groupBy for bill counts...");
     const billCounts = await prisma.billManager.groupBy({
       by: ["clerkUserId"],
       where: { isDeleted: false, clerkUserId: { in: clerkIds } },
       _count: { id: true },
     });
+    console.log(`✅ [API reports/sellers] Loaded ${billCounts.length} bill counts.`);
     const billCountMap = Object.fromEntries(
       billCounts.map((b) => [b.clerkUserId, b._count.id])
     );
 
-    // Fetch total revenue per user
+    // 4. Fetch Revenue
+    console.log("🕵️ [API reports/sellers] Querying prisma.billManager.groupBy for revenue...");
     const revenueStats = await prisma.billManager.groupBy({
       by: ["clerkUserId"],
       where: { isDeleted: false, clerkUserId: { in: clerkIds } },
       _sum: { total: true },
     });
+    console.log(`✅ [API reports/sellers] Loaded ${revenueStats.length} revenue stats.`);
     const revenueMap = Object.fromEntries(
       revenueStats.map((s) => [s.clerkUserId, s._sum.total || 0])
     );
 
-    // Fetch latest bill date per user
+    // 5. Fetch Latest Bills
+    console.log("🕵️ [API reports/sellers] Querying prisma.billManager.findMany for latest bill dates...");
     const latestBills = await prisma.billManager.findMany({
       where: { isDeleted: false, clerkUserId: { in: clerkIds } },
       orderBy: { createdAt: "desc" },
       select: { clerkUserId: true, createdAt: true },
       distinct: ["clerkUserId"],
     });
+    console.log(`✅ [API reports/sellers] Loaded ${latestBills.length} latest bills.`);
     const lastBillMap = Object.fromEntries(
       latestBills.map((b) => [b.clerkUserId, b.createdAt])
     );
@@ -81,18 +99,20 @@ export async function GET(req: NextRequest) {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+    console.log("🔄 [API reports/sellers] Transforming rawSellers into reportData...");
     const reportData = rawSellers.map((seller) => {
+      const lookupKey = seller.clerkId || "";
       const businessName =
-        profileMap[seller.clerkId] || seller.name || "Unknown Business";
-      const totalBills = billCountMap[seller.clerkId] || 0;
-      const totalRevenue = revenueMap[seller.clerkId] || 0;
-      const lastBillDate = lastBillMap[seller.clerkId] || null;
+        (lookupKey ? profileMap[lookupKey] : null) || seller.name || "Unknown Business";
+      const totalBills = lookupKey ? (billCountMap[lookupKey] || 0) : 0;
+      const totalRevenue = lookupKey ? (revenueMap[lookupKey] || 0) : 0;
+      const lastBillDate = lookupKey ? (lastBillMap[lookupKey] || null) : null;
       const isActive = lastBillDate && lastBillDate > sevenDaysAgo;
 
       return {
-        clerkId: seller.clerkId,
+        clerkId: seller.clerkId || seller.id,
         businessName,
-        email: seller.email,
+        email: seller.email || "",
         totalBills,
         totalRevenue,
         lastBill: lastBillDate,
@@ -100,6 +120,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    console.log("📊 [API reports/sellers] Calculating stats...");
     const stats = {
       totalMerchants: reportData.length,
       activeMerchants: reportData.filter((s) => s.status === "ACTIVE").length,
@@ -108,9 +129,13 @@ export async function GET(req: NextRequest) {
       totalBills: reportData.reduce((sum, s) => sum + s.totalBills, 0),
     };
 
+    console.log(`🎉 [API reports/sellers] Successfully generated report for ${reportData.length} merchants.`);
     return NextResponse.json({ sellers: reportData, stats });
-  } catch (err) {
-    console.error("ADMIN REPORT ERROR:", err);
-    return NextResponse.json({ error: "Failed to fetch report" }, { status: 500 });
+  } catch (err: any) {
+    console.error("🚨🚨 [API reports/sellers] CRITICAL EXCEPTION OCCURRED:", err);
+    return NextResponse.json(
+      { error: "Failed to fetch report", details: err.message || String(err) },
+      { status: 500 }
+    );
   }
 }
