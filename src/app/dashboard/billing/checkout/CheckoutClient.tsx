@@ -1509,6 +1509,9 @@ export default function CheckoutClient() {
 
   const runPrintJob = (type: "kot" | "bill", html: string, callback?: () => void) => {
     setTimeout(() => {
+      const containerId = `print-container-checkout-${type}`;
+      const styleId = `print-style-checkout-${type}`;
+      
       // 🛡️ SANITIZATION: Clean up ONLY the specific type's old templates to prevent overlap
       document.getElementById(containerId)?.remove();
       document.getElementById(styleId)?.remove();
