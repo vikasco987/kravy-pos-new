@@ -769,7 +769,7 @@ function KravyPOS() {
             .filter(t => {
                 const matchSearch = t.name.toLowerCase().includes(tableSearch.toLowerCase());
                 const matchFilter = tableFilter === "ALL" || (tableFilter === "RUNNING" && t.status === "PREPARING") || (tableFilter === "READY" && t.status === "READY");
-                const matchZone = activeZone === "ALL" || t.zone === activeZone;
+                const matchZone = activeZone === "ALL" || (t.zone ? t.zone.trim().toUpperCase() === activeZone.toUpperCase() : false);
                 return matchSearch && matchFilter && matchZone;
             })
             .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
@@ -777,7 +777,14 @@ function KravyPOS() {
 
     const availableZones = useMemo(() => {
         const zones = new Set<string>();
-        tablesList.forEach(t => { if (t.zone) zones.add(t.zone); });
+        tablesList.forEach(t => { 
+            if (t.zone) {
+                const normalized = t.zone.trim().toUpperCase();
+                if (normalized) {
+                    zones.add(normalized);
+                }
+            }
+        });
         return Array.from(zones).sort();
     }, [tablesList]);
 
@@ -1071,7 +1078,7 @@ function KravyPOS() {
 
                                 {/* Tables Grid */}
                                 <div className="flex-1 overflow-y-auto p-3 scrollbar-hide bg-[#F8FAFC]/50 dark:bg-slate-950/50 backdrop-blur-sm">
-                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
+                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-2">
                                         {filteredTables.map((t) => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
@@ -1079,7 +1086,6 @@ function KravyPOS() {
                                             
                                             // Dynamic Font Scaling
                                             const nameLength = displayName?.length || 0;
-                                            const fontSize = nameLength <= 3 ? "text-5xl" : nameLength <= 8 ? "text-4xl" : "text-2xl";
 
                                             return (
                                                 <motion.div
@@ -1090,26 +1096,26 @@ function KravyPOS() {
                                                         setSelectedTableId(t.id); 
                                                         setSelectedOrderId(null); 
                                                     }}
-                                                    className={`relative group h-[210px] flex flex-col rounded-3xl transition-all duration-300 cursor-pointer ${isActive ? "z-20 scale-[1.04] -translate-y-1" : "z-10 hover:scale-[1.02] hover:-translate-y-0.5"}`}
+                                                    className={`relative group h-[96px] flex flex-col rounded-2xl transition-all duration-300 cursor-pointer ${isActive ? "z-20 scale-[1.02] -translate-y-0.5" : "z-10 hover:scale-[1.01]"}`}
                                                     whileTap={{ scale: 0.98 }}
                                                 >
-                                                    <div className={`w-full h-full rounded-3xl flex flex-col items-center justify-between p-3 border transition-all duration-300 overflow-hidden relative ${cfg.bg} ${cfg.border} ${isActive ? "ring-4 ring-purple-400/10 shadow-[0_0_40px_rgba(168,85,247,0.12)]" : cfg.glow}`}>
-                                                        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent)', backgroundSize: '20px 20px' }} />
+                                                    <div className={`w-full h-full rounded-2xl flex flex-col justify-between p-2.5 border transition-all duration-300 overflow-hidden relative ${cfg.bg} ${cfg.border} ${isActive ? "ring-2 ring-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.15)]" : cfg.glow}`}>
+                                                        <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent)', backgroundSize: '16px 16px' }} />
                                                         
-                                                        {/* Compact Status Badge - Clean Centered */}
-                                                        <div className="w-full flex justify-center relative">
-                                                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full border border-white/40 backdrop-blur-xl shadow-md text-[8px] font-bold uppercase tracking-wider ${cfg.glass} ${cfg.text}`}>
-                                                                <div className={`w-1 h-1 rounded-full ${cfg.dot} ${isActive || t.status !== 'FREE' ? 'animate-pulse' : ''}`} />
-                                                                {cfg.label}
+                                                        {/* Compact Status Indicator - Top Left */}
+                                                        <div className="w-full flex items-center justify-between z-10">
+                                                            <div className={`flex items-center gap-1.5 text-[8px] font-black uppercase tracking-wider ${cfg.text}`}>
+                                                                <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${t.status !== 'FREE' ? 'animate-pulse' : ''}`} />
+                                                                <span>{cfg.label}</span>
                                                             </div>
                                                         </div>
 
-                                                        {/* Table Number - Multi-line Support */}
-                                                        <div className="flex flex-col items-center justify-center flex-1 w-full min-h-[40px] px-2 py-0.5">
+                                                        {/* Table Number - Dynamic & Auto-Scaling */}
+                                                        <div className="w-full flex flex-col items-center justify-center flex-1 z-10 py-1">
                                                             <span 
-                                                                className="text-center font-black leading-tight tracking-tighter text-slate-900 dark:text-white drop-shadow-sm break-normal whitespace-normal"
+                                                                className="text-center font-black leading-tight tracking-tight text-slate-900 dark:text-white drop-shadow-sm break-normal whitespace-normal"
                                                                 style={{
-                                                                    fontSize: 'clamp(16px, 5vw, 24px)',
+                                                                    fontSize: nameLength <= 3 ? '18px' : nameLength <= 8 ? '14px' : '11px',
                                                                     display: '-webkit-box',
                                                                     WebkitLineClamp: 2,
                                                                     WebkitBoxOrient: 'vertical',
@@ -1121,21 +1127,23 @@ function KravyPOS() {
                                                             </span>
                                                         </div>
 
-                                                        {/* Compact Timer - Clean Centered */}
-                                                        <div className="w-full flex justify-center pb-2">
+                                                        {/* Compact Timer - Clean Bottom */}
+                                                        <div className="w-full flex justify-center z-10">
                                                             {t.startTime ? (
-                                                                <TableTimer startTime={t.startTime} />
+                                                                <TableTimer 
+                                                                    startTime={t.startTime} 
+                                                                    className="!bg-transparent !p-0 !border-none !shadow-none !text-[9px] !font-black"
+                                                                />
                                                             ) : (
-                                                                <div className="h-[30px]" />
+                                                                <div className="h-[14px]" />
                                                             )}
                                                         </div>
 
-
                                                     </div>
-                                                    {/* Notification Badge (Moved outside for visibility) */}
-                                                    {t.activeCount > 0 && (
-                                                        <div className="absolute -top-2 -right-2 z-[40] animate-bounce">
-                                                            <div className="bg-rose-500 text-white text-[10px] font-black min-w-[24px] h-[24px] px-1 rounded-full flex items-center justify-center shadow-xl border-2 border-white dark:border-slate-900">
+                                                    {/* Notification Badge */}
+                                                    {(t.activeCount ?? 0) > 0 && (
+                                                        <div className="absolute -top-1.5 -right-1.5 z-[40] animate-bounce">
+                                                            <div className="bg-rose-500 text-white text-[9px] font-black min-w-[20px] h-[20px] px-1 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900">
                                                                 {t.activeCount}
                                                             </div>
                                                         </div>

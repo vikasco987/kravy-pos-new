@@ -52,6 +52,15 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
     const [isLoading, setIsLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState<number | null>(null);
 
+    // Stable references to prevent infinite callback recreation loops
+    const lastUpdatedRef = React.useRef<number | null>(null);
+    const rawTablesLengthRef = React.useRef<number>(0);
+
+    // Keep length ref in sync
+    useEffect(() => {
+        rawTablesLengthRef.current = rawTables.length;
+    }, [rawTables.length]);
+
     // Group orders by table ID for fast lookup
     const ordersByTableId = React.useMemo(() => {
         const map: Record<string, Order[]> = {};
@@ -85,13 +94,14 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
     }, [rawTables, ordersByTableId]);
 
     const fetchData = useCallback(async (showLoading = true, force = false) => {
+        const currentLastUpdated = lastUpdatedRef.current;
         // ✅ Stale-time logic: Avoid fetching if data is recent (< 30s) unless forced
-        if (!force && lastUpdated && Date.now() - lastUpdated < 30000) {
+        if (!force && currentLastUpdated && Date.now() - currentLastUpdated < 30000) {
             console.log("[TerminalContext] Data is fresh, skipping fetch");
             return;
         }
 
-        if (showLoading && rawTables.length === 0) setIsLoading(true);
+        if (showLoading && rawTablesLengthRef.current === 0) setIsLoading(true);
         
         try {
             const [tablesRes, ordersRes, profileRes] = await Promise.all([
@@ -114,14 +124,16 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
             }
             
             if (tablesRes?.ok || ordersRes?.ok || profileRes?.ok) {
-                setLastUpdated(Date.now());
+                const now = Date.now();
+                lastUpdatedRef.current = now;
+                setLastUpdated(now);
             }
         } catch (err) {
             console.error("Failed to fetch terminal data:", err);
         } finally {
             setIsLoading(false);
         }
-    }, [rawTables.length, lastUpdated]);
+    }, []);
 
     const updateTableStatus = useCallback((tableId: string, status: Table["status"]) => {
         // Optional: Manual override if needed
