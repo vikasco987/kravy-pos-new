@@ -3004,23 +3004,27 @@ export default function CheckoutClient() {
                 kravy.payment(); 
                 toast.success("Settlement Finalized! 💰");
                 
-                // Print immediately
-                printReceipt(false);
+                // Print immediately after a short delay to let state render to DOM
+                setTimeout(() => {
+                  printReceipt(business?.enableKOTWithBill || false);
 
-                // Quick Redirection
-                const returnTo = searchParams.get("returnTo");
-                if (returnTo) {
-                  const tableId = searchParams.get("tableId");
-                  const query = new URLSearchParams();
-                  if (tableId) query.set("tableId", tableId);
-                  
-                  // Use replace for faster navigation and to clean history
-                  router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
-                  return;
-                }
-                
-                resetForm();
-                if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                  // Quick Redirection & reset delayed to allow print template capture
+                  setTimeout(() => {
+                    const returnTo = searchParams.get("returnTo");
+                    if (returnTo) {
+                      const tableId = searchParams.get("tableId");
+                      const query = new URLSearchParams();
+                      if (tableId) query.set("tableId", tableId);
+                      
+                      // Use replace for faster navigation and to clean history
+                      router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
+                      return;
+                    }
+                    
+                    resetForm();
+                    if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                  }, 1200);
+                }, 350);
               }}
               disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
               className="w-full flex items-center justify-center gap-2 py-2 rounded-xl

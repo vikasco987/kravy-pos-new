@@ -111,9 +111,64 @@ export function OrderNotificationProvider() {
     const seenReviewIds = useRef<Set<string>>(new Set());
     const eventSourceRef = useRef<EventSource | null>(null);
 
+    // Live toggles loaded from local storage / database
+    const [prefs, setPrefs] = useState({
+        newOrderPopup: true,
+        newOrderSound: true,
+        newOrderToast: true,
+        reviewToast: true,
+    });
+
+    const prefsRef = useRef(prefs);
+    useEffect(() => {
+        prefsRef.current = prefs;
+    }, [prefs]);
+
     const removePopup = useCallback((id: string) => {
         setPopups(prev => prev.filter(p => p.id !== id));
     }, []);
+
+    // Sync notification preferences
+    useEffect(() => {
+        // 1. Read from localStorage for fast load (runs immediately on mount)
+        const stored = localStorage.getItem("kravy_notification_prefs");
+        if (stored) {
+            try {
+                setPrefs(prev => ({ ...prev, ...JSON.parse(stored) }));
+            } catch (e) {}
+        }
+
+        if (!userId) return;
+
+        // 2. Fetch fresh from DB uiPreferences
+        fetch("/api/user/me")
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.uiPreferences) {
+                    const dbPrefs = {
+                        newOrderPopup: data.uiPreferences.newOrderPopup !== false,
+                        newOrderSound: data.uiPreferences.newOrderSound !== false,
+                        newOrderToast: data.uiPreferences.newOrderToast !== false,
+                        reviewToast: data.uiPreferences.reviewToast !== false,
+                    };
+                    setPrefs(dbPrefs);
+                    localStorage.setItem("kravy_notification_prefs", JSON.stringify(dbPrefs));
+                }
+            })
+            .catch(() => {});
+
+        // 3. Listen to localStorage updates across tabs
+        const handleStorageChange = () => {
+            const storedVal = localStorage.getItem("kravy_notification_prefs");
+            if (storedVal) {
+                try {
+                    setPrefs(prev => ({ ...prev, ...JSON.parse(storedVal) }));
+                } catch (e) {}
+            }
+        };
+        window.addEventListener("storage", handleStorageChange);
+        return () => window.removeEventListener("storage", handleStorageChange);
+    }, [userId]);
 
     useEffect(() => {
         if (!userId) return;
@@ -138,7 +193,9 @@ export function OrderNotificationProvider() {
                         );
 
                         if (newOrders.length > 0) {
-                            kravy.orderBell();
+                            if (prefsRef.current.newOrderSound) {
+                                kravy.orderBell();
+                            }
 
                             newOrders.forEach((order: any) => {
                                 seenOrderIds.current.add(order.id);
@@ -159,13 +216,17 @@ export function OrderNotificationProvider() {
                                     createdAt: order.createdAt,
                                 };
 
-                                setPopups(prev => [notification, ...prev].slice(0, 3)); // max 3 popups
+                                if (prefsRef.current.newOrderPopup) {
+                                    setPopups(prev => [notification, ...prev].slice(0, 3)); // max 3 popups
+                                }
 
                                 // Also fire a toast (in case popup is missed)
-                                toast.success(`🛎️ New order — ₹${order.total}`, {
-                                    duration: 4000,
-                                    position: "top-center",
-                                });
+                                if (prefsRef.current.newOrderToast) {
+                                    toast.success(`🛎️ New order — ₹${order.total}`, {
+                                        duration: 4000,
+                                        position: "top-center",
+                                    });
+                                }
                             });
 
                             // Persist seen IDs
@@ -181,13 +242,17 @@ export function OrderNotificationProvider() {
                         );
 
                         if (newReviews.length > 0) {
-                            kravy.review();
+                            if (prefsRef.current.newOrderSound) {
+                                kravy.review();
+                            }
                             newReviews.forEach((r: any) => {
                                 seenReviewIds.current.add(r.id);
-                                toast(`⭐ New ${r.rating}-star review from ${r.customerName || "a customer"}`, {
-                                    duration: 5000,
-                                    icon: "🌟",
-                                });
+                                if (prefsRef.current.reviewToast) {
+                                    toast(`⭐ New ${r.rating}-star review from ${r.customerName || "a customer"}`, {
+                                        duration: 5000,
+                                        icon: "🌟",
+                                    });
+                                }
                             });
                         }
                     }

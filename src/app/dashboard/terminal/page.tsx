@@ -358,6 +358,13 @@ function KravyPOS() {
                 console.error(`[PRINT ERROR] No DOM reference found for ${type}. billReceiptRef: ${!!billReceiptRef.current}, kotReceiptRef: ${!!kotReceiptRef.current}`);
                 return;
             }
+
+            // 🛡️ SANITIZATION: Clean up any old print templates/styles to prevent double-printing or styling overlap
+            document.getElementById("print-receipt-container")?.remove();
+            document.getElementById("print-receipt-style")?.remove();
+            document.querySelectorAll("[id^='print-container-']").forEach(el => el.remove());
+            document.querySelectorAll("[id^='print-style-']").forEach(el => el.remove());
+
             console.log(`[PRINT_DEBUG] targetRef found. Starting print sequence...`);
 
             const printHTML = targetRef.innerHTML;
@@ -378,6 +385,7 @@ function KravyPOS() {
             `;
 
             const styleSheet = document.createElement("style");
+            styleSheet.id = "print-receipt-style";
             styleSheet.textContent = printStyles;
             document.head.appendChild(styleSheet);
 
@@ -422,7 +430,11 @@ function KravyPOS() {
             }
 
             if (type === "BILL" && business?.enableKOTWithBill) {
-                handlePrint("KOT", targetOrder, targetTable);
+                const ps = (business as any)?.printSettings || {};
+                const delay = ps.spoolerDelay !== undefined && ps.spoolerDelay !== null ? Number(ps.spoolerDelay) : 2500;
+                setTimeout(() => {
+                    handlePrint("KOT", targetOrder, targetTable);
+                }, delay);
             }
         }, 50);
     };

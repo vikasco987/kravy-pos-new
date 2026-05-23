@@ -80,7 +80,7 @@ export default function SettingsPage() {
       title: "Preferences",
       items: [
         {
-          href: "#",
+          href: "/dashboard/settings/notifications",
           icon: <Bell size={20} />,
           color: "#FF6B35",
           label: "Notifications",
