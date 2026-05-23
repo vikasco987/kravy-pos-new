@@ -1508,174 +1508,189 @@ export default function CheckoutClient() {
   };
 
   const runPrintJob = (type: "kot" | "bill", html: string, callback?: () => void) => {
-    setTimeout(() => {
-      const containerId = `print-container-checkout-${type}`;
-      const styleId = `print-style-checkout-${type}`;
-      
-      // 🛡️ SANITIZATION: Clean up ONLY the specific type's old templates to prevent overlap
-      document.getElementById(containerId)?.remove();
-      document.getElementById(styleId)?.remove();
+    const containerId = `print-container-checkout-${type}`;
+    const styleId = `print-style-checkout-${type}`;
 
-      // Read Print Settings Dynamically
-      const ps = (business as any)?.printSettings || {};
-      const is80 = ps.paperWidth === '80mm';
-      const paperWidth = is80 ? '74mm' : '58mm';
-      // Thermal safety feed spacing
-      const paperBottomPadding = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
+    // Clean ONLY this specific type's old containers to prevent interrupting concurrent KOT/Bill spooling
+    document.getElementById(containerId)?.remove();
+    document.getElementById(styleId)?.remove();
 
-      const fontFamilyVal = ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      const kotFontFamilyVal = ps.kotFontFamily || '"Courier New", Courier, monospace';
-      const fontWeightVal = ps.fontWeight || '';
-      const kotFontWeightVal = ps.kotFontWeight || '';
+    const ps = (business as any)?.printSettings || {};
+    const is80 = ps.paperWidth === '80mm';
+    const paperWidth = is80 ? '74mm' : '58mm';
+    const paperBottomPadding = ps.paperBottomPadding !== undefined && ps.paperBottomPadding !== null ? `${ps.paperBottomPadding}px` : '80px';
 
-      const getClamped = (val: any, def: number, min: number, max: number) => {
-        if (val === undefined || val === null || val === "") return def;
-        return Math.max(min, Math.min(max, Number(val)));
-      };
-      const rawBusinessNameSize = getClamped(ps.businessNameSize, 18, 14, 32);
-      const businessAddressSize = getClamped(ps.businessAddressSize, 11, 8, 16);
-      const taglineSize = getClamped(ps.taglineSize, 11, 8, 14);
-      const receiptTokenSize = getClamped(ps.receiptTokenSize, 28, 18, 40);
-      const detailsFontSize = getClamped(ps.detailsFontSize, 10, 8, 14);
-      const itemsFontSize = getClamped(ps.itemsFontSize, 11, 9, 18);
-      const totalFontSize = getClamped(ps.totalFontSize, 13, 11, 24);
-      const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
+    // --- Dynamic Typography Configurations with Thermal Safety Limits ---
+    const fontFamilyVal = ps.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    const kotFontFamilyVal = ps.kotFontFamily || '"Courier New", Courier, monospace';
+    const fontWeightVal = ps.fontWeight || '';
+    const kotFontWeightVal = ps.kotFontWeight || '';
 
-      const kotTokenSize = getClamped(ps.kotTokenSize, 16, 12, 28);
-      const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 18);
-      const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 22);
+    const getClamped = (val: any, def: number, min: number, max: number) => {
+      if (val === undefined || val === null || val === "") return def;
+      return Math.max(min, Math.min(max, Number(val)));
+    };
 
-      // --- Auto-Shrink Logic ---
-      const getAutoShrunkNameSize = () => {
-        let size = rawBusinessNameSize;
-        const nameLen = (business?.businessName || "").length;
-        if (nameLen > 25) size -= 2;
-        if (nameLen > 35) size -= 2;
-        return Math.max(14, size);
-      };
-      const finalBusinessNameSize = getAutoShrunkNameSize();
+    const rawBusinessNameSize = getClamped(ps.businessNameSize, 18, 14, 32);
+    const businessAddressSize = getClamped(ps.businessAddressSize, 11, 8, 16);
+    const taglineSize = getClamped(ps.taglineSize, 11, 8, 14);
+    const receiptTokenSize = getClamped(ps.receiptTokenSize, 28, 18, 40);
+    const detailsFontSize = getClamped(ps.detailsFontSize, 10, 8, 14);
+    const itemsFontSize = getClamped(ps.itemsFontSize, 11, 9, 18);
+    const totalFontSize = getClamped(ps.totalFontSize, 13, 11, 24);
+    const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
+    
+    const kotTokenSize = getClamped(ps.kotTokenSize, 16, 12, 28);
+    const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 18);
+    const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 22);
 
-      const getAutoShrunkAddressSize = () => {
-        let size = businessAddressSize;
-        const addrLen = (business?.businessAddress || "").length;
-        if (addrLen > 60) size -= 1;
-        if (addrLen > 100) size -= 1;
-        return Math.max(8, size);
-      };
-      const finalAddressSize = getAutoShrunkAddressSize();
+    const getAutoShrunkNameSize = () => {
+      let size = rawBusinessNameSize;
+      const nameLen = (business?.businessName || "").length;
+      if (nameLen > 25) size -= 2;
+      if (nameLen > 35) size -= 2;
+      return Math.max(14, size);
+    };
+    const finalBusinessNameSize = getAutoShrunkNameSize();
 
-      // Create Style
-      const style = document.createElement("style");
-      style.id = styleId;
-      style.innerHTML = `
-        @media print {
-          html, body { height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
-          body > *:not(#${containerId}) { display: none !important; }
-          @page { margin: 0; size: ${is80 ? '80mm' : '58mm'} auto; }
+    const getAutoShrunkAddressSize = () => {
+      let size = businessAddressSize;
+      const addrLen = (business?.businessAddress || "").length;
+      if (addrLen > 60) size -= 1;
+      if (addrLen > 100) size -= 1;
+      return Math.max(8, size);
+    };
+    const finalAddressSize = getAutoShrunkAddressSize();
 
-          #${containerId} {
-            display: block !important;
-            width: 100% !important;
-            max-width: ${paperWidth} !important;
-            height: auto !important;
-            overflow: visible !important;
-            margin: 0 auto !important;
-            padding: ${is80 ? `2mm 6mm ${paperBottomPadding} 6mm` : `2mm 4% ${paperBottomPadding} 4%`} !important; 
-            background: #fff !important;
-            color: #000 !important;
-            position: relative !important;
-            box-sizing: border-box !important;
-          }
-          /* Inject CSS custom variables to override custom elements correctly */
-          #${containerId}.receipt-container-dynamic {
-            --r-font-family: ${fontFamilyVal};
-            --r-business-size: ${finalBusinessNameSize}px;
-            --r-address-size: ${finalAddressSize}px;
-            --r-tagline-size: ${taglineSize}px;
-            --r-items-size: ${itemsFontSize}px;
-            --r-total-size: ${totalFontSize}px;
-            --r-token-size: ${receiptTokenSize}px;
-            --r-details-size: ${detailsFontSize}px;
-            --r-greeting-size: ${greetingFontSize}px;
-            font-family: var(--r-font-family) !important;
-            font-size: var(--r-details-size) !important;
-          }
-          #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
-            font-family: var(--r-font-family) !important;
-          }
-
-          #${containerId}.kot-container-dynamic {
-            --k-font-family: ${kotFontFamilyVal};
-            --k-items-size: ${kotItemsFontSize}px;
-            --k-qty-size: ${kotQtyFontSize}px;
-            --k-token-size: ${kotTokenSize}px;
-            font-family: var(--k-font-family) !important;
-            font-size: var(--k-items-size) !important;
-          }
-          #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
-            font-family: var(--k-font-family) !important;
-          }
-
-          ${fontWeightVal ? `
-          #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
-            font-weight: ${fontWeightVal} !important;
-          }
-          ` : ''}
-
-          ${kotFontWeightVal ? `
-          #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
-            font-weight: ${kotFontWeightVal} !important;
-          }
-          ` : ''}
-
-          * { color: #000 !important; border-color: #000 !important; overflow: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-          img { filter: grayscale(100%) contrast(300%) !important; max-width: 100% !important; display: block !important; margin: 0 auto !important; }
+    // Create Style
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.innerHTML = `
+      @media print {
+        html, body { 
+          height: auto !important; 
+          overflow: visible !important; 
+          margin: 0 !important;
+          padding: 0 !important;
         }
-      `;
-      document.head.appendChild(style);
-
-      // Create Container
-      const container = document.createElement("div");
-      container.id = containerId;
-      container.className = type === "kot"
-        ? "kot kot-container kot-container-dynamic text-black bg-white"
-        : "receipt receipt-container receipt-container-dynamic text-black bg-white";
-      container.innerHTML = html;
-
-      // Add physical bottom spacer for thermal feeds past cutter to prevent jamming
-      const spacer = document.createElement("div");
-      spacer.style.height = paperBottomPadding;
-      spacer.style.minHeight = paperBottomPadding;
-      spacer.style.display = "block";
-      spacer.style.clear = "both";
-      spacer.style.color = "transparent";
-      spacer.innerHTML = ".";
-      container.appendChild(spacer);
-
-      document.body.appendChild(container);
-
-      if (type === "kot") {
-        setIsKotPrinted(true);
-        try {
-          // Attempt to pass cut config to native wrapper
-          (kravy as any).print(JSON.stringify({ cut: false }));
-        } catch (e) {
-          kravy.print();
+        body > *:not(#${containerId}) { display: none !important; }
+        @page { 
+          margin: 0; 
+          size: ${is80 ? '80mm auto' : 'auto'}; 
         }
-      } else {
-        kravy.print();
+        #${containerId} {
+          display: block !important;
+          width: 100% !important;
+          max-width: ${paperWidth} !important;
+          height: auto !important;
+          overflow: visible !important;
+          margin: 0 auto !important;
+          padding: ${is80 ? `2mm 6mm ${paperBottomPadding} 6mm` : `2mm 4% ${paperBottomPadding} 4%`} !important; 
+          background: #fff !important;
+          color: #000 !important;
+          position: relative !important;
+          box-sizing: border-box !important;
+          ${is80 ? '' : `
+          page-break-after: always !important;
+          break-after: page !important;
+          `}
+        }
+
+        /* Inject CSS custom variables to override custom elements correctly */
+        #${containerId}.receipt-container-dynamic {
+          --r-font-family: ${fontFamilyVal};
+          --r-business-size: ${finalBusinessNameSize}px;
+          --r-address-size: ${finalAddressSize}px;
+          --r-tagline-size: ${taglineSize}px;
+          --r-items-size: ${itemsFontSize}px;
+          --r-total-size: ${totalFontSize}px;
+          --r-token-size: ${receiptTokenSize}px;
+          --r-details-size: ${detailsFontSize}px;
+          --r-greeting-size: ${greetingFontSize}px;
+          font-family: var(--r-font-family) !important;
+          font-size: var(--r-details-size) !important;
+        }
+
+        #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
+          font-family: var(--r-font-family) !important;
+        }
+
+        #${containerId}.kot-container-dynamic {
+          --k-font-family: ${kotFontFamilyVal};
+          --k-items-size: ${kotItemsFontSize}px;
+          --k-qty-size: ${kotQtyFontSize}px;
+          --k-token-size: ${kotTokenSize}px;
+          font-family: var(--k-font-family) !important;
+          font-size: var(--k-items-size) !important;
+        }
+
+        #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
+          font-family: var(--k-font-family) !important;
+        }
+
+        ${fontWeightVal ? `
+        #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
+          font-weight: ${fontWeightVal} !important;
+        }
+        ` : ''}
+
+        ${kotFontWeightVal ? `
+        #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
+          font-weight: ${kotFontWeightVal} !important;
+        }
+        ` : ''}
+
+        * { color: #000 !important; border-color: #000 !important; overflow: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        img { filter: grayscale(100%) contrast(300%) !important; max-width: 100% !important; display: block !important; margin: 0 auto !important; }
       }
+    `;
+    document.head.appendChild(style);
 
-      window.print();
-      
-      // Delay cleanup significantly to ensure slow spoolers finish reading the DOM
+    // Create Container
+    const container = document.createElement("div");
+    container.id = containerId;
+    container.className = type === "kot"
+      ? "kot kot-container kot-container-dynamic text-black bg-white"
+      : "receipt receipt-container receipt-container-dynamic text-black bg-white";
+    container.innerHTML = html;
+
+    // Add physical bottom spacer for thermal feeds past cutter to prevent jamming
+    const spacer = document.createElement("div");
+    spacer.style.height = paperBottomPadding;
+    spacer.style.minHeight = paperBottomPadding;
+    spacer.style.display = "block";
+    spacer.style.clear = "both";
+    spacer.style.color = "transparent";
+    spacer.innerHTML = ".";
+    container.appendChild(spacer);
+
+    document.body.appendChild(container);
+
+    if (type === "kot") setIsKotPrinted(true);
+
+    // Dynamic Image Preloader: Ensure all images are 100% loaded before showing the print dialog
+    const images = container.querySelectorAll("img");
+    const imagePromises = Array.from(images).map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve(); // continue even if an image fails
+      });
+    });
+
+    Promise.all(imagePromises).then(() => {
+      // Give more time (300ms) for items to render and images to prepare
       setTimeout(() => {
-        if (document.body.contains(container)) container.remove();
-        if (document.head.contains(style)) style.remove();
-      }, 15000); 
-
-      if (callback) callback();
-    }, 50);
+        window.print();
+        
+        // Delay cleanup to ensure spooler finishes reading the DOM
+        setTimeout(() => {
+          if (document.body.contains(container)) container.remove();
+          if (document.head.contains(style)) style.remove();
+          if (callback) callback();
+        }, 2500); 
+      }, 300);
+    });
   };
 
   /* ================= QUICK ADD ITEM ================= */
