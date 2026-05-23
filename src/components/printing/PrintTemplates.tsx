@@ -173,16 +173,12 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         style={{ 
           width: printableWidthStr, 
           margin: '0 auto',
-          padding: is80 ? `0mm 6mm ${paperBottomPaddingVal} 6mm` : `0mm 2mm ${paperBottomPaddingVal} 2mm`, 
           boxSizing: 'border-box',
           WebkitFontSmoothing: 'antialiased',
           overflow: 'visible',
           marginTop: '-10px',
           overflowWrap: 'break-word',
-          wordBreak: 'break-word',
-          // Thermal safety variables
-          WebkitPrintColorAdjust: 'exact',
-          printColorAdjust: 'exact'
+          wordBreak: 'break-word'
         }}
       >
         {(business?.logoUrl && s('showLogo')) && (
@@ -544,12 +540,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         style={{ 
           width: printableWidthStr, 
           margin: '0 auto', 
-          padding: is80 ? `0mm 6mm ${paperBottomPaddingVal} 6mm` : `0mm 2mm ${paperBottomPaddingVal} 2mm`, 
           boxSizing: 'border-box', 
-          overflow: 'visible',
-          // KOT safety features
-          WebkitPrintColorAdjust: 'exact',
-          printColorAdjust: 'exact'
+          overflow: 'visible'
         }}
       >
         <div className="text-center font-black border-b-2 border-black pb-1 mb-2" style={{ fontSize: 'calc(var(--k-items-size) * 1.8)' }}>K.O.T</div>
