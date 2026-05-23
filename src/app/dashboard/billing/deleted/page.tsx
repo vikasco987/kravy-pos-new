@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 
 type DeletedBill = {
@@ -83,7 +83,7 @@ export default function DeletedBillsPage() {
             {bills.map((b) => {
               const snap = b.snapshot;
               return (
-                <React.Fragment key={b.id}>
+                <Fragment key={b.id}>
                   <tr className="border-t border-[var(--kravy-border)] hover:bg-[var(--kravy-bg-2)]/30 transition-colors">
                     <td className="p-4 font-black text-[var(--kravy-text-primary)]">
                       <div className="flex flex-col">
@@ -148,7 +148,7 @@ export default function DeletedBillsPage() {
                       </td>
                     </tr>
                   )}
-                </React.Fragment>
+                </Fragment>
               );
             })}
 
