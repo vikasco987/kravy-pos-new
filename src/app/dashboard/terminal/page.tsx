@@ -14,7 +14,7 @@ import {
     RotateCcw, RefreshCw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
     Wifi, Battery, Signal, Smartphone, Timer, AlertTriangle, ChevronUp, Package2,
     Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut, Phone, MessageSquare,
-    Crown, Building, Wind, Monitor, Layout, Navigation
+    Crown, Building, Wind, Monitor, Layout, Navigation, ArrowLeft, ShoppingBag
 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { 
