@@ -1717,30 +1717,6 @@ function KravyPOS() {
                                                         if (!activeOrderForSelected || !selectedTable) return;
                                                         kravy.payment();
                                                         setSelectedOrderId(activeOrderForSelected.id);
-                                                        setActiveTab("payment");
-                                                    }}
-                                                    className="flex-[1.5] h-11 rounded-full flex items-center justify-center gap-3 bg-[#6D3BFF] text-white font-black text-[10px] uppercase tracking-[0.25em] shadow-[0_8px_20px_rgba(109,59,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20 group"
-                                                >
-                                                    <span>Print Final Bill</span>
-                                                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                    </motion.div>
-                                ) : (
-                                    <div className="h-full flex flex-col items-center justify-center opacity-30 text-center p-12">
-                                        <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 mb-6 shadow-inner">
-                                            <TableIcon size={32} strokeWidth={1.2} />
-                                        </div>
-                                        <p className="text-2xl font-black text-slate-900 dark:text-white mb-2">Select a Table</p>
-                                        <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em]">Click any table to view active orders</p>
-                                    </div>
-                                )}
-                             </div>
-                         </motion.div>
-                     )}
-
                     {/* ── CASHIER / BILLING TAB ── */}
                     {activeTab === "payment" && (
                         <motion.div
@@ -1748,53 +1724,53 @@ function KravyPOS() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="h-full flex flex-col items-center justify-center p-4 lg:p-8 overflow-y-auto no-scrollbar bg-[#0f111a]"
+                            className="h-full flex flex-col items-center justify-center p-4 lg:p-8 overflow-y-auto no-scrollbar bg-slate-50 dark:bg-[#0f111a]"
                         >
                             {selectedTable && activeOrderForSelected ? (
                                 <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 w-full max-w-7xl h-full lg:h-auto max-h-[90vh]">
                                     
                                     {/* LEFT PANEL: Order Summary */}
-                                    <div className="bg-[#1a1d27] rounded-xl flex flex-col overflow-hidden border border-slate-800 shadow-2xl">
-                                        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-                                            <h3 className="text-xl font-bold text-slate-200">Order Summary</h3>
+                                    <div className="bg-white dark:bg-[#1a1d27] rounded-xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl">
+                                        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                                            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-200">Order Summary</h3>
                                         </div>
                                         
-                                        <div className="p-5 flex gap-8 items-start border-b border-slate-800/50 text-slate-300">
+                                        <div className="p-5 flex gap-8 items-start border-b border-slate-200 dark:border-slate-800/50 text-slate-600 dark:text-slate-300">
                                             <div>
-                                                <p className="text-xs text-slate-500 mb-2">ID</p>
-                                                <span className="px-2 py-1 text-xs font-semibold bg-emerald-900/30 text-emerald-400 rounded">Active</span>
+                                                <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">ID</p>
+                                                <span className="px-2 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 rounded">Active</span>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-slate-500 mb-2">Table</p>
-                                                <span className="px-2 py-1 text-xs font-semibold bg-indigo-900/30 text-indigo-400 rounded">{selectedTable.name}</span>
+                                                <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Table</p>
+                                                <span className="px-2 py-1 text-xs font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 rounded">{selectedTable.name}</span>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-slate-500 mb-2">Order Type</p>
-                                                <span className="px-2 py-1 text-xs font-semibold bg-indigo-900/30 text-indigo-400 rounded">Dine In</span>
+                                                <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Order Type</p>
+                                                <span className="px-2 py-1 text-xs font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 rounded">Dine In</span>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-slate-500 mb-2">Waiter</p>
+                                                <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Waiter</p>
                                                 <span className="text-sm font-semibold">-</span>
                                             </div>
                                         </div>
 
-                                        <div className="p-5 border-b border-slate-800/50 flex items-center justify-between">
-                                            <div className="flex items-center gap-3 text-slate-300">
-                                                <User size={18} className="text-emerald-500" />
+                                        <div className="p-5 border-b border-slate-200 dark:border-slate-800/50 flex items-center justify-between">
+                                            <div className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                                                <User size={18} className="text-emerald-600 dark:text-emerald-500" />
                                                 <span className="text-sm font-medium">{activeOrderForSelected.customerName || "Guest (+1)"}</span>
                                             </div>
-                                            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-xs text-slate-300 transition-colors">
+                                            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 transition-colors">
                                                 <Edit3 size={14} /> Edit Details
                                             </button>
                                         </div>
 
                                         {/* Tabs */}
-                                        <div className="flex px-5 border-b border-slate-800 pt-2 gap-6">
+                                        <div className="flex px-5 border-b border-slate-200 dark:border-slate-800 pt-2 gap-6">
                                             {["ITEMS", "KOT", "RESERVATION"].map(tab => (
                                                 <button 
                                                     key={tab}
                                                     onClick={() => setSettleTab(tab as any)}
-                                                    className={`pb-3 text-sm font-medium transition-colors ${settleTab === tab ? "text-indigo-400 border-b-2 border-indigo-500" : "text-slate-500 hover:text-slate-400"}`}
+                                                    className={`pb-3 text-sm font-medium transition-colors ${settleTab === tab ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-500" : "text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-400"}`}
                                                 >
                                                     {tab === "ITEMS" ? "Ordered Items" : tab === "KOT" ? "KOT History" : "User Reservation History"}
                                                 </button>
@@ -1804,8 +1780,8 @@ function KravyPOS() {
                                         {/* Table */}
                                         <div className="flex-1 overflow-y-auto">
                                             {settleTab === "ITEMS" ? (
-                                                <table className="w-full text-left text-sm text-slate-300">
-                                                    <thead className="text-xs text-slate-400 bg-slate-800/20">
+                                                <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
+                                                    <thead className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/20">
                                                         <tr>
                                                             <th className="px-5 py-4 font-medium">Item Name</th>
                                                             <th className="px-5 py-4 font-medium text-center">Qty</th>
@@ -1815,8 +1791,8 @@ function KravyPOS() {
                                                     </thead>
                                                     <tbody>
                                                         {activeOrderForSelected.items.map((it, idx) => (
-                                                            <tr key={idx} className="border-b border-slate-800/50 hover:bg-slate-800/20">
-                                                                <td className="px-5 py-4 font-medium">{it.name}</td>
+                                                            <tr key={idx} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20">
+                                                                <td className="px-5 py-4 font-medium text-slate-900 dark:text-slate-200">{it.name}</td>
                                                                 <td className="px-5 py-4 text-center">{it.quantity}</td>
                                                                 <td className="px-5 py-4 text-right">₹{it.price}</td>
                                                                 <td className="px-5 py-4 text-right font-semibold">₹{it.price * it.quantity}</td>
@@ -1825,7 +1801,7 @@ function KravyPOS() {
                                                     </tbody>
                                                 </table>
                                             ) : (
-                                                <div className="p-8 text-center text-slate-500 text-sm">
+                                                <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-sm">
                                                     No history available.
                                                 </div>
                                             )}
@@ -1833,73 +1809,162 @@ function KravyPOS() {
                                     </div>
 
                                     {/* RIGHT PANEL: Billing Calculation */}
-                                    <div className="bg-[#1a1d27] rounded-xl flex flex-col border border-slate-800 shadow-2xl relative">
-                                        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-                                            <h3 className="text-lg font-bold text-slate-200">Billing Calculation</h3>
-                                            <button className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-lg font-medium transition-colors">
+                                    <div className="bg-white dark:bg-[#1a1d27] rounded-xl flex flex-col border border-slate-200 dark:border-slate-800 shadow-2xl relative">
+                                        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-200">Billing Calculation</h3>
+                                            <button className="bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-lg font-medium transition-colors">
                                                 Add Charges
                                             </button>
                                         </div>
 
                                         <div className="p-5 flex-1 flex flex-col gap-6">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-slate-300 font-medium">Subtotal</span>
-                                                <span className="text-slate-200 font-semibold">₹{settlementBill?.subtotal.toFixed(2)}</span>
+                                                <span className="text-slate-600 dark:text-slate-300 font-medium">Subtotal</span>
+                                                <span className="text-slate-900 dark:text-slate-200 font-semibold">₹{settlementBill?.subtotal.toFixed(2)}</span>
                                             </div>
 
                                             <div className="flex items-center justify-between gap-4">
-                                                <span className="text-slate-300 font-medium whitespace-nowrap">Discount</span>
+                                                <span className="text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">Discount</span>
                                                 <div className="flex flex-1 items-center justify-end gap-2">
-                                                    <div className="flex border border-slate-700 rounded-lg overflow-hidden bg-slate-900/50 w-24">
+                                                    <div className="flex border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-900/50 w-24">
                                                         <input 
                                                             type="number"
                                                             value={discountValue}
                                                             onChange={e => setDiscountValue(e.target.value)}
                                                             placeholder="0"
-                                                            className="w-full bg-transparent text-slate-200 text-right px-3 py-1.5 text-sm outline-none"
+                                                            className="w-full bg-transparent text-slate-900 dark:text-slate-200 text-right px-3 py-1.5 text-sm outline-none"
                                                         />
                                                     </div>
-                                                    <div className="flex bg-slate-800 border border-slate-700 rounded-lg p-0.5">
+                                                    <div className="flex bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5">
                                                         <button 
                                                             onClick={() => setDiscountType("PERCENT")}
-                                                            className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${discountType === "PERCENT" ? "bg-blue-600 text-white" : "text-slate-400"}`}
+                                                            className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${discountType === "PERCENT" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 dark:text-slate-400"}`}
                                                         >
                                                             %
                                                         </button>
                                                         <button 
                                                             onClick={() => setDiscountType("FLAT")}
-                                                            className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${discountType === "FLAT" ? "bg-blue-600 text-white" : "text-slate-400"}`}
+                                                            className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${discountType === "FLAT" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 dark:text-slate-400"}`}
                                                         >
                                                             ₹
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <span className="text-slate-200 font-semibold w-20 text-right">
+                                                <span className="text-slate-900 dark:text-slate-200 font-semibold w-20 text-right">
                                                     ₹{settlementBill?.discountAmt.toFixed(2)}
                                                 </span>
                                             </div>
 
                                             <div className="flex items-center justify-between">
-                                                <span className="text-slate-300 font-medium">CGST</span>
+                                                <span className="text-slate-600 dark:text-slate-300 font-medium">CGST</span>
                                                 <div className="flex items-center gap-4">
                                                     <button 
                                                         onClick={() => setIsCgstEnabled(!isCgstEnabled)}
-                                                        className={`w-10 h-5 rounded-full relative transition-colors ${isCgstEnabled ? "bg-slate-300" : "bg-slate-700"}`}
+                                                        className={`w-10 h-5 rounded-full relative transition-colors ${isCgstEnabled ? "bg-blue-600 dark:bg-slate-300" : "bg-slate-300 dark:bg-slate-700"}`}
                                                     >
-                                                        <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${isCgstEnabled ? "bg-white left-[22px]" : "bg-slate-400 left-0.5"}`} />
+                                                        <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${isCgstEnabled ? "bg-white left-[22px]" : "bg-white dark:bg-slate-400 left-0.5 shadow-sm"}`} />
                                                     </button>
-                                                    <span className="text-slate-200 font-semibold w-20 text-right">₹{settlementBill?.cgst.toFixed(2)}</span>
+                                                    <span className="text-slate-900 dark:text-slate-200 font-semibold w-20 text-right">₹{settlementBill?.cgst.toFixed(2)}</span>
                                                 </div>
                                             </div>
 
                                             <div className="flex items-center justify-between">
-                                                <span className="text-slate-300 font-medium">SGST</span>
+                                                <span className="text-slate-600 dark:text-slate-300 font-medium">SGST</span>
                                                 <div className="flex items-center gap-4">
                                                     <button 
                                                         onClick={() => setIsSgstEnabled(!isSgstEnabled)}
-                                                        className={`w-10 h-5 rounded-full relative transition-colors ${isSgstEnabled ? "bg-slate-300" : "bg-slate-700"}`}
+                                                        className={`w-10 h-5 rounded-full relative transition-colors ${isSgstEnabled ? "bg-blue-600 dark:bg-slate-300" : "bg-slate-300 dark:bg-slate-700"}`}
                                                     >
-                                                        <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${isSgstEnabled ? "bg-white left-[22px]" : "bg-slate-400 left-0.5"}`} />
+                                                        <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${isSgstEnabled ? "bg-white left-[22px]" : "bg-white dark:bg-slate-400 left-0.5 shadow-sm"}`} />
+                                                    </button>
+                                                    <span className="text-slate-900 dark:text-slate-200 font-semibold w-20 text-right">₹{settlementBill?.sgst.toFixed(2)}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-4 mt-2">
+                                                <span className="text-slate-900 dark:text-slate-200 font-semibold text-lg">Total</span>
+                                                <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-900/50 font-bold text-lg">
+                                                    ₹{settlementBill?.total.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161821] rounded-b-xl space-y-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm">
+                                                    <CreditCard size={16} />
+                                                    <span className="font-medium">Payment Method</span>
+                                                </div>
+                                                <select 
+                                                    value={payMethod}
+                                                    onChange={e => setPayMethod(e.target.value)}
+                                                    className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-200 px-3 py-1.5 rounded-lg outline-none text-sm w-32 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                                >
+                                                    <option value="CASH">CASH</option>
+                                                    <option value="UPI">UPI</option>
+                                                    <option value="CARD">CARD</option>
+                                                    <option value="WALLET">WALLET</option>
+                                                </select>
+
+                                                <button className="flex items-center gap-1 border border-slate-300 dark:border-slate-700 bg-white dark:bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-lg text-sm transition-colors ml-auto shadow-sm">
+                                                    <X size={14} /> Clear
+                                                </button>
+                                            </div>
+
+                                            <div className="flex items-center justify-between pt-2">
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={printBillOnConfirm}
+                                                        onChange={e => setPrintBillOnConfirm(e.target.checked)}
+                                                        className="w-4 h-4 rounded bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 accent-blue-600 dark:accent-blue-500" 
+                                                    />
+                                                    <span className="text-slate-700 dark:text-slate-300 text-sm font-medium">Print Bill</span>
+                                                </label>
+
+                                                <div className="flex gap-3">
+                                                    <button 
+                                                        onClick={() => setActiveTab("dashboard")}
+                                                        className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-sm transition-colors shadow-sm"
+                                                    >
+                                                        <ArrowLeft size={16} /> Back
+                                                    </button>
+                                                    <button 
+                                                        onClick={async () => {
+                                                            await handleCheckout(activeOrderForSelected.id);
+                                                            if (printBillOnConfirm) {
+                                                                setPrintOrder(activeOrderForSelected);
+                                                                setPrintTable(selectedTable);
+                                                                setPrintMode("BILL");
+                                                            } else {
+                                                                setActiveTab("dashboard");
+                                                            }
+                                                        }}
+                                                        disabled={isSettling}
+                                                        className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white font-medium text-sm transition-colors disabled:opacity-50 shadow-md"
+                                                    >
+                                                        <ShoppingBag size={16} /> {isSettling ? "Confirming..." : "Confirm"}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center text-center max-w-sm opacity-50 animate-in fade-in zoom-in-95">
+                                    <div className="w-24 h-24 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 mb-6 border border-slate-300 dark:border-slate-700 shadow-inner">
+                                        <CreditCard size={40} />
+                                    </div>
+                                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-200 mb-2">Billing Vault</p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">Select an active table from Terminal to initiate checkout flow.</p>
+                                    <button onClick={() => setActiveTab("dashboard")} className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium shadow-lg hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors">
+                                        Back to Terminal
+                                    </button>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}                                                        <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${isSgstEnabled ? "bg-white left-[22px]" : "bg-slate-400 left-0.5"}`} />
                                                     </button>
                                                     <span className="text-slate-200 font-semibold w-20 text-right">₹{settlementBill?.sgst.toFixed(2)}</span>
                                                 </div>
