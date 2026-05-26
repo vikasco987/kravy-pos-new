@@ -1303,8 +1303,17 @@ function KravyPOS() {
                                                     <div className={`w-full h-full rounded-2xl flex flex-col justify-between p-2.5 border transition-all duration-300 overflow-hidden relative ${cfg.bg} ${cfg.border} ${isActive ? "ring-2 ring-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.15)]" : cfg.glow}`}>
                                                         <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent)', backgroundSize: '16px 16px' }} />
                                                         
-                                                        {/* Compact Status Indicator - Top Left */}
-                                                        <div className="w-full flex items-center justify-between z-10">
+                                                        {/* Actions & Compact Status Indicator - Top */}
+                                                        <div className="w-full flex items-center justify-between z-20 relative">
+                                                            {/* Edit/Delete overlay appearing on hover */}
+                                                            <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm p-1 rounded-bl-xl shadow-sm z-30 translate-x-3 -translate-y-3 pointer-events-auto">
+                                                                <button onClick={(e) => { e.stopPropagation(); setEditingTable(t); setTableNameInput(t.name); setTableZoneInput(t.zone || "Default"); setIsTableModalOpen(true); kravy.click(); }} className="p-1.5 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
+                                                                    <Edit2 size={12} />
+                                                                </button>
+                                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteTable(t.id, t.name); kravy.trash(); }} className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/50 rounded-lg transition-colors">
+                                                                    <Trash2 size={12} />
+                                                                </button>
+                                                            </div>
                                                             <div className={`flex items-center gap-1.5 text-[8px] font-black uppercase tracking-wider ${cfg.text}`}>
                                                                 <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${t.status !== 'FREE' ? 'animate-pulse' : ''}`} />
                                                                 <span>{cfg.label}</span>
@@ -1352,6 +1361,17 @@ function KravyPOS() {
                                                 </motion.div>
                                             );
                                         })}
+                                        
+                                        {/* Quick Add Table Ghost Card */}
+                                        <motion.div
+                                            onClick={() => { setEditingTable(null); setTableNameInput(""); setTableZoneInput(activeZone === "All Zones" ? "Default" : activeZone); setIsTableModalOpen(true); kravy.click(); }}
+                                            className="relative group h-[96px] flex flex-col items-center justify-center rounded-2xl transition-all duration-300 cursor-pointer z-10 hover:scale-[1.02] border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500/50 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-indigo-50/30"
+                                        >
+                                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors mb-2 shadow-sm">
+                                                <Plus size={16} className="text-slate-500 dark:text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 group-hover:text-indigo-600">Add Table</span>
+                                        </motion.div>
                                     </div>
                                     {filteredTables.length === 0 && (
                                         <div className="flex flex-col items-center justify-center opacity-30 mt-16 text-center">
@@ -2226,6 +2246,33 @@ function KravyPOS() {
                 resumeBillId={null}
                 router={router}
             />
+            {/* Quick Table Add/Edit Modal */}
+            <AnimatePresence>
+                {isTableModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsTableModalOpen(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-6 w-full max-w-sm border border-slate-200 dark:border-slate-800 z-[101]">
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white mb-4">{editingTable ? "Edit Table" : "Add Table"}</h2>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-slate-500 px-1">Table Name</label>
+                                    <input autoFocus type="text" value={tableNameInput} onChange={(e) => setTableNameInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSaveTable()} className="w-full mt-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all" placeholder="e.g. T-01, Balcony..." />
+                                </div>
+                                {business?.multiZoneMenuEnabled && (
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase text-slate-500 px-1">Zone</label>
+                                        <input type="text" value={tableZoneInput} onChange={(e) => setTableZoneInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSaveTable()} className="w-full mt-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all" placeholder="e.g. Default, Rooftop..." />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-3 mt-6">
+                                <button onClick={() => setIsTableModalOpen(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-black text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                                <button onClick={handleSaveTable} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/25">{editingTable ? "Save Changes" : "Add Table"}</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 
