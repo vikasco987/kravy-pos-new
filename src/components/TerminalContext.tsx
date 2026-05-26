@@ -6,6 +6,7 @@ export type OrderStatus = "PENDING" | "ACCEPTED" | "PREPARING" | "READY" | "COMP
 
 export interface Order {
     id: string;
+    orderNumber?: string;
     items: any[];
     total: number;
     status: OrderStatus;

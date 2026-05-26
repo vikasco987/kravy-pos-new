@@ -84,6 +84,7 @@ export async function PATCH(req: NextRequest) {
                     await prisma.businessProfile.update({
                         where: { userId: effectiveId },
                         data: {
+                orderNumber: orderNumber,
                             lastTokenNumber: nextToken,
                             lastTokenDate: new Date()
                         }
@@ -203,6 +204,39 @@ export async function POST(req: NextRequest) {
                 qty: Number(it.qty || it.quantity || 0)
             }))
             : items;
+
+        // ✅ Generate orderNumber (INV/YYMM/XXXX) with max sequence
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+        
+        let maxSerial = 0;
+        const lastBill = await prisma.billManager.findFirst({
+            where: { clerkUserId: effectiveId, createdAt: { gte: startOfMonth }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
+            orderBy: { createdAt: 'desc' },
+            select: { billNumber: true }
+        });
+        if (lastBill?.billNumber) {
+            const parts = lastBill.billNumber.split(/[\/-]/);
+            const serial = parseInt(parts[parts.length - 1], 10);
+            if (!isNaN(serial) && serial > maxSerial) maxSerial = serial;
+        }
+        
+        const lastOrder = await prisma.order.findFirst({
+            where: { clerkUserId: effectiveId, createdAt: { gte: startOfMonth }, orderNumber: { not: null } },
+            orderBy: { createdAt: 'desc' },
+            select: { orderNumber: true }
+        });
+        if (lastOrder?.orderNumber) {
+            const parts = lastOrder.orderNumber.split(/[\/-]/);
+            const serial = parseInt(parts[parts.length - 1], 10);
+            if (!isNaN(serial) && serial > maxSerial) maxSerial = serial;
+        }
+
+        const nextSerial = maxSerial + 1;
+        const yy = String(startOfMonth.getFullYear()).slice(-2);
+        const mm = String(startOfMonth.getMonth() + 1).padStart(2, '0');
+        const orderNumber = \`INV/${yy}${mm}/${nextSerial.toString().padStart(4, '0')}\`;
 
         // ✅ 3. CREATE ORDER WITH PERSISTENT TOKEN
         const order = await prisma.order.create({

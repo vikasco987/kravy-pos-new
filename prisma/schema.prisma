@@ -312,6 +312,7 @@ model Table {
 
 model Order {
   id          String @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber String?
   clerkUserId String
   user        User   @relation(fields: [clerkUserId], references: [clerkId])
 
