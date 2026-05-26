@@ -128,11 +128,13 @@ export default function ProfilePage() {
      UI
   ---------------------------------*/
   const name = (user as any).name || (user as any).fullName || "User";
-  const email = (user as any).email || (clerkUser?.primaryEmailAddress?.emailAddress) || "No email";
-  const phone = (user as any).phone || (clerkUser?.primaryPhoneNumber?.phoneNumber) || "";
+  const email = identifiers.primaryEmail || (user as any).email || (clerkUser?.primaryEmailAddress?.emailAddress) || "No email";
+  const phone = identifiers.primaryPhone || (user as any).phone || (clerkUser?.primaryPhoneNumber?.phoneNumber) || "";
   const avatar = (clerkUser as any)?.imageUrl || "https://avatar.iran.liara.run/public/38";
 
-  const [identifiers, setIdentifiers] = useState<{ secondaryEmails: string[], secondaryPhones: string[] }>({
+  const [identifiers, setIdentifiers] = useState<{ primaryEmail: string, primaryPhone: string, secondaryEmails: string[], secondaryPhones: string[] }>({
+    primaryEmail: "",
+    primaryPhone: "",
     secondaryEmails: [],
     secondaryPhones: []
   });
@@ -145,6 +147,8 @@ export default function ProfilePage() {
         if (res.ok) {
             const data = await res.json();
             setIdentifiers({
+                primaryEmail: data.email || "",
+                primaryPhone: data.phone || "",
                 secondaryEmails: data.secondaryEmails || [],
                 secondaryPhones: data.secondaryPhones || []
             });
@@ -155,6 +159,24 @@ export default function ProfilePage() {
   useEffect(() => {
     fetchIdentifiers();
   }, []);
+
+  const handlePromoteIdentifier = async (type: 'email' | 'phone', value: string) => {
+    try {
+        const res = await fetch("/api/user/identifiers", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "promote", type, value })
+        });
+        if (res.ok) {
+            toast.success(`${type === 'email' ? 'Email' : 'Phone'} made primary!`);
+            fetchIdentifiers();
+        } else {
+            toast.error("Failed to promote");
+        }
+    } catch (e) {
+        toast.error("Network error");
+    }
+  };
 
   const handleAddIdentifier = async () => {
     if (!newValue) return;
@@ -271,12 +293,20 @@ export default function ProfilePage() {
                             <span className="text-[8px] font-black uppercase tracking-widest text-white/30">Secondary Email</span>
                         </div>
                     </div>
-                    <button 
-                        onClick={() => handleDeleteIdentifier('email', e)}
-                        className="p-2 rounded-lg text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10"
-                    >
-                        <Trash2 size={14} />
-                    </button>
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <button 
+                            onClick={() => handlePromoteIdentifier('email', e)}
+                            className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20"
+                        >
+                            Make Primary
+                        </button>
+                        <button 
+                            onClick={() => handleDeleteIdentifier('email', e)}
+                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    </div>
                 </div>
             ))}
 
@@ -292,12 +322,20 @@ export default function ProfilePage() {
                             <span className="text-[8px] font-black uppercase tracking-widest text-white/30">Secondary Phone</span>
                         </div>
                     </div>
-                    <button 
-                        onClick={() => handleDeleteIdentifier('phone', p)}
-                        className="p-2 rounded-lg text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10"
-                    >
-                        <Trash2 size={14} />
-                    </button>
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <button 
+                            onClick={() => handlePromoteIdentifier('phone', p)}
+                            className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20"
+                        >
+                            Make Primary
+                        </button>
+                        <button 
+                            onClick={() => handleDeleteIdentifier('phone', p)}
+                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    </div>
                 </div>
             ))}
 

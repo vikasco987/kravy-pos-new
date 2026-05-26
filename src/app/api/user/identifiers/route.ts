@@ -96,3 +96,40 @@ export async function DELETE(req: Request) {
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
+
+
+export async function PATCH(req: Request) {
+    try {
+        const auth = await getAuthUser();
+        if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const { type, value, action } = await req.json();
+
+        if (action === "promote") {
+            const user = await prisma.user.findUnique({ where: { id: auth.id } });
+            if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+            const updateData: any = {};
+            if (type === "email") {
+                const oldPrimary = user.email;
+                updateData.email = value;
+                updateData.secondaryEmails = [...(user.secondaryEmails || []).filter(e => e !== value), oldPrimary];
+            } else if (type === "phone") {
+                const oldPrimary = user.phone;
+                updateData.phone = value;
+                const filtered = (user.secondaryPhones || []).filter(p => p !== value);
+                updateData.secondaryPhones = oldPrimary ? [...filtered, oldPrimary] : filtered;
+            }
+
+            const updated = await prisma.user.update({
+                where: { id: auth.id },
+                data: updateData
+            });
+            return NextResponse.json(updated);
+        }
+
+        return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    } catch (error) {
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
