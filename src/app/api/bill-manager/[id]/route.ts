@@ -261,7 +261,7 @@ export async function PUT(
         const lastS = parseInt(lastBill.billNumber.split('/').pop() || "0", 10);
         if (!isNaN(lastS)) nextSerial = lastS + 1;
       }
-      const billNumber = `SV/${yy}${mm}/${String(nextSerial).padStart(4, '0')}`;
+      const billNumber = `INV/${yy}${mm}/${String(nextSerial).padStart(4, '0')}`;
 
       bill = await prisma.billManager.create({
         data: {

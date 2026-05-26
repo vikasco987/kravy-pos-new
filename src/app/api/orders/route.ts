@@ -236,7 +236,7 @@ export async function POST(req: NextRequest) {
         const nextSerial = maxSerial + 1;
         const yy = String(startOfMonth.getFullYear()).slice(-2);
         const mm = String(startOfMonth.getMonth() + 1).padStart(2, '0');
-        const orderNumber = \`INV/${yy}${mm}/${nextSerial.toString().padStart(4, '0')}\`;
+        const orderNumber = `INV/${yy}${mm}/${nextSerial.toString().padStart(4, '0')}`;
 
         // ✅ 3. CREATE ORDER WITH PERSISTENT TOKEN
         const order = await prisma.order.create({

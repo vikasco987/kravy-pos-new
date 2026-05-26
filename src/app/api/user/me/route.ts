@@ -168,7 +168,7 @@ export async function PATCH(req: Request) {
         name: name !== undefined ? name : undefined,
         phone: phone !== undefined ? phone.replace(/\D/g, '') : undefined,
         imageUrl: imageUrl !== undefined ? imageUrl : undefined,
-        secondaryEmails: secondaryEmails !== undefined ? secondaryEmails : undefined,
+        secondaryEmails: secondaryEmails !== undefined ? secondaryEmails.map((e: string) => e.trim().toLowerCase()) : undefined,
         secondaryPhones: secondaryPhones !== undefined ? secondaryPhones.map((p: string) => p.replace(/\D/g, '')) : undefined,
         uiPreferences: uiPreferences !== undefined ? uiPreferences : undefined,
       }

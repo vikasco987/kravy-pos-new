@@ -309,7 +309,7 @@ export async function PUT(req: Request) {
 
     let dbUpdate: any = { 
       name: name || undefined,
-      secondaryEmails: body.secondaryEmails !== undefined ? body.secondaryEmails : undefined,
+      secondaryEmails: body.secondaryEmails !== undefined ? body.secondaryEmails.map((e: string) => e.trim().toLowerCase()) : undefined,
       secondaryPhones: body.secondaryPhones !== undefined ? body.secondaryPhones : undefined,
       publicMetadata: publicMetadata !== undefined ? publicMetadata : undefined,
       privateMetadata: privateMetadata !== undefined ? privateMetadata : undefined,

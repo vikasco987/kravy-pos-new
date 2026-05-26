@@ -164,7 +164,15 @@ export async function POST(req: NextRequest) {
       if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
     }
     const serialLabel = String(nextSerial).padStart(4, '0');
-    const billNumber = `SV/${yy}${mm}/${serialLabel}`;
+    let billNumber = `INV/${yy}${mm}/${serialLabel}`;
+
+    // Try to sync with order's KOT number if available
+    if (body.orderId) {
+        const order = await prisma.order.findUnique({ where: { id: body.orderId } });
+        if (order?.orderNumber) {
+            billNumber = order.orderNumber;
+        }
+    }
 
     const finalPaymentMode: "Cash" | "UPI" | "Card" | "Pay on Counter" | "Wallet" =
       paymentMode === "UPI" || paymentMode === "Card" || paymentMode === "Pay on Counter" || paymentMode === "Wallet"
