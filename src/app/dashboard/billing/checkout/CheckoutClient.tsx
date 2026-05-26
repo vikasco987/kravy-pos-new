@@ -1399,12 +1399,19 @@ export default function CheckoutClient() {
     if (receiptRef.current) runPrintJob("bill", receiptRef.current.innerHTML);
   };
 
-  const printKOT = (callback?: () => void) => {
-    if (kotRef.current) runPrintJob("kot", kotRef.current.innerHTML, callback);
+  const printKOT = (htmlOverride?: string | null | (() => void), callback?: () => void) => {
+    let html = typeof htmlOverride === "string" ? htmlOverride : null;
+    let cb = typeof htmlOverride === "function" ? htmlOverride : callback;
+    if (html) runPrintJob("kot", html, cb);
+    else if (kotRef.current) runPrintJob("kot", kotRef.current.innerHTML, cb);
   };
 
   const handlePrintKOT = async () => {
     if (isSaving || items.length === 0) return;
+    
+    // ✅ CAPTURE KOT HTML BEFORE MODIFYING ANY STATE!
+    const htmlToPrint = kotRef.current?.innerHTML;
+
     setIsSaving(true);
 
     try {
@@ -1479,7 +1486,7 @@ export default function CheckoutClient() {
           setTimeout(() => {
             const returnTo = searchParams.get("returnTo");
             
-            printKOT(() => {
+            printKOT(htmlToPrint, () => {
               // This callback runs after the print job finishes (or right away if printing fails/is blocked)
               if (returnTo) {
                 const currentOrderId = finalOrderId || syncedOrderId;
