@@ -176,8 +176,48 @@ function KravyPOS() {
         setActiveTab(tab);
     };
 
+    
     const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
     const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+    // Floor Management Quick Table Add/Edit
+    const [isTableModalOpen, setIsTableModalOpen] = useState(false);
+    const [editingTable, setEditingTable] = useState<{ id: string, name: string, zone?: string } | null>(null);
+    const [tableNameInput, setTableNameInput] = useState("");
+    const [tableZoneInput, setTableZoneInput] = useState("Default");
+
+    const handleSaveTable = async () => {
+        if (!tableNameInput.trim()) return;
+        try {
+            const method = editingTable ? "PUT" : "POST";
+            const body = editingTable ? { id: editingTable.id, name: tableNameInput.trim(), zone: tableZoneInput } : { name: tableNameInput.trim(), zone: tableZoneInput };
+            const res = await fetch("/api/tables", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+            if (res.ok) {
+                toast.success(`Table ${editingTable ? "updated" : "added"}!`);
+                fetchData(false, true);
+                setIsTableModalOpen(false);
+                setEditingTable(null);
+                setTableNameInput("");
+            } else {
+                toast.error("Failed to save table");
+            }
+        } catch (e) { toast.error("Error saving table"); }
+    };
+
+    const handleDeleteTable = async (id: string, name: string) => {
+        if (!confirm(`Delete table ${name}?`)) return;
+        try {
+            const res = await fetch(`/api/tables?id=${id}`, { method: "DELETE" });
+            if (res.ok) {
+                toast.success("Table deleted!");
+                if (selectedTableId === id) setSelectedTableId(null);
+                fetchData(false, true);
+            } else {
+                toast.error("Failed to delete table");
+            }
+        } catch (e) { toast.error("Error deleting table"); }
+    };
+
     const [payMethod, setPayMethod] = useState("CASH");
     const [discountType, setDiscountType] = useState<"PERCENT" | "FLAT">("PERCENT");
     const [discountValue, setDiscountValue] = useState<string>("");
