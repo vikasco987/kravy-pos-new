@@ -253,8 +253,8 @@ export async function PUT(
       const yy = String(nowLocal.getFullYear()).slice(-2);
       const mm = String(nowLocal.getMonth() + 1).padStart(2, '0');
       const lastBill = await prisma.billManager.findFirst({
-        where: { clerkUserId: effectiveId, createdAt: { gte: new Date(nowLocal.getFullYear(), nowLocal.getMonth(), 1) }, billNumber: { startsWith: 'SV/' } },
-        orderBy: { billNumber: 'desc' },
+        where: { clerkUserId: effectiveId, createdAt: { gte: new Date(nowLocal.getFullYear(), nowLocal.getMonth(), 1) }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
+        orderBy: { createdAt: 'desc' },
       });
       let nextSerial = 1;
       if (lastBill) {

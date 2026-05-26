@@ -363,7 +363,7 @@ export default function CheckoutClient() {
     const now = new Date();
     const dateStr = `${now.getDate().toString().padStart(2, '0')}${(now.getMonth() + 1).toString().padStart(2, '0')}`;
     const rand = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
-    setBillNumber(`SV-${dateStr}-${rand}`);
+    setBillNumber(`INV/${dateStr}-${rand}`);
     setBillDate(now.toLocaleString());
     setSyncedOrderId(null);
   };
@@ -444,7 +444,7 @@ export default function CheckoutClient() {
     const now = new Date();
     const dateStr = `${now.getDate().toString().padStart(2, '0')}${ (now.getMonth() + 1).toString().padStart(2, '0')}`;
     const rand = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
-    setBillNumber(`SV-${dateStr}-${rand}`); 
+    setBillNumber(`INV/${dateStr}-${rand}`); 
     setBillDate(new Date().toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -'));
   }, []);
 

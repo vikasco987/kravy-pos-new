@@ -95,8 +95,8 @@ export async function POST(req: NextRequest) {
       prisma.item.findMany({ where: { id: { in: itemIds }, clerkId: effectiveId } }),
       discountCode ? prisma.offer.findFirst({ where: { code: discountCode.toUpperCase(), isActive: true, clerkUserId: effectiveId } }) : Promise.resolve(null),
       prisma.billManager.findFirst({
-        where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, billNumber: { startsWith: 'SV/' } },
-        orderBy: { billNumber: 'desc' },
+        where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
+        orderBy: { createdAt: 'desc' },
         select: { billNumber: true }
       })
     ]);
