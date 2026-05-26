@@ -608,6 +608,7 @@ export default function CheckoutClient() {
                 id: i.itemId || i.id || i._id || `item-${Math.random().toString(36).substr(2, 9)}`,
                 name: i.name,
                 qty: Number(i.quantity || i.qty || 0),
+                printedQty: Number(i.quantity || i.qty || 0),
                 rate: Number(i.price || i.rate || 0),
                 gst: i.gst,
                 taxStatus: i.taxStatus || "Without Tax",
@@ -639,6 +640,7 @@ export default function CheckoutClient() {
             id: i.itemId || i.id || i._id || `item-${Math.random().toString(36).substr(2, 9)}`,
             name: i.name,
             qty: Number(i.quantity || i.qty || 0),
+            printedQty: Number(i.quantity || i.qty || 0),
             rate: Number(i.price || i.rate || 0),
             gst: i.gst,
             taxStatus: i.taxStatus || "Without Tax",
@@ -739,13 +741,14 @@ export default function CheckoutClient() {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
         kravy.click(); // item already in cart — just increase qty
-        return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1, isNew: true } : i);
+        return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1, isNew: (i.qty + 1) > (i.printedQty || 0) } : i);
       }
       kravy.add(); // new item added — bigger pop sound
       return [...prev, { 
         id: item.id, 
         name: item.name, 
         qty: 1, 
+        printedQty: 0,
         rate: item.price,
         gst: item.gst ?? null,
         hsnCode: item.hsnCode || "",
@@ -760,7 +763,7 @@ export default function CheckoutClient() {
       const current = prev.find(i => i.id === itemId);
       if (current && current.qty <= 1) kravy.trash(); // last one removed
       else kravy.remove(); // qty decreased
-      return prev.map((i) => i.id === itemId ? { ...i, qty: i.qty - 1 } : i).filter((i) => i.qty > 0);
+      return prev.map((i) => i.id === itemId ? { ...i, qty: i.qty - 1, isNew: (i.qty - 1) > (i.printedQty || 0) } : i).filter((i) => i.qty > 0);
     });
   }
 
@@ -773,7 +776,7 @@ export default function CheckoutClient() {
     setItems((prev) => {
       const existing = prev.find(i => i.name === fullName);
       if (existing) {
-        return prev.map(i => i.name === fullName ? { ...i, qty: i.qty + 1 } : i);
+        return prev.map(i => i.name === fullName ? { ...i, qty: i.qty + 1, isNew: (i.qty + 1) > (i.printedQty || 0) } : i);
       }
       return [
         ...prev,
@@ -805,7 +808,7 @@ export default function CheckoutClient() {
         return prev.filter(i => i.name !== fullName);
       } else {
         kravy.remove();
-        return prev.map(i => i.name === fullName ? { ...i, qty: i.qty - 1 } : i);
+        return prev.map(i => i.name === fullName ? { ...i, qty: i.qty - 1, isNew: (i.qty - 1) > (i.printedQty || 0) } : i);
       }
     });
   }
@@ -1467,6 +1470,7 @@ export default function CheckoutClient() {
               id: it.itemId || it.id || it._id || `item-${Math.random().toString(36).substr(2, 9)}`,
               rate: it.price || it.rate,
               qty: it.quantity || it.qty,
+              printedQty: it.quantity || it.qty,
               isNew: false // Explicitly clear local isNew flag
             })));
           }

@@ -602,7 +602,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                        </div>
                      )}
                   </td>
-                  <td className="text-right py-2 align-top font-black" style={{ fontSize: 'var(--k-qty-size)', fontWeight: ps.kotQtyWeight || undefined }}>x{i.qty}</td>
+                  <td className="text-right py-2 align-top font-black" style={{ fontSize: 'var(--k-qty-size)', fontWeight: ps.kotQtyWeight || undefined }}>x{i.isNew && i.printedQty ? i.qty - i.printedQty : i.qty}</td>
                 </tr>
               ));
             })()}
