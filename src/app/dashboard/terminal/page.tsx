@@ -8,7 +8,7 @@ import { kravy } from "@/lib/sounds";
 import {
     LayoutDashboard, ChefHat, MapPin, CreditCard,
     Clock, Bell, TrendingUp, ArrowRight, Check,
-    Flame, UtensilsCrossed, Plus, Trash2, Eye,
+    Flame, UtensilsCrossed, Plus, Trash2, Eye, Edit2,
     Printer, X, Filter, Search, User, ChevronRight,
     Edit3, LogOut, Table as TableIcon, History,
     RotateCcw, RefreshCw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
@@ -899,7 +899,7 @@ function KravyPOS() {
             }
 
             const billData = {
-                items: order.items.map(it => ({
+                items: order.items?.map(it => ({
                     name: it.name,
                     price: it.price,
                     quantity: it.quantity,
@@ -1524,7 +1524,7 @@ function KravyPOS() {
                                         {/* Multi-Order Selection (if table has multiple orders) */}
                                         {selectedTable && tableOrders.length > 1 && (
                                             <div className="px-6 py-3 border-b border-slate-50 dark:border-slate-800 flex gap-2 overflow-x-auto scrollbar-hide bg-slate-50/30">
-                                                {tableOrders.map(o => (
+                                                {tableOrders?.map(o => (
                                                     <button 
                                                         key={o.id}
                                                         onClick={() => { kravy.click(); setSelectedOrderId(o.id); }}
@@ -1588,7 +1588,7 @@ function KravyPOS() {
                                                         
                                                         // Sort rounds: first all KOTs in sequence, then New Items
                                                         const sortedRounds = [
-                                                            ...kotList.map((kn: number, i: number) => ({ id: kn, label: `Round ${i + 1} - KOT #${kn}`, items: rounds[kn] })),
+                                                            ...kotList?.map((kn: number, i: number) => ({ id: kn, label: `Round ${i + 1} - KOT #${kn}`, items: rounds[kn] })),
                                                             ...(rounds["New Items"] ? [{ id: "New Items", label: "🛒 Current Cart (Not Printed)", items: rounds["New Items"] }] : [])
                                                         ].filter(r => r.items && r.items.length > 0);
 
@@ -1603,7 +1603,7 @@ function KravyPOS() {
                                                                     </div>
                                                                     <div className={`h-[1.5px] flex-1 ${roundObj.id === "New Items" ? "bg-amber-100" : "bg-indigo-100"}`} />
                                                                 </div>
-                                                                {roundObj.items.map((item: any, idx: number) => (
+                                                                {roundObj.items?.map((item: any, idx: number) => (
                                                                     <motion.div
                                                                         key={`${roundObj.id}-${idx}`}
                                                                         initial={{ opacity: 0, y: 8 }}
@@ -1874,7 +1874,7 @@ function KravyPOS() {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {activeOrderForSelected.items.map((it, idx) => (
+                                                        {activeOrderForSelected.items?.map((it, idx) => (
                                                             <tr key={idx} className="border-b border-slate-200 dark:border-slate-800/50 hover:bg-slate-50 dark:bg-slate-200 dark:bg-slate-800/20">
                                                                 <td className="px-5 py-4 font-medium">{it.name}</td>
                                                                 <td className="px-5 py-4 text-center">{it.quantity}</td>
@@ -2147,7 +2147,7 @@ function KravyPOS() {
                 orderNotes={printOrder?.notes || ""}
                 buyerGSTIN=""
                 placeOfSupply=""
-                items={printOrder?.items.map(it => ({
+                items={printOrder?.items?.map(it => ({
                     name: it.name,
                     qty: it.quantity,
                     rate: it.price,
@@ -2200,7 +2200,7 @@ function KravyPOS() {
                 customerAddress={printOrder?.customerAddress || ""}
                 orderNotes={printOrder?.notes || ""}
                 placeOfSupply=""
-                items={printOrder?.items.map((it: any) => ({
+                items={printOrder?.items?.map((it: any) => ({
                     name: it.name,
                     qty: Number(it.qty || it.quantity || 0),
                     rate: Number(it.rate || it.price || 0),
