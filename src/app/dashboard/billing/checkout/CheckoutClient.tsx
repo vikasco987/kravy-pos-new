@@ -1482,11 +1482,17 @@ export default function CheckoutClient() {
             })));
           }
           
+          // Inject token number if it was missing in the pre-captured HTML
+          let finalHtmlToPrint = htmlToPrint;
+          if (serverToken != null && finalHtmlToPrint) {
+              finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${serverToken}`);
+          }
+
           // ✅ Print KOT AFTER sync and state update
           setTimeout(() => {
             const returnTo = searchParams.get("returnTo");
             
-            printKOT(htmlToPrint, () => {
+            printKOT(finalHtmlToPrint, () => {
               // This callback runs after the print job finishes (or right away if printing fails/is blocked)
               if (returnTo) {
                 const currentOrderId = finalOrderId || syncedOrderId;
