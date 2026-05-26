@@ -1396,8 +1396,8 @@ export default function CheckoutClient() {
     if (receiptRef.current) runPrintJob("bill", receiptRef.current.innerHTML);
   };
 
-  const printKOT = () => {
-    if (kotRef.current) runPrintJob("kot", kotRef.current.innerHTML);
+  const printKOT = (callback?: () => void) => {
+    if (kotRef.current) runPrintJob("kot", kotRef.current.innerHTML, callback);
   };
 
   const handlePrintKOT = async () => {
@@ -1473,27 +1473,28 @@ export default function CheckoutClient() {
           
           // ✅ Print KOT AFTER sync and state update
           setTimeout(() => {
-            printKOT();
+            const returnTo = searchParams.get("returnTo");
+            
+            printKOT(() => {
+              // This callback runs after the print job finishes (or right away if printing fails/is blocked)
+              if (returnTo) {
+                const currentOrderId = finalOrderId || syncedOrderId;
+                const tableId = searchParams.get("tableId");
+                const tableName = searchParams.get("tableName");
+                
+                const query = new URLSearchParams();
+                if (tableId) query.set("tableId", tableId);
+                if (tableName) query.set("tableName", tableName);
+                if (currentOrderId) query.set("orderId", currentOrderId);
+                query.set("refresh", Date.now().toString());
+
+                router.push(`${returnTo.split('?')[0]}?${query.toString()}`);
+              }
+            });
             toast.success("KOT Printed & Order Synced! ✅");
-          }, 1000); // Increased timeout further for slow DOM updates
-
-          const returnTo = searchParams.get("returnTo");
-          if (returnTo) {
-            setTimeout(() => {
-              const currentOrderId = finalOrderId || syncedOrderId;
-              const tableId = searchParams.get("tableId");
-              const tableName = searchParams.get("tableName");
-              
-              const query = new URLSearchParams();
-              if (tableId) query.set("tableId", tableId);
-              if (tableName) query.set("tableName", tableName);
-              if (currentOrderId) query.set("orderId", currentOrderId);
-              query.set("refresh", Date.now().toString());
-
-              router.push(`${returnTo.split('?')[0]}?${query.toString()}`);
-            }, 100);
-            return;
-          }
+          }, 500); // 500ms for DOM update to reflect new items
+          
+          if (searchParams.get("returnTo")) return; // Prevent any other actions if returning
         } else {
           const errData = await res.json().catch(() => ({}));
           console.error("SYNC_ERROR:", errData);
