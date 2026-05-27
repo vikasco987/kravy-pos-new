@@ -2055,11 +2055,7 @@ function KravyPOS() {
                                             </div>
 
                                             {/* Action Buttons */}
-                                            <div className="px-4 pb-4 grid grid-cols-4 gap-2">
-                                                <button onClick={() => setActiveTab("dashboard")} className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-amber-200 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-500 hover:bg-amber-100">
-                                                    <Pause size={18} />
-                                                    <span className="text-[9px] font-black uppercase mt-1">Hold</span>
-                                                </button>
+                                            <div className="px-4 pb-4 grid grid-cols-2 gap-2">
                                                 <button onClick={() => setActiveTab("dashboard")} className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
                                                     <Save size={18} />
                                                     <span className="text-[9px] font-black uppercase mt-1">Save</span>
@@ -2067,14 +2063,6 @@ function KravyPOS() {
                                                 <button onClick={() => setShowPreview(true)} className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-blue-200 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-500 hover:bg-blue-100">
                                                     <Eye size={18} />
                                                     <span className="text-[9px] font-black uppercase mt-1">Preview</span>
-                                                </button>
-                                                <button onClick={() => {
-                                                    setPrintOrder(activeOrderForSelected);
-                                                    setPrintTable(selectedTable);
-                                                    setPrintMode("KOT");
-                                                }} className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-orange-200 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-500 hover:bg-orange-100">
-                                                    <Receipt size={18} />
-                                                    <span className="text-[9px] font-black uppercase mt-1">KOT</span>
                                                 </button>
                                             </div>
                                         </div>
