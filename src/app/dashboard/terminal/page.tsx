@@ -2126,10 +2126,12 @@ function KravyPOS() {
                                         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161821] mt-auto">
                                             <button 
                                                 onClick={async () => {
+                                                    const orderToPrint = activeOrderForSelected;
+                                                    const tableToPrint = selectedTable;
                                                     await handleCheckout(activeOrderForSelected.id);
-                                                    setPrintOrder(activeOrderForSelected);
-                                                    setPrintTable(selectedTable);
-                                                    setPrintMode("BILL");
+                                                    setTimeout(() => {
+                                                        handlePrint("BILL", orderToPrint, tableToPrint as any);
+                                                    }, 500);
                                                 }}
                                                 disabled={isSettling}
                                                 className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
