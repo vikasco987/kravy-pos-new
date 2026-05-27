@@ -1919,22 +1919,22 @@ function KravyPOS() {
                                         {/* Table */}
                                         <div className="flex-1 overflow-y-auto">
                                             {settleTab === "ITEMS" ? (
-                                                <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                                                    <thead className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-200 dark:bg-slate-800/20">
+                                                <table className="w-full text-left text-sm text-slate-800 dark:text-slate-200 border-collapse border border-slate-300 dark:border-slate-800">
+                                                    <thead className="text-sm text-slate-900 dark:text-white bg-slate-100 dark:bg-[#1a1a1a]">
                                                         <tr>
-                                                            <th className="px-5 py-4 font-medium">Item Name</th>
-                                                            <th className="px-5 py-4 font-medium text-center">Qty</th>
-                                                            <th className="px-5 py-4 font-medium text-right">Price</th>
-                                                            <th className="px-5 py-4 font-medium text-right">Total</th>
+                                                            <th className="px-5 py-4 font-bold border border-slate-300 dark:border-slate-800">Item Name</th>
+                                                            <th className="px-5 py-4 font-bold text-center border border-slate-300 dark:border-slate-800">Qty</th>
+                                                            <th className="px-5 py-4 font-bold text-center border border-slate-300 dark:border-slate-800">Price</th>
+                                                            <th className="px-5 py-4 font-bold text-center border border-slate-300 dark:border-slate-800">Total</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody>
+                                                    <tbody className="bg-white dark:bg-[#111111]">
                                                         {activeOrderForSelected.items?.map((it, idx) => (
-                                                            <tr key={idx} className="border-b border-slate-200 dark:border-slate-800/50 hover:bg-slate-50 dark:bg-slate-200 dark:bg-slate-800/20">
-                                                                <td className="px-5 py-4 font-medium">{it.name}</td>
-                                                                <td className="px-5 py-4 text-center">{it.quantity}</td>
-                                                                <td className="px-5 py-4 text-right">₹{it.price}</td>
-                                                                <td className="px-5 py-4 text-right font-semibold">₹{it.price * it.quantity}</td>
+                                                            <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">
+                                                                <td className="px-5 py-4 font-semibold border border-slate-300 dark:border-slate-800">{it.name}</td>
+                                                                <td className="px-5 py-4 text-center border border-slate-300 dark:border-slate-800">{it.quantity}</td>
+                                                                <td className="px-5 py-4 text-center border border-slate-300 dark:border-slate-800">₹ {it.price}</td>
+                                                                <td className="px-5 py-4 text-center font-bold border border-slate-300 dark:border-slate-800">₹ {it.price * it.quantity}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
