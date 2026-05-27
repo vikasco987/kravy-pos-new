@@ -1939,9 +1939,52 @@ function KravyPOS() {
                                                         ))}
                                                     </tbody>
                                                 </table>
+                                            ) : settleTab === "KOT" ? (
+                                                <div className="h-full flex flex-col p-4">
+                                                    {(() => {
+                                                        const kotList = activeOrderForSelected?.kotNumbers || [];
+                                                        if (kotList.length === 0) {
+                                                            return (
+                                                                <div className="h-full flex flex-col items-center justify-center opacity-40">
+                                                                    <Receipt size={32} className="text-slate-400 mb-4" />
+                                                                    <p className="text-xs font-black uppercase tracking-widest text-slate-500">No KOT History Found</p>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return (
+                                                            <div className="space-y-3">
+                                                                {kotList.map((kn: number, i: number) => (
+                                                                    <div key={kn} className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-md rounded-xl p-4 border border-slate-200 dark:border-slate-700/50 flex items-center justify-between">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                                                                                <ChefHat size={16} className="text-indigo-600 dark:text-indigo-400" />
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-sm font-bold text-slate-900 dark:text-slate-200">KOT #{kn}</p>
+                                                                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Round {i + 1}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">Printed</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
                                             ) : (
-                                                <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-sm">
-                                                    No history available.
+                                                <div className="h-full flex flex-col items-center justify-center p-8 opacity-40">
+                                                    <History size={32} className="text-slate-400 mb-4" />
+                                                    <p className="text-xs font-black uppercase tracking-widest text-slate-500">No Past Reservations</p>
+                                                    {selectedParty && (
+                                                        <div className="mt-6 p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 w-full max-w-sm text-left opacity-80">
+                                                            <p className="text-xs font-bold text-slate-900 dark:text-slate-200 mb-2 border-b border-slate-200 dark:border-slate-800 pb-2">Customer Profile</p>
+                                                            <div className="space-y-1 mt-2">
+                                                                <p className="text-[10px] uppercase font-bold text-slate-500">Name: <span className="text-slate-900 dark:text-slate-300">{selectedParty.name}</span></p>
+                                                                <p className="text-[10px] uppercase font-bold text-slate-500">Phone: <span className="text-slate-900 dark:text-slate-300">{selectedParty.phone}</span></p>
+                                                                <p className="text-[10px] uppercase font-bold text-slate-500">Total Visits: <span className="text-slate-900 dark:text-slate-300">{selectedParty.totalVisits || 0}</span></p>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
