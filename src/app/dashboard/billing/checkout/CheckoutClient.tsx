@@ -2695,149 +2695,151 @@ export default function CheckoutClient() {
             </div>
 
             {/* 🎟️ ADJUSTMENTS SECTION (Discount / Charges) */}
-            <div className="space-y-1.5">
-              <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
-                 <button 
-                  onClick={() => {
-                    if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
-                      toast.error("Permission Denied: Cannot apply discounts.");
-                      return;
-                    }
-                    setDiscountMode('PROMO');
-                  }}
-                  className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'PROMO' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
-                 >
-                   Promo
-                 </button>
-                 <button 
-                  onClick={() => {
-                    if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
-                      toast.error("Permission Denied: Cannot apply discounts.");
-                      return;
-                    }
-                    setDiscountMode('INSTANT');
-                  }}
-                  className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'INSTANT' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
-                 >
-                   Discount
-                 </button>
-                 <button 
-                  onClick={() => setDiscountMode('CHARGES')}
-                  className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'CHARGES' ? 'bg-indigo-600 text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
-                 >
-                   Charges
-                 </button>
-              </div>
-
-              {discountMode === 'CHARGES' ? (
-                <div className="grid grid-cols-1 gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <div className="flex gap-2">
-                    <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
-                      <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
-                        <Truck size={10} className="text-slate-500" />
-                      </div>
-                      <select 
-                        value={deliveryChargeType}
-                        onChange={(e) => { kravy.click(); setDeliveryChargeType(e.target.value as 'FLAT' | 'PERCENT'); }}
-                        className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-1.5 text-[9px] font-black outline-none cursor-pointer"
-                      >
-                        <option value="FLAT">₹</option>
-                        <option value="PERCENT">%</option>
-                      </select>
-                      <input 
-                        type="number"
-                        placeholder="Delivery Charge..."
-                        value={manualDeliveryCharge || ""}
-                        onChange={e => setManualDeliveryCharge(Number(e.target.value))}
-                        className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
-                      />
-                    </div>
-
-                    <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
-                      <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
-                        <ShoppingBag size={10} className="text-slate-500" />
-                      </div>
-                      <select 
-                        value={packagingChargeType}
-                        onChange={(e) => { kravy.click(); setPackagingChargeType(e.target.value as 'FLAT' | 'PERCENT'); }}
-                        className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-1.5 text-[9px] font-black outline-none cursor-pointer"
-                      >
-                        <option value="FLAT">₹</option>
-                        <option value="PERCENT">%</option>
-                      </select>
-                      <input 
-                        type="number"
-                        placeholder="Package Charge..."
-                        value={manualPackagingCharge || ""}
-                        onChange={e => setManualPackagingCharge(Number(e.target.value))}
-                        className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
-                    <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
-                      <Star size={10} className="text-slate-500" />
-                    </div>
-                    <select 
-                      value={serviceChargeType}
-                      onChange={(e) => { kravy.click(); setServiceChargeType(e.target.value as 'FLAT' | 'PERCENT'); }}
-                      className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-2 text-[9px] font-black outline-none cursor-pointer"
-                    >
-                      <option value="FLAT">₹ Flat Service Charge</option>
-                      <option value="PERCENT">% Percentage Service Charge</option>
-                    </select>
-                    <input 
-                      type="number"
-                      placeholder="Amount..."
-                      value={serviceCharge || ""}
-                      onChange={e => setServiceCharge(Number(e.target.value))}
-                      className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
-                    />
-                  </div>
+            {!(selectedTable !== "POS" && selectedTable !== "TAKEAWAY" && selectedTable !== "DELIVERY") && (
+              <div className="space-y-1.5">
+                <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
+                   <button 
+                    onClick={() => {
+                      if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
+                        toast.error("Permission Denied: Cannot apply discounts.");
+                        return;
+                      }
+                      setDiscountMode('PROMO');
+                    }}
+                    className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'PROMO' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+                   >
+                     Promo
+                   </button>
+                   <button 
+                    onClick={() => {
+                      if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
+                        toast.error("Permission Denied: Cannot apply discounts.");
+                        return;
+                      }
+                      setDiscountMode('INSTANT');
+                    }}
+                    className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'INSTANT' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+                   >
+                     Discount
+                   </button>
+                   <button 
+                    onClick={() => setDiscountMode('CHARGES')}
+                    className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'CHARGES' ? 'bg-indigo-600 text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+                   >
+                     Charges
+                   </button>
                 </div>
-              ) : (
-                <div className="flex gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                   {discountMode === 'PROMO' ? (
-                     <input 
-                       placeholder="PROMO CODE..."
-                       value={discountCode}
-                       onChange={e => setDiscountCode(e.target.value.toUpperCase())}
-                       disabled={!!appliedOffer}
-                       className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-xl outline-none text-[10px] font-black tracking-widest uppercase"
-                     />
-                   ) : (
-                     <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+
+                {discountMode === 'CHARGES' ? (
+                  <div className="grid grid-cols-1 gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="flex gap-2">
+                      <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                        <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
+                          <Truck size={10} className="text-slate-500" />
+                        </div>
                         <select 
-                          value={customDiscountType}
-                          onChange={(e) => { kravy.click(); setCustomDiscountType(e.target.value as 'PERCENT' | 'FLAT'); }}
-                          className="bg-slate-100 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-2.5 text-[10px] font-black outline-none cursor-pointer"
+                          value={deliveryChargeType}
+                          onChange={(e) => { kravy.click(); setDeliveryChargeType(e.target.value as 'FLAT' | 'PERCENT'); }}
+                          className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-1.5 text-[9px] font-black outline-none cursor-pointer"
                         >
-                          <option value="PERCENT">%</option>
                           <option value="FLAT">₹</option>
+                          <option value="PERCENT">%</option>
                         </select>
                         <input 
                           type="number"
-                          placeholder="Amount..."
-                          value={customDiscountValue}
-                          onChange={e => setCustomDiscountValue(e.target.value)}
-                          className="bg-transparent text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 outline-none text-[10px] font-black"
+                          placeholder="Delivery Charge..."
+                          value={manualDeliveryCharge || ""}
+                          onChange={e => setManualDeliveryCharge(Number(e.target.value))}
+                          className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
                         />
-                     </div>
-                   )}
-                   <button 
-                     onClick={appliedOffer || (discountMode === 'INSTANT' && customDiscountValue) ? removeCoupon : handleApplyCoupon}
-                     className={`px-4 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm ${
-                       appliedOffer || (discountMode === 'INSTANT' && customDiscountValue) 
-                       ? "bg-rose-500 text-white" 
-                       : "bg-[var(--kravy-brand)] text-white"
-                     }`}
-                   >
-                     {appliedOffer || (discountMode === 'INSTANT' && customDiscountValue) ? "Clear" : "Apply"}
-                   </button>
-                </div>
-              )}
-            </div>
+                      </div>
+
+                      <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                        <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
+                          <ShoppingBag size={10} className="text-slate-500" />
+                        </div>
+                        <select 
+                          value={packagingChargeType}
+                          onChange={(e) => { kravy.click(); setPackagingChargeType(e.target.value as 'FLAT' | 'PERCENT'); }}
+                          className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-1.5 text-[9px] font-black outline-none cursor-pointer"
+                        >
+                          <option value="FLAT">₹</option>
+                          <option value="PERCENT">%</option>
+                        </select>
+                        <input 
+                          type="number"
+                          placeholder="Package Charge..."
+                          value={manualPackagingCharge || ""}
+                          onChange={e => setManualPackagingCharge(Number(e.target.value))}
+                          className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                      <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
+                        <Star size={10} className="text-slate-500" />
+                      </div>
+                      <select 
+                        value={serviceChargeType}
+                        onChange={(e) => { kravy.click(); setServiceChargeType(e.target.value as 'FLAT' | 'PERCENT'); }}
+                        className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-2 text-[9px] font-black outline-none cursor-pointer"
+                      >
+                        <option value="FLAT">₹ Flat Service Charge</option>
+                        <option value="PERCENT">% Percentage Service Charge</option>
+                      </select>
+                      <input 
+                        type="number"
+                        placeholder="Amount..."
+                        value={serviceCharge || ""}
+                        onChange={e => setServiceCharge(Number(e.target.value))}
+                        className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                     {discountMode === 'PROMO' ? (
+                       <input 
+                         placeholder="PROMO CODE..."
+                         value={discountCode}
+                         onChange={e => setDiscountCode(e.target.value.toUpperCase())}
+                         disabled={!!appliedOffer}
+                         className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-xl outline-none text-[10px] font-black tracking-widest uppercase"
+                       />
+                     ) : (
+                       <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                          <select 
+                            value={customDiscountType}
+                            onChange={(e) => { kravy.click(); setCustomDiscountType(e.target.value as 'PERCENT' | 'FLAT'); }}
+                            className="bg-slate-100 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-2.5 text-[10px] font-black outline-none cursor-pointer"
+                          >
+                            <option value="PERCENT">%</option>
+                            <option value="FLAT">₹</option>
+                          </select>
+                          <input 
+                            type="number"
+                            placeholder="Amount..."
+                            value={customDiscountValue}
+                            onChange={e => setCustomDiscountValue(e.target.value)}
+                            className="bg-transparent text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 outline-none text-[10px] font-black"
+                          />
+                       </div>
+                     )}
+                     <button 
+                       onClick={appliedOffer || (discountMode === 'INSTANT' && customDiscountValue) ? removeCoupon : handleApplyCoupon}
+                       className={`px-4 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm ${
+                         appliedOffer || (discountMode === 'INSTANT' && customDiscountValue) 
+                         ? "bg-rose-500 text-white" 
+                         : "bg-[var(--kravy-brand)] text-white"
+                       }`}
+                     >
+                       {appliedOffer || (discountMode === 'INSTANT' && customDiscountValue) ? "Clear" : "Apply"}
+                     </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 💳 PAYMENT METHODS AND ACTIONS */}
             {!(selectedTable !== "POS" && selectedTable !== "TAKEAWAY" && selectedTable !== "DELIVERY") ? (
