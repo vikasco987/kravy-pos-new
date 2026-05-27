@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { orderId, status, isKotPrinted, isBillPrinted, items, total, isDeleted, skipInventoryDeduction } = await req.json();
+        const { orderId, status, isKotPrinted, isBillPrinted, items, total, isDeleted, skipInventoryDeduction, customerName, customerPhone } = await req.json();
 
         if (!orderId) {
             return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
@@ -58,6 +58,8 @@ export async function PATCH(req: NextRequest) {
         if (items) data.items = items;
         if (typeof total === "number") data.total = total;
         if (typeof isDeleted === "boolean") data.isDeleted = isDeleted;
+        if (customerName !== undefined) data.customerName = customerName;
+        if (customerPhone !== undefined) data.customerPhone = customerPhone;
 
         // ✅ ALWAYS GENERATE TOKEN IF MISSING (Or if new items added)
         try {

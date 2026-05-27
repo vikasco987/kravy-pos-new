@@ -241,6 +241,9 @@ function KravyPOS() {
     const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
     const [showQRTemplate, setShowQRTemplate] = useState(false);
     const [qrContext, setQrContext] = useState<{ tableId: string, tableName: string } | null>(null);
+    const [showCustomerModal, setShowCustomerModal] = useState(false);
+    const [editCustomerName, setEditCustomerName] = useState("");
+    const [editCustomerPhone, setEditCustomerPhone] = useState("");
     const [isMobile, setIsMobile] = useState(false);
     const [selectedParty, setSelectedParty] = useState<any>(null);
     const [clock, setClock] = useState("");
@@ -1885,9 +1888,19 @@ function KravyPOS() {
                                         <div className="p-5 border-b border-slate-200 dark:border-slate-800/50 flex items-center justify-between">
                                             <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
                                                 <User size={18} className="text-emerald-600 dark:text-emerald-500" />
-                                                <span className="text-sm font-medium">{activeOrderForSelected.customerName || "Guest (+1)"}</span>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-medium">{activeOrderForSelected.customerName || "Guest (+1)"}</span>
+                                                    {activeOrderForSelected.customerPhone && <span className="text-[10px] text-slate-400 dark:text-slate-500">{activeOrderForSelected.customerPhone}</span>}
+                                                </div>
                                             </div>
-                                            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-200 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 transition-colors">
+                                            <button 
+                                                onClick={() => {
+                                                    setEditCustomerName(activeOrderForSelected.customerName || "");
+                                                    setEditCustomerPhone(activeOrderForSelected.customerPhone || "");
+                                                    setShowCustomerModal(true);
+                                                }}
+                                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-200 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 transition-colors"
+                                            >
                                                 <Edit3 size={14} /> Edit Details
                                             </button>
                                         </div>
@@ -2319,6 +2332,54 @@ function KravyPOS() {
                             <div className="flex items-center gap-3 mt-6">
                                 <button onClick={() => setIsTableModalOpen(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-black text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
                                 <button onClick={handleSaveTable} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/25">{editingTable ? "Save Changes" : "Add Table"}</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+                
+                {/* Customer Details Modal */}
+                {showCustomerModal && activeOrderForSelected && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCustomerModal(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-6 w-full max-w-sm border border-slate-200 dark:border-slate-800 z-[101]">
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <User size={20} className="text-indigo-600 dark:text-indigo-400" />
+                                Edit Customer
+                            </h2>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-slate-500 px-1">Customer Name</label>
+                                    <input autoFocus type="text" value={editCustomerName} onChange={(e) => setEditCustomerName(e.target.value)} className="w-full mt-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all" placeholder="e.g. John Doe" />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-slate-500 px-1">Phone Number (Optional)</label>
+                                    <input type="tel" value={editCustomerPhone} onChange={(e) => setEditCustomerPhone(e.target.value)} className="w-full mt-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all" placeholder="e.g. +91 9876543210" />
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 mt-6">
+                                <button onClick={() => setShowCustomerModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-black text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                                <button onClick={async () => {
+                                    try {
+                                        const res = await fetch("/api/orders", {
+                                            method: "PATCH",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({
+                                                orderId: activeOrderForSelected.id,
+                                                customerName: editCustomerName,
+                                                customerPhone: editCustomerPhone
+                                            })
+                                        });
+                                        if (res.ok) {
+                                            toast.success("Customer details saved");
+                                            fetchData(false, true);
+                                            setShowCustomerModal(false);
+                                        } else {
+                                            toast.error("Failed to save details");
+                                        }
+                                    } catch (e) {
+                                        toast.error("An error occurred");
+                                    }
+                                }} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/25">Save</button>
                             </div>
                         </motion.div>
                     </div>
