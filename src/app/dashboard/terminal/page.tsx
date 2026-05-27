@@ -1045,11 +1045,11 @@ function KravyPOS() {
     };
 
     const statusConfig = {
-        FREE: { bg: "bg-gradient-to-br from-white to-slate-100/50 dark:from-slate-900 dark:to-slate-950", border: "border-slate-200 dark:border-slate-800", text: "text-slate-400", dot: "bg-slate-300", ring: "ring-slate-100", label: "Vacant", glass: "bg-slate-500/5 border-slate-500/10", glow: "shadow-sm" },
-        PENDING: { bg: "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20", border: "border-amber-100 dark:border-amber-900/40", text: "text-amber-600", dot: "bg-amber-500", ring: "ring-amber-100", label: "Reserved", glass: "bg-amber-500/10 border-amber-500/20", glow: "shadow-lg shadow-amber-500/5" },
-        ACCEPTED: { bg: "bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/20 dark:to-blue-950/20", border: "border-indigo-100 dark:border-indigo-900/40", text: "text-indigo-600", dot: "bg-indigo-500", ring: "ring-indigo-100", label: "Accepted", glass: "bg-indigo-500/10 border-indigo-500/20", glow: "shadow-lg shadow-indigo-500/5" },
-        PREPARING: { bg: "bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/20 dark:to-indigo-950/20", border: "border-violet-100 dark:border-violet-900/40", text: "text-violet-600", dot: "bg-violet-600", ring: "ring-violet-200", label: "Preparing", glass: "bg-violet-600/10 border-violet-600/20", glow: "shadow-xl shadow-violet-500/10" },
-        READY: { bg: "bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20", border: "border-emerald-100 dark:border-emerald-900/40", text: "text-emerald-600", dot: "bg-emerald-600", ring: "ring-emerald-200", label: "Serve Now", glass: "bg-emerald-600/10 border-emerald-600/20", glow: "shadow-2xl shadow-emerald-500/20" }
+        FREE: { bg: "bg-white/40 dark:bg-slate-900/40 backdrop-blur-md", border: "border-white/50 dark:border-slate-800/50", text: "text-slate-400 dark:text-slate-500", dot: "bg-slate-300 dark:bg-slate-600", ring: "ring-slate-100", label: "Vacant", glass: "bg-slate-500/5 border-slate-500/10", glow: "shadow-sm" },
+        PENDING: { bg: "bg-amber-50/60 dark:bg-amber-900/30 backdrop-blur-md", border: "border-amber-200/50 dark:border-amber-700/40", text: "text-amber-600 dark:text-amber-400", dot: "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]", ring: "ring-amber-100", label: "Reserved", glass: "bg-amber-500/10 border-amber-500/20", glow: "shadow-lg shadow-amber-500/10" },
+        ACCEPTED: { bg: "bg-indigo-50/60 dark:bg-indigo-900/30 backdrop-blur-md", border: "border-indigo-200/50 dark:border-indigo-700/40", text: "text-indigo-600 dark:text-indigo-400", dot: "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]", ring: "ring-indigo-100", label: "Accepted", glass: "bg-indigo-500/10 border-indigo-500/20", glow: "shadow-lg shadow-indigo-500/10" },
+        PREPARING: { bg: "bg-violet-50/60 dark:bg-violet-900/30 backdrop-blur-md", border: "border-violet-200/50 dark:border-violet-700/40", text: "text-violet-600 dark:text-violet-400", dot: "bg-violet-600 shadow-[0_0_8px_rgba(124,58,237,0.6)]", ring: "ring-violet-200", label: "Preparing", glass: "bg-violet-600/10 border-violet-600/20", glow: "shadow-xl shadow-violet-500/15" },
+        READY: { bg: "bg-emerald-50/60 dark:bg-emerald-900/30 backdrop-blur-md", border: "border-emerald-200/50 dark:border-emerald-700/40", text: "text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]", ring: "ring-emerald-200", label: "Serve Now", glass: "bg-emerald-600/10 border-emerald-600/20", glow: "shadow-2xl shadow-emerald-500/25" }
     };
 
     // Helper: Aggregate items for Chef
@@ -1072,11 +1072,7 @@ function KravyPOS() {
 
     return (
         <div 
-            className={`flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300 relative scale-[0.98] origin-top`}
-            style={{
-                backgroundImage: 'radial-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)',
-                backgroundSize: '24px 24px'
-            }}
+            className={`flex flex-col h-screen overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-50 via-indigo-50/20 to-slate-100 dark:from-[#0B1B48] dark:via-[#081028] dark:to-slate-950 transition-colors duration-500 relative`}
         >
             {/* ═══ COMBINATION SELECTION MODAL (MOVED TO TOP) ═══ */}
             <AnimatePresence>
@@ -1298,15 +1294,15 @@ function KravyPOS() {
 
                                     {/* Floor/Zone Selection */}
                                     {availableZones.length > 0 && (
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-1 h-3 bg-indigo-500 rounded-full" />
-                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Floor Management</span>
+                                        <div className="flex flex-col gap-2 mt-2">
+                                            <div className="flex items-center gap-2 px-1">
+                                                <div className="w-1.5 h-3 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                                                <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Floor Zones</span>
                                             </div>
-                                            <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                                            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 px-1">
                                                 <button
                                                     onClick={() => { kravy.click(); setActiveZone("ALL"); }}
-                                                    className={`px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-tight transition-all border whitespace-nowrap ${activeZone === "ALL" ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20" : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-500 hover:border-slate-300"}`}
+                                                    className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border backdrop-blur-md whitespace-nowrap ${activeZone === "ALL" ? "bg-indigo-600/90 border-indigo-500/50 text-white shadow-[0_4px_20px_rgba(79,70,229,0.3)] scale-[1.02]" : "bg-white/60 dark:bg-slate-800/60 border-slate-200/50 dark:border-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-white/80 dark:hover:bg-slate-700"}`}
                                                 >
                                                     All Floors
                                                 </button>
@@ -1314,7 +1310,7 @@ function KravyPOS() {
                                                     <button
                                                         key={z}
                                                         onClick={() => { kravy.click(); setActiveZone(z); }}
-                                                        className={`px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-tight transition-all border whitespace-nowrap ${activeZone === z ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20" : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-500 hover:border-slate-300"}`}
+                                                        className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border backdrop-blur-md whitespace-nowrap ${activeZone === z ? "bg-indigo-600/90 border-indigo-500/50 text-white shadow-[0_4px_20px_rgba(79,70,229,0.3)] scale-[1.02]" : "bg-white/60 dark:bg-slate-800/60 border-slate-200/50 dark:border-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-white/80 dark:hover:bg-slate-700"}`}
                                                     >
                                                         {z}
                                                     </button>
@@ -1325,8 +1321,8 @@ function KravyPOS() {
                                 </div>
 
                                 {/* Tables Grid */}
-                                <div className="flex-1 overflow-y-auto p-3 scrollbar-hide bg-[#F8FAFC]/50 dark:bg-slate-950/50 backdrop-blur-sm">
-                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-2">
+                                <div className="flex-1 overflow-y-auto p-4 scrollbar-hide bg-white/10 dark:bg-[#0B1B48]/10 backdrop-blur-xl border-t border-white/20 dark:border-slate-800/50">
+                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-3">
                                         {filteredTables.map((t) => {
                                             const cfg = statusConfig[t.status as keyof typeof statusConfig] || statusConfig.FREE;
                                             const isActive = selectedTableId === t.id;
@@ -1464,16 +1460,17 @@ function KravyPOS() {
                             </div>
 
                             {/* RIGHT PANEL */}
-                            <div className="flex-1 flex flex-col overflow-hidden bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-slate-800/40 rounded-3xl shadow-sm transition-colors duration-300">
+                            <div className="flex-1 flex flex-col overflow-hidden bg-white/40 dark:bg-[#0B1B48]/40 backdrop-blur-2xl border border-white/60 dark:border-indigo-500/20 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-colors duration-500 relative">
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent dark:from-indigo-500/5 dark:to-transparent pointer-events-none" />
                                 {selectedTable ? (
                                     <motion.div
                                         key={selectedTable.id}
                                         initial={{ opacity: 0, x: 10 }}
                                         animate={{ opacity: 1, x: 0 }}
-                                        className="h-full flex flex-col"
+                                        className="h-full flex flex-col relative z-10"
                                     >
                                         {/* Order Header: Horizontal Flow Design */}
-                                        <div className="px-3 sm:px-5 py-2 sm:py-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1.5 sm:gap-3 transition-colors duration-300">
+                                        <div className="px-3 sm:px-5 py-2 sm:py-3 border-b border-white/50 dark:border-slate-800/50 flex items-center gap-1.5 sm:gap-3 transition-colors duration-300 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md">
                                             {/* 1. Avatar (Table ID) */}
                                                 <motion.div
                                                     initial={{ rotate: -10, scale: 0.8 }}
@@ -1641,14 +1638,14 @@ function KravyPOS() {
 
                                                         return sortedRounds.map((roundObj, rIdx) => (
                                                             <div key={roundObj.id} className="space-y-2 pb-6 last:pb-2">
-                                                                <div className="flex items-center gap-3 px-2 py-1">
-                                                                    <div className={`h-[1.5px] flex-1 ${roundObj.id === "New Items" ? "bg-amber-100" : "bg-indigo-100"}`} />
+                                                                <div className="flex items-center gap-1 px-2 py-3">
+                                                                    <div className={`h-[1.5px] flex-1 rounded-full ${roundObj.id === "New Items" ? "bg-gradient-to-r from-transparent to-amber-500 shadow-[0_0_8px_rgba(251,191,36,0.6)]" : "bg-gradient-to-r from-transparent to-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]"}`} />
                                                                     <div className="flex flex-col items-center">
-                                                                        <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${roundObj.id === "New Items" ? "text-amber-500" : "text-indigo-500"}`}>
+                                                                        <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full border backdrop-blur-md ${roundObj.id === "New Items" ? "text-amber-500 border-amber-500/30 bg-amber-500/10" : "text-indigo-400 border-indigo-500/30 bg-indigo-500/10"}`}>
                                                                             {roundObj.label}
                                                                         </span>
                                                                     </div>
-                                                                    <div className={`h-[1.5px] flex-1 ${roundObj.id === "New Items" ? "bg-amber-100" : "bg-indigo-100"}`} />
+                                                                    <div className={`h-[1.5px] flex-1 rounded-full ${roundObj.id === "New Items" ? "bg-gradient-to-l from-transparent to-amber-500 shadow-[0_0_8px_rgba(251,191,36,0.6)]" : "bg-gradient-to-l from-transparent to-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]"}`} />
                                                                 </div>
                                                                 {roundObj.items?.map((item: any, idx: number) => (
                                                                     <motion.div
@@ -1656,7 +1653,7 @@ function KravyPOS() {
                                                                         initial={{ opacity: 0, y: 8 }}
                                                                         animate={{ opacity: 1, y: 0 }}
                                                                         transition={{ delay: idx * 0.03 }}
-                                                                        className={`flex items-center justify-between px-3 py-1.5 min-h-[52px] rounded-xl border transition-all duration-300 group bg-white dark:bg-slate-900/70 border-slate-100 dark:border-slate-800 hover:border-[#6D3BFF]/20 hover:shadow-[0_8px_30px_rgba(15,23,42,0.04)] ${roundObj.id === "New Items" ? "ring-1 ring-amber-200/40" : ""}`}
+                                                                        className={`flex items-center justify-between px-3 py-1.5 min-h-[52px] rounded-2xl border transition-all duration-300 group bg-white/60 dark:bg-slate-900/40 backdrop-blur-md border-white/50 dark:border-slate-800/50 hover:border-indigo-500/30 hover:bg-white/90 dark:hover:bg-slate-800/60 hover:shadow-[0_8px_30px_rgba(99,102,241,0.1)] ${roundObj.id === "New Items" ? "ring-1 ring-amber-500/20 shadow-[0_0_15px_rgba(251,191,36,0.05)]" : ""}`}
                                                                     >
                                                                         <div className="flex items-center gap-3 flex-1 min-w-0">
                                                                             {(() => {
@@ -2314,8 +2311,8 @@ function KravyPOS() {
             <AnimatePresence>
                 {isTableModalOpen && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsTableModalOpen(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-6 w-full max-w-sm border border-slate-200 dark:border-slate-800 z-[101]">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsTableModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-xl" />
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.2)] p-6 w-full max-w-sm border border-white/50 dark:border-slate-700/50 z-[101]">
                             <h2 className="text-xl font-black text-slate-900 dark:text-white mb-4">{editingTable ? "Edit Table" : "Add Table"}</h2>
                             <div className="space-y-4">
                                 <div>
@@ -2340,8 +2337,8 @@ function KravyPOS() {
                 {/* Customer Details Modal */}
                 {showCustomerModal && activeOrderForSelected && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCustomerModal(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-6 w-full max-w-sm border border-slate-200 dark:border-slate-800 z-[101]">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCustomerModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-xl" />
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.2)] p-6 w-full max-w-sm border border-white/50 dark:border-slate-700/50 z-[101]">
                             <h2 className="text-xl font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                                 <User size={20} className="text-indigo-600 dark:text-indigo-400" />
                                 Edit Customer
