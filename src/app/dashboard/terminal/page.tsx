@@ -2115,7 +2115,7 @@ function KravyPOS() {
                                                     <Save size={18} />
                                                     <span className="text-[9px] font-black uppercase mt-1">Save</span>
                                                 </button>
-                                                <button onClick={() => setShowPreview(true)} className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-blue-200 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-500 hover:bg-blue-100">
+                                                <button onClick={() => { if (activeOrderForSelected) setPrintOrder(activeOrderForSelected); setShowPreview(true); }} className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-blue-200 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-500 hover:bg-blue-100">
                                                     <Eye size={18} />
                                                     <span className="text-[9px] font-black uppercase mt-1">Preview</span>
                                                 </button>

@@ -159,12 +159,12 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
           <style dangerouslySetInnerHTML={{ __html: previewCss }} />
           
           <div 
-            className="bg-white text-black p-4 shadow-xl transition-transform origin-top mx-auto"
+            className="bg-white text-black p-4 shadow-xl mx-auto"
             style={{ 
               width: is80 ? '80mm' : '58mm', 
               minHeight: '100px',
-              transform: `scale(${previewZoom * 1.5})`, // 1.5x base scale so it's readable on screen
-              marginBottom: `${previewZoom * 100}px` // extra space for transform
+              zoom: previewZoom * 1.5, // Use zoom to correctly scale layout without clipping bugs
+              marginBottom: '40px'
             }}
           >
             {/* Dynamic style representation */}
