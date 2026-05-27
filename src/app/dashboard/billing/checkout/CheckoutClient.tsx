@@ -1487,6 +1487,12 @@ export default function CheckoutClient() {
           if (serverToken != null && finalHtmlToPrint) {
               finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${serverToken}`);
           }
+          
+          const serverOrderNumber = data.orderNumber || data.order?.orderNumber;
+          if (serverOrderNumber && finalHtmlToPrint) {
+              finalHtmlToPrint = finalHtmlToPrint.replace(new RegExp(billNumber, 'g'), serverOrderNumber);
+              setBillNumber(serverOrderNumber);
+          }
 
           // ✅ Print KOT AFTER sync and state update
           setTimeout(() => {
