@@ -178,6 +178,42 @@ export async function POST(req: NextRequest) {
         }
 
 
+        // ==========================================
+        // PUSH NOTIFICATION LOGIC
+        // ==========================================
+        try {
+            const owner = await prisma.user.findUnique({
+                where: { clerkId: clerkUserId }
+            });
+            if (owner?.privateMetadata) {
+                const metadata = owner.privateMetadata as any;
+                const pushToken = metadata.expoPushToken;
+                if (pushToken) {
+                    const pushMessage = {
+                        to: pushToken,
+                        sound: 'default',
+                        title: '🚨 NEW URGENT ORDER!',
+                        body: `Table ${tableRecord?.name || 'Online'} placed a new order of ₹${total}!`,
+                        data: { orderId: order.id },
+                        priority: 'high',
+                        channelId: 'urgent-orders'
+                    };
+                    await fetch('https://exp.host/--/api/v2/push/send', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Accept-encoding': 'gzip, deflate',
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(pushMessage),
+                    });
+                }
+            }
+        } catch (pushErr) {
+            console.error("PUSH_NOTIFICATION_ERROR:", pushErr);
+        }
+        // ==========================================
+
         return NextResponse.json(order);
     } catch (error) {
         console.error("ORDER_CREATE_ERROR:", error);
