@@ -2132,7 +2132,7 @@ function KravyPOS() {
                 receiptRef={billReceiptRef}
                 kotRef={kotReceiptRef}
                 business={business}
-                billNumber={printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
+                billNumber={printOrder?.orderNumber || printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
                 billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -') : new Date().toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -')}
                 tokenNumber={(() => {
                     const tn = printOrder?.tokenNumber;
@@ -2186,7 +2186,7 @@ function KravyPOS() {
                 previewZoom={previewZoom}
                 setPreviewZoom={setPreviewZoom}
                 business={business}
-                billNumber={printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
+                billNumber={printOrder?.orderNumber || printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
                 billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}
                 tokenNumber={(() => {
                     const tn = printOrder?.tokenNumber || activeOrderForSelected?.tokenNumber;

@@ -84,7 +84,6 @@ export async function PATCH(req: NextRequest) {
                     await prisma.businessProfile.update({
                         where: { userId: effectiveId },
                         data: {
-                orderNumber: orderNumber,
                             lastTokenNumber: nextToken,
                             lastTokenDate: new Date()
                         }
@@ -253,6 +252,7 @@ export async function POST(req: NextRequest) {
                 preferences: preferences || null,
                 isKotPrinted: isKotPrinted || false,
                 isBillPrinted: false,
+                orderNumber: orderNumber,
                 tokenNumber: nextToken, // Legacy
                 kotNumbers: [nextToken], // Store as first KOT/Token number
             },
