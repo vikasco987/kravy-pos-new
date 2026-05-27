@@ -1852,14 +1852,15 @@ function KravyPOS() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="h-full flex flex-col items-center justify-center p-4 lg:p-8 overflow-y-auto no-scrollbar bg-slate-50 dark:bg-[#0f111a]"
+                            className="h-full flex flex-col p-4 lg:p-6 xl:p-8 overflow-y-auto no-scrollbar"
                         >
                             {selectedTable && activeOrderForSelected ? (
-                                <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 w-full max-w-7xl h-full lg:h-auto max-h-[90vh]">
+                                <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 w-full h-full min-h-0">
                                     
                                     {/* LEFT PANEL: Order Summary */}
-                                    <div className="bg-white dark:bg-[#1a1d27] rounded-xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl">
-                                        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                                    <div className="bg-white/40 dark:bg-[#0B1B48]/40 backdrop-blur-2xl rounded-3xl flex flex-col overflow-hidden border border-white/60 dark:border-indigo-500/20 shadow-[0_8px_32px_rgba(0,0,0,0.1)] relative">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent dark:from-indigo-500/5 dark:to-transparent pointer-events-none" />
+                                        <div className="p-5 border-b border-white/50 dark:border-slate-800/50 flex items-center justify-between bg-white/30 dark:bg-slate-900/30 backdrop-blur-md relative z-10">
                                             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-200">Order Summary</h3>
                                         </div>
                                         
@@ -1947,10 +1948,11 @@ function KravyPOS() {
                                     </div>
 
                                     {/* RIGHT PANEL: Billing Calculation */}
-                                    <div className="bg-white dark:bg-[#1a1d27] rounded-xl flex flex-col border border-slate-200 dark:border-slate-800 shadow-2xl relative w-full h-full overflow-hidden">
-                                        <div className="flex-1 overflow-y-auto no-scrollbar">
+                                    <div className="bg-white/40 dark:bg-[#0B1B48]/40 backdrop-blur-2xl rounded-3xl flex flex-col border border-white/60 dark:border-indigo-500/20 shadow-[0_8px_32px_rgba(0,0,0,0.1)] relative w-full h-full overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent dark:from-indigo-500/5 dark:to-transparent pointer-events-none" />
+                                        <div className="flex-1 overflow-y-auto no-scrollbar relative z-10">
                                             {/* Totals Section */}
-                                            <div className="p-5 border-b border-[var(--kravy-border)] dark:border-slate-800 space-y-2">
+                                            <div className="p-5 border-b border-white/50 dark:border-slate-800/50 space-y-2 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md">
                                                 <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
                                                     <span>Items Base</span>
                                                     <span>₹{settlementBill?.subtotal.toFixed(2)}</span>
