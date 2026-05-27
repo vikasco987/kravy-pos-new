@@ -978,6 +978,15 @@ function KravyPOS() {
                 await fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: targetOrderId, status: "COMPLETED" }) });
             }
 
+            // Free the table if it was occupied
+            if (order.table && order.table.id && order.table.name !== "POS" && order.table.name !== "TAKEAWAY" && order.table.name !== "DELIVERY") {
+                await fetch(`/api/tables`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: order.table.id, isOccupied: false, currentOrderId: null })
+                });
+            }
+
             if (!silent) {
                 kravy.payment();
                 toast.success("Transaction Finalized! 💰");
@@ -2126,11 +2135,10 @@ function KravyPOS() {
                                         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161821] mt-auto">
                                             <button 
                                                 onClick={async () => {
-                                                    const orderToPrint = activeOrderForSelected;
                                                     const tableToPrint = selectedTable;
-                                                    await handleCheckout(activeOrderForSelected.id);
+                                                    const finalOrder = await handleCheckout(activeOrderForSelected.id);
                                                     setTimeout(() => {
-                                                        handlePrint("BILL", orderToPrint, tableToPrint as any);
+                                                        handlePrint("BILL", finalOrder || activeOrderForSelected, tableToPrint as any);
                                                     }, 500);
                                                 }}
                                                 disabled={isSettling}
