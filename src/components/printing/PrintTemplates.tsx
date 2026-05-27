@@ -258,28 +258,28 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               <div className="font-black">No: {billNumber}</div>
               <div className="font-black">{billDate}</div>
             </div>
+            {(() => {
+              const tn = tokenNumber;
+              const displayToken = (() => {
+                if (tn == null || tn === "" || tn === "---" || tn === 0) return null;
+                if (typeof tn === 'object' && tn.$numberLong) return tn.$numberLong.toString().padStart(3, '0');
+                return tn.toString().padStart(3, '0');
+              })();
+
+              if (displayToken) {
+                return (
+                  <div className="text-right">
+                    <div style={{ fontSize: 'calc(var(--r-details-size) - 2px)', fontWeight: '800', textTransform: 'uppercase' }}>Token</div>
+                    <div style={{ fontSize: 'calc(var(--r-details-size) + 4px)', fontWeight: '900', lineHeight: '1' }}>#{displayToken}</div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         </div>
 
-        {/* 🔥 SIMPLE CLEAN TOKEN DISPLAY 🔥 */}
-        {(() => {
-          const tn = tokenNumber;
-          const displayToken = (() => {
-            if (tn == null || tn === "" || tn === "---" || tn === 0) return null;
-            if (typeof tn === 'object' && tn.$numberLong) return tn.$numberLong.toString().padStart(3, '0');
-            return tn.toString().padStart(3, '0');
-          })();
-
-          if (displayToken && s('showToken')) {
-            return (
-              <div style={{ textAlign: 'center', margin: '10px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '6px 0' }}>
-                <div style={{ fontSize: 'calc(var(--r-details-size) - 1px)', fontWeight: ps.receiptTokenWeight || '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Token No.</div>
-                <div style={{ fontSize: 'var(--r-token-size)', fontWeight: ps.receiptTokenWeight || '900', lineHeight: '1', marginTop: '4px' }}>#{displayToken}</div>
-              </div>
-            );
-          }
-          return null;
-        })()}
+        {/* Big centered token block is disabled to save space, moved to Bill Summary header above! */}
 
         {((customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && s('showCustomerDetails')) && (
           <div className={`mt-2 font-black ${s('sepCustomer') ? 'border-t-2 border-dashed border-black' : ''} pt-1`} style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
