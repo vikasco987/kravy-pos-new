@@ -154,12 +154,12 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
         </div>
 
         {/* Preview Area (Rendered like paper) */}
-        <div className="flex-1 overflow-auto bg-[#E5E5E5] dark:bg-[#1A1A1A] p-6 flex flex-col items-center justify-start">
+        <div className="flex-1 overflow-auto bg-[#E5E5E5] dark:bg-[#1A1A1A] p-6 text-center">
           {/* Dynamic styles injected locally for preview container */}
           <style dangerouslySetInnerHTML={{ __html: previewCss }} />
           
           <div 
-            className="bg-white text-black p-4 shadow-xl mx-auto"
+            className="bg-white text-black p-4 shadow-xl inline-block text-left"
             style={{ 
               width: is80 ? '80mm' : '58mm', 
               minHeight: '100px',
@@ -168,7 +168,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
             }}
           >
             {/* Dynamic style representation */}
-            <div className="bill-preview-dynamic leading-tight">
+            <div className="bill-preview-dynamic leading-tight break-words whitespace-normal overflow-hidden">
               {s('showLogo') && business?.logoUrl && (
                 <div className="flex justify-center mb-1">
                   <img src={business?.logoUrl} alt="Logo" className="max-h-[28mm] object-contain" />
