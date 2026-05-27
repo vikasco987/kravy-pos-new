@@ -1494,30 +1494,28 @@ export default function CheckoutClient() {
               setBillNumber(serverOrderNumber);
           }
 
-          // ✅ Print KOT AFTER sync and state update
-          setTimeout(() => {
-            const returnTo = searchParams.get("returnTo");
-            
-            printKOT(finalHtmlToPrint, () => {
-              // This callback runs after the print job finishes (or right away if printing fails/is blocked)
-              if (returnTo) {
-                const currentOrderId = finalOrderId || syncedOrderId;
-                const tableId = searchParams.get("tableId");
-                const tableName = searchParams.get("tableName");
-                
-                const query = new URLSearchParams();
-                if (tableId) query.set("tableId", tableId);
-                if (tableName) query.set("tableName", tableName);
-                if (currentOrderId) query.set("orderId", currentOrderId);
-                query.set("refresh", Date.now().toString());
+          // ✅ Print KOT immediately without 500ms timeout
+          const returnTo = searchParams.get("returnTo");
+          printKOT(finalHtmlToPrint, () => {
+            // This callback runs after the print job finishes
+            if (returnTo) {
+              const currentOrderId = finalOrderId || syncedOrderId;
+              const tableId = searchParams.get("tableId");
+              const tableName = searchParams.get("tableName");
+              
+              const query = new URLSearchParams();
+              if (tableId) query.set("tableId", tableId);
+              if (tableName) query.set("tableName", tableName);
+              if (currentOrderId) query.set("orderId", currentOrderId);
+              query.set("refresh", Date.now().toString());
 
-                router.push(`${returnTo.split('?')[0]}?${query.toString()}`);
-              }
-            });
-            toast.success("KOT Printed & Order Synced! ✅");
-          }, 500); // 500ms for DOM update to reflect new items
+              // Use replace for faster perceived navigation without adding history
+              router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
+            }
+          });
+          toast.success("KOT Printed & Order Synced! ✅");
           
-          if (searchParams.get("returnTo")) return; // Prevent any other actions if returning
+          if (returnTo) return; // Prevent any other actions if returning
         } else {
           const errData = await res.json().catch(() => ({}));
           console.error("SYNC_ERROR:", errData);
@@ -1705,11 +1703,13 @@ export default function CheckoutClient() {
       setTimeout(() => {
         window.print();
         
+        // Call callback immediately after print dialog is closed (or returns)
+        if (callback) callback();
+        
         // Delay cleanup to ensure spooler finishes reading the DOM
         setTimeout(() => {
           if (document.body.contains(container)) container.remove();
           if (document.head.contains(style)) style.remove();
-          if (callback) callback();
         }, 2500); 
       }, 300);
     });
