@@ -2839,214 +2839,232 @@ export default function CheckoutClient() {
               )}
             </div>
 
-            {/* 💳 PAYMENT METHODS (Compact Grid) */}
-            <div 
-              className="grid gap-1.5 mb-2"
-              style={{ 
-                gridTemplateColumns: `repeat(${
-                  (["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const).filter(mode => {
+            {/* 💳 PAYMENT METHODS AND ACTIONS */}
+            {!(selectedTable !== "POS" && selectedTable !== "TAKEAWAY" && selectedTable !== "DELIVERY") ? (
+              <>
+              <div 
+                className="grid gap-1.5 mb-2"
+                style={{ 
+                  gridTemplateColumns: `repeat(${
+                    (["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const).filter(mode => {
+                      if (mode === "Cash") return business?.posCashEnabled !== false;
+                      if (mode === "UPI") return business?.posUpiEnabled !== false;
+                      if (mode === "Card") return business?.posCardEnabled !== false;
+                      if (mode === "Pay on Counter") return business?.posCounterEnabled !== false;
+                      if (mode === "Wallet") return business?.posWalletEnabled !== false;
+                      return true;
+                    }).length
+                  }, 1fr)` 
+                }}
+              >
+                {(["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const)
+                  .filter(mode => {
                     if (mode === "Cash") return business?.posCashEnabled !== false;
                     if (mode === "UPI") return business?.posUpiEnabled !== false;
                     if (mode === "Card") return business?.posCardEnabled !== false;
                     if (mode === "Pay on Counter") return business?.posCounterEnabled !== false;
                     if (mode === "Wallet") return business?.posWalletEnabled !== false;
                     return true;
-                  }).length
-                }, 1fr)` 
-              }}
-            >
-              {(["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const)
-                .filter(mode => {
-                  if (mode === "Cash") return business?.posCashEnabled !== false;
-                  if (mode === "UPI") return business?.posUpiEnabled !== false;
-                  if (mode === "Card") return business?.posCardEnabled !== false;
-                  if (mode === "Pay on Counter") return business?.posCounterEnabled !== false;
-                  if (mode === "Wallet") return business?.posWalletEnabled !== false;
-                  return true;
-                })
-                .map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
-                  className={`py-1.5 px-0.5 rounded-xl border-2 font-black text-[7px] transition-all flex flex-col items-center justify-center gap-1 ${paymentMode === mode
-                    ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-                    : "bg-white border-slate-200 text-slate-900 hover:border-indigo-400 hover:bg-indigo-50/30"
-                    }`}
-                >
-                  <span className="text-[12px] leading-none">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
-                  <span className="truncate w-full text-center uppercase tracking-tighter">{mode === "Pay on Counter" ? "Counter" : mode}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* UPI Details - Conditional */}
-            {paymentMode === "UPI" && (
-              <div className="space-y-2 p-2.5 rounded-2xl bg-indigo-50 border border-indigo-200 mb-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <a href={upiLink} className="text-center text-indigo-700 font-black text-[10px] py-2 border-2 border-dashed border-indigo-300 rounded-xl bg-white flex items-center justify-center gap-2">
-                    📱 UPI App
-                  </a>
-                  <div className="grid grid-cols-2 gap-1">
-                    {(["Pending", "Paid"] as const).map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => setPaymentStatus(s)}
-                        className={`py-1.5 rounded-lg border-2 font-black text-[8px] transition-all uppercase tracking-wider ${paymentStatus === s
-                          ? s === "Paid" ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/20" : "bg-amber-600 border-amber-600 text-white shadow-md shadow-amber-500/20"
-                          : "bg-white border-slate-200 text-slate-500"
-                          }`}
-                      >
-                        {s === "Pending" ? "🕒 PENDING" : "✅ PAID"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <input
-                  placeholder="Txn Ref No."
-                  value={upiTxnRef}
-                  onChange={(e) => setUpiTxnRef(e.target.value)}
-                  className="bg-white border-2 border-slate-200 text-slate-900 p-2 w-full rounded-xl text-[11px] outline-none focus:ring-1 focus:ring-indigo-500 font-bold"
-                />
+                  })
+                  .map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
+                    className={`py-1.5 px-0.5 rounded-xl border-2 font-black text-[7px] transition-all flex flex-col items-center justify-center gap-1 ${paymentMode === mode
+                      ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                      : "bg-white border-slate-200 text-slate-900 hover:border-indigo-400 hover:bg-indigo-50/30"
+                      }`}
+                  >
+                    <span className="text-[12px] leading-none">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
+                    <span className="truncate w-full text-center uppercase tracking-tighter">{mode === "Pay on Counter" ? "Counter" : mode}</span>
+                  </button>
+                ))}
               </div>
-            )}
 
-            {/* 💎 SMART DYNAMIC ACTIONS: Prominent if few, Compact if many */}
-            {(() => {
-              if (!business) return <div className="h-10 animate-pulse bg-slate-50 rounded-xl mb-4" />;
-
-              const enabledActions = [
-                { id: 'hold', enabled: business.posHoldEnabled !== false },
-                { id: 'save', enabled: business.posSaveEnabled !== false },
-                { id: 'preview', enabled: business.posPreviewEnabled !== false },
-                { id: 'kot', enabled: business.posKotEnabled !== false }
-              ].filter(a => a.enabled);
-
-              const isCompact = enabledActions.length > 2;
-
-              return (
-                <div 
-                  className={`grid gap-2 mb-4 ${isCompact ? "" : "grid-cols-2"}`}
-                  style={isCompact ? { 
-                    gridTemplateColumns: `repeat(${enabledActions.length}, 1fr)`
-                  } : {}}
-                >
-                  {(business.posHoldEnabled !== false) && (
-                    <button
-                      onClick={async () => {
-                        const bill = await saveBill(true);
-                        if (!bill) return;
-                        kravy.ping(); 
-                        resetForm();
-                        fetchHeldBills();
-                        if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                      }}
-                      disabled={items.length === 0 || isSaving}
-                      className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all font-black active:scale-95`}
-                    >
-                      <span className={isCompact ? "text-[16px]" : "text-[20px]"}>⏸️</span>
-                      <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Hold</span>
-                    </button>
-                  )}
-
-                  {(business.posSaveEnabled !== false) && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        kravy.click();
-                        const bill = await saveBill();
-                        if (!bill) return;
-                        kravy.success(); 
-                        toast.success("Bill Saved Successfully! 💾");
-                        
-                        const returnTo = searchParams.get("returnTo");
-                        if (returnTo) {
-                          const tableId = searchParams.get("tableId");
-                          const orderId = searchParams.get("orderId") || syncedOrderId || bill.id;
-                          const query = new URLSearchParams();
-                          if (tableId) query.set("tableId", tableId);
-                          if (orderId) query.set("orderId", orderId);
-                          router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
-                          return;
-                        }
-                        resetForm();
-                        if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                      }}
-                      disabled={items.length === 0 || isSaving}
-                      className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-slate-300 text-slate-900 bg-slate-50 hover:bg-slate-200 transition-all font-black active:scale-95`}
-                    >
-                      <span className={isCompact ? "text-[16px]" : "text-[20px]"}>💾</span>
-                      <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Save</span>
-                    </button>
-                  )}
-
-                  {(business.posPreviewEnabled !== false) && (
-                    <button
-                      onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
-                      disabled={items.length === 0 || isSaving}
-                      className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 text-indigo-800 bg-indigo-50 hover:bg-indigo-100 transition-all font-black active:scale-95`}
-                    >
-                      <span className={isCompact ? "text-[16px]" : "text-[20px]"}>👁️</span>
-                      <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Preview</span>
-                    </button>
-                  )}
-
-                  {(business.posKotEnabled !== false) && (
-                    <button
-                      onClick={handlePrintKOT}
-                      disabled={items.length === 0 || isSaving}
-                      className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-orange-300 text-orange-800 bg-orange-50 hover:bg-orange-100 transition-all font-black active:scale-95`}
-                    >
-                      <span className={isCompact ? "text-[16px]" : "text-[20px]"}>🧾</span>
-                      <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>KOT</span>
-                    </button>
-                  )}
+              {/* UPI Details - Conditional */}
+              {paymentMode === "UPI" && (
+                <div className="space-y-2 p-2.5 rounded-2xl bg-indigo-50 border border-indigo-200 mb-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <a href={upiLink} className="text-center text-indigo-700 font-black text-[10px] py-2 border-2 border-dashed border-indigo-300 rounded-xl bg-white flex items-center justify-center gap-2">
+                      📱 UPI App
+                    </a>
+                    <div className="grid grid-cols-2 gap-1">
+                      {(["Pending", "Paid"] as const).map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => setPaymentStatus(s)}
+                          className={`py-1.5 rounded-lg border-2 font-black text-[8px] transition-all uppercase tracking-wider ${paymentStatus === s
+                            ? s === "Paid" ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/20" : "bg-amber-600 border-amber-600 text-white shadow-md shadow-amber-500/20"
+                            : "bg-white border-slate-200 text-slate-500"
+                            }`}
+                        >
+                          {s === "Pending" ? "🕒 PENDING" : "✅ PAID"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <input
+                    placeholder="Txn Ref No."
+                    value={upiTxnRef}
+                    onChange={(e) => setUpiTxnRef(e.target.value)}
+                    className="bg-white border-2 border-slate-200 text-slate-900 p-2 w-full rounded-xl text-[11px] outline-none focus:ring-1 focus:ring-indigo-500 font-bold"
+                  />
                 </div>
-              );
-            })()}
+              )}
 
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={async () => {
-                if (paymentMode === "Wallet" && selectedParty) {
-                  setPrevWalletBalance(selectedParty.walletBalance);
-                } else {
-                  setPrevWalletBalance(null);
-                }
-                const bill = await saveBill();
-                if (!bill) return;
-                
-                kravy.payment(); 
-                toast.success("Settlement Finalized! 💰");
-                
-                // Print immediately after a short delay to let state render to DOM
-                setTimeout(() => {
-                  printReceipt(business?.enableKOTWithBill || false, null, () => {
-                    const returnTo = searchParams.get("returnTo");
-                    if (returnTo) {
-                      const tableId = searchParams.get("tableId");
-                      const query = new URLSearchParams();
-                      if (tableId) query.set("tableId", tableId);
+              {/* 💎 SMART DYNAMIC ACTIONS: Prominent if few, Compact if many */}
+              {(() => {
+                if (!business) return <div className="h-10 animate-pulse bg-slate-50 rounded-xl mb-4" />;
+
+                const enabledActions = [
+                  { id: 'hold', enabled: business.posHoldEnabled !== false },
+                  { id: 'save', enabled: business.posSaveEnabled !== false },
+                  { id: 'preview', enabled: business.posPreviewEnabled !== false },
+                  { id: 'kot', enabled: business.posKotEnabled !== false }
+                ].filter(a => a.enabled);
+
+                const isCompact = enabledActions.length > 2;
+
+                return (
+                  <div 
+                    className={`grid gap-2 mb-4 ${isCompact ? "" : "grid-cols-2"}`}
+                    style={isCompact ? { 
+                      gridTemplateColumns: `repeat(${enabledActions.length}, 1fr)`
+                    } : {}}
+                  >
+                    {(business.posHoldEnabled !== false) && (
+                      <button
+                        onClick={async () => {
+                          const bill = await saveBill(true);
+                          if (!bill) return;
+                          kravy.ping(); 
+                          resetForm();
+                          fetchHeldBills();
+                          if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                        }}
+                        disabled={items.length === 0 || isSaving}
+                        className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all font-black active:scale-95`}
+                      >
+                        <span className={isCompact ? "text-[16px]" : "text-[20px]"}>⏸️</span>
+                        <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Hold</span>
+                      </button>
+                    )}
+
+                    {(business.posSaveEnabled !== false) && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          kravy.click();
+                          const bill = await saveBill();
+                          if (!bill) return;
+                          kravy.success(); 
+                          toast.success("Bill Saved Successfully! 💾");
+                          
+                          const returnTo = searchParams.get("returnTo");
+                          if (returnTo) {
+                            const tableId = searchParams.get("tableId");
+                            const orderId = searchParams.get("orderId") || syncedOrderId || bill.id;
+                            const query = new URLSearchParams();
+                            if (tableId) query.set("tableId", tableId);
+                            if (orderId) query.set("orderId", orderId);
+                            router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
+                            return;
+                          }
+                          resetForm();
+                          if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                        }}
+                        disabled={items.length === 0 || isSaving}
+                        className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-slate-300 text-slate-900 bg-slate-50 hover:bg-slate-200 transition-all font-black active:scale-95`}
+                      >
+                        <span className={isCompact ? "text-[16px]" : "text-[20px]"}>💾</span>
+                        <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Save</span>
+                      </button>
+                    )}
+
+                    {(business.posPreviewEnabled !== false) && (
+                      <button
+                        onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
+                        disabled={items.length === 0 || isSaving}
+                        className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 text-indigo-800 bg-indigo-50 hover:bg-indigo-100 transition-all font-black active:scale-95`}
+                      >
+                        <span className={isCompact ? "text-[16px]" : "text-[20px]"}>👁️</span>
+                        <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Preview</span>
+                      </button>
+                    )}
+
+                    {(business.posKotEnabled !== false) && (
+                      <button
+                        onClick={handlePrintKOT}
+                        disabled={items.length === 0 || isSaving}
+                        className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-orange-300 text-orange-800 bg-orange-50 hover:bg-orange-100 transition-all font-black active:scale-95`}
+                      >
+                        <span className={isCompact ? "text-[16px]" : "text-[20px]"}>🧾</span>
+                        <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>KOT</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={async () => {
+                  if (paymentMode === "Wallet" && selectedParty) {
+                    setPrevWalletBalance(selectedParty.walletBalance);
+                  } else {
+                    setPrevWalletBalance(null);
+                  }
+                  const bill = await saveBill();
+                  if (!bill) return;
+                  
+                  kravy.payment(); 
+                  toast.success("Settlement Finalized! 💰");
+                  
+                  // Print immediately after a short delay to let state render to DOM
+                  setTimeout(() => {
+                    printReceipt(business?.enableKOTWithBill || false, null, () => {
+                      const returnTo = searchParams.get("returnTo");
+                      if (returnTo) {
+                        const tableId = searchParams.get("tableId");
+                        const query = new URLSearchParams();
+                        if (tableId) query.set("tableId", tableId);
+                        
+                        // Use replace for faster navigation and to clean history
+                        router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
+                        return;
+                      }
                       
-                      // Use replace for faster navigation and to clean history
-                      router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
-                      return;
-                    }
-                    
-                    resetForm();
-                    if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                  });
-                }, 350);
-              }}
-              disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
-              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl
-                bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 bg-[length:200%_auto] hover:bg-right transition-all duration-500
-                text-white font-black text-[10px] uppercase tracking-widest
-                shadow-lg shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? <RefreshCw size={14} className="animate-spin" /> : <Printer size={14} strokeWidth={3} />} 
-              {business?.enableKOTWithBill ? "KOT & Print Bill" : "Print Bill / Receipt"}
-            </motion.button>
+                      resetForm();
+                      if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                    });
+                  }, 350);
+                }}
+                disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl
+                  bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 bg-[length:200%_auto] hover:bg-right transition-all duration-500
+                  text-white font-black text-[10px] uppercase tracking-widest
+                  shadow-lg shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? <RefreshCw size={14} className="animate-spin" /> : <Printer size={14} strokeWidth={3} />} 
+                {business?.enableKOTWithBill ? "KOT & Print Bill" : "Print Bill / Receipt"}
+              </motion.button>
+              </>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handlePrintKOT}
+                disabled={items.length === 0 || isSaving}
+                className="w-full mt-4 flex items-center justify-center gap-2 py-4 rounded-xl
+                  bg-gradient-to-r from-orange-500 via-orange-400 to-orange-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500
+                  text-white font-black text-sm uppercase tracking-widest
+                  shadow-lg shadow-orange-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? <RefreshCw size={18} className="animate-spin" /> : <Printer size={18} strokeWidth={3} />} 
+                SAVE & PRINT KOT
+              </motion.button>
+            )}
           </div>
         </div>
       </div>
