@@ -21,12 +21,13 @@ export async function GET(
             where: { userId: clerkId },
         });
 
+        const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(tableId || "");
+        
         const table = tableId ? await prisma.table.findFirst({
             where: {
                 clerkUserId: clerkId,
                 OR: [
-                    { id: tableId.length === 24 ? tableId : undefined },
-                    { id: tableId },
+                    isValidObjectId ? { id: tableId } : undefined,
                     { name: tableId }
                 ].filter(Boolean) as any
             }
