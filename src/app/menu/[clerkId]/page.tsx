@@ -1386,7 +1386,7 @@ function PublicMenu() {
 
                                           {/* Item Image & ADD Button (Right) */}
                                           <div className="relative flex-shrink-0" onClick={e => e.stopPropagation()}>
-                                               <div className={`${!(item.imageUrl || item.image) ? "hidden" : "w-[124px] h-[124px] rounded-2xl overflow-hidden relative shadow-md"} border border-gray-50`}>
+                                               <div className={`${!(item.imageUrl || item.image) ? "hidden" : "w-[156px] h-[156px] rounded-2xl overflow-hidden relative shadow-md"} border border-gray-50`}>
                                                   {item.imageUrl || item.image ? (
                                                       <Image src={(item.imageUrl || item.image) as string} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                                                   ) : null}
