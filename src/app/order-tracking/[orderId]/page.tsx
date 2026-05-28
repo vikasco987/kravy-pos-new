@@ -250,8 +250,8 @@ export default function OrderTrackingPage() {
                         </p>
 
                         {/* Status Progress Bar with Labels */}
-                        <div className="mt-8 px-1 pb-10">
-                            <div className="flex items-center justify-between w-full relative mb-16">
+                        <div className="mt-8 px-1">
+                            <div className="flex items-center justify-between w-full relative pb-20">
                                 {/* Connecting Line Background */}
                                 <div className="absolute top-[14px] left-0 w-full h-[3px] bg-slate-100" />
                                 
