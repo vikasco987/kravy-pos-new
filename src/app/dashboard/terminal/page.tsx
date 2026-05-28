@@ -1878,20 +1878,20 @@ function KravyPOS() {
                                         
                                         <div className="p-5 flex gap-8 items-start border-b border-slate-200 dark:border-slate-800/50 text-slate-600 dark:text-slate-300">
                                             <div>
-                                                <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">ID</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-medium">ID</p>
                                                 <span className="px-2 py-1 text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded">Active</span>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Table</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-medium">Table</p>
                                                 <span className="px-2 py-1 text-xs font-semibold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded">{selectedTable.name}</span>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Order Type</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-medium">Order Type</p>
                                                 <span className="px-2 py-1 text-xs font-semibold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded">Dine In</span>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Waiter</p>
-                                                <span className="text-sm font-semibold">-</span>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-medium">Waiter</p>
+                                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">-</span>
                                             </div>
                                         </div>
 
@@ -1921,7 +1921,7 @@ function KravyPOS() {
                                                 <button 
                                                     key={tab}
                                                     onClick={async () => setSettleTab(tab as any)}
-                                                    className={`pb-3 text-sm font-medium transition-colors ${settleTab === tab ? "text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-500" : "text-slate-400 dark:text-slate-500 hover:text-slate-400 dark:text-slate-500 dark:text-slate-400"}`}
+                                                    className={`pb-3 text-sm font-medium transition-colors ${settleTab === tab ? "text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}
                                                 >
                                                     {tab === "ITEMS" ? "Ordered Items" : tab === "KOT" ? "KOT History" : "User Reservation History"}
                                                 </button>
