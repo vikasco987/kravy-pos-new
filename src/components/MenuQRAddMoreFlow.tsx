@@ -123,9 +123,8 @@ export default function MenuQRAddMoreFlow({ onClose, caseType = "merge", orderDa
     else if (caseType === "round2") setCurrentFlow("case3");
     else if (activeOrderData?.status) {
       const s = activeOrderData.status.toUpperCase();
-      if (["PENDING", "ACCEPTING", "RECEIVED"].includes(s)) setCurrentFlow("case1");
-      else if (["ACCEPTED", "PREPARING", "READY"].includes(s)) setCurrentFlow("case2");
-      else if (["SERVED", "COMPLETED"].includes(s)) setCurrentFlow("case3");
+      if (["PENDING", "ACCEPTING", "RECEIVED", "ACCEPTED", "PREPARING", "READY", "SERVED"].includes(s)) setCurrentFlow("case1");
+      else if (["COMPLETED"].includes(s)) setCurrentFlow("case3");
     }
   }, [caseType, activeOrderData]);
 

@@ -109,8 +109,8 @@ export default function OrderTrackingPage() {
     useEffect(() => {
         if (orderId) {
             fetchOrder();
-            // Set up auto-refresh every 5 seconds
-            const interval = setInterval(fetchOrder, 5000);
+            // Set up auto-refresh every 15 seconds
+            const interval = setInterval(fetchOrder, 15000);
             return () => clearInterval(interval);
         }
     }, [orderId]);
@@ -250,8 +250,8 @@ export default function OrderTrackingPage() {
                         </p>
 
                         {/* Status Progress Bar with Labels */}
-                        <div className="mt-8 px-1">
-                            <div className="flex items-center justify-between w-full relative mb-12">
+                        <div className="mt-8 px-1 pb-10">
+                            <div className="flex items-center justify-between w-full relative mb-16">
                                 {/* Connecting Line Background */}
                                 <div className="absolute top-[14px] left-0 w-full h-[3px] bg-slate-100" />
                                 
@@ -299,27 +299,34 @@ export default function OrderTrackingPage() {
                     </motion.div>
 
                     {/* ── LOYALTY PROGRESS (MASALA HOUSE SPECIAL) ── */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="bg-gradient-to-br from-[#1a0a00] to-[#2d1500] rounded-[2rem] p-5 shadow-lg relative overflow-hidden"
-                    >
-                        <div className="relative z-10 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="text-3xl">👑</div>
-                                <div>
-                                    <div className="text-[0.85rem] font-[800] text-[#F0EAD6]">Loyalty Member</div>
-                                    <div className="text-[0.68rem] text-[#F0EAD6]/60">Order total: ₹{order.total}</div>
+                    <div className="mt-12 mb-8">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                            className="bg-gradient-to-br from-[#1a0a00] to-[#2d1500] rounded-[2rem] p-5 shadow-lg relative overflow-hidden"
+                        >
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="text-3xl">👑</div>
+                                    <div>
+                                        <div className="text-[0.85rem] font-[800] text-[#F0EAD6]">Loyalty Member</div>
+                                        <div className="text-[0.68rem] text-[#F0EAD6]/60">Order total: ₹{order.total}</div>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-[#D4A353] font-[Syne] font-[900] text-xl">+{Math.floor(order.total / 10)}</div>
+                                    <div className="text-[0.55rem] font-[900] text-[#D4A353] uppercase">Points Earned</div>
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <div className="text-[#D4A353] font-[Syne] font-[900] text-xl">+{Math.floor(order.total / 10)}</div>
-                                <div className="text-[0.55rem] font-[900] text-[#D4A353] uppercase">Points Earned</div>
-                            </div>
+                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(212,163,83,0.15),transparent)] pointer-events-none" />
+                        </motion.div>
+                        <div className="mt-3 px-3 text-center">
+                            <p className="text-[0.75rem] font-[600] text-[#696969]">
+                                You earn <span className="text-[#E23744] font-bold">10%</span> of your bill as loyalty points. Use them on your next visit!
+                            </p>
                         </div>
-                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(212,163,83,0.15),transparent)] pointer-events-none" />
-                    </motion.div>
+                    </div>
 
                     {/* ── ORDER ITEMS & BILL ── */}
                     <motion.div
@@ -333,7 +340,6 @@ export default function OrderTrackingPage() {
                                 <Receipt size={18} className="text-[#E23744]" />
                                 Final Bill Breakdown
                             </h3>
-                            <button className="text-[0.7rem] font-[800] text-[#3B82F6] underline decoration-blue-200" onClick={() => setShowAddMore(true)}>Naya Item Add Karein +</button>
                         </div>
 
                         <div className="p-6 space-y-4">
@@ -449,11 +455,11 @@ export default function OrderTrackingPage() {
                     <motion.button
                         initial={{ y: 50, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        className="w-full pointer-events-auto bg-[#E23744] text-white h-16 rounded-[1.2rem] shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all text-lg font-black italic tracking-tight"
+                        className="w-full pointer-events-auto bg-[#E23744] text-white h-16 rounded-[1.2rem] shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all text-lg font-black italic tracking-tight uppercase"
                         onClick={() => setShowAddMore(true)}
                     >
                         <Plus size={24} strokeWidth={3} />
-                        KUCH AUR MANGWAO?
+                        Order More
                     </motion.button>
                 </div>
 
