@@ -44,8 +44,9 @@ export async function POST(req: NextRequest) {
 
         if (profile.openingTime && profile.closingTime) {
             const now = new Date();
-            // Convert everything to minutes for easy comparison
-            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const istTimeStr = now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
+            const istTime = new Date(istTimeStr);
+            const currentMinutes = istTime.getHours() * 60 + istTime.getMinutes();
             const [openH, openM] = profile.openingTime.split(':').map(Number);
             const [closeH, closeM] = profile.closingTime.split(':').map(Number);
             const openMinutes = openH * 60 + openM;

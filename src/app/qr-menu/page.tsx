@@ -254,7 +254,9 @@ function QRMenuContent() {
         if (profile.isOnline === false) return false;
 
         const now = new Date();
-        const currentTime = now.getHours() * 60 + now.getMinutes();
+        const istTimeStr = now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
+        const istTime = new Date(istTimeStr);
+        const currentTime = istTime.getHours() * 60 + istTime.getMinutes();
 
         if (profile.openingTime && profile.closingTime) {
             const [openH, openM] = profile.openingTime.split(':').map(Number);
