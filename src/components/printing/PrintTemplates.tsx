@@ -266,11 +266,20 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                 return tn.toString().padStart(3, '0');
               })();
 
-              if (displayToken) {
+              if (displayToken || (kotNumbers && kotNumbers.length > 0)) {
                 return (
                   <div className="text-right">
-                    <div style={{ fontSize: 'calc(var(--r-details-size) - 2px)', fontWeight: '800', textTransform: 'uppercase' }}>Token</div>
-                    <div style={{ fontSize: 'calc(var(--r-details-size) + 4px)', fontWeight: '900', lineHeight: '1' }}>#{displayToken}</div>
+                    {displayToken && (
+                      <>
+                        <div style={{ fontSize: 'calc(var(--r-details-size) - 2px)', fontWeight: '800', textTransform: 'uppercase' }}>Token</div>
+                        <div style={{ fontSize: 'calc(var(--r-details-size) + 4px)', fontWeight: '900', lineHeight: '1' }}>#{displayToken}</div>
+                      </>
+                    )}
+                    {kotNumbers && kotNumbers.length > 0 && (
+                      <div style={{ fontSize: 'calc(var(--r-details-size) - 2px)', fontWeight: '900', marginTop: '2px', textTransform: 'uppercase' }}>
+                        KOT: {kotNumbers.join(", ")}
+                      </div>
+                    )}
                   </div>
                 );
               }
@@ -555,16 +564,16 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
           {s('showKOTToken') && (
             <div className="text-right leading-none">
-              <div style={{ fontSize: 'calc(var(--k-items-size) - 3px)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Token No.</div>
+              <div style={{ fontSize: 'calc(var(--k-items-size) - 3px)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>KOT No.</div>
               <div 
                 className="font-black"
                 style={{ fontSize: 'var(--k-token-size)', fontWeight: ps.kotTokenWeight || undefined }}
               >
                 #{(() => {
-                  if (tokenNumber != null && tokenNumber !== "" && tokenNumber !== "---") {
-                    return tokenNumber;
+                  if (kotNumbers && kotNumbers.length > 0) {
+                    return kotNumbers[kotNumbers.length - 1];
                   }
-                  return "---";
+                  return "KOT_PLACEHOLDER";
                 })()}
               </div>
             </div>

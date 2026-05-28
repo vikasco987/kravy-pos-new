@@ -1487,8 +1487,15 @@ export default function CheckoutClient() {
           
           // Inject token number if it was missing in the pre-captured HTML
           let finalHtmlToPrint = htmlToPrint;
-          if (serverToken != null && finalHtmlToPrint) {
-              finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${serverToken}`);
+          if (finalHtmlToPrint) {
+              const latestKot = data.kotNumbers && data.kotNumbers.length > 0 
+                ? data.kotNumbers[data.kotNumbers.length - 1] 
+                : (serverToken || "---");
+              
+              finalHtmlToPrint = finalHtmlToPrint.replace(/#KOT_PLACEHOLDER/g, `#${latestKot}`);
+              if (serverToken != null) {
+                finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${serverToken}`);
+              }
           }
           
           const serverOrderNumber = data.orderNumber || data.order?.orderNumber;
