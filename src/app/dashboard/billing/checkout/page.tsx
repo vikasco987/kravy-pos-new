@@ -16,7 +16,6 @@
 // };
 
 // export default function BillingPage() {
-  const { confirm } = useConfirm();
 //   const receiptRef = useRef<HTMLDivElement | null>(null);
 
 //   // SHOP DETAILS
@@ -573,8 +572,6 @@
 
 import { Suspense } from "react";
 import CheckoutClient from "./CheckoutClient";
-import { useConfirm } from "@/components/ConfirmContext";
-
 
 export default function Page() {
   return (
