@@ -1410,7 +1410,9 @@ function PublicMenu() {
                                                         </button>
                                                     )}
                                                   </div>
-                                                  <div className="text-[0.55rem] text-center text-gray-400 mt-1 font-black uppercase tracking-widest">customisable</div>
+                                                  {((item.variants && (item.variants as any[]).length > 0) || (item.addonGroups && (item.addonGroups as any[]).length > 0)) && (
+                                                      <div className="text-[0.55rem] text-center text-gray-400 mt-1 font-black uppercase tracking-widest">customisable</div>
+                                                  )}
                                               </div>
                                           </div>
                                         </div>
@@ -2838,10 +2840,21 @@ function PublicMenu() {
                                         )}
                                     </div>
                                     
-                                    <div className="flex items-start justify-between gap-4 mb-4">
+                                    <div className="flex items-start justify-between gap-4 mb-2">
                                         <h2 className="text-[1.5rem] font-black text-gray-900 leading-[1.1]">
                                             {(activeLang === "hi" && selectedMenuItem.hiName ? selectedMenuItem.hiName : selectedMenuItem.name).replace(/\s?\((V|NV|R)\)/gi, "").trim()}
                                         </h2>
+                                    </div>
+                                    
+                                    {/* Base Price in Modal */}
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="text-[1.2rem] font-[800] text-gray-900 leading-tight">₹{selectedMenuItem.sellingPrice || selectedMenuItem.price || 0}</span>
+                                        {selectedMenuItem.price && selectedMenuItem.sellingPrice && selectedMenuItem.sellingPrice < selectedMenuItem.price && (
+                                            <>
+                                                <span className="text-[0.9rem] text-gray-400 line-through font-bold">₹{selectedMenuItem.price}</span>
+                                                <span className="text-[0.85rem] font-black text-blue-600">{Math.round(((selectedMenuItem.price - selectedMenuItem.sellingPrice) / selectedMenuItem.price) * 100)}% OFF</span>
+                                            </>
+                                        )}
                                     </div>
 
                                     {(selectedMenuItem as any)._count?.reviews > 0 && (
@@ -2859,14 +2872,12 @@ function PublicMenu() {
                                         </div>
                                     )}
 
-                                    {selectedMenuItem.description && (
-                                        <div className="space-y-4">
-                                            <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Chef's Description</div>
-                                            <p className="text-[15px] text-gray-600 font-medium leading-[1.6]">
-                                                {selectedMenuItem.description}
-                                            </p>
-                                        </div>
-                                    )}
+                                    <div className="space-y-4 mb-6">
+                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Chef's Description</div>
+                                        <p className="text-[15px] text-gray-600 font-medium leading-[1.6]">
+                                            {selectedMenuItem.description || "A delicious treat prepared with love and fresh ingredients."}
+                                        </p>
+                                    </div>
 
                                     {/* Link Addon Groups Interactive Selection (Zomato Style) */}
                                     {(selectedMenuItem.addonGroups || selectedMenuItem.variants) && (
