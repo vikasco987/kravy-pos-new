@@ -227,13 +227,13 @@ export default function OrderTrackingPage() {
                     </button>
                 </nav>
 
-                <main className="pb-36 p-4 space-y-4">
+                <main className="pb-36 p-4">
 
                     {/* ── MAIN STATUS CARD ── */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-[#EBEBEB] text-center"
+                        className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-[#EBEBEB] text-center mb-6"
                     >
                         <div className="relative inline-block mb-6">
                             <div className={`w-24 h-24 rounded-full flex items-center justify-center shadow-xl mb-1 ${currentStatusConfig.color} border-4 border-white animate-pulse-slow`}>
@@ -250,8 +250,8 @@ export default function OrderTrackingPage() {
                         </p>
 
                         {/* Status Progress Bar with Labels */}
-                        <div className="mt-8 px-1">
-                            <div className="flex items-center justify-between w-full relative pb-20">
+                        <div className="mt-8 px-1 min-h-[100px]">
+                            <div className="flex items-center justify-between w-full relative">
                                 {/* Connecting Line Background */}
                                 <div className="absolute top-[14px] left-0 w-full h-[3px] bg-slate-100" />
                                 
@@ -299,7 +299,7 @@ export default function OrderTrackingPage() {
                     </motion.div>
 
                     {/* ── LOYALTY PROGRESS (MASALA HOUSE SPECIAL) ── */}
-                    <div className="mt-12 mb-8">
+                    <div className="mb-6">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
