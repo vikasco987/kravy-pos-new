@@ -250,8 +250,8 @@ export default function OrderTrackingPage() {
                         </p>
 
                         {/* Status Progress Bar with Labels */}
-                        <div className="mt-8 px-1">
-                            <div className="flex items-center justify-between w-full relative">
+                        <div className="mt-8 px-1 pb-6">
+                            <div className="flex items-start justify-between w-full relative">
                                 {/* Connecting Line Background */}
                                 <div className="absolute top-[14px] left-0 w-full h-[3px] bg-slate-100" />
                                 
@@ -278,7 +278,7 @@ export default function OrderTrackingPage() {
                                             </div>
                                             
                                             {/* Label */}
-                                            <div className="absolute top-10 flex flex-col items-center w-20">
+                                            <div className="mt-2 flex flex-col items-center w-full px-0.5">
                                                 <span className={`text-[0.52rem] font-black uppercase tracking-tighter text-center leading-tight transition-all duration-500 ${
                                                     isCurrent ? "text-[#E23744] scale-105" : isActive ? "text-[#1C1C1C]" : "text-slate-300"
                                                 }`}>
@@ -295,8 +295,6 @@ export default function OrderTrackingPage() {
                                     );
                                 })}
                             </div>
-                            {/* Explicit spacer to force the white card to contain the absolute positioned labels */}
-                            <div style={{ height: '70px', width: '100%', clear: 'both' }} />
                         </div>
                     </motion.div>
 
