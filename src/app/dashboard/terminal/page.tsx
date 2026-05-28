@@ -1878,29 +1878,29 @@ function KravyPOS() {
                                         
                                         <div className="p-5 flex gap-8 items-start border-b border-slate-200 dark:border-slate-800/50 text-slate-600 dark:text-slate-300">
                                             <div>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-medium">ID</p>
-                                                <span className="px-2 py-1 text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded">Active</span>
+                                                <p className="text-xs text-slate-700 dark:text-slate-300 mb-2 font-bold uppercase tracking-wider">ID</p>
+                                                <span className="px-2 py-1 text-xs font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 rounded">Active</span>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-medium">Table</p>
-                                                <span className="px-2 py-1 text-xs font-semibold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded">{selectedTable.name}</span>
+                                                <p className="text-xs text-slate-700 dark:text-slate-300 mb-2 font-bold uppercase tracking-wider">Table</p>
+                                                <span className="px-2 py-1 text-xs font-bold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400 rounded">{selectedTable.name}</span>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-medium">Order Type</p>
-                                                <span className="px-2 py-1 text-xs font-semibold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded">Dine In</span>
+                                                <p className="text-xs text-slate-700 dark:text-slate-300 mb-2 font-bold uppercase tracking-wider">Order Type</p>
+                                                <span className="px-2 py-1 text-xs font-bold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400 rounded">Dine In</span>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-medium">Waiter</p>
-                                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">-</span>
+                                                <p className="text-xs text-slate-700 dark:text-slate-300 mb-2 font-bold uppercase tracking-wider">Waiter</p>
+                                                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">-</span>
                                             </div>
                                         </div>
 
                                         <div className="p-5 border-b border-slate-200 dark:border-slate-800/50 flex items-center justify-between">
-                                            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-                                                <User size={18} className="text-emerald-600 dark:text-emerald-500" />
+                                            <div className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
+                                                <User size={18} className="text-emerald-700 dark:text-emerald-400" />
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-medium">{activeOrderForSelected.customerName || "Guest (+1)"}</span>
-                                                    {activeOrderForSelected.customerPhone && <span className="text-[10px] text-slate-400 dark:text-slate-500">{activeOrderForSelected.customerPhone}</span>}
+                                                    <span className="text-sm font-bold">{activeOrderForSelected.customerName || "Guest (+1)"}</span>
+                                                    {activeOrderForSelected.customerPhone && <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{activeOrderForSelected.customerPhone}</span>}
                                                 </div>
                                             </div>
                                             <button 
@@ -1921,7 +1921,7 @@ function KravyPOS() {
                                                 <button 
                                                     key={tab}
                                                     onClick={async () => setSettleTab(tab as any)}
-                                                    className={`pb-3 text-sm font-medium transition-colors ${settleTab === tab ? "text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}
+                                                    className={`pb-3 text-sm font-bold transition-colors ${settleTab === tab ? "text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-500" : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"}`}
                                                 >
                                                     {tab === "ITEMS" ? "Ordered Items" : tab === "KOT" ? "KOT History" : "User Reservation History"}
                                                 </button>
