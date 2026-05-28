@@ -1872,8 +1872,13 @@ function KravyPOS() {
                                     {/* LEFT PANEL: Order Summary */}
                                     <div className="bg-white/40 dark:bg-[#0B1B48]/40 backdrop-blur-2xl rounded-3xl flex flex-col overflow-hidden border border-white/60 dark:border-indigo-500/20 shadow-[0_8px_32px_rgba(0,0,0,0.1)] relative">
                                         <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent dark:from-indigo-500/5 dark:to-transparent pointer-events-none" />
-                                        <div className="p-5 border-b border-white/50 dark:border-slate-800/50 flex items-center justify-between bg-white/30 dark:bg-slate-900/30 backdrop-blur-md relative z-10">
-                                            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-200">Order Summary</h3>
+                                        <div className="p-6 border-b border-white/50 dark:border-slate-800/50 flex items-center justify-between bg-white/30 dark:bg-slate-900/30 backdrop-blur-md relative z-10">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
+                                                    <Receipt size={20} />
+                                                </div>
+                                                <h3 className="text-2xl font-black bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">Order Summary</h3>
+                                            </div>
                                         </div>
                                         
                                         <div className="p-5 flex gap-8 items-start border-b border-slate-200 dark:border-slate-800/50 text-slate-600 dark:text-slate-300">
@@ -1928,29 +1933,36 @@ function KravyPOS() {
                                             ))}
                                         </div>
 
-                                        {/* Table */}
-                                        <div className="flex-1 overflow-y-auto">
+                                        {/* Table/List */}
+                                        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 dark:bg-[#111111]/50">
                                             {settleTab === "ITEMS" ? (
-                                                <table className="w-full text-left text-sm text-slate-800 dark:text-slate-200 border-collapse border border-slate-300 dark:border-slate-800">
-                                                    <thead className="text-sm text-slate-900 dark:text-white bg-slate-100 dark:bg-[#1a1a1a]">
-                                                        <tr>
-                                                            <th className="px-5 py-4 font-bold border border-slate-300 dark:border-slate-800">Item Name</th>
-                                                            <th className="px-5 py-4 font-bold text-center border border-slate-300 dark:border-slate-800">Qty</th>
-                                                            <th className="px-5 py-4 font-bold text-center border border-slate-300 dark:border-slate-800">Price</th>
-                                                            <th className="px-5 py-4 font-bold text-center border border-slate-300 dark:border-slate-800">Total</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="bg-white dark:bg-[#111111]">
-                                                        {activeOrderForSelected.items?.map((it, idx) => (
-                                                            <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">
-                                                                <td className="px-5 py-4 font-semibold border border-slate-300 dark:border-slate-800">{it.name}</td>
-                                                                <td className="px-5 py-4 text-center border border-slate-300 dark:border-slate-800">{it.quantity}</td>
-                                                                <td className="px-5 py-4 text-center border border-slate-300 dark:border-slate-800">₹ {it.price}</td>
-                                                                <td className="px-5 py-4 text-center font-bold border border-slate-300 dark:border-slate-800">₹ {it.price * it.quantity}</td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
+                                                <div className="space-y-3">
+                                                    {activeOrderForSelected.items?.map((it, idx) => (
+                                                        <div key={idx} className="group flex items-center justify-between p-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-white/60 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-500/50 hover:shadow-[0_8px_30px_rgba(99,102,241,0.08)] transition-all duration-300 transform hover:-translate-y-0.5">
+                                                            <div className="flex items-center gap-4 flex-1">
+                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm shadow-sm border border-white/50 dark:border-slate-700 ${it.isVeg === false || it.name?.toUpperCase().includes("(NV)") ? "bg-rose-50 text-rose-500" : "bg-emerald-50 text-emerald-500"}`}>
+                                                                    {it.isVeg === false || it.name?.toUpperCase().includes("(NV)") ? "🍗" : "🥗"}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-bold text-slate-900 dark:text-white uppercase tracking-tight text-[13px]">{it.name}</p>
+                                                                    <div className="flex items-center gap-2 mt-1">
+                                                                        <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400 px-2 py-0.5 rounded uppercase tracking-widest">₹{it.price} each</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-6">
+                                                                <div className="text-center">
+                                                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Qty</p>
+                                                                    <p className="text-sm font-black text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 w-8 h-8 rounded-lg flex items-center justify-center">{it.quantity}</p>
+                                                                </div>
+                                                                <div className="text-right min-w-[70px]">
+                                                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Total</p>
+                                                                    <p className="text-lg font-black text-slate-900 dark:text-white">₹{it.price * it.quantity}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             ) : settleTab === "KOT" ? (
                                                 <div className="h-full flex flex-col p-4">
                                                     {(() => {
@@ -2031,7 +2043,7 @@ function KravyPOS() {
                                                     </div>
                                                     <div className="text-right shrink-0">
                                                         <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none mb-1">PAYABLE</p>
-                                                        <p className="text-2xl font-black text-blue-600 dark:text-blue-500 leading-none">₹{settlementBill?.total.toFixed(2)}</p>
+                                                        <p className="text-4xl font-black bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm leading-none">₹{settlementBill?.total.toFixed(2)}</p>
                                                     </div>
                                                 </div>
 
@@ -2102,21 +2114,26 @@ function KravyPOS() {
                                             </div>
 
                                             {/* Payment Methods */}
-                                            <div className="p-4 grid grid-cols-5 gap-2">
+                                            <div className="p-4 grid grid-cols-5 gap-3">
                                                 {[
-                                                    { id: 'CASH', icon: <div className="text-xl">💵</div> },
-                                                    { id: 'UPI', icon: <div className="text-xl">📱</div> },
-                                                    { id: 'CARD', icon: <div className="text-xl">💳</div> },
-                                                    { id: 'COUNTER', icon: <div className="text-xl">🏪</div> },
-                                                    { id: 'WALLET', icon: <div className="text-xl">👛</div> }
+                                                    { id: 'CASH', icon: <div className="text-2xl drop-shadow-sm">💵</div>, color: 'from-emerald-500 to-teal-500' },
+                                                    { id: 'UPI', icon: <div className="text-2xl drop-shadow-sm">📱</div>, color: 'from-purple-500 to-indigo-600' },
+                                                    { id: 'CARD', icon: <div className="text-2xl drop-shadow-sm">💳</div>, color: 'from-slate-700 to-slate-900' },
+                                                    { id: 'COUNTER', icon: <div className="text-2xl drop-shadow-sm">🏪</div>, color: 'from-amber-500 to-orange-500' },
+                                                    { id: 'WALLET', icon: <div className="text-2xl drop-shadow-sm">👛</div>, color: 'from-pink-500 to-rose-500' }
                                                 ].map(method => (
                                                     <button
                                                         key={method.id}
                                                         onClick={async () => setPayMethod(method.id)}
-                                                        className={`flex flex-col items-center justify-center py-2 rounded-xl border-2 transition-all ${payMethod === method.id ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-blue-400'}`}
+                                                        className={`group relative flex flex-col items-center justify-center py-3 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg overflow-hidden ${payMethod === method.id ? 'border-transparent text-white shadow-xl scale-105' : 'border border-slate-200/50 bg-white/50 text-slate-600'}`}
                                                     >
-                                                        {method.icon}
-                                                        <span className="text-[8px] font-black uppercase mt-1 tracking-widest">{method.id}</span>
+                                                        {payMethod === method.id && (
+                                                            <div className={`absolute inset-0 bg-gradient-to-br ${method.color} opacity-100 transition-opacity duration-300`} />
+                                                        )}
+                                                        <div className="relative z-10 flex flex-col items-center">
+                                                            <div className={`transition-transform duration-300 ${payMethod === method.id ? 'scale-110 mb-1' : 'group-hover:scale-110'}`}>{method.icon}</div>
+                                                            <span className={`text-[9px] font-black uppercase mt-1 tracking-widest ${payMethod === method.id ? 'text-white drop-shadow-sm' : 'text-slate-500 group-hover:text-slate-800'}`}>{method.id}</span>
+                                                        </div>
                                                     </button>
                                                 ))}
                                             </div>
@@ -2135,7 +2152,7 @@ function KravyPOS() {
                                         </div>
 
                                         {/* Sticky Footer */}
-                                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161821] mt-auto">
+                                        <div className="p-5 border-t border-white/40 bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl mt-auto rounded-b-3xl">
                                             <button 
                                                 onClick={async () => {
                                                     const tableToPrint = selectedTable;
@@ -2145,10 +2162,11 @@ function KravyPOS() {
                                                     }, 500);
                                                 }}
                                                 disabled={isSettling}
-                                                className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="relative w-full overflow-hidden flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:via-teal-400 hover:to-emerald-500 text-white font-black text-[13px] uppercase tracking-[0.2em] transition-all shadow-[0_10px_40px_rgba(16,185,129,0.4)] hover:shadow-[0_15px_50px_rgba(16,185,129,0.6)] disabled:opacity-50 disabled:cursor-not-allowed group transform hover:-translate-y-0.5 active:translate-y-1"
                                             >
-                                                <Printer size={20} />
-                                                {isSettling ? "Processing..." : "Settle & Print Bill"}
+                                                <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)] -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                                                <Printer size={22} className="relative z-10 drop-shadow-md" />
+                                                <span className="relative z-10 drop-shadow-md">{isSettling ? "Processing..." : "Settle & Print Bill"}</span>
                                             </button>
                                         </div>
                                     </div>
