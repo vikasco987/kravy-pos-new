@@ -6,8 +6,11 @@ import ItemModal from './ItemModal'
 import AddonGroupsModal from './AddonGroupsModal'
 import { toast } from 'react-hot-toast'
 import { Layers, Cloud, Zap, ShieldCheck, Globe, Star, Sparkles, LayoutDashboard } from 'lucide-react'
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 export default function MenuEditor({ clerkId }: { clerkId: string }) {
+  const { confirm } = useConfirm();
   const [categories, setCategories] = useState<any[]>([])
   const [items, setItems] = useState<any[]>([])
   const [addonGroups, setAddonGroups] = useState<any[]>([])
@@ -116,7 +119,7 @@ export default function MenuEditor({ clerkId }: { clerkId: string }) {
   }
 
   async function handleDeleteAddonGroup(id: string) {
-    if (!confirm("Are you sure?")) return
+    if (!await confirm("Are you sure?")) return
     const res = await fetch(`/api/menu-editor/addon-groups?id=${id}`, { method: 'DELETE' })
     if (res.ok) {
       toast.success("Group deleted")

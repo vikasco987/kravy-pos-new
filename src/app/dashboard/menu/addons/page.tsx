@@ -5,8 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { toast, Toaster } from 'react-hot-toast'
 import AddonGroupsModal from '@/components/MenuEditor/AddonGroupsModal'
 import Link from 'next/link'
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 export default function AddonClustersPage() {
+  const { confirm } = useConfirm();
   const [groups, setGroups] = useState<any[]>([])
   const [items, setItems] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
@@ -77,7 +80,7 @@ export default function AddonClustersPage() {
   }
 
   async function handleDeleteGroup(id: string) {
-    if (!confirm("Are you sure you want to decommission this cluster? All item linkages will be severed.")) return
+    if (!await confirm("Are you sure you want to decommission this cluster? All item linkages will be severed.")) return
     try {
       const res = await fetch(`/api/menu-editor/addon-groups?id=${id}`, { method: 'DELETE' })
       if (res.ok) {
@@ -143,7 +146,7 @@ export default function AddonClustersPage() {
               </div>
 
               <button 
-                onClick={() => setShowModal(true)}
+                onClick={async () => setShowModal(true)}
                 className="group relative px-8 py-5 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-[1.8rem] font-black uppercase tracking-widest text-[0.8rem] shadow-2xl shadow-slate-900/30 hover:scale-[1.03] active:scale-95 transition-all flex items-center gap-3 overflow-hidden"
               >
                  <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-rose-500 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500" />
@@ -211,7 +214,7 @@ export default function AddonClustersPage() {
                         {/* CARD ACTIONS */}
                         <div className="absolute top-8 right-8 flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                            <button 
-                             onClick={() => handleDeleteGroup(group.id)}
+                             onClick={async () => handleDeleteGroup(group.id)}
                              className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950 text-rose-50 dark:text-rose-400 hover:bg-rose-500 dark:hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center shadow-sm"
                            >
                               <Plus size={18} className="rotate-45" />
@@ -304,7 +307,7 @@ export default function AddonClustersPage() {
 
                            <div className="pt-6">
                               <button 
-                                onClick={() => {
+                                onClick={async () => {
                                   setEditingGroup(group);
                                   setShowModal(true);
                                 }}

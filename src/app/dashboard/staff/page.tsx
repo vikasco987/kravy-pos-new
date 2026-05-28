@@ -46,6 +46,8 @@ import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuthContext } from "@/components/AuthContext";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 const ALL_PATHS = [
   { path: "/dashboard", label: "Store Dashboard", icon: <LayoutGrid size={16} /> },
@@ -112,6 +114,7 @@ type StaffMember = {
 };
 
 export default function StaffManagementPage() {
+  const { confirm } = useConfirm();
   const router = useRouter();
   const { user } = useAuthContext();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -253,7 +256,7 @@ export default function StaffManagementPage() {
   };
 
   const deleteStaff = async (member: StaffMember) => {
-    if (!confirm(`Are you sure you want to delete ${member.name}? This action cannot be undone.`)) return;
+    if (!await confirm(`Are you sure you want to delete ${member.name}? This action cannot be undone.`)) return;
     
     try {
       const url = new URL("/api/seller/staff", window.location.origin);
@@ -275,7 +278,7 @@ export default function StaffManagementPage() {
 
   const toggleBlockStaff = async (member: StaffMember) => {
     const action = member.isDisabled ? "unblock" : "block";
-    if (!confirm(`Are you sure you want to ${action} ${member.name}?`)) return;
+    if (!await confirm(`Are you sure you want to ${action} ${member.name}?`)) return;
 
     try {
       const res = await fetch("/api/seller/staff", {
@@ -318,7 +321,7 @@ export default function StaffManagementPage() {
         <div className="flex items-center gap-3">
           {isAdmin && (
             <button 
-              onClick={() => router.push("/dashboard/docs/staff-access")}
+              onClick={async () => router.push("/dashboard/docs/staff-access")}
               className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-2xl border border-indigo-700 hover:bg-indigo-500 transition-all font-bold text-sm shadow-lg shadow-indigo-200"
             >
               <Zap size={16} /> Technical Docs
@@ -367,7 +370,7 @@ export default function StaffManagementPage() {
                     />
                     <button 
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
                         const random = Math.random().toString(36).slice(-5);
                         setNewStaff({...newStaff, email: `staff.${random}@kravypos.com`});
                       }}
@@ -401,14 +404,14 @@ export default function StaffManagementPage() {
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                       <button 
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={async () => setShowPassword(!showPassword)}
                         className="text-slate-400 hover:text-indigo-600 p-1.5"
                       >
                         {showPassword ? <UserX size={14} /> : <Lock size={14} />}
                       </button>
                       <button 
                         type="button"
-                        onClick={() => {
+                        onClick={async () => {
                           const pass = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase() + "!";
                           setNewStaff({...newStaff, password: pass});
                           setShowPassword(true);
@@ -464,21 +467,21 @@ export default function StaffManagementPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => toggleBlockStaff(member)}
+                        onClick={async () => toggleBlockStaff(member)}
                         title={member.isDisabled ? "Unblock Staff" : "Block Staff"}
                         className={`p-2 rounded-xl transition-all ${member.isDisabled ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60' : 'bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-950/80'}`}
                       >
                         {member.isDisabled ? <UserCheck size={18} /> : <Ban size={18} />}
                       </button>
                       <button
-                        onClick={() => deleteStaff(member)}
+                        onClick={async () => deleteStaff(member)}
                         title="Delete Staff"
                         className="p-2 rounded-xl bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-950/80 transition-all"
                       >
                         <Trash2 size={18} />
                       </button>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           setSelectedStaff(member);
                           setIsEditingInfo(false);
                           setEditInfoData({ name: member.name, phone: (member as any).phone || "" });
@@ -512,20 +515,20 @@ export default function StaffManagementPage() {
                        </div>
                        <h3 className="text-white font-black">Edit Visibility: <span className="text-orange-400">{selectedStaff.name}</span></h3>
                     </div>
-                    <button onClick={() => setSelectedStaff(null)} className="text-slate-500 hover:text-white transition-colors">
+                    <button onClick={async () => setSelectedStaff(null)} className="text-slate-500 hover:text-white transition-colors">
                        <X size={20} />
                     </button>
                  </div>
 
                   <div className="flex bg-slate-800/50 p-1 rounded-xl mb-6">
                     <button 
-                      onClick={() => setIsEditingInfo(false)}
+                      onClick={async () => setIsEditingInfo(false)}
                       className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${!isEditingInfo ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
                     >
                       Permissions
                     </button>
                     <button 
-                      onClick={() => setIsEditingInfo(true)}
+                      onClick={async () => setIsEditingInfo(true)}
                       className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${isEditingInfo ? 'bg-orange-600 text-white' : 'text-slate-400'}`}
                     >
                       Profile Info
@@ -552,7 +555,7 @@ export default function StaffManagementPage() {
                            />
                            <button 
                              type="button"
-                             onClick={() => setUpdatingPassword(Math.random().toString(36).slice(-8))}
+                             onClick={async () => setUpdatingPassword(Math.random().toString(36).slice(-8))}
                              className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-xl"
                            >
                              <Sparkles size={14} />
@@ -578,7 +581,7 @@ export default function StaffManagementPage() {
                              return (
                                <button
                                  key={item.path}
-                                 onClick={() => handleTogglePath(item.path)}
+                                 onClick={async () => handleTogglePath(item.path)}
                                  className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isActive ? 'bg-indigo-600/20 border-indigo-500/50 text-white' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
                                >
                                  <div className="flex items-center gap-3">

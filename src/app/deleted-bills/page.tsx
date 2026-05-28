@@ -2,8 +2,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 export default function DeletedBillsPage() {
+  const { confirm } = useConfirm();
   const [deletedBills, setDeletedBills] = useState([]);
 
   const fetchDeleted = async () => {
@@ -17,7 +20,7 @@ export default function DeletedBillsPage() {
   };
 
   const restoreBill = async (id: string) => {
-    if (!confirm("Restore this bill?")) return;
+    if (!await confirm("Restore this bill?")) return;
 
     try {
       const res = await fetch(`/api/billing/deleted/restore/${id}`, {
@@ -83,7 +86,7 @@ export default function DeletedBillsPage() {
                 <td className="border p-2">
                   <button
                     className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-                    onClick={() => restoreBill(entry.id)}
+                    onClick={async () => restoreBill(entry.id)}
                   >
                     Restore
                   </button>

@@ -6,6 +6,8 @@ import { Package, Search, Plus, Filter, Download, Eye, Edit, Trash2, FileText, X
 import toast from "react-hot-toast";
 import { useSearch } from "@/components/SearchContext";
 import Link from "next/link";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 type InventoryItem = {
   id: string;
@@ -35,6 +37,7 @@ type RawMaterial = {
 };
 
 export default function InventoryPage() {
+  const { confirm } = useConfirm();
   const { query: globalQuery } = useSearch();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -201,7 +204,7 @@ export default function InventoryPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this item?")) return;
+    if (!await confirm("Are you sure you want to delete this item?")) return;
     try {
       const res = await fetch(`/api/items?id=${id}`, { method: "DELETE" });
       if (res.ok) {
@@ -264,13 +267,13 @@ export default function InventoryPage() {
         <div className="flex gap-2">
           <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] p-1 rounded-xl flex gap-1 mr-4 shadow-sm">
             <button 
-              onClick={() => setActiveTab("finished")}
+              onClick={async () => setActiveTab("finished")}
               className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'finished' ? 'bg-[var(--kravy-brand)] text-white shadow-lg shadow-[var(--kravy-brand)]/20' : 'text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg)]'}`}
             >
               Finished Products
             </button>
             <button 
-              onClick={() => setActiveTab("raw")}
+              onClick={async () => setActiveTab("raw")}
               className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'raw' ? 'bg-[var(--kravy-brand)] text-white shadow-lg shadow-[var(--kravy-brand)]/20' : 'text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg)]'}`}
             >
               Raw Ingredients
@@ -283,7 +286,7 @@ export default function InventoryPage() {
             <BarChart3 size={16} /> REPORT
           </Link>
           <button 
-            onClick={() => {
+            onClick={async () => {
               if (activeTab === 'finished') {
                 setEditingItem(null);
                 setFormData({
@@ -311,7 +314,7 @@ export default function InventoryPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            onClick={() => setFilterMode(stat.mode as any)}
+            onClick={async () => setFilterMode(stat.mode as any)}
             className={`cursor-pointer bg-[var(--kravy-surface)] border rounded-2xl p-3 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex items-center gap-3 transition-all duration-300 ${filterMode === stat.mode && stat.mode === "critical" ? "border-rose-500 ring-2 ring-rose-500/10 shadow-rose-500/5" : "border-[var(--kravy-border)] hover:border-[var(--kravy-brand)]/30"}`}
           >
             <div className={`w-9 h-9 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center shrink-0`}>
@@ -390,7 +393,7 @@ export default function InventoryPage() {
           {/* Reset Filters */}
           {(searchTerm || selectedCategory !== "all" || filterStatus !== "all" || sortBy !== "name" || filterMode !== "all") && (
             <button
-              onClick={() => {
+              onClick={async () => {
                 setSearchTerm("");
                 setSelectedCategory("all");
                 setFilterStatus("all");
@@ -509,13 +512,13 @@ export default function InventoryPage() {
                             <FileText size={12} /> Recipe
                           </button>
                           <button 
-                            onClick={() => handleEdit(item)}
+                            onClick={async () => handleEdit(item)}
                             className="w-8 h-8 rounded-lg bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:text-[var(--kravy-brand)] hover:border-[var(--kravy-brand)]/50 transition-all flex items-center justify-center"
                           >
                             <Edit size={14} />
                           </button>
                           <button 
-                            onClick={() => handleDelete(item.id)}
+                            onClick={async () => handleDelete(item.id)}
                             className="w-8 h-8 rounded-lg bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:text-rose-500 hover:border-rose-500/50 transition-all flex items-center justify-center"
                           >
                             <Trash2 size={14} />
@@ -571,7 +574,7 @@ export default function InventoryPage() {
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button 
-                              onClick={() => {
+                              onClick={async () => {
                                 setEditingRaw(mat);
                                 setRawFormData({
                                   name: mat.name,
@@ -588,7 +591,7 @@ export default function InventoryPage() {
                             </button>
                             <button 
                               onClick={async () => {
-                                if(!confirm("Delete this material?")) return;
+                                if(!await confirm("Delete this material?")) return;
                                 const res = await fetch(`/api/inventory/materials?id=${mat.id}`, { method: 'DELETE' });
                                 if(res.ok) {
                                   toast.success("Deleted");
@@ -618,7 +621,7 @@ export default function InventoryPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
+              onClick={async () => setIsModalOpen(false)}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div
@@ -637,7 +640,7 @@ export default function InventoryPage() {
                     <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-widest leading-none mt-1">Classification & Stock Levels</p>
                   </div>
                 </div>
-                <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 rounded-xl hover:bg-[var(--kravy-bg)] flex items-center justify-center text-[var(--kravy-text-muted)] transition-colors">
+                <button onClick={async () => setIsModalOpen(false)} className="w-8 h-8 rounded-xl hover:bg-[var(--kravy-bg)] flex items-center justify-center text-[var(--kravy-text-muted)] transition-colors">
                   <X size={20} />
                 </button>
               </div>
@@ -759,7 +762,7 @@ export default function InventoryPage() {
                         <button
                           key={status}
                           type="button"
-                          onClick={() => setFormData({ ...formData, taxStatus: status })}
+                          onClick={async () => setFormData({ ...formData, taxStatus: status })}
                           className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
                             formData.taxStatus === status
                               ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
@@ -776,7 +779,7 @@ export default function InventoryPage() {
                         <button
                           key={val}
                           type="button"
-                          onClick={() => setFormData({ ...formData, gst: val })}
+                          onClick={async () => setFormData({ ...formData, gst: val })}
                           className={`px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
                             formData.gst === val
                               ? "bg-indigo-600 text-white border-indigo-600"
@@ -823,7 +826,7 @@ export default function InventoryPage() {
                 <div className="mt-8 flex gap-3">
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={async () => setIsModalOpen(false)}
                     className="flex-1 px-6 py-3 bg-[var(--kravy-bg)] text-[var(--kravy-text-muted)] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[var(--kravy-border)]/20 transition-all border border-[var(--kravy-border)]"
                   >
                     Discard Changes
@@ -847,7 +850,7 @@ export default function InventoryPage() {
       <AnimatePresence>
         {isRawModalOpen && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsRawModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={async () => setIsRawModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] w-full max-w-md rounded-3xl overflow-hidden shadow-2xl relative z-10 p-6">
               <h2 className="text-lg font-black mb-6 flex items-center gap-2">
                 <Package className="text-orange-500" /> {editingRaw ? "Edit Material" : "New Raw Material"}
@@ -879,7 +882,7 @@ export default function InventoryPage() {
                 </div>
               </div>
               <div className="flex gap-3 mt-8">
-                <button onClick={() => setIsRawModalOpen(false)} className="flex-1 py-3 bg-slate-100 dark:bg-white/5 rounded-xl text-xs font-black uppercase">Cancel</button>
+                <button onClick={async () => setIsRawModalOpen(false)} className="flex-1 py-3 bg-slate-100 dark:bg-white/5 rounded-xl text-xs font-black uppercase">Cancel</button>
                 <button onClick={async () => {
                   const res = await fetch("/api/inventory/materials", {
                     method: editingRaw ? 'PATCH' : 'POST',
@@ -902,14 +905,14 @@ export default function InventoryPage() {
       <AnimatePresence>
         {isRecipeModalOpen && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsRecipeModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={async () => setIsRecipeModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl relative z-10">
               <div className="px-6 py-5 border-b border-[var(--kravy-border)] flex justify-between items-center bg-indigo-500/5">
                 <div>
                   <h2 className="text-lg font-black text-indigo-600">Recipe: {selectedItemForRecipe?.name}</h2>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Map raw materials to this item</p>
                 </div>
-                <button onClick={() => setIsRecipeModalOpen(false)} className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400">
+                <button onClick={async () => setIsRecipeModalOpen(false)} className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400">
                   <X size={20} />
                 </button>
               </div>
@@ -939,7 +942,7 @@ export default function InventoryPage() {
                           <span className="text-[10px] font-black text-slate-400 uppercase">{rawMaterials.find(m => m.id === item.materialId)?.unit}</span>
                         </div>
                         <button 
-                          onClick={() => setCurrentRecipe(currentRecipe.filter((_, i) => i !== idx))}
+                          onClick={async () => setCurrentRecipe(currentRecipe.filter((_, i) => i !== idx))}
                           className="w-8 h-8 rounded-lg text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition-all"
                         >
                           <Trash2 size={14} />
@@ -975,7 +978,7 @@ export default function InventoryPage() {
 
                 <div className="flex gap-3 pt-4">
                   <button 
-                    onClick={() => setIsRecipeModalOpen(false)}
+                    onClick={async () => setIsRecipeModalOpen(false)}
                     className="flex-1 py-3.5 bg-slate-100 dark:bg-white/5 rounded-2xl text-xs font-black uppercase tracking-widest"
                   >
                     Discard

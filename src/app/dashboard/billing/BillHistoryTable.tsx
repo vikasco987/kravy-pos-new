@@ -12,10 +12,13 @@ import { formatWhatsAppNumber } from "@/lib/whatsapp";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 // --- Sub-components ---
 
 const TypeBadge = ({ type }: { type: string }) => {
+  const { confirm } = useConfirm();
   const t = type?.toUpperCase() || "POS";
   let color = "#64748B";
   let bg = "rgba(100, 116, 139, 0.1)";
@@ -82,7 +85,7 @@ const PaymentBadge = ({ mode, status }: { mode: string, status: string }) => {
 const MenuOption = ({ icon, label, onClick, isDestructive }: any) => (
   <button 
     type="button"
-    onClick={(e) => { e.stopPropagation(); onClick(e); }} 
+    onClick={async (e) => { e.stopPropagation(); onClick(e); }} 
     style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", fontWeight: 700, color: isDestructive ? "#EF4444" : "#374151" }}
   >
     {icon} {label}
@@ -101,7 +104,7 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
   const canDelete = userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("delete-bill");
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure?")) return;
+    if (!await confirm("Are you sure?")) return;
     try {
       const res = await fetch(`/api/bill-manager/${bill.id}`, { method: "DELETE" });
       if (res.ok) { toast.success("Deleted"); refresh(true); }
@@ -110,7 +113,7 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
 
   const handleStatusUpdate = async (status: string) => {
     const label = status === "Paid" ? "PAID" : status === "CANCELLED" ? "CANCELLED" : "UNPAID";
-    if (!confirm(`Mark this order as ${label}?`)) return;
+    if (!await confirm(`Mark this order as ${label}?`)) return;
     try {
       const res = await fetch(`/api/bill-manager/${bill.id}`, {
         method: "PATCH",
@@ -122,7 +125,7 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
     } catch (e) { toast.error("Error"); }
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     const phone = formatWhatsAppNumber(bill.customerPhone);
     const origin = window.location.origin;
     const pdfUrl = `${origin}/api/bill-manager/${bill.id}/pdf${bill.clerkUserId ? `?clerkId=${bill.clerkUserId}` : ""}`;
@@ -173,35 +176,35 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
         </button>
         {isOpen && mounted && typeof document !== "undefined" && createPortal(
           <div style={{ position: "absolute", zIndex: 99999 }}>
-            <div style={{ position: "fixed", inset: 0, zIndex: 99998 }} onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
+            <div style={{ position: "fixed", inset: 0, zIndex: 99998 }} onClick={async (e) => { e.stopPropagation(); setOpenMenuId(null); }} />
             <div style={{
               position: "fixed", left: menuPos.left, top: menuPos.top, bottom: menuPos.bottom, width: "200px",
               background: "white", borderRadius: "18px", border: "1px solid #F3F4F6",
               boxShadow: "0 10px 40px rgba(0,0,0,0.15)", padding: "8px", zIndex: 99999, display: "flex", flexDirection: "column", gap: "2px"
             }}>
-              <MenuOption icon={<Eye size={14} color="#3B82F6" />} label="View Details" onClick={() => { setOpenMenuId(null); setViewBillDetails(bill); }} />
-              <MenuOption icon={<Eye size={14} color="#8B5CF6" />} label="Preview" onClick={() => { setOpenMenuId(null); setPreviewBill(bill); }} />
-              <MenuOption icon={<Printer size={14} color="#6B7280" />} label="Reprint Bill" onClick={() => { setOpenMenuId(null); router.push(`/dashboard/billing/${bill.id}`); }} />
-              <MenuOption icon={<FileText size={14} color="#3B82F6" />} label="Edit Bill" onClick={() => { setOpenMenuId(null); router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`); }} />
-              <MenuOption icon={<MessageCircle size={14} color="#10B981" />} label="WhatsApp" onClick={() => { setOpenMenuId(null); handleWhatsApp(); }} />
+              <MenuOption icon={<Eye size={14} color="#3B82F6" />} label="View Details" onClick={async () => { setOpenMenuId(null); setViewBillDetails(bill); }} />
+              <MenuOption icon={<Eye size={14} color="#8B5CF6" />} label="Preview" onClick={async () => { setOpenMenuId(null); setPreviewBill(bill); }} />
+              <MenuOption icon={<Printer size={14} color="#6B7280" />} label="Reprint Bill" onClick={async () => { setOpenMenuId(null); router.push(`/dashboard/billing/${bill.id}`); }} />
+              <MenuOption icon={<FileText size={14} color="#3B82F6" />} label="Edit Bill" onClick={async () => { setOpenMenuId(null); router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`); }} />
+              <MenuOption icon={<MessageCircle size={14} color="#10B981" />} label="WhatsApp" onClick={async () => { setOpenMenuId(null); handleWhatsApp(); }} />
               
               <div style={{ height: "1px", background: "#F3F4F6", margin: "4px 0" }} />
               
               {bill.paymentStatus !== "Paid" && (
-                <MenuOption icon={<CheckCircle size={14} color="#10B981" />} label="Mark as Paid" onClick={() => { setOpenMenuId(null); handleStatusUpdate("Paid"); }} />
+                <MenuOption icon={<CheckCircle size={14} color="#10B981" />} label="Mark as Paid" onClick={async () => { setOpenMenuId(null); handleStatusUpdate("Paid"); }} />
               )}
               {bill.paymentStatus !== "Pending" && bill.paymentStatus !== "Unpaid" && (
-                <MenuOption icon={<Clock size={14} color="#F59E0B" />} label="Mark as Unpaid" onClick={() => { setOpenMenuId(null); handleStatusUpdate("Pending"); }} />
+                <MenuOption icon={<Clock size={14} color="#F59E0B" />} label="Mark as Unpaid" onClick={async () => { setOpenMenuId(null); handleStatusUpdate("Pending"); }} />
               )}
               {bill.paymentStatus !== "CANCELLED" ? (
-                <MenuOption icon={<XCircle size={14} color="#EF4444" />} label="Mark as Cancelled" onClick={() => { setOpenMenuId(null); handleStatusUpdate("CANCELLED"); }} />
+                <MenuOption icon={<XCircle size={14} color="#EF4444" />} label="Mark as Cancelled" onClick={async () => { setOpenMenuId(null); handleStatusUpdate("CANCELLED"); }} />
               ) : (
-                <MenuOption icon={<CheckCircle size={14} color="#10B981" />} label="Restore Order" onClick={() => { setOpenMenuId(null); handleStatusUpdate("Paid"); }} />
+                <MenuOption icon={<CheckCircle size={14} color="#10B981" />} label="Restore Order" onClick={async () => { setOpenMenuId(null); handleStatusUpdate("Paid"); }} />
               )}
               {canDelete && (
                 <>
                   <div style={{ height: "1px", background: "#F3F4F6", margin: "4px 0" }} />
-                  <MenuOption icon={<Trash2 size={14} color="#EF4444" />} label="Delete Bill" onClick={() => { setOpenMenuId(null); handleDelete(); }} isDestructive />
+                  <MenuOption icon={<Trash2 size={14} color="#EF4444" />} label="Delete Bill" onClick={async () => { setOpenMenuId(null); handleDelete(); }} isDestructive />
                 </>
               )}
             </div>
@@ -274,7 +277,7 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
               <React.Fragment key={bill.id}>
                 <tr style={{ borderBottom: isExpanded ? "none" : "1px solid #F9FAFB", transition: "background 0.2s" }} className="hover:bg-slate-50">
                   <td style={{ padding: "16px 10px", width: "40px", textAlign: "center" }}>
-                    <button onClick={() => toggleRow(bill.id)} style={{ background: "none", border: "none", color: "#9CA3AF", cursor: "pointer" }}>
+                    <button onClick={async () => toggleRow(bill.id)} style={{ background: "none", border: "none", color: "#9CA3AF", cursor: "pointer" }}>
                       {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </button>
                   </td>
@@ -321,7 +324,7 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
                   )}
                   {visibleCols.items && (
                     <td>
-                      <button onClick={() => toggleRow(bill.id)} style={{ padding: "6px 12px", borderRadius: "10px", background: "#EEF2FF", color: "#6366F1", fontSize: "0.7rem", fontWeight: 900, border: "1px solid #E0E7FF", cursor: "pointer", transition: "all 0.2s" }}>
+                      <button onClick={async () => toggleRow(bill.id)} style={{ padding: "6px 12px", borderRadius: "10px", background: "#EEF2FF", color: "#6366F1", fontSize: "0.7rem", fontWeight: 900, border: "1px solid #E0E7FF", cursor: "pointer", transition: "all 0.2s" }}>
                         {itemsCount} {itemsCount === 1 ? 'ITEM' : 'ITEMS'}
                       </button>
                     </td>
@@ -543,7 +546,7 @@ const BillPreviewModal = ({ bill, business, onClose }: { bill: any, business: an
 
   const totalTaxable = taxBreakup.reduce((sum, g: any) => sum + g.taxable, 0);
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     const phone = formatWhatsAppNumber(bill.customerPhone);
     const origin = window.location.origin;
     const pdfUrl = `${origin}/api/bill-manager/${bill.id}/pdf${bill.clerkUserId ? `?clerkId=${bill.clerkUserId}` : ""}`;
@@ -560,7 +563,7 @@ const BillPreviewModal = ({ bill, business, onClose }: { bill: any, business: an
     window.open(phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`, "_blank");
   };
 
-  const handlePrintPdf = () => {
+  const handlePrintPdf = async () => {
     const origin = window.location.origin;
     const pdfUrl = `${origin}/api/bill-manager/${bill.id}/pdf${bill.clerkUserId ? `?clerkId=${bill.clerkUserId}` : ""}`;
     window.open(pdfUrl, "_blank");
@@ -848,7 +851,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
   const dateStr = dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const timeStr = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-  const getOrderTitle = () => {
+  const getOrderTitle = async () => {
     const t = bill.tableName || "POS";
     if (t === "POS") return "Counter Order Details";
     if (t.includes("TAKEAWAY")) return "Takeaway Order Details";
@@ -856,7 +859,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
     return `Dine In Order Details (${t})`;
   };
 
-  const getStatusLabel = () => {
+  const getStatusLabel = async () => {
     if (bill.isOrder) return bill.orderStatus || "ACTIVE";
     return bill.paymentStatus || "SETTLED";
   };
@@ -974,7 +977,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <button
-              onClick={() => {
+              onClick={async () => {
                 onClose();
                 router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`);
               }}
@@ -1018,7 +1021,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
                 </div>
               </div>
               <button
-                onClick={() => {
+                onClick={async () => {
                   setEditName(bill.customerName || "");
                   setEditPhone(bill.customerPhone || "");
                   setShowEditCustomer(true);
@@ -1068,7 +1071,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
         {/* Tab Headers */}
         <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid #E2E8F0", padding: "0 16px" }}>
           <button
-            onClick={() => setActiveTab("order_info")}
+            onClick={async () => setActiveTab("order_info")}
             className="tabBtn"
             style={{
               padding: "14px 20px", background: "transparent", border: "none",
@@ -1080,7 +1083,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
             Order Info
           </button>
           <button
-            onClick={() => setActiveTab("kot_history")}
+            onClick={async () => setActiveTab("kot_history")}
             className="tabBtn"
             style={{
               padding: "14px 20px", background: "transparent", border: "none",
@@ -1092,7 +1095,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
             KOT History
           </button>
           <button
-            onClick={() => setActiveTab("customer_details")}
+            onClick={async () => setActiveTab("customer_details")}
             className="tabBtn"
             style={{
               padding: "14px 20px", background: "transparent", border: "none",
@@ -1258,7 +1261,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
               {/* Action Footer */}
               <div style={{ marginTop: "12px" }}>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     onClose();
                     router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`);
                   }}
@@ -1424,7 +1427,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
 
         {showEditCustomer && (
           <div style={{ position: "absolute", inset: 0, zIndex: 10, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
-            <div style={{ position: "absolute", inset: 0, zIndex: 1 }} onClick={() => setShowEditCustomer(false)} />
+            <div style={{ position: "absolute", inset: 0, zIndex: 1 }} onClick={async () => setShowEditCustomer(false)} />
             
             <div 
               style={{ 
@@ -1439,7 +1442,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
                   <User size={18} style={{ color: "#2563EB" }} /> Edit Customer Details
                 </div>
                 <button 
-                  onClick={() => setShowEditCustomer(false)} 
+                  onClick={async () => setShowEditCustomer(false)} 
                   style={{
                     width: "28px", height: "28px", borderRadius: "8px", background: "#F1F5F9",
                     border: "none", color: "#64748B", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s"
@@ -1474,7 +1477,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
               
               <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
                 <button 
-                  onClick={() => setShowEditCustomer(false)} 
+                  onClick={async () => setShowEditCustomer(false)} 
                   style={{ flex: 1, padding: "11px", borderRadius: "10px", border: "1px solid #E2E8F0", background: "white", fontWeight: 800, color: "#475569", cursor: "pointer", fontSize: "0.8rem", transition: "0.2s" }}
                   className="hover:bg-slate-50"
                 >

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Database, Download, Upload, RefreshCw, Shield, Clock, CheckCircle, AlertCircle, HardDrive, Cloud, FileText, Calendar, Search, FileCode, ChevronRight, Trash2 } from "lucide-react";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 type BackupRecord = {
   id: string;
@@ -14,6 +16,7 @@ type BackupRecord = {
 }
 
 export default function BackupPage() {
+  const { confirm } = useConfirm();
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [backupProgress, setBackupProgress] = useState(0);
   const [backupHistory, setBackupHistory] = useState<BackupRecord[]>([]);
@@ -67,7 +70,7 @@ export default function BackupPage() {
   };
 
   const handleDeleteBackup = async (id: string, fileName: string) => {
-    if (!confirm(`Are you sure you want to delete backup "${fileName}"?`)) return;
+    if (!await confirm(`Are you sure you want to delete backup "${fileName}"?`)) return;
 
     try {
       const res = await fetch("/api/admin/backups/delete", {
@@ -109,7 +112,7 @@ export default function BackupPage() {
         <div style={{ display: "flex", gap: "10px" }}>
           {selectedBackup && (
             <button
-               onClick={() => setSelectedBackup(null)}
+               onClick={async () => setSelectedBackup(null)}
                style={{
                  background: "rgba(239, 68, 68, 0.1)",
                  color: "#EF4444",
@@ -417,7 +420,7 @@ export default function BackupPage() {
                     <td style={{ padding: "16px" }}>
                       <div style={{ display: "flex", gap: "8px", justifyContent: "center", alignItems: "center" }}>
                         <button 
-                          onClick={() => setSelectedBackup(backup.filename)}
+                          onClick={async () => setSelectedBackup(backup.filename)}
                           style={{
                                background: selectedBackup === backup.filename ? "var(--kravy-brand)" : "rgba(139, 92, 246, 0.1)",
                                color: selectedBackup === backup.filename ? "white" : "var(--kravy-brand)",
@@ -429,7 +432,7 @@ export default function BackupPage() {
                         </button>
                         <DownloadButton fileName={backup.filename} />
                         <button 
-                          onClick={() => handleDeleteBackup(backup.id, backup.filename)}
+                          onClick={async () => handleDeleteBackup(backup.id, backup.filename)}
                           style={{
                             background: "rgba(239, 68, 68, 0.1)",
                             color: "#EF4444",
@@ -624,7 +627,7 @@ function CollectionExplorer({ source, onReset }: { source: string | null, onRese
 
               <div style={{ display: "flex", gap: "8px" }}>
                 <button 
-                  onClick={() => handleExport('excel', col.name)}
+                  onClick={async () => handleExport('excel', col.name)}
                   style={{
                     flex: 1,
                     background: "rgba(16, 185, 129, 0.1)",
@@ -644,7 +647,7 @@ function CollectionExplorer({ source, onReset }: { source: string | null, onRese
                   <FileText size={14} /> Excel
                 </button>
                 <button 
-                  onClick={() => handleExport('json', col.name)}
+                  onClick={async () => handleExport('json', col.name)}
                   style={{
                     flex: 1,
                     background: "rgba(245, 158, 11, 0.1)",

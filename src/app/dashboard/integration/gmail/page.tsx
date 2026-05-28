@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "react-hot-toast";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 interface GmailStatus {
     isConnected: boolean;
@@ -42,6 +44,7 @@ function GmailIntegrationContent() {
     const [sandboxResult, setSandboxResult] = useState<any>(null);
 
     const loadSample = (platform: "zomato" | "swiggy") => {
+  const { confirm } = useConfirm();
         if (platform === "zomato") {
             setSandboxContent(
 `Dear Partner,
@@ -121,7 +124,7 @@ Swiggy Business Team`
     };
 
     const handleDisconnect = async () => {
-        if (!confirm("Are you sure you want to disconnect your Gmail integration? Daily Swiggy/Zomato email parsing will stop.")) {
+        if (!await confirm("Are you sure you want to disconnect your Gmail integration? Daily Swiggy/Zomato email parsing will stop.")) {
             return;
         }
         setActionLoading(true);
@@ -222,7 +225,7 @@ Swiggy Business Team`
             {/* Navigation Tabs */}
             <div className="flex border-b border-white/10 gap-6">
                 <button
-                    onClick={() => setActiveTab("auto")}
+                    onClick={async () => setActiveTab("auto")}
                     className={`pb-3 font-semibold text-sm transition-all duration-200 cursor-pointer ${
                         activeTab === "auto"
                             ? "text-violet-400 border-b-2 border-violet-500"
@@ -232,7 +235,7 @@ Swiggy Business Team`
                     Automatic Gmail Sync
                 </button>
                 <button
-                    onClick={() => setActiveTab("sandbox")}
+                    onClick={async () => setActiveTab("sandbox")}
                     className={`pb-3 font-semibold text-sm transition-all duration-200 cursor-pointer ${
                         activeTab === "sandbox"
                             ? "text-violet-400 border-b-2 border-violet-500"
@@ -439,13 +442,13 @@ Swiggy Business Team`
                                         <label className="block text-slate-400 text-xs font-semibold">Email Content Body</label>
                                         <div className="flex gap-2">
                                             <button
-                                                onClick={() => loadSample("zomato")}
+                                                onClick={async () => loadSample("zomato")}
                                                 className="text-[10px] text-violet-400 hover:text-violet-300 font-semibold bg-violet-500/10 px-2.5 py-1 rounded-md cursor-pointer"
                                             >
                                                 Load Zomato Sample
                                             </button>
                                             <button
-                                                onClick={() => loadSample("swiggy")}
+                                                onClick={async () => loadSample("swiggy")}
                                                 className="text-[10px] text-violet-400 hover:text-violet-300 font-semibold bg-violet-500/10 px-2.5 py-1 rounded-md cursor-pointer"
                                             >
                                                 Load Swiggy Sample

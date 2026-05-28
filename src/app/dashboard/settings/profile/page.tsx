@@ -7,8 +7,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Mail, Phone, Plus, Trash2, User as UserIcon, Shield, Camera, X } from "lucide-react";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 export default function ProfilePage() {
+  const { confirm } = useConfirm();
   const router = useRouter();
   const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
   const { signOut: clerkSignOut } = useClerk();
@@ -116,7 +119,7 @@ export default function ProfilePage() {
         toast.error("Custom accounts cannot be deleted from here yet. Contact support.");
         return;
     }
-    const ok = confirm(
+    const ok = await confirm(
       "This will permanently delete your account. Continue?"
     );
     if (!ok) return;
@@ -260,7 +263,7 @@ export default function ProfilePage() {
             <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em] opacity-50">Contact Methods</h2>
             <div className="flex gap-2">
                 <button 
-                    onClick={() => setShowAddModal({ show: true, type: 'email' })}
+                    onClick={async () => setShowAddModal({ show: true, type: 'email' })}
                     className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 transition-colors"
                 >
                     <Plus size={16} />
@@ -295,13 +298,13 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                         <button 
-                            onClick={() => handlePromoteIdentifier('email', e)}
+                            onClick={async () => handlePromoteIdentifier('email', e)}
                             className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20"
                         >
                             Make Primary
                         </button>
                         <button 
-                            onClick={() => handleDeleteIdentifier('email', e)}
+                            onClick={async () => handleDeleteIdentifier('email', e)}
                             className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
                         >
                             <Trash2 size={14} />
@@ -324,13 +327,13 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                         <button 
-                            onClick={() => handlePromoteIdentifier('phone', p)}
+                            onClick={async () => handlePromoteIdentifier('phone', p)}
                             className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20"
                         >
                             Make Primary
                         </button>
                         <button 
-                            onClick={() => handleDeleteIdentifier('phone', p)}
+                            onClick={async () => handleDeleteIdentifier('phone', p)}
                             className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
                         >
                             <Trash2 size={14} />
@@ -341,7 +344,7 @@ export default function ProfilePage() {
 
             {/* Add Phone Button */}
             <button 
-                onClick={() => setShowAddModal({ show: true, type: 'phone' })}
+                onClick={async () => setShowAddModal({ show: true, type: 'phone' })}
                 className="w-full py-4 border border-dashed border-white/10 rounded-3xl text-[10px] font-black uppercase tracking-widest text-white/30 hover:border-white/20 hover:text-white/50 transition-all"
             >
                 Add another phone number
@@ -356,7 +359,7 @@ export default function ProfilePage() {
                 <div className="bg-[#0a0a0a] border border-white/10 rounded-[40px] p-10 w-full max-w-md shadow-2xl">
                     <div className="flex justify-between items-center mb-8">
                         <h3 className="text-sm font-black text-white uppercase tracking-widest">Add {showAddModal.type}</h3>
-                        <button onClick={() => setShowAddModal({ ...showAddModal, show: false })} className="text-white/40 hover:text-white">
+                        <button onClick={async () => setShowAddModal({ ...showAddModal, show: false })} className="text-white/40 hover:text-white">
                             <X size={18} />
                         </button>
                     </div>

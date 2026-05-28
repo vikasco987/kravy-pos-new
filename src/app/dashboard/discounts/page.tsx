@@ -5,6 +5,8 @@ import { Plus, Tag, Trash2, Edit3, Settings, AlertCircle, CheckCircle2, Search, 
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { calculateDiscount } from "@/lib/discount-utils";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 /* ================= TYPES ================= */
 
@@ -38,6 +40,7 @@ type Item = {
 /* ================= PAGE ================= */
 
 export default function DiscountManagement() {
+  const { confirm } = useConfirm();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,7 +144,7 @@ export default function DiscountManagement() {
   }
 
   async function deleteOffer(id: string) {
-    if (!confirm("Are you sure you want to delete this offer?")) return;
+    if (!await confirm("Are you sure you want to delete this offer?")) return;
     try {
       const res = await fetch(`/api/discounts/${id}`, { method: "DELETE" });
       if (res.ok) {
@@ -169,7 +172,7 @@ export default function DiscountManagement() {
             <p className="text-[var(--kravy-text-muted)] mt-1 font-medium">Manage coupons, BOGO and flat discounts</p>
           </div>
           <button 
-            onClick={() => { setEditingId(null); setShowAddModal(true); }}
+            onClick={async () => { setEditingId(null); setShowAddModal(true); }}
             className="flex items-center gap-2 bg-[var(--kravy-brand)] hover:scale-105 active:scale-95 text-white px-6 py-3.5 rounded-2xl font-black transition-all shadow-lg shadow-indigo-500/30"
           >
             <Plus size={20} strokeWidth={3} />
@@ -182,7 +185,7 @@ export default function DiscountManagement() {
           {["OFFERS", "ANALYTICS", "TESTER"].map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={async () => setActiveTab(tab)}
               className={`px-6 py-2.5 rounded-xl text-[10px] font-black tracking-widest transition-all ${activeTab === tab 
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
                 : 'text-[var(--kravy-text-muted)] hover:bg-gray-100 dark:hover:bg-gray-800'}`}
@@ -240,7 +243,7 @@ export default function DiscountManagement() {
                 {/* STATUS BADGE */}
                 <div className="absolute top-6 right-6 flex gap-2">
                    <button 
-                    onClick={() => toggleStatus(o.id, o.isActive)}
+                    onClick={async () => toggleStatus(o.id, o.isActive)}
                     className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${o.isActive ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-amber-500/10 border-amber-500/20 text-amber-600'}`}
                   >
                     {o.isActive ? "● Active" : "○ Paused"}
@@ -281,13 +284,13 @@ export default function DiscountManagement() {
                   {/* QUICK ACTIONS */}
                   <div className="flex gap-2 mt-8">
                     <button 
-                      onClick={() => { setEditingId(o.id); setFormData(o); setShowAddModal(true); }}
+                      onClick={async () => { setEditingId(o.id); setFormData(o); setShowAddModal(true); }}
                       className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-50 dark:bg-gray-800 hover:bg-indigo-500/10 hover:text-indigo-500 rounded-2xl font-bold transition-all"
                     >
                       <Edit3 size={16} /> Edit
                     </button>
                     <button 
-                      onClick={() => deleteOffer(o.id)}
+                      onClick={async () => deleteOffer(o.id)}
                       className="w-12 h-12 flex items-center justify-center bg-gray-50 dark:bg-gray-800 hover:bg-rose-500/10 hover:text-rose-500 rounded-2xl transition-all"
                     >
                       <Trash2 size={18} />
@@ -340,7 +343,7 @@ export default function DiscountManagement() {
                   <input value={testCode} onChange={e => setTestCode(e.target.value.toUpperCase())} placeholder="SAVE50, DIWALI, etc." className="w-full bg-[var(--kravy-bg-2)] border-2 border-[var(--kravy-border)] p-4 rounded-2xl outline-none focus:border-[var(--kravy-brand)] font-black tracking-widest uppercase" />
                 </div>
                 <button 
-                  onClick={() => {
+                  onClick={async () => {
                     const found = offers.find(o => o.code === testCode);
                     if (!found) { setTestResult({ error: "Invalid Code" }); return; }
                     if (!found) { setTestResult({ error: "Invalid Code" }); return; }
@@ -405,7 +408,7 @@ export default function DiscountManagement() {
             <motion.div 
                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-               onClick={() => setShowAddModal(false)}
+               onClick={async () => setShowAddModal(false)}
             />
             <motion.form 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -421,7 +424,7 @@ export default function DiscountManagement() {
                   </h2>
                   <p className="text-[var(--kravy-text-muted)] font-medium">Fill in the details for your marketing campaign</p>
                 </div>
-                <button type="button" onClick={() => setShowAddModal(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-all h-fit text-gray-500 hover:text-rose-500">
+                <button type="button" onClick={async () => setShowAddModal(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-all h-fit text-gray-500 hover:text-rose-500">
                   <X />
                 </button>
               </div>
@@ -495,7 +498,7 @@ export default function DiscountManagement() {
               </div>
 
               <div className="mt-10 pt-8 border-t border-[var(--kravy-border)] flex gap-4">
-                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl font-black text-gray-500 hover:bg-gray-200 transition-all">CANCEL</button>
+                <button type="button" onClick={async () => setShowAddModal(false)} className="flex-1 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl font-black text-gray-500 hover:bg-gray-200 transition-all">CANCEL</button>
                 <button type="submit" disabled={submitting} className="flex-[2] py-4 bg-[var(--kravy-brand)] text-white rounded-2xl font-black shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                   {submitting ? "SAVING..." : "SAVE OFFER"}
                 </button>

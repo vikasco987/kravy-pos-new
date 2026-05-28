@@ -44,6 +44,8 @@ import {
 } from "@/components/ui/select";
 import { useRealTimeNotifications } from "@/hooks/useRealTimeNotifications";
 import { kravy } from "@/lib/sounds";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 interface TableData {
     id: string;
@@ -101,6 +103,7 @@ const statusConfig = {
 };
 
 export default function QRManagementPage() {
+  const { confirm } = useConfirm();
     const { userId } = useAuth();
     const { isConnected } = useRealTimeNotifications();
 
@@ -179,7 +182,7 @@ export default function QRManagementPage() {
         }
     };
 
-    const handleRefresh = () => {
+    const handleRefresh = async () => {
         setRefreshing(true);
         fetchAllData();
     };
@@ -213,7 +216,7 @@ export default function QRManagementPage() {
     };
 
     const deleteTable = async (tableId: string) => {
-        if (!confirm("Are you sure you want to delete this table?")) return;
+        if (!await confirm("Are you sure you want to delete this table?")) return;
 
         try {
             const response = await fetch(`/api/tables?id=${tableId}`, {
@@ -330,7 +333,7 @@ export default function QRManagementPage() {
                         {["overview", "tables", "orders", "reviews"].map((tab) => (
                             <button
                                 key={tab}
-                                onClick={() => setActiveTab(tab)}
+                                onClick={async () => setActiveTab(tab)}
                                 className={`py-4 px-1 border-b-2 font-medium text-sm capitalize ${
                                     activeTab === tab
                                         ? "border-orange-500 text-orange-600"
@@ -517,7 +520,7 @@ export default function QRManagementPage() {
                                                             <Button
                                                                 size="sm"
                                                                 variant="outline"
-                                                                onClick={() => downloadQR(table)}
+                                                                onClick={async () => downloadQR(table)}
                                                             >
                                                                 <Download className="h-3 w-3" />
                                                             </Button>
@@ -525,7 +528,7 @@ export default function QRManagementPage() {
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
-                                                            onClick={() => deleteTable(table.id)}
+                                                            onClick={async () => deleteTable(table.id)}
                                                         >
                                                             <Trash2 className="h-3 w-3" />
                                                         </Button>
@@ -615,7 +618,7 @@ export default function QRManagementPage() {
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => window.open(`/order-tracking/${order.id}`, '_blank')}
+                                                    onClick={async () => window.open(`/order-tracking/${order.id}`, '_blank')}
                                                 >
                                                     <Eye className="h-3 w-3" />
                                                 </Button>

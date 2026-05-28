@@ -7,6 +7,8 @@ import { Copy, Plus, Edit2, Trash2, Image as ImageIcon, UtensilsCrossed, X } fro
 import { Button } from "@/components/ui/button";
 import { kravy } from "@/lib/sounds";
 import CategorySelect from "@/app/dashboard/components/uploaditems/CategorySelect";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 type Category = {
     id: string;
@@ -29,6 +31,7 @@ type MenuItem = {
 };
 
 export default function MenuEditPage() {
+  const { confirm } = useConfirm();
     const [items, setItems] = useState<MenuItem[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
@@ -92,7 +95,7 @@ export default function MenuEditPage() {
         setIsFormOpen(true);
     };
 
-    const openAddModal = () => {
+    const openAddModal = async () => {
         setEditingItem(null);
         setFormData({
             name: "",
@@ -150,7 +153,7 @@ export default function MenuEditPage() {
     };
 
     const handleDelete = async (id: string, name: string) => {
-        if (!confirm(`Are you sure you want to delete ${name}?`)) return;
+        if (!await confirm(`Are you sure you want to delete ${name}?`)) return;
         try {
             const res = await fetch("/api/items", {
                 method: "DELETE",
@@ -246,13 +249,13 @@ export default function MenuEditPage() {
                                         <td className="py-4 px-6">
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
-                                                    onClick={() => openEditModal(item)}
+                                                    onClick={async () => openEditModal(item)}
                                                     className="w-10 h-10 rounded-xl bg-[var(--kravy-brand)]/10 text-[var(--kravy-brand)] flex items-center justify-center hover:bg-[var(--kravy-brand)] hover:text-white transition-all"
                                                 >
                                                     <Edit2 className="w-4 h-4" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDelete(item.id, item.name)}
+                                                    onClick={async () => handleDelete(item.id, item.name)}
                                                     className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -275,7 +278,7 @@ export default function MenuEditPage() {
                                 {editingItem ? "Edit Menu Item" : "Add New Item"}
                             </h2>
                             <button
-                                onClick={() => setIsFormOpen(false)}
+                                onClick={async () => setIsFormOpen(false)}
                                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--kravy-surface-hover)] text-[var(--kravy-text-muted)] transition-colors"
                             >
                                 <X className="w-5 h-5" />
@@ -387,7 +390,7 @@ export default function MenuEditPage() {
                                         <label className="text-xs font-black text-[var(--kravy-text-primary)] uppercase tracking-wider">Item Customizations (Variants / Addons)</label>
                                         <button 
                                             type="button"
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 const newVariants = [...formData.variants, {
                                                     id: Date.now().toString(),
                                                     name: "New Group",
@@ -431,7 +434,7 @@ export default function MenuEditPage() {
                                                     </select>
                                                     <button 
                                                         type="button"
-                                                        onClick={() => {
+                                                        onClick={async () => {
                                                             const updated = formData.variants.filter((_: any, i: number) => i !== gIdx);
                                                             setFormData({ ...formData, variants: updated });
                                                         }}
@@ -470,7 +473,7 @@ export default function MenuEditPage() {
                                                             </div>
                                                             <button 
                                                                 type="button"
-                                                                onClick={() => {
+                                                                onClick={async () => {
                                                                     const updated = [...formData.variants];
                                                                     updated[gIdx].options = updated[gIdx].options.filter((_: any, i: number) => i !== oIdx);
                                                                     setFormData({ ...formData, variants: updated });
@@ -483,7 +486,7 @@ export default function MenuEditPage() {
                                                     ))}
                                                     <button 
                                                         type="button"
-                                                        onClick={() => {
+                                                        onClick={async () => {
                                                             const updated = [...formData.variants];
                                                             updated[gIdx].options.push({ id: "opt-" + Date.now(), name: "", price: 0 });
                                                             setFormData({ ...formData, variants: updated });
@@ -504,7 +507,7 @@ export default function MenuEditPage() {
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => setIsFormOpen(false)}
+                                onClick={async () => setIsFormOpen(false)}
                                 className="px-6 rounded-xl border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-surface-hover)] font-black uppercase tracking-widest text-xs"
                             >
                                 Cancel

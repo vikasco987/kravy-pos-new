@@ -27,7 +27,9 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import ImageUpload from "../components/uploaditems/ImageUpload";
 import { kravy } from "@/lib/sounds";
+import { useConfirm } from "@/components/ConfirmContext";
 import {
+
     Sheet,
     SheetContent,
     SheetDescription,
@@ -63,6 +65,7 @@ interface Combo {
 }
 
 export default function CombosPage() {
+  const { confirm } = useConfirm();
     const [combos, setCombos] = useState<Combo[]>([]);
     const [items, setItems] = useState<MenuItem[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
@@ -158,7 +161,7 @@ export default function CombosPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure?")) return;
+        if (!await confirm("Are you sure?")) return;
         try {
             const res = await fetch(`/api/admin/combos/${id}`, { method: "DELETE" });
             if (res.ok) {
@@ -245,7 +248,7 @@ export default function CombosPage() {
                                         <Label className="font-black text-xs uppercase tracking-widest opacity-60">Status</Label>
                                         <Button
                                             type="button"
-                                            onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
+                                            onClick={async () => setFormData({ ...formData, isActive: !formData.isActive })}
                                             variant="outline"
                                             className={`w-full h-12 rounded-xl border-[var(--kravy-border)] font-bold flex justify-between px-4 ${formData.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : ''}`}
                                         >
@@ -260,10 +263,10 @@ export default function CombosPage() {
                                     <div className="flex items-center justify-between">
                                         <Label className="font-black text-xs uppercase tracking-widest opacity-60">Combo Components</Label>
                                         <div className="flex gap-2">
-                                            <Button type="button" onClick={() => handleAddSelection('fixed')} size="sm" variant="outline" className="rounded-lg h-8 gap-2 border-[var(--kravy-border)] font-bold text-[10px] uppercase">
+                                            <Button type="button" onClick={async () => handleAddSelection('fixed')} size="sm" variant="outline" className="rounded-lg h-8 gap-2 border-[var(--kravy-border)] font-bold text-[10px] uppercase">
                                                 <Plus size={12} /> Fixed Item
                                             </Button>
-                                            <Button type="button" onClick={() => handleAddSelection('choice')} size="sm" variant="outline" className="rounded-lg h-8 gap-2 border-[var(--kravy-border)] font-bold text-[10px] uppercase">
+                                            <Button type="button" onClick={async () => handleAddSelection('choice')} size="sm" variant="outline" className="rounded-lg h-8 gap-2 border-[var(--kravy-border)] font-bold text-[10px] uppercase">
                                                 <ListPlus size={12} /> Choice Pack
                                             </Button>
                                         </div>
@@ -274,7 +277,7 @@ export default function CombosPage() {
                                             <Card key={idx} className="p-4 rounded-2xl border-[var(--kravy-border)] relative group shadow-none bg-gray-50/30">
                                                 <button
                                                     type="button"
-                                                    onClick={() => removeSelection(idx)}
+                                                    onClick={async () => removeSelection(idx)}
                                                     className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                                                 >
                                                     <X size={14} />
@@ -490,7 +493,7 @@ export default function CombosPage() {
                                         </div>
                                     )}
                                     <div className="flex gap-1">
-                                        <button className="p-2 hover:bg-gray-100 rounded-xl text-gray-400" onClick={() => {
+                                        <button className="p-2 hover:bg-gray-100 rounded-xl text-gray-400" onClick={async () => {
                                             setEditingCombo(combo);
                                             setFormData({
                                                 name: combo.name,
@@ -504,7 +507,7 @@ export default function CombosPage() {
                                         }}>
                                             <Edit2 size={16} />
                                         </button>
-                                        <button className="p-2 hover:bg-red-50 rounded-xl text-gray-400 hover:text-red-500" onClick={() => handleDelete(combo.id)}>
+                                        <button className="p-2 hover:bg-red-50 rounded-xl text-gray-400 hover:text-red-500" onClick={async () => handleDelete(combo.id)}>
                                             <Trash2 size={16} />
                                         </button>
                                     </div>

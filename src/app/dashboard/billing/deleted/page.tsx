@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 type DeletedBill = {
   id: string;
@@ -21,6 +23,7 @@ type DeletedBill = {
 };
 
 export default function DeletedBillsPage() {
+  const { confirm } = useConfirm();
   const [bills, setBills] = useState<DeletedBill[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -33,7 +36,7 @@ export default function DeletedBillsPage() {
   }, []);
 
   async function restore(billId: string) {
-    if (!confirm("Restore this bill?")) return;
+    if (!await confirm("Restore this bill?")) return;
 
     const res = await fetch(
       `/api/bill-manager/deleted/restore/${billId}`,
@@ -119,7 +122,7 @@ export default function DeletedBillsPage() {
 
                     <td className="p-4 text-right">
                       <button
-                        onClick={() => restore(b.id)}
+                        onClick={async () => restore(b.id)}
                         className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-xl text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
                       >
                         Restore

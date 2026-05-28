@@ -5,6 +5,7 @@ import { SidebarProvider } from "@/components/SidebarContext";
 import { SearchProvider } from "@/components/SearchContext";
 import ThemeProvider from "@/components/ThemeProvider";
 import { Toaster } from "react-hot-toast";
+import { ConfirmProvider } from "@/components/ConfirmContext";
 
 export default function Providers({
   children,
@@ -14,12 +15,14 @@ export default function Providers({
   return (
     <ClerkProvider>
       <ThemeProvider>
-        <SidebarProvider>
-          <SearchProvider>
-            <Toaster position="top-right" />
-            {children}
-          </SearchProvider>
-        </SidebarProvider>
+        <ConfirmProvider>
+          <SidebarProvider>
+            <SearchProvider>
+              <Toaster position="top-right" />
+              {children}
+            </SearchProvider>
+          </SidebarProvider>
+        </ConfirmProvider>
       </ThemeProvider>
     </ClerkProvider>
   );

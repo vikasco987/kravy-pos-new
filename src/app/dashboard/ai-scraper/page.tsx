@@ -13,8 +13,11 @@ import {
   Play
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 export default function AIScraperPage() {
+  const { confirm } = useConfirm();
   const { user } = useAuthContext()
   const clerkId = user?.id
   const [data, setData] = useState<{ pending: any[], completed: any[], stats: any } | null>(null)
@@ -46,7 +49,7 @@ export default function AIScraperPage() {
   }
 
   async function syncAll() {
-    if (!confirm("This will start a bulk sync for your entire menu. Continue?")) return
+    if (!await confirm("This will start a bulk sync for your entire menu. Continue?")) return
     setSyncingAll(true)
     try {
       const res = await fetch(`${SCRAPER_URL}/api/scrape-external`, {
@@ -151,7 +154,7 @@ export default function AIScraperPage() {
                         </div>
                       </div>
                       <button 
-                        onClick={() => syncSingle(item)}
+                        onClick={async () => syncSingle(item)}
                         disabled={syncingItem === item.id}
                         className="bg-gray-50 hover:bg-orange-500 hover:text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50"
                       >

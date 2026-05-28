@@ -29,8 +29,10 @@ import PrintTemplates from "@/components/printing/PrintTemplates";
 import BillPreview from "@/components/printing/BillPreview";
 import OrderAlertLoop from "./components/order-alert-loop";
 import { useAuthContext } from "@/components/AuthContext";
+import { useConfirm } from "@/components/ConfirmContext";
 
-const SatoshiFont = () => (
+
+const SatoshiFont = async () => (
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
 );
 
@@ -53,13 +55,14 @@ type OrderItem = {
 
 
 const TableTimer = ({ startTime, className = "" }: { startTime?: string, className?: string }) => {
+  const { confirm } = useConfirm();
     const [timeData, setTimeData] = useState<{ h: number, m: number }>({ h: 0, m: 0 });
     const [ageStatus, setAgeStatus] = useState<"fresh" | "medium" | "old">("fresh");
 
     useEffect(() => {
         if (!startTime) return;
 
-        const update = () => {
+        const update = async () => {
             const now = new Date();
             const start = new Date(startTime);
             const diff = Math.floor((now.getTime() - start.getTime()) / 1000);
@@ -206,7 +209,7 @@ function KravyPOS() {
     };
 
     const handleDeleteTable = async (id: string, name: string) => {
-        if (!confirm(`Delete table ${name}?`)) return;
+        if (!await confirm(`Delete table ${name}?`)) return;
         try {
             const res = await fetch(`/api/tables?id=${id}`, { method: "DELETE" });
             if (res.ok) {
@@ -677,7 +680,7 @@ function KravyPOS() {
         if (!order) return;
 
         if (order.items.length === 1) {
-            if (confirm("This is the last item. Delete the whole order?")) {
+            if (await confirm("This is the last item. Delete the whole order?")) {
                 const res = await fetch("/api/orders", {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
@@ -756,7 +759,7 @@ function KravyPOS() {
 
     // Polling is now managed by TerminalContext
     useEffect(() => {
-        const tick = () => setClock(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+        const tick = async () => setClock(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
         tick(); const i = setInterval(tick, 1000); return () => clearInterval(i);
     }, []);
     useEffect(() => {
@@ -819,7 +822,7 @@ function KravyPOS() {
     };
 
     const softDeleteOrder = async (orderId: string) => {
-        if (!confirm("Are you sure you want to delete this order? It will be removed from workflow but kept in records.")) return;
+        if (!await confirm("Are you sure you want to delete this order? It will be removed from workflow but kept in records.")) return;
         try {
             const res = await fetch("/api/orders", {
                 method: "PATCH",
@@ -1092,7 +1095,7 @@ function KravyPOS() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             className="absolute inset-0 bg-black/80 backdrop-blur-xl"
-                            onClick={() => {
+                            onClick={async () => {
                                 console.log("[CI] Closing Modal via Backdrop");
                                 setShowCombineModal(false);
                             }}
@@ -1109,7 +1112,7 @@ function KravyPOS() {
                                     <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">Merge Pipelines</h3>
                                     <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Select orders to combine</p>
                                 </div>
-                                <button onClick={() => setShowCombineModal(false)} className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all">
+                                <button onClick={async () => setShowCombineModal(false)} className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all">
                                     <X size={20} />
                                 </button>
                             </div>
@@ -1118,7 +1121,7 @@ function KravyPOS() {
                                 {orders.filter(o => o.status !== "COMPLETED" && !o.isDeleted).map(o => (
                                     <button
                                         key={o.id}
-                                        onClick={(e) => {
+                                        onClick={async (e) => {
                                             e.stopPropagation();
                                             setCombineSelection(prev => {
                                                 const next = new Set(prev);
@@ -1157,7 +1160,7 @@ function KravyPOS() {
                             <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
                                 <button
                                     disabled={combineSelection.size < 2}
-                                    onClick={() => {
+                                    onClick={async () => {
                                         setShowCombineModal(false);
                                         handlePrint("MANUAL_COMBINE");
                                     }}
@@ -1198,7 +1201,7 @@ function KravyPOS() {
                             return (
                                 <button
                                     key={t.key}
-                                    onClick={() => { kravy.click(); setActiveTab(t.key as TabKey); }}
+                                    onClick={async () => { kravy.click(); setActiveTab(t.key as TabKey); }}
                                     className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isActive ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
                                 >
                                     <Icon size={12} />
@@ -1238,7 +1241,7 @@ function KravyPOS() {
                             </div>
                         </div>
                         <button
-                            onClick={() => { 
+                            onClick={async () => { 
                                 kravy.click(); 
                                 router.push("/dashboard/billing/checkout?returnTo=/dashboard/terminal"); 
                             }}
@@ -1273,7 +1276,7 @@ function KravyPOS() {
                                             <Layers size={12} />
                                             Dining Tables
                                         </span>
-                                        <button onClick={() => fetchData()} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"><RotateCcw size={13} /></button>
+                                        <button onClick={async () => fetchData()} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"><RotateCcw size={13} /></button>
                                     </div>
 
                                     {/* Search */}
@@ -1293,7 +1296,7 @@ function KravyPOS() {
                                         {(["ALL", "RUNNING", "READY"] as const).map(f => (
                                             <button
                                                 key={f}
-                                                onClick={() => { kravy.click(); setTableFilter(f); }}
+                                                onClick={async () => { kravy.click(); setTableFilter(f); }}
                                                 className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${tableFilter === f ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg shadow-slate-900/10" : "bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"}`}
                                             >
                                                 {f}
@@ -1310,7 +1313,7 @@ function KravyPOS() {
                                             </div>
                                             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 px-1">
                                                 <button
-                                                    onClick={() => { kravy.click(); setActiveZone("ALL"); }}
+                                                    onClick={async () => { kravy.click(); setActiveZone("ALL"); }}
                                                     className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border backdrop-blur-md whitespace-nowrap ${activeZone === "ALL" ? "bg-indigo-600/90 border-indigo-500/50 text-white shadow-[0_4px_20px_rgba(79,70,229,0.3)] scale-[1.02]" : "bg-white/60 dark:bg-slate-800/60 border-slate-200/50 dark:border-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-white/80 dark:hover:bg-slate-700"}`}
                                                 >
                                                     All Floors
@@ -1318,7 +1321,7 @@ function KravyPOS() {
                                                 {availableZones.map(z => (
                                                     <button
                                                         key={z}
-                                                        onClick={() => { kravy.click(); setActiveZone(z); }}
+                                                        onClick={async () => { kravy.click(); setActiveZone(z); }}
                                                         className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border backdrop-blur-md whitespace-nowrap ${activeZone === z ? "bg-indigo-600/90 border-indigo-500/50 text-white shadow-[0_4px_20px_rgba(79,70,229,0.3)] scale-[1.02]" : "bg-white/60 dark:bg-slate-800/60 border-slate-200/50 dark:border-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-white/80 dark:hover:bg-slate-700"}`}
                                                     >
                                                         {z}
@@ -1344,7 +1347,7 @@ function KravyPOS() {
                                                 <motion.div
                                                     key={t.id}
                                                     title={displayName} // Tooltip on hover
-                                                    onClick={() => { 
+                                                    onClick={async () => { 
                                                         kravy.click(); 
                                                         setSelectedTableId(t.id); 
                                                         setSelectedOrderId(null); 
@@ -1359,10 +1362,10 @@ function KravyPOS() {
                                                         <div className="w-full flex items-center justify-between z-20 relative">
                                                             {/* Edit/Delete overlay appearing on hover */}
                                                             <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm p-1 rounded-bl-xl shadow-sm z-30 translate-x-3 -translate-y-3 pointer-events-auto">
-                                                                <button onClick={(e) => { e.stopPropagation(); setEditingTable(t); setTableNameInput(t.name); setTableZoneInput(t.zone || "Default"); setIsTableModalOpen(true); kravy.click(); }} className="p-1.5 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
+                                                                <button onClick={async (e) => { e.stopPropagation(); setEditingTable(t); setTableNameInput(t.name); setTableZoneInput(t.zone || "Default"); setIsTableModalOpen(true); kravy.click(); }} className="p-1.5 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
                                                                     <Edit2 size={12} />
                                                                 </button>
-                                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteTable(t.id, t.name); kravy.trash(); }} className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/50 rounded-lg transition-colors">
+                                                                <button onClick={async (e) => { e.stopPropagation(); handleDeleteTable(t.id, t.name); kravy.trash(); }} className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/50 rounded-lg transition-colors">
                                                                     <Trash2 size={12} />
                                                                 </button>
                                                             </div>
@@ -1416,7 +1419,7 @@ function KravyPOS() {
                                         
                                         {/* Quick Add Table Ghost Card */}
                                         <motion.div
-                                            onClick={() => { setEditingTable(null); setTableNameInput(""); setTableZoneInput(activeZone === "All Zones" ? "Default" : activeZone); setIsTableModalOpen(true); kravy.click(); }}
+                                            onClick={async () => { setEditingTable(null); setTableNameInput(""); setTableZoneInput(activeZone === "All Zones" ? "Default" : activeZone); setIsTableModalOpen(true); kravy.click(); }}
                                             className="relative group h-[96px] flex flex-col items-center justify-center rounded-2xl transition-all duration-300 cursor-pointer z-10 hover:scale-[1.02] border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500/50 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-indigo-50/30"
                                         >
                                             <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors mb-2 shadow-sm">
@@ -1549,7 +1552,7 @@ function KravyPOS() {
                                             {/* 9. Action Buttons */}
                                             <div className="flex items-center gap-2">
                                                 <button 
-                                                    onClick={() => {
+                                                    onClick={async () => {
                                                         kravy.click();
                                                         router.push(`/dashboard/billing/checkout?tableId=${selectedTable.id}&tableName=${selectedTable.name}&returnTo=/dashboard/terminal`);
                                                     }}
@@ -1558,7 +1561,7 @@ function KravyPOS() {
                                                     <Plus size={14} className="group-hover:rotate-90 transition-transform" /> New Order
                                                 </button>
                                                 <button 
-                                                    onClick={() => {
+                                                    onClick={async () => {
                                                         kravy.click();
                                                         if (activeOrderForSelected) {
                                                             sessionStorage.setItem("quick_pos_handoff_order", JSON.stringify(activeOrderForSelected));
@@ -1580,7 +1583,7 @@ function KravyPOS() {
                                                 {tableOrders?.map(o => (
                                                     <button 
                                                         key={o.id}
-                                                        onClick={() => { kravy.click(); setSelectedOrderId(o.id); }}
+                                                        onClick={async () => { kravy.click(); setSelectedOrderId(o.id); }}
                                                         className={`shrink-0 px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-3 ${activeOrderForSelected?.id === o.id ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 shadow-lg shadow-slate-900/10" : "bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-800 hover:border-slate-300"}`}
                                                     >
                                                         <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${activeOrderForSelected?.id === o.id ? "bg-white/10" : "bg-slate-50 dark:bg-slate-700"}`}>
@@ -1697,7 +1700,7 @@ function KravyPOS() {
                                                                             </div>
                                                                             <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
                                                                                 <button 
-                                                                                    onClick={() => { kravy.remove(); handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity - 1); }}
+                                                                                    onClick={async () => { kravy.remove(); handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity - 1); }}
                                                                                     className="w-4 h-4 rounded flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 text-slate-400 transition-all font-black text-[10px]"
                                                                                 >
                                                                                     −
@@ -1706,7 +1709,7 @@ function KravyPOS() {
                                                                                     {item.quantity}
                                                                                 </span>
                                                                                 <button 
-                                                                                    onClick={() => { kravy.click(); handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity + 1); }}
+                                                                                    onClick={async () => { kravy.click(); handleUpdateItemQty(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item), item.quantity + 1); }}
                                                                                     className="w-4 h-4 rounded flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 text-[#6D3BFF] transition-all font-black text-[10px]"
                                                                                 >
                                                                                     +
@@ -1714,7 +1717,7 @@ function KravyPOS() {
                                                                             </div>
                                                                             <span className="w-12 text-right text-[11px] font-black text-slate-900">₹{item.price * item.quantity}</span>
                                                                             <button 
-                                                                                onClick={() => { kravy.trash(); handleRemoveItem(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item)); }}
+                                                                                onClick={async () => { kravy.trash(); handleRemoveItem(activeOrderForSelected.id, activeOrderForSelected.items.indexOf(item)); }}
                                                                                 className="w-5 h-5 rounded flex items-center justify-center text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
                                                                             >
                                                                                 <Trash2 size={10} />
@@ -1759,7 +1762,7 @@ function KravyPOS() {
                                                             <button
                                                                 key={i}
                                                                 disabled={!activeOrderForSelected || !btn.active}
-                                                                onClick={() => updateOrderStatus(activeOrderForSelected!.id, btn.s)}
+                                                                onClick={async () => updateOrderStatus(activeOrderForSelected!.id, btn.s)}
                                                                 className={`flex-1 h-9 rounded-lg flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${btn.active ? `${btn.color} shadow-lg hover:scale-[1.02] active:scale-95` : "bg-slate-50 dark:bg-slate-800/50 text-slate-300 dark:text-slate-600 opacity-40 cursor-not-allowed"}`}
                                                             >
                                                                 {btn.icon} {btn.label}
@@ -1786,7 +1789,7 @@ function KravyPOS() {
                                             <div className="flex gap-2.5">
                                                 <div className="flex-1 flex gap-2">
                                                     <button
-                                                        onClick={() => { 
+                                                        onClick={async () => { 
                                                             if (activeOrderForSelected) setPrintOrder(activeOrderForSelected);
                                                             setPreviewMode("KOT"); 
                                                             setShowPreview(true); 
@@ -1797,7 +1800,7 @@ function KravyPOS() {
                                                         <Eye size={14} />
                                                     </button>
                                                     <button
-                                                        onClick={() => {
+                                                        onClick={async () => {
                                                             const tbl = tablesList.find(t => t.id === activeOrderForSelected?.table?.id);
                                                             if (activeOrderForSelected) {
                                                                 setPrintOrder(activeOrderForSelected);
@@ -1810,7 +1813,7 @@ function KravyPOS() {
                                                         <Printer size={12} /> KOT
                                                     </button>
                                                     <button
-                                                        onClick={() => {
+                                                        onClick={async () => {
                                                             const tbl = tablesList.find(t => t.id === activeOrderForSelected?.table?.id);
                                                             if (activeOrderForSelected) {
                                                                 setPrintOrder(activeOrderForSelected);
@@ -1826,7 +1829,7 @@ function KravyPOS() {
                                                 </div>
                                                 <button
                                                     disabled={!activeOrderForSelected}
-                                                    onClick={() => {
+                                                    onClick={async () => {
                                                         if (!activeOrderForSelected || !selectedTable) return;
                                                         kravy.payment();
                                                         setSelectedOrderId(activeOrderForSelected.id);
@@ -1901,7 +1904,7 @@ function KravyPOS() {
                                                 </div>
                                             </div>
                                             <button 
-                                                onClick={() => {
+                                                onClick={async () => {
                                                     setEditCustomerName(activeOrderForSelected.customerName || "");
                                                     setEditCustomerPhone(activeOrderForSelected.customerPhone || "");
                                                     setShowCustomerModal(true);
@@ -1917,7 +1920,7 @@ function KravyPOS() {
                                             {["ITEMS", "KOT", "RESERVATION"].map(tab => (
                                                 <button 
                                                     key={tab}
-                                                    onClick={() => setSettleTab(tab as any)}
+                                                    onClick={async () => setSettleTab(tab as any)}
                                                     className={`pb-3 text-sm font-medium transition-colors ${settleTab === tab ? "text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-500" : "text-slate-400 dark:text-slate-500 hover:text-slate-400 dark:text-slate-500 dark:text-slate-400"}`}
                                                 >
                                                     {tab === "ITEMS" ? "Ordered Items" : tab === "KOT" ? "KOT History" : "User Reservation History"}
@@ -2034,17 +2037,17 @@ function KravyPOS() {
 
                                                 {/* Tabs */}
                                                 <div className="flex border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden p-0.5 bg-slate-50 dark:bg-slate-900 mt-4">
-                                                    <button onClick={() => setDiscountMode('PROMO')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${discountMode === 'PROMO' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}>Promo</button>
-                                                    <button onClick={() => setDiscountMode('INSTANT')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${discountMode === 'INSTANT' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}>Discount</button>
-                                                    <button onClick={() => setDiscountMode('CHARGES')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${discountMode === 'CHARGES' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}>Charges</button>
+                                                    <button onClick={async () => setDiscountMode('PROMO')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${discountMode === 'PROMO' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}>Promo</button>
+                                                    <button onClick={async () => setDiscountMode('INSTANT')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${discountMode === 'INSTANT' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}>Discount</button>
+                                                    <button onClick={async () => setDiscountMode('CHARGES')} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${discountMode === 'CHARGES' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}>Charges</button>
                                                 </div>
                                                 
                                                 {/* Discount Tab Content */}
                                                 {discountMode === 'INSTANT' && (
                                                     <div className="flex items-center gap-2 mt-3">
                                                         <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
-                                                            <button onClick={() => setDiscountType('PERCENT')} className={`px-3 py-1.5 text-xs font-bold rounded-md ${discountType === 'PERCENT' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>%</button>
-                                                            <button onClick={() => setDiscountType('FLAT')} className={`px-3 py-1.5 text-xs font-bold rounded-md ${discountType === 'FLAT' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>₹</button>
+                                                            <button onClick={async () => setDiscountType('PERCENT')} className={`px-3 py-1.5 text-xs font-bold rounded-md ${discountType === 'PERCENT' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>%</button>
+                                                            <button onClick={async () => setDiscountType('FLAT')} className={`px-3 py-1.5 text-xs font-bold rounded-md ${discountType === 'FLAT' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>₹</button>
                                                         </div>
                                                         <input 
                                                             type="number" 
@@ -2109,7 +2112,7 @@ function KravyPOS() {
                                                 ].map(method => (
                                                     <button
                                                         key={method.id}
-                                                        onClick={() => setPayMethod(method.id)}
+                                                        onClick={async () => setPayMethod(method.id)}
                                                         className={`flex flex-col items-center justify-center py-2 rounded-xl border-2 transition-all ${payMethod === method.id ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-blue-400'}`}
                                                     >
                                                         {method.icon}
@@ -2120,11 +2123,11 @@ function KravyPOS() {
 
                                             {/* Action Buttons */}
                                             <div className="px-4 pb-4 grid grid-cols-2 gap-2">
-                                                <button onClick={() => setActiveTab("dashboard")} className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
+                                                <button onClick={async () => setActiveTab("dashboard")} className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
                                                     <Save size={18} />
                                                     <span className="text-[9px] font-black uppercase mt-1">Save</span>
                                                 </button>
-                                                <button onClick={() => { if (activeOrderForSelected) setPrintOrder(activeOrderForSelected); setShowPreview(true); }} className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-blue-200 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-500 hover:bg-blue-100">
+                                                <button onClick={async () => { if (activeOrderForSelected) setPrintOrder(activeOrderForSelected); setShowPreview(true); }} className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-blue-200 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-500 hover:bg-blue-100">
                                                     <Eye size={18} />
                                                     <span className="text-[9px] font-black uppercase mt-1">Preview</span>
                                                 </button>
@@ -2158,7 +2161,7 @@ function KravyPOS() {
                                     </div>
                                     <p className="text-2xl font-bold text-slate-900 dark:text-slate-200 mb-2">Billing Vault</p>
                                     <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400 mb-8">Select an active table from Terminal to initiate checkout flow.</p>
-                                    <button onClick={() => setActiveTab("dashboard")} className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium shadow-lg hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors">
+                                    <button onClick={async () => setActiveTab("dashboard")} className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium shadow-lg hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors">
                                         Back to Terminal
                                     </button>
                                 </div>
@@ -2180,7 +2183,7 @@ function KravyPOS() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                            onClick={() => setShowAddItemModal(false)}
+                            onClick={async () => setShowAddItemModal(false)}
                         />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -2193,7 +2196,7 @@ function KravyPOS() {
                                     <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight">Add Items</h3>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Updating Order #{orderToUpdate?.id.slice(-4).toUpperCase()}</p>
                                 </div>
-                                <button onClick={() => setShowAddItemModal(false)} className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all"><X size={20} /></button>
+                                <button onClick={async () => setShowAddItemModal(false)} className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all"><X size={20} /></button>
                             </div>
 
                             <div className="p-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
@@ -2216,7 +2219,7 @@ function KravyPOS() {
                                     .map(it => (
                                         <div 
                                             key={it.id} 
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 kravy.click();
                                                 addItemToOrder(it);
                                             }}
@@ -2366,7 +2369,7 @@ function KravyPOS() {
             <AnimatePresence>
                 {isTableModalOpen && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsTableModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-xl" />
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={async () => setIsTableModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-xl" />
                         <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.2)] p-6 w-full max-w-sm border border-white/50 dark:border-slate-700/50 z-[101]">
                             <h2 className="text-xl font-black text-slate-900 dark:text-white mb-4">{editingTable ? "Edit Table" : "Add Table"}</h2>
                             <div className="space-y-4">
@@ -2382,7 +2385,7 @@ function KravyPOS() {
                                 )}
                             </div>
                             <div className="flex items-center gap-3 mt-6">
-                                <button onClick={() => setIsTableModalOpen(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-black text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                                <button onClick={async () => setIsTableModalOpen(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-black text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
                                 <button onClick={handleSaveTable} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/25">{editingTable ? "Save Changes" : "Add Table"}</button>
                             </div>
                         </motion.div>
@@ -2392,7 +2395,7 @@ function KravyPOS() {
                 {/* Customer Details Modal */}
                 {showCustomerModal && activeOrderForSelected && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCustomerModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-xl" />
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={async () => setShowCustomerModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-xl" />
                         <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.2)] p-6 w-full max-w-sm border border-white/50 dark:border-slate-700/50 z-[101]">
                             <h2 className="text-xl font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                                 <User size={20} className="text-indigo-600 dark:text-indigo-400" />
@@ -2409,7 +2412,7 @@ function KravyPOS() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 mt-6">
-                                <button onClick={() => setShowCustomerModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-black text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                                <button onClick={async () => setShowCustomerModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-black text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
                                 <button onClick={async () => {
                                     try {
                                         const res = await fetch("/api/orders", {

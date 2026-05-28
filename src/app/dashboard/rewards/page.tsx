@@ -29,6 +29,8 @@ import {
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { kravy } from "@/lib/sounds";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 type Reward = {
     id: string;
@@ -39,6 +41,7 @@ type Reward = {
 };
 
 export default function RewardsPage() {
+  const { confirm } = useConfirm();
     const [rewards, setRewards] = useState<Reward[]>([]);
     const [loading, setLoading] = useState(true);
     const [isOpen, setIsOpen] = useState(false);
@@ -94,7 +97,7 @@ export default function RewardsPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Delete this reward?")) return;
+        if (!await confirm("Delete this reward?")) return;
         try {
             const res = await fetch(`/api/admin/rewards/${id}`, { method: "DELETE" });
             if (res.ok) {
@@ -313,13 +316,13 @@ export default function RewardsPage() {
                                         </div>
                                         <div className="flex gap-2">
                                             <button
-                                                onClick={() => openEdit(reward)}
+                                                onClick={async () => openEdit(reward)}
                                                 className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 hover:text-black hover:bg-white border border-transparent hover:border-gray-100 transition-all"
                                             >
                                                 <Edit2 size={16} />
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(reward.id)}
+                                                onClick={async () => handleDelete(reward.id)}
                                                 className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-400 hover:text-red-600 border border-transparent hover:border-red-100 transition-all"
                                             >
                                                 <Trash2 size={16} />

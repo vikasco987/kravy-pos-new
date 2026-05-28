@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { kravy } from "@/lib/sounds";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 type GalleryImage = {
     id: string;
@@ -35,6 +37,7 @@ const CAT_COLORS: Record<string, string> = {
 };
 
 export default function GalleryManagerPage() {
+  const { confirm } = useConfirm();
     const [images, setImages] = useState<GalleryImage[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
@@ -103,7 +106,7 @@ export default function GalleryManagerPage() {
     }
 
     async function handleDelete(id: string) {
-        if (!confirm("Delete this image from gallery?")) return;
+        if (!await confirm("Delete this image from gallery?")) return;
         try {
             await fetch(`/api/admin/gallery?id=${id}`, { method: "DELETE" });
             setImages(prev => prev.filter(i => i.id !== id));
@@ -170,7 +173,7 @@ export default function GalleryManagerPage() {
                 {stats.map(cat => (
                     <button
                         key={cat.value}
-                        onClick={() => setFilterCat(filterCat === cat.value ? "all" : cat.value)}
+                        onClick={async () => setFilterCat(filterCat === cat.value ? "all" : cat.value)}
                         className={`rounded-2xl p-3 border transition-all text-left ${filterCat === cat.value ? CAT_COLORS[cat.value] + " border-current" : "bg-[var(--kravy-surface)] border-[var(--kravy-border)]"}`}
                     >
                         <div className="text-xl font-black text-[var(--kravy-text-primary)]">{cat.count}</div>
@@ -194,7 +197,7 @@ export default function GalleryManagerPage() {
                             {CATEGORIES.map(c => (
                                 <button
                                     key={c.value}
-                                    onClick={() => setUploadCat(c.value)}
+                                    onClick={async () => setUploadCat(c.value)}
                                     className={`px-2.5 py-1.5 rounded-lg text-[0.7rem] font-black border transition-all ${uploadCat === c.value ? CAT_COLORS[c.value] + " border-current" : "border-[var(--kravy-border)] text-[var(--kravy-text-muted)]"}`}
                                 >
                                     {c.label}
@@ -224,7 +227,7 @@ export default function GalleryManagerPage() {
                             onChange={handleUpload}
                         />
                         <button
-                            onClick={() => fileRef.current?.click()}
+                            onClick={async () => fileRef.current?.click()}
                             disabled={uploading}
                             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl font-black text-sm hover:bg-violet-700 transition disabled:opacity-50 shadow-md shadow-violet-200"
                         >
@@ -245,7 +248,7 @@ export default function GalleryManagerPage() {
                 {["all", ...CATEGORIES.map(c => c.value)].map(cat => (
                     <button
                         key={cat}
-                        onClick={() => setFilterCat(cat)}
+                        onClick={async () => setFilterCat(cat)}
                         className={`px-3.5 py-1.5 rounded-full text-[0.72rem] font-black border transition-all ${filterCat === cat
                             ? "bg-[var(--kravy-brand)] text-white border-[var(--kravy-brand)] shadow-md"
                             : "bg-[var(--kravy-surface)] text-[var(--kravy-text-muted)] border-[var(--kravy-border)]"
@@ -278,7 +281,7 @@ export default function GalleryManagerPage() {
                             {/* Image */}
                             <div
                                 className="relative w-full h-40 cursor-pointer"
-                                onClick={() => { kravy.open(); setLightbox(img); }}
+                                onClick={async () => { kravy.open(); setLightbox(img); }}
                             >
                                 <Image src={img.imageUrl} alt={img.caption || img.category} fill className="object-cover" />
                                 {/* Category chip */}
@@ -306,30 +309,30 @@ export default function GalleryManagerPage() {
                                         {CATEGORIES.map(c => (
                                             <button
                                                 key={c.value}
-                                                onClick={() => setEditCategory(c.value)}
+                                                onClick={async () => setEditCategory(c.value)}
                                                 className={`flex-1 text-[0.55rem] font-black py-1 rounded-md border transition ${editCategory === c.value ? CAT_COLORS[c.value] + " border-current" : "border-gray-200 text-gray-400"}`}
                                             >{c.label.split(" ")[0]}</button>
                                         ))}
                                     </div>
                                     <div className="flex gap-1">
-                                        <button onClick={() => setEditingId(null)} className="flex-1 text-xs py-1 rounded-md border border-gray-200 text-gray-400">Cancel</button>
-                                        <button onClick={() => handleSaveEdit(img.id)} className="flex-1 text-xs py-1 rounded-md bg-violet-600 text-white font-black flex items-center justify-center gap-1"><Save size={10} />Save</button>
+                                        <button onClick={async () => setEditingId(null)} className="flex-1 text-xs py-1 rounded-md border border-gray-200 text-gray-400">Cancel</button>
+                                        <button onClick={async () => handleSaveEdit(img.id)} className="flex-1 text-xs py-1 rounded-md bg-violet-600 text-white font-black flex items-center justify-center gap-1"><Save size={10} />Save</button>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="p-2 flex items-center justify-between gap-1 bg-[var(--kravy-surface)]">
                                     <span className="text-[0.65rem] font-medium text-[var(--kravy-text-muted)] truncate flex-1">{img.caption || <span className="italic opacity-40">No caption</span>}</span>
                                     <div className="flex items-center gap-1 shrink-0">
-                                        <button onClick={() => { setEditingId(img.id); setEditCaption(img.caption || ""); setEditCategory(img.category); }} className="p-1 hover:bg-violet-50 rounded-lg transition" title="Edit">
+                                        <button onClick={async () => { setEditingId(img.id); setEditCaption(img.caption || ""); setEditCategory(img.category); }} className="p-1 hover:bg-violet-50 rounded-lg transition" title="Edit">
                                             <Edit3 size={12} className="text-violet-400" />
                                         </button>
-                                        <button onClick={() => handleToggle(img)} title={img.isActive ? "Hide" : "Show"}>
+                                        <button onClick={async () => handleToggle(img)} title={img.isActive ? "Hide" : "Show"}>
                                             {img.isActive
                                                 ? <ToggleRight size={20} className="text-green-500" />
                                                 : <ToggleLeft size={20} className="text-gray-300" />
                                             }
                                         </button>
-                                        <button onClick={() => handleDelete(img.id)} className="p-1 hover:bg-red-50 rounded-lg transition text-gray-300 hover:text-red-400">
+                                        <button onClick={async () => handleDelete(img.id)} className="p-1 hover:bg-red-50 rounded-lg transition text-gray-300 hover:text-red-400">
                                             <Trash2 size={12} />
                                         </button>
                                     </div>
@@ -347,7 +350,7 @@ export default function GalleryManagerPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={() => setLightbox(null)}
+                        onClick={async () => setLightbox(null)}
                         className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
                     >
                         <motion.div
@@ -364,7 +367,7 @@ export default function GalleryManagerPage() {
                                 <div className="bg-black/70 text-white text-sm font-bold text-center py-3 px-4">{lightbox.caption}</div>
                             )}
                             <button
-                                onClick={() => { kravy.close(); setLightbox(null); }}
+                                onClick={async () => { kravy.close(); setLightbox(null); }}
                                 className="absolute top-3 right-3 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/80 transition"
                             >
                                 <X size={16} />

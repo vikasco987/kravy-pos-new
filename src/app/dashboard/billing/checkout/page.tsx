@@ -16,6 +16,7 @@
 // };
 
 // export default function BillingPage() {
+  const { confirm } = useConfirm();
 //   const receiptRef = useRef<HTMLDivElement | null>(null);
 
 //   // SHOP DETAILS
@@ -176,7 +177,7 @@
 
 //   // CLEAR BILL
 //   function clearBill() {
-//     if (!confirm("Clear current bill?")) return;
+//     if (!await confirm("Clear current bill?")) return;
 //     setItems([]);
 //     setBillDiscountPercent(0);
 //     setPaymentMode("Cash");
@@ -417,13 +418,13 @@
 //           <div>{i.name}</div>
 //           <div>₹{i.rate}</div>
 //           <div className="flex items-center gap-2">
-//             <button onClick={() => dec(i.id)} className="border px-2">−</button>
+//             <button onClick={async () => dec(i.id)} className="border px-2">−</button>
 //             <span>{i.qty}</span>
-//             <button onClick={() => inc(i.id)} className="border px-2">+</button>
+//             <button onClick={async () => inc(i.id)} className="border px-2">+</button>
 //           </div>
 //           <div className="flex justify-between items-center">
 //             <span>₹{(i.qty * i.rate).toFixed(2)}</span>
-//             <button onClick={() => remove(i.id)} className="text-red-600 ml-2">✕</button>
+//             <button onClick={async () => remove(i.id)} className="text-red-600 ml-2">✕</button>
 //           </div>
 //         </div>
 //       ))}
@@ -494,7 +495,7 @@
 //   </button>
 
 //   <button
-//     onClick={() => saveBill()}
+//     onClick={async () => saveBill()}
 //     className="flex-1 bg-gray-200 py-2 rounded"
 //   >
 //     Save
@@ -572,6 +573,8 @@
 
 import { Suspense } from "react";
 import CheckoutClient from "./CheckoutClient";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 export default function Page() {
   return (

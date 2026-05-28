@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { kravy } from "@/lib/sounds";
+import { useConfirm } from "@/components/ConfirmContext";
 import {
     Sheet,
     SheetContent,
@@ -59,6 +60,7 @@ interface Offer {
 }
 
 export default function OffersPage() {
+  const { confirm } = useConfirm();
     const [offers, setOffers] = useState<Offer[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -168,7 +170,7 @@ export default function OffersPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this offer?")) return;
+        if (!await confirm("Are you sure you want to delete this offer?")) return;
         try {
             const res = await fetch(`/api/admin/offers/${id}`, { method: "DELETE" });
             if (res.ok) {
@@ -428,7 +430,7 @@ export default function OffersPage() {
                                         <Label className="font-black text-xs uppercase tracking-widest opacity-60">Offer Status</Label>
                                         <Button
                                             type="button"
-                                            onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
+                                            onClick={async () => setFormData({ ...formData, isActive: !formData.isActive })}
                                             variant="outline"
                                             className={`w-full h-12 rounded-xl border-[var(--kravy-border)] font-bold flex justify-between px-4 ${formData.isActive ? 'bg-amber-50 text-amber-600 border-amber-200' : ''}`}
                                         >
@@ -560,7 +562,7 @@ export default function OffersPage() {
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <button
-                                                onClick={() => {
+                                                onClick={async () => {
                                                     setEditingOffer(offer);
                                                     setFormData({
                                                         title: offer.title,
@@ -587,7 +589,7 @@ export default function OffersPage() {
                                                 <Edit2 size={18} />
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(offer.id)}
+                                                onClick={async () => handleDelete(offer.id)}
                                                 className="p-2 hover:bg-red-50 rounded-xl text-gray-400 hover:text-red-500 transition-colors"
                                             >
                                                 <Trash2 size={18} />
@@ -654,7 +656,7 @@ export default function OffersPage() {
                             Create your first coupon or offer to attract more customers and boost your sales!
                         </p>
                         <Button
-                            onClick={() => setIsSheetOpen(true)}
+                            onClick={async () => setIsSheetOpen(true)}
                             className="mt-8 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl px-8 h-12 font-bold shadow-lg"
                         >
                             Launch First Offer 🚀

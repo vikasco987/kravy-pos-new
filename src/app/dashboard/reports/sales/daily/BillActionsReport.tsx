@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { MoreVertical, Eye, Printer, FileText, MessageCircle, Clock, Trash2, Smartphone, XCircle, CheckCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { formatWhatsAppNumber } from "@/lib/whatsapp";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 interface BillActionsProps {
   billId: string;
@@ -13,11 +15,12 @@ interface BillActionsProps {
 }
 
 export const BillActionsReport = ({ billId, bill, business }: BillActionsProps) => {
+  const { confirm } = useConfirm();
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this bill?")) return;
+    if (!await confirm("Are you sure you want to delete this bill?")) return;
     try {
       const res = await fetch(`/api/bill-manager/${billId}`, { method: "DELETE" });
       if (res.ok) {
@@ -32,7 +35,7 @@ export const BillActionsReport = ({ billId, bill, business }: BillActionsProps) 
   };
 
   const handleCancel = async (unCancel = false) => {
-    if (!confirm(unCancel ? "Mark this order as SETTLED?" : "Mark this order as CANCELLED?")) return;
+    if (!await confirm(unCancel ? "Mark this order as SETTLED?" : "Mark this order as CANCELLED?")) return;
     try {
       const res = await fetch(`/api/bill-manager/${billId}`, {
         method: "PATCH",
@@ -69,7 +72,7 @@ export const BillActionsReport = ({ billId, bill, business }: BillActionsProps) 
     }
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     if (!bill) return;
     const phone = formatWhatsAppNumber(bill.customerPhone);
     const origin = window.location.origin;
@@ -90,18 +93,18 @@ export const BillActionsReport = ({ billId, bill, business }: BillActionsProps) 
     setShowMenu(false);
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     router.push(`/dashboard/billing/checkout?resumeBillId=${billId}`);
     setShowMenu(false);
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     // Navigate to the view page which has the print logic
     router.push(`/dashboard/billing/${billId}`);
     setShowMenu(false);
   };
 
-  const handleView = () => {
+  const handleView = async () => {
     router.push(`/dashboard/billing/${billId}`);
     setShowMenu(false);
   };
@@ -109,7 +112,7 @@ export const BillActionsReport = ({ billId, bill, business }: BillActionsProps) 
   return (
     <div style={{ position: "relative", display: "flex", justifyContent: "flex-end" }}>
       <button 
-        onClick={() => setShowMenu(!showMenu)}
+        onClick={async () => setShowMenu(!showMenu)}
         style={{
           width: "36px", height: "36px", borderRadius: "12px", border: "1px solid var(--kravy-border)",
           background: "var(--kravy-bg-2)", color: "var(--kravy-text-muted)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer"
@@ -120,7 +123,7 @@ export const BillActionsReport = ({ billId, bill, business }: BillActionsProps) 
 
       {showMenu && (
         <>
-          <div style={{ position: "fixed", inset: 0, zIndex: 100 }} onClick={() => setShowMenu(false)} />
+          <div style={{ position: "fixed", inset: 0, zIndex: 100 }} onClick={async () => setShowMenu(false)} />
           <div style={{
             position: "absolute", right: 0, top: "calc(100% + 8px)", width: "200px",
             background: "var(--kravy-surface)", borderRadius: "18px", border: "1px solid var(--kravy-border)",
@@ -132,16 +135,16 @@ export const BillActionsReport = ({ billId, bill, business }: BillActionsProps) 
             <MenuOption icon={<MessageCircle size={14} color="#10B981" />} label="WhatsApp" onClick={handleWhatsApp} />
             
             {bill.paymentStatus !== "CANCELLED" && bill.paymentStatus?.toLowerCase() !== "paid" && (
-              <MenuOption icon={<CheckCircle size={14} color="#10B981" />} label="Mark as Paid" onClick={() => handlePaymentStatusChange("Paid")} />
+              <MenuOption icon={<CheckCircle size={14} color="#10B981" />} label="Mark as Paid" onClick={async () => handlePaymentStatusChange("Paid")} />
             )}
             {bill.paymentStatus !== "CANCELLED" && bill.paymentStatus?.toLowerCase() === "paid" && (
-              <MenuOption icon={<Clock size={14} color="#F59E0B" />} label="Mark as Unpaid" onClick={() => handlePaymentStatusChange("Pending")} />
+              <MenuOption icon={<Clock size={14} color="#F59E0B" />} label="Mark as Unpaid" onClick={async () => handlePaymentStatusChange("Pending")} />
             )}
 
             {bill.paymentStatus === "CANCELLED" ? (
-              <MenuOption icon={<CheckCircle size={14} color="#10B981" />} label="Un-cancel Order" onClick={() => handleCancel(true)} />
+              <MenuOption icon={<CheckCircle size={14} color="#10B981" />} label="Un-cancel Order" onClick={async () => handleCancel(true)} />
             ) : (
-              <MenuOption icon={<XCircle size={14} color="#EF4444" />} label="Mark as Cancelled" onClick={() => handleCancel(false)} />
+              <MenuOption icon={<XCircle size={14} color="#EF4444" />} label="Mark as Cancelled" onClick={async () => handleCancel(false)} />
             )}
             <div style={{ height: "1px", background: "var(--kravy-border)", margin: "4px 0" }} />
             <MenuOption icon={<Trash2 size={14} color="#EF4444" />} label="Delete" onClick={handleDelete} isDestructive />

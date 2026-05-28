@@ -25,6 +25,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import OrderAlertLoop from "./components/order-alert-loop";
 import { useAuthContext } from "@/components/AuthContext";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 // --- TYPES ---
 type OrderItem = {
@@ -100,6 +102,7 @@ const numberToWords = (num: number): string => {
 
 // --- DND HELPERS ---
 const DraggableOrderCard = ({ children, id, order }: any) => {
+  const { confirm } = useConfirm();
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: id,
         data: { order }
@@ -598,7 +601,7 @@ export default function KravyPOS() {
         return () => clearInterval(interval);
     }, []);
     useEffect(() => {
-        const tick = () => setClock(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+        const tick = async () => setClock(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
         tick(); const i = setInterval(tick, 1000); return () => clearInterval(i);
     }, []);
     useEffect(() => {
@@ -660,7 +663,7 @@ export default function KravyPOS() {
     };
 
     const softDeleteOrder = async (orderId: string) => {
-        if (!confirm("Are you sure you want to delete this order? It will be removed from workflow but kept in records.")) return;
+        if (!await confirm("Are you sure you want to delete this order? It will be removed from workflow but kept in records.")) return;
         try {
             const res = await fetch("/api/orders", {
                 method: "PATCH",
@@ -801,7 +804,7 @@ export default function KravyPOS() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             className="absolute inset-0 bg-black/80 backdrop-blur-xl"
-                            onClick={() => {
+                            onClick={async () => {
                                 console.log("[CI] Closing Modal via Backdrop");
                                 setShowCombineModal(false);
                             }}
@@ -818,7 +821,7 @@ export default function KravyPOS() {
                                     <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">Merge Pipelines</h3>
                                     <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Select orders to combine</p>
                                 </div>
-                                <button onClick={() => setShowCombineModal(false)} className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all">
+                                <button onClick={async () => setShowCombineModal(false)} className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all">
                                     <X size={20} />
                                 </button>
                             </div>
@@ -827,7 +830,7 @@ export default function KravyPOS() {
                                 {orders.filter(o => o.status !== "COMPLETED" && !o.isDeleted).map(o => (
                                     <button
                                         key={o.id}
-                                        onClick={(e) => {
+                                        onClick={async (e) => {
                                             e.stopPropagation();
                                             setCombineSelection(prev => {
                                                 const next = new Set(prev);
@@ -866,7 +869,7 @@ export default function KravyPOS() {
                             <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
                                 <button
                                     disabled={combineSelection.size < 2}
-                                    onClick={() => {
+                                    onClick={async () => {
                                         setShowCombineModal(false);
                                         handlePrint("MANUAL_COMBINE");
                                     }}
@@ -897,7 +900,7 @@ export default function KravyPOS() {
                     <div className="flex lg:hidden items-center gap-2">
                         <button className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><User size={14} /></button>
                         <button
-                            onClick={() => { kravy.click(); setActiveTab("dashboard"); }}
+                            onClick={async () => { kravy.click(); setActiveTab("dashboard"); }}
                             className="px-4 py-2 bg-rose-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest"
                         >
                             New
@@ -918,7 +921,7 @@ export default function KravyPOS() {
                         return (
                             <button
                                 key={t.key}
-                                onClick={() => { kravy.click(); setActiveTab(t.key); }}
+                                onClick={async () => { kravy.click(); setActiveTab(t.key); }}
                                 className={`relative flex items-center gap-2 px-3 lg:px-4 py-2 rounded-xl text-[11px] lg:text-xs font-bold transition-all whitespace-nowrap ${isActive ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}
                             >
                                 <Icon size={14} />
@@ -953,7 +956,7 @@ export default function KravyPOS() {
                     <div className="flex items-center gap-3">
                         <button className="w-9 h-9 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:border-slate-900 transition-all"><User size={16} /></button>
                         <button
-                            onClick={() => { kravy.click(); setActiveTab("dashboard"); }}
+                            onClick={async () => { kravy.click(); setActiveTab("dashboard"); }}
                             className="flex items-center gap-2 px-6 py-2.5 bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:scale-105 active:scale-95 transition-all"
                         >
                             <Plus size={14} />
@@ -992,7 +995,7 @@ export default function KravyPOS() {
                                         return (
                                             <button
                                                 key={tab}
-                                                onClick={() => { kravy.click(); setLiveOrderTab(tab); }}
+                                                onClick={async () => { kravy.click(); setLiveOrderTab(tab); }}
                                                 className={`px-4 py-1.5 rounded-lg text-[13px] font-medium transition-all flex items-center gap-1.5 border ${isActive
                                                         ? "bg-[#EF6C00] text-white border-[#EF6C00] shadow-sm"
                                                         : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -1064,7 +1067,7 @@ export default function KravyPOS() {
                                                             <div className="flex gap-2">
                                                                 <div className="flex-1 flex flex-col gap-1">
                                                                     <button
-                                                                        onClick={() => {
+                                                                        onClick={async () => {
                                                                             const tbl = tablesList.find(t => t.id === order.table?.id);
                                                                             setPrintOrder(order);
                                                                             setPrintTable(tbl || null);
@@ -1074,11 +1077,11 @@ export default function KravyPOS() {
                                                                     >
                                                                         <Printer size={12} /> KOT
                                                                     </button>
-                                                                    <button onClick={() => handleSaveAction("KOT", order)} className="text-[7px] font-black uppercase text-indigo-500 hover:underline tracking-tighter text-center">Save KOT</button>
+                                                                    <button onClick={async () => handleSaveAction("KOT", order)} className="text-[7px] font-black uppercase text-indigo-500 hover:underline tracking-tighter text-center">Save KOT</button>
                                                                 </div>
                                                                 <div className="flex-1 flex flex-col gap-1">
                                                                     <button
-                                                                        onClick={() => {
+                                                                        onClick={async () => {
                                                                             const tbl = tablesList.find(t => t.id === order.table?.id);
                                                                             setPrintOrder(order);
                                                                             setPrintTable(tbl || null);
@@ -1088,14 +1091,14 @@ export default function KravyPOS() {
                                                                     >
                                                                         <CreditCard size={12} /> Bill
                                                                     </button>
-                                                                    <button onClick={() => handleSaveAction("BILL", order)} className="text-[7px] font-black uppercase text-emerald-500 hover:underline tracking-tighter text-center">Save Bill</button>
+                                                                    <button onClick={async () => handleSaveAction("BILL", order)} className="text-[7px] font-black uppercase text-emerald-500 hover:underline tracking-tighter text-center">Save Bill</button>
                                                                 </div>
                                                             </div>
                                                         </div>
 
                                                         {/* COMBINED BILL ACTION */}
                                                         <button
-                                                            onClick={(e) => {
+                                                            onClick={async (e) => {
                                                                 e.stopPropagation();
                                                                 setShowCombineModal(true);
                                                                 setCombineSelection(new Set([order.id]));
@@ -1174,7 +1177,7 @@ export default function KravyPOS() {
                                                         ))}
                                                         
                                                         <button 
-                                                            onClick={() => {
+                                                            onClick={async () => {
                                                                 kravy.click();
                                                                 setOrderToUpdate(order);
                                                                 setShowAddItemModal(true);
@@ -1266,7 +1269,7 @@ export default function KravyPOS() {
                                                             whileHover={{ scale: 1.02 }}
                                                             whileTap={{ scale: 0.95 }}
                                                             disabled={updatingOrders.has(order.id)}
-                                                            onClick={(e) => {
+                                                            onClick={async (e) => {
                                                                 e.stopPropagation();
                                                                 const nextStatus = order.status === "PENDING" ? "ACCEPTED" : order.status === "ACCEPTED" ? "PREPARING" : order.status === "PREPARING" ? "READY" : "COMPLETED";
                                                                 updateOrderStatus(order.id, nextStatus);
@@ -1358,7 +1361,7 @@ export default function KravyPOS() {
                                         {(["ALL", "RUNNING", "READY"] as const).map(f => (
                                             <button
                                                 key={f}
-                                                onClick={() => { kravy.click(); setTableFilter(f); }}
+                                                onClick={async () => { kravy.click(); setTableFilter(f); }}
                                                 className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${tableFilter === f ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg shadow-slate-900/10" : "bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"}`}
                                             >
                                                 {f}
@@ -1377,7 +1380,7 @@ export default function KravyPOS() {
                                                 <motion.button
                                                     layout
                                                     key={t.id}
-                                                    onClick={() => { kravy.click(); setSelectedTableId(t.id); }}
+                                                    onClick={async () => { kravy.click(); setSelectedTableId(t.id); }}
                                                     className={`relative group h-24 flex flex-col items-center justify-center gap-2 rounded-2xl transition-all ${isActive ? "z-10" : ""}`}
                                                     whileHover={{ y: -2 }}
                                                     whileTap={{ scale: 0.96 }}
@@ -1562,7 +1565,7 @@ export default function KravyPOS() {
                                                             <button
                                                                 key={i}
                                                                 disabled={!activeOrderForSelected || !btn.active}
-                                                                onClick={() => updateOrderStatus(activeOrderForSelected!.id, btn.s)}
+                                                                onClick={async () => updateOrderStatus(activeOrderForSelected!.id, btn.s)}
                                                                 className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${btn.active ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg shadow-slate-900/10" : "bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 opacity-50 cursor-not-allowed"}`}
                                                             >
                                                                 {btn.icon} {btn.label}
@@ -1578,7 +1581,7 @@ export default function KravyPOS() {
                                             </div>
                                             <div className="flex gap-3">
                                                 <button
-                                                    onClick={() => { setPreviewMode("KOT"); setShowPreview(true); }}
+                                                    onClick={async () => { setPreviewMode("KOT"); setShowPreview(true); }}
                                                     className="w-14 h-14 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-slate-700 transition-all bg-white dark:bg-slate-900"
                                                     title="Preview KOT"
                                                 >
@@ -1586,7 +1589,7 @@ export default function KravyPOS() {
                                                 </button>
                                                 <div className="flex-1 flex flex-col gap-1.5">
                                                     <button
-                                                        onClick={() => {
+                                                        onClick={async () => {
                                                             const tbl = tablesList.find(t => t.id === activeOrderForSelected?.table?.id);
                                                             if (activeOrderForSelected) {
                                                                 setPrintOrder(activeOrderForSelected);
@@ -1598,11 +1601,11 @@ export default function KravyPOS() {
                                                     >
                                                         <Printer size={15} /> KOT
                                                     </button>
-                                                    <button onClick={() => activeOrderForSelected && handleSaveAction("KOT", activeOrderForSelected)} className="text-[7px] font-black uppercase text-indigo-500 hover:underline tracking-tighter text-center">Save KOT</button>
+                                                    <button onClick={async () => activeOrderForSelected && handleSaveAction("KOT", activeOrderForSelected)} className="text-[7px] font-black uppercase text-indigo-500 hover:underline tracking-tighter text-center">Save KOT</button>
                                                 </div>
                                                 <div className="flex-1 flex flex-col gap-1.5">
                                                     <button
-                                                        onClick={() => {
+                                                        onClick={async () => {
                                                             const tbl = tablesList.find(t => t.id === activeOrderForSelected?.table?.id);
                                                             if (activeOrderForSelected) {
                                                                 setPrintOrder(activeOrderForSelected);
@@ -1614,11 +1617,11 @@ export default function KravyPOS() {
                                                     >
                                                         <CreditCard size={15} /> Bill
                                                     </button>
-                                                    <button onClick={() => activeOrderForSelected && handleSaveAction("BILL", activeOrderForSelected)} className="text-[7px] font-black uppercase text-emerald-500 hover:underline tracking-tighter text-center">Save Bill</button>
+                                                    <button onClick={async () => activeOrderForSelected && handleSaveAction("BILL", activeOrderForSelected)} className="text-[7px] font-black uppercase text-emerald-500 hover:underline tracking-tighter text-center">Save Bill</button>
                                                 </div>
                                                 <button
                                                     disabled={!activeOrderForSelected}
-                                                    onClick={() => {
+                                                    onClick={async () => {
                                                         kravy.payment();
                                                         if (activeOrderForSelected && (activeOrderForSelected as any).paymentMode) {
                                                             const m = (activeOrderForSelected as any).paymentMode.toLowerCase();
@@ -1736,7 +1739,7 @@ export default function KravyPOS() {
                                                             <div className="flex gap-2">
                                                                 <div className="flex-1 flex flex-col gap-1.5">
                                                                     <button
-                                                                        onClick={(e) => {
+                                                                        onClick={async (e) => {
                                                                             e.stopPropagation();
                                                                             const tbl = tablesList.find(t => t.id === o.table?.id);
                                                                             setPrintOrder(o);
@@ -1747,11 +1750,11 @@ export default function KravyPOS() {
                                                                     >
                                                                         <Printer size={14} /> KOT
                                                                     </button>
-                                                                    <button onClick={(e) => { e.stopPropagation(); handleSaveAction("KOT", o); }} className="text-[8px] font-black uppercase text-indigo-500 hover:underline tracking-tighter text-center">Save KOT</button>
+                                                                    <button onClick={async (e) => { e.stopPropagation(); handleSaveAction("KOT", o); }} className="text-[8px] font-black uppercase text-indigo-500 hover:underline tracking-tighter text-center">Save KOT</button>
                                                                 </div>
                                                                 <div className="flex-1 flex flex-col gap-1.5">
                                                                     <button
-                                                                        onClick={(e) => {
+                                                                        onClick={async (e) => {
                                                                             e.stopPropagation();
                                                                             const tbl = tablesList.find(t => t.id === o.table?.id);
                                                                             setPrintOrder(o);
@@ -1762,11 +1765,11 @@ export default function KravyPOS() {
                                                                     >
                                                                         <CreditCard size={14} /> BILL
                                                                     </button>
-                                                                    <button onClick={(e) => { e.stopPropagation(); handleSaveAction("BILL", o); }} className="text-[8px] font-black uppercase text-emerald-500 hover:underline tracking-tighter text-center">Save Bill</button>
+                                                                    <button onClick={async (e) => { e.stopPropagation(); handleSaveAction("BILL", o); }} className="text-[8px] font-black uppercase text-emerald-500 hover:underline tracking-tighter text-center">Save Bill</button>
                                                                 </div>
                                                             </div>
                                                             <button
-                                                                onClick={(e) => {
+                                                                onClick={async (e) => {
                                                                     e.stopPropagation();
                                                                     alert("[TC] Click registered. Opening Modal.");
                                                                     setShowCombineModal(true);
@@ -1778,7 +1781,7 @@ export default function KravyPOS() {
                                                             </button>
                                                         </div>
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); updateOrderStatus(o.id, col.next); }}
+                                                            onClick={async (e) => { e.stopPropagation(); updateOrderStatus(o.id, col.next); }}
                                                             className={`w-full h-11 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-lg active:scale-95 ${col.status === 'PENDING' ? 'bg-rose-500 text-white shadow-rose-500/10' : col.status === 'ACCEPTED' ? 'bg-blue-500 text-white shadow-blue-500/10' : col.status === 'PREPARING' ? 'bg-amber-500 text-white shadow-amber-500/10' : 'bg-emerald-900 text-white shadow-emerald-900/10'}`}
                                                         >
                                                             {col.btnLabel}
@@ -1898,7 +1901,7 @@ export default function KravyPOS() {
                                             ].map(m => (
                                                 <button
                                                     key={m.id}
-                                                    onClick={() => { kravy.click(); setPayMethod(m.id); }}
+                                                    onClick={async () => { kravy.click(); setPayMethod(m.id); }}
                                                     className={`relative flex flex-col items-start p-6 rounded-[2.5rem] border-2 transition-all group overflow-hidden ${payMethod === m.id ? "bg-white dark:bg-slate-800 border-slate-900 dark:border-white shadow-2xl -translate-y-1" : "bg-white/50 dark:bg-slate-900/50 border-transparent hover:border-slate-200 dark:hover:border-slate-700"}`}
                                                 >
                                                     {payMethod === m.id && (
@@ -1936,20 +1939,20 @@ export default function KravyPOS() {
 
                                         <div className="flex gap-4">
                                             <button
-                                                onClick={() => { setPreviewMode("BILL"); setShowPreview(true); }}
+                                                onClick={async () => { setPreviewMode("BILL"); setShowPreview(true); }}
                                                 className="w-20 h-20 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white shadow-sm transition-all active:scale-90"
                                             >
                                                 <Eye size={20} />
                                                 <span className="text-[8px] font-black uppercase mt-1">Preview</span>
                                             </button>
                                             <button
-                                                onClick={() => handlePrint("BILL")}
+                                                onClick={async () => handlePrint("BILL")}
                                                 className="flex-1 h-20 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-white shadow-sm transition-all active:scale-95"
                                             >
                                                 <Printer size={18} /> Print Physical Receipt
                                             </button>
                                             <button
-                                                onClick={() => handleCheckout(activeOrderForSelected.id)}
+                                                onClick={async () => handleCheckout(activeOrderForSelected.id)}
                                                 className="flex-[2.5] h-20 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[1.8rem] flex items-center justify-center gap-4 text-base font-black uppercase tracking-[0.15em] shadow-2xl shadow-slate-900/40 active:scale-95 transition-all hover:bg-slate-800 dark:hover:bg-slate-100"
                                             >
                                                 Finalize Settlement <ArrowRight size={20} />
@@ -1964,7 +1967,7 @@ export default function KravyPOS() {
                                     </div>
                                     <p className="text-3xl font-black text-slate-900 mb-3 italic tracking-tighter uppercase leading-none">Billing Vault</p>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed mb-10">Select an active table from Terminal to initiate checkout flow.</p>
-                                    <button onClick={() => setActiveTab("dashboard")} className="h-14 px-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:scale-110 active:scale-90 transition-all">
+                                    <button onClick={async () => setActiveTab("dashboard")} className="h-14 px-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:scale-110 active:scale-90 transition-all">
                                         <LayoutDashboard size={16} className="mr-2 inline" /> Back to Terminal
                                     </button>
                                 </div>
@@ -1997,7 +2000,7 @@ export default function KravyPOS() {
                                         return (
                                             <button
                                                 key={tab}
-                                                onClick={() => { kravy.click(); setLiveOrderTab(tab); }}
+                                                onClick={async () => { kravy.click(); setLiveOrderTab(tab); }}
                                                 className={`px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border ${isActive
                                                         ? "bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-900/20"
                                                         : "bg-transparent text-slate-500 dark:text-slate-400 border-transparent hover:bg-white dark:hover:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-700"
@@ -2021,7 +2024,7 @@ export default function KravyPOS() {
                                         />
                                     </div>
                                     <button 
-                                        onClick={() => { kravy.click(); fetchData(); }} 
+                                        onClick={async () => { kravy.click(); fetchData(); }} 
                                         className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center hover:text-slate-900 dark:hover:text-white transition-all shadow-sm active:scale-90"
                                     >
                                         <RotateCcw size={18} />
@@ -2103,7 +2106,7 @@ export default function KravyPOS() {
                                                             <td className="px-6 py-8 text-right">
                                                                 <div className="flex items-center justify-end gap-2.5 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                                                                     <button
-                                                                        onClick={() => {
+                                                                        onClick={async () => {
                                                                             setPrintOrder(order);
                                                                             handlePrint("KOT", order);
                                                                         }}
@@ -2115,7 +2118,7 @@ export default function KravyPOS() {
                                                                     
                                                                     {order.status === "COMPLETED" && (
                                                                         <button
-                                                                            onClick={() => {
+                                                                            onClick={async () => {
                                                                                 setPrintOrder(order);
                                                                                 handlePrint("BILL", order);
                                                                             }}
@@ -2127,7 +2130,7 @@ export default function KravyPOS() {
                                                                     )}
 
                                                                     <button
-                                                                        onClick={() => {
+                                                                        onClick={async () => {
                                                                             setOrderToUpdate(order);
                                                                             setShowAddItemModal(true);
                                                                         }}
@@ -2137,7 +2140,7 @@ export default function KravyPOS() {
                                                                         <Edit3 size={16} />
                                                                     </button>
                                                                     <button
-                                                                        onClick={() => softDeleteOrder(order.id)}
+                                                                        onClick={async () => softDeleteOrder(order.id)}
                                                                         className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-90"
                                                                         title="Delete Order"
                                                                     >
@@ -2145,7 +2148,7 @@ export default function KravyPOS() {
                                                                     </button>
                                                                     {order.status !== "COMPLETED" && (
                                                                         <button
-                                                                            onClick={() => {
+                                                                            onClick={async () => {
                                                                                 if (order.status === "PENDING" || order.status === "ACCEPTED") updateOrderStatus(order.id, "PREPARING");
                                                                                 else if (order.status === "PREPARING") updateOrderStatus(order.id, "READY");
                                                                                 else if (order.status === "READY") updateOrderStatus(order.id, "COMPLETED");
@@ -2180,7 +2183,7 @@ export default function KravyPOS() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             className="absolute inset-0 bg-black/80 backdrop-blur-md"
-                            onClick={() => setShowPreview(false)}
+                            onClick={async () => setShowPreview(false)}
                         />
 
                         <motion.div
@@ -2196,11 +2199,11 @@ export default function KravyPOS() {
                                     <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">Check before printing</p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <button onClick={() => setPreviewZoom(z => Math.max(0.5, z - 0.1))} className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"><ZoomOut size={14} /></button>
+                                    <button onClick={async () => setPreviewZoom(z => Math.max(0.5, z - 0.1))} className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"><ZoomOut size={14} /></button>
                                     <span className="text-xs font-bold text-slate-600 dark:text-slate-300 w-9 text-center">{(previewZoom * 100).toFixed(0)}%</span>
-                                    <button onClick={() => setPreviewZoom(z => Math.min(2, z + 0.1))} className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"><ZoomIn size={14} /></button>
+                                    <button onClick={async () => setPreviewZoom(z => Math.min(2, z + 0.1))} className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"><ZoomIn size={14} /></button>
                                     <div className="w-px h-5 bg-slate-100 dark:bg-slate-800 mx-1" />
-                                    <button onClick={() => setShowPreview(false)} className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all">
+                                    <button onClick={async () => setShowPreview(false)} className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all">
                                         <X size={16} />
                                     </button>
                                 </div>
@@ -2248,13 +2251,13 @@ export default function KravyPOS() {
                             {/* Footer */}
                             <div className="px-5 py-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex gap-3 shrink-0">
                                 <button
-                                    onClick={() => setShowPreview(false)}
+                                    onClick={async () => setShowPreview(false)}
                                     className="flex-1 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 font-bold text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                                 >
                                     Close
                                 </button>
                                 <button
-                                    onClick={() => {
+                                    onClick={async () => {
                                         handlePrint(previewMode);
                                         setShowPreview(false);
                                     }}
@@ -2278,7 +2281,7 @@ export default function KravyPOS() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                            onClick={() => setShowAddItemModal(false)}
+                            onClick={async () => setShowAddItemModal(false)}
                         />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -2291,7 +2294,7 @@ export default function KravyPOS() {
                                     <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight">Add Items</h3>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Updating Order #{orderToUpdate?.id.slice(-4).toUpperCase()}</p>
                                 </div>
-                                <button onClick={() => setShowAddItemModal(false)} className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all"><X size={20} /></button>
+                                <button onClick={async () => setShowAddItemModal(false)} className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all"><X size={20} /></button>
                             </div>
 
                             <div className="p-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
@@ -2313,7 +2316,7 @@ export default function KravyPOS() {
                                     .map(it => (
                                         <div 
                                             key={it.id} 
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 kravy.click();
                                                 addItemToOrder(it);
                                             }}

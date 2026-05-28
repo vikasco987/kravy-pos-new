@@ -17,6 +17,8 @@ import PrintTemplates from "@/components/printing/PrintTemplates";
 import BillPreview from "@/components/printing/BillPreview";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo } from "react";
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 /* ================= TYPES ================= */
 
@@ -96,7 +98,7 @@ const MenuItemCard = ({ m, items, addToCart, reduceFromCart }: {
   const inCart = items.find((i) => i.id === m.id);
   return (
     <div
-      onClick={() => addToCart(m)}
+      onClick={async () => addToCart(m)}
       className={`group relative border rounded-2xl overflow-hidden cursor-pointer
         transition-all duration-200 bg-[var(--kravy-surface)] flex flex-col
         hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97]
@@ -125,7 +127,7 @@ const MenuItemCard = ({ m, items, addToCart, reduceFromCart }: {
         )}
         {inCart && (
           <button
-            onClick={(e) => { e.stopPropagation(); reduceFromCart(m.id); }}
+            onClick={async (e) => { e.stopPropagation(); reduceFromCart(m.id); }}
             className="absolute top-2 right-2 bg-rose-500 text-white
               w-6 h-6 rounded-full flex items-center justify-center
               text-sm font-black hover:bg-rose-600 shadow-lg shadow-rose-500/40
@@ -162,7 +164,7 @@ const MenuItemCard = ({ m, items, addToCart, reduceFromCart }: {
 const QuickAddCard = ({ cat, onClick }: { cat: { id: string, name: string }, onClick: () => void }) => {
   return (
     <div
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onClick={async (e) => { e.stopPropagation(); onClick(); }}
       className="group relative border-2 border-dashed border-[var(--kravy-border)] rounded-2xl overflow-hidden cursor-pointer
         transition-all duration-200 bg-[var(--kravy-bg-2)]/50 flex flex-col items-center justify-center gap-2
         hover:border-[var(--kravy-brand)] hover:bg-[var(--kravy-brand)]/5 hover:shadow-lg active:scale-[0.97] h-full min-h-[140px]"
@@ -181,7 +183,7 @@ const QuickAddCard = ({ cat, onClick }: { cat: { id: string, name: string }, onC
 const QuickAddAddonChip = ({ onClick }: { onClick: () => void }) => {
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onClick={async (e) => { e.stopPropagation(); onClick(); }}
       className="flex items-center gap-2 px-4 py-1.5 border border-dashed border-indigo-300 dark:border-indigo-700 
         bg-indigo-50/20 dark:bg-indigo-900/10 rounded-full text-indigo-400 dark:text-indigo-600
         hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-500 hover:text-indigo-600 transition-all active:scale-95"
@@ -195,6 +197,7 @@ const QuickAddAddonChip = ({ onClick }: { onClick: () => void }) => {
 /* ================= PAGE ================= */
 
 export default function CheckoutClient() {
+  const { confirm } = useConfirm();
   /* ================= BUSINESS PROFILE ================= */
   const [business, setBusiness] = useState<{
     businessName: string;
@@ -332,7 +335,7 @@ export default function CheckoutClient() {
   const [serviceCharge, setServiceCharge] = useState<number>(0);
   const [serviceChargeType, setServiceChargeType] = useState<'FLAT' | 'PERCENT'>('FLAT');
 
-  const resetForm = () => {
+  const resetForm = async () => {
     setItems([]);
     setCustomerName("");
     setCustomerPhone("");
@@ -1111,7 +1114,7 @@ export default function CheckoutClient() {
     }
   };
 
-  const removeCoupon = () => {
+  const removeCoupon = async () => {
     setAppliedOffer(null);
     setDiscountCode("");
     setDiscountAmt(0);
@@ -1395,7 +1398,7 @@ export default function CheckoutClient() {
   }
 
 
-  const printActualBill = () => {
+  const printActualBill = async () => {
     if (receiptRef.current) runPrintJob("bill", receiptRef.current.innerHTML);
   };
 
@@ -1566,7 +1569,7 @@ export default function CheckoutClient() {
     const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 18);
     const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 22);
 
-    const getAutoShrunkNameSize = () => {
+    const getAutoShrunkNameSize = async () => {
       let size = rawBusinessNameSize;
       const nameLen = (business?.businessName || "").length;
       if (nameLen > 25) size -= 2;
@@ -1575,7 +1578,7 @@ export default function CheckoutClient() {
     };
     const finalBusinessNameSize = getAutoShrunkNameSize();
 
-    const getAutoShrunkAddressSize = () => {
+    const getAutoShrunkAddressSize = async () => {
       let size = businessAddressSize;
       const addrLen = (business?.businessAddress || "").length;
       if (addrLen > 60) size -= 1;
@@ -1894,7 +1897,7 @@ export default function CheckoutClient() {
               <div className="flex items-center gap-2 min-w-0">
                 {searchParams.get("returnTo") && (
                   <button 
-                    onClick={() => { 
+                    onClick={async () => { 
                       kravy.click(); 
                       const returnTo = searchParams.get("returnTo");
                       if (returnTo) {
@@ -1915,7 +1918,7 @@ export default function CheckoutClient() {
                   Browse Products
                 </h2>
                 <button
-                  onClick={() => { kravy.toggle(); setCategoryLayout(prev => prev === 'horizontal' ? 'vertical' : 'horizontal'); }}
+                  onClick={async () => { kravy.toggle(); setCategoryLayout(prev => prev === 'horizontal' ? 'vertical' : 'horizontal'); }}
                   className="p-1 px-2 rounded-lg border border-[var(--kravy-border)] hover:bg-slate-100 transition-all flex items-center gap-1.5 text-[9px] font-black text-[var(--kravy-text-secondary)] shrink-0 bg-white shadow-sm"
                   title="Switch Layout"
                 >
@@ -1941,10 +1944,10 @@ export default function CheckoutClient() {
                     </button>
                     <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-[var(--kravy-border)] rounded-xl shadow-2xl p-1 z-50 opacity-0 invisible group-hover/zone:opacity-100 group-hover/zone:visible transition-all">
                        <button
-                         onClick={() => { 
+                         onClick={async () => { 
                            kravy.click(); 
                            setActiveZone("All");
-                           if (confirm("Set Global as default for direct visits?")) {
+                           if (await confirm("Set Global as default for direct visits?")) {
                              localStorage.setItem('kravy_default_zone', 'All');
                              toast.success("Default zone updated");
                            }
@@ -1956,13 +1959,13 @@ export default function CheckoutClient() {
                        {availableZones.map(zone => (
                          <div key={zone} className="relative group/zoneitem">
                            <button
-                             onClick={() => { kravy.click(); setActiveZone(zone); }}
+                             onClick={async () => { kravy.click(); setActiveZone(zone); }}
                              className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all mb-0.5 last:mb-0 ${activeZone === zone ? "bg-indigo-600 text-white" : "hover:bg-indigo-50 text-slate-600"}`}
                            >
                              {zone}
                            </button>
                            <button 
-                             onClick={(e) => {
+                             onClick={async (e) => {
                                e.stopPropagation();
                                localStorage.setItem('kravy_default_zone', zone);
                                toast.success(`${zone} set as default`);
@@ -1995,7 +1998,7 @@ export default function CheckoutClient() {
                 </div>
                 {canEdit && (
                   <button
-                    onClick={() => setQuickAddCat(categoriesList[0] || { id: "others", name: "Others" })}
+                    onClick={async () => setQuickAddCat(categoriesList[0] || { id: "others", name: "Others" })}
                     className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-all flex items-center justify-center shrink-0"
                     title="Quick Add Item"
                   >
@@ -2003,7 +2006,7 @@ export default function CheckoutClient() {
                   </button>
                 )}
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setMenuLoading(true);
                     fetch(`/api/menu/items?t=${Date.now()}`, { cache: "no-store" })
                       .then(r => r.json())
@@ -2028,7 +2031,7 @@ export default function CheckoutClient() {
             {categoryLayout === 'horizontal' && (
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-3 pb-2">
                 <button
-                  onClick={() => { kravy.click(); setActiveCategory("All"); }}
+                  onClick={async () => { kravy.click(); setActiveCategory("All"); }}
                   className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all whitespace-nowrap ${activeCategory === "All"
                     ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20"
                     : "bg-[var(--kravy-surface)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-indigo-500/50"
@@ -2039,7 +2042,7 @@ export default function CheckoutClient() {
                 {categories.map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => { kravy.click(); setActiveCategory(cat); }}
+                    onClick={async () => { kravy.click(); setActiveCategory(cat); }}
                     className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all whitespace-nowrap ${activeCategory === cat
                       ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20"
                       : "bg-[var(--kravy-surface)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-indigo-500/50"
@@ -2050,7 +2053,7 @@ export default function CheckoutClient() {
                 ))}
                 {canEdit && (
                   <button
-                    onClick={() => setShowAddCategory(true)}
+                    onClick={async () => setShowAddCategory(true)}
                     className="px-2 py-1 rounded-full bg-white border border-[var(--kravy-border)] text-indigo-600 hover:border-indigo-500 transition-all shadow-sm shrink-0"
                     title="Add Category"
                   >
@@ -2066,7 +2069,7 @@ export default function CheckoutClient() {
             {categoryLayout === 'vertical' && (
               <div className="w-[120px] md:w-[150px] flex-shrink-0 bg-[var(--kravy-bg-2)] border-r border-[var(--kravy-border)] overflow-y-auto no-scrollbar py-3 px-2 space-y-2">
                 <button
-                  onClick={() => { kravy.click(); setActiveCategory("All"); }}
+                  onClick={async () => { kravy.click(); setActiveCategory("All"); }}
                   className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all text-center flex flex-col items-center gap-1 ${activeCategory === "All"
                     ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/30"
                     : "bg-[var(--kravy-surface)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-indigo-500/50"
@@ -2079,7 +2082,7 @@ export default function CheckoutClient() {
                 {categories.map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => { kravy.click(); setActiveCategory(cat); }}
+                    onClick={async () => { kravy.click(); setActiveCategory(cat); }}
                     className={`w-full py-3 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all text-center flex flex-col items-center gap-1 ${activeCategory === cat
                       ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/30"
                       : "bg-[var(--kravy-surface)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-indigo-500/50"
@@ -2092,7 +2095,7 @@ export default function CheckoutClient() {
 
                 {canEdit && (
                   <button
-                    onClick={() => setShowAddCategory(true)}
+                    onClick={async () => setShowAddCategory(true)}
                     className="w-full py-3 rounded-xl border-2 border-dashed border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:text-indigo-500 hover:border-indigo-400/50 transition-all flex flex-col items-center justify-center gap-1"
                   >
                     <Plus size={14} strokeWidth={3} />
@@ -2140,7 +2143,7 @@ export default function CheckoutClient() {
                           {catItems.map(m => (
                             <MenuItemCard key={m.id} m={m} items={items} addToCart={addToCart} reduceFromCart={reduceFromCart} />
                           ))}
-                            {canEdit && <QuickAddCard cat={catObj} onClick={() => { setQuickAddCat(catObj); toast.info(`Quick add to ${catName}`); }} />}
+                            {canEdit && <QuickAddCard cat={catObj} onClick={async () => { setQuickAddCat(catObj); toast.info(`Quick add to ${catName}`); }} />}
                         </div>
 
                         {/* Category Addons Section */}
@@ -2170,7 +2173,7 @@ export default function CheckoutClient() {
                                        return (
                                         <div key={idx} className="relative group/addon">
                                          <button
-                                           onClick={() => addAddonToCart(addon, ag.name, catName)}
+                                           onClick={async () => addAddonToCart(addon, ag.name, catName)}
                                            className={`flex items-center border-[0.5px] rounded-full overflow-hidden shadow-sm transition-all group
                                              ${inCart 
                                                ? 'bg-indigo-600 border-indigo-700 shadow-indigo-500/20 scale-[1.02]' 
@@ -2191,7 +2194,7 @@ export default function CheckoutClient() {
                                          </button>
                                          {inCart && (
                                             <button 
-                                              onClick={(e) => { e.stopPropagation(); reduceAddonFromCart(addon.name, ag.name, catName); }}
+                                              onClick={async (e) => { e.stopPropagation(); reduceAddonFromCart(addon.name, ag.name, catName); }}
                                               className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-rose-600 active:scale-90 transition-all z-10 border border-white dark:border-slate-900"
                                             >
                                               <X size={10} strokeWidth={4} />
@@ -2199,7 +2202,7 @@ export default function CheckoutClient() {
                                          )}
                                         </div>
                                       )})}
-                                       {canEdit && <QuickAddAddonChip onClick={() => setQuickAddAddonGroup(ag)} />}
+                                       {canEdit && <QuickAddAddonChip onClick={async () => setQuickAddAddonGroup(ag)} />}
                                      </div>
                                    </div>
                                  ))}
@@ -2218,7 +2221,7 @@ export default function CheckoutClient() {
                       ))}
                       {!searchQuery && activeCategory !== "All" && (() => {
                         const fallbackCat = categoriesList.find(c => c.name.toLowerCase() === activeCategory.toLowerCase()) || { id: "", name: activeCategory };
-                        if (canEdit) return <QuickAddCard cat={fallbackCat} onClick={() => setQuickAddCat(fallbackCat)} />;
+                        if (canEdit) return <QuickAddCard cat={fallbackCat} onClick={async () => setQuickAddCat(fallbackCat)} />;
                         return null;
                       })()}
                     </div>
@@ -2252,7 +2255,7 @@ export default function CheckoutClient() {
                                        return (
                                         <div key={idx} className="relative group/addon">
                                          <button
-                                           onClick={() => addAddonToCart(addon, ag.name, activeCategory)}
+                                           onClick={async () => addAddonToCart(addon, ag.name, activeCategory)}
                                            className={`flex items-center border-[0.5px] rounded-full overflow-hidden shadow-sm transition-all group
                                              ${inCart 
                                                ? 'bg-indigo-600 border-indigo-700 shadow-indigo-500/20 scale-[1.02]' 
@@ -2273,7 +2276,7 @@ export default function CheckoutClient() {
                                          </button>
                                          {inCart && (
                                             <button 
-                                              onClick={(e) => { e.stopPropagation(); reduceAddonFromCart(addon.name, ag.name, activeCategory); }}
+                                              onClick={async (e) => { e.stopPropagation(); reduceAddonFromCart(addon.name, ag.name, activeCategory); }}
                                               className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-rose-600 active:scale-90 transition-all z-10 border border-white dark:border-slate-900"
                                             >
                                               <X size={10} strokeWidth={4} />
@@ -2281,7 +2284,7 @@ export default function CheckoutClient() {
                                          )}
                                         </div>
                                       )})}
-                                     {canEdit && <QuickAddAddonChip onClick={() => setQuickAddAddonGroup(ag)} />}
+                                     {canEdit && <QuickAddAddonChip onClick={async () => setQuickAddAddonGroup(ag)} />}
                                    </div>
                                  </div>
                                ))}
@@ -2345,7 +2348,7 @@ export default function CheckoutClient() {
               {/* Note & Held Bills Buttons */}
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => { kravy.click(); setShowNotesModal(true); }}
+                  onClick={async () => { kravy.click(); setShowNotesModal(true); }}
                   className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${orderNotes ? "bg-blue-500/10 border-blue-500/25 text-blue-500" : "bg-[var(--kravy-surface)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)]"}`}
                   title="Add Order Note"
                 >
@@ -2353,7 +2356,7 @@ export default function CheckoutClient() {
                 </button>
 
                 <button
-                  onClick={() => { kravy.click(); setShowHeldBills(true); fetchHeldBills(); }}
+                  onClick={async () => { kravy.click(); setShowHeldBills(true); fetchHeldBills(); }}
                   className="relative group flex items-center gap-2 px-3 py-2 bg-amber-500/10 text-amber-500
                     border border-amber-500/25 rounded-xl hover:bg-amber-500/20 transition-all"
                   title="View Held Bills"
@@ -2381,7 +2384,7 @@ export default function CheckoutClient() {
               ].map((type) => (
                 <button
                   key={type.id}
-                  onClick={() => {
+                  onClick={async () => {
                     kravy.click();
                     setOrderType(type.id as any);
                     if (type.id !== 'DINING') {
@@ -2427,7 +2430,7 @@ export default function CheckoutClient() {
           <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar flex flex-col">
             {/* Customer Section Toggle */}
             <button
-              onClick={() => { kravy.click(); setShowCustomer(!showCustomer); }}
+              onClick={async () => { kravy.click(); setShowCustomer(!showCustomer); }}
               className="px-4 md:px-5 py-3 text-left border-b border-[var(--kravy-border)]
                 flex items-center justify-between hover:bg-[var(--kravy-bg)] transition-colors flex-shrink-0"
             >
@@ -2497,7 +2500,7 @@ export default function CheckoutClient() {
                       <button
                         key={p.id || idx}
                         type="button"
-                        onClick={() => selectCustomer(p)}
+                        onClick={async () => selectCustomer(p)}
                         className="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-[var(--kravy-border)] last:border-0 transition-colors flex items-center justify-between"
                       >
                         <div>
@@ -2519,7 +2522,7 @@ export default function CheckoutClient() {
                        <p className="text-lg font-black text-indigo-600 mt-0.5">₹{selectedParty.walletBalance?.toFixed(2) || "0.00"}</p>
                      </div>
                      <button 
-                       onClick={() => {
+                       onClick={async () => {
                          const amt = prompt("Enter amount to deposit (₹):");
                          if (amt && !isNaN(Number(amt))) {
                            handleDeposit(Number(amt));
@@ -2616,7 +2619,7 @@ export default function CheckoutClient() {
                       {/* Qty Controls */}
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         <button
-                          onClick={() => dec(i.id)}
+                          onClick={async () => dec(i.id)}
                           className="w-7 h-7 rounded-lg border border-[var(--kravy-border)] bg-[var(--kravy-surface)]
                             text-[var(--kravy-text-secondary)] font-black text-base flex items-center justify-center
                             hover:bg-rose-50 hover:border-rose-200 hover:text-rose-500 transition-all"
@@ -2625,7 +2628,7 @@ export default function CheckoutClient() {
                         </button>
                         <span className="w-6 text-center font-black text-sm text-[var(--kravy-text-primary)]">{i.qty}</span>
                         <button
-                          onClick={() => inc(i.id)}
+                          onClick={async () => inc(i.id)}
                           className="w-7 h-7 rounded-lg border border-[var(--kravy-border)] bg-[var(--kravy-surface)]
                             text-[var(--kravy-text-secondary)] font-black text-base flex items-center justify-center
                             hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-500 transition-all"
@@ -2639,7 +2642,7 @@ export default function CheckoutClient() {
                       </span>
 
                       <button
-                        onClick={() => remove(i.id)}
+                        onClick={async () => remove(i.id)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center
                           text-[var(--kravy-text-muted)] hover:bg-rose-50 hover:text-rose-500 transition-all flex-shrink-0"
                       >
@@ -2699,7 +2702,7 @@ export default function CheckoutClient() {
               <div className="space-y-1.5">
                 <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
                    <button 
-                    onClick={() => {
+                    onClick={async () => {
                       if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
                         toast.error("Permission Denied: Cannot apply discounts.");
                         return;
@@ -2711,7 +2714,7 @@ export default function CheckoutClient() {
                      Promo
                    </button>
                    <button 
-                    onClick={() => {
+                    onClick={async () => {
                       if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
                         toast.error("Permission Denied: Cannot apply discounts.");
                         return;
@@ -2723,7 +2726,7 @@ export default function CheckoutClient() {
                      Discount
                    </button>
                    <button 
-                    onClick={() => setDiscountMode('CHARGES')}
+                    onClick={async () => setDiscountMode('CHARGES')}
                     className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'CHARGES' ? 'bg-indigo-600 text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
                    >
                      Charges
@@ -2871,7 +2874,7 @@ export default function CheckoutClient() {
                   .map((mode) => (
                   <button
                     key={mode}
-                    onClick={() => { kravy.toggle(); setPaymentMode(mode); }}
+                    onClick={async () => { kravy.toggle(); setPaymentMode(mode); }}
                     className={`py-1.5 px-0.5 rounded-xl border-2 font-black text-[7px] transition-all flex flex-col items-center justify-center gap-1 ${paymentMode === mode
                       ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20"
                       : "bg-white border-slate-200 text-slate-900 hover:border-indigo-400 hover:bg-indigo-50/30"
@@ -2894,7 +2897,7 @@ export default function CheckoutClient() {
                       {(["Pending", "Paid"] as const).map((s) => (
                         <button
                           key={s}
-                          onClick={() => setPaymentStatus(s)}
+                          onClick={async () => setPaymentStatus(s)}
                           className={`py-1.5 rounded-lg border-2 font-black text-[8px] transition-all uppercase tracking-wider ${paymentStatus === s
                             ? s === "Paid" ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/20" : "bg-amber-600 border-amber-600 text-white shadow-md shadow-amber-500/20"
                             : "bg-white border-slate-200 text-slate-500"
@@ -2985,7 +2988,7 @@ export default function CheckoutClient() {
 
                     {(business.posPreviewEnabled !== false) && (
                       <button
-                        onClick={() => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
+                        onClick={async () => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
                         disabled={items.length === 0 || isSaving}
                         className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 text-indigo-800 bg-indigo-50 hover:bg-indigo-100 transition-all font-black active:scale-95`}
                       >
@@ -3127,7 +3130,7 @@ export default function CheckoutClient() {
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/20"
-            onClick={() => setShowHeldBills(false)}
+            onClick={async () => setShowHeldBills(false)}
           />
 
           {/* Drawer */}
@@ -3144,7 +3147,7 @@ export default function CheckoutClient() {
                 </p>
               </div>
               <button
-                onClick={() => setShowHeldBills(false)}
+                onClick={async () => setShowHeldBills(false)}
                 className="w-9 h-9 flex items-center justify-center rounded-xl
                   hover:bg-rose-500/10 text-[var(--kravy-text-muted)] hover:text-rose-500 transition-all"
               >
@@ -3237,7 +3240,7 @@ export default function CheckoutClient() {
                     {/* Actions */}
                     <div className="flex border-t border-[var(--kravy-border)]">
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           setShowHeldBills(false);
                           router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`);
                         }}
@@ -3251,7 +3254,7 @@ export default function CheckoutClient() {
                         <Play size={13} fill="currentColor" /> Resume
                       </button>
                       <button
-                        onClick={() => setDeleteConfirmId(bill.id)}
+                        onClick={async () => setDeleteConfirmId(bill.id)}
                         className="w-14 flex items-center justify-center
                           bg-rose-500/8 text-rose-500 hover:bg-rose-500 hover:text-white
                           transition-all"
@@ -3267,7 +3270,7 @@ export default function CheckoutClient() {
             {/* Drawer Footer */}
             <div className="p-5 border-t border-[var(--kravy-border)] flex-shrink-0">
               <button
-                onClick={() => setShowHeldBills(false)}
+                onClick={async () => setShowHeldBills(false)}
                 className="w-full py-3 bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
                   rounded-2xl font-black text-sm text-[var(--kravy-text-secondary)]
                   hover:bg-[var(--kravy-surface-hover)] transition-all"
@@ -3286,7 +3289,7 @@ export default function CheckoutClient() {
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div
             className="absolute inset-0 bg-black/20"
-            onClick={() => setDeleteConfirmId(null)}
+            onClick={async () => setDeleteConfirmId(null)}
           />
           <div className="relative w-full sm:max-w-sm bg-[var(--kravy-surface)] rounded-t-3xl sm:rounded-3xl
             shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
@@ -3339,7 +3342,7 @@ export default function CheckoutClient() {
                   <Trash2 size={16} /> Haan, Delete Karo
                 </button>
                 <button
-                  onClick={() => setDeleteConfirmId(null)}
+                  onClick={async () => setDeleteConfirmId(null)}
                   className="w-full py-3.5 rounded-2xl bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
                     text-[var(--kravy-text-secondary)] font-black text-sm
                     hover:bg-[var(--kravy-surface-hover)] transition-all"
@@ -3359,7 +3362,7 @@ export default function CheckoutClient() {
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div
             className="absolute inset-0 bg-black/20"
-            onClick={() => setResumeConfirmId(null)}
+            onClick={async () => setResumeConfirmId(null)}
           />
           <div className="relative w-full sm:max-w-sm bg-[var(--kravy-surface)] rounded-t-3xl sm:rounded-3xl
             shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
@@ -3378,7 +3381,7 @@ export default function CheckoutClient() {
               </p>
               <div className="flex flex-col gap-2.5">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setShowHeldBills(false);
                     router.push(`/dashboard/billing/checkout?resumeBillId=${resumeConfirmId}`);
                     setResumeConfirmId(null);
@@ -3391,7 +3394,7 @@ export default function CheckoutClient() {
                   <Play size={16} fill="currentColor" /> Haan, Resume Karo
                 </button>
                 <button
-                  onClick={() => setResumeConfirmId(null)}
+                  onClick={async () => setResumeConfirmId(null)}
                   className="w-full py-3.5 rounded-2xl bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
                     text-[var(--kravy-text-secondary)] font-black text-sm hover:bg-[var(--kravy-surface-hover)] transition-all"
                 >
@@ -3463,7 +3466,7 @@ export default function CheckoutClient() {
       {/* 📝 ORDER NOTES MODAL */}
       {showNotesModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowNotesModal(false)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={async () => setShowNotesModal(false)} />
           <div className="relative w-full max-w-sm bg-[var(--kravy-surface)] rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-5 border-b border-[var(--kravy-border)] flex items-center justify-between bg-blue-500/5">
               <div className="flex items-center gap-3">
@@ -3475,7 +3478,7 @@ export default function CheckoutClient() {
                   <p className="text-[9px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-wider">Kitchen Instructions</p>
                 </div>
               </div>
-              <button onClick={() => setShowNotesModal(false)} className="text-[var(--kravy-text-muted)] hover:text-rose-500 transition-colors">
+              <button onClick={async () => setShowNotesModal(false)} className="text-[var(--kravy-text-muted)] hover:text-rose-500 transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -3490,7 +3493,7 @@ export default function CheckoutClient() {
                   focus:border-blue-500 transition-all placeholder:text-[var(--kravy-text-muted)] resize-none"
               />
               <button
-                onClick={() => { kravy.toggle(); setShowNotesModal(false); }}
+                onClick={async () => { kravy.toggle(); setShowNotesModal(false); }}
                 className="w-full py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest
                   shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all"
               >
@@ -3506,7 +3509,7 @@ export default function CheckoutClient() {
       ════════════════════════════════════════════ */}
       {quickAddCat && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/10" onClick={() => setQuickAddCat(null)} />
+          <div className="absolute inset-0 bg-black/10" onClick={async () => setQuickAddCat(null)} />
           <div className="relative bg-[var(--kravy-surface)] w-full max-w-sm rounded-[2rem] shadow-2xl border border-[var(--kravy-border)] overflow-hidden scale-100 animate-in fade-in duration-200">
             <div className="p-6">
               <div className="flex items-center gap-4 mb-5 pb-4 border-b border-[var(--kravy-border)]/50">
@@ -3591,7 +3594,7 @@ export default function CheckoutClient() {
                         <button
                           key={status}
                           type="button"
-                          onClick={() => setQuickAddTaxStatus(status)}
+                          onClick={async () => setQuickAddTaxStatus(status)}
                           className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
                             quickAddTaxStatus === status
                               ? "bg-[var(--kravy-brand)] text-white shadow-lg shadow-[var(--kravy-brand)]/20"
@@ -3608,7 +3611,7 @@ export default function CheckoutClient() {
                         <button
                           key={val}
                           type="button"
-                          onClick={() => setQuickAddGst(val)}
+                          onClick={async () => setQuickAddGst(val)}
                           className={`px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
                             quickAddGst === val
                               ? "bg-[var(--kravy-brand)] text-white border-[var(--kravy-brand)]"
@@ -3625,7 +3628,7 @@ export default function CheckoutClient() {
                 <div className="flex gap-2 pt-2">
                   <button
                     type="button"
-                    onClick={() => setQuickAddCat(null)}
+                    onClick={async () => setQuickAddCat(null)}
                     className="flex-1 py-3 rounded-xl border border-[var(--kravy-border)] bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-xs hover:bg-[var(--kravy-surface-hover)] transition-all"
                   >
                     Cancel
@@ -3647,7 +3650,7 @@ export default function CheckoutClient() {
       ════════════════════════════════════════════ */}
       {showAddCategory && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/10" onClick={() => setShowAddCategory(false)} />
+          <div className="absolute inset-0 bg-black/10" onClick={async () => setShowAddCategory(false)} />
           <div className="relative bg-[var(--kravy-surface)] w-full max-w-sm rounded-[2rem] shadow-2xl border border-[var(--kravy-border)] overflow-hidden scale-100 animate-in fade-in duration-200">
             <div className="p-6">
               <div className="flex items-center gap-4 mb-5 pb-4 border-b border-[var(--kravy-border)]/50">
@@ -3678,7 +3681,7 @@ export default function CheckoutClient() {
                 <div className="flex gap-2 pt-2">
                   <button
                     type="button"
-                    onClick={() => setShowAddCategory(false)}
+                    onClick={async () => setShowAddCategory(false)}
                     className="flex-1 py-3 rounded-xl border border-[var(--kravy-border)] bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-xs hover:bg-[var(--kravy-surface-hover)] transition-all"
                   >
                     Cancel
@@ -3705,7 +3708,7 @@ export default function CheckoutClient() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            onClick={() => setQuickAddAddonGroup(null)}
+            onClick={async () => setQuickAddAddonGroup(null)}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -3765,7 +3768,7 @@ export default function CheckoutClient() {
                   <div className="grid grid-cols-2 gap-3 pt-4">
                      <button 
                         type="button"
-                        onClick={() => setQuickAddAddonGroup(null)}
+                        onClick={async () => setQuickAddAddonGroup(null)}
                         className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest text-[0.7rem] hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
                      >
                         Abort

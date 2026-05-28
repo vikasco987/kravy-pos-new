@@ -5,8 +5,11 @@ import { Plus, X, Tag, Sparkles, Layers, ArrowRight, Check, Trash2, Smartphone, 
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import AddonGroupsModal from './AddonGroupsModal'
+import { useConfirm } from "@/components/ConfirmContext";
+
 
 export default function ItemModal({ item, addonGroups = [], onSave, onClose, categories = [] }: any) {
+  const { confirm } = useConfirm();
   const [mounted, setMounted] = useState(false)
   const [variantState, setVariantState] = useState<'list' | 'add'>('list')
   const [addonState, setAddonState] = useState<'list' | 'add'>('list')
@@ -52,7 +55,7 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
   }
 
   async function handleQuickAddonDelete(id: string) {
-    if (!confirm("Are you sure?")) return
+    if (!await confirm("Are you sure?")) return
     const res = await fetch(`/api/menu-editor/addon-groups?id=${id}`, { method: 'DELETE' })
     if (res.ok) {
        setLocalGroups((prev: any[]) => prev.filter((g: any) => g.id !== id))
@@ -94,11 +97,11 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
   }
 
   // LOGIC HELPERS
-  const addVariantOption = () => setNewVariant(p => ({ ...p, options: [...p.options, { id: Math.random().toString(), name: '', price: '' }] }))
-  const saveVariant = () => { if(!newVariant.groupName) return; update('variants', [...form.variants, { ...newVariant, id: Math.random().toString() }]); setVariantState('list'); setNewVariant({ groupName: '', required: true, multiSelect: false, options: [{ id: '1', name: '', price: '' }] }) }
-  const addAddonRow = () => setNewAddonGroup(p => ({ ...p, addons: [...p.addons, { id: Math.random().toString(), name: '', price: '', foodType: 'veg', imageUrl: '' }] }))
+  const addVariantOption = async () => setNewVariant(p => ({ ...p, options: [...p.options, { id: Math.random().toString(), name: '', price: '' }] }))
+  const saveVariant = async () => { if(!newVariant.groupName) return; update('variants', [...form.variants, { ...newVariant, id: Math.random().toString() }]); setVariantState('list'); setNewVariant({ groupName: '', required: true, multiSelect: false, options: [{ id: '1', name: '', price: '' }] }) }
+  const addAddonRow = async () => setNewAddonGroup(p => ({ ...p, addons: [...p.addons, { id: Math.random().toString(), name: '', price: '', foodType: 'veg', imageUrl: '' }] }))
   const updateAddonRow = (id: string, k: string, v: any) => setNewAddonGroup(p => ({ ...p, addons: p.addons.map(a => a.id === id ? { ...a, [k]: v } : a) }))
-  const saveNewAddonGroup = () => { if(!newAddonGroup.name) return; update('addonGroupIds', [...form.addonGroupIds, Math.random().toString()]); setAddonState('list'); }
+  const saveNewAddonGroup = async () => { if(!newAddonGroup.name) return; update('addonGroupIds', [...form.addonGroupIds, Math.random().toString()]); setAddonState('list'); }
   const toggleLink = (id: string) => update('addonGroupIds', form.addonGroupIds.includes(id) ? form.addonGroupIds.filter((i: string) => i !== id) : [...form.addonGroupIds, id])
 
   function handleSubmit() {
@@ -225,8 +228,8 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
                    <label className="text-[0.6rem] font-black text-gray-400 uppercase tracking-widest pl-1 opacity-80">{f.l}</label>
                    {f.toggle ? (
                       <div className="flex h-9 border border-gray-100 rounded-lg overflow-hidden font-black text-[0.6rem] bg-white">
-                         <button onClick={() => update('gstType', 'goods')} className={`flex-1 ${form.gstType === 'goods' ? 'bg-[#1a6de0] text-white' : 'text-gray-300'}`}>GOODS</button>
-                         <button onClick={() => update('gstType', 'services')} className={`flex-1 border-l border-gray-50 ${form.gstType === 'services' ? 'bg-[#1a6de0] text-white' : 'text-gray-300'}`}>SERV</button>
+                         <button onClick={async () => update('gstType', 'goods')} className={`flex-1 ${form.gstType === 'goods' ? 'bg-[#1a6de0] text-white' : 'text-gray-300'}`}>GOODS</button>
+                         <button onClick={async () => update('gstType', 'services')} className={`flex-1 border-l border-gray-50 ${form.gstType === 'services' ? 'bg-[#1a6de0] text-white' : 'text-gray-300'}`}>SERV</button>
                       </div>
                    ) : f.select ? (
                       <div className="relative group">
@@ -264,7 +267,7 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
                                            {v.required && <span className="text-[0.55rem] bg-rose-50 text-rose-500 px-2 py-0.5 rounded-md font-black uppercase tracking-widest">Compulsory</span>}
                                         </div>
                                      </div>
-                                     <button onClick={() => update('variants', form.variants.filter((_: any, i: number) => i !== idx))} className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all"><Trash2 size={16} /></button>
+                                     <button onClick={async () => update('variants', form.variants.filter((_: any, i: number) => i !== idx))} className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all"><Trash2 size={16} /></button>
                                   </div>
                                ))}
                             </div>
@@ -275,16 +278,16 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
                                 { t: 'Spice Level', opts: ['Mild', 'Hot'], i: <Flame size={14} /> },
                                 { t: 'Portion', opts: ['Half', 'Full'], i: <PackageSearch size={14} /> }
                              ].map((p, i) => (
-                                <button key={i} onClick={() => { setNewVariant({ ...newVariant, groupName: p.t, options: p.opts.map(o => ({ id: Math.random().toString(), name: o, price: '' })) }); setVariantState('add'); }} className="px-4 py-2 border border-gray-100 rounded-full text-[0.68rem] font-black text-gray-400 hover:border-blue-400 hover:text-blue-600 transition-all bg-white shadow-sm flex items-center gap-2">+ {p.t}</button>
+                                <button key={i} onClick={async () => { setNewVariant({ ...newVariant, groupName: p.t, options: p.opts.map(o => ({ id: Math.random().toString(), name: o, price: '' })) }); setVariantState('add'); }} className="px-4 py-2 border border-gray-100 rounded-full text-[0.68rem] font-black text-gray-400 hover:border-blue-400 hover:text-blue-600 transition-all bg-white shadow-sm flex items-center gap-2">+ {p.t}</button>
                              ))}
-                             <button onClick={() => setVariantState('add')} className="px-5 py-2 bg-blue-600 text-white rounded-full text-[0.68rem] font-black uppercase tracking-widest active:scale-95 shadow-lg shadow-blue-500/20 ml-auto">+ Custom</button>
+                             <button onClick={async () => setVariantState('add')} className="px-5 py-2 bg-blue-600 text-white rounded-full text-[0.68rem] font-black uppercase tracking-widest active:scale-95 shadow-lg shadow-blue-500/20 ml-auto">+ Custom</button>
                           </div>
                        </motion.div>
                     ) : (
                        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 pt-2 bg-gray-50/50 p-6 rounded-[3rem] border border-white shadow-inner">
                           <div className="grid grid-cols-2 gap-4 items-end">
                              <div className="space-y-1.5"><label className="text-[0.6rem] font-black text-gray-400 uppercase tracking-widest pl-1">Variant Label *</label><input value={newVariant.groupName} onChange={e => setNewVariant(p => ({ ...p, groupName: e.target.value }))} placeholder="e.g. Set Portion" className={`${inputClass} !h-10 border-white`} /></div>
-                             <div className="flex gap-2 justify-end"><button onClick={() => setVariantState('list')} className="text-[0.68rem] font-black text-gray-400 uppercase tracking-widest px-4">Cancel</button><button onClick={saveVariant} className="bg-blue-600 text-white px-8 py-2.5 rounded-xl text-[0.68rem] font-black uppercase shadow-lg shadow-blue-500/10">Save Group</button></div>
+                             <div className="flex gap-2 justify-end"><button onClick={async () => setVariantState('list')} className="text-[0.68rem] font-black text-gray-400 uppercase tracking-widest px-4">Cancel</button><button onClick={saveVariant} className="bg-blue-600 text-white px-8 py-2.5 rounded-xl text-[0.68rem] font-black uppercase shadow-lg shadow-blue-500/10">Save Group</button></div>
                           </div>
                           <div className="grid grid-cols-2 gap-4 border-y border-white py-3">
                              <Toggle label="Selection mandatory (customer must choose)" value={newVariant.required} onChange={(v: boolean) => setNewVariant(p => ({ ...p, required: v }))} />
@@ -295,7 +298,7 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
                                 <div key={opt.id} className="flex gap-3 items-center">
                                    <input value={opt.name} onChange={e => setNewVariant(p => ({ ...p, options: p.options.map(o => o.id === opt.id ? { ...o, name: e.target.value } : o) }))} placeholder="e.g. Large" className={`${inputClass} !h-9 flex-1 border-white shadow-none`} />
                                    <div className="relative w-28 shrink-0"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 font-bold">₹</span><input type="number" value={opt.price} onChange={e => setNewVariant(p => ({ ...p, options: p.options.map(o => o.id === opt.id ? { ...o, price: e.target.value } : o) }))} placeholder="0" className={`${inputClass} !h-9 pl-7 border-white shadow-none`} /></div>
-                                   <button onClick={() => setNewVariant(p => ({ ...p, options: p.options.filter(o => o.id !== opt.id) }))} className="text-gray-200 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                                   <button onClick={async () => setNewVariant(p => ({ ...p, options: p.options.filter(o => o.id !== opt.id) }))} className="text-gray-200 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
                                 </div>
                              ))}
                              <button onClick={addVariantOption} className="text-[#1a6de0] text-[0.68rem] font-black uppercase tracking-widest pl-1 mt-2 hover:opacity-70 transition-opacity">+ Append Selection</button>
@@ -320,12 +323,12 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
                              </div>
                              <div className="flex items-center gap-4">
                                 <span className="text-[0.6rem] text-gray-400 font-bold uppercase tracking-widest">Sync</span>
-                                <button onClick={() => toggleLink(g.id)} className={`w-8 h-4.5 rounded-full relative transition-colors ${form.addonGroupIds.includes(g.id) ? 'bg-green-500 shadow-sm shadow-green-100' : 'bg-gray-200'}`}><span className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${form.addonGroupIds.includes(g.id) ? 'left-[16px]' : 'left-0.5'}`} /></button>
+                                <button onClick={async () => toggleLink(g.id)} className={`w-8 h-4.5 rounded-full relative transition-colors ${form.addonGroupIds.includes(g.id) ? 'bg-green-500 shadow-sm shadow-green-100' : 'bg-gray-200'}`}><span className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${form.addonGroupIds.includes(g.id) ? 'left-[16px]' : 'left-0.5'}`} /></button>
                              </div>
                           </div>
                        ))}
                     </div>
-                    <div className="pt-2 flex justify-between items-center"><button onClick={() => setShowAddonManager(true)} className="text-blue-600 text-[0.7rem] font-black uppercase tracking-[0.2em] border-2 border-dashed border-blue-50 px-6 py-2.5 rounded-2xl hover:bg-blue-50 transition-all active:scale-95 hover:border-blue-200">+ Create fresh cluster cluster</button><span className="text-[0.6rem] text-gray-300 font-bold uppercase tracking-widest">{form.addonGroupIds.length} clusters linked</span></div>
+                    <div className="pt-2 flex justify-between items-center"><button onClick={async () => setShowAddonManager(true)} className="text-blue-600 text-[0.7rem] font-black uppercase tracking-[0.2em] border-2 border-dashed border-blue-50 px-6 py-2.5 rounded-2xl hover:bg-blue-50 transition-all active:scale-95 hover:border-blue-200">+ Create fresh cluster cluster</button><span className="text-[0.6rem] text-gray-300 font-bold uppercase tracking-widest">{form.addonGroupIds.length} clusters linked</span></div>
                  </div>
               </AccordionItem>
 
@@ -339,7 +342,7 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
               </div>
               <div className="col-span-4 space-y-2">
                  <label className={labelClass}>Dish Snapshot</label>
-                 <div onClick={() => fileInputRef.current?.click()} className="group border-2 border-dashed border-gray-100 rounded-[1.5rem] h-[100px] flex items-center justify-center cursor-pointer bg-gray-50/10 hover:border-blue-500 hover:bg-blue-50/20 transition-all relative overflow-hidden">
+                 <div onClick={async () => fileInputRef.current?.click()} className="group border-2 border-dashed border-gray-100 rounded-[1.5rem] h-[100px] flex items-center justify-center cursor-pointer bg-gray-50/10 hover:border-blue-500 hover:bg-blue-50/20 transition-all relative overflow-hidden">
                     {form.imageUrl ? <Image src={form.imageUrl} alt="dish" fill className="object-cover" /> : <div className="flex flex-col items-center gap-1 opacity-30"><ImageIcon size={22} /><span className="text-[0.55rem] font-black uppercase tracking-widest">Media</span></div>}
                  </div>
                  <input ref={fileInputRef} type="file" className="hidden" />
@@ -399,7 +402,7 @@ function Toggle({ label, value, onChange }: any) {
    return (
       <div className="flex justify-between items-center py-2.5 border-b border-gray-50/50 last:border-none">
          <span className="text-[0.72rem] font-black text-gray-700 uppercase tracking-tighter opacity-80">{label}</span>
-         <button onClick={() => onChange(!value)} className={`w-9 h-4.5 rounded-full relative transition-colors ${value ? 'bg-green-500 shadow-sm shadow-green-100' : 'bg-gray-200'}`}><span className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all shadow-sm ${value ? 'left-[18px]' : 'left-0.5'}`} /></button>
+         <button onClick={async () => onChange(!value)} className={`w-9 h-4.5 rounded-full relative transition-colors ${value ? 'bg-green-500 shadow-sm shadow-green-100' : 'bg-gray-200'}`}><span className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all shadow-sm ${value ? 'left-[18px]' : 'left-0.5'}`} /></button>
       </div>
    )
 }
