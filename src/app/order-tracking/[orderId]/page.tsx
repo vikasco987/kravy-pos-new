@@ -199,7 +199,6 @@ export default function OrderTrackingPage() {
     const currentStep = getStatusStep(order.status);
 
     return (
-    return (
         <div className="min-h-screen bg-gradient-to-b from-[#F8F8F8] to-[#FFFFFF] font-sans text-[#1C1C1C] overflow-x-hidden w-full" style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}>
             <div className="max-w-[480px] mx-auto min-h-screen relative overflow-x-hidden w-full flex flex-col">
 
