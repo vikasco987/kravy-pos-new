@@ -198,8 +198,8 @@ export default function OrderTrackingPage() {
     const currentStep = getStatusStep(order.status);
 
     return (
-        <div className="min-h-screen bg-[#F4F4F4] font-sans text-[#1C1C1C]">
-            <div className="max-w-[480px] mx-auto min-h-screen bg-[#F4F4F4] relative">
+        <div className="min-h-screen bg-[#F4F4F4] font-sans text-[#1C1C1C] overflow-x-hidden w-full">
+            <div className="max-w-[480px] mx-auto min-h-screen bg-[#F4F4F4] relative overflow-x-hidden w-full">
 
                 {/* ── TOP NAVIGATION ── */}
                 <nav className="sticky top-0 z-[100] bg-white border-b border-[#EBEBEB] px-4 py-3.5 flex items-center justify-between shadow-sm">
@@ -210,11 +210,11 @@ export default function OrderTrackingPage() {
                         >
                             <ArrowLeft size={18} strokeWidth={2.5} />
                         </button>
-                        <div>
-                            <div className="text-[0.95rem] font-[900] leading-none">Order Tracking</div>
-                            <div className="text-[0.65rem] text-[#ABABAB] font-[800] uppercase tracking-wider mt-1 flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                Live Updates · Table {order.table?.name || "Counter"} · #{order.id.slice(-6).toUpperCase()}
+                        <div className="min-w-0 flex-1">
+                            <div className="text-[0.95rem] font-[900] leading-none truncate">Order Tracking</div>
+                            <div className="text-[0.65rem] text-[#ABABAB] font-[800] uppercase tracking-wider mt-1 flex items-center gap-1.5 truncate">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
+                                <span className="truncate">Live Updates · Table {order.table?.name || "Counter"} · #{order.id.slice(-6).toUpperCase()}</span>
                             </div>
                         </div>
                     </div>
@@ -263,14 +263,14 @@ export default function OrderTrackingPage() {
                                     const Icon = config.icon;
 
                                     return (
-                                        <div key={status} className="flex-1 flex flex-col items-center relative z-10">
+                                        <div key={status} className="flex-1 flex flex-col items-center relative z-10 min-w-0">
                                             {/* Progress line overlay */}
                                             {index > 0 && index <= currentStep && (
                                                 <div className="absolute top-[14px] right-1/2 w-full h-[3px] bg-[#E23744]" />
                                             )}
                                             
                                             {/* Dot / Icon container */}
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 transition-all duration-500 shadow-sm ${
+                                            <div className={`w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-full flex items-center justify-center border-4 transition-all duration-500 shadow-sm ${
                                                 isCurrent ? "bg-[#E23744] border-white scale-125 z-20 shadow-lg" : 
                                                 isActive ? "bg-[#E23744] border-white" : "bg-white border-slate-100"
                                             }`}>
@@ -279,7 +279,7 @@ export default function OrderTrackingPage() {
                                             
                                             {/* Label */}
                                             <div className="mt-3 block text-center w-full px-0.5">
-                                                <span className={`block text-[0.55rem] font-black uppercase tracking-tighter text-center leading-normal transition-all duration-500 ${
+                                                <span className={`block text-[8px] sm:text-[9px] font-black uppercase tracking-tighter text-center leading-tight transition-all duration-500 break-words ${
                                                     isCurrent ? "text-[#E23744] scale-105" : isActive ? "text-[#1C1C1C]" : "text-slate-300"
                                                 }`}>
                                                     {config.label.split(' ')[0]}
