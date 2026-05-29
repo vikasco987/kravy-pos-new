@@ -199,8 +199,9 @@ export default function OrderTrackingPage() {
     const currentStep = getStatusStep(order.status);
 
     return (
-        <div className="min-h-screen bg-[#F8F8F8] font-sans text-[#1C1C1C] overflow-x-hidden w-full" style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}>
-            <div className="max-w-[480px] mx-auto min-h-screen bg-[#F8F8F8] relative overflow-x-hidden w-full flex flex-col">
+    return (
+        <div className="min-h-screen bg-gradient-to-b from-[#F8F8F8] to-[#FFFFFF] font-sans text-[#1C1C1C] overflow-x-hidden w-full" style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}>
+            <div className="max-w-[480px] mx-auto min-h-screen relative overflow-x-hidden w-full flex flex-col">
 
                 {/* ── COMPACT TOP NAVIGATION ── */}
                 <nav className="sticky top-0 z-[100] bg-white/90 backdrop-blur-md border-b border-[#EBEBEB] px-4 py-3 flex items-center justify-between shadow-sm">
@@ -212,8 +213,11 @@ export default function OrderTrackingPage() {
                             <ArrowLeft size={16} strokeWidth={2.5} />
                         </button>
                         <div className="min-w-0 flex-1">
-                            <div className="text-[0.9rem] font-[800] leading-none truncate tracking-tight">{order.table?.name ? `Table ${order.table.name}` : "Order Tracking"}</div>
-                            <div className="text-[0.65rem] text-[#696969] font-[700] mt-1 flex items-center gap-1.5 truncate">
+                            <div className="text-[0.9rem] font-[800] leading-none truncate tracking-tight flex items-center gap-1.5">
+                                <span className="text-lg leading-none translate-y-[-1px]">🍽</span>
+                                {order.table?.name ? `Table ${order.table.name}` : "Order Tracking"}
+                            </div>
+                            <div className="text-[0.6rem] text-[#696969] font-[700] mt-1 flex items-center gap-1.5 truncate">
                                 <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse shrink-0" />
                                 <span className="truncate">Live • #{order.id.slice(-6).toUpperCase()}</span>
                             </div>
@@ -221,13 +225,13 @@ export default function OrderTrackingPage() {
                     </div>
                 </nav>
 
-                <main className="pb-40 p-4 flex-1">
+                <main className="pb-40 p-4 flex-1 space-y-4">
 
                     {/* ── MAIN STATUS CARD ── */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-3xl p-5 shadow-sm border border-[#EBEBEB] mb-6"
+                        className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[#EBEBEB]"
                     >
                         <div className="flex items-center gap-4 mb-6">
                             <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-sm bg-[#EF4F5F]/10 text-[#EF4F5F] relative`}>
@@ -275,10 +279,10 @@ export default function OrderTrackingPage() {
                                             
                                             {/* Label */}
                                             <div className="mt-2 text-center w-full">
-                                                <span className={`block text-[0.55rem] font-[800] uppercase tracking-tighter leading-tight transition-all duration-500 break-words ${
+                                                <span className={`block text-[10px] leading-none font-[800] uppercase tracking-tighter transition-all duration-500 break-words ${
                                                     isCurrent ? "text-[#EF4F5F]" : isActive ? "text-[#1C1C1C]" : "text-[#ABABAB]"
                                                 }`}>
-                                                    {config.label}
+                                                    {config.label.split(' ')[0]}
                                                 </span>
                                             </div>
                                         </div>
@@ -294,26 +298,22 @@ export default function OrderTrackingPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="bg-gradient-to-br from-[#1a0a00] to-[#2d1500] rounded-[2rem] p-5 shadow-lg relative overflow-hidden"
+                            className="bg-gradient-to-br from-[#1a0a00] to-[#2d1500] rounded-3xl p-6 shadow-[0_8px_30px_rgba(45,21,0,0.12)] relative overflow-hidden"
                         >
                             <div className="relative z-10 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="text-3xl">👑</div>
+                                <div className="flex items-center gap-4">
+                                    <div className="text-4xl bg-white/10 rounded-2xl p-2 border border-white/5 shadow-inner">👑</div>
                                     <div>
-                                        <div className="text-[0.85rem] font-[800] text-[#F0EAD6]">Loyalty Member</div>
-                                        <div className="text-[0.68rem] text-[#F0EAD6]/60">Order total: ₹{order.total}</div>
+                                        <div className="text-[0.95rem] font-[800] text-[#F0EAD6] tracking-wide">Loyalty Member</div>
+                                        <div className="text-[0.75rem] text-[#F0EAD6]/80 mt-1">🎉 You earned <strong className="text-[#D4A353]">{Math.floor(order.total / 10)} points</strong></div>
                                     </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-[#D4A353] font-[Syne] font-[900] text-xl">+{Math.floor(order.total / 10)}</div>
-                                    <div className="text-[0.55rem] font-[900] text-[#D4A353] uppercase">Points Earned</div>
                                 </div>
                             </div>
                             <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(212,163,83,0.15),transparent)] pointer-events-none" />
                         </motion.div>
-                        <div className="mt-3 px-3 text-center">
+                        <div className="mt-4 px-3 text-center">
                             <p className="text-[0.75rem] font-[600] text-[#696969]">
-                                You earn <span className="text-[#E23744] font-bold">10%</span> of your bill as loyalty points. Use them on your next visit!
+                                Use these points on your next order to save money!
                             </p>
                         </div>
                     </div>
@@ -359,14 +359,14 @@ export default function OrderTrackingPage() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="font-[600] text-[0.9rem] leading-snug text-[#1C1C1C] break-words">
-                                                    {item.name} <span className="text-[#696969] ml-1 font-[500]">×{item.quantity}</span>
+                                                    {item.name} <span className="inline-block bg-[#F4F4F4] text-[#696969] text-[0.65rem] font-[800] px-1.5 py-0.5 rounded-md ml-1 translate-y-[-1px]">×{item.quantity}</span>
                                                 </div>
                                                 {item.isNew && (
                                                     <span className="bg-[#FC8019]/10 text-[#FC8019] text-[0.55rem] font-[800] px-1.5 py-0.5 rounded uppercase tracking-tighter mt-1 inline-block">New</span>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="font-[600] text-[0.9rem] text-[#1C1C1C] shrink-0">₹{item.price * item.quantity}</div>
+                                        <div className="font-[800] text-[0.9rem] text-[#1C1C1C] shrink-0">₹{item.price * item.quantity}</div>
                                     </div>
                                 ))}
                             </div>
@@ -384,28 +384,46 @@ export default function OrderTrackingPage() {
 
                             <div className="pt-4 border-t border-[#EBEBEB] flex justify-between items-center">
                                 <span className="font-[800] text-[1.05rem] text-[#1C1C1C]">Total Payable</span>
-                                <span className="font-[900] text-[1.15rem] text-[#1C1C1C]">₹{Math.round(order.total * 1.05)}</span>
+                                <div className="bg-red-50 text-[#EF4F5F] rounded-xl px-3 py-1.5 font-[900] text-[1.15rem] shadow-inner border border-red-100/50">
+                                    ₹{Math.round(order.total * 1.05)}
+                                </div>
                             </div>
                         </div>
                     </motion.div>
 
+                    {/* ── RESTAURANT DETAILS ── */}
+                    <div className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[#EBEBEB] flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-500">
+                                <MapPin size={20} />
+                            </div>
+                            <div>
+                                <div className="font-[800] text-[#1C1C1C] text-[0.9rem]">Kravy Kitchen</div>
+                                <div className="text-[0.7rem] text-[#696969] font-[500] mt-0.5">MG Road, Food Hub</div>
+                            </div>
+                        </div>
+                        <a href="tel:+919876543210" className="w-9 h-9 rounded-full bg-[#F8F8F8] border border-[#EBEBEB] flex items-center justify-center text-[#1C1C1C] hover:bg-[#EBEBEB] transition-colors">
+                            <Phone size={14} />
+                        </a>
+                    </div>
+
                     {/* ── CUSTOMER & ORDER INFO ── */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-[#EBEBEB]">
-                            <div className="w-8 h-8 rounded-full bg-[#F4F4F4] flex items-center justify-center mb-3">
+                        <div className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
+                            <div className="w-8 h-8 rounded-full bg-[#F8F8F8] flex items-center justify-center mb-3">
                                 <User size={16} className="text-[#696969]" />
                             </div>
                             <div className="text-[0.65rem] font-[800] text-[#ABABAB] uppercase tracking-wider mb-1">Customer</div>
-                            <div className="text-[0.85rem] font-[900] truncate">{order.customerName}</div>
-                            <div className="text-[0.7rem] font-[700] text-[#696969] mt-0.5">{order.customerPhone || "Guest"}</div>
+                            <div className="text-[0.85rem] font-[900] truncate text-[#1C1C1C]">{order.customerName || "Guest"}</div>
+                            <div className="text-[0.7rem] font-[600] text-[#696969] mt-1">{order.type === 'delivery' ? '🚚 Delivery' : '🍽 Dine-In'}</div>
                         </div>
-                        <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-[#EBEBEB]">
-                            <div className="w-8 h-8 rounded-full bg-[#F4F4F4] flex items-center justify-center mb-3">
-                                <Clock size={16} className="text-[#696969]" />
+                        <div className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
+                            <div className="w-8 h-8 rounded-full bg-[#F8F8F8] flex items-center justify-center mb-3">
+                                <CheckCircle size={16} className="text-[#22C55E]" />
                             </div>
-                            <div className="text-[0.65rem] font-[800] text-[#ABABAB] uppercase tracking-wider mb-1">Time</div>
-                            <div className="text-[0.85rem] font-[900] truncate">{formatTime(order.createdAt)}</div>
-                            <div className="text-[0.7rem] font-[700] text-[#696969] mt-0.5">{formatDate(order.createdAt)}</div>
+                            <div className="text-[0.65rem] font-[800] text-[#ABABAB] uppercase tracking-wider mb-1">Payment</div>
+                            <div className="text-[0.85rem] font-[900] truncate text-[#1C1C1C]">{order.paymentStatus === 'paid' ? 'Paid via UPI' : 'Pending'}</div>
+                            <div className="text-[0.7rem] font-[600] text-[#696969] mt-1">{formatTime(order.createdAt)}</div>
                         </div>
                     </div>
 
@@ -439,30 +457,31 @@ export default function OrderTrackingPage() {
                 </main>
 
                 {/* ── FLOATING SUPPORT ACTION ── */}
-                <div className="fixed bottom-24 right-4 z-[90] max-w-[480px] w-full mx-auto pointer-events-none flex justify-end px-4 left-1/2 -translate-x-1/2">
+                <div className="fixed bottom-[90px] right-5 z-[90] pointer-events-none flex justify-end">
                     <motion.a
                         href="https://wa.me/"
                         target="_blank"
                         rel="noreferrer"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-xl shadow-[#25D366]/30 pointer-events-auto border-2 border-white"
+                        className="w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-[0_8px_30px_rgba(37,211,102,0.4)] pointer-events-auto border-2 border-white relative"
                     >
-                        <MessageCircle size={26} strokeWidth={2} />
+                        <div className="absolute inset-0 rounded-full border-2 border-[#25D366] animate-ping opacity-30" />
+                        <MessageCircle size={26} strokeWidth={2.2} className="relative z-10" />
                     </motion.a>
                 </div>
 
                 {/* ── STICKY TOTAL & ADD MORE BAR ── */}
-                <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/85 backdrop-blur-xl border-t border-white/40 shadow-[0_-8px_30px_rgba(0,0,0,0.04)] px-5 py-4 z-[100]">
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="flex flex-col">
-                            <span className="text-[0.65rem] font-[800] text-[#696969] uppercase tracking-widest">Total Payable</span>
-                            <span className="text-[1.3rem] font-[900] text-[#1C1C1C] leading-none mt-0.5">₹{Math.round(order.total * 1.05)}</span>
+                <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/90 backdrop-blur-xl border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.06)] px-4 py-3.5 z-[100]">
+                    <div className="flex items-center justify-between gap-5">
+                        <div className="flex flex-col min-w-[100px]">
+                            <span className="text-[0.6rem] font-[800] text-[#696969] uppercase tracking-widest">Total</span>
+                            <span className="text-[1.25rem] font-[900] text-[#1C1C1C] leading-none mt-1">₹{Math.round(order.total * 1.05)}</span>
                         </div>
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.95 }}
-                            className="bg-[#FC8019] flex-1 text-white h-12 rounded-[1rem] shadow-lg shadow-[#FC8019]/20 flex items-center justify-center gap-2 font-[800] text-[0.95rem] tracking-tight"
+                            className="bg-[#FC8019] flex-1 text-white h-[46px] rounded-[14px] shadow-[0_8px_25px_rgba(252,128,25,0.25)] flex items-center justify-center gap-2 font-[800] text-[0.95rem] tracking-tight"
                             onClick={() => setShowAddMore(true)}
                         >
                             <Plus size={18} strokeWidth={3} />
