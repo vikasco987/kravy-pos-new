@@ -466,7 +466,7 @@ function PublicMenu() {
     }, [items]);
 
     const filteredItems = useMemo(() => {
-        return items.filter(it => {
+        const _filtered = items.filter(it => {
             const matchVeg = vegOnly ? it.isVeg : true;
             const matchSearch = (it.name.toLowerCase().includes(searchQ.toLowerCase())) ||
                 (it.hiName?.includes(searchQ));
@@ -479,6 +479,63 @@ function PublicMenu() {
 
             return matchVeg && matchSearch && matchZone;
         });
+
+        const grouped: Record<string, MenuItem[]> = {};
+        _filtered.forEach(it => {
+            let baseName = it.name;
+            const suffixMatch = it.name.match(/\s*\(([^)]+)\)$/);
+            if (suffixMatch) {
+                baseName = it.name.substring(0, suffixMatch.index).trim();
+            }
+            if (!grouped[baseName]) grouped[baseName] = [];
+            grouped[baseName].push(it);
+        });
+
+        const finalItems: MenuItem[] = [];
+        Object.entries(grouped).forEach(([baseName, group]) => {
+            if (group.length === 1) {
+                finalItems.push(group[0]);
+            } else {
+                const minPrice = Math.min(...group.map(i => i.sellingPrice || i.price || 0));
+                const virtualVariants = [{
+                    id: 'virtual_group',
+                    name: 'Size / Portion',
+                    type: 'radio',
+                    required: true,
+                    options: group.map(i => {
+                        const match = i.name.match(/\((.*?)\)/)?.[1] || i.name;
+                        let niceName = match;
+                        if (match.toUpperCase() === 'F' || match.toUpperCase() === 'FULL') niceName = 'Full Portion';
+                        if (match.toUpperCase() === 'H' || match.toUpperCase() === 'HALF') niceName = 'Half Portion';
+                        if (match.toUpperCase() === 'S' || match.toUpperCase() === 'SMALL') niceName = 'Small';
+                        if (match.toUpperCase() === 'R' || match.toUpperCase() === 'REGULAR') niceName = 'Regular';
+                        if (match.toUpperCase() === 'M' || match.toUpperCase() === 'MEDIUM') niceName = 'Medium';
+                        if (match.toUpperCase() === 'L' || match.toUpperCase() === 'LARGE') niceName = 'Large';
+                        
+                        return {
+                            id: i.id,
+                            name: niceName,
+                            price: i.sellingPrice || i.price || 0,
+                            originalId: i.id,
+                            imageUrl: i.imageUrl || i.image || null
+                        };
+                    })
+                }];
+                finalItems.push({
+                    ...group[0],
+                    id: "virtual_" + baseName,
+                    name: baseName,
+                    price: minPrice,
+                    sellingPrice: minPrice,
+                    variants: virtualVariants,
+                    addonGroups: [],
+                    isVirtualGroup: true,
+                    groupedItems: group
+                } as any);
+            }
+        });
+
+        return finalItems;
     }, [items, vegOnly, searchQ, activeZoneFilter]);
 
     const categorized = useMemo(() => {
@@ -587,6 +644,13 @@ function PublicMenu() {
 
         const initial: Record<string, any> = {};
         
+        // Handle virtual groups
+        if ((item as any).isVirtualGroup) {
+            initial['virtual_group'] = (item.variants as any[])[0].options[0];
+            setSelectedVariants(initial);
+            return;
+        }
+
         // Handle standard Variants
         (item.variants as any[])?.forEach((v: any) => {
             if (v.required && v.options?.length > 0) {
@@ -605,11 +669,12 @@ function PublicMenu() {
     }, [customizingItem?.id, selectedMenuItem?.id]);
 
     const addToCart = (id: string) => {
-        const item = items.find(it => it.id === id);
+        // Search in both items and filteredItems (which contains virtual grouped items)
+        const item = items.find(it => it.id === id) || filteredItems.find(it => it.id === id);
         if (!item) return;
 
         // ✅ If item has variants OR addon groups, open selection sheet
-        if ((item.variants && (item.variants as any[]).length > 0) || (item.addonGroups && item.addonGroups.length > 0)) {
+        if ((item.variants && (item.variants as any[]).length > 0) || (item.addonGroups && (item.addonGroups as any[]).length > 0)) {
             setCustomizingItem(item);
             return;
         }
@@ -640,6 +705,24 @@ function PublicMenu() {
         if (missingMandatoryGroups.length > 0) {
             toast.error(`Required: ${missingMandatoryGroups.join(", ")}`);
             return;
+        }
+
+        // Handle Virtual Group Items (Full/Half)
+        if ((item as any).isVirtualGroup) {
+            const selectedOption = selectedVariants['virtual_group'];
+            if (!selectedOption) {
+                toast.error("Please select a size / portion");
+                return;
+            }
+            const originalItem = (item as any).groupedItems.find((i:any) => i.id === selectedOption.originalId);
+            if (originalItem) {
+                setCart(prev => ({ ...prev, [originalItem.id]: (prev[originalItem.id] || 0) + 1 }));
+                kravy.add();
+                toast.success("Added to cart", { duration: 800, position: "top-center" });
+                setCustomizingItem(null);
+                setSelectedMenuItem(null);
+                return;
+            }
         }
 
         Object.entries(selectedVariants).forEach(([groupId, val]) => {
@@ -2690,16 +2773,25 @@ function PublicMenu() {
                                                             className={`flex items-center justify-between p-4 rounded-[1.25rem] border-2 transition-all cursor-pointer ${isSelected ? "border-red-600 bg-red-50/20 shadow-sm" : "border-gray-100 bg-white"}`}
                                                         >
                                                             <div className="flex items-center gap-3.5">
-                                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-red-600 bg-red-600 shadow-inner" : "border-gray-300 bg-white"}`}>
+                                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${isSelected ? "border-red-600 bg-red-600 shadow-inner" : "border-gray-300 bg-white"}`}>
                                                                     {isSelected && (
                                                                         vGroup.type === 'radio' 
                                                                             ? <div className="w-1.5 h-1.5 rounded-full bg-white" />
                                                                             : <Check size={12} className="text-white" strokeWidth={4} />
                                                                     )}
                                                                 </div>
+                                                                {opt.imageUrl && (
+                                                                    <div className="w-10 h-10 rounded-lg overflow-hidden relative shadow-sm border border-gray-100 shrink-0">
+                                                                        <Image src={opt.imageUrl} alt={opt.name} fill className="object-cover" />
+                                                                    </div>
+                                                                )}
                                                                 <span className={`text-[0.88rem] font-[800] ${isSelected ? "text-red-700" : "text-gray-700"}`}>{opt.name}</span>
                                                             </div>
-                                                            {opt.price > 0 && <span className={`text-[0.85rem] font-black italic ${isSelected ? "text-red-600" : "text-emerald-600"}`}>+₹{opt.price}</span>}
+                                                            {opt.price > 0 && (
+                                                                <span className={`text-[0.85rem] font-black italic ${isSelected ? "text-red-600" : "text-emerald-600"}`}>
+                                                                    {vGroup.id === 'virtual_group' ? `₹${opt.price}` : `+₹${opt.price}`}
+                                                                </span>
+                                                            )}
                                                         </motion.div>
                                                     );
                                                 })}
@@ -2766,8 +2858,13 @@ function PublicMenu() {
                                 >
                                     <span className="flex items-center gap-2">Add To Cart <ArrowRight size={18} /></span>
                                     <span className="text-lg italic tracking-tighter">₹{
-                                        ((customizingItem.sellingPrice || customizingItem.price || 0) + 
+                                        (
+                                            (customizingItem as any).isVirtualGroup 
+                                                ? (selectedVariants['virtual_group']?.price || 0) 
+                                                : (customizingItem.sellingPrice || customizingItem.price || 0)
+                                        ) + 
                                         Object.entries(selectedVariants).reduce((acc, [gid, val]) => {
+                                            if (gid === 'virtual_group') return acc;
                                             if (gid.startsWith('ag_')) {
                                                return acc + ((val as any[])?.reduce?.((s, o) => s + (o.price || 0), 0) || 0);
                                             }
@@ -2775,7 +2872,7 @@ function PublicMenu() {
                                             if (group?.type === "radio") return acc + (val?.price || 0);
                                             if (group?.type === "checkbox") return acc + (val?.reduce?.((s: number, o: any) => s + (o.price || 0), 0) || 0);
                                             return acc;
-                                        }, 0)).toFixed(0)
+                                        }, 0)
                                     }</span>
                                 </button>
                             </div>
