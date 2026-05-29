@@ -14,8 +14,7 @@ import {
     RotateCcw, RefreshCw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
     Wifi, Battery, Signal, Smartphone, Timer, AlertTriangle, ChevronUp, Package2,
     Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut, Phone, MessageSquare,
-    Crown, Building, Wind, Monitor, Layout, Navigation, ArrowLeft, ShoppingBag,
-    Truck, Package, Pause, Save, Receipt
+    Truck, Package, Pause, Save, Receipt, MessageCircle
 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { 
@@ -1827,6 +1826,22 @@ function KravyPOS() {
                                                         <Printer size={12} /> {business?.enableKOTWithBill ? "KOT + BILL" : "PRINT BILL"}
                                                     </button>
                                                 </div>
+                                            </div>
+
+                                            <div className="flex gap-2.5 mt-2.5">
+                                                <button
+                                                    disabled={!activeOrderForSelected}
+                                                    onClick={() => {
+                                                        if (!activeOrderForSelected) return;
+                                                        const url = `https://billing.kravy.in/order-tracking/${activeOrderForSelected.id}`;
+                                                        const msg = `Hi${activeOrderForSelected.customerName ? ' ' + activeOrderForSelected.customerName : ''},\n\nHere is your live order tracking & digital bill from Kravy:\n${url}\n\nTotal Amount: ₹${activeOrderForSelected.total}\n\nThank you!`;
+                                                        const phone = activeOrderForSelected.customerPhone ? `91${activeOrderForSelected.customerPhone.replace(/[^0-9]/g, '')}` : '';
+                                                        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                                                    }}
+                                                    className="flex-1 h-11 rounded-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-black text-[10px] uppercase tracking-[0.1em] shadow-[0_8px_20px_rgba(37,211,102,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20"
+                                                >
+                                                    <MessageCircle size={16} /> WhatsApp
+                                                </button>
                                                 <button
                                                     disabled={!activeOrderForSelected}
                                                     onClick={async () => {
