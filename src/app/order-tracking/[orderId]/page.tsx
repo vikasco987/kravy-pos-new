@@ -250,8 +250,8 @@ export default function OrderTrackingPage() {
                         </p>
 
                         {/* Status Progress Bar with Labels */}
-                        <div className="mt-8 px-1 pb-10 min-h-[140px]">
-                            <div className="flex items-start justify-between w-full relative h-full">
+                        <div className="mt-8 px-1 h-[150px] w-full block">
+                            <div className="flex items-start justify-between w-full relative">
                                 {/* Connecting Line Background */}
                                 <div className="absolute top-[14px] left-0 w-full h-[3px] bg-slate-100" />
                                 
@@ -278,8 +278,8 @@ export default function OrderTrackingPage() {
                                             </div>
                                             
                                             {/* Label */}
-                                            <div className="mt-2 flex flex-col items-center w-full px-0.5">
-                                                <span className={`text-[0.52rem] font-black uppercase tracking-tighter text-center leading-tight transition-all duration-500 ${
+                                            <div className="mt-3 block text-center w-full px-0.5">
+                                                <span className={`block text-[0.55rem] font-black uppercase tracking-tighter text-center leading-normal transition-all duration-500 ${
                                                     isCurrent ? "text-[#E23744] scale-105" : isActive ? "text-[#1C1C1C]" : "text-slate-300"
                                                 }`}>
                                                     {config.label.split(' ')[0]}
