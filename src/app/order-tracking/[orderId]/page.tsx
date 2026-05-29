@@ -292,6 +292,7 @@ export default function OrderTrackingPage() {
                                                 <div className="absolute -top-1 w-10 h-10 bg-[#E23744]/15 rounded-full animate-ping" />
                                             )}
                                         </div>
+                                    );
                                 })}
                             </div>
                         </div>
