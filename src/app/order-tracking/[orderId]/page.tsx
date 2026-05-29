@@ -278,10 +278,10 @@ export default function OrderTrackingPage() {
                                             
                                             {/* Label */}
                                             <div className="mt-2 text-center w-full">
-                                                <span className={`block text-[10px] leading-none font-[800] uppercase tracking-tighter transition-all duration-500 break-words ${
+                                                <span className={`block text-[9px] leading-none font-[800] uppercase tracking-tighter transition-all duration-500 whitespace-nowrap ${
                                                     isCurrent ? "text-[#EF4F5F]" : isActive ? "text-[#1C1C1C]" : "text-[#ABABAB]"
                                                 }`}>
-                                                    {config.label.split(' ')[0]}
+                                                    {status === 'PENDING' ? 'RECEIVED' : status === 'ACCEPTING' ? 'REVIEWING' : status === 'ACCEPTED' ? 'CONFIRMED' : status === 'PREPARING' ? 'PREPARING' : status === 'READY' ? 'READY' : status === 'SERVED' ? 'SERVED' : 'COMPLETED'}
                                                 </span>
                                             </div>
                                         </div>
@@ -290,6 +290,27 @@ export default function OrderTrackingPage() {
                             </div>
                         </div>
                     </motion.div>
+
+                    {/* ── LIVE ETA CARD ── */}
+                    {(order.status === 'PREPARING' || order.status === 'ACCEPTED' || order.status === 'READY') && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.1 }}
+                            className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[#EBEBEB] flex items-center justify-between mb-6"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 relative">
+                                    <Clock size={24} />
+                                    <div className="absolute top-0 right-0 w-3 h-3 bg-blue-500 rounded-full animate-ping opacity-50" />
+                                </div>
+                                <div>
+                                    <div className="text-[0.7rem] text-[#696969] font-[700] uppercase tracking-widest mb-0.5">Estimated Time</div>
+                                    <div className="font-[900] text-[#1C1C1C] text-[1.1rem]">18 mins remaining</div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
 
                     {/* ── LOYALTY PROGRESS (MASALA HOUSE SPECIAL) ── */}
                     <div className="mb-6">
@@ -349,7 +370,7 @@ export default function OrderTrackingPage() {
                                 </div>
                             ) : null}
 
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {order.items.map((item: any, idx: number) => (
                                     <div key={idx} className="flex items-start justify-between gap-4">
                                         <div className="flex-1 min-w-0 flex items-start gap-2.5">
@@ -360,9 +381,6 @@ export default function OrderTrackingPage() {
                                                 <div className="font-[600] text-[0.9rem] leading-snug text-[#1C1C1C] break-words">
                                                     {item.name} <span className="inline-block bg-[#F4F4F4] text-[#696969] text-[0.65rem] font-[800] px-1.5 py-0.5 rounded-md ml-1 translate-y-[-1px]">×{item.quantity}</span>
                                                 </div>
-                                                {item.isNew && (
-                                                    <span className="bg-[#FC8019]/10 text-[#FC8019] text-[0.55rem] font-[800] px-1.5 py-0.5 rounded uppercase tracking-tighter mt-1 inline-block">New</span>
-                                                )}
                                             </div>
                                         </div>
                                         <div className="font-[800] text-[0.9rem] text-[#1C1C1C] shrink-0">₹{item.price * item.quantity}</div>
@@ -407,19 +425,13 @@ export default function OrderTrackingPage() {
                     </div>
 
                     {/* ── CUSTOMER & ORDER INFO ── */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
-                            <div className="w-8 h-8 rounded-full bg-[#F8F8F8] flex items-center justify-center mb-3">
-                                <User size={16} className="text-[#696969]" />
-                            </div>
+                    <div className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[#EBEBEB] flex divide-x divide-[#EBEBEB]">
+                        <div className="flex-1 pr-4">
                             <div className="text-[0.65rem] font-[800] text-[#ABABAB] uppercase tracking-wider mb-1">Customer</div>
                             <div className="text-[0.85rem] font-[900] truncate text-[#1C1C1C]">{order.customerName || "Guest"}</div>
                             <div className="text-[0.7rem] font-[600] text-[#696969] mt-1">{order.type === 'delivery' ? '🚚 Delivery' : '🍽 Dine-In'}</div>
                         </div>
-                        <div className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[#EBEBEB]">
-                            <div className="w-8 h-8 rounded-full bg-[#F8F8F8] flex items-center justify-center mb-3">
-                                <CheckCircle size={16} className="text-[#22C55E]" />
-                            </div>
+                        <div className="flex-1 pl-4">
                             <div className="text-[0.65rem] font-[800] text-[#ABABAB] uppercase tracking-wider mb-1">Payment</div>
                             <div className="text-[0.85rem] font-[900] truncate text-[#1C1C1C]">{order.paymentStatus === 'paid' ? 'Paid via UPI' : 'Pending'}</div>
                             <div className="text-[0.7rem] font-[600] text-[#696969] mt-1">{formatTime(order.createdAt)}</div>
