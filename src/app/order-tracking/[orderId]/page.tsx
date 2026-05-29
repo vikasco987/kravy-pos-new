@@ -20,7 +20,8 @@ import {
     Receipt,
     History,
     MapPin,
-    ArrowLeft
+    ArrowLeft,
+    MessageCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import MenuQRAddMoreFlow from "@/components/MenuQRAddMoreFlow";
@@ -198,63 +199,55 @@ export default function OrderTrackingPage() {
     const currentStep = getStatusStep(order.status);
 
     return (
-        <div className="min-h-screen bg-[#F4F4F4] font-sans text-[#1C1C1C] overflow-x-hidden w-full">
-            <div className="max-w-[480px] mx-auto min-h-screen bg-[#F4F4F4] relative overflow-x-hidden w-full">
+        <div className="min-h-screen bg-[#F8F8F8] font-sans text-[#1C1C1C] overflow-x-hidden w-full" style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}>
+            <div className="max-w-[480px] mx-auto min-h-screen bg-[#F8F8F8] relative overflow-x-hidden w-full flex flex-col">
 
-                {/* ── TOP NAVIGATION ── */}
-                <nav className="sticky top-0 z-[100] bg-white border-b border-[#EBEBEB] px-4 py-3.5 flex items-center justify-between shadow-sm">
+                {/* ── COMPACT TOP NAVIGATION ── */}
+                <nav className="sticky top-0 z-[100] bg-white/90 backdrop-blur-md border-b border-[#EBEBEB] px-4 py-3 flex items-center justify-between shadow-sm">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => window.location.href = `/menu/${order.clerkUserId}`}
-                            className="w-9 h-9 rounded-full bg-[#F4F4F4] flex items-center justify-center text-[#1C1C1C]"
+                            className="w-8 h-8 rounded-full bg-[#F8F8F8] flex items-center justify-center text-[#1C1C1C] hover:bg-[#EBEBEB] transition-colors"
                         >
-                            <ArrowLeft size={18} strokeWidth={2.5} />
+                            <ArrowLeft size={16} strokeWidth={2.5} />
                         </button>
                         <div className="min-w-0 flex-1">
-                            <div className="text-[0.95rem] font-[900] leading-none truncate">Order Tracking</div>
-                            <div className="text-[0.65rem] text-[#ABABAB] font-[800] uppercase tracking-wider mt-1 flex items-center gap-1.5 truncate">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
-                                <span className="truncate">Live Updates · Table {order.table?.name || "Counter"} · #{order.id.slice(-6).toUpperCase()}</span>
+                            <div className="text-[0.9rem] font-[800] leading-none truncate tracking-tight">{order.table?.name ? `Table ${order.table.name}` : "Order Tracking"}</div>
+                            <div className="text-[0.65rem] text-[#696969] font-[700] mt-1 flex items-center gap-1.5 truncate">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse shrink-0" />
+                                <span className="truncate">Live • #{order.id.slice(-6).toUpperCase()}</span>
                             </div>
                         </div>
                     </div>
-                    <button
-                        onClick={handleRefresh}
-                        disabled={refreshing}
-                        className={`w-9 h-9 rounded-full bg-[#F4F4F4] flex items-center justify-center transition-all ${refreshing ? "rotate-180" : ""}`}
-                    >
-                        <RefreshCw size={16} className={refreshing ? 'animate-spin text-[#E23744]' : 'text-[#696969]'} />
-                    </button>
                 </nav>
 
-                <main className="pb-36 p-4">
+                <main className="pb-40 p-4 flex-1">
 
                     {/* ── MAIN STATUS CARD ── */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-[2.5rem] p-6 pb-10 shadow-sm border border-[#EBEBEB] text-center mb-6"
+                        className="bg-white rounded-3xl p-5 shadow-sm border border-[#EBEBEB] mb-6"
                     >
-                        <div className="relative inline-block mb-6">
-                            <div className={`w-24 h-24 rounded-full flex items-center justify-center shadow-xl mb-1 ${currentStatusConfig.color} border-4 border-white animate-pulse-slow`}>
-                                <StatusIcon size={40} className="text-white" strokeWidth={2.5} />
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-sm bg-[#EF4F5F]/10 text-[#EF4F5F] relative`}>
+                                <StatusIcon size={28} strokeWidth={2.5} />
+                                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#22C55E] border-2 border-white flex items-center justify-center text-[10px]">⚡</div>
                             </div>
-                            <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#22C55E] border-4 border-white flex items-center justify-center text-[0.8rem]">⚡</div>
+                            <div className="flex-1 text-left">
+                                <h2 className="text-[1.35rem] font-[900] tracking-tight text-[#1C1C1C] leading-tight">
+                                    {currentStatusConfig.label}
+                                </h2>
+                                <p className="text-[0.8rem] text-[#696969] font-[600] mt-0.5">
+                                    {currentStatusConfig.description}
+                                </p>
+                            </div>
                         </div>
 
-                        <h2 className="text-[1.8rem] font-[900] tracking-tight text-[#1C1C1C] mb-1 leading-tight">
-                            {currentStatusConfig.label}
-                        </h2>
-                        <p className="text-[0.85rem] text-[#696969] font-[600] px-4">
-                            {currentStatusConfig.description}
-                        </p>
-
-                        {/* Status Progress Bar with Labels */}
-                        <div className="mt-8 px-1 h-[150px] w-full block">
-                            <div className="flex items-start justify-between w-full relative">
-                                {/* Connecting Line Background */}
-                                <div className="absolute top-[14px] left-0 w-full h-[3px] bg-slate-100" />
-                                
+                        {/* Minimal Horizontal Stepper */}
+                        <div className="relative pt-2 pb-2 w-full">
+                            <div className="absolute top-[12px] left-4 right-4 h-[3px] bg-[#F4F4F4] rounded-full" />
+                            <div className="flex items-start justify-between relative z-10">
                                 {Object.entries(statusConfig).map(([status, config]: [string, any], index: number) => {
                                     const statusOrder = ['PENDING', 'ACCEPTING', 'ACCEPTED', 'PREPARING', 'READY', 'SERVED', 'COMPLETED'];
                                     const stepIndex = statusOrder.indexOf(status);
@@ -263,41 +256,36 @@ export default function OrderTrackingPage() {
                                     const Icon = config.icon;
 
                                     return (
-                                        <div key={status} className="flex-1 flex flex-col items-center relative z-10 min-w-0">
+                                        <div key={status} className="flex flex-col items-center relative z-10 w-12 shrink-0">
                                             {/* Progress line overlay */}
                                             {index > 0 && index <= currentStep && (
-                                                <div className="absolute top-[14px] right-1/2 w-full h-[3px] bg-[#E23744]" />
+                                                <div className="absolute top-[12px] right-[50%] w-full h-[3px] bg-[#EF4F5F]" />
                                             )}
                                             
-                                            {/* Dot / Icon container */}
-                                            <div className={`w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-full flex items-center justify-center border-4 transition-all duration-500 shadow-sm ${
-                                                isCurrent ? "bg-[#E23744] border-white scale-125 z-20 shadow-lg" : 
-                                                isActive ? "bg-[#E23744] border-white" : "bg-white border-slate-100"
+                                            {/* Dot Container */}
+                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-500 shadow-sm relative z-20 ${
+                                                isCurrent ? "bg-[#EF4F5F] border-2 border-white scale-110 shadow-md" : 
+                                                isActive ? "bg-[#EF4F5F] border-2 border-white" : "bg-white border-2 border-[#EBEBEB]"
                                             }`}>
-                                                <Icon size={12} className={isActive ? "text-white" : "text-slate-300"} />
+                                                <Icon size={12} className={isActive ? "text-white" : "text-[#ABABAB]"} />
+                                                {isCurrent && (
+                                                    <div className="absolute inset-0 rounded-full border-2 border-[#EF4F5F] animate-ping opacity-20" />
+                                                )}
                                             </div>
                                             
                                             {/* Label */}
-                                            <div className="mt-3 block text-center w-full px-0.5">
-                                                <span className={`block text-[8px] sm:text-[9px] font-black uppercase tracking-tighter text-center leading-tight transition-all duration-500 break-words ${
-                                                    isCurrent ? "text-[#E23744] scale-105" : isActive ? "text-[#1C1C1C]" : "text-slate-300"
+                                            <div className="mt-2 text-center w-full">
+                                                <span className={`block text-[0.55rem] font-[800] uppercase tracking-tighter leading-tight transition-all duration-500 break-words ${
+                                                    isCurrent ? "text-[#EF4F5F]" : isActive ? "text-[#1C1C1C]" : "text-[#ABABAB]"
                                                 }`}>
-                                                    {config.label.split(' ')[0]}
-                                                    <br />
-                                                    {config.label.split(' ').slice(1).join(' ')}
+                                                    {config.label}
                                                 </span>
                                             </div>
-
-                                            {isCurrent && (
-                                                <div className="absolute -top-1 w-10 h-10 bg-[#E23744]/15 rounded-full animate-ping" />
-                                            )}
                                         </div>
                                     );
                                 })}
                             </div>
                         </div>
-                        {/* Invisible spacer to guarantee bottom padding and prevent overlap */}
-                        <div className="h-[100px] w-full shrink-0"></div>
                     </motion.div>
 
                     {/* ── LOYALTY PROGRESS (MASALA HOUSE SPECIAL) ── */}
@@ -335,70 +323,68 @@ export default function OrderTrackingPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-[#EBEBEB]"
+                        className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EBEBEB] mb-6"
                     >
-                        <div className="px-6 py-5 border-b border-[#F7F7F7] flex items-center justify-between bg-[#FCFCFC]">
-                            <h3 className="font-[900] text-[0.95rem] flex items-center gap-2">
-                                <Receipt size={18} className="text-[#E23744]" />
-                                Final Bill Breakdown
+                        <div className="px-5 py-4 border-b border-dashed border-[#EBEBEB] flex items-center justify-between">
+                            <h3 className="font-[800] text-[0.95rem] flex items-center gap-2 tracking-tight text-[#1C1C1C]">
+                                <Receipt size={16} className="text-[#696969]" />
+                                Bill Details
                             </h3>
                         </div>
 
-                        <div className="p-6 space-y-4">
+                        <div className="p-5 space-y-5">
                             {/* If there's a session (case 1/2), show combined summary */}
                             {sessionData && sessionData.orders.length > 1 ? (
-                                <div className="mb-6 bg-blue-50/50 border border-blue-100 rounded-2xl p-4">
-                                    <div className="text-[0.7rem] font-[900] text-blue-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                                        <History size={12} /> Multiple Orders Combined
+                                <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4">
+                                    <div className="text-[0.7rem] font-[800] text-blue-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                                        <History size={12} /> Combined Orders
                                     </div>
                                     <div className="space-y-2">
                                         {sessionData.orders.map((o: any, idx: number) => (
                                             <div key={o.id} className="flex justify-between items-center text-[0.8rem] font-[700]">
                                                 <span className="text-[#696969]">Order #{idx + 1}</span>
-                                                <span>₹{o.total}</span>
+                                                <span className="text-[#1C1C1C]">₹{o.total}</span>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             ) : null}
 
-                            <div className="space-y-3.5">
+                            <div className="space-y-4">
                                 {order.items.map((item: any, idx: number) => (
                                     <div key={idx} className="flex items-start justify-between gap-4">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-0.5">
-                                                <div className={`w-3 h-3 border-[1.5px] rounded-sm flex items-center justify-center shrink-0 ${item.quantity > 0 ? "border-[#22C55E]" : "border-[#E23744]"}`}>
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${item.quantity > 0 ? "bg-[#22C55E]" : "bg-[#E23744]"}`} />
+                                        <div className="flex-1 min-w-0 flex items-start gap-2.5">
+                                            <div className={`mt-[3px] w-[13px] h-[13px] border-[1.5px] rounded-[3px] flex items-center justify-center shrink-0 ${item.quantity > 0 ? "border-[#22C55E]" : "border-[#EF4F5F]"}`}>
+                                                <div className={`w-[7px] h-[7px] rounded-full ${item.quantity > 0 ? "bg-[#22C55E]" : "bg-[#EF4F5F]"}`} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-[600] text-[0.9rem] leading-snug text-[#1C1C1C] break-words">
+                                                    {item.name} <span className="text-[#696969] ml-1 font-[500]">×{item.quantity}</span>
                                                 </div>
-                                                <span className="font-[800] text-[0.9rem] leading-tight truncate">{item.name}</span>
                                                 {item.isNew && (
-                                                    <span className="bg-[#E23744] text-white text-[0.55rem] font-[900] px-1.5 py-0.5 rounded uppercase tracking-tighter">Naya</span>
+                                                    <span className="bg-[#FC8019]/10 text-[#FC8019] text-[0.55rem] font-[800] px-1.5 py-0.5 rounded uppercase tracking-tighter mt-1 inline-block">New</span>
                                                 )}
                                             </div>
-                                            <div className="text-[0.7rem] text-[#696969] space-x-2">
-                                                <span>{item.quantity} Quantity</span>
-                                                <span>·</span>
-                                                <span>₹{item.price} each</span>
-                                            </div>
                                         </div>
-                                        <div className="font-[900] text-[0.9rem] text-[#1C1C1C]">₹{item.price * item.quantity}</div>
+                                        <div className="font-[600] text-[0.9rem] text-[#1C1C1C] shrink-0">₹{item.price * item.quantity}</div>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="pt-5 border-t border-dashed border-[#EBEBEB] space-y-2">
-                                <div className="flex justify-between text-[0.85rem] font-[700] text-[#696969]">
+                            <div className="pt-4 border-t border-dashed border-[#EBEBEB] space-y-3">
+                                <div className="flex justify-between items-center text-[0.8rem] font-[500] text-[#696969]">
                                     <span>Subtotal</span>
-                                    <span>₹{order.total}</span>
+                                    <span className="text-[#1C1C1C] font-[600]">₹{order.total}</span>
                                 </div>
-                                <div className="flex justify-between text-[0.85rem] font-[700] text-[#696969]">
+                                <div className="flex justify-between items-center text-[0.8rem] font-[500] text-[#696969]">
                                     <span>Taxes & GST</span>
-                                    <span>₹{Math.round(order.total * 0.05)}</span>
+                                    <span className="text-[#1C1C1C] font-[600]">₹{Math.round(order.total * 0.05)}</span>
                                 </div>
-                                <div className="flex justify-between items-center pt-3 mt-1 text-[1.2rem] font-[900] text-[#1C1C1C] italic tracking-tighter translate-x-[-1px]">
-                                    <span className="flex items-center gap-2">To Pay <IndianRupee size={16} /></span>
-                                    <span className="text-[#E23744] text-[1.4rem]">₹{Math.round(order.total * 1.05)}</span>
-                                </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-[#EBEBEB] flex justify-between items-center">
+                                <span className="font-[800] text-[1.05rem] text-[#1C1C1C]">Total Payable</span>
+                                <span className="font-[900] text-[1.15rem] text-[#1C1C1C]">₹{Math.round(order.total * 1.05)}</span>
                             </div>
                         </div>
                     </motion.div>
@@ -452,17 +438,37 @@ export default function OrderTrackingPage() {
 
                 </main>
 
-                {/* ── STICKY ADD MORE BAR ── */}
-                <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] p-6 z-[100] pointer-events-none">
-                    <motion.button
-                        initial={{ y: 50, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        className="w-full pointer-events-auto bg-[#E23744] text-white h-16 rounded-[1.2rem] shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all text-lg font-black italic tracking-tight uppercase"
-                        onClick={() => setShowAddMore(true)}
+                {/* ── FLOATING SUPPORT ACTION ── */}
+                <div className="fixed bottom-24 right-4 z-[90] max-w-[480px] w-full mx-auto pointer-events-none flex justify-end px-4 left-1/2 -translate-x-1/2">
+                    <motion.a
+                        href="https://wa.me/"
+                        target="_blank"
+                        rel="noreferrer"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-xl shadow-[#25D366]/30 pointer-events-auto border-2 border-white"
                     >
-                        <Plus size={24} strokeWidth={3} />
-                        Order More
-                    </motion.button>
+                        <MessageCircle size={26} strokeWidth={2} />
+                    </motion.a>
+                </div>
+
+                {/* ── STICKY TOTAL & ADD MORE BAR ── */}
+                <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/85 backdrop-blur-xl border-t border-white/40 shadow-[0_-8px_30px_rgba(0,0,0,0.04)] px-5 py-4 z-[100]">
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex flex-col">
+                            <span className="text-[0.65rem] font-[800] text-[#696969] uppercase tracking-widest">Total Payable</span>
+                            <span className="text-[1.3rem] font-[900] text-[#1C1C1C] leading-none mt-0.5">₹{Math.round(order.total * 1.05)}</span>
+                        </div>
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="bg-[#FC8019] flex-1 text-white h-12 rounded-[1rem] shadow-lg shadow-[#FC8019]/20 flex items-center justify-center gap-2 font-[800] text-[0.95rem] tracking-tight"
+                            onClick={() => setShowAddMore(true)}
+                        >
+                            <Plus size={18} strokeWidth={3} />
+                            Order More
+                        </motion.button>
+                    </div>
                 </div>
 
                 {/* ── ADD MORE FLOW OVERLAY ── */}
