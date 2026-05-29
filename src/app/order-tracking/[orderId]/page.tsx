@@ -250,8 +250,8 @@ export default function OrderTrackingPage() {
                         </p>
 
                         {/* Status Progress Bar with Labels */}
-                        <div className="mt-8 px-1 pb-10">
-                            <div className="flex items-start justify-between w-full relative">
+                        <div className="mt-8 px-1 pb-10 min-h-[140px]">
+                            <div className="flex items-start justify-between w-full relative h-full">
                                 {/* Connecting Line Background */}
                                 <div className="absolute top-[14px] left-0 w-full h-[3px] bg-slate-100" />
                                 
@@ -292,10 +292,11 @@ export default function OrderTrackingPage() {
                                                 <div className="absolute -top-1 w-10 h-10 bg-[#E23744]/15 rounded-full animate-ping" />
                                             )}
                                         </div>
-                                    );
                                 })}
                             </div>
                         </div>
+                        {/* Invisible spacer to guarantee bottom padding and prevent overlap */}
+                        <div className="h-[100px] w-full shrink-0"></div>
                     </motion.div>
 
                     {/* ── LOYALTY PROGRESS (MASALA HOUSE SPECIAL) ── */}
