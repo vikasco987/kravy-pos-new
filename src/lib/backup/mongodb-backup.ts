@@ -56,6 +56,8 @@ export async function runMongoBackup() {
       
       const data = await db.collection(colName).find({}).toArray();
       allData[colName] = data;
+      // Add a tiny delay to prevent overwhelming MongoDB Atlas free tier connections
+      await new Promise(resolve => setTimeout(resolve, 150));
     }
 
     const ejsonString = BSON.EJSON.stringify(allData);

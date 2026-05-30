@@ -54,7 +54,6 @@ async function ensureValidDates() {
 }
 
 export async function GET(request: Request) {
-  await ensureValidDates();
   try {
     const effectiveId = await getEffectiveClerkId();
 
@@ -100,7 +99,6 @@ export async function GET(request: Request) {
 ============================= */
 export async function POST(request: Request) {
   console.log("API VERSION: 1.0.6 - Debug Status");
-  await ensureValidDates();
   try {
     const effectiveId = await getEffectiveClerkId();
 
