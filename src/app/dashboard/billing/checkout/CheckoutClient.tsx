@@ -1622,10 +1622,6 @@ export default function CheckoutClient() {
           color: #000 !important;
           position: relative !important;
           box-sizing: border-box !important;
-          ${is80 ? '' : `
-          page-break-after: always !important;
-          break-after: page !important;
-          `}
         }
 
         /* Inject CSS custom variables to override custom elements correctly */
