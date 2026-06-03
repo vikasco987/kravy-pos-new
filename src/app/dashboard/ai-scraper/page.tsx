@@ -25,6 +25,9 @@ export default function AIScraperPage() {
   const [syncingAll, setSyncingAll] = useState(false)
   const [syncingItem, setSyncingItem] = useState<string | null>(null)
 
+  const foodSnapCount = data?.completed.filter(i => (i.imageUrl || i.image || i.cloudinaryUrl || "").includes("foodsnap")).length || 0;
+  const scrapedCount = (data?.completed.length || 0) - foodSnapCount;
+
   const SCRAPER_URL = process.env.NEXT_PUBLIC_SCRAPER_URL || "http://localhost:3005"
 
   useEffect(() => {
@@ -190,7 +193,11 @@ export default function AIScraperPage() {
                         <div>
                           <h3 className="font-black text-gray-900 leading-tight">{item.foodName}</h3>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[9px] font-black text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">Live on Cloud</span>
+                            {item.cloudinaryUrl?.includes("foodsnap") ? (
+                              <span className="text-[9px] font-black text-purple-600 uppercase bg-purple-50 px-2 py-0.5 rounded-md">FoodSnap DB</span>
+                            ) : (
+                              <span className="text-[9px] font-black text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded-md">Puppeteer AI</span>
+                            )}
                             <span className="text-[9px] font-bold text-gray-400">{item.confidence}% Conf.</span>
                           </div>
                         </div>
@@ -241,6 +248,14 @@ export default function AIScraperPage() {
                 <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pending</span>
                   <span className="text-xl font-black text-orange-500">{data?.pending.length || 0}</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">FoodSnap DB</span>
+                  <span className="text-xl font-black text-emerald-400">{foodSnapCount}</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
+                  <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">AI Scraped</span>
+                  <span className="text-xl font-black text-blue-400">{scrapedCount}</span>
                 </div>
               </div>
               <p className="text-[10px] text-gray-500 font-mono leading-relaxed">

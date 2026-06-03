@@ -11,11 +11,14 @@ import GstTaxSection from "@/app/dashboard/components/uploaditems/GstTaxSection"
 import ProductDetailsSection from "@/app/dashboard/components/uploaditems/ProductDetailsSection";
 import InventorySection from "@/app/dashboard/components/uploaditems/InventorySection";
 import DisplaySection from "@/app/dashboard/components/uploaditems/DisplaySection";
+import { Wand2, Loader2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 export default function Page() {
   const [image, setImage] = useState<string | null>(null);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isFetchingImage, setIsFetchingImage] = useState(false);
 
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -66,6 +69,33 @@ export default function Page() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAutoFetchImage = async () => {
+    if (!formData.productName.trim()) {
+      toast.error("Please enter a product name first");
+      return;
+    }
+    setIsFetchingImage(true);
+    try {
+      const SCRAPER_URL = process.env.NEXT_PUBLIC_SCRAPER_URL || "http://localhost:3005";
+      const res = await fetch(`${SCRAPER_URL}/api/scrape-image-only`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productName: formData.productName.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to fetch image");
+      
+      setImage(data.url);
+      localStorage.setItem("uploadedImage", data.url);
+      toast.success(`Image found via ${data.source === 'database' ? 'Database' : 'AI Scraper'}!`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Could not find an image automatically");
+    } finally {
+      setIsFetchingImage(false);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -171,15 +201,30 @@ export default function Page() {
           <ImageUpload image={image} setImage={setImage} />
 
           <div className="mb-4">
-            <input
-              type="text"
-              name="productName"
-              placeholder="Product/Service Name *"
-              value={formData.productName}
-              onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-3 text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-400 outline-none bg-gray-50"
-              required
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                name="productName"
+                placeholder="Product/Service Name *"
+                value={formData.productName}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-3 text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-400 outline-none bg-gray-50"
+                required
+              />
+              <button
+                type="button"
+                onClick={handleAutoFetchImage}
+                disabled={isFetchingImage || !formData.productName.trim()}
+                className="bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-800 px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 whitespace-nowrap"
+              >
+                {isFetchingImage ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Wand2 className="w-5 h-5" />
+                )}
+                Auto Image
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-4">

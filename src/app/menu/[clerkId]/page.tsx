@@ -170,7 +170,7 @@ function PublicMenu() {
     const [cart, setCart] = useState<Record<string, number>>({});
     const [instructions, setInstructions] = useState<Record<string, string>>({});
     const [searchQ, setSearchQ] = useState("");
-    const [vegOnly, setVegOnly] = useState(false);
+    const [foodPref, setFoodPref] = useState<"all" | "veg" | "non-veg">("all");
     const [activeLang, setActiveLang] = useState<"en" | "hi" | "mr" | "ta">("en");
     const [activeCategory, setActiveCategory] = useState("all");
     const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
@@ -467,7 +467,7 @@ function PublicMenu() {
 
     const filteredItems = useMemo(() => {
         const _filtered = items.filter(it => {
-            const matchVeg = vegOnly ? it.isVeg : true;
+            const matchVeg = foodPref === "all" ? true : foodPref === "veg" ? it.isVeg : (!it.isVeg);
             const matchSearch = (it.name.toLowerCase().includes(searchQ.toLowerCase())) ||
                 (it.hiName?.includes(searchQ));
             
@@ -536,7 +536,7 @@ function PublicMenu() {
         });
 
         return finalItems;
-    }, [items, vegOnly, searchQ, activeZoneFilter]);
+    }, [items, foodPref, searchQ, activeZoneFilter]);
 
     const categorized = useMemo(() => {
         const groups: Record<string, any[]> = {};
@@ -1088,13 +1088,13 @@ function PublicMenu() {
                     {/* Filter Chips */}
                     <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                         <button 
-                          onClick={() => setVegOnly(!vegOnly)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[0.72rem] font-black transition-all whitespace-nowrap ${vegOnly ? 'bg-green-50 border-green-200 text-green-600 shadow-sm' : 'bg-white border-gray-200 text-gray-600'}`}
+                          onClick={() => setFoodPref(foodPref === 'veg' ? 'all' : 'veg')}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[0.72rem] font-black transition-all whitespace-nowrap ${foodPref === 'veg' ? 'bg-green-50 border-green-200 text-green-600 shadow-sm' : 'bg-white border-gray-200 text-gray-600'}`}
                         >
-                            <div className="w-3.5 h-3.5 border border-gray-300 rounded-sm flex items-center justify-center bg-white">
-                              <div className={`w-1.5 h-1.5 rounded-full ${vegOnly ? 'bg-green-500' : 'bg-gray-300 opacity-0'}`} />
+                            <div className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center bg-white ${foodPref === 'veg' ? 'border-green-500' : 'border-gray-300'}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${foodPref === 'veg' ? 'bg-green-500' : 'bg-gray-300 opacity-0'}`} />
                             </div>
-                            Filters <ChevronDown size={14} />
+                            Veg <ChevronDown size={14} />
                         </button>
                         {offers.map(offer => (
                           <div key={offer.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-100 bg-blue-50 text-blue-600 text-[0.72rem] font-black whitespace-nowrap shadow-sm">
@@ -1330,28 +1330,25 @@ function PublicMenu() {
 
                             {/* VEG TOGGLE & ZONE FILTER */}
                             <div className="bg-white px-3.5 py-2.5 flex flex-col gap-3 mb-2">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2.5">
-                                        <div
-                                            onClick={() => setVegOnly(!vegOnly)}
-                                            className={`w-10 h-[22px] rounded-full relative cursor-pointer transition-colors ${vegOnly ? "bg-[#22C55E]" : "bg-[#EBEBEB]"}`}
-                                        >
-                                            <div className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow-md transition-all ${vegOnly ? "left-[19px]" : "left-0.5"}`} />
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setFoodPref(foodPref === 'veg' ? 'all' : 'veg')}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[0.75rem] font-[800] transition-all ${foodPref === 'veg' ? 'bg-green-50 border-green-600 text-green-700 shadow-sm' : 'bg-white border-gray-200 text-gray-600'}`}
+                                    >
+                                        <div className={`w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center ${foodPref === 'veg' ? 'border-green-600' : 'border-gray-400'}`}>
+                                            <div className={`w-1.5 h-1.5 rounded-full ${foodPref === 'veg' ? 'bg-green-600' : 'bg-gray-400'}`} />
                                         </div>
-                                        <span className="text-[0.8rem] font-[700]">Veg Only</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center gap-1 text-[0.7rem] font-[700] text-[#696969]">
-                                            <div className="w-[13px] h-[13px] border-[1.5px] border-[#22C55E] flex items-center justify-center rounded-sm">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
-                                            </div> Veg
+                                        Veg
+                                    </button>
+                                    <button 
+                                        onClick={() => setFoodPref(foodPref === 'non-veg' ? 'all' : 'non-veg')}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[0.75rem] font-[800] transition-all ${foodPref === 'non-veg' ? 'bg-red-50 border-red-600 text-red-700 shadow-sm' : 'bg-white border-gray-200 text-gray-600'}`}
+                                    >
+                                        <div className={`w-3.5 h-3.5 border-[1.5px] rounded-sm flex items-center justify-center ${foodPref === 'non-veg' ? 'border-red-600' : 'border-gray-400'}`}>
+                                            <div className={`w-1.5 h-1.5 rounded-full ${foodPref === 'non-veg' ? 'bg-red-600' : 'bg-gray-400'}`} />
                                         </div>
-                                        <div className="flex items-center gap-1 text-[0.7rem] font-[700] text-[#696969]">
-                                            <div className="w-[13px] h-[13px] border-[1.5px] border-[#E23744] flex items-center justify-center rounded-sm">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#E23744]" />
-                                            </div> Non-veg
-                                        </div>
-                                    </div>
+                                        Non-veg
+                                    </button>
                                 </div>
 
                                 {availableZones.length > 0 && (

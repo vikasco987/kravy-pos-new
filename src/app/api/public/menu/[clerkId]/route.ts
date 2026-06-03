@@ -17,9 +17,28 @@ export async function GET(
         console.log(`[PUBLIC_MENU] Fetching menu for: ${clerkId}, Table: ${tableId}`);
 
         // Fetch profile first to check if multi-zone is enabled
-        const profile = await prisma.businessProfile.findUnique({
-            where: { userId: clerkId },
-        });
+        let profile = null;
+        try {
+            profile = await prisma.businessProfile.findUnique({
+                where: { userId: clerkId },
+            });
+        } catch (e: any) {
+            if (e.code === 'P2032' || e.message?.includes('createdAt') || e.message?.includes('updatedAt')) {
+                console.log("⚠️ Prisma P2032 error in Public Menu. Running self-healing...");
+                await prisma.$runCommandRaw({
+                    update: "BusinessProfile",
+                    updates: [
+                        { q: { $or: [{ createdAt: null }, { createdAt: { $exists: false } }] }, u: { $set: { createdAt: { $date: new Date().toISOString() } } }, multi: true },
+                        { q: { $or: [{ updatedAt: null }, { updatedAt: { $exists: false } }] }, u: { $set: { updatedAt: { $date: new Date().toISOString() } } }, multi: true }
+                    ]
+                });
+                profile = await prisma.businessProfile.findUnique({
+                    where: { userId: clerkId },
+                });
+            } else {
+                throw e;
+            }
+        }
 
         const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(tableId || "");
         

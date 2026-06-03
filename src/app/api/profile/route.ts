@@ -61,9 +61,28 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const profile = await prisma.businessProfile.findFirst({
-      where: { userId: effectiveId },
-    });
+    let profile = null;
+    try {
+      profile = await prisma.businessProfile.findFirst({
+        where: { userId: effectiveId },
+      });
+    } catch (e: any) {
+      if (e.code === 'P2032' || e.message?.includes('createdAt') || e.message?.includes('updatedAt')) {
+        console.log("⚠️ Prisma P2032 error detected. Running self-healing for missing dates...");
+        await prisma.$runCommandRaw({
+          update: "BusinessProfile",
+          updates: [
+            { q: { $or: [{ createdAt: null }, { createdAt: { $exists: false } }] }, u: { $set: { createdAt: { $date: new Date().toISOString() } } }, multi: true },
+            { q: { $or: [{ updatedAt: null }, { updatedAt: { $exists: false } }] }, u: { $set: { updatedAt: { $date: new Date().toISOString() } } }, multi: true }
+          ]
+        });
+        profile = await prisma.businessProfile.findFirst({
+          where: { userId: effectiveId },
+        });
+      } else {
+        throw e;
+      }
+    }
 
     // SaaS Logic: Auto-trigger popup after trial period
     if (profile && !profile.isPremium && !profile.showPremiumPopup) {
