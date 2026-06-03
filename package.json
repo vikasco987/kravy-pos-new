@@ -40,7 +40,7 @@
     "@tabler/icons-react": "^3.36.1",
     "@tanstack/react-table": "^8.21.3",
     "aws-sdk": "^2.1693.0",
-    "axios": "^1.16.1",
+    "axios": "^1.17.0",
     "baseline-browser-mapping": "^2.9.16",
     "bcryptjs": "^3.0.3",
     "busboy": "^1.6.0",
