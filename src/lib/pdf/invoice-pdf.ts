@@ -126,6 +126,12 @@ export async function generateManualInvoicePDF(data: any) {
   page.drawText("Date", { x: rightX, y: metaY, size: 10, font });
   page.drawText(new Date().toLocaleDateString(), { x: 480, y: metaY, size: 10, font });
 
+  if (data.paymentMode) {
+    metaY -= 16;
+    page.drawText("Payment", { x: rightX, y: metaY, size: 10, font });
+    page.drawText(String(data.paymentMode), { x: 480, y: metaY, size: 10, font });
+  }
+
   /* ---------- TABLE HEADER ---------- */
   let tableY = height - 350;
   page.drawRectangle({

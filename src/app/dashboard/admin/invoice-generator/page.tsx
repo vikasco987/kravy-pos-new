@@ -29,6 +29,7 @@ export default function InvoiceGenerator() {
         invoiceNumber: `INV-${Math.floor(100000 + Math.random() * 900000)}`,
         date: new Date().toISOString().split('T')[0],
         documentType: "invoice",
+        paymentMode: "Online / Bank Transfer",
         customer: {
             name: "",
             phone: "",
@@ -112,6 +113,7 @@ export default function InvoiceGenerator() {
                     customerDistrict: invoiceData.customer.city,
                     customerState: invoiceData.customer.state,
                     customerPincode: invoiceData.customer.pincode,
+                    paymentMode: invoiceData.paymentMode,
                     total: calculateSubtotal(),
                     taxType: "inclusive"
                 })
@@ -324,6 +326,23 @@ export default function InvoiceGenerator() {
                                         className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
                                     />
                                 </div>
+                                <div className="space-y-1 col-span-2 mt-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                                        <CreditCard size={10} /> Payment Mode (Optional)
+                                    </label>
+                                    <select 
+                                        value={invoiceData.paymentMode}
+                                        onChange={e => setInvoiceData(prev => ({ ...prev, paymentMode: e.target.value }))}
+                                        className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
+                                    >
+                                        <option value="">None (Hide from invoice)</option>
+                                        <option value="Online / Bank Transfer">Online / Bank Transfer</option>
+                                        <option value="UPI">UPI</option>
+                                        <option value="Cash">Cash</option>
+                                        <option value="Card">Card</option>
+                                        <option value="Cheque">Cheque</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -378,9 +397,13 @@ export default function InvoiceGenerator() {
                                         )}
                                     </div>
                                     <div className="flex flex-col justify-end text-right">
-                                        <p className="text-[10px] font-black uppercase tracking-[3px] text-slate-400 mb-4">Payment Method</p>
-                                        <p className="text-xs font-bold text-slate-600">Online / Bank Transfer</p>
-                                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Status: Paid</p>
+                                        {invoiceData.paymentMode && (
+                                            <>
+                                                <p className="text-[10px] font-black uppercase tracking-[3px] text-slate-400 mb-4">Payment Method</p>
+                                                <p className="text-xs font-bold text-slate-600">{invoiceData.paymentMode}</p>
+                                                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Status: Paid</p>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
 
