@@ -314,7 +314,7 @@ export default function InvoiceGenerator() {
 
                     {/* Preview Side */}
                     <div className="lg:col-span-7">
-                        <div className="bg-white rounded-3xl shadow-2xl p-0 overflow-hidden sticky top-8 border border-slate-200" style={{ minHeight: '842px' }}>
+                        <div className="bg-white rounded-3xl shadow-2xl p-0 overflow-auto sticky top-8 border border-slate-200" style={{ minHeight: '842px' }}>
                             <div id="invoice-capture" className="p-12 text-slate-800 bg-white" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto' }}>
                                 
                                 {/* Invoice Header */}
