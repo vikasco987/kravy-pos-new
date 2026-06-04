@@ -33,6 +33,9 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="invoice-${Date.now()}.pdf"`,
         "Content-Length": pdfBuffer.length.toString(),
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
       },
     });
   } catch (error: any) {

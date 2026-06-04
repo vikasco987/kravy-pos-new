@@ -97,7 +97,11 @@ export default function InvoiceGenerator() {
         try {
             const response = await fetch("/api/admin/generate-invoice", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Cache-Control": "no-cache, no-store, must-revalidate"
+                },
+                cache: "no-store",
                 body: JSON.stringify({
                     ...invoiceData,
                     customerName: invoiceData.customer.name,
