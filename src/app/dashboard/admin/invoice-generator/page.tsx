@@ -28,6 +28,7 @@ export default function InvoiceGenerator() {
     const [invoiceData, setInvoiceData] = useState({
         invoiceNumber: `INV-${Math.floor(100000 + Math.random() * 900000)}`,
         date: new Date().toISOString().split('T')[0],
+        documentType: "invoice",
         customer: {
             name: "",
             phone: "",
@@ -285,6 +286,21 @@ export default function InvoiceGenerator() {
 
                         {/* Invoice Metadata */}
                         <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 shadow-sm border border-slate-200 dark:border-white/5">
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div className="space-y-1 col-span-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                                        <FileText size={10} /> Document Type
+                                    </label>
+                                    <select 
+                                        value={invoiceData.documentType}
+                                        onChange={e => setInvoiceData(prev => ({ ...prev, documentType: e.target.value }))}
+                                        className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
+                                    >
+                                        <option value="invoice">Tax Invoice</option>
+                                        <option value="proforma">Proforma Invoice</option>
+                                    </select>
+                                </div>
+                            </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
@@ -334,7 +350,9 @@ export default function InvoiceGenerator() {
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <h2 className="text-5xl font-black text-slate-200 tracking-tighter mb-4">INVOICE</h2>
+                                        <h2 className="text-4xl font-black text-slate-200 tracking-tighter mb-4">
+                                            {invoiceData.documentType === 'proforma' ? 'PROFORMA INVOICE' : 'INVOICE'}
+                                        </h2>
                                         <div className="space-y-1">
                                             <p className="text-xs font-black"><span className="text-slate-400 uppercase tracking-widest mr-2">Number:</span> {invoiceData.invoiceNumber}</p>
                                             <p className="text-xs font-black"><span className="text-slate-400 uppercase tracking-widest mr-2">Date:</span> {new Date(invoiceData.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>

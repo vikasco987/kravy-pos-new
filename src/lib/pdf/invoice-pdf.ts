@@ -86,8 +86,10 @@ export async function generateManualInvoicePDF(data: any) {
   page.drawText(companyGst, { x: infoX, y: infoY, size: 9, font, color: textColor });
 
   /* ---------- INVOICE TITLE ---------- */
-  page.drawText("TAX INVOICE", {
-    x: 595 / 2 - 60,
+  const documentTitle = data.documentType === "proforma" ? "PROFORMA INVOICE" : "TAX INVOICE";
+  const titleWidth = bold.widthOfTextAtSize(documentTitle, 20);
+  page.drawText(documentTitle, {
+    x: (595 - titleWidth) / 2,
     y: height - 160,
     size: 20,
     font: bold,
