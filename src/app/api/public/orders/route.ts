@@ -31,9 +31,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Fetch business profile for dynamic settings
-        const profile = await prisma.businessProfile.findUnique({
-            where: { userId: clerkUserId }
-        });
+        const profile = await prisma.businessProfile.findFirst({ where: { :  }, orderBy: { createdAt: 'asc' } });
 
         if (!profile) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
 

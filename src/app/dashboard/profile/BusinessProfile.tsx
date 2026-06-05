@@ -145,16 +145,18 @@ import UserActivityHeatmap from "@/components/profile/UserActivityHeatmap";
 export default function BusinessProfile({
   data,
   onProfileUpdated,
+  isNew = false,
 }: {
   data: any;
   onProfileUpdated: () => void;
+  isNew?: boolean;
 }) {
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(isNew);
 
   if (editMode) {
     return (
       <BusinessProfileForm
-        mode="edit"
+        mode={isNew ? "create" : "edit"}
         defaultValues={{
           businessType: data.businessType,
           businessName: data.businessName,
@@ -186,6 +188,7 @@ export default function BusinessProfile({
           tokenNumberSize: data.tokenNumberSize,
           businessAddressSize: data.businessAddressSize,
           userId: data.userId, 
+          id: data.id,
         }}
         onCancel={() => setEditMode(false)}
         onSuccess={() => {

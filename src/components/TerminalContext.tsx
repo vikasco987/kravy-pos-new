@@ -37,6 +37,9 @@ interface TerminalContextType {
     orders: Order[];
     ordersByTableId: Record<string, Order[]>; // Fast lookup map
     business: any;
+    allProfiles: any[];
+    enableMultipleProfiles: boolean;
+    setSelectedProfileId: (id: string) => void;
     isLoading: boolean;
     lastUpdated: number | null;
     fetchData: (showLoading?: boolean) => any;
@@ -49,9 +52,20 @@ const TerminalContext = createContext<TerminalContextType | undefined>(undefined
 export const TerminalProvider = ({ children }: { children: React.ReactNode }) => {
     const [rawTables, setRawTables] = useState<Table[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
-    const [business, setBusiness] = useState<any>(null);
+    const [allProfiles, setAllProfiles] = useState<any[]>([]);
+    const [enableMultipleProfiles, setEnableMultipleProfiles] = useState(false);
+    const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+
+    const business = React.useMemo(() => {
+        if (!allProfiles.length) return null;
+        if (selectedProfileId) {
+            const found = allProfiles.find(p => p.id === selectedProfileId);
+            if (found) return found;
+        }
+        return allProfiles[0];
+    }, [allProfiles, selectedProfileId]);
 
     // Stable references to prevent infinite callback recreation loops
     const lastUpdatedRef = React.useRef<number | null>(null);
@@ -105,10 +119,10 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
         if (showLoading && rawTablesLengthRef.current === 0) setIsLoading(true);
         
         try {
-            const [tablesRes, ordersRes, profileRes] = await Promise.all([
+            const [tablesRes, ordersRes, profilesRes] = await Promise.all([
                 fetch(`/api/tables`).catch(() => null),
                 fetch(`/api/orders?active=true`).catch(() => null),
-                fetch(`/api/profile`).catch(() => null)
+                fetch(`/api/profiles`).catch(() => null)
             ]);
 
             if (tablesRes?.ok) {
@@ -119,12 +133,15 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
                 const oData = await ordersRes.json();
                 setOrders(oData);
             }
-            if (profileRes?.ok) {
-                const bData = await profileRes.json();
-                setBusiness(bData);
+            if (profilesRes?.ok) {
+                const pData = await profilesRes.json();
+                if (pData.profiles && Array.isArray(pData.profiles)) {
+                    setAllProfiles(pData.profiles);
+                    setEnableMultipleProfiles(pData.enableMultipleProfiles || false);
+                }
             }
             
-            if (tablesRes?.ok || ordersRes?.ok || profileRes?.ok) {
+            if (tablesRes?.ok || ordersRes?.ok || profilesRes?.ok) {
                 const now = Date.now();
                 lastUpdatedRef.current = now;
                 setLastUpdated(now);
@@ -150,14 +167,17 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
     }, [fetchData]);
 
     return (
-        <TerminalContext.Provider value={{ 
-            tablesList, 
-            orders, 
+        <TerminalContext.Provider value={{
+            tablesList,
+            orders,
             ordersByTableId,
-            business, 
-            isLoading, 
-            lastUpdated, 
-            fetchData, 
+            business,
+            allProfiles,
+            enableMultipleProfiles,
+            setSelectedProfileId,
+            isLoading,
+            lastUpdated,
+            fetchData,
             updateTableStatus,
             setOrders
         }}>

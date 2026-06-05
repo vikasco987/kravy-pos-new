@@ -26,6 +26,7 @@ import { INDIA_STATE_DISTRICT } from "@/lib/india-state-district";
 
 /* ---------------- SCHEMA ---------------- */
 const schema = z.object({
+  id: z.string().optional(),
   businessType: z.string().nullable().optional(),
   businessName: z.string().min(1, "Required"),
   businessTagline: z.string().nullable().optional(),
@@ -72,6 +73,7 @@ export default function BusinessProfileForm({
     signatureUrl?: string;
     upiQrEnabled?: boolean;
     userId?: string;
+    id?: string;
   };
   onCancel?: () => void;
   onSuccess?: () => void;
@@ -199,6 +201,8 @@ export default function BusinessProfileForm({
 
       // ✅ EXPLICIT PAYLOAD (MATCHES API 1:1)
       const payload = {
+        id: defaultValues?.id,
+        isNewProfile: mode === "create",
         businessType: values.businessType,
         businessName: values.businessName,
         businessTagline: values.businessTagline || null,

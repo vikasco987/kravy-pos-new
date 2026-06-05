@@ -134,7 +134,7 @@ export default async function DailySalesReportPage({
   endRange.setHours(23, 59, 59, 999);
 
   // Profile data
-  const profile = await prisma.businessProfile.findUnique({ where: { userId: effectiveId } });
+  const profile = await prisma.businessProfile.findFirst({ where: { :  }, orderBy: { createdAt: 'asc' } });
   const businessName = profile?.businessName || "Your Restaurant";
 
   // Build where clause

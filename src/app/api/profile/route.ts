@@ -66,6 +66,13 @@ export async function GET(request: Request) {
       profile = await prisma.businessProfile.findFirst({
         where: { userId: effectiveId },
       });
+
+      const user = await prisma.user.findUnique({
+        where: { clerkId: effectiveId }
+      });
+      if (profile && user) {
+        (profile as any).enableMultipleProfiles = user.enableMultipleProfiles;
+      }
     } catch (e: any) {
       if (e.code === 'P2032' || e.message?.includes('createdAt') || e.message?.includes('updatedAt')) {
         console.log("⚠️ Prisma P2032 error detected. Running self-healing for missing dates...");
@@ -79,6 +86,12 @@ export async function GET(request: Request) {
         profile = await prisma.businessProfile.findFirst({
           where: { userId: effectiveId },
         });
+        const user = await prisma.user.findUnique({
+          where: { clerkId: effectiveId }
+        });
+        if (profile && user) {
+          (profile as any).enableMultipleProfiles = user.enableMultipleProfiles;
+        }
       } else {
         throw e;
       }
@@ -151,6 +164,14 @@ export async function POST(request: Request) {
 
     const updateData: any = {};
     
+    // ✅ Global toggle for multiple profiles
+    if (body.enableMultipleProfiles !== undefined) {
+      await prisma.user.update({
+        where: { clerkId: effectiveId },
+        data: { enableMultipleProfiles: b(body.enableMultipleProfiles) }
+      });
+    }
+
     // ✅ QR Ordering Status & Timing (MOVE TO TOP FOR PRIORITY)
     console.log("SERVER DEBUG: body.isOnline =", body.isOnline, "Type =", typeof body.isOnline);
     if (body.isOnline !== undefined) updateData.isOnline = b(body.isOnline);
@@ -266,10 +287,10 @@ export async function POST(request: Request) {
 
     console.log("SERVER DEBUG: Final Update Data:", JSON.stringify(updateData, null, 2));
 
-    // ✅ FIX: Use separate find/update/create instead of upsert to avoid MongoDB Atlas pipeline length limit (50 stages)
-    const existingProfile = await prisma.businessProfile.findUnique({
-      where: { userId: effectiveId }
-    });
+    // ✅ FIX: Find specific profile if body.id is provided, otherwise find the first one unless it's a new profile
+    const existingProfile = body.id 
+      ? await prisma.businessProfile.findFirst({ where: { id: body.id, userId: effectiveId } })
+      : (body.isNewProfile ? null : await prisma.businessProfile.findFirst({ where: { userId: effectiveId } }));
 
     let profile;
     if (existingProfile) {
@@ -289,16 +310,16 @@ export async function POST(request: Request) {
 
         // Update in two chunks
         await prisma.businessProfile.update({
-          where: { userId: effectiveId },
+          where: { id: existingProfile.id },
           data: chunk1
         });
         profile = await prisma.businessProfile.update({
-          where: { userId: effectiveId },
+          where: { id: existingProfile.id },
           data: chunk2
         });
       } else {
         profile = await prisma.businessProfile.update({
-          where: { userId: effectiveId },
+          where: { id: existingProfile.id },
           data: updateData
         });
       }

@@ -251,6 +251,7 @@ model User {
   isDisabled   Boolean  @default(false)
   ownerId      String?
   allowedPaths String[]
+  enableMultipleProfiles Boolean @default(false)
 
   publicMetadata  Json? @default("{}")
   privateMetadata Json? @default("{}")
@@ -407,7 +408,7 @@ model Field {
 model BusinessProfile {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  userId String @unique
+  userId String
   user   User   @relation(fields: [userId], references: [clerkId])
 
   businessType    String?

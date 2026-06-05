@@ -25,7 +25,7 @@ export default function AIScraperPage() {
   const [syncingAll, setSyncingAll] = useState(false)
   const [syncingItem, setSyncingItem] = useState<string | null>(null)
 
-  const foodSnapCount = data?.completed.filter(i => (i.imageUrl || i.image || i.cloudinaryUrl || "").includes("foodsnap")).length || 0;
+  const foodSnapCount = data?.completed.filter(i => (i.imageUrl || i.image || i.cloudinaryUrl || "").includes("foodsnap") || i.source === "zomato_api" || i.source === "foodsnap").length || 0;
   const scrapedCount = (data?.completed.length || 0) - foodSnapCount;
 
   const SCRAPER_URL = process.env.NEXT_PUBLIC_SCRAPER_URL || "http://localhost:3005"
@@ -193,7 +193,7 @@ export default function AIScraperPage() {
                         <div>
                           <h3 className="font-black text-gray-900 leading-tight">{item.foodName}</h3>
                           <div className="flex items-center gap-2 mt-1">
-                            {item.cloudinaryUrl?.includes("foodsnap") ? (
+                            {item.cloudinaryUrl?.includes("foodsnap") || item.source === "zomato_api" || item.source === "foodsnap" ? (
                               <span className="text-[9px] font-black text-purple-600 uppercase bg-purple-50 px-2 py-0.5 rounded-md">FoodSnap DB</span>
                             ) : (
                               <span className="text-[9px] font-black text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded-md">Puppeteer AI</span>

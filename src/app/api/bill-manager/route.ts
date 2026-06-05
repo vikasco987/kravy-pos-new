@@ -91,7 +91,9 @@ export async function POST(req: NextRequest) {
     // ✅ OPTIMIZED PARALLEL DATA FETCHING
     const itemIds = items.map((it: any) => it.id).filter(Boolean);
     const [profile, dbItems, offer, lastBill] = await Promise.all([
-      prisma.businessProfile.findUnique({ where: { userId: effectiveId } }),
+      body.profileId 
+        ? prisma.businessProfile.findUnique({ where: { id: body.profileId } }) 
+        : prisma.businessProfile.findFirst({ where: { userId: effectiveId }, orderBy: { createdAt: 'asc' } }),
       prisma.item.findMany({ where: { id: { in: itemIds }, clerkId: effectiveId } }),
       discountCode ? prisma.offer.findFirst({ where: { code: discountCode.toUpperCase(), isActive: true, clerkUserId: effectiveId } }) : Promise.resolve(null),
       prisma.billManager.findFirst({
@@ -228,13 +230,15 @@ export async function POST(req: NextRequest) {
             }
 
             // Sync with BusinessProfile
-            await prisma.businessProfile.update({
-                where: { userId: effectiveId },
+            if (profile?.id) {
+                await prisma.businessProfile.update({
+                    where: { id: profile.id },
                 data: {
                     lastTokenNumber: nextToken,
                     lastTokenDate: new Date()
                 }
             });
+            }
         } catch (tokenErr) {
             console.error("TOKEN GENERATION ERROR:", tokenErr);
             nextToken = 1; // Fallback

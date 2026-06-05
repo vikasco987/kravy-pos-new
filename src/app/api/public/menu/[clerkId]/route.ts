@@ -19,8 +19,9 @@ export async function GET(
         // Fetch profile first to check if multi-zone is enabled
         let profile = null;
         try {
-            profile = await prisma.businessProfile.findUnique({
+            profile = await prisma.businessProfile.findFirst({
                 where: { userId: clerkId },
+                orderBy: { createdAt: 'asc' },
             });
         } catch (e: any) {
             if (e.code === 'P2032' || e.message?.includes('createdAt') || e.message?.includes('updatedAt')) {
@@ -32,8 +33,9 @@ export async function GET(
                         { q: { $or: [{ updatedAt: null }, { updatedAt: { $exists: false } }] }, u: { $set: { updatedAt: { $date: new Date().toISOString() } } }, multi: true }
                     ]
                 });
-                profile = await prisma.businessProfile.findUnique({
+                profile = await prisma.businessProfile.findFirst({
                     where: { userId: clerkId },
+                    orderBy: { createdAt: 'asc' },
                 });
             } else {
                 throw e;

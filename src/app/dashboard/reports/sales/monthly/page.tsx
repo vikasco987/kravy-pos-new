@@ -78,7 +78,7 @@ export default async function MonthlySalesReportPage() {
     orderBy: { createdAt: "desc" }
   });
 
-  const business = await prisma.businessProfile.findUnique({ where: { userId: effectiveId } });
+  const business = await prisma.businessProfile.findFirst({ where: { :  }, orderBy: { createdAt: 'asc' } });
 
   const totalRevenue = bills.reduce((s, b) => s + b.total, 0);
   const totalBills = bills.length;

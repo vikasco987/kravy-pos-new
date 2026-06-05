@@ -851,7 +851,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
   const dateStr = dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const timeStr = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-  const getOrderTitle = async () => {
+  const getOrderTitle = () => {
     const t = bill.tableName || "POS";
     if (t === "POS") return "Counter Order Details";
     if (t.includes("TAKEAWAY")) return "Takeaway Order Details";
@@ -859,7 +859,7 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
     return `Dine In Order Details (${t})`;
   };
 
-  const getStatusLabel = async () => {
+  const getStatusLabel = () => {
     if (bill.isOrder) return bill.orderStatus || "ACTIVE";
     return bill.paymentStatus || "SETTLED";
   };

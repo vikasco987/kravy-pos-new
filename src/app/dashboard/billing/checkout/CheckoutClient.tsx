@@ -234,6 +234,7 @@ export default function CheckoutClient() {
     packagingGstRate?: number;
     lastTokenNumber?: number;
     userId?: string;
+    id?: string;
     syncQuickPosWithKitchen?: boolean;
     multiZoneMenuEnabled?: boolean;
     posCashEnabled?: boolean;
@@ -266,6 +267,68 @@ export default function CheckoutClient() {
     posPreviewEnabled: true,
     posKotEnabled: true
   });
+
+  const [availableProfiles, setAvailableProfiles] = useState<any[]>([]);
+  const [enableMultipleProfiles, setEnableMultipleProfiles] = useState(false);
+
+  const applyBusinessProfile = (data: any) => {
+    if (!data) return;
+    setBusiness({
+      id: data.id,
+      businessName: data.businessName,
+      businessTagLine: data.businessTagLine,
+      gstNumber: data.gstNumber,
+      businessAddress: data.businessAddress,
+      district: data.district,
+      state: data.state,
+      pinCode: data.pinCode,
+      upi: data.upi,
+      logoUrl: data.logoUrl,
+      taxEnabled: data.taxEnabled ?? true,
+      taxRate: data.taxRate ?? 5.0,
+      fssaiNumber: data.fssaiNumber,
+      fssaiEnabled: data.fssaiEnabled ?? false,
+      perProductTaxEnabled: data.perProductTaxEnabled ?? false,
+      collectCustomerName: data.collectCustomerName ?? true,
+      requireCustomerName: data.requireCustomerName ?? false,
+      collectCustomerPhone: data.collectCustomerPhone ?? true,
+      requireCustomerPhone: data.requireCustomerPhone ?? false,
+      collectCustomerAddress: data.collectCustomerAddress ?? false,
+      requireCustomerAddress: data.requireCustomerAddress ?? false,
+      enableKOTWithBill: data.enableKOTWithBill ?? false,
+      enableMenuQRInBill: data.enableMenuQRInBill ?? false,
+      enableDeliveryCharges: data.enableDeliveryCharges ?? false,
+      deliveryChargeAmount: data.deliveryChargeAmount ?? 0,
+      deliveryGstEnabled: data.deliveryGstEnabled ?? false,
+      deliveryGstRate: data.deliveryGstRate ?? 0,
+      enablePackagingCharges: data.enablePackagingCharges ?? false,
+      packagingChargeAmount: data.packagingChargeAmount ?? 0,
+      packagingGstEnabled: data.packagingGstEnabled ?? false,
+      packagingGstRate: data.packagingGstRate ?? 0,
+      lastTokenNumber: data.lastTokenNumber ?? 0,
+      userId: data.userId,
+      syncQuickPosWithKitchen: data.syncQuickPosWithKitchen ?? false,
+      posCashEnabled: data.posCashEnabled ?? true,
+      posUpiEnabled: data.posUpiEnabled ?? true,
+      posCardEnabled: data.posCardEnabled ?? true,
+      posCounterEnabled: data.posCounterEnabled ?? true,
+      posWalletEnabled: data.posWalletEnabled ?? true,
+      posHoldEnabled: data.posHoldEnabled ?? true,
+      posSaveEnabled: data.posSaveEnabled ?? true,
+      posPreviewEnabled: data.posPreviewEnabled ?? true,
+      posKotEnabled: data.posKotEnabled ?? true,
+      multiZoneMenuEnabled: data.multiZoneMenuEnabled ?? false,
+      greetingMessage: data.greetingMessage,
+      contactPersonPhone: data.contactPersonPhone,
+      contactPhone: data.contactPhone,
+      businessPhone: data.businessPhone,
+      businessAddressSize: data.businessAddressSize,
+      tokenNumberSize: data.tokenNumberSize,
+      businessNameSize: data.businessNameSize,
+      phonePrefixType: data.phonePrefixType || "TEXT",
+      printSettings: data.printSettings
+    });
+  };
 
   /* ================= CATEGORY + SEARCH ================= */
   const [activeCategory, setActiveCategory] = useState<string>("All");
@@ -343,8 +406,8 @@ export default function CheckoutClient() {
     setOrderNotes("");
     setSelectedParty(null);
     setUpiTxnRef("");
-    setPaymentMode("Cash");
-    setPaymentStatus("Paid");
+    setPaymentMode("None");
+    setPaymentStatus("Pending");
     setBuyerGSTIN("");
     setPlaceOfSupply("");
     setAppliedOffer(null);
@@ -890,69 +953,18 @@ export default function CheckoutClient() {
   useEffect(() => {
     async function fetchBusinessProfile() {
       try {
-        const res = await fetch("/api/profile", { cache: "no-store" });
+        const res = await fetch("/api/profiles", { cache: "no-store" });
         if (!res.ok) return;
-        const data = await res.json();
-        if (data) {
-          setBusiness({
-            businessName: data.businessName,
-            businessTagLine: data.businessTagLine,
-            gstNumber: data.gstNumber,
-            businessAddress: data.businessAddress,
-            district: data.district,
-            state: data.state,
-            pinCode: data.pinCode,
-            upi: data.upi,
-            logoUrl: data.logoUrl,
-            taxEnabled: data.taxEnabled ?? true,
-            taxRate: data.taxRate ?? 5.0,
-            fssaiNumber: data.fssaiNumber,
-            fssaiEnabled: data.fssaiEnabled ?? false,
-            perProductTaxEnabled: data.perProductTaxEnabled ?? false,
-            collectCustomerName: data.collectCustomerName ?? true,
-            requireCustomerName: data.requireCustomerName ?? false,
-            collectCustomerPhone: data.collectCustomerPhone ?? true,
-            requireCustomerPhone: data.requireCustomerPhone ?? false,
-            collectCustomerAddress: data.collectCustomerAddress ?? false,
-            requireCustomerAddress: data.requireCustomerAddress ?? false,
-            enableKOTWithBill: data.enableKOTWithBill ?? false,
-            enableMenuQRInBill: data.enableMenuQRInBill ?? false,
-            enableDeliveryCharges: data.enableDeliveryCharges ?? false,
-            deliveryChargeAmount: data.deliveryChargeAmount ?? 0,
-            deliveryGstEnabled: data.deliveryGstEnabled ?? false,
-            deliveryGstRate: data.deliveryGstRate ?? 0,
-            enablePackagingCharges: data.enablePackagingCharges ?? false,
-            packagingChargeAmount: data.packagingChargeAmount ?? 0,
-            packagingGstEnabled: data.packagingGstEnabled ?? false,
-            packagingGstRate: data.packagingGstRate ?? 0,
-            lastTokenNumber: data.lastTokenNumber ?? 0,
-            userId: data.userId,
-            syncQuickPosWithKitchen: data.syncQuickPosWithKitchen ?? false,
-            posCashEnabled: data.posCashEnabled ?? true,
-            posUpiEnabled: data.posUpiEnabled ?? true,
-            posCardEnabled: data.posCardEnabled ?? true,
-            posCounterEnabled: data.posCounterEnabled ?? true,
-            posWalletEnabled: data.posWalletEnabled ?? true,
-            posHoldEnabled: data.posHoldEnabled ?? true,
-            posSaveEnabled: data.posSaveEnabled ?? true,
-            posPreviewEnabled: data.posPreviewEnabled ?? true,
-            posKotEnabled: data.posKotEnabled ?? true,
-            multiZoneMenuEnabled: data.multiZoneMenuEnabled ?? false,
-            greetingMessage: data.greetingMessage,
-            contactPersonPhone: data.contactPersonPhone,
-            contactPhone: data.contactPhone,
-            businessPhone: data.businessPhone,
-            businessAddressSize: data.businessAddressSize,
-            tokenNumberSize: data.tokenNumberSize,
-            businessNameSize: data.businessNameSize,
-            phonePrefixType: data.phonePrefixType || "TEXT",
-            printSettings: data.printSettings
-          });
-          console.log("DEBUG POS API RESPONSE - enableKOTWithBill:", data.enableKOTWithBill);
-          console.log("DEBUG POS API FULL DATA:", data);
+        const result = await res.json();
+        
+        setEnableMultipleProfiles(result.enableMultipleProfiles || false);
+        setAvailableProfiles(result.profiles || []);
+        
+        if (result.profiles && result.profiles.length > 0) {
+          applyBusinessProfile(result.profiles[0]);
         }
       } catch (err) {
-        console.error("Business profile load failed", err);
+        console.error("Fetch profile error", err);
       }
     }
     fetchBusinessProfile();
@@ -1282,6 +1294,7 @@ export default function CheckoutClient() {
         serviceCharge: finalServiceCharge,
         kotNumbers,
         tokenNumber,
+        profileId: business?.id,
       };
 
       const url = resumeBillId ? `/api/bill-manager/${resumeBillId}` : "/api/bill-manager";
@@ -1929,6 +1942,27 @@ export default function CheckoutClient() {
                   <span className="hidden sm:inline tracking-widest">{categoryLayout === 'horizontal' ? 'SIDEBAR' : 'CHIPS'}</span>
                 </button>
                 {business && (
+                  <div className="flex items-center gap-1 sm:gap-2 bg-indigo-50 border border-indigo-100 px-2 sm:px-3 py-1 rounded-lg shrink-0 max-w-[150px] sm:max-w-[200px] overflow-hidden">
+                    <span className="hidden sm:inline text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Business:</span>
+                    {enableMultipleProfiles ? (
+                      <select
+                        className="text-[10px] sm:text-xs font-black text-indigo-700 bg-transparent border-none outline-none cursor-pointer w-full text-ellipsis"
+                        value={business.id}
+                        onChange={(e) => {
+                          const p = availableProfiles.find(p => p.id === e.target.value);
+                          if (p) applyBusinessProfile(p);
+                        }}
+                      >
+                        {availableProfiles.map(p => (
+                          <option key={p.id} value={p.id}>{p.businessName || "Unnamed Business"}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="text-[10px] sm:text-xs font-black text-indigo-700 truncate w-full">{business.businessName || "Your Store"}</span>
+                    )}
+                  </div>
+                )}
+                {business && (
                   <div className="hidden lg:flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-lg shrink-0">
                     <Layers size={12} className="text-indigo-500" />
                     <span className="text-[10px] font-black text-indigo-700 uppercase tracking-tighter whitespace-nowrap">Tokens: {business.lastTokenNumber || 0}</span>
@@ -2339,7 +2373,23 @@ export default function CheckoutClient() {
           <div className="border-b border-[var(--kravy-border)] px-4 md:px-5 py-3.5 bg-[var(--kravy-bg)]/40 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-[var(--kravy-text-primary)] hidden md:block">Billing Invoice</p>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <p className="text-sm font-black text-[var(--kravy-text-primary)] hidden md:block">Billing Invoice</p>
+                  {business && enableMultipleProfiles && (
+                    <select
+                      className="text-xs font-black text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded outline-none cursor-pointer max-w-[150px] text-ellipsis"
+                      value={business.id}
+                      onChange={(e) => {
+                        const p = availableProfiles.find(p => p.id === e.target.value);
+                        if (p) applyBusinessProfile(p);
+                      }}
+                    >
+                      {availableProfiles.map(p => (
+                        <option key={p.id} value={p.id}>{p.businessName || "Unnamed Business"}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-[10px] font-black px-2.5 py-1 bg-[var(--kravy-brand)]/10 text-[var(--kravy-brand)] rounded-lg uppercase tracking-wider">
                     {billNumber}

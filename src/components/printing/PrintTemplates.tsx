@@ -455,7 +455,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             className={`mt-3 ${s('sepPayment') ? 'border-t-2 border-dashed border-black' : ''} pt-1 flex justify-between font-bold`}
             style={{ fontSize: 'var(--r-items-size)' }}
           >
-            <span>Payment: {paymentMode}</span>
+            <span>Payment: {paymentMode === "None" ? "Pending" : paymentMode}</span>
             <span>Status: {paymentStatus}</span>
           </div>
         )}

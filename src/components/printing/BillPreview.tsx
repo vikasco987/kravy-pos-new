@@ -359,7 +359,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
 
               {s('showPaymentStatus') && (
                 <div className="mt-1 flex justify-between text-[8px]">
-                  <span>Payment: {paymentMode}</span>
+                  <span>Payment: {paymentMode === "None" ? "Pending" : paymentMode}</span>
                   <span>Status: {paymentStatus}</span>
                 </div>
               )}
