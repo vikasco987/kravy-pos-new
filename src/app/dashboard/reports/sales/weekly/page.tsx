@@ -78,7 +78,7 @@ export default async function WeeklySalesReportPage() {
     orderBy: { createdAt: "desc" }
   });
 
-  const business = await prisma.businessProfile.findFirst({ where: { :  }, orderBy: { createdAt: 'asc' } });
+  const business = await prisma.businessProfile.findFirst({ where: { userId: effectiveId }, orderBy: { createdAt: 'asc' } });
 
   const totalRevenue = bills.filter(b => b.paymentStatus !== "Cancelled" && b.paymentStatus !== "CANCELLED").reduce((s, b) => s + b.total, 0);
   const totalBills = bills.filter(b => b.paymentStatus !== "Cancelled" && b.paymentStatus !== "CANCELLED").length;

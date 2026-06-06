@@ -49,7 +49,7 @@ export default async function OrderTypeAnalyticsPage({ searchParams }: { searchP
     orderBy: { createdAt: "desc" }
   });
 
-  const business = await prisma.businessProfile.findFirst({ where: { :  }, orderBy: { createdAt: 'asc' } });
+  const business = await prisma.businessProfile.findFirst({ where: { userId: effectiveId }, orderBy: { createdAt: 'asc' } });
 
   // --- ANALYTICS CALCULATIONS ---
   

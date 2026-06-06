@@ -42,7 +42,7 @@ export async function GET(req: Request) {
         _sum: { total: true },
         _count: true
       }),
-      prisma.businessProfile.findFirst({ where: { :  }, orderBy: { createdAt: 'asc' } })
+      prisma.businessProfile.findFirst({ where: { userId: targetUserId }, orderBy: { createdAt: 'asc' } })
     ]);
 
     if (!seller) return NextResponse.json({ error: "Seller not found" }, { status: 404 });
