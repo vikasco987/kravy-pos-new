@@ -8,6 +8,10 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "foodsnap-plus.s3.ap-southeast-2.amazonaws.com",
+      },
+      {
+        protocol: "https",
         hostname: "encrypted-tbn0.gstatic.com",
       },
       {
