@@ -71,8 +71,9 @@ export async function PATCH(req: NextRequest) {
 
                 if (hasNewItems || isMissingToken) {
                     let nextToken = 1;
-                    const profile = await prisma.businessProfile.findUnique({
+                    const profile = await prisma.businessProfile.findFirst({
                         where: { userId: effectiveId },
+                        orderBy: { createdAt: 'asc' }
                     });
                     const today = new Date().toISOString().split('T')[0];
                     const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
@@ -83,13 +84,15 @@ export async function PATCH(req: NextRequest) {
                         nextToken = 1;
                     }
 
-                    await prisma.businessProfile.update({
-                        where: { userId: effectiveId },
-                        data: {
-                            lastTokenNumber: nextToken,
-                            lastTokenDate: new Date()
-                        }
-                    });
+                    if (profile?.id) {
+                        await prisma.businessProfile.update({
+                            where: { id: profile.id },
+                            data: {
+                                lastTokenNumber: nextToken,
+                                lastTokenDate: new Date()
+                            }
+                        });
+                    }
 
                     const existingKotNumbers = Array.isArray(currentOrder.kotNumbers) ? currentOrder.kotNumbers : (currentOrder.tokenNumber ? [currentOrder.tokenNumber] : []);
                     
@@ -154,16 +157,18 @@ export async function POST(req: NextRequest) {
         }
 
         // ✅ 1. FETCH PROFILE FOR TOKEN GENERATION
-        const profile = await prisma.businessProfile.findUnique({
+        const profile = await prisma.businessProfile.findFirst({
             where: { userId: effectiveId },
+            orderBy: { createdAt: 'asc' }
         });
 
         // ✅ 2. TOKEN NUMBER GENERATION (DAILY RESET)
         let nextToken = 1;
         try {
             // Re-fetch profile to get latest lastTokenNumber (prevent race condition)
-            const latestProfile = await prisma.businessProfile.findUnique({
+            const latestProfile = await prisma.businessProfile.findFirst({
                 where: { userId: effectiveId },
+                orderBy: { createdAt: 'asc' }
             });
             const today = new Date().toISOString().split('T')[0];
             const lastTokenDate = latestProfile?.lastTokenDate ? new Date(latestProfile.lastTokenDate).toISOString().split('T')[0] : "";
@@ -175,20 +180,25 @@ export async function POST(req: NextRequest) {
             }
 
             // Sync with BusinessProfile (using upsert to prevent errors if profile missing)
-            await prisma.businessProfile.upsert({
-                where: { userId: effectiveId },
-                update: {
-                    lastTokenNumber: nextToken,
-                    lastTokenDate: new Date()
-                },
-                create: {
-                    userId: effectiveId,
-                    lastTokenNumber: nextToken,
-                    lastTokenDate: new Date(),
-                    businessName: "My Restaurant",
-                    contactPersonEmail: effectiveId.includes("user_") ? "" : effectiveId // Fallback
-                }
-            });
+            if (latestProfile?.id) {
+                await prisma.businessProfile.update({
+                    where: { id: latestProfile.id },
+                    data: {
+                        lastTokenNumber: nextToken,
+                        lastTokenDate: new Date()
+                    }
+                });
+            } else {
+                await prisma.businessProfile.create({
+                    data: {
+                        userId: effectiveId,
+                        lastTokenNumber: nextToken,
+                        lastTokenDate: new Date(),
+                        businessName: "My Restaurant",
+                        contactPersonEmail: effectiveId.includes("user_") ? "" : effectiveId // Fallback
+                    }
+                });
+            }
         } catch (tokenErr) {
             console.error("ORDER_TOKEN_GENERATION_ERROR:", tokenErr);
             // Fallback to 1 if profile update fails
