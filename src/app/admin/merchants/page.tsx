@@ -28,6 +28,7 @@ interface Seller {
   clerkId: string;
   businessName: string;
   email: string;
+  phone: string;
   totalBills: number;
   totalRevenue: number;
   lastBill: string | null;
@@ -152,10 +153,12 @@ export default function AdminMerchantsPage() {
     }
   };
 
-  const filteredSellers = sellers.filter(s => 
-    (s.businessName || "").toLowerCase().includes(search.toLowerCase()) || 
-    (s.email || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredSellers = sellers.filter(s => {
+    const term = search.toLowerCase().trim();
+    return (s.businessName || "").toLowerCase().includes(term) || 
+           (s.email || "").toLowerCase().includes(term) ||
+           (s.phone || "").includes(term);
+  });
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8">
@@ -299,6 +302,11 @@ export default function AdminMerchantsPage() {
                         <div className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
                           <Mail size={10} /> {seller.email}
                         </div>
+                        {seller.phone && (
+                          <div className="text-[10px] font-bold text-slate-500 flex items-center gap-1 mt-0.5">
+                            <span className="text-[8px]">📞</span> {seller.phone}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>

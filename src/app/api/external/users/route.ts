@@ -20,6 +20,17 @@ export async function GET(request: Request) {
       },
     });
 
+    // Fetch user details for email and phone
+    const users = await prisma.user.findMany({
+      select: {
+        clerkId: true,
+        email: true,
+        phone: true,
+      }
+    });
+
+    const userMap = new Map(users.filter(u => u.clerkId).map(u => [u.clerkId, u]));
+
     // For each profile, get the count of items without images
     const usersWithStats = await Promise.all(
       businessProfiles.map(async (profile) => {
@@ -40,10 +51,14 @@ export async function GET(request: Request) {
           },
         });
 
+        const user = userMap.get(profile.userId);
+
         return {
           id: profile.userId,
           name: profile.businessName,
           image: profile.profileImageUrl,
+          email: user?.email || '',
+          phone: user?.phone || '',
           totalItems,
           missingImages: missingImageItems,
         };
