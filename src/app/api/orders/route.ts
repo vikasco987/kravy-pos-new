@@ -278,6 +278,32 @@ export async function POST(req: NextRequest) {
             await deductInventory(order.items as any[]);
         }
 
+        // ✅ 5. SEND EXPO PUSH NOTIFICATION FOR BACKGROUND POPUP
+        try {
+            if (profile?.expoPushToken) {
+                console.log(`Sending push alarm to: ${profile.expoPushToken}`);
+                const pushPayload = {
+                    to: profile.expoPushToken,
+                    sound: "default",
+                    title: "🚨 NEW URGENT ORDER 🚨",
+                    body: `${tableId || customerName || 'Online Order'} sent a new order.`,
+                    data: { orderId: order.id, isNewOrder: true },
+                    priority: "high"
+                };
+                await fetch("https://exp.host/--/api/v2/push/send", {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json",
+                        "Accept-encoding": "gzip, deflate",
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(pushPayload)
+                });
+            }
+        } catch (pushErr) {
+            console.error("PUSH_NOTIFICATION_ERROR:", pushErr);
+        }
+
         return NextResponse.json(order);
     } catch (error: any) {
         console.error("POST_ORDER_ERROR:", error);
