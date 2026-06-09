@@ -83,7 +83,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   const setTheme = (t: Theme) => {
     try {
       localStorage.setItem(LS_KEY, t);
-    } catch {}
+    } catch { }
     setThemeState(t);
   };
 
@@ -93,7 +93,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
       const next = prev === "light" ? "dark" : prev === "dark" ? "system" : "light";
       try {
         localStorage.setItem(LS_KEY, next);
-      } catch {}
+      } catch { }
       return next;
     });
   };

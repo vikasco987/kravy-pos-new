@@ -135,7 +135,7 @@ export function OrderNotificationProvider() {
         if (stored) {
             try {
                 setPrefs(prev => ({ ...prev, ...JSON.parse(stored) }));
-            } catch (e) {}
+            } catch (e) { }
         }
 
         if (!userId) return;
@@ -155,7 +155,7 @@ export function OrderNotificationProvider() {
                     localStorage.setItem("kravy_notification_prefs", JSON.stringify(dbPrefs));
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
 
         // 3. Listen to localStorage updates across tabs
         const handleStorageChange = () => {
@@ -163,7 +163,7 @@ export function OrderNotificationProvider() {
             if (storedVal) {
                 try {
                     setPrefs(prev => ({ ...prev, ...JSON.parse(storedVal) }));
-                } catch (e) {}
+                } catch (e) { }
             }
         };
         window.addEventListener("storage", handleStorageChange);
