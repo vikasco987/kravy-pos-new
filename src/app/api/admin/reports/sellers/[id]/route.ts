@@ -79,14 +79,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
-    await prisma.businessProfile.upsert({
+    const existingProfile = await prisma.businessProfile.findFirst({
       where: { userId: id },
-      update: updateData,
-      create: {
-        userId: id,
-        ...updateData
-      }
+      orderBy: { createdAt: 'asc' }
     });
+
+    if (existingProfile?.id) {
+      await prisma.businessProfile.update({
+        where: { id: existingProfile.id },
+        data: updateData,
+      });
+    } else {
+      await prisma.businessProfile.create({
+        data: {
+          userId: id,
+          ...updateData
+        }
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
