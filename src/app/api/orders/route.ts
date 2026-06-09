@@ -278,15 +278,12 @@ export async function POST(req: NextRequest) {
             await deductInventory(order.items as any[]);
         }
 
-        // ✅ 5. SEND EXPO PUSH NOTIFICATION FOR BACKGROUND POPUP
+        // ✅ 5. SEND EXPO PUSH NOTIFICATION FOR BACKGROUND POPUP (DATA ONLY MESSAGE)
         try {
             if (profile?.expoPushToken) {
-                console.log(`Sending push alarm to: ${profile.expoPushToken}`);
+                console.log(`Sending silent data push to wake up Notifee: ${profile.expoPushToken}`);
                 const pushPayload = {
                     to: profile.expoPushToken,
-                    sound: "default",
-                    title: "🚨 NEW URGENT ORDER 🚨",
-                    body: `${tableId || customerName || 'Online Order'} sent a new order.`,
                     data: { orderId: order.id, isNewOrder: true },
                     priority: "high"
                 };
