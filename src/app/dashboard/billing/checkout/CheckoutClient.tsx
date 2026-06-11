@@ -619,8 +619,10 @@ export default function CheckoutClient() {
         setItems(bill.items.map((i: any) => ({ 
           id: i.id || i.itemId || i._id || `item-${Math.random().toString(36).substr(2, 9)}`, 
           name: i.name, 
-          qty: i.qty, 
-          rate: i.rate,
+          qty: Number(i.qty) || Number(i.quantity) || 1, 
+          printedQty: Number(i.printedQty) || Number(i.qty) || Number(i.quantity) || 0,
+          isNew: false,
+          rate: Number(i.rate) || Number(i.price) || 0,
           gst: i.gst,
           hsnCode: i.hsnCode,
           taxStatus: i.taxStatus || "Without Tax",
