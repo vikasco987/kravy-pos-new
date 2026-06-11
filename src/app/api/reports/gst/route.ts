@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     }
 
     // 1. Fetch Business Profile
-    const profile = await prisma.businessProfile.findUnique({
+    const profile = await prisma.businessProfile.findFirst({
       where: { userId: effectiveId },
     });
 
