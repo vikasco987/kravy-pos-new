@@ -2751,7 +2751,7 @@ export default function CheckoutClient() {
             </div>
 
             {/* 🎟️ ADJUSTMENTS SECTION (Discount / Charges) */}
-            {!(selectedTable !== "POS" && selectedTable !== "TAKEAWAY" && selectedTable !== "DELIVERY") && (
+            {!(selectedTable !== "POS" && selectedTable !== "TAKEAWAY" && selectedTable !== "DELIVERY" && searchParams.get("returnTo")) && (
               <div className="space-y-1.5">
                 <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
                    <button 
@@ -2898,7 +2898,7 @@ export default function CheckoutClient() {
             )}
 
             {/* 💳 PAYMENT METHODS AND ACTIONS */}
-            {!(selectedTable !== "POS" && selectedTable !== "TAKEAWAY" && selectedTable !== "DELIVERY") ? (
+            {!(selectedTable !== "POS" && selectedTable !== "TAKEAWAY" && selectedTable !== "DELIVERY" && searchParams.get("returnTo")) ? (
               <>
               <div 
                 className="grid gap-1.5 mb-2"
