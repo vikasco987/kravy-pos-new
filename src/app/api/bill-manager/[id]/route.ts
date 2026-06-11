@@ -141,7 +141,9 @@ export async function PUT(
     const perProductEnabled = profile?.perProductTaxEnabled ?? false;
 
     // ✅ FETCH DB ITEMS
-    const itemIds = items.map((it: any) => it.id).filter(Boolean);
+    const itemIds = items
+      .map((it: any) => it.id)
+      .filter((id: any) => id && /^[0-9a-fA-F]{24}$/.test(id));
     const dbItems = await prisma.item.findMany({
       where: { 
         id: { in: itemIds },

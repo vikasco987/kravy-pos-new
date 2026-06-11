@@ -89,7 +89,9 @@ export async function POST(req: NextRequest) {
     const monthStart = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), 1);
 
     // ✅ OPTIMIZED PARALLEL DATA FETCHING
-    const itemIds = items.map((it: any) => it.id).filter(Boolean);
+    const itemIds = items
+      .map((it: any) => it.id)
+      .filter((id: any) => id && /^[0-9a-fA-F]{24}$/.test(id));
     const [profile, dbItems, offer, lastBill] = await Promise.all([
       body.profileId 
         ? prisma.businessProfile.findUnique({ where: { id: body.profileId } }) 
