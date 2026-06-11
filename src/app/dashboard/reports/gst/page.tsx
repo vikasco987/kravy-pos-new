@@ -95,24 +95,14 @@ export default function GSTReportPage() {
     fetchReport();
   }, [startDate, endDate]);
 
-  const exportToCSV = (reportData: any[], filename: string) => {
+  const exportToExcel = async (reportData: any[], filename: string) => {
     if (!reportData || reportData.length === 0) return;
     
-    const headers = Object.keys(reportData[0]);
-    const csvContent = [
-      headers.join(","),
-      ...reportData.map(row => headers.map(header => JSON.stringify(row[header])).join(","))
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${filename}_${startDate}_to_${endDate}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const XLSX = await import("xlsx");
+    const worksheet = XLSX.utils.json_to_sheet(reportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
+    XLSX.writeFile(workbook, `${filename}_${startDate}_to_${endDate}.xlsx`);
   };
 
   if (gstEnabled === false) {
@@ -176,10 +166,10 @@ export default function GSTReportPage() {
           </div>
           <button 
             onClick={() => {
-              if (activeTab === "GSTR-1") exportToCSV(data?.gstr1 || [], "GSTR-1");
-              if (activeTab === "HSN") exportToCSV(data?.hsnSummary || [], "HSN_Summary");
-              if (activeTab === "Daily") exportToCSV(data?.dailyTax || [], "Daily_GST_Report");
-              if (activeTab === "GSTR-3B") exportToCSV([data?.gstr3b], "GSTR-3B_Summary");
+              if (activeTab === "GSTR-1") exportToExcel(data?.gstr1 || [], "GSTR-1");
+              if (activeTab === "HSN") exportToExcel(data?.hsnSummary || [], "HSN_Summary");
+              if (activeTab === "Daily") exportToExcel(data?.dailyTax || [], "Daily_GST_Report");
+              if (activeTab === "GSTR-3B") exportToExcel([data?.gstr3b], "GSTR-3B_Summary");
             }}
             className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white dark:bg-white dark:text-black rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-slate-200 dark:shadow-none"
           >
