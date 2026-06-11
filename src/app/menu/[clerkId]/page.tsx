@@ -483,7 +483,8 @@ function PublicMenu() {
         const grouped: Record<string, MenuItem[]> = {};
         _filtered.forEach(it => {
             let baseName = it.name;
-            const suffixMatch = it.name.match(/\s*\(([^)]+)\)$/);
+            // Ignore (V), (NV), and (Egg) badges when extracting sizes
+            const suffixMatch = it.name.match(/\s*\(((?!V\b|NV\b|Egg\b)[^)]+)\)$/i);
             if (suffixMatch) {
                 baseName = it.name.substring(0, suffixMatch.index).trim();
             }
@@ -503,7 +504,7 @@ function PublicMenu() {
                     type: 'radio',
                     required: true,
                     options: group.map(i => {
-                        const match = i.name.match(/\((.*?)\)/)?.[1] || i.name;
+                        const match = i.name.match(/\(([^)]+)\)$/)?.[1] || i.name;
                         let niceName = match;
                         if (match.toUpperCase() === 'F' || match.toUpperCase() === 'FULL') niceName = 'Full Portion';
                         if (match.toUpperCase() === 'H' || match.toUpperCase() === 'HALF') niceName = 'Half Portion';
