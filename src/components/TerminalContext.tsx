@@ -120,9 +120,9 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
         
         try {
             const [tablesRes, ordersRes, profilesRes] = await Promise.all([
-                fetch(`/api/tables`).catch(() => null),
-                fetch(`/api/orders?active=true`).catch(() => null),
-                fetch(`/api/profiles`).catch(() => null)
+                fetch(`/api/tables`, { cache: 'no-store' }).catch(() => null),
+                fetch(`/api/orders?active=true`, { cache: 'no-store' }).catch(() => null),
+                fetch(`/api/profiles`, { cache: 'no-store' }).catch(() => null)
             ]);
 
             if (tablesRes?.ok) {
@@ -163,7 +163,14 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
         fetchData();
         // Background polling every 10 seconds (increased frequency for better POS sync)
         const interval = setInterval(() => fetchData(false), 10000);
-        return () => clearInterval(interval);
+        
+        const handleFocus = () => fetchData(false, true);
+        window.addEventListener("focus", handleFocus);
+        
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener("focus", handleFocus);
+        };
     }, [fetchData]);
 
     return (

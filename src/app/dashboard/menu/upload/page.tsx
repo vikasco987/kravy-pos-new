@@ -41,9 +41,9 @@ export default function Page() {
     openingStock: "",
     currentStock: "",
     reorderLevel: "",
-    displayCategory: "",
     displayColor: "",
     hsnCode: "",
+    zones: "",
   });
 
   // Load categories from API
@@ -140,6 +140,7 @@ export default function Page() {
       displayColor: formData.displayColor || null,
       imageUrl: image,
       hsnCode: formData.hsnCode || null,
+      zones: formData.zones ? formData.zones.split(',').map((z: string) => z.trim()).filter(Boolean) : [],
     };
 
     try {
@@ -173,6 +174,7 @@ export default function Page() {
         displayCategory: "",
         displayColor: "",
         hsnCode: "",
+        zones: "",
       });
       setImage(null);
       setOpenSection(null);
@@ -257,6 +259,17 @@ export default function Page() {
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
           />
+
+          <div className="mb-4">
+            <input
+              type="text"
+              name="zones"
+              placeholder="Zones (comma separated e.g. Dining, Takeaway)"
+              value={formData.zones}
+              onChange={handleChange}
+              className="w-full border rounded-lg px-4 py-3 text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-400 outline-none bg-gray-50"
+            />
+          </div>
 
           <div className="grid grid-cols-2 gap-4 mb-6">
             <input
