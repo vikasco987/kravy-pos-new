@@ -109,6 +109,8 @@ model Item {
   taxRate          String? // GST 5.0% etc
   calories         Float?
   protein          Float?
+  shortCode        String? // Quick add code
+
 
   // Relationship to AddonGroups
   addonGroups   AddonGroup[] @relation("ItemToAddonGroups", fields: [addonGroupIds], references: [id])

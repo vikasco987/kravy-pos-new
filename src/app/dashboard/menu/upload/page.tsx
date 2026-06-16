@@ -27,6 +27,7 @@ export default function Page() {
 
   const [formData, setFormData] = useState({
     productName: "",
+    shortCode: "",
     sellPrice: "",
     itemUnit: "",
     mrp: "",
@@ -138,6 +139,7 @@ export default function Page() {
       reorderLevel: parseIntOrNull(formData.reorderLevel),
       displayCategory: formData.displayCategory || null,
       displayColor: formData.displayColor || null,
+      shortCode: formData.shortCode || null,
       imageUrl: image,
       hsnCode: formData.hsnCode || null,
       zones: formData.zones ? formData.zones.split(',').map((z: string) => z.trim()).filter(Boolean) : [],
@@ -157,6 +159,7 @@ export default function Page() {
       formRef.current.reset();
       setFormData({
         productName: "",
+        shortCode: "",
         sellPrice: "",
         itemUnit: "",
         mrp: "",
@@ -227,6 +230,17 @@ export default function Page() {
                 Auto Image
               </button>
             </div>
+          </div>
+
+          <div className="mb-4">
+            <input
+              type="text"
+              name="shortCode"
+              placeholder="Item Code / Short Code (Optional)"
+              value={formData.shortCode}
+              onChange={handleChange}
+              className="w-full border rounded-lg px-4 py-3 text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-400 outline-none bg-gray-50"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-4">

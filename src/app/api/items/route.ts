@@ -391,9 +391,9 @@ export async function POST(req: Request) {
         image: body.imageUrl || null,
         description: body.description || null,
         clerkId: effectiveId,
-        categoryId: (body.categoryId && isValidObjectId(String(body.categoryId))) 
-          ? String(body.categoryId) 
-          : null,
+        category: (body.categoryId && isValidObjectId(String(body.categoryId))) 
+          ? { connect: { id: String(body.categoryId) } } 
+          : undefined,
         userId: dbUser.id,
         // Enhanced Fields
         isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : true,
@@ -401,6 +401,7 @@ export async function POST(req: Request) {
         isBestseller: Boolean(body.isBestseller),
         isRecommended: Boolean(body.isRecommended),
         isNew: Boolean(body.isNew),
+        shortCode: body.shortCode || null,
         spiciness: body.spiciness || null,
         rating: body.rating != null ? Number(body.rating) : 4.5,
         hiName: body.hiName || null,
@@ -461,7 +462,7 @@ export async function PUT(req: Request) {
           isBestseller: body.isBestseller !== undefined ? Boolean(body.isBestseller) : undefined,
           isRecommended: body.isRecommended !== undefined ? Boolean(body.isRecommended) : undefined,
           isNew: body.isNew !== undefined ? Boolean(body.isNew) : undefined,
-          categoryId: (categoryId === "uncategorised" || categoryId === "__uncategorised__") ? null : categoryId ?? undefined,
+          shortCode: body.shortCode !== undefined ? body.shortCode : undefined,
           taxStatus: body.taxStatus !== undefined ? body.taxStatus : undefined,
           gst: body.gst !== undefined ? (body.gst !== null ? Number(body.gst) : null) : undefined,
           isActive: body.isActive !== undefined ? Boolean(body.isActive) : undefined,
@@ -500,14 +501,15 @@ export async function PUT(req: Request) {
         imageUrl: imageUrl === undefined ? undefined : imageUrl,
         image: imageUrl === undefined ? undefined : imageUrl,
         description: description ?? undefined,
-        categoryId: (categoryId && isValidObjectId(String(categoryId))) 
-          ? String(categoryId) 
-          : (categoryId === "uncategorised" || categoryId === "__uncategorised__") ? null : undefined,
+        category: (categoryId && isValidObjectId(String(categoryId))) 
+          ? { connect: { id: String(categoryId) } }
+          : (categoryId === "uncategorised" || categoryId === "__uncategorised__" || categoryId === null) ? { disconnect: true } : undefined,
         isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : undefined,
         isEgg: body.isEgg !== undefined ? Boolean(body.isEgg) : undefined,
         isBestseller: body.isBestseller !== undefined ? Boolean(body.isBestseller) : undefined,
         isRecommended: body.isRecommended !== undefined ? Boolean(body.isRecommended) : undefined,
         isNew: body.isNew !== undefined ? Boolean(body.isNew) : undefined,
+        shortCode: body.shortCode !== undefined ? body.shortCode : undefined,
         spiciness: body.spiciness !== undefined ? body.spiciness : undefined,
         rating: body.rating !== undefined ? Number(body.rating) : undefined,
         hiName: body.hiName !== undefined ? body.hiName : undefined,

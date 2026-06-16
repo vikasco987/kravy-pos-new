@@ -35,6 +35,7 @@ type MenuItem = {
   } | null;
   gst?: number;
   hsnCode?: string;
+  shortCode?: string | null;
   taxStatus?: string;
   zones?: string[];
   isVeg?: boolean;
@@ -57,7 +58,7 @@ function normalizeMenuItems(data: any[]): MenuItem[] {
     const sPrice = Number(it.sellingPrice);
     const bPrice = Number(it.price);
     const finalPrice = !isNaN(sPrice) && it.sellingPrice !== null ? sPrice : !isNaN(bPrice) ? bPrice : 0;
-    return { ...it, price: finalPrice, gst: it.gst, hsnCode: it.hsnCode, taxStatus: it.taxStatus };
+    return { ...it, price: finalPrice, gst: it.gst, hsnCode: it.hsnCode, taxStatus: it.taxStatus, shortCode: it.shortCode };
   });
 }
 
@@ -782,7 +783,7 @@ export default function CheckoutClient() {
     return menuItems
       .filter((i) => i.isActive !== false) // 🛡️ Filter Offline Items
       .filter((i) => activeCategory === "All" ? true : i.category?.name === activeCategory)
-      .filter((i) => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .filter((i) => i.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) || (i.shortCode && String(i.shortCode).toLowerCase().includes(searchQuery.trim().toLowerCase())))
       .filter((i) => {
         // 1. Manual Zone Filter (Highest Priority)
         if (activeZone !== "All") {

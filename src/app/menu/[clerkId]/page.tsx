@@ -72,6 +72,7 @@ type MenuItem = {
     gst?: number;
     taxStatus?: string;
     ico?: string;
+    shortCode?: string | null;
     variants?: any[] | null;
     addonGroups?: any[] | null;
     tags?: string[];
@@ -468,8 +469,8 @@ function PublicMenu() {
     const filteredItems = useMemo(() => {
         const _filtered = items.filter(it => {
             const matchVeg = foodPref === "all" ? true : foodPref === "veg" ? it.isVeg : (!it.isVeg);
-            const matchSearch = (it.name.toLowerCase().includes(searchQ.toLowerCase())) ||
-                (it.hiName?.includes(searchQ));
+            const matchSearch = (it.name.toLowerCase().includes(searchQ.trim().toLowerCase())) ||
+                (it.hiName?.includes(searchQ.trim())) || (it.shortCode && String(it.shortCode).toLowerCase().includes(searchQ.trim().toLowerCase()));
             
             // Zone Filter Logic
             let matchZone = true;

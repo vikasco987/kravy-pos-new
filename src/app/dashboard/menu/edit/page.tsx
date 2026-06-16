@@ -23,6 +23,7 @@ type MenuItem = {
     sellingPrice: number | null;
     imageUrl: string | null;
     categoryId: string | null;
+    shortCode?: string | null;
     category?: { name: string };
     hsnCode: string | null;
     gst: number | null;
@@ -48,6 +49,7 @@ export default function MenuEditPage() {
         description: "",
         imageUrl: "",
         categoryId: "uncategorised",
+        shortCode: "",
         hsnCode: "",
         gst: "",
         taxStatus: "Without Tax",
@@ -87,6 +89,7 @@ export default function MenuEditPage() {
             description: item.description || "",
             imageUrl: item.imageUrl || "",
             categoryId: item.categoryId || "uncategorised",
+            shortCode: item.shortCode || "",
             hsnCode: item.hsnCode || "",
             gst: item.gst ? String(item.gst) : "",
             taxStatus: item.taxStatus || "Without Tax",
@@ -103,6 +106,7 @@ export default function MenuEditPage() {
             description: "",
             imageUrl: "",
             categoryId: categories.length > 0 ? categories[0].id : "uncategorised",
+            shortCode: "",
             hsnCode: "",
             gst: "",
             taxStatus: "Without Tax",
@@ -123,6 +127,7 @@ export default function MenuEditPage() {
                 description: formData.description,
                 imageUrl: formData.imageUrl,
                 categoryId: formData.categoryId === "uncategorised" ? null : formData.categoryId,
+                shortCode: formData.shortCode || null,
                 hsnCode: formData.hsnCode || null,
                 gst: formData.gst ? parseFloat(formData.gst) : 0,
                 taxStatus: formData.taxStatus,
@@ -296,6 +301,17 @@ export default function MenuEditPage() {
                                         placeholder="e.g. Paneer Tikka"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-[var(--kravy-text-secondary)] mb-1.5 uppercase tracking-wider">Item Code (Short Code)</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] rounded-xl px-4 py-3 text-[var(--kravy-text-primary)] focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none font-semibold uppercase"
+                                        placeholder="e.g. PT-01"
+                                        value={formData.shortCode}
+                                        onChange={(e) => setFormData({ ...formData, shortCode: e.target.value })}
                                     />
                                 </div>
 

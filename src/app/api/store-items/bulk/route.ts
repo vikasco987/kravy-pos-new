@@ -71,6 +71,7 @@ export async function POST(req: Request) {
         imageUrl: item.imageUrl ?? null,
         image: item.imageUrl ?? null,
         categoryId: item.categoryId ?? null,
+        shortCode: item.shortCode ?? null,
         isActive: item.isActive ?? true,
         zones: item.zones || [],
       })),

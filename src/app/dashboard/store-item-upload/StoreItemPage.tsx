@@ -22,6 +22,7 @@ type ClerkOption = {
 type StoreItem = {
   id?: string;
   name: string;
+  shortCode?: string | null;
   description?: string;
   price: number | null;
   categoryId: string | null;
@@ -62,6 +63,7 @@ export default function StoreItemPage() {
   const [uploadedRows, setUploadedRows] = useState<any[]>([]);
   const [columnMapping, setColumnMapping] = useState({
     name: "",
+    shortCode: "",
     price: "",
     category: "",
     description: "",
@@ -156,6 +158,7 @@ export default function StoreItemPage() {
         data.map((i: any) => ({
           id: i.id,
           name: i.name,
+          shortCode: i.shortCode ?? null,
           description: i.description || "",
           price: i.price,
           categoryId: i.categoryId ?? null,
@@ -245,6 +248,7 @@ export default function StoreItemPage() {
               // Try to auto-map
               setColumnMapping({
                 name: headers.find(h => /name|dish|item|title|उत्पाद|नाम/i.test(String(h))) || "",
+                shortCode: headers.find(h => /code|short|id|sku|कोड/i.test(String(h))) || "",
                 price: headers.find(h => /price|selling|mrp|cost|rate|मूल्य|कीमत/i.test(String(h))) || "",
                 category: headers.find(h => /category|group|type|श्रेणी|वर्ग/i.test(String(h))) || "",
                 description: headers.find(h => /desc|info|detail|composition|विवरण/i.test(String(h))) || "",
@@ -297,6 +301,7 @@ export default function StoreItemPage() {
         // Try to auto-map
         setColumnMapping({
           name: headers.find(h => /name|dish|item|title|उत्पाद|नाम/i.test(String(h))) || "",
+          shortCode: headers.find(h => /code|short|id|sku|कोड/i.test(String(h))) || "",
           price: headers.find(h => /price|selling|mrp|cost|rate|मूल्य|कीमत/i.test(String(h))) || "",
           category: headers.find(h => /category|group|type|श्रेणी|वर्ग/i.test(String(h))) || "",
           description: headers.find(h => /desc|info|detail|composition|विवरण/i.test(String(h))) || "",
@@ -365,6 +370,7 @@ export default function StoreItemPage() {
 
       newItems.push({
         name,
+        shortCode: mapping.shortCode ? String(row[mapping.shortCode] || "").trim() || null : null,
         description: mapping.description ? String(row[mapping.description] || "").trim() : "",
         price: parsedPrice,
         categoryId,
@@ -432,6 +438,7 @@ export default function StoreItemPage() {
       ...prev,
       {
         name: "",
+        shortCode: null,
         description: "",
         price: null,
         categoryId: null,
@@ -714,6 +721,7 @@ export default function StoreItemPage() {
               <tr>
                 <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Dish Image</th>
                 <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Dish Context</th>
+                <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Short Code</th>
                 <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Composition</th>
                  <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Selling Price</th>
                 <th className="py-7 px-8 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 text-left">Category</th>
@@ -885,6 +893,25 @@ export default function StoreItemPage() {
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                           <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Visible in digital menu</span>
                        </div>
+                    </div>
+                  </td>
+
+                  {/* SHORT CODE INPUT */}
+                  <td className="py-8 px-8 align-top min-w-[150px]">
+                    <div className="flex flex-col gap-2">
+                       <input
+                         className={`bg-gray-50/50 dark:bg-slate-800/50 border-2 border-gray-50 dark:border-slate-800 rounded-2xl px-5 py-4 w-full text-base font-black text-gray-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-800 transition-all shadow-sm placeholder:text-gray-300 dark:placeholder:text-gray-600`}
+                         placeholder="e.g. 1999"
+                         value={item.shortCode ?? ""}
+                         onChange={e => {
+                           const val = e.target.value;
+                           setItems(prev =>
+                             prev.map((it) =>
+                               it === item ? { ...it, shortCode: val } : it
+                             )
+                           )
+                         }}
+                       />
                     </div>
                   </td>
 

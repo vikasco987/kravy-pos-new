@@ -424,6 +424,7 @@ type MenuItem = {
   taxStatus?: string | null;
   gst?: number | null;
   hsnCode?: string | null;
+  shortCode?: string | null;
   isActive: boolean;
 };
 
@@ -567,6 +568,7 @@ export default function ViewMenuPage() {
             isBestseller: !!it.isBestseller,
             isRecommended: !!it.isRecommended,
             isNew: !!it.isNew,
+            shortCode: it.shortCode ?? null,
           });
         });
 
@@ -711,6 +713,7 @@ export default function ViewMenuPage() {
           gst: updated.gst,
           isVeg: updated.isVeg,
           isEgg: updated.isEgg,
+          shortCode: updated.shortCode,
         }),
       });
 
@@ -849,6 +852,7 @@ export default function ViewMenuPage() {
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
     const price = formData.get("price") as string;
+    const shortCode = formData.get("shortCode") as string;
     const description = formData.get("description") as string;
     const manualImageUrl = formData.get("imageUrl") as string;
     const imageUrl = quickAddImage || manualImageUrl;
@@ -874,6 +878,7 @@ export default function ViewMenuPage() {
       isBestseller: false,
       isRecommended: false,
       isNew: true,
+      shortCode: shortCode || null,
       description: description || null,
       imageUrl: imageUrl || null,
       taxStatus: quickAddTaxStatus,
@@ -904,6 +909,7 @@ export default function ViewMenuPage() {
           categoryId: quickAddCat.id,
           description: description || null,
           imageUrl: imageUrl || null,
+          shortCode: shortCode || null,
           taxStatus: quickAddTaxStatus,
           gst: Number(quickAddGst),
           isVeg: quickAddDietary === "veg",
@@ -1568,6 +1574,16 @@ export default function ViewMenuPage() {
                 </div>
 
                 <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Item Code / Short Code (Optional)</label>
+                  <input
+                    name="shortCode"
+                    placeholder="e.g. 1999"
+                    autoComplete="off"
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold"
+                  />
+                </div>
+
+                <div className="space-y-1">
                   <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Description (Optional)</label>
                   <input
                     name="description"
@@ -1894,6 +1910,16 @@ function EditModal({
                     rows={3}
                     value={local.description ?? ""}
                     onChange={(e) => setLocal({ ...local, description: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Item Code / Short Code</label>
+                  <input
+                    className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+                    value={local.shortCode ?? ""}
+                    placeholder="e.g. 1999"
+                    onChange={(e) => setLocal({ ...local, shortCode: e.target.value })}
                   />
                 </div>
 

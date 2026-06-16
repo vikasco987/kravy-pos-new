@@ -214,6 +214,7 @@ export async function PUT(req: Request) {
           item.price != null ? Number(item.price) : null,
         imageUrl: item.imageUrl ?? null,
         image: item.imageUrl ?? null,
+        shortCode: item.shortCode ?? null,
         isActive: item.isActive ?? true,
         zones: Array.isArray(item.zones) ? item.zones : [],
 

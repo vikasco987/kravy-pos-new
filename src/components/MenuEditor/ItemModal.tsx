@@ -17,6 +17,7 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
   
   const [form, setForm] = useState({
     name: item?.name || '',
+    shortCode: item?.shortCode || '',
     sellingPrice: item?.sellingPrice || item?.price || '',
     price: item?.price || '',
     description: item?.description || '',
@@ -178,9 +179,13 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
            
            {/* SECTION 1: CORE IDENTITY (CLEAN GRID) */}
            <div className="grid grid-cols-12 gap-6 items-end">
-              <div className="col-span-12 lg:col-span-8 space-y-2">
+              <div className="col-span-12 lg:col-span-5 space-y-2">
                  <label className={labelClass}>Dish Title *</label>
                  <input value={form.name} onChange={e => update('name', e.target.value)} placeholder="e.g. Kadai Paneer Gravy" className={inputClass} />
+              </div>
+              <div className="col-span-12 lg:col-span-3 space-y-2">
+                 <label className={labelClass}>Item Code</label>
+                 <input value={form.shortCode} onChange={e => update('shortCode', e.target.value)} placeholder="e.g. 1999" className={inputClass} />
               </div>
               <div className="col-span-12 lg:col-span-4 space-y-2">
                  <label className={labelClass}>Sub-Category</label>
