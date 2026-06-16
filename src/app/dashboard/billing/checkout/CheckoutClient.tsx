@@ -1596,7 +1596,7 @@ export default function CheckoutClient() {
     const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 18);
     const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 22);
 
-    const getAutoShrunkNameSize = async () => {
+    const getAutoShrunkNameSize = () => {
       let size = rawBusinessNameSize;
       const nameLen = (business?.businessName || "").length;
       if (nameLen > 25) size -= 2;
@@ -1605,7 +1605,7 @@ export default function CheckoutClient() {
     };
     const finalBusinessNameSize = getAutoShrunkNameSize();
 
-    const getAutoShrunkAddressSize = async () => {
+    const getAutoShrunkAddressSize = () => {
       let size = businessAddressSize;
       const addrLen = (business?.businessAddress || "").length;
       if (addrLen > 60) size -= 1;
