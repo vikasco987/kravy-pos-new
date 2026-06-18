@@ -365,15 +365,14 @@ export async function POST(req: Request) {
 
     console.log("🚀 [API_ITEMS_POST] Incoming Body:", JSON.stringify(body, null, 2));
 
-    if (!body?.name || body.price == null || !body.categoryId) {
+    if (!body?.name || body.price == null) {
       console.log("ITEM CREATE VALIDATION FAILED:", {
         name: !!body?.name,
         price: body?.price != null,
-        categoryId: !!body?.categoryId,
         body: body
       });
       return NextResponse.json(
-        { error: "Missing required fields", missing: { name: !body?.name, price: body?.price == null, categoryId: !body?.categoryId } },
+        { error: "Missing required fields", missing: { name: !body?.name, price: body?.price == null } },
         { status: 400 }
       );
     }
@@ -391,8 +390,8 @@ export async function POST(req: Request) {
         image: body.imageUrl || null,
         description: body.description || null,
         clerkId: effectiveId,
-        category: (body.categoryId && isValidObjectId(String(body.categoryId))) 
-          ? { connect: { id: String(body.categoryId) } } 
+        categoryId: (body.categoryId && isValidObjectId(String(body.categoryId))) 
+          ? String(body.categoryId)
           : undefined,
         userId: dbUser.id,
         // Enhanced Fields
@@ -501,9 +500,9 @@ export async function PUT(req: Request) {
         imageUrl: imageUrl === undefined ? undefined : imageUrl,
         image: imageUrl === undefined ? undefined : imageUrl,
         description: description ?? undefined,
-        category: (categoryId && isValidObjectId(String(categoryId))) 
-          ? { connect: { id: String(categoryId) } }
-          : (categoryId === "uncategorised" || categoryId === "__uncategorised__" || categoryId === null) ? { disconnect: true } : undefined,
+        categoryId: (categoryId && isValidObjectId(String(categoryId))) 
+          ? String(categoryId)
+          : (categoryId === "uncategorised" || categoryId === "__uncategorised__" || categoryId === null) ? null : undefined,
         isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : undefined,
         isEgg: body.isEgg !== undefined ? Boolean(body.isEgg) : undefined,
         isBestseller: body.isBestseller !== undefined ? Boolean(body.isBestseller) : undefined,
