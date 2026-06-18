@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock, Trash2, Play, X, Search, ChevronDown, User, Printer, ArrowLeft,
   Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus,
-  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck, Star, Zap
+  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck, Star, Zap, Pencil
 } from "lucide-react";
 import { calculateDiscount } from "@/lib/discount-utils";
 import { toast } from "sonner";
@@ -89,6 +89,55 @@ const numberToWords = (num: number): string => {
 };
 
 /* ================= SUB-COMPONENTS ================= */
+
+const InlineRateEdit = ({ item, updateRate, taxActive, perProductEnabled, globalRate }: any) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [val, setVal] = useState(item.rate?.toString() || "");
+
+  const handleSave = () => {
+    const num = Number(val);
+    if (!isNaN(num) && num >= 0) {
+      updateRate(item.id, num);
+    } else {
+      setVal(item.rate?.toString() || "");
+    }
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-1 mt-1">
+        <span className="text-xs font-black text-[var(--kravy-brand)]">{item.qty} × ₹</span>
+        <input 
+          autoFocus
+          type="number"
+          className="w-16 text-xs font-black text-[var(--kravy-brand)] bg-[var(--kravy-surface)] border border-[var(--kravy-brand)] rounded px-1 outline-none no-arrows"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setIsEditing(false); }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <button
+        onClick={() => { setVal(item.rate?.toString() || ""); setIsEditing(true); }}
+        className="text-xs font-black text-[var(--kravy-brand)] hover:underline cursor-pointer flex items-center gap-1 text-left"
+        title="Edit Price"
+      >
+        {item.qty} × ₹{Number(item.rate ?? 0).toFixed(2)} <Pencil size={10} className="inline opacity-50 hover:opacity-100" />
+      </button>
+      {(taxActive || perProductEnabled) && (
+        <span className="text-[8px] font-black px-1.5 py-0.5 bg-[var(--kravy-brand)]/5 text-[var(--kravy-brand)] border border-[var(--kravy-brand)]/10 rounded-md uppercase tracking-tighter">
+          GST: {(perProductEnabled && item.gst !== null) ? item.gst : globalRate}%
+        </span>
+      )}
+    </div>
+  );
+};
 
 const MenuItemCard = ({ m, items, addToCart, reduceFromCart }: { 
   m: MenuItem, 
@@ -947,6 +996,14 @@ export default function CheckoutClient() {
     }
     kravy.trash(); 
     setItems((s) => s.filter((i) => i.id !== id)); 
+  };
+  const updateRate = (id: string, newRate: number) => {
+    if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
+      toast.error("Permission Denied: Cannot change item price.");
+      return;
+    }
+    kravy.click();
+    setItems((s) => s.map((i) => i.id === id ? { ...i, rate: newRate, price: newRate, isCustomRate: true } : i));
   };
 
 
@@ -2664,16 +2721,7 @@ export default function CheckoutClient() {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-[var(--kravy-text-primary)] truncate text-sm">{i.name}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-xs font-black text-[var(--kravy-brand)]">
-                            {i.qty} × ₹{Number(i.rate ?? 0).toFixed(2)}
-                          </p>
-                          {(taxActive || perProductEnabled) && (
-                            <span className="text-[8px] font-black px-1.5 py-0.5 bg-[var(--kravy-brand)]/5 text-[var(--kravy-brand)] border border-[var(--kravy-brand)]/10 rounded-md uppercase tracking-tighter">
-                              GST: {(perProductEnabled && i.gst !== null) ? i.gst : globalRate}%
-                            </span>
-                          )}
-                        </div>
+                        <InlineRateEdit item={i} updateRate={updateRate} taxActive={taxActive} perProductEnabled={perProductEnabled} globalRate={globalRate} />
                       </div>
 
                       {/* Qty Controls */}

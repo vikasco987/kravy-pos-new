@@ -115,7 +115,9 @@ export async function POST(req: NextRequest) {
     items.forEach((item: any) => {
       const dbItem = dbItems.find(it => it.id === item.id);
       const qty = Number(item.qty || item.quantity) || 0;
-      const rate = dbItem ? Number(dbItem.sellingPrice ?? dbItem.price) : Number(item.rate || item.price || 0);
+      const rate = item.isCustomRate 
+        ? Number(item.rate) 
+        : (dbItem ? Number(dbItem.sellingPrice ?? dbItem.price) : Number(item.rate || item.price || 0));
       const itemGstRate = (perProductEnabled && item.gst !== undefined && item.gst !== null) ? Number(item.gst) : globalGstRate;
       const taxStatus = item.taxStatus || "Without Tax";
       const gross = qty * rate;
