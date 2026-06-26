@@ -832,7 +832,7 @@ export default function CheckoutClient() {
     return menuItems
       .filter((i) => i.isActive !== false) // 🛡️ Filter Offline Items
       .filter((i) => activeCategory === "All" ? true : i.category?.name === activeCategory)
-      .filter((i) => i.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) || (i.shortCode && String(i.shortCode).toLowerCase().includes(searchQuery.trim().toLowerCase())))
+      .filter((i) => i.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) || (i.shortCode && String(i.shortCode).toLowerCase() === searchQuery.trim().toLowerCase()))
       .filter((i) => {
         // 1. Manual Zone Filter (Highest Priority)
         if (activeZone !== "All") {

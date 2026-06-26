@@ -24,10 +24,11 @@ export async function GET(req: Request) {
           OR: [
             { name: { contains: query, mode: "insensitive" } },
             { barcode: { contains: query, mode: "insensitive" } },
+            { shortCode: { equals: query, mode: "insensitive" } },
           ],
         },
         take: 5,
-        select: { id: true, name: true, price: true, currentStock: true, barcode: true },
+        select: { id: true, name: true, price: true, currentStock: true, barcode: true, shortCode: true },
       }),
       prisma.billManager.findMany({
         where: {

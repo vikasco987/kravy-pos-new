@@ -287,6 +287,7 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
                                 <div style={{ display: "flex", flexDirection: "column" }}>
                                   <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--kravy-text-primary)" }}>{item.name}</span>
                                   <span style={{ fontSize: "9px", color: "var(--kravy-text-muted)" }}>Stock: {item.currentStock ?? 0} · ₹{item.price}</span>
+                                  {item.code && <span style={{ fontSize: "9px", color: "var(--kravy-text-faint)", marginTop: "2px" }}>Code: {item.code}</span>}
                                 </div>
                                 <ArrowRight size={12} style={{ color: "var(--kravy-text-faint)" }} className="group-hover:translate-x-1 group-hover:text-[var(--kravy-brand)] transition-all" />
                               </button>

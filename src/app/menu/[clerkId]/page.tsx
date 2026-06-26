@@ -470,7 +470,7 @@ function PublicMenu() {
         const _filtered = items.filter(it => {
             const matchVeg = foodPref === "all" ? true : foodPref === "veg" ? it.isVeg : (!it.isVeg);
             const matchSearch = (it.name.toLowerCase().includes(searchQ.trim().toLowerCase())) ||
-                (it.hiName?.includes(searchQ.trim())) || (it.shortCode && String(it.shortCode).toLowerCase().includes(searchQ.trim().toLowerCase()));
+                (it.hiName?.includes(searchQ.trim())) || (it.shortCode && String(it.shortCode).toLowerCase() === searchQ.trim().toLowerCase());
             
             // Zone Filter Logic
             let matchZone = true;
