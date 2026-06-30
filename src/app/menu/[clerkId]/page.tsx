@@ -484,10 +484,11 @@ function PublicMenu() {
         const grouped: Record<string, MenuItem[]> = {};
         _filtered.forEach(it => {
             let baseName = it.name;
-            // Ignore (V), (NV), and (Egg) badges when extracting sizes
-            const suffixMatch = it.name.match(/\s*\(((?!V\b|NV\b|Egg\b)[^)]+)\)\s*$/i);
+            // First strip out trailing dietary badges so that the size parenthesis becomes the last one
+            let cleanedName = it.name.replace(/\s*\((V|NV|Egg|R)\)\s*/gi, " ").trim();
+            const suffixMatch = cleanedName.match(/\s*\(([^)]+)\)\s*$/i);
             if (suffixMatch) {
-                baseName = it.name.substring(0, suffixMatch.index).trim();
+                baseName = cleanedName.substring(0, suffixMatch.index).trim();
             }
             if (!grouped[baseName]) grouped[baseName] = [];
             grouped[baseName].push(it);
@@ -507,7 +508,8 @@ function PublicMenu() {
                     type: 'radio',
                     required: true,
                     options: group.map(i => {
-                        const match = i.name.match(/\(([^)]+)\)\s*$/)?.[1] || i.name;
+                        let cleanedName = i.name.replace(/\s*\((V|NV|Egg|R)\)\s*/gi, " ").trim();
+                        const match = cleanedName.match(/\(([^)]+)\)\s*$/)?.[1] || cleanedName;
                         let niceName = match.trim();
                         if (niceName.toUpperCase() === 'F' || niceName.toUpperCase() === 'FULL') niceName = 'Full Portion';
                         if (niceName.toUpperCase() === 'H' || niceName.toUpperCase() === 'HALF') niceName = 'Half Portion';
