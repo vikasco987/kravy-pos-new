@@ -485,7 +485,7 @@ function PublicMenu() {
         _filtered.forEach(it => {
             let baseName = it.name;
             // Ignore (V), (NV), and (Egg) badges when extracting sizes
-            const suffixMatch = it.name.match(/\s*\(((?!V\b|NV\b|Egg\b)[^)]+)\)$/i);
+            const suffixMatch = it.name.match(/\s*\(((?!V\b|NV\b|Egg\b)[^)]+)\)\s*$/i);
             if (suffixMatch) {
                 baseName = it.name.substring(0, suffixMatch.index).trim();
             }
@@ -495,7 +495,9 @@ function PublicMenu() {
 
         const finalItems: MenuItem[] = [];
         Object.entries(grouped).forEach(([baseName, group]) => {
-            if (group.length === 1) {
+            const hasVariant = group.some(i => i.name.trim() !== baseName.trim());
+            
+            if (group.length === 1 && !hasVariant) {
                 finalItems.push(group[0]);
             } else {
                 const minPrice = Math.min(...group.map(i => i.sellingPrice || i.price || 0));
@@ -505,14 +507,14 @@ function PublicMenu() {
                     type: 'radio',
                     required: true,
                     options: group.map(i => {
-                        const match = i.name.match(/\(([^)]+)\)$/)?.[1] || i.name;
-                        let niceName = match;
-                        if (match.toUpperCase() === 'F' || match.toUpperCase() === 'FULL') niceName = 'Full Portion';
-                        if (match.toUpperCase() === 'H' || match.toUpperCase() === 'HALF') niceName = 'Half Portion';
-                        if (match.toUpperCase() === 'S' || match.toUpperCase() === 'SMALL') niceName = 'Small';
-                        if (match.toUpperCase() === 'R' || match.toUpperCase() === 'REGULAR') niceName = 'Regular';
-                        if (match.toUpperCase() === 'M' || match.toUpperCase() === 'MEDIUM') niceName = 'Medium';
-                        if (match.toUpperCase() === 'L' || match.toUpperCase() === 'LARGE') niceName = 'Large';
+                        const match = i.name.match(/\(([^)]+)\)\s*$/)?.[1] || i.name;
+                        let niceName = match.trim();
+                        if (niceName.toUpperCase() === 'F' || niceName.toUpperCase() === 'FULL') niceName = 'Full Portion';
+                        if (niceName.toUpperCase() === 'H' || niceName.toUpperCase() === 'HALF') niceName = 'Half Portion';
+                        if (niceName.toUpperCase() === 'S' || niceName.toUpperCase() === 'SMALL') niceName = 'Small';
+                        if (niceName.toUpperCase() === 'R' || niceName.toUpperCase() === 'REGULAR') niceName = 'Regular';
+                        if (niceName.toUpperCase() === 'M' || niceName.toUpperCase() === 'MEDIUM') niceName = 'Medium';
+                        if (niceName.toUpperCase() === 'L' || niceName.toUpperCase() === 'LARGE') niceName = 'Large';
                         
                         return {
                             id: i.id,
