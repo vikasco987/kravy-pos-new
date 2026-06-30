@@ -260,6 +260,7 @@ export default function CheckoutClient() {
     upi?: string;
     logoUrl?: string;
     taxEnabled?: boolean;
+    taxInclusive?: boolean;
     taxRate?: number;
     upiQrEnabled?: boolean;
     fssaiNumber?: string;
@@ -335,6 +336,7 @@ export default function CheckoutClient() {
       upi: data.upi,
       logoUrl: data.logoUrl,
       taxEnabled: data.taxEnabled ?? true,
+      taxInclusive: data.taxInclusive ?? false,
       taxRate: data.taxRate ?? 5.0,
       fssaiNumber: data.fssaiNumber,
       fssaiEnabled: data.fssaiEnabled ?? false,
