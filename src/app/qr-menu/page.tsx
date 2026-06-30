@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -282,6 +282,65 @@ function QRMenuContent() {
         ? items 
         : items.filter(item => item.category?.name === selectedCategory);
 
+    const groupedItems = useMemo(() => {
+        const groups = new Map<string, any>();
+        
+        filteredItems.forEach(item => {
+            const match = item.name.match(/^(.*?)\s*(?:\(|\[|-)?\s*\b(Half|Full|Quarter|Small|Medium|Large|Regular|Mini|Jumbo|Family)\b\s*(?:\)|\])?$/i);
+            
+            let baseName = item.name;
+            let variantName = "Regular";
+            
+            if (match) {
+                baseName = match[1].trim() || item.name;
+                variantName = match[2].trim();
+                variantName = variantName.charAt(0).toUpperCase() + variantName.slice(1).toLowerCase();
+            }
+
+            const key = baseName.toLowerCase();
+            
+            if (!groups.has(key)) {
+                groups.set(key, {
+                    baseName,
+                    description: item.description,
+                    isVeg: item.isVeg,
+                    isBestseller: item.isBestseller,
+                    isRecommended: item.isRecommended,
+                    isNew: item.isNew,
+                    spiciness: item.spiciness,
+                    rating: item.rating,
+                    category: item.category,
+                    imageUrl: item.imageUrl,
+                    variants: []
+                });
+            }
+            
+            const group = groups.get(key)!;
+            if (item.description && (!group.description || item.description.length > group.description.length)) {
+                group.description = item.description;
+            }
+            if (item.imageUrl && !group.imageUrl) {
+                group.imageUrl = item.imageUrl;
+            }
+            group.variants.push({
+                ...item,
+                variantName: variantName !== "Regular" || match ? variantName : "Regular"
+            });
+        });
+        
+        // Sort variants: Small -> Half -> Medium -> Regular -> Full -> Large -> Jumbo -> Family
+        const variantOrder: Record<string, number> = {
+            "Small": 1, "Quarter": 2, "Half": 3, "Mini": 4, "Medium": 5, "Regular": 6, "Full": 7, "Large": 8, "Jumbo": 9, "Family": 10
+        };
+
+        const sortedGroups = Array.from(groups.values()).map(group => {
+            group.variants.sort((a: any, b: any) => (variantOrder[a.variantName] || 99) - (variantOrder[b.variantName] || 99));
+            return group;
+        });
+
+        return sortedGroups;
+    }, [filteredItems]);
+
     if (loading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center">
@@ -419,63 +478,70 @@ function QRMenuContent() {
 
                         {/* Menu Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {filteredItems.map(item => (
-                                <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                                    <CardContent className="p-4">
-                                        <div className="flex space-x-4">
-                                            {item.imageUrl && (
+                            {groupedItems.map((group, index) => (
+                                <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
+                                    <CardContent className="p-4 flex flex-col flex-1">
+                                        <div className="flex space-x-4 mb-2">
+                                            {group.imageUrl && (
                                                 <img 
-                                                    src={item.imageUrl} 
-                                                    alt={item.name}
+                                                    src={group.imageUrl} 
+                                                    alt={group.baseName}
                                                     className="w-20 h-20 rounded-lg object-cover"
                                                 />
                                             )}
                                             <div className="flex-1">
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex-1">
-                                                        <div className="flex items-center space-x-2 mb-1">
-                                                            <h3 className="font-semibold text-gray-900">{item.name}</h3>
-                                                            {item.isVeg && <Leaf className="h-4 w-4 text-green-500" />}
-                                                            {item.isBestseller && (
-                                                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                                                        <div className="flex items-center space-x-2 mb-1 flex-wrap gap-y-1">
+                                                            <h3 className="font-semibold text-gray-900 leading-tight">{group.baseName}</h3>
+                                                            {group.isVeg && <Leaf className="h-4 w-4 text-green-500 shrink-0" />}
+                                                            {group.isBestseller && (
+                                                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-[10px] shrink-0">
                                                                     Bestseller
                                                                 </Badge>
                                                             )}
-                                                            {item.isNew && (
-                                                                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                                            {group.isNew && (
+                                                                <Badge variant="secondary" className="bg-green-100 text-green-800 text-[10px] shrink-0">
                                                                     New
                                                                 </Badge>
                                                             )}
                                                         </div>
-                                                        {item.description && (
-                                                            <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                                                                {item.description}
+                                                        {group.description && (
+                                                            <p className="text-sm text-gray-600 mb-1 line-clamp-2">
+                                                                {group.description}
                                                             </p>
                                                         )}
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center space-x-2">
-                                                                <span className="font-bold text-orange-600">
-                                                                    <IndianRupee className="h-4 w-4 inline" />
-                                                                    {item.sellingPrice || item.price || 0}
-                                                                </span>
-                                                                {item.rating && (
-                                                                    <div className="flex items-center space-x-1">
-                                                                        <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                                                                        <span className="text-xs text-gray-600">{item.rating}</span>
-                                                                    </div>
-                                                                )}
+                                                        {group.rating && (
+                                                            <div className="flex items-center space-x-1">
+                                                                <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                                                                <span className="text-xs text-gray-600">{group.rating}</span>
                                                             </div>
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={() => addToCart(item)}
-                                                                className="bg-orange-500 hover:bg-orange-600"
-                                                            >
-                                                                <Plus className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div className="mt-auto space-y-2 pt-2 border-t border-gray-100">
+                                            {group.variants.map((v: any) => (
+                                                <div key={v.id} className="flex items-center justify-between bg-gray-50/50 p-2 rounded-lg border border-gray-100">
+                                                    <span className="text-sm font-medium text-gray-700">
+                                                        {v.variantName !== "Regular" ? v.variantName : (group.variants.length > 1 ? "Regular" : "")}
+                                                    </span>
+                                                    <div className="flex items-center space-x-3">
+                                                        <span className="font-bold text-orange-600 text-sm">
+                                                            <IndianRupee className="h-3 w-3 inline" />
+                                                            {v.sellingPrice || v.price || 0}
+                                                        </span>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => addToCart(v)}
+                                                            className="bg-orange-500 hover:bg-orange-600 h-8 w-8 p-0 rounded-full shadow-sm"
+                                                        >
+                                                            <Plus className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </CardContent>
                                 </Card>
