@@ -439,6 +439,7 @@ model BusinessProfile {
   taxRate              Float   @default(5.0)
   gstType              String? @default("PRODUCT") // "PRODUCT" or "UNIVERSAL"
   perProductTaxEnabled Boolean @default(false)
+  taxInclusive         Boolean @default(false)
 
   // ✅ Customer Data Requirement Settings
   collectCustomerName    Boolean @default(true)

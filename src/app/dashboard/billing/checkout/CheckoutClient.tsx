@@ -1079,6 +1079,7 @@ export default function CheckoutClient() {
   /* ================= TOTALS ================= */
   const taxActive = business?.taxEnabled ?? true;
   const perProductEnabled = business?.perProductTaxEnabled ?? false;
+  const globalTaxInclusive = business?.taxInclusive ?? false;
   const globalRate = business?.taxRate ?? 5.0;
 
   // 1. Calculate Gross Subtotal
@@ -1128,7 +1129,14 @@ export default function CheckoutClient() {
     let taxable = gross;
     let gst = 0;
 
-    if (item.taxStatus === "With Tax") {
+    let isInclusive = false;
+    if (perProductEnabled && item.gst !== undefined && item.gst !== null) {
+      isInclusive = item.taxStatus === "With Tax";
+    } else if (taxActive) {
+      isInclusive = globalTaxInclusive;
+    }
+
+    if (isInclusive) {
       taxable = gross / (1 + rate / 100);
       gst = gross - taxable;
     } else {

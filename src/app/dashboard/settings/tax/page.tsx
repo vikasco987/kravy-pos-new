@@ -31,6 +31,7 @@ export default function PricingSettingsPage() {
     // Tax settings
     const [taxEnabled, setTaxEnabled] = useState(true);
     const [perProductTaxEnabled, setPerProductTaxEnabled] = useState(false);
+    const [taxInclusive, setTaxInclusive] = useState(false);
     const [qrMenuPriceInclusive, setQrMenuPriceInclusive] = useState(false);
     const [enableKOTWithBill, setEnableKOTWithBill] = useState(false);
     const [enableMenuQRInBill, setEnableMenuQRInBill] = useState(false);
@@ -77,6 +78,7 @@ export default function PricingSettingsPage() {
                 setBusinessProfile(profileData);
                 setTaxEnabled(profileData?.taxEnabled ?? true);
                 setPerProductTaxEnabled(profileData?.perProductTaxEnabled ?? false);
+                setTaxInclusive(profileData?.taxInclusive ?? false);
                 setQrMenuPriceInclusive(profileData?.qrMenuPriceInclusive ?? false);
                 setEnableDeliveryCharges(profileData?.enableDeliveryCharges ?? false);
                 setDeliveryChargeAmount(profileData?.deliveryChargeAmount ?? 0);
@@ -110,6 +112,7 @@ export default function PricingSettingsPage() {
             const payload = { 
                 taxEnabled, 
                 perProductTaxEnabled, 
+                taxInclusive,
                 qrMenuPriceInclusive, 
                 enableDeliveryCharges,
                 deliveryChargeAmount: Number(deliveryChargeAmount),
@@ -255,11 +258,11 @@ export default function PricingSettingsPage() {
     // Live preview calculation
     const sampleSubtotal = 1000;
     const sampleTax = taxEnabled 
-        ? (qrMenuPriceInclusive 
+        ? (taxInclusive 
             ? (sampleSubtotal * (1 - 1 / (1 + taxRate/100))) 
             : (sampleSubtotal * taxRate / 100)) 
         : 0;
-    const sampleTotal = qrMenuPriceInclusive ? sampleSubtotal : (sampleSubtotal + sampleTax);
+    const sampleTotal = taxInclusive ? sampleSubtotal : (sampleSubtotal + sampleTax);
 
     return (
         <div className="max-w-3xl mx-auto py-8 px-4 kravy-page-fade space-y-8">
@@ -332,7 +335,30 @@ export default function PricingSettingsPage() {
                         </button>
                     </div>
 
-                    {/* Inclusive vs Exclusive Toggle Row */}
+                    {/* Global Inclusive vs Exclusive Toggle Row */}
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--kravy-border)]">
+                        <div className="flex items-center gap-3.5">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${taxInclusive ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}>
+                                <BadgePercent size={20} />
+                            </div>
+                            <div>
+                                <div className="font-black text-[0.9rem] text-[var(--kravy-text-primary)]">{taxInclusive ? "Inclusive GST (POS & Bills)" : "Exclusive GST (POS & Bills)"}</div>
+                                <div className="text-xs text-[var(--kravy-text-muted)] font-medium">
+                                    {taxInclusive 
+                                        ? "Prices entered already include GST. Bill will show backwards calculation." 
+                                        : "GST will be calculated as EXTRA on top of item prices."}
+                                </div>
+                            </div>
+                        </div>
+                        <button onClick={() => setTaxInclusive(!taxInclusive)} className="shrink-0">
+                            {taxInclusive
+                                ? <ToggleRight size={36} className="text-indigo-500" />
+                                : <ToggleLeft size={36} className="text-gray-300" />
+                            }
+                        </button>
+                    </div>
+
+                    {/* QR Menu Inclusive Toggle Row */}
                     <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--kravy-border)]">
                         <div className="flex items-center gap-3.5">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${qrMenuPriceInclusive ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}>

@@ -219,6 +219,7 @@ export async function POST(request: Request) {
     if (body.pinCode !== undefined) updateData.pinCode = s(body.pinCode);
     
     if (body.taxEnabled !== undefined) updateData.taxEnabled = b(body.taxEnabled);
+    if (body.taxInclusive !== undefined) updateData.taxInclusive = b(body.taxInclusive);
     if (body.taxRate !== undefined) updateData.taxRate = n(body.taxRate);
     if (body.upiQrEnabled !== undefined) updateData.upiQrEnabled = b(body.upiQrEnabled);
     if (body.menuLinkEnabled !== undefined) updateData.menuLinkEnabled = b(body.menuLinkEnabled);
@@ -331,6 +332,7 @@ export async function POST(request: Request) {
           // Ensure mandatory fields have defaults if missing in updateData
           businessName: updateData.businessName ?? s(body.businessName) ?? "My Business",
           taxEnabled: updateData.taxEnabled ?? b(body.taxEnabled) ?? false,
+          taxInclusive: updateData.taxInclusive ?? b(body.taxInclusive) ?? false,
           taxRate: updateData.taxRate ?? n(body.taxRate) ?? 5.0,
           upiQrEnabled: updateData.upiQrEnabled ?? b(body.upiQrEnabled) ?? true,
           menuLinkEnabled: updateData.menuLinkEnabled ?? b(body.menuLinkEnabled) ?? true,
