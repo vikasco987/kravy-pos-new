@@ -1270,15 +1270,19 @@ export default function CheckoutClient() {
       // Recalculation Check (Compare UI result with calculated result)
       let reCalcGst = items.reduce((sum, item) => {
         let rate = 0;
+        let isInclusive = false;
+        
         if (perProductEnabled && item.gst !== undefined && item.gst !== null) {
           rate = item.gst;
+          isInclusive = item.taxStatus === "With Tax";
         } else if (taxActive) {
           rate = globalRate;
+          isInclusive = globalTaxInclusive;
         }
 
         // Important: Apply discount ratio here as well
         const gross = (item.qty * item.rate) * validationDiscountRatio;
-        if (item.taxStatus === "With Tax") return sum + (gross - (gross / (1 + rate / 100)));
+        if (isInclusive) return sum + (gross - (gross / (1 + rate / 100)));
         return sum + ((gross * rate) / 100);
       }, 0);
 
