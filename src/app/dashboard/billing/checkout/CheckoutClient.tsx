@@ -1015,7 +1015,7 @@ export default function CheckoutClient() {
   useEffect(() => {
     async function fetchBusinessProfile() {
       try {
-        const res = await fetch("/api/profiles", { cache: "no-store" });
+        const res = await fetch(`/api/profiles?t=${Date.now()}`, { cache: "no-store" });
         if (!res.ok) return;
         const result = await res.json();
         

@@ -119,10 +119,18 @@ export async function POST(req: NextRequest) {
         ? Number(item.rate) 
         : (dbItem ? Number(dbItem.sellingPrice ?? dbItem.price) : Number(item.rate || item.price || 0));
       const itemGstRate = (perProductEnabled && item.gst !== undefined && item.gst !== null) ? Number(item.gst) : globalGstRate;
-      const taxStatus = item.taxStatus || "Without Tax";
+      const globalTaxInclusive = profile?.taxInclusive ?? false;
+      
+      let isInclusive = false;
+      if (perProductEnabled && item.gst !== undefined && item.gst !== null) {
+        isInclusive = (item.taxStatus || "Without Tax") === "With Tax";
+      } else if (isTaxEnabled) {
+        isInclusive = globalTaxInclusive;
+      }
+
       const gross = qty * rate;
 
-      if (taxStatus === "With Tax") {
+      if (isInclusive) {
         const base = gross / (1 + itemGstRate / 100);
         const gst = gross - base;
         calcSubtotal += base;
