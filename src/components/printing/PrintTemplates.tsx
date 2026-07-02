@@ -77,6 +77,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
   const taglineSize = getClamped(ps.taglineSize, 11, 8, 14);
   const receiptTokenSize = getClamped(ps.receiptTokenSize, 28, 18, 40);
   const detailsFontSize = getClamped(ps.detailsFontSize, 10, 8, 14);
+  const customerDetailsFontSize = getClamped(ps.customerDetailsFontSize, detailsFontSize, 8, 24);
   const itemsFontSize = getClamped(ps.itemsFontSize, 11, 9, 18);
   const totalFontSize = getClamped(ps.totalFontSize, 13, 11, 24);
   const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
@@ -114,6 +115,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
       --r-total-size: ${totalFontSize}px;
       --r-token-size: ${receiptTokenSize}px;
       --r-details-size: ${detailsFontSize}px;
+      --r-customer-details-size: ${customerDetailsFontSize}px;
       --r-greeting-size: ${greetingFontSize}px;
       font-family: var(--r-font-family) !important;
       font-size: var(--r-details-size);
@@ -291,7 +293,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         {/* Big centered token block is disabled to save space, moved to Bill Summary header above! */}
 
         {((customerName || customerPhone || customerAddress || orderNotes || buyerGSTIN) && s('showCustomerDetails')) && (
-          <div className={`mt-2 font-black ${s('sepCustomer') ? 'border-t-2 border-dashed border-black' : ''} pt-1`} style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
+          <div className={`mt-2 font-black ${s('sepCustomer') ? 'border-t-2 border-dashed border-black' : ''} pt-1`} style={{ fontSize: 'var(--r-customer-details-size, var(--r-details-size))', fontWeight: ps.customerDetailsFontWeight || ps.detailsWeight || undefined }}>
             {customerName && <div>Customer: {customerName}</div>}
             {customerPhone && <div>Phone: {customerPhone}</div>}
             {buyerGSTIN && <div className="uppercase">Buyer GST: {buyerGSTIN}</div>}

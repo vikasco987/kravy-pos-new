@@ -65,6 +65,7 @@ const defaults: any = {
     taglineSize: 11,
     receiptTokenSize: 28,
     detailsFontSize: 10,
+    customerDetailsFontSize: 10,
     itemsFontSize: 11,
     totalFontSize: 13,
     greetingFontSize: 12,
@@ -80,6 +81,7 @@ const TYPOGRAPHY_PRESETS = {
         taglineSize: 11,
         receiptTokenSize: 28,
         detailsFontSize: 10,
+        customerDetailsFontSize: 10,
         itemsFontSize: 11,
         totalFontSize: 13,
         greetingFontSize: 12,
@@ -108,6 +110,7 @@ const TYPOGRAPHY_PRESETS = {
         taglineSize: 9,
         receiptTokenSize: 20,
         detailsFontSize: 8,
+        customerDetailsFontSize: 8,
         itemsFontSize: 9,
         totalFontSize: 11,
         greetingFontSize: 9,
@@ -136,6 +139,7 @@ const TYPOGRAPHY_PRESETS = {
         taglineSize: 12,
         receiptTokenSize: 34,
         detailsFontSize: 12,
+        customerDetailsFontSize: 12,
         itemsFontSize: 13,
         totalFontSize: 16,
         greetingFontSize: 14,
@@ -164,6 +168,7 @@ const TYPOGRAPHY_PRESETS = {
         taglineSize: 10,
         receiptTokenSize: 24,
         detailsFontSize: 9,
+        customerDetailsFontSize: 9,
         itemsFontSize: 10,
         totalFontSize: 12,
         greetingFontSize: 10,
@@ -884,6 +889,15 @@ export default function PrintingSettings() {
                                             descMap={{ 11: "Regular", 13: "Standard Highlight", 18: "Bold Large", 24: "Screaming Total" }} 
                                         />
                                         <Sizer 
+                                            label="Customer Details Size" 
+                                            icon={User} 
+                                            sKey="customerDetailsFontSize" 
+                                            weightKey="customerDetailsFontWeight"
+                                            min={8} 
+                                            max={24} 
+                                            descMap={{ 8: "Dense", 10: "Standard", 14: "Large", 18: "Extra Large" }} 
+                                        />
+                                        <Sizer 
                                             label="Details & Metadata Size" 
                                             icon={FileText} 
                                             sKey="detailsFontSize" 
@@ -956,6 +970,7 @@ export default function PrintingSettings() {
                                                     taglineSize: defaults.taglineSize,
                                                     receiptTokenSize: defaults.receiptTokenSize,
                                                     detailsFontSize: defaults.detailsFontSize,
+                                                    customerDetailsFontSize: defaults.customerDetailsFontSize,
                                                     itemsFontSize: defaults.itemsFontSize,
                                                     totalFontSize: defaults.totalFontSize,
                                                     greetingFontSize: defaults.greetingFontSize,

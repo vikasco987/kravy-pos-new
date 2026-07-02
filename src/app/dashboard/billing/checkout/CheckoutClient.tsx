@@ -1659,6 +1659,7 @@ export default function CheckoutClient() {
     const taglineSize = getClamped(ps.taglineSize, 11, 8, 14);
     const receiptTokenSize = getClamped(ps.receiptTokenSize, 28, 18, 40);
     const detailsFontSize = getClamped(ps.detailsFontSize, 10, 8, 14);
+    const customerDetailsFontSize = getClamped(ps.customerDetailsFontSize, detailsFontSize, 8, 24);
     const itemsFontSize = getClamped(ps.itemsFontSize, 11, 9, 18);
     const totalFontSize = getClamped(ps.totalFontSize, 13, 11, 24);
     const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
@@ -1725,6 +1726,7 @@ export default function CheckoutClient() {
           --r-total-size: ${totalFontSize}px;
           --r-token-size: ${receiptTokenSize}px;
           --r-details-size: ${detailsFontSize}px;
+          --r-customer-details-size: ${customerDetailsFontSize}px;
           --r-greeting-size: ${greetingFontSize}px;
           font-family: var(--r-font-family) !important;
           font-size: var(--r-details-size) !important;

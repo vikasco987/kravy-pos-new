@@ -254,7 +254,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
 
               {s('sepCustomer') && <div className="my-1 border-t border-dashed border-gray-400" />}
               {s('showCustomerDetails') && (customerName || customerPhone || customerAddress) && (
-                <div className="font-black pt-1" style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
+                <div className="font-black pt-1" style={{ fontSize: 'var(--r-customer-details-size, var(--r-details-size))', fontWeight: ps.customerDetailsFontWeight || ps.detailsWeight || undefined }}>
                   {customerName && <div>Customer: {customerName}</div>}
                   {customerPhone && <div>Phone: {customerPhone}</div>}
                   {customerAddress && <div className="mt-0.5" style={{ wordWrap: 'break-word', whiteSpace: 'pre-wrap' }}>Addr: {customerAddress}</div>}
