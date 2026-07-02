@@ -152,12 +152,12 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
     }
     ${fontWeightVal ? `
     .receipt-container-dynamic, .receipt-container-dynamic * {
-      font-weight: ${fontWeightVal} !important;
+      font-weight: ${fontWeightVal};
     }
     ` : ''}
     ${kotFontWeightVal ? `
     .kot-container-dynamic, .kot-container-dynamic * {
-      font-weight: ${kotFontWeightVal} !important;
+      font-weight: ${kotFontWeightVal};
     }
     ` : ''}
   `;

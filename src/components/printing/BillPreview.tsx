@@ -125,7 +125,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
     }
     ${fontWeightVal ? `
     .bill-preview-dynamic, .bill-preview-dynamic * {
-      font-weight: ${fontWeightVal} !important;
+      font-weight: ${fontWeightVal};
     }
     ` : ''}
   `;

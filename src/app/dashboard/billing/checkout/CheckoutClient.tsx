@@ -1751,13 +1751,13 @@ export default function CheckoutClient() {
 
         ${fontWeightVal ? `
         #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
-          font-weight: ${fontWeightVal} !important;
+          font-weight: ${fontWeightVal};
         }
         ` : ''}
 
         ${kotFontWeightVal ? `
         #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
-          font-weight: ${kotFontWeightVal} !important;
+          font-weight: ${kotFontWeightVal};
         }
         ` : ''}
 
