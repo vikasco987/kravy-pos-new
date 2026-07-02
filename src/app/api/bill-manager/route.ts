@@ -214,11 +214,12 @@ export async function POST(req: NextRequest) {
               createdBy: effectiveId,
             },
           },
-          update: { name: customerName },
+          update: { name: customerName, address: customerAddress || null },
           create: {
             name: customerName,
             phone: cleanPhone,
             createdBy: effectiveId,
+            address: customerAddress || null,
           },
         });
         partyId = party.id;

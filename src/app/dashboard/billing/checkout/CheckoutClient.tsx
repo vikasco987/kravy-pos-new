@@ -948,7 +948,11 @@ export default function CheckoutClient() {
     setCustomerPhone(val);
     setSelectedParty(null); // Clear selected party if manual edit
     if (val.length >= 3) {
-      const filtered = parties.filter(p => p.phone.includes(val) || p.name.toLowerCase().includes(val.toLowerCase()));
+      const filtered = parties.filter(p => 
+        p.phone.includes(val) || 
+        p.name.toLowerCase().includes(val.toLowerCase()) ||
+        p.address?.toLowerCase().includes(val.toLowerCase())
+      );
       setCustomerSuggestions(filtered.slice(0, 5));
     } else {
       setCustomerSuggestions([]);
@@ -959,7 +963,11 @@ export default function CheckoutClient() {
     setCustomerName(val);
     setSelectedParty(null); // Clear selected party if manual edit
     if (val.length >= 2) {
-      const filtered = parties.filter(p => p.name.toLowerCase().includes(val.toLowerCase()) || p.phone.includes(val));
+      const filtered = parties.filter(p => 
+        p.name.toLowerCase().includes(val.toLowerCase()) || 
+        p.phone.includes(val) ||
+        p.address?.toLowerCase().includes(val.toLowerCase())
+      );
       setCustomerSuggestions(filtered.slice(0, 5));
     } else {
       setCustomerSuggestions([]);
@@ -2636,11 +2644,12 @@ export default function CheckoutClient() {
                         onClick={async () => selectCustomer(p)}
                         className="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-[var(--kravy-border)] last:border-0 transition-colors flex items-center justify-between"
                       >
-                        <div>
-                          <p className="font-black text-sm text-[var(--kravy-text-primary)]">{p.name}</p>
+                        <div className="flex-1 min-w-0 pr-2">
+                          <p className="font-black text-sm text-[var(--kravy-text-primary)] truncate">{p.name}</p>
                           <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-0.5">{p.phone}</p>
+                          {p.address && <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate italic">{p.address}</p>}
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
                           <User size={14} />
                         </div>
                       </button>

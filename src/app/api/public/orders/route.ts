@@ -161,13 +161,15 @@ export async function POST(req: NextRequest) {
                         },
                         update: {
                             loyaltyPoints: { increment: pointsToAward },
-                            name: customerName || undefined
+                            name: customerName || undefined,
+                            address: customerAddress || undefined
                         },
                         create: {
                             phone: customerPhone,
                             name: customerName || "Guest",
                             createdBy: clerkUserId,
-                            loyaltyPoints: pointsToAward
+                            loyaltyPoints: pointsToAward,
+                            address: customerAddress || undefined
                         }
                     });
                 }

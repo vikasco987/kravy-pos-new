@@ -209,8 +209,8 @@ export async function PUT(
         const cleanPhone = customerPhone.replace(/[\s\-\(\)\+]/g, "").slice(-10);
         const party = await prisma.party.upsert({
           where: { phone_createdBy: { phone: cleanPhone, createdBy: effectiveId } },
-          update: { name: customerName },
-          create: { name: customerName, phone: cleanPhone, createdBy: effectiveId },
+          update: { name: customerName, address: customerAddress || null },
+          create: { name: customerName, phone: cleanPhone, createdBy: effectiveId, address: customerAddress || null },
         });
         partyId = party.id;
       } catch (err) {}
@@ -351,7 +351,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     const { id } = await context.params;
     const body = await req.json();
 
-    const allowedUpdates = ["paymentStatus", "paymentMode", "upiTxnRef", "isHeld", "customerName", "customerPhone"];
+    const allowedUpdates = ["paymentStatus", "paymentMode", "upiTxnRef", "isHeld", "customerName", "customerPhone", "customerAddress"];
     const data: any = {};
     allowedUpdates.forEach(key => {
       if (body[key] !== undefined) data[key] = body[key];
@@ -361,22 +361,25 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       data.paymentStatus = "Paid";
     }
 
-    // Party upsertion logic if customer name/phone are updated
-    if (data.customerName !== undefined || data.customerPhone !== undefined) {
+    // Party upsertion logic if customer name/phone/address are updated
+    if (data.customerName !== undefined || data.customerPhone !== undefined || data.customerAddress !== undefined) {
       // Find current customer details in database to merge
       let existingName = data.customerName;
       let existingPhone = data.customerPhone;
+      let existingAddress = data.customerAddress;
 
-      if (existingName === undefined || existingPhone === undefined) {
+      if (existingName === undefined || existingPhone === undefined || existingAddress === undefined) {
         const existingBill = await prisma.billManager.findUnique({ where: { id } });
         if (existingBill) {
           if (existingName === undefined) existingName = existingBill.customerName || "";
           if (existingPhone === undefined) existingPhone = existingBill.customerPhone || "";
+          if (existingAddress === undefined) existingAddress = existingBill.customerAddress || "";
         } else {
           const existingOrder = await prisma.order.findUnique({ where: { id } });
           if (existingOrder) {
             if (existingName === undefined) existingName = existingOrder.customerName || "";
             if (existingPhone === undefined) existingPhone = existingOrder.customerPhone || "";
+            if (existingAddress === undefined) existingAddress = existingOrder.customerAddress || "";
           }
         }
       }
@@ -386,8 +389,8 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
           const cleanPhone = existingPhone.replace(/[\s\-\(\)\+]/g, "").slice(-10);
           const party = await prisma.party.upsert({
             where: { phone_createdBy: { phone: cleanPhone, createdBy: effectiveId } },
-            update: { name: existingName },
-            create: { name: existingName, phone: cleanPhone, createdBy: effectiveId },
+            update: { name: existingName, address: existingAddress || null },
+            create: { name: existingName, phone: cleanPhone, createdBy: effectiveId, address: existingAddress || null },
           });
           data.partyId = party.id;
         } catch (err) {
