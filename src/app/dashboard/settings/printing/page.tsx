@@ -56,6 +56,7 @@ const defaults: any = {
     itemsWeight: "",
     totalWeight: "",
     detailsWeight: "",
+    customerDetailsFontWeight: "",
     greetingWeight: "",
     kotTokenWeight: "",
     kotItemsWeight: "",
@@ -99,6 +100,7 @@ const TYPOGRAPHY_PRESETS = {
         itemsWeight: "",
         totalWeight: "",
         detailsWeight: "",
+        customerDetailsFontWeight: "",
         greetingWeight: "",
         kotTokenWeight: "",
         kotItemsWeight: "",
@@ -128,6 +130,7 @@ const TYPOGRAPHY_PRESETS = {
         itemsWeight: "",
         totalWeight: "",
         detailsWeight: "",
+        customerDetailsFontWeight: "",
         greetingWeight: "",
         kotTokenWeight: "",
         kotItemsWeight: "",
@@ -157,6 +160,7 @@ const TYPOGRAPHY_PRESETS = {
         itemsWeight: "",
         totalWeight: "",
         detailsWeight: "",
+        customerDetailsFontWeight: "",
         greetingWeight: "",
         kotTokenWeight: "",
         kotItemsWeight: "",
@@ -983,6 +987,7 @@ export default function PrintingSettings() {
                                                     itemsWeight: defaults.itemsWeight,
                                                     totalWeight: defaults.totalWeight,
                                                     detailsWeight: defaults.detailsWeight,
+                                                    customerDetailsFontWeight: defaults.customerDetailsFontWeight,
                                                     greetingWeight: defaults.greetingWeight
                                                 }));
                                                 kravy.success();
