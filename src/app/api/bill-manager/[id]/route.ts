@@ -157,21 +157,32 @@ export async function PUT(
     items.forEach((item: any) => {
       const dbItem = dbItems.find(it => it.id === item.id);
       const qty = Number(item.qty || item.quantity) || 0;
-      const rate = dbItem ? Number(dbItem.sellingPrice ?? dbItem.price) : Number(item.rate || item.price || 0);
-      
+      const rate = item.isCustomRate 
+        ? Number(item.rate) 
+        : (dbItem ? Number(dbItem.sellingPrice ?? dbItem.price) : Number(item.rate || item.price || 0));
       const itemGstRate = (perProductEnabled && item.gst !== undefined && item.gst !== null) ? Number(item.gst) : globalGstRate;
-      const taxStatus = item.taxStatus || "Without Tax";
+      const globalTaxInclusive = profile?.taxInclusive ?? false;
+      
+      let isInclusive = false;
+      if (perProductEnabled && item.gst !== undefined && item.gst !== null) {
+        isInclusive = (item.taxStatus || "Without Tax") === "With Tax";
+      } else if (isTaxEnabled) {
+        isInclusive = globalTaxInclusive;
+      }
+
       const gross = qty * rate;
 
-      if (taxStatus === "With Tax") {
+      if (isInclusive) {
         const base = gross / (1 + itemGstRate / 100);
+        const gst = gross - base;
         calcSubtotal += base;
-        totalTax += (gross - base);
+        totalTax += gst;
       } else {
+        const gst = (gross * itemGstRate) / 100;
         calcSubtotal += gross;
-        totalTax += (gross * itemGstRate) / 100;
+        totalTax += gst;
       }
-      item.rate = rate;
+      item.rate = rate; 
     });
 
     const finalSubtotal = Number(calcSubtotal.toFixed(2));
