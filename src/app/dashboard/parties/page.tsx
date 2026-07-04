@@ -614,15 +614,47 @@ export default function PartiesPage() {
               Prev
             </button>
             <div className="flex items-center gap-1">
-              {[...Array(totalPages)].map((_, i) => (
-                <button 
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${currentPage === i + 1 ? 'bg-[var(--kravy-brand)] text-white shadow-lg shadow-indigo-500/20' : 'bg-[var(--kravy-surface)] text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg-2)]'}`}
-                >
-                  {i + 1}
-                </button>
-              ))}
+              {(() => {
+                const pages = [];
+                const maxVisible = 5;
+                let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                let end = Math.min(totalPages, start + maxVisible - 1);
+                
+                if (end - start + 1 < maxVisible) {
+                  start = Math.max(1, end - maxVisible + 1);
+                }
+
+                if (start > 1) {
+                  pages.push(1);
+                  if (start > 2) pages.push('...');
+                }
+
+                for (let i = start; i <= end; i++) {
+                  pages.push(i);
+                }
+
+                if (end < totalPages) {
+                  if (end < totalPages - 1) pages.push('...');
+                  pages.push(totalPages);
+                }
+
+                return pages.map((p, i) => (
+                  <button 
+                    key={i}
+                    onClick={() => typeof p === 'number' && setCurrentPage(p)}
+                    disabled={typeof p !== 'number'}
+                    className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${
+                      p === '...' 
+                        ? 'bg-transparent text-[var(--kravy-text-muted)] cursor-default' 
+                        : currentPage === p 
+                          ? 'bg-[var(--kravy-brand)] text-white shadow-lg shadow-indigo-500/20' 
+                          : 'bg-[var(--kravy-surface)] text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-bg-2)]'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ));
+              })()}
             </div>
             <button 
               disabled={currentPage === totalPages}
