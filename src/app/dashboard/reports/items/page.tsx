@@ -4,7 +4,7 @@ import { getEffectiveClerkId } from "@/lib/auth-utils";
 import DateFilter from "../../components/date-filter";
 import { ChevronLeft, Package, TrendingUp, IndianRupee, PieChart } from "lucide-react";
 import Link from "next/link";
-import PrintButton from "./PrintButton";
+import PrintableTable from "./PrintableTable";
 
 export const revalidate = 0;
 
@@ -150,7 +150,6 @@ export default async function ItemWiseSalesReportPage({
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <DateFilter />
-          <PrintButton />
         </div>
       </div>
 
@@ -211,88 +210,7 @@ export default async function ItemWiseSalesReportPage({
         ))}
       </div>
 
-      {/* ── Print Header ── */}
-      <div className="hidden print:block mb-4 text-center">
-        <h2 style={{ fontSize: "1.5rem", fontWeight: 900 }}>Item-wise Sales Report</h2>
-        <p style={{ fontSize: "0.9rem", color: "#555" }}>Printed on: {new Date().toLocaleString()}</p>
-      </div>
-
-      {/* ── Report Table ── */}
-      <div style={{
-        background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)",
-        borderRadius: "24px", overflow: "hidden", boxShadow: "var(--kravy-card-shadow)"
-      }} className="print:shadow-none print:border-none print:rounded-none">
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
-            <thead>
-              <tr style={{ background: "rgba(0,0,0,0.02)" }}>
-                <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", width: "60px" }}>Sr.</th>
-                <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Rank & Product</th>
-                <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Category</th>
-                <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Qty Sold</th>
-                <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Revenue</th>
-                <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Revenue Share</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ padding: "60px", textAlign: "center", color: "var(--kravy-text-muted)" }}>
-                    <div style={{ fontSize: "3rem", marginBottom: "12px" }}>📊</div>
-                    <p>No sales data found for this period.</p>
-                  </td>
-                </tr>
-              ) : (
-                filteredItems.map((item, idx) => {
-                  const revenueShare = grandTotalRevenue > 0 ? (item.totalRevenue / grandTotalRevenue) * 100 : 0;
-                  return (
-                    <tr key={item.name} style={{ borderTop: "1px solid var(--kravy-border)", transition: "background 0.2s" }}>
-                      <td style={{ padding: "18px 24px", fontSize: "0.85rem", fontWeight: 900, color: "var(--kravy-text-faint)" }}>{String(idx + 1).padStart(2, '0')}</td>
-                      <td style={{ padding: "18px 24px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                          <div style={{
-                            width: "28px", height: "28px", borderRadius: "8px", background: "var(--kravy-bg-2)",
-                            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem",
-                            fontWeight: 900, color: idx < 3 ? "var(--kravy-brand)" : "var(--kravy-text-muted)",
-                            border: `1px solid ${idx < 3 ? "var(--kravy-brand)30" : "var(--kravy-border)"}`
-                          }}>
-                            {idx + 1}
-                          </div>
-                          <span style={{ fontWeight: 700, color: "var(--kravy-text-primary)" }}>{item.name}</span>
-                        </div>
-                      </td>
-                      <td style={{ padding: "18px 24px" }}>
-                        <span style={{
-                          padding: "4px 10px", borderRadius: "8px", background: "var(--kravy-bg-2)",
-                          fontSize: "0.7rem", fontWeight: 600, color: "var(--kravy-text-secondary)"
-                        }}>
-                          {item.category}
-                        </span>
-                      </td>
-                      <td style={{ padding: "18px 24px", textAlign: "right", fontWeight: 800, color: "var(--kravy-brand)" }}>
-                        {format(item.totalSold)}
-                      </td>
-                      <td style={{ padding: "18px 24px", textAlign: "right", fontWeight: 800, color: "var(--kravy-text-primary)" }}>
-                        ₹{format(item.totalRevenue)}
-                      </td>
-                      <td style={{ padding: "18px 24px", textAlign: "right" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "10px" }}>
-                          <div style={{ width: "60px", height: "6px", background: "var(--kravy-bg-2)", borderRadius: "10px", overflow: "hidden" }}>
-                            <div style={{ width: `${revenueShare}%`, height: "100%", background: "var(--kravy-brand)", borderRadius: "10px" }} />
-                          </div>
-                          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--kravy-text-muted)", width: "40px" }}>
-                            {revenueShare.toFixed(1)}%
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <PrintableTable filteredItems={filteredItems} grandTotalRevenue={grandTotalRevenue} />
       
       {/* ── Help Tip ── */}
       <div style={{

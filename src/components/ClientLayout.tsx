@@ -213,7 +213,7 @@ export default function ClientLayout({
               ${isMobile ? 'fixed' : 'relative'}
               ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}
               transition-transform duration-300 ease-in-out
-              z-50
+              z-50 print:hidden
             `}>
               <Sidebar />
             </div>
@@ -222,11 +222,13 @@ export default function ClientLayout({
           {/* Main Content */}
           <div className="flex flex-col flex-1 min-w-0">
             {!isPOS && !isExpenses && (
-              <Navbar
-                isMobile={isMobile}
-                onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
-                sidebarOpen={sidebarOpen}
-              />
+              <div className="print:hidden">
+                <Navbar
+                  isMobile={isMobile}
+                  onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+                  sidebarOpen={sidebarOpen}
+                />
+              </div>
             )}
 
             {/* Floating Mobile Toggle for Navbar-less Pages */}
