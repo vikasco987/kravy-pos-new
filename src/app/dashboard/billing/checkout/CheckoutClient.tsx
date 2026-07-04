@@ -668,6 +668,8 @@ export default function CheckoutClient() {
         const data = await res.json();
         const bill = data.bill ?? data;
         setActiveBillId(bill.id);
+        const isMathematicallyExclusive = bill.tax > 0 && bill.total > 0 && Math.abs(bill.total - (bill.subtotal + bill.tax + (bill.deliveryCharges || 0) + (bill.packagingCharges || 0) + (bill.serviceCharge || 0))) < 0.5;
+        
         setItems(bill.items.map((i: any) => ({ 
           id: i.id || i.itemId || i._id || `item-${Math.random().toString(36).substr(2, 9)}`, 
           name: i.name, 
@@ -677,7 +679,7 @@ export default function CheckoutClient() {
           rate: Number(i.rate) || Number(i.price) || 0,
           gst: i.gst,
           hsnCode: i.hsnCode,
-          taxStatus: i.taxStatus || "Without Tax",
+          taxStatus: isMathematicallyExclusive ? "Without Tax" : (i.taxStatus || "Without Tax"),
           kotNumber: i.kotNumber,
           addedAt: i.addedAt
         })));
@@ -756,6 +758,8 @@ export default function CheckoutClient() {
           if (!order) return;
           
           setSyncedOrderId(order.id);
+          const isMathematicallyExclusive = order.tax > 0 && order.total > 0 && Math.abs(order.total - (order.subtotal + order.tax + (order.deliveryCharges || 0) + (order.packagingCharges || 0) + (order.serviceCharge || 0))) < 0.5;
+          
           setItems(order.items.map((i: any) => ({
             id: i.itemId || i.id || i._id || `item-${Math.random().toString(36).substr(2, 9)}`,
             name: i.name,
@@ -763,7 +767,7 @@ export default function CheckoutClient() {
             printedQty: Number(i.quantity || i.qty || 0),
             rate: Number(i.price || i.rate || 0),
             gst: i.gst,
-            taxStatus: i.taxStatus || "Without Tax",
+            taxStatus: isMathematicallyExclusive ? "Without Tax" : (i.taxStatus || "Without Tax"),
             isNew: false,
             kotNumber: i.kotNumber,
             addedAt: i.addedAt
