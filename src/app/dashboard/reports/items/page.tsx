@@ -4,6 +4,7 @@ import { getEffectiveClerkId } from "@/lib/auth-utils";
 import DateFilter from "../../components/date-filter";
 import { ChevronLeft, Package, TrendingUp, IndianRupee, PieChart } from "lucide-react";
 import Link from "next/link";
+import PrintButton from "./PrintButton";
 
 export const revalidate = 0;
 
@@ -130,7 +131,7 @@ export default async function ItemWiseSalesReportPage({
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* ── Header ── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }} className="print:hidden">
           <Link href="/dashboard" style={{
             width: "40px", height: "40px", borderRadius: "12px", background: "var(--kravy-surface)",
             border: "1px solid var(--kravy-border)", display: "flex", alignItems: "center", justifyContent: "center",
@@ -147,7 +148,10 @@ export default async function ItemWiseSalesReportPage({
             </p>
           </div>
         </div>
-        <DateFilter />
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <DateFilter />
+          <PrintButton />
+        </div>
       </div>
 
       {/* ── Category Filter ── */}
@@ -156,7 +160,7 @@ export default async function ItemWiseSalesReportPage({
         gap: "10px", 
         overflowX: "auto", 
         paddingBottom: "10px"
-      }} className="no-scrollbar">
+      }} className="no-scrollbar print:hidden">
         {uniqueCategories.map((cat) => (
           <Link
             key={cat}
@@ -180,7 +184,7 @@ export default async function ItemWiseSalesReportPage({
       </div>
 
       {/* ── Summary Cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }} className="print:hidden">
         {[
           { label: "Total Items Sold", value: format(grandTotalSold), icon: <Package size={20} />, color: "#8B5CF6" },
           { label: "Total Revenue", value: `₹${format(grandTotalRevenue)}`, icon: <IndianRupee size={20} />, color: "#10B981" },
@@ -207,11 +211,17 @@ export default async function ItemWiseSalesReportPage({
         ))}
       </div>
 
+      {/* ── Print Header ── */}
+      <div className="hidden print:block mb-4 text-center">
+        <h2 style={{ fontSize: "1.5rem", fontWeight: 900 }}>Item-wise Sales Report</h2>
+        <p style={{ fontSize: "0.9rem", color: "#555" }}>Printed on: {new Date().toLocaleString()}</p>
+      </div>
+
       {/* ── Report Table ── */}
       <div style={{
         background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)",
         borderRadius: "24px", overflow: "hidden", boxShadow: "var(--kravy-card-shadow)"
-      }}>
+      }} className="print:shadow-none print:border-none print:rounded-none">
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
             <thead>
@@ -288,7 +298,7 @@ export default async function ItemWiseSalesReportPage({
       <div style={{
         padding: "16px 24px", background: "rgba(79, 70, 229, 0.05)", border: "1px dashed rgba(79, 70, 229, 0.2)",
         borderRadius: "16px", display: "flex", alignItems: "center", gap: "12px", color: "var(--kravy-brand)"
-      }}>
+      }} className="print:hidden">
         <TrendingUp size={18} />
         <p style={{ fontSize: "0.82rem", fontWeight: 600 }}>
           Tip: Your top 3 products contribute to {filteredItems.slice(0, 3).reduce((s, i) => s + (grandTotalRevenue > 0 ? (i.totalRevenue / grandTotalRevenue) * 100 : 0), 0).toFixed(1)}% of your total revenue.
