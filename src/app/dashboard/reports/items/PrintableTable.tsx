@@ -3,7 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Printer, Settings, Check } from "lucide-react";
 
-export default function PrintableTable({ filteredItems, grandTotalRevenue }: { filteredItems: any[], grandTotalRevenue: number }) {
+interface PrintableTableProps {
+  filteredItems: any[];
+  grandTotalRevenue: number;
+}
+
+export default function PrintableTable({ filteredItems, grandTotalRevenue }: PrintableTableProps) {
   const [showSettings, setShowSettings] = useState(false);
   
   // Column preferences
@@ -39,6 +44,9 @@ export default function PrintableTable({ filteredItems, grandTotalRevenue }: { f
     setColumns(newCols);
     localStorage.setItem("kravy_item_report_columns", JSON.stringify(newCols));
   };
+
+  // Count visible columns for proper spacing
+  const visibleColCount = 2 + Object.values(columns).filter(Boolean).length; // Sr + Product + toggled ones
 
   const format = (num: number) => new Intl.NumberFormat("en-IN").format(Math.round(num));
 
@@ -84,7 +92,7 @@ export default function PrintableTable({ filteredItems, grandTotalRevenue }: { f
               zIndex: 100
             }}>
               <h4 style={{ fontSize: "0.75rem", fontWeight: 800, textTransform: "uppercase", color: "var(--kravy-text-muted)", marginBottom: "12px", letterSpacing: "0.5px" }}>
-                Select Columns to Print
+                Select Columns
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {[
@@ -142,9 +150,9 @@ export default function PrintableTable({ filteredItems, grandTotalRevenue }: { f
       </div>
 
       {/* ── Print Header ── */}
-      <div className="hidden print:block mb-6 mt-4 text-center">
-        <h2 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "4px" }}>Item-wise Sales Report</h2>
-        <p style={{ fontSize: "0.95rem", color: "#555", fontWeight: 500 }}>Printed on: {new Date().toLocaleString('en-IN')}</p>
+      <div className="hidden print:block mb-2 mt-0 text-center">
+        <h2 style={{ fontSize: "1.75rem", fontWeight: 900, marginBottom: "4px" }} className="print:!text-sm print:!mb-1">Item-wise Sales Report</h2>
+        <p style={{ fontSize: "0.95rem", color: "#555", fontWeight: 500 }} className="print:!text-[10px] print:!font-normal">Printed on: {new Date().toLocaleString('en-IN')}</p>
       </div>
 
       {/* ── Report Table ── */}
@@ -152,23 +160,23 @@ export default function PrintableTable({ filteredItems, grandTotalRevenue }: { f
         background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)",
         borderRadius: "24px", overflow: "hidden", boxShadow: "var(--kravy-card-shadow)",
         marginTop: "24px"
-      }} className="print:shadow-none print:border-none print:rounded-none">
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }} className="print:w-full">
+      }} className="print:!shadow-none print:!border-none print:!rounded-none print:!m-0 print:!bg-transparent print:!overflow-visible">
+        <div style={{ overflowX: "auto" }} className="print:!overflow-visible">
+          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, tableLayout: "auto" }} className="print:!w-full print:!border-collapse">
             <thead>
-              <tr style={{ background: "rgba(0,0,0,0.02)" }} className="print:bg-gray-100">
-                <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", width: "60px" }} className="print:text-black">Sr.</th>
-                <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }} className="print:text-black">Product</th>
-                {columns.category && <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }} className="print:text-black">Category</th>}
-                {columns.qty && <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }} className="print:text-black">Qty Sold</th>}
-                {columns.revenue && <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }} className="print:text-black">Revenue</th>}
-                {columns.share && <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }} className="print:text-black">Revenue Share</th>}
+              <tr style={{ background: "rgba(0,0,0,0.02)" }} className="print:!bg-transparent print:!border-b print:!border-black print:!border-dashed">
+                <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", width: "60px", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">Sr.</th>
+                <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", width: "auto" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">Product</th>
+                {columns.category && <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">Category</th>}
+                {columns.qty && <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">Qty Sold</th>}
+                {columns.revenue && <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">Revenue</th>}
+                {columns.share && <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">Share</th>}
               </tr>
             </thead>
             <tbody>
               {filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: "60px", textAlign: "center", color: "var(--kravy-text-muted)" }}>
+                  <td colSpan={visibleColCount} style={{ padding: "60px", textAlign: "center", color: "var(--kravy-text-muted)" }}>
                     <div style={{ fontSize: "3rem", marginBottom: "12px" }}>📊</div>
                     <p>No sales data found for this period.</p>
                   </td>
@@ -177,40 +185,40 @@ export default function PrintableTable({ filteredItems, grandTotalRevenue }: { f
                 filteredItems.map((item, idx) => {
                   const revenueShare = grandTotalRevenue > 0 ? (item.totalRevenue / grandTotalRevenue) * 100 : 0;
                   return (
-                    <tr key={item.name} style={{ borderTop: "1px solid var(--kravy-border)", transition: "background 0.2s" }} className="print:border-b print:border-gray-200">
-                      <td style={{ padding: "18px 24px", fontSize: "0.85rem", fontWeight: 900, color: "var(--kravy-text-faint)" }} className="print:text-black">{String(idx + 1).padStart(2, '0')}</td>
-                      <td style={{ padding: "18px 24px" }} className="print:text-black">
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                          <span style={{ fontWeight: 700, color: "var(--kravy-text-primary)" }} className="print:text-black">{item.name}</span>
+                    <tr key={item.name} style={{ borderTop: "1px solid var(--kravy-border)", transition: "background 0.2s" }} className="print:!border-b print:!border-black print:!border-dashed">
+                      <td style={{ padding: "18px 24px", fontSize: "0.85rem", fontWeight: 900, color: "var(--kravy-text-faint)" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">{String(idx + 1).padStart(2, '0')}</td>
+                      <td style={{ padding: "18px 24px" }} className="print:!text-black print:!p-1 print:!border-b print:!border-black print:!border-dashed">
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }} className="print:!gap-1">
+                          <span style={{ fontWeight: 700, color: "var(--kravy-text-primary)" }} className="print:!text-black print:!text-[10px] print:!leading-tight">{item.name}</span>
                         </div>
                       </td>
                       {columns.category && (
-                        <td style={{ padding: "18px 24px" }} className="print:text-black">
+                        <td style={{ padding: "18px 24px" }} className="print:!text-black print:!p-1 print:!border-b print:!border-black print:!border-dashed">
                           <span style={{
                             padding: "4px 10px", borderRadius: "8px", background: "var(--kravy-bg-2)",
                             fontSize: "0.7rem", fontWeight: 600, color: "var(--kravy-text-secondary)"
-                          }} className="print:bg-transparent print:p-0 print:text-black">
+                          }} className="print:!bg-transparent print:!p-0 print:!text-black print:!text-[10px]">
                             {item.category}
                           </span>
                         </td>
                       )}
                       {columns.qty && (
-                        <td style={{ padding: "18px 24px", textAlign: "right", fontWeight: 800, color: "var(--kravy-brand)" }} className="print:text-black">
+                        <td style={{ padding: "18px 24px", textAlign: "right", fontWeight: 800, color: "var(--kravy-brand)" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">
                           {format(item.totalSold)}
                         </td>
                       )}
                       {columns.revenue && (
-                        <td style={{ padding: "18px 24px", textAlign: "right", fontWeight: 800, color: "var(--kravy-text-primary)" }} className="print:text-black">
+                        <td style={{ padding: "18px 24px", textAlign: "right", fontWeight: 800, color: "var(--kravy-text-primary)" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">
                           ₹{format(item.totalRevenue)}
                         </td>
                       )}
                       {columns.share && (
-                        <td style={{ padding: "18px 24px", textAlign: "right" }} className="print:text-black">
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "10px" }}>
+                        <td style={{ padding: "18px 24px", textAlign: "right" }} className="print:!text-black print:!p-1 print:!border-b print:!border-black print:!border-dashed">
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "10px" }} className="print:!gap-1">
                             <div style={{ width: "60px", height: "6px", background: "var(--kravy-bg-2)", borderRadius: "10px", overflow: "hidden" }} className="print:hidden">
                               <div style={{ width: `${revenueShare}%`, height: "100%", background: "var(--kravy-brand)", borderRadius: "10px" }} />
                             </div>
-                            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--kravy-text-muted)", width: "40px" }} className="print:text-black">
+                            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--kravy-text-muted)", width: "40px" }} className="print:!text-black print:!text-[10px]">
                               {revenueShare.toFixed(1)}%
                             </span>
                           </div>
