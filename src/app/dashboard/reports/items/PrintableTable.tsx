@@ -54,6 +54,33 @@ export default function PrintableTable({ filteredItems, grandTotalRevenue }: Pri
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page {
+            margin: 2mm !important;
+            size: auto !important;
+          }
+          body {
+            width: 100% !important;
+            max-width: 80mm !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            font-size: 10px !important;
+            color: #000 !important;
+            background: #fff !important;
+          }
+          table {
+            table-layout: fixed !important;
+            width: 100% !important;
+          }
+          td, th {
+            word-wrap: break-word !important;
+            white-space: normal !important;
+            overflow-wrap: break-word !important;
+            word-break: break-all !important;
+          }
+        }
+      `}} />
       <div style={{ display: "flex", gap: "10px", alignItems: "center", justifyContent: "flex-end", position: "relative" }} className="print:hidden">
         
         {/* Settings Dropdown */}
@@ -155,22 +182,21 @@ export default function PrintableTable({ filteredItems, grandTotalRevenue }: Pri
         <p style={{ fontSize: "0.95rem", color: "#555", fontWeight: 500 }} className="print:!text-[10px] print:!font-normal">Printed on: {new Date().toLocaleString('en-IN')}</p>
       </div>
 
-      {/* ── Report Table ── */}
       <div style={{
         background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)",
         borderRadius: "24px", overflow: "hidden", boxShadow: "var(--kravy-card-shadow)",
         marginTop: "24px"
       }} className="print:!shadow-none print:!border-none print:!rounded-none print:!m-0 print:!bg-transparent print:!overflow-visible">
         <div style={{ overflowX: "auto" }} className="print:!overflow-visible">
-          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, tableLayout: "auto" }} className="print:!w-full print:!border-collapse">
+          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, tableLayout: "auto" }} className="print:!w-full print:!border-collapse print:!table-fixed">
             <thead>
               <tr style={{ background: "rgba(0,0,0,0.02)" }} className="print:!bg-transparent print:!border-b print:!border-black print:!border-dashed">
-                <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", width: "60px", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">Sr.</th>
-                <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", width: "auto" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">Product</th>
-                {columns.category && <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">Category</th>}
-                {columns.qty && <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">Qty Sold</th>}
-                {columns.revenue && <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">Revenue</th>}
-                {columns.share && <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">Share</th>}
+                <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", width: "60px", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed print:!w-[10%]">Sr.</th>
+                <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", width: "auto" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed print:!w-[50%]">Product</th>
+                {columns.category && <th style={{ padding: "18px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed print:!w-[15%]">Category</th>}
+                {columns.qty && <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed print:!w-[10%]">Qty Sold</th>}
+                {columns.revenue && <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed print:!w-[15%]">Revenue</th>}
+                {columns.share && <th style={{ padding: "18px 24px", textAlign: "right", fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed print:!w-[10%]">Share</th>}
               </tr>
             </thead>
             <tbody>
@@ -187,9 +213,9 @@ export default function PrintableTable({ filteredItems, grandTotalRevenue }: Pri
                   return (
                     <tr key={item.name} style={{ borderTop: "1px solid var(--kravy-border)", transition: "background 0.2s" }} className="print:!border-b print:!border-black print:!border-dashed">
                       <td style={{ padding: "18px 24px", fontSize: "0.85rem", fontWeight: 900, color: "var(--kravy-text-faint)" }} className="print:!text-black print:!p-1 print:!text-[10px] print:!border-b print:!border-black print:!border-dashed">{String(idx + 1).padStart(2, '0')}</td>
-                      <td style={{ padding: "18px 24px" }} className="print:!text-black print:!p-1 print:!border-b print:!border-black print:!border-dashed">
+                      <td style={{ padding: "18px 24px" }} className="print:!text-black print:!p-1 print:!border-b print:!border-black print:!border-dashed print:!w-[50%]">
                         <div style={{ display: "flex", alignItems: "center", gap: "12px" }} className="print:!gap-1">
-                          <span style={{ fontWeight: 700, color: "var(--kravy-text-primary)" }} className="print:!text-black print:!text-[10px] print:!leading-tight">{item.name}</span>
+                          <span style={{ fontWeight: 700, color: "var(--kravy-text-primary)" }} className="print:!text-black print:!text-[10px] print:!leading-tight print:!whitespace-normal print:!break-all">{item.name}</span>
                         </div>
                       </td>
                       {columns.category && (
