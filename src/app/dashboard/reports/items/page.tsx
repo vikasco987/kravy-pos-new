@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 import DateFilter from "../../components/date-filter";
-import { ChevronLeft, Package, TrendingUp, IndianRupee, PieChart } from "lucide-react";
+import { ChevronLeft, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import PrintableTable from "./PrintableTable";
 
@@ -182,33 +182,7 @@ export default async function ItemWiseSalesReportPage({
         ))}
       </div>
 
-      {/* ── Summary Cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }} className="print:hidden">
-        {[
-          { label: "Total Items Sold", value: format(grandTotalSold), icon: <Package size={20} />, color: "#8B5CF6" },
-          { label: "Total Revenue", value: `₹${format(grandTotalRevenue)}`, icon: <IndianRupee size={20} />, color: "#10B981" },
-          { label: "Category Items", value: filteredItems.length, icon: <PieChart size={20} />, color: "#F59E0B" },
-          { label: "Top Product", value: filteredItems[0]?.name || "N/A", icon: <TrendingUp size={20} />, color: "#FF6B35" },
-        ].map((s, i) => (
-          <div key={i} style={{
-            background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)",
-            borderRadius: "20px", padding: "20px", display: "flex", alignItems: "center", gap: "16px",
-            boxShadow: "var(--kravy-card-shadow)"
-          }}>
-            <div style={{
-              width: "48px", height: "48px", borderRadius: "14px",
-              background: `${s.color}15`, border: `1px solid ${s.color}25`,
-              display: "flex", alignItems: "center", justifyContent: "center", color: s.color
-            }}>
-              {s.icon}
-            </div>
-            <div>
-              <div style={{ fontSize: "1.25rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>{s.value}</div>
-              <div style={{ fontSize: "0.65rem", color: "var(--kravy-text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>{s.label}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+
 
       <PrintableTable filteredItems={filteredItems} grandTotalRevenue={grandTotalRevenue} />
       
