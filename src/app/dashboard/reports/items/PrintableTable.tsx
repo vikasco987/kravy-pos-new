@@ -79,6 +79,9 @@ export default function PrintableTable({ filteredItems, grandTotalRevenue }: Pri
             overflow-wrap: break-word !important;
             word-break: break-all !important;
           }
+          .print\\:hidden, .print-hidden {
+            display: none !important;
+          }
         }
       `}} />
       <div style={{ display: "flex", gap: "10px", alignItems: "center", justifyContent: "flex-end", position: "relative" }} className="print:hidden">

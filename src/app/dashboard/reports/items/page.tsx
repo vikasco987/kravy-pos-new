@@ -130,8 +130,8 @@ export default async function ItemWiseSalesReportPage({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* ── Header ── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }} className="print:hidden">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }} className="print:hidden">
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <Link href="/dashboard" style={{
             width: "40px", height: "40px", borderRadius: "12px", background: "var(--kravy-surface)",
             border: "1px solid var(--kravy-border)", display: "flex", alignItems: "center", justifyContent: "center",
