@@ -1,0 +1,7 @@
+{
+  "type": "service_account",
+  "project_id": "placeholder-project",
+  "private_key_id": "placeholder-id",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nPLACEHOLDER\n-----END PRIVATE KEY-----\n",
+  "client_email": "placeholder@placeholder.iam.gserviceaccount.com"
+}

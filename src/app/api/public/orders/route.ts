@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
 
 
         // ==========================================
-        // PUSH NOTIFICATION LOGIC
+        // PUSH NOTIFICATION LOGIC (FIREBASE)
         // ==========================================
         try {
             const owner = await prisma.user.findUnique({
@@ -188,26 +188,26 @@ export async function POST(req: NextRequest) {
             });
             if (owner?.privateMetadata) {
                 const metadata = owner.privateMetadata as any;
-                const pushToken = metadata.expoPushToken;
+                const pushToken = metadata.fcmToken;
+                
                 if (pushToken) {
-                    const pushMessage = {
-                        to: pushToken,
-                        sound: 'default',
-                        title: '🚨 NEW URGENT ORDER!',
-                        body: `Table ${tableRecord?.name || 'Online'} placed a new order of ₹${total}!`,
-                        data: { orderId: order.id },
-                        priority: 'high',
-                        channelId: 'urgent-orders'
-                    };
-                    await fetch('https://exp.host/--/api/v2/push/send', {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Accept-encoding': 'gzip, deflate',
-                            'Content-Type': 'application/json',
+                    // Lazy import to avoid serverless startup issues
+                    const admin = (await import('@/lib/firebase-admin')).default;
+                    
+                    const message = {
+                        token: pushToken,
+                        data: {
+                            orderId: order.id,
+                            title: '🚨 NEW URGENT ORDER!',
+                            body: `Table ${tableRecord?.name || 'Online'} placed a new order of ₹${total}!`
                         },
-                        body: JSON.stringify(pushMessage),
-                    });
+                        android: {
+                            priority: 'high' as const
+                        }
+                    };
+                    
+                    await admin.messaging().send(message);
+                    console.log("Firebase Data Message Sent Successfully!");
                 }
             }
         } catch (pushErr) {

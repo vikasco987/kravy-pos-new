@@ -4,9 +4,9 @@ import prisma from "@/lib/prisma";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { clerkUserId, token } = body;
+        const { clerkUserId, token, fcmToken } = body;
         
-        if (!clerkUserId || !token) {
+        if (!clerkUserId || (!token && !fcmToken)) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
         
@@ -15,13 +15,14 @@ export async function POST(req: NextRequest) {
         
         const currentMetadata = (user.privateMetadata as any) || {};
         
-        // Update metadata with the new push token
+        // Update metadata with the new push tokens
         await prisma.user.update({
             where: { clerkId: clerkUserId },
             data: {
                 privateMetadata: {
                     ...currentMetadata,
-                    expoPushToken: token
+                    expoPushToken: token || currentMetadata.expoPushToken,
+                    fcmToken: fcmToken || currentMetadata.fcmToken
                 }
             }
         });
