@@ -6,14 +6,15 @@ import serviceAccount from './firebase-key.json';
 // @ts-ignore
 if (!getApps().length) {
   try {
-    const serviceAccountDecoded = {
-      ...serviceAccount,
-      private_key: Buffer.from(serviceAccount.private_key_base64, 'base64').toString('utf8')
-    };
+    // Read from environment variable first, otherwise fallback to the dummy json file
+    const serviceAccountConfig = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : serviceAccount;
+
     // @ts-ignore
     initializeApp({
       // @ts-ignore
-      credential: cert(serviceAccountDecoded as any),
+      credential: cert(serviceAccountConfig as any),
     });
   } catch (error: any) {
     console.log('Firebase admin initialization error', error.stack);
