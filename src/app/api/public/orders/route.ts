@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+
 // GET /api/public/orders?id=<orderId> — public order tracking
 export async function GET(req: NextRequest) {
     try {
@@ -38,16 +39,13 @@ export async function POST(req: NextRequest) {
             const [openH, openM] = profile.openingTime.split(':').map(Number);
             const [closeH, closeM] = profile.closingTime.split(':').map(Number);
             const openMinutes = openH * 60 + openM;
-            const [openHour, openMin] = [openH, openM];
-            const [closeHour, closeMin] = [closeH, closeM];
-            const openMinTotal = openHour * 60 + openMin;
-            const closeMinTotal = closeHour * 60 + closeMin;
+            const closeMinutes = closeH * 60 + closeM;
             let isWithinTime = false;
-            if (openMinTotal < closeMinTotal) {
-                isWithinTime = currentMinutes >= openMinTotal && currentMinutes <= closeMinTotal;
+            if (openMinutes < closeMinutes) {
+                isWithinTime = currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
             } else {
                 // Overnight shift
-                isWithinTime = currentMinutes >= openMinTotal || currentMinutes <= closeMinTotal;
+                isWithinTime = currentMinutes >= openMinutes || currentMinutes <= closeMinutes;
             }
             if (!isWithinTime) {
                 return NextResponse.json({ error: profile.offlineMessage || "Restaurant is currently closed." }, { status: 403 });
@@ -158,7 +156,7 @@ export async function POST(req: NextRequest) {
             }
         }
         // ==========================================
-        // PUSH NOTIFICATION LOGIC (FIREBASE V14)
+        // PUSH NOTIFICATION LOGIC (DATA-ONLY)
         // ==========================================
         try {
             const owner = await prisma.user.findUnique({
@@ -173,19 +171,13 @@ export async function POST(req: NextRequest) {
                     const { getMessaging } = await import('firebase-admin/messaging');
                     const message = {
                         token: pushToken,
-                        notification: {
+                        data: {
+                            orderId: String(order.id),
                             title: '🚨 NEW URGENT ORDER!',
                             body: `Table ${tableRecord?.name || 'Online'} placed a new order of ₹${total}!`
                         },
-                        data: {
-                            orderId: order.id,
-                        },
                         android: {
-                            priority: 'high' as const,
-                            notification: {
-                                channelId: 'urgent-orders',
-                                sound: 'default'
-                            }
+                            priority: 'high' as const
                         }
                     };
                     await getMessaging().send(message);
