@@ -52,3 +52,7 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Firebase key local file
+/src/lib/firebase-key.json
+
