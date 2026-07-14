@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-
 // GET /api/public/orders?id=<orderId> — public order tracking
 export async function GET(req: NextRequest) {
     try {
@@ -17,7 +16,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Failed to fetch order" }, { status: 500 });
     }
 }
-
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -40,13 +38,16 @@ export async function POST(req: NextRequest) {
             const [openH, openM] = profile.openingTime.split(':').map(Number);
             const [closeH, closeM] = profile.closingTime.split(':').map(Number);
             const openMinutes = openH * 60 + openM;
-            const closeMinutes = closeH * 60 + closeM;
+            const [openHour, openMin] = [openH, openM];
+            const [closeHour, closeMin] = [closeH, closeM];
+            const openMinTotal = openHour * 60 + openMin;
+            const closeMinTotal = closeHour * 60 + closeMin;
             let isWithinTime = false;
-            if (openMinutes < closeMinutes) {
-                isWithinTime = currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
+            if (openMinTotal < closeMinTotal) {
+                isWithinTime = currentMinutes >= openMinTotal && currentMinutes <= closeMinTotal;
             } else {
                 // Overnight shift
-                isWithinTime = currentMinutes >= openMinutes || currentMinutes <= closeMinutes;
+                isWithinTime = currentMinutes >= openMinTotal || currentMinutes <= closeMinTotal;
             }
             if (!isWithinTime) {
                 return NextResponse.json({ error: profile.offlineMessage || "Restaurant is currently closed." }, { status: 403 });
@@ -157,7 +158,7 @@ export async function POST(req: NextRequest) {
             }
         }
         // ==========================================
-        // PUSH NOTIFICATION LOGIC (FIREBASE)
+        // PUSH NOTIFICATION LOGIC (FIREBASE V14)
         // ==========================================
         try {
             const owner = await prisma.user.findUnique({
@@ -167,8 +168,9 @@ export async function POST(req: NextRequest) {
                 const metadata = owner.privateMetadata as any;
                 const pushToken = metadata.fcmToken;
                 if (pushToken) {
-                    // Lazy import to avoid serverless startup issues
-                    const admin = (await import('@/lib/firebase-admin')).default as any;
+                    // Initialize Firebase first
+                    await import('@/lib/firebase-admin');
+                    const { getMessaging } = await import('firebase-admin/messaging');
                     const message = {
                         token: pushToken,
                         notification: {
@@ -186,7 +188,7 @@ export async function POST(req: NextRequest) {
                             }
                         }
                     };
-                    await admin.messaging().send(message);
+                    await getMessaging().send(message);
                     console.log("Firebase Data Message Sent Successfully!");
                 }
             }

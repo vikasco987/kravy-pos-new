@@ -1,19 +1,23 @@
 // @ts-ignore
-import admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
 // @ts-ignore
 import serviceAccount from './firebase-key.json';
 
 // @ts-ignore
-if (!admin.apps.length) {
+if (!getApps().length) {
   try {
-    admin.initializeApp({
+    const serviceAccountDecoded = {
+      ...serviceAccount,
+      private_key: Buffer.from(serviceAccount.private_key_base64, 'base64').toString('utf8')
+    };
+    // @ts-ignore
+    initializeApp({
       // @ts-ignore
-      credential: admin.credential.cert(serviceAccount as any),
+      credential: cert(serviceAccountDecoded as any),
     });
   } catch (error: any) {
     console.log('Firebase admin initialization error', error.stack);
   }
 }
 
-// Export configured admin instance
-export default admin;
+export {};
