@@ -15,4 +15,5 @@ if (!admin.apps.length) {
   }
 }
 
+// Export configured admin instance
 export default admin;
