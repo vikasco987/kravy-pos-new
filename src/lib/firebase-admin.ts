@@ -1,20 +1,18 @@
-// Firebase Admin SDK modular initialization
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getMessaging } from 'firebase-admin/messaging';
+// @ts-ignore
+import admin from 'firebase-admin';
+// @ts-ignore
 import serviceAccount from './firebase-key.json';
 
-if (!getApps().length) {
+// @ts-ignore
+if (!admin.apps.length) {
   try {
-    initializeApp({
-      credential: cert(serviceAccount as any),
+    admin.initializeApp({
+      // @ts-ignore
+      credential: admin.credential.cert(serviceAccount as any),
     });
   } catch (error: any) {
     console.log('Firebase admin initialization error', error.stack);
   }
 }
-
-const admin = {
-  messaging: () => getMessaging(),
-};
 
 export default admin;

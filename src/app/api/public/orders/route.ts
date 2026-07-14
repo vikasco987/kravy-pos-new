@@ -7,14 +7,11 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get("id");
         if (!id) return NextResponse.json({ error: "Order ID required" }, { status: 400 });
-
         const order = await prisma.order.findUnique({
             where: { id },
             include: { table: true },
         });
-
         if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
-
         return NextResponse.json(order);
     } catch (error) {
         return NextResponse.json({ error: "Failed to fetch order" }, { status: 500 });
@@ -25,31 +22,25 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { clerkUserId, tableId, items, total, customerName, customerPhone, customerAddress, caseType, parentOrderId, paymentMethod } = body;
-
         if (!clerkUserId || !items || !total) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
-
         // Fetch business profile for dynamic settings
         const profile = await prisma.businessProfile.findFirst({ where: { userId: clerkUserId }, orderBy: { createdAt: 'asc' } });
-
         if (!profile) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
-
         // ✅ CHECK ONLINE STATUS & TIMING
         if (profile.isOnline === false) {
             return NextResponse.json({ error: profile.offlineMessage || "Restaurant is currently offline." }, { status: 403 });
         }
-
         if (profile.openingTime && profile.closingTime) {
             const now = new Date();
-            const istTimeStr = now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
+            const istTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
             const istTime = new Date(istTimeStr);
             const currentMinutes = istTime.getHours() * 60 + istTime.getMinutes();
             const [openH, openM] = profile.openingTime.split(':').map(Number);
             const [closeH, closeM] = profile.closingTime.split(':').map(Number);
             const openMinutes = openH * 60 + openM;
             const closeMinutes = closeH * 60 + closeM;
-
             let isWithinTime = false;
             if (openMinutes < closeMinutes) {
                 isWithinTime = currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
@@ -57,32 +48,25 @@ export async function POST(req: NextRequest) {
                 // Overnight shift
                 isWithinTime = currentMinutes >= openMinutes || currentMinutes <= closeMinutes;
             }
-
             if (!isWithinTime) {
                 return NextResponse.json({ error: profile.offlineMessage || "Restaurant is currently closed." }, { status: 403 });
             }
         }
-
         const isInclusive = profile?.qrMenuPriceInclusive ?? false;
-        const enrichedRequestItems = items.map((i: any) => ({ 
-            ...i, 
-            taxStatus: i.taxStatus || (isInclusive ? "With Tax" : "Without Tax") 
+        const enrichedRequestItems = items.map((i: any) => ({
+            ...i,
+            taxStatus: i.taxStatus || (isInclusive ? "With Tax" : "Without Tax")
         }));
-
         // Case 1: MERGE INTO EXISTING ORDER
         if (caseType === "merge" && parentOrderId) {
             const isValidParentId = /^[0-9a-fA-F]{24}$/.test(parentOrderId);
             if (!isValidParentId) return NextResponse.json({ error: "Invalid parent order ID format" }, { status: 400 });
-
             const existing = await prisma.order.findUnique({ where: { id: parentOrderId } });
             if (!existing) return NextResponse.json({ error: "Parent order not found" }, { status: 404 });
-
             // Mark new items explicitly so kitchen can highlight them
             const newItems = enrichedRequestItems.map((i: any) => ({ ...i, isNew: true, addedAt: new Date().toISOString() }));
-
             const currentItems = Array.isArray(existing.items) ? existing.items : [];
             const updatedItems = [...currentItems, ...newItems];
-
             const updatedOrder = await prisma.order.update({
                 where: { id: parentOrderId },
                 data: {
@@ -101,14 +85,11 @@ export async function POST(req: NextRequest) {
             });
             return NextResponse.json(updatedOrder);
         }
-
         // Resolve table name to real table ID
         let realTableId = null;
         let tableRecord = null;
-
         if (tableId) {
             const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(tableId);
-            
             tableRecord = await prisma.table.findFirst({
                 where: {
                     OR: [
@@ -122,7 +103,6 @@ export async function POST(req: NextRequest) {
                 realTableId = tableRecord.id;
             }
         }
-
         // Case 2 & 3: NEW ORDER (Separate / Round 2)
         const order = await prisma.order.create({
             data: {
@@ -145,7 +125,6 @@ export async function POST(req: NextRequest) {
                 table: true,
             }
         });
-
         // Award Loyalty Points (Dynamic Ratio)
         if (customerPhone) {
             try {
@@ -177,8 +156,6 @@ export async function POST(req: NextRequest) {
                 console.error("LOYALTY_AWARD_ERROR:", loyaltyError);
             }
         }
-
-
         // ==========================================
         // PUSH NOTIFICATION LOGIC (FIREBASE)
         // ==========================================
@@ -189,23 +166,26 @@ export async function POST(req: NextRequest) {
             if (owner?.privateMetadata) {
                 const metadata = owner.privateMetadata as any;
                 const pushToken = metadata.fcmToken;
-                
                 if (pushToken) {
                     // Lazy import to avoid serverless startup issues
-                    const admin = (await import('@/lib/firebase-admin')).default;
-                    
+                    const admin = (await import('@/lib/firebase-admin')).default as any;
                     const message = {
                         token: pushToken,
-                        data: {
-                            orderId: order.id,
+                        notification: {
                             title: '🚨 NEW URGENT ORDER!',
                             body: `Table ${tableRecord?.name || 'Online'} placed a new order of ₹${total}!`
                         },
+                        data: {
+                            orderId: order.id,
+                        },
                         android: {
-                            priority: 'high' as const
+                            priority: 'high' as const,
+                            notification: {
+                                channelId: 'urgent-orders',
+                                sound: 'default'
+                            }
                         }
                     };
-                    
                     await admin.messaging().send(message);
                     console.log("Firebase Data Message Sent Successfully!");
                 }
@@ -214,7 +194,6 @@ export async function POST(req: NextRequest) {
             console.error("PUSH_NOTIFICATION_ERROR:", pushErr);
         }
         // ==========================================
-
         return NextResponse.json(order);
     } catch (error) {
         console.error("ORDER_CREATE_ERROR:", error);
