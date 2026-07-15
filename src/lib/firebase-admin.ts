@@ -1,19 +1,17 @@
 // @ts-ignore
-import * as admin from 'firebase-admin';
-
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
 // @ts-ignore
-if (!admin.apps.length) {
+if (!getApps().length) {
   try {
     const base64Key = process.env.FIREBASE_BASE64_KEY;
     if (base64Key) {
       // Base64 ko wapas JSON me decode karke initialize karenge
       const decodedKey = Buffer.from(base64Key, 'base64').toString('utf-8');
       const serviceAccount = JSON.parse(decodedKey);
-
       // @ts-ignore
-      admin.initializeApp({
+      initializeApp({
         // @ts-ignore
-        credential: admin.credential.cert(serviceAccount),
+        credential: cert(serviceAccount),
       });
       console.log('Firebase initialized successfully via Base64!');
     } else {
@@ -23,5 +21,4 @@ if (!admin.apps.length) {
     console.log('Firebase admin initialization error', error.stack);
   }
 }
-
-export default admin;
+export { };
