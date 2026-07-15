@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
                 password: hashedPassword,
                 name: restaurantName,
                 role: "SELLER",
+                isVerified: true, // Auto-verify account
                 clerkId: newClerkId, // Fallback for clerkId requirement
             }
         });
