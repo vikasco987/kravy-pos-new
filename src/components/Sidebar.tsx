@@ -142,6 +142,7 @@ const navGroups = [
       { icon: <Sparkles size={18} />, label: "Interactive Editor", href: "/dashboard/menu-editor", badge: "New", badgeColor: "#8B5CF6" },
       { icon: <Layers size={18} />, label: "Add-on clusters", href: "/dashboard/menu/addons", badge: "Setup", badgeColor: "#10B981" },
       { icon: <Zap size={18} />, label: "AI Menu Scraper", href: "/dashboard/ai-scraper", badge: "AI", badgeColor: "#F59E0B", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Sparkles size={18} />, label: "Auto Apply Images", href: "/dashboard/auto-apply", badge: "AI OCR", badgeColor: "#8B5CF6", roles: ["ADMIN"] },
       { icon: <PlusCircle size={18} />, label: "Add Single Item", href: "/dashboard/menu/upload" },
       { icon: <Upload size={18} />, label: "Excel Bulk Import", href: "/dashboard/store-item-upload", badge: "Import", badgeColor: "#FF6B35", roles: ["ADMIN", "SELLER", "STAFF"] },
       { icon: <Settings size={18} />, label: "Category & Editor", href: "/dashboard/menu/edit" },
