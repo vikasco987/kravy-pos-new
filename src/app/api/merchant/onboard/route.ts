@@ -57,16 +57,33 @@ export async function POST(req: NextRequest) {
 
         // If menu items are provided, insert them
         if (menu && Array.isArray(menu) && menu.length > 0) {
+            // 1. Extract unique categories
+            const uniqueCategories = Array.from(new Set(menu.map((item: any) => item.category || "Uncategorized")));
+            
+            // 2. Create categories in the database and store their IDs
+            const categoryMap = new Map<string, string>();
+            for (const catName of uniqueCategories) {
+                const newCategory = await prisma.category.create({
+                    data: {
+                        name: catName as string,
+                        clerkId: newClerkId,
+                    }
+                });
+                categoryMap.set(catName as string, newCategory.id);
+            }
+
+            // 3. Map items to their respective category IDs
             const menuData = menu.map((item: any) => {
-                let categoryId = null;
-                // Since creating categories perfectly via raw import is complex, 
-                // we map the item string category for the frontend or create basic items
+                const catName = item.category || "Uncategorized";
+                const categoryId = categoryMap.get(catName) || null;
+
                 return {
                     name: item.name || "Unnamed Item",
                     price: parseFloat(item.price) || 0,
                     sellingPrice: parseFloat(item.price) || 0,
                     imageUrl: item.imageUrl || null,
                     image: item.imageUrl || null,
+                    categoryId: categoryId,
                     clerkId: newClerkId,
                     userId: newUser.id,
                     isActive: true
