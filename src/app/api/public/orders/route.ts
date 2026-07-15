@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-
 // GET /api/public/orders?id=<orderId> — public order tracking
 export async function GET(req: NextRequest) {
     try {
@@ -156,7 +155,7 @@ export async function POST(req: NextRequest) {
             }
         }
         // ==========================================
-        // PUSH NOTIFICATION LOGIC (DATA-ONLY)
+        // PUSH NOTIFICATION LOGIC (FIREBASE)
         // ==========================================
         try {
             const owner = await prisma.user.findUnique({
@@ -166,9 +165,8 @@ export async function POST(req: NextRequest) {
                 const metadata = owner.privateMetadata as any;
                 const pushToken = metadata.fcmToken;
                 if (pushToken) {
-                    // Initialize Firebase first
-                    await import('@/lib/firebase-admin');
-                    const { getMessaging } = await import('firebase-admin/messaging');
+                    // Lazy import to avoid serverless startup issues
+                    const admin = (await import('@/lib/firebase-admin')).default;
                     const message = {
                         token: pushToken,
                         data: {
@@ -180,7 +178,8 @@ export async function POST(req: NextRequest) {
                             priority: 'high' as const
                         }
                     };
-                    await getMessaging().send(message);
+                    // @ts-ignore
+                    await admin.messaging().send(message);
                     console.log("Firebase Data Message Sent Successfully!");
                 }
             }
