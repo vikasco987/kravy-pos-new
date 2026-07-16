@@ -165,8 +165,9 @@ export async function POST(req: NextRequest) {
                 const metadata = owner.privateMetadata as any;
                 const pushToken = metadata.fcmToken;
                 if (pushToken) {
-                    // Lazy import to avoid serverless startup issues
-                    const admin = (await import('@/lib/firebase-admin')).default;
+                    // ✅ FIX: Properly load Firebase and Get Messaging Service
+                    await import('@/lib/firebase-admin');
+                    const { getMessaging } = await import('firebase-admin/messaging');
                     const message = {
                         token: pushToken,
                         data: {
@@ -178,8 +179,7 @@ export async function POST(req: NextRequest) {
                             priority: 'high' as const
                         }
                     };
-                    // @ts-ignore
-                    await admin.messaging().send(message);
+                    await getMessaging().send(message);
                     console.log("Firebase Data Message Sent Successfully!");
                 }
             }
