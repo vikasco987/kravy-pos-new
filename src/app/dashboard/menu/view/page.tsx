@@ -486,6 +486,14 @@ export default function ViewMenuPage() {
   const [draggedOverItemId, setDraggedOverItemId] = useState<string | null>(null);
   const [searchProvider, setSearchProvider] = useState<"foodsnap" | "global">("foodsnap");
 
+  // Upload New Menu States
+  const [showUploadMenuModal, setShowUploadMenuModal] = useState(false);
+  const [menuFileQueue, setMenuFileQueue] = useState<File[]>([]);
+  const [extractingMenu, setExtractingMenu] = useState(false);
+  const [extractedMenuProgress, setExtractedMenuProgress] = useState({ completed: 0, total: 0 });
+  const [extractedMenuItems, setExtractedMenuItems] = useState<any[]>([]);
+  const [savingExtractedMenu, setSavingExtractedMenu] = useState(false);
+
   // Sync All state
   const [syncProgress, setSyncProgress] = useState<{ completed: number; total: number } | null>(null);
 
@@ -603,6 +611,204 @@ export default function ViewMenuPage() {
     const nextProvider = searchProvider === "foodsnap" ? "global" : "foodsnap";
     setSearchProvider(nextProvider);
     handleSearchImages(searchImageQuery, nextProvider);
+  };
+
+  const startParsingMenuFiles = async () => {
+    if (menuFileQueue.length === 0) return;
+    setExtractingMenu(true);
+    setExtractedMenuItems([]);
+    setExtractedMenuProgress({ completed: 0, total: 0 });
+
+    let combinedMenu: any[] = [];
+    const filesToProcess = [...menuFileQueue];
+    setMenuFileQueue([]);
+
+    for (let file of filesToProcess) {
+      try {
+        const formData = new FormData();
+        formData.append("menuFile", file);
+
+        // Step 1: Fast Parse
+        const parseRes = await fetch("/api/menu/upload-ocr?parseOnly=true", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!parseRes.ok) throw new Error(`Parsing failed: ${parseRes.statusText}`);
+        const parseData = await parseRes.json();
+        if (!parseData.success || !parseData.partsArray) {
+          throw new Error("Failed to parse file");
+        }
+
+        // Step 2: Get Key
+        const keyRes = await fetch("/api/menu/get-keys");
+        if (!keyRes.ok) throw new Error("Failed to fetch API key");
+        const { apiKey } = await keyRes.json();
+        if (!apiKey) throw new Error("API Key missing");
+
+        // Step 3: Call Gemini
+        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+        let textResponse = "";
+        for (const model of modelsToTry) {
+          try {
+            const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+              method: "POST",
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: parseData.partsArray }],
+                generationConfig: { responseMimeType: "application/json" }
+              })
+            });
+            if (geminiRes.ok) {
+              const geminiData = await geminiRes.json();
+              textResponse = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (textResponse) break;
+            }
+          } catch {}
+        }
+
+        if (!textResponse) throw new Error("Gemini models failed to extract menu.");
+
+        // Step 4: Post Process
+        const parsedJson = JSON.parse(textResponse);
+        const processRes = await fetch("/api/menu/post-process", {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(parsedJson)
+        });
+        if (!processRes.ok) throw new Error("Post-processing failed");
+        const processedData = await processRes.json();
+        const items = processedData.menu || [];
+
+        if (items.length > 0) {
+          combinedMenu = combinedMenu.concat(items.map((item: any) => ({
+            ...item,
+            checked: true,
+            imageUrl: null,
+            img_status: 'loading'
+          })));
+        }
+      } catch (err: any) {
+        console.error(err);
+        setToast(`Error processing ${file.name}: ${err.message}`);
+      }
+    }
+
+    if (combinedMenu.length > 0) {
+      setExtractedMenuItems(combinedMenu);
+      autoApplyExtractedImages(combinedMenu);
+    } else {
+      setExtractingMenu(false);
+    }
+  };
+
+  const autoApplyExtractedImages = async (items: any[]) => {
+    const total = items.length;
+    let completed = 0;
+    let currentItems = [...items];
+
+    const chunkSize = 3;
+    for (let i = 0; i < total; i += chunkSize) {
+      const chunk = currentItems.slice(i, i + chunkSize);
+      const promises = chunk.map(async (item, idx) => {
+        const actualIndex = i + idx;
+        try {
+          const rawName = item.item_name || item.name || "";
+          const cleanName = rawName.replace(/^\(v\)\s*/i, '').replace(/\[.*?\]|\(.*?\)/g, '').trim();
+          
+          const res = await fetch(`/api/proxy/google-image-search?q=${encodeURIComponent(cleanName)}`);
+          if (res.ok) {
+            const data = await res.json();
+            const photos = data.data || [];
+            if (photos.length > 0) {
+              currentItems[actualIndex].imageUrl = photos[0].image_url;
+              currentItems[actualIndex].img_status = 'success';
+            } else {
+              currentItems[actualIndex].img_status = 'empty';
+            }
+          }
+        } catch {
+          currentItems[actualIndex].img_status = 'error';
+        }
+        completed++;
+        setExtractedMenuProgress({ completed, total });
+        setExtractedMenuItems([...currentItems]);
+      });
+      await Promise.all(promises);
+    }
+    setExtractingMenu(false);
+  };
+
+  const handleAddExtractedMenu = async () => {
+    const selectedItems = extractedMenuItems.filter(item => item.checked);
+    if (selectedItems.length === 0) {
+      setToast("Please select at least one item to add.");
+      return;
+    }
+
+    setSavingExtractedMenu(true);
+    try {
+      let existingCatsRes = await fetch(asUserId ? `/api/categories?asUserId=${asUserId}` : "/api/categories");
+      let existingCats = await existingCatsRes.json();
+      if (!Array.isArray(existingCats)) existingCats = [];
+
+      const categoriesMap = new Map<string, string>();
+      existingCats.forEach((c: any) => {
+        categoriesMap.set(c.name.toLowerCase().trim(), c.id);
+      });
+
+      for (const item of selectedItems) {
+        let categoryName = (item.category || item.category_name || "General").trim();
+        let catKey = categoryName.toLowerCase();
+        let categoryId = categoriesMap.get(catKey);
+
+        if (!categoryId) {
+          const catRes = await fetch("/api/categories", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+            },
+            body: JSON.stringify({ name: categoryName })
+          });
+          if (catRes.ok) {
+            const newCat = await catRes.json();
+            categoryId = newCat.id;
+            categoriesMap.set(catKey, categoryId);
+          }
+        }
+
+        const rawName = item.item_name || item.name || "Unnamed Item";
+        const isVegVal = item.type?.toLowerCase().includes("veg") && !item.type?.toLowerCase().includes("non");
+        const isEggVal = item.type?.toLowerCase().includes("egg");
+        
+        await fetch("/api/items", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+          },
+          body: JSON.stringify({
+            name: rawName,
+            price: Number(item.price || item.price_default || 0),
+            categoryId,
+            imageUrl: item.imageUrl || null,
+            isVeg: isVegVal,
+            isEgg: isEggVal,
+            description: item.description || ""
+          })
+        });
+      }
+
+      setToast("Menu items successfully merged!");
+      setShowUploadMenuModal(false);
+      await fetchMenus(); 
+    } catch (err: any) {
+      console.error(err);
+      setToast("Failed to merge menu items");
+    } finally {
+      setSavingExtractedMenu(false);
+    }
   };
 
   const handleRemoveImage = async (e: React.MouseEvent, item: MenuItem) => {
@@ -860,87 +1066,87 @@ export default function ViewMenuPage() {
       .catch(() => {});
   }, [asUserId]);
 
-  useEffect(() => {
-    const fetchMenus = async () => {
-      setLoading(true);
-      setError(null);
+  const fetchMenus = async () => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        const fetchUrl = asUserId ? `/api/menu/view?asUserId=${asUserId}` : "/api/menu/view";
-        const res = await fetch(fetchUrl, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
+    try {
+      const fetchUrl = asUserId ? `/api/menu/view?asUserId=${asUserId}` : "/api/menu/view";
+      const res = await fetch(fetchUrl, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
 
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || `Failed (${res.status})`);
-        }
-
-        const items = await res.json();
-        console.log("🚀 [FRONTEND_FETCH] Raw Items from API:", items);
-
-        if (!Array.isArray(items)) {
-          throw new Error("Menu API did not return array");
-        }
-
-        const UNCATEGORISED_ID = "__uncategorised__";
-
-        const categoryMap = new Map<string, MenuCategory>();
-
-        categoryMap.set(UNCATEGORISED_ID, {
-          id: UNCATEGORISED_ID,
-          name: "Uncategorised",
-          items: [],
-        });
-
-        items.forEach((it: any) => {
-          const catId = it.category?.id ?? UNCATEGORISED_ID;
-          const catName = it.category?.name ?? "Uncategorised";
-
-          if (!categoryMap.has(catId)) {
-            categoryMap.set(catId, {
-              id: catId,
-              name: catName,
-              items: [],
-            });
-          }
-
-          categoryMap.get(catId)!.items.push({
-            ...it,
-            id: String(it.id),
-            name: it.name ?? "Unnamed",
-            price:
-              typeof it.sellingPrice === "number"
-                ? it.sellingPrice
-                : it.price ?? null,
-            imageUrl: it.imageUrl || it.image || null,
-            unit: it.unit ?? null,
-            categoryId: catId,
-            isVeg: it.isVeg ?? true,
-            isEgg: !!it.isEgg,
-            isBestseller: !!it.isBestseller,
-            isRecommended: !!it.isRecommended,
-            isNew: !!it.isNew,
-            shortCode: it.shortCode ?? null,
-          });
-        });
-
-        const finalCategories = Array.from(categoryMap.values()).filter(
-          (c) => c.items.length > 0
-        );
-
-        setMenus(finalCategories);
-        setActiveCategory(finalCategories[0]?.id ?? null);
-      } catch (err: any) {
-        console.error("Error fetching menus:", err);
-        setError(err.message || "Failed to load menu");
-      } finally {
-        setLoading(false);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Failed (${res.status})`);
       }
-    };
 
+      const items = await res.json();
+      console.log("🚀 [FRONTEND_FETCH] Raw Items from API:", items);
+
+      if (!Array.isArray(items)) {
+        throw new Error("Menu API did not return array");
+      }
+
+      const UNCATEGORISED_ID = "__uncategorised__";
+
+      const categoryMap = new Map<string, MenuCategory>();
+
+      categoryMap.set(UNCATEGORISED_ID, {
+        id: UNCATEGORISED_ID,
+        name: "Uncategorised",
+        items: [],
+      });
+
+      items.forEach((it: any) => {
+        const catId = it.category?.id ?? UNCATEGORISED_ID;
+        const catName = it.category?.name ?? "Uncategorised";
+
+        if (!categoryMap.has(catId)) {
+          categoryMap.set(catId, {
+            id: catId,
+            name: catName,
+            items: [],
+          });
+        }
+
+        categoryMap.get(catId)!.items.push({
+          ...it,
+          id: String(it.id),
+          name: it.name ?? "Unnamed",
+          price:
+            typeof it.sellingPrice === "number"
+              ? it.sellingPrice
+              : it.price ?? null,
+          imageUrl: it.imageUrl || it.image || null,
+          unit: it.unit ?? null,
+          categoryId: catId,
+          isVeg: it.isVeg ?? true,
+          isEgg: !!it.isEgg,
+          isBestseller: !!it.isBestseller,
+          isRecommended: !!it.isRecommended,
+          isNew: !!it.isNew,
+          shortCode: it.shortCode ?? null,
+        });
+      });
+
+      const finalCategories = Array.from(categoryMap.values()).filter(
+        (c) => c.items.length > 0
+      );
+
+      setMenus(finalCategories);
+      setActiveCategory(finalCategories[0]?.id ?? null);
+    } catch (err: any) {
+      console.error("Error fetching menus:", err);
+      setError(err.message || "Failed to load menu");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchMenus();
   }, [asUserId]);
 
@@ -1430,6 +1636,13 @@ export default function ViewMenuPage() {
               </div>
 
               <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowUploadMenuModal(true)}
+                  className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-md transition-all animate-pulse"
+                >
+                  <Plus size={12} strokeWidth={3} /> Upload New Menu (AI)
+                </button>
+
                 <button
                   onClick={handleSyncAllImages}
                   disabled={syncProgress !== null}
@@ -2398,6 +2611,170 @@ export default function ViewMenuPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Upload New Menu Modal */}
+      {showUploadMenuModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[2.5rem] w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl relative">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-[var(--kravy-border)]/50 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-black text-[var(--kravy-text-primary)]">Upload New Menu (AI Scraper)</h3>
+                <p className="text-xs text-[var(--kravy-text-muted)] font-medium mt-1">Upload a PDF, Doc, Excel, or Menu Image to automatically extract and merge new items into the existing menu.</p>
+              </div>
+              <button 
+                onClick={() => setShowUploadMenuModal(false)}
+                className="p-2 hover:bg-[var(--kravy-surface-hover)] rounded-xl text-[var(--kravy-text-secondary)] transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
+              
+              {/* Drag and Drop Zone */}
+              {extractedMenuItems.length === 0 && (
+                <div 
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files) {
+                      setMenuFileQueue(Array.from(e.dataTransfer.files));
+                    }
+                  }}
+                  className="border-[3px] border-dashed border-[var(--kravy-border)] hover:border-orange-500 rounded-[2rem] p-12 text-center space-y-4 bg-[var(--kravy-bg-2)]/40 hover:bg-orange-50/10 transition-all cursor-pointer relative"
+                  onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.multiple = true;
+                    input.accept = ".pdf,.xlsx,.xls,.doc,.docx,.png,.jpg,.jpeg,.webp";
+                    input.onchange = (e: any) => {
+                      if (e.target.files) {
+                        setMenuFileQueue(Array.from(e.target.files));
+                      }
+                    };
+                    input.click();
+                  }}
+                >
+                  <div className="w-16 h-16 bg-orange-100 dark:bg-orange-950/20 text-orange-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                    <ImageIcon size={28} />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-sm text-[var(--kravy-text-primary)] uppercase tracking-wider">Drag & Drop Menu File Here</h4>
+                    <p className="text-xs text-[var(--kravy-text-muted)] font-bold mt-1.5">Supports PDF, Excel, Word, or Images (JPG/PNG/WebP)</p>
+                  </div>
+                  
+                  {menuFileQueue.length > 0 && (
+                    <div className="inline-block px-4 py-2 bg-orange-500/10 border border-orange-200 rounded-xl text-[10px] font-black text-orange-600 uppercase tracking-widest mt-4">
+                      {menuFileQueue.length} files selected
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Status and Progress */}
+              {extractingMenu && (
+                <div className="flex flex-col items-center justify-center p-20 space-y-4">
+                  <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
+                  <div className="text-center">
+                    <p className="text-xs font-black text-orange-500 uppercase tracking-widest animate-pulse">AI Digitizing & Scraping Menu...</p>
+                    {extractedMenuProgress.total > 0 && (
+                      <p className="text-[10px] text-[var(--kravy-text-muted)] font-bold mt-1">
+                        Auto-matching Food Images: {extractedMenuProgress.completed} of {extractedMenuProgress.total} items
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* File Selected Action */}
+              {menuFileQueue.length > 0 && !extractingMenu && extractedMenuItems.length === 0 && (
+                <div className="flex justify-center">
+                  <button
+                    onClick={startParsingMenuFiles}
+                    className="px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center gap-2"
+                  >
+                    <Zap size={14} fill="currentColor" /> Extract Menu Items
+                  </button>
+                </div>
+              )}
+
+              {/* Extracted Items List */}
+              {extractedMenuItems.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center opacity-75">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-[var(--kravy-text-primary)]">Parsed Menu Preview ({extractedMenuItems.length} Items)</h4>
+                    <span className="text-[10px] text-orange-500 font-black uppercase tracking-widest">Select items to import</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[40vh] overflow-y-auto pr-1 no-scrollbar animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    {extractedMenuItems.map((item, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`bg-[var(--kravy-surface)] border rounded-[1.5rem] p-4 flex items-center justify-between gap-4 transition-all ${
+                          item.checked ? "border-orange-500 bg-orange-50/5 animate-pulse" : "border-[var(--kravy-border)]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <input
+                            type="checkbox"
+                            checked={item.checked}
+                            onChange={(e) => {
+                              setExtractedMenuItems(prev => prev.map((it, i) => i === idx ? { ...it, checked: e.target.checked } : it));
+                            }}
+                            className="w-4 h-4 rounded border-[var(--kravy-border)] text-orange-600 focus:ring-orange-500/20 accent-orange-500 cursor-pointer animate-none"
+                          />
+                          <div className="w-12 h-12 rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex-shrink-0 relative">
+                            {item.imageUrl ? (
+                              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)]">
+                                {item.img_status === 'loading' ? <Loader2 className="animate-spin text-orange-500" size={16} /> : <ImageIcon size={16} />}
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h5 className="font-bold text-xs text-[var(--kravy-text-primary)] truncate" title={item.name}>{item.name}</h5>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[9px] font-black text-orange-500 uppercase bg-orange-500/10 px-1.5 py-0.5 rounded">{item.category}</span>
+                              <span className="text-[9px] font-bold text-[var(--kravy-text-muted)]">₹{item.price}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            {extractedMenuItems.length > 0 && (
+              <div className="p-6 border-t border-[var(--kravy-border)]/50 flex justify-between items-center gap-4 bg-[var(--kravy-bg-2)]/30">
+                <button
+                  onClick={() => {
+                    setExtractedMenuItems([]);
+                    setMenuFileQueue([]);
+                  }}
+                  className="px-6 py-3 border border-[var(--kravy-border)] hover:bg-[var(--kravy-surface-hover)] text-[var(--kravy-text-primary)] font-black text-xs uppercase tracking-widest rounded-2xl transition-all"
+                >
+                  Clear / Upload New
+                </button>
+                <button
+                  onClick={handleAddExtractedMenu}
+                  disabled={savingExtractedMenu}
+                  className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {savingExtractedMenu ? <Loader2 className="animate-spin" size={14} /> : <Zap size={14} fill="currentColor" />}
+                  Add to Existing Menu
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
