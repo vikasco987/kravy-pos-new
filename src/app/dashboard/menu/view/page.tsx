@@ -398,7 +398,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles, Image as ImageIcon, Loader2, Globe } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 /* types */
@@ -484,6 +484,7 @@ export default function ViewMenuPage() {
   const [searchingImages, setSearchingImages] = useState(false);
   const [visibleImagesCount, setVisibleImagesCount] = useState(12);
   const [draggedOverItemId, setDraggedOverItemId] = useState<string | null>(null);
+  const [searchProvider, setSearchProvider] = useState<"foodsnap" | "global">("foodsnap");
 
   // Sync All state
   const [syncProgress, setSyncProgress] = useState<{ completed: number; total: number } | null>(null);
@@ -552,31 +553,32 @@ export default function ViewMenuPage() {
     }
   };
 
-  const handleSearchImages = async (forcedQuery?: string) => {
+  const handleSearchImages = async (forcedQuery?: string, provider?: "foodsnap" | "global") => {
     const q = forcedQuery || searchImageQuery.trim();
     if (!q) return;
     setSearchingImages(true);
     setVisibleImagesCount(12);
+
+    const activeProvider = provider || searchProvider;
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
-
       let photos = [];
-      try {
-        const res = await fetch(`/api/proxy/image-search?q=${encodeURIComponent(q)}`, {
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          const data = await res.json();
-          photos = data.data || [];
+      if (activeProvider === "foodsnap") {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        try {
+          const res = await fetch(`/api/proxy/image-search?q=${encodeURIComponent(q)}`, {
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            const data = await res.json();
+            photos = data.data || [];
+          }
+        } catch (err) {
+          console.warn("FoodSnap search failed, falling back to Deep Search...", err);
         }
-      } catch (err) {
-        console.warn("FoodSnap search timed out or failed, falling back to Deep Search...", err);
-      }
-
-      if (photos.length === 0) {
-        const resDeep = await fetch(`/api/proxy/google-image-search?q=${encodeURIComponent(q)}`);
+      } else {
+        const resDeep = await fetch(`/api/proxy/google-image-search?q=${encodeURIComponent(q)}&offset=0`);
         if (resDeep.ok) {
           const dataDeep = await resDeep.json();
           photos = dataDeep.data || [];
@@ -595,6 +597,12 @@ export default function ViewMenuPage() {
     } finally {
       setSearchingImages(false);
     }
+  };
+
+  const toggleSearchProvider = () => {
+    const nextProvider = searchProvider === "foodsnap" ? "global" : "foodsnap";
+    setSearchProvider(nextProvider);
+    handleSearchImages(searchImageQuery, nextProvider);
   };
 
   const handleRemoveImage = async (e: React.MouseEvent, item: MenuItem) => {
@@ -1671,10 +1679,11 @@ export default function ViewMenuPage() {
                             onDrop={(e) => handleDrop(e, item)}
                             onClick={(e) => {
                               e.stopPropagation();
+                              setSearchProvider("foodsnap"); // default back to FoodSnap
                               setImageSearchItem(item);
                               const cleanName = item.name.replace(/^\(v\)\s*/i, '').replace(/\[.*?\]|\(.*?\)/g, '').trim();
                               setSearchImageQuery(cleanName);
-                              handleSearchImages(cleanName);
+                              handleSearchImages(cleanName, "foodsnap");
                             }}
                             className={`w-full h-40 mb-4 relative rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center min-w-0 shadow-inner group cursor-pointer ring-offset-2 hover:ring-2 hover:ring-indigo-500 transition-all ${
                               draggedOverItemId === item.id 
@@ -2289,11 +2298,32 @@ export default function ViewMenuPage() {
               <div className="flex items-center justify-between border-b border-[var(--kravy-border)]/50 pb-4 mb-6">
                 <div>
                   <h3 className="font-[900] text-[var(--kravy-text-primary)] text-xl tracking-tight">Search Images</h3>
-                  <p className="text-xs text-[var(--kravy-text-muted)] font-medium mt-1 truncate max-w-[280px]">For: <span className="font-bold text-indigo-500">{imageSearchItem.name}</span></p>
+                  <p className="text-xs text-[var(--kravy-text-muted)] font-medium mt-1 truncate max-w-[200px]">For: <span className="font-bold text-indigo-500">{imageSearchItem.name}</span></p>
                 </div>
-                <button onClick={() => setImageSearchItem(null)} className="p-2 hover:bg-[var(--kravy-surface-hover)] rounded-xl text-[var(--kravy-text-secondary)] transition-all">
-                  <X size={20} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={toggleSearchProvider}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all flex items-center gap-1.5 ${
+                      searchProvider === "global"
+                        ? "bg-amber-500/10 border-amber-200 text-amber-600 hover:bg-amber-500 hover:text-white"
+                        : "bg-indigo-500/10 border-indigo-200 text-indigo-600 hover:bg-indigo-500 hover:text-white"
+                    }`}
+                    title={searchProvider === "global" ? "Switch to FoodSnap Search" : "Switch to Global Web Search"}
+                  >
+                    {searchProvider === "global" ? (
+                      <>
+                        <Sparkles size={12} /> FoodSnap
+                      </>
+                    ) : (
+                      <>
+                        <Globe size={12} /> Global Search
+                      </>
+                    )}
+                  </button>
+                  <button onClick={() => setImageSearchItem(null)} className="p-2 hover:bg-[var(--kravy-surface-hover)] rounded-xl text-[var(--kravy-text-secondary)] transition-all">
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
 
               <div className="flex gap-2 mb-6">
