@@ -112,6 +112,21 @@ Strictly follow these rules:
 ${languageRule}
 `;
 
+        const searchParams = req.nextUrl.searchParams;
+        const parseOnly = searchParams.get("parseOnly") === "true";
+
+        if (parseOnly) {
+            const partsArray: any[] = [{ text: prompt }];
+            if (excelTextPart) partsArray.push(excelTextPart);
+            if (inlineDataPart) partsArray.push(inlineDataPart);
+            
+            console.log(`⚡ [Menu AI OCR Engine] Fast parsing complete. Returning payload to frontend for client-side processing.`);
+            return NextResponse.json({
+                success: true,
+                partsArray: partsArray
+            });
+        }
+
         let textResponse = "";
         let selectedModel = "";
         let lastError: any = null;

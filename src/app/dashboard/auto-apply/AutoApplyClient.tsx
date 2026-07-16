@@ -95,18 +95,91 @@ export default function AutoApplyClient() {
                 const formData = new FormData();
                 formData.append("menuFile", file);
                 
-                const res = await fetch("/api/menu/upload-ocr", {
+                // Step 1: Fast Parse (gets prompt and base64/CSV from our server instantly)
+                const parseRes = await fetch("/api/menu/upload-ocr?parseOnly=true", {
                     method: "POST",
                     body: formData
                 });
                 
-                if (!res.ok) {
-                    const errorText = await res.text();
-                    throw new Error(`Server Error ${res.status}: ${errorText}`);
+                if (!parseRes.ok) {
+                    const errorText = await parseRes.text();
+                    throw new Error(`Server Parsing Error ${parseRes.status}: ${errorText}`);
                 }
+                const parseData = await parseRes.json();
+                if (!parseData.success || !parseData.partsArray) {
+                    throw new Error("Failed to parse file for AI processing");
+                }
+
+                // Step 2: Get Secure API Key
+                const keyRes = await fetch("/api/menu/get-keys");
+                if (!keyRes.ok) throw new Error("Failed to fetch API configuration");
+                const { apiKey } = await keyRes.json();
+                if (!apiKey) throw new Error("API Key is missing on the server");
+
+                // Step 3: Direct Client-Side Gemini Call (Bypasses Vercel 60s Timeout)
+                setOcrStatus({ text: `Analyzing with AI (Takes 1-3 mins)...`, colorClass: "text-orange-500", isLoading: true });
+                const modelsToTry = [
+                    "gemini-2.5-flash",
+                    "gemini-2.0-flash",
+                    "gemini-2.5-flash-lite",
+                    "gemini-1.5-flash"
+                ];
+
+                let textResponse = "";
+                let lastError = null;
+
+                for (const model of modelsToTry) {
+                    try {
+                        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                        const geminiRes = await fetch(geminiUrl, {
+                            method: "POST",
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{ parts: parseData.partsArray }],
+                                generationConfig: { responseMimeType: "application/json" }
+                            })
+                        });
+
+                        if (!geminiRes.ok) {
+                            const errorJson = await geminiRes.json();
+                            throw new Error(errorJson.error?.message || "Unknown Gemini API Error");
+                        }
+
+                        const geminiData = await geminiRes.json();
+                        textResponse = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (textResponse) break;
+                    } catch (err) {
+                        lastError = err;
+                        console.warn(`Model ${model} failed`, err);
+                    }
+                }
+
+                if (!textResponse) {
+                    throw new Error(`All AI models failed: ${lastError?.message || "No response"}`);
+                }
+
+                // Step 4: Parse AI JSON response and apply the same smart grouping logic
+                const parsedMenu = JSON.parse(textResponse);
+                let menuItems: any[] = parsedMenu.menu || [];
                 
-                const data = await res.json();
-                const extracted = data.items || data.menu || [];
+                // Send to our backend to run the identical smart merging logic
+                // Or just do basic parsing here and let the server handle it?
+                // Wait, it's easier to use a quick server API to normalize it or we can just use the raw extracted menu.
+                // For simplicity, we just use the raw items as we can't easily duplicate 100 lines of complex grouping logic here.
+                // Wait, let's just make a fast API route to post-process the items!
+                // Actually, I can just send the raw parsedMenu to another endpoint or process it here.
+                // To keep it 100% same, we will create a fast post-process API endpoint.
+                
+                const processRes = await fetch("/api/menu/post-process", {
+                    method: "POST",
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(parsedMenu)
+                });
+                
+                if (!processRes.ok) throw new Error("Failed to post-process AI data");
+                const data = await processRes.json();
+                
+                const extracted = data.menu || [];
                 
                 if (data.success && extracted.length > 0) {
                     combinedMenu = combinedMenu.concat(extracted.map((e: any) => ({ ...e, assigned_image: null, img_status: 'waiting' })));
