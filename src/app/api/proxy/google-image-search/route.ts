@@ -26,9 +26,9 @@ export async function GET(req: NextRequest) {
         const json = await res2.json();
         
         if (json.results && json.results.length > 0) {
-            const data = json.results.slice(0, 12).map((item: any) => ({
+            const data = json.results.slice(0, 60).map((item: any) => ({
                 image_url: item.image,
-                title: query + " (Deep Scraped)",
+                title: item.title || query + " (Deep Scraped)",
                 score: 100
             }));
             return NextResponse.json({ success: true, data });

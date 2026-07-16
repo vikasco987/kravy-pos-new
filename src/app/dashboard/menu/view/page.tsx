@@ -462,8 +462,9 @@ export default function ViewMenuPage() {
   // Image search side panel states
   const [imageSearchItem, setImageSearchItem] = useState<MenuItem | null>(null);
   const [searchImageQuery, setSearchImageQuery] = useState("");
-  const [searchedImages, setSearchedImages] = useState<any[]>([]);
+  const [searchedImages, setSearchedImages] = useState<{ url: string; title?: string }[]>([]);
   const [searchingImages, setSearchingImages] = useState(false);
+  const [visibleImagesCount, setVisibleImagesCount] = useState(12);
 
   // Sync All state
   const [syncProgress, setSyncProgress] = useState<{ completed: number; total: number } | null>(null);
@@ -536,6 +537,7 @@ export default function ViewMenuPage() {
     const q = forcedQuery || searchImageQuery.trim();
     if (!q) return;
     setSearchingImages(true);
+    setVisibleImagesCount(12);
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2500);
@@ -562,13 +564,43 @@ export default function ViewMenuPage() {
         }
       }
 
-      const urls = photos.map((p: any) => p.image_url || p.image || p.url).filter(Boolean);
-      setSearchedImages(urls);
+      const results = photos.map((p: any) => ({
+        url: p.image_url || p.image || p.url || p.imageUrl,
+        title: p.title || p.name || ""
+      })).filter((x: any) => Boolean(x.url));
+
+      setSearchedImages(results);
     } catch (e) {
       console.error(e);
       setToast("Failed to search images");
     } finally {
       setSearchingImages(false);
+    }
+  };
+
+  const handleRemoveImage = async (e: React.MouseEvent, item: MenuItem) => {
+    e.stopPropagation();
+    if (!confirm(`Are you sure you want to remove the image for "${item.name}"?`)) return;
+    try {
+      const res = await fetch("/api/items", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+        },
+        body: JSON.stringify({ id: item.id, imageUrl: null }),
+      });
+
+      if (!res.ok) throw new Error(await res.text().catch(() => `Failed (${res.status})`));
+      
+      setMenus(prev => prev.map(cat => ({
+        ...cat,
+        items: cat.items.map(it => it.id === item.id ? { ...it, imageUrl: null } : it)
+      })));
+      setToast(`Image removed for ${item.name}`);
+    } catch (err: any) {
+      console.error(err);
+      setToast(err?.message ?? "Remove failed");
     }
   };
 
@@ -1478,22 +1510,29 @@ export default function ViewMenuPage() {
 
                           <div
                             onClick={(e) => {
-                              if (isAdmin) {
-                                e.stopPropagation();
-                                setImageSearchItem(item);
-                                const cleanName = item.name.replace(/^\(v\)\s*/i, '').replace(/\[.*?\]|\(.*?\)/g, '').trim();
-                                setSearchImageQuery(cleanName);
-                                handleSearchImages(cleanName);
-                              }
+                              e.stopPropagation();
+                              setImageSearchItem(item);
+                              const cleanName = item.name.replace(/^\(v\)\s*/i, '').replace(/\[.*?\]|\(.*?\)/g, '').trim();
+                              setSearchImageQuery(cleanName);
+                              handleSearchImages(cleanName);
                             }}
-                            className={`w-full h-40 mb-4 relative rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center min-w-0 shadow-inner group ${isAdmin ? "cursor-pointer ring-offset-2 hover:ring-2 hover:ring-indigo-500 transition-all" : ""}`}
+                            className="w-full h-40 mb-4 relative rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center min-w-0 shadow-inner group cursor-pointer ring-offset-2 hover:ring-2 hover:ring-indigo-500 transition-all"
                           >
                             {item.imageUrl ? (
-                              <img src={item.imageUrl} alt={item.name} className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${!item.isActive ? "grayscale opacity-50" : ""}`} />
+                              <div className="relative w-full h-full group/img">
+                                <img src={item.imageUrl} alt={item.name} className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${!item.isActive ? "grayscale opacity-50" : ""}`} />
+                                <button
+                                  onClick={(e) => handleRemoveImage(e, item)}
+                                  className="absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full p-1.5 opacity-0 group-hover/img:opacity-100 transition-opacity shadow-md z-20"
+                                  title="Remove Image"
+                                >
+                                  <X size={12} strokeWidth={3} />
+                                </button>
+                              </div>
                             ) : (
                               <div className="text-[var(--kravy-text-faint)] font-bold text-xs uppercase tracking-widest flex flex-col items-center gap-1">
                                 <span>No Image</span>
-                                {isAdmin && <span className="text-[9px] text-indigo-500 font-black lowercase normal-case tracking-normal">(click to add)</span>}
+                                <span className="text-[9px] text-indigo-500 font-black lowercase normal-case tracking-normal">(click to add)</span>
                               </div>
                             )}
                             
@@ -2119,19 +2158,37 @@ export default function ViewMenuPage() {
                 ) : searchedImages.length === 0 ? (
                   <p className="text-center py-20 text-xs text-[var(--kravy-text-muted)] font-bold opacity-60">No images found. Try a different query.</p>
                 ) : (
-                  <div className="grid grid-cols-2 gap-4 pb-12">
-                    {searchedImages.map((imgUrl, i) => (
-                      <div
-                        key={i}
-                        onClick={() => handleSelectImage(imgUrl)}
-                        className="group relative h-28 rounded-xl overflow-hidden cursor-pointer border border-[var(--kravy-border)] hover:border-indigo-500 shadow-sm transition-all"
-                      >
-                        <img src={imgUrl} alt="Thumbnail" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                        <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-white bg-indigo-600 px-3 py-1.5 rounded-lg shadow-md active:scale-95">Use Image</span>
+                  <div className="flex flex-col gap-6 pb-12">
+                    <div className="grid grid-cols-2 gap-4">
+                      {searchedImages.slice(0, visibleImagesCount).map((img, i) => (
+                        <div
+                          key={i}
+                          onClick={() => handleSelectImage(img.url)}
+                          className="group flex flex-col gap-1.5 cursor-pointer"
+                        >
+                          <div className="relative h-28 rounded-xl overflow-hidden border border-[var(--kravy-border)] hover:border-indigo-500 shadow-sm transition-all">
+                            <img src={img.url} alt={img.title || "Thumbnail"} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                            <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                              <span className="text-[9px] font-black uppercase tracking-widest text-white bg-indigo-600 px-3 py-1.5 rounded-lg shadow-md active:scale-95">Use Image</span>
+                            </div>
+                          </div>
+                          {img.title && (
+                            <span className="text-[10px] font-bold text-[var(--kravy-text-muted)] truncate px-1 text-center group-hover:text-indigo-500 transition-colors" title={img.title}>
+                              {img.title}
+                            </span>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+
+                    {visibleImagesCount < searchedImages.length && (
+                      <button
+                        onClick={() => setVisibleImagesCount(prev => prev + 12)}
+                        className="w-full py-3 bg-[var(--kravy-surface-hover)] border border-[var(--kravy-border)] rounded-xl font-black text-xs uppercase tracking-widest text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm active:scale-98"
+                      >
+                        Load More Images
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
