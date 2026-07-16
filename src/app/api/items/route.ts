@@ -441,6 +441,8 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const effectiveId = await getEffectiveClerkId();
+    const headersList = await (await import('next/headers')).headers();
+    console.log("🔍 [API_ITEMS_PUT_DEBUG] EffectiveId:", effectiveId, "x-impersonate-id:", headersList.get('x-impersonate-id'), "referer:", headersList.get('referer'));
 
     if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
