@@ -22,20 +22,21 @@ export async function POST(req: NextRequest) {
         const fileBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(fileBuffer);
         const mimeType = file.type;
+        const fileName = file.name.toLowerCase();
         const base64Data = buffer.toString("base64");
 
         console.log(`📡 [Menu AI OCR Engine] Processing uploaded file: Name = ${file.name}, Mime = ${mimeType}, Size = ${fileBuffer.byteLength} bytes`);
         let inlineDataPart = null;
         let excelTextPart = null;
 
-        if (mimeType.includes("spreadsheetml") || mimeType.includes("excel") || mimeType.includes("csv")) {
+        if (mimeType.includes("spreadsheetml") || mimeType.includes("excel") || mimeType.includes("csv") || fileName.endsWith(".xlsx") || fileName.endsWith(".xls") || fileName.endsWith(".csv")) {
             console.log("📊 Detected Excel/CSV file! Parsing with xlsx package before sending to Gemini...");
             const workbook = xlsx.read(buffer, { type: "buffer" });
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
             const csvData = xlsx.utils.sheet_to_csv(worksheet);
             excelTextPart = { text: "Here is the parsed spreadsheet content in CSV format:\n" + csvData };
-        } else if (mimeType.includes("wordprocessingml") || mimeType.includes("msword") || file.name.endsWith(".docx") || file.name.endsWith(".doc")) {
+        } else if (mimeType.includes("wordprocessingml") || mimeType.includes("msword") || fileName.endsWith(".docx") || fileName.endsWith(".doc")) {
             console.log("📝 Detected Word document! Parsing with mammoth before sending to Gemini...");
             try {
                 const mammoth = await import("mammoth");
@@ -46,9 +47,16 @@ export async function POST(req: NextRequest) {
                 excelTextPart = { text: "Failed to parse word document." };
             }
         } else {
+            let actualMime = mimeType;
+            if (!actualMime || actualMime === "application/octet-stream") {
+                if (fileName.endsWith(".pdf")) actualMime = "application/pdf";
+                else if (fileName.endsWith(".png")) actualMime = "image/png";
+                else if (fileName.endsWith(".webp")) actualMime = "image/webp";
+                else actualMime = "image/jpeg";
+            }
             inlineDataPart = {
                 inlineData: {
-                    mimeType: mimeType || 'image/jpeg',
+                    mimeType: actualMime,
                     data: base64Data
                 }
             };
