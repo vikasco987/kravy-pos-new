@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import * as xlsx from "xlsx";
 
+export const maxDuration = 60; // Set Vercel function timeout to 60 seconds for AI processing
+
+
 export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
