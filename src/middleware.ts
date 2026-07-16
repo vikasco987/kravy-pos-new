@@ -1,28 +1,5 @@
-// import { clerkMiddleware } from "@clerk/nextjs/server";
-
-// export default clerkMiddleware();
-
-// export const config = {
-//   matcher: [
-//     "/((?!_next|.*\\..*).*)",
-//     "/(api|trpc)(.*)"
-//   ],
-// };
-
-// import { clerkMiddleware } from "@clerk/nextjs/server";
-
-// export default clerkMiddleware();
-
-// export const config = {
-//   matcher: [
-//     "/((?!_next|static|favicon.ico).*)",
-//     "/api/(.*)"
-//   ],
-// };
-
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-
 const isPublicRoute = createRouteMatcher([
   "/menu/(.*)",
   "/order-tracking/(.*)",
@@ -31,11 +8,11 @@ const isPublicRoute = createRouteMatcher([
   "/api/public/(.*)",
   "/api/external/(.*)",
   "/api/bill-manager/(.*)/pdf",
-  "/auth/custom(.*)", // Added
-  "/api/auth/(.*)",   // Added
-  "/api/invoice/(.*)", // Added
-  "/api/phonepe/webhook", // Added
-  "/api/update-token", // Added: Allow token sync without cookies
+  "/auth/custom(.*)", 
+  "/api/auth/(.*)",   
+  "/api/invoice/(.*)", 
+  "/api/phonepe/webhook", 
+  "/api/update-token", // ✅ Naya Route add kiya hai taki Token block na ho
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/staff/login",
@@ -44,26 +21,21 @@ const isPublicRoute = createRouteMatcher([
   "/qr-menu/(.*)",
   "/"
 ]);
-
 export default clerkMiddleware(async (auth, request) => {
   const { userId } = await auth();
   const staffToken = request.cookies.get("staff_token")?.value;
   const customToken = request.cookies.get("kravy_auth_token")?.value;
-
   // 1. Redirect to dashboard if already logged in (for auth pages)
   if ((userId || customToken) && request.nextUrl.pathname.startsWith('/auth/custom')) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
-
   if (userId && (request.nextUrl.pathname.startsWith('/sign-in') || request.nextUrl.pathname.startsWith('/sign-up'))) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
-
   // 2. Allow access for Custom Auth Users
   if (customToken) {
     return NextResponse.next();
   }
-
   // 3. Allow access for Staff
   if (staffToken) {
     try {
@@ -71,7 +43,6 @@ export default clerkMiddleware(async (auth, request) => {
       const payload = JSON.parse(atob(payloadBase64));
       const permissions = payload.permissions || [];
       const path = request.nextUrl.pathname;
-
       if (path.startsWith('/dashboard')) {
         const isAllowed = permissions.some((p: string) => path === p || path.startsWith(p + '/'));
         if (!isAllowed) {
@@ -83,23 +54,18 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(new URL('/staff/login?error=invalid_session', request.url));
     }
   }
-
-  // 4. Allow Public Routes
   // 4. Allow Public Routes
   if (isPublicRoute(request)) {
     return NextResponse.next();
   }
-
   // 5. If not authenticated and not a public route, redirect to CUSTOM auth page
   if (!isPublicRoute(request) && !userId && !customToken && !staffToken) {
     const signInUrl = new URL('/auth/custom', request.url);
     // signInUrl.searchParams.set('redirect_url', request.nextUrl.pathname);
     return NextResponse.redirect(signInUrl);
   }
-
   return NextResponse.next();
 });
-
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
