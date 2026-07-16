@@ -3,11 +3,19 @@ import prisma from "@/lib/prisma";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { clerkUserId, token, fcmToken } = body;
+        let { clerkUserId, token, fcmToken } = body;
         if (!clerkUserId || (!token && !fcmToken)) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
-        const user = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+        let user = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+        // ✅ FIX: Agar user nahi mila, toh ho sakta hai clerkUserId ek Business Profile ID ho (Staff Login se aaya ho)
+        if (!user) {
+            const business = await prisma.businessProfile.findUnique({ where: { id: clerkUserId } });
+            if (business && business.userId) {
+                user = await prisma.user.findUnique({ where: { clerkId: business.userId } });
+                clerkUserId = business.userId; // ID ko Owner ki ID se badal do
+            }
+        }
         if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
         const currentMetadata = (user.privateMetadata as any) || {};
         // Update metadata with the new push token
