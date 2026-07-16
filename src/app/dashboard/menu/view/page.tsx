@@ -465,6 +465,7 @@ export default function ViewMenuPage() {
   const [searchedImages, setSearchedImages] = useState<{ url: string; title?: string }[]>([]);
   const [searchingImages, setSearchingImages] = useState(false);
   const [visibleImagesCount, setVisibleImagesCount] = useState(12);
+  const [draggedOverItemId, setDraggedOverItemId] = useState<string | null>(null);
 
   // Sync All state
   const [syncProgress, setSyncProgress] = useState<{ completed: number; total: number } | null>(null);
@@ -601,6 +602,100 @@ export default function ViewMenuPage() {
     } catch (err: any) {
       console.error(err);
       setToast(err?.message ?? "Remove failed");
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, itemId: string) => {
+    e.preventDefault();
+    setDraggedOverItemId(itemId);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDraggedOverItemId(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, item: MenuItem) => {
+    e.preventDefault();
+    setDraggedOverItemId(null);
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setToast("Only image files are allowed!");
+      return;
+    }
+
+    setToast(`Uploading image for ${item.name}...`);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: asUserId ? { "x-impersonate-id": asUserId } : {},
+        body: formData
+      });
+
+      if (!uploadRes.ok) throw new Error("Upload failed");
+      const uploadData = await uploadRes.json();
+      const newImgUrl = uploadData.secure_url;
+
+      if (newImgUrl) {
+        const saveRes = await fetch("/api/items", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+          },
+          body: JSON.stringify({ id: item.id, imageUrl: newImgUrl })
+        });
+
+        if (saveRes.ok) {
+          setMenus(prev => prev.map(cat => ({
+            ...cat,
+            items: cat.items.map(it => it.id === item.id ? { ...it, imageUrl: newImgUrl } : it)
+          })));
+          setToast("Image uploaded successfully!");
+        } else {
+          throw new Error("Failed to save image reference");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setToast("Failed to upload image.");
+    }
+  };
+
+  const handleLoadMoreImages = async () => {
+    if (!imageSearchItem) return;
+    const q = searchImageQuery.trim();
+    if (!q) return;
+    
+    const currentOffset = searchedImages.length;
+    setSearchingImages(true);
+    try {
+      const resDeep = await fetch(`/api/proxy/google-image-search?q=${encodeURIComponent(q)}&offset=${currentOffset}`);
+      if (resDeep.ok) {
+        const dataDeep = await resDeep.json();
+        const photos = dataDeep.data || [];
+        const nextResults = photos.map((p: any) => ({
+          url: p.image_url || p.image || p.url || p.imageUrl,
+          title: p.title || p.name || ""
+        })).filter((x: any) => Boolean(x.url));
+
+        if (nextResults.length === 0) {
+          setToast("No more images found.");
+        } else {
+          setSearchedImages(prev => [...prev, ...nextResults]);
+          setVisibleImagesCount(prev => prev + 12);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      setToast("Failed to load more images");
+    } finally {
+      setSearchingImages(false);
     }
   };
 
@@ -1509,6 +1604,9 @@ export default function ViewMenuPage() {
                         <motion.div key={item.id} layout whileHover={{ scale: 1.03, y: -4 }} className="bg-[var(--kravy-surface)] p-4 rounded-2xl border border-[var(--kravy-border)] shadow-sm relative cursor-pointer min-w-0 transition-all hover:border-indigo-400/50">
 
                           <div
+                            onDragOver={(e) => handleDragOver(e, item.id)}
+                            onDragLeave={handleDragLeave}
+                            onDrop={(e) => handleDrop(e, item)}
                             onClick={(e) => {
                               e.stopPropagation();
                               setImageSearchItem(item);
@@ -1516,7 +1614,11 @@ export default function ViewMenuPage() {
                               setSearchImageQuery(cleanName);
                               handleSearchImages(cleanName);
                             }}
-                            className="w-full h-40 mb-4 relative rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center min-w-0 shadow-inner group cursor-pointer ring-offset-2 hover:ring-2 hover:ring-indigo-500 transition-all"
+                            className={`w-full h-40 mb-4 relative rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center min-w-0 shadow-inner group cursor-pointer ring-offset-2 hover:ring-2 hover:ring-indigo-500 transition-all ${
+                              draggedOverItemId === item.id 
+                                ? "border-4 border-dashed border-indigo-600 bg-indigo-50 dark:bg-indigo-950/20 scale-95" 
+                                : ""
+                            }`}
                           >
                             {item.imageUrl ? (
                               <div className="relative w-full h-full group/img">
@@ -2181,12 +2283,20 @@ export default function ViewMenuPage() {
                       ))}
                     </div>
 
-                    {visibleImagesCount < searchedImages.length && (
+                    {visibleImagesCount < searchedImages.length ? (
                       <button
                         onClick={() => setVisibleImagesCount(prev => prev + 12)}
                         className="w-full py-3 bg-[var(--kravy-surface-hover)] border border-[var(--kravy-border)] rounded-xl font-black text-xs uppercase tracking-widest text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm active:scale-98"
                       >
                         Load More Images
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleLoadMoreImages}
+                        disabled={searchingImages}
+                        className="w-full py-3 bg-[var(--kravy-surface-hover)] border border-[var(--kravy-border)] rounded-xl font-black text-xs uppercase tracking-widest text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {searchingImages ? <Loader2 className="animate-spin" size={16} /> : "Search Next Page"}
                       </button>
                     )}
                   </div>

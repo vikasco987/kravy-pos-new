@@ -4,6 +4,7 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const query = searchParams.get("q");
+        const offset = searchParams.get("offset") || "0";
         
         if (!query) {
             return NextResponse.json({ success: false, error: "Query parameter 'q' is required." }, { status: 400 });
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
         
         if (!vqdMatch) throw new Error("No VQD token from search provider");
         
-        const url = `https://duckduckgo.com/i.js?q=${encodeURIComponent(searchQ)}&o=json&vqd=${vqdMatch[1]}`;
+        const url = `https://duckduckgo.com/i.js?q=${encodeURIComponent(searchQ)}&o=json&vqd=${vqdMatch[1]}&s=${offset}&nextvqd=${vqdMatch[1]}`;
         const res2 = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
         const json = await res2.json();
         
