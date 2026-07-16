@@ -11,97 +11,27 @@ const JWT_SECRET = process.env.JWT_SECRET || "kravy_pos_secret_key_123";
  * Supports Admin Impersonation (View-As) via 'x-impersonate-id' header or search params.
  */
 export async function getEffectiveClerkId(): Promise<string | null> {
-  // 1. Get current logged-in user
-  const { userId } = await auth();
-  
-  if (userId) {
-    let user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { id: true, role: true, ownerId: true }
-    });
+  const authUser = await getAuthUser();
+  if (!authUser) return null;
 
-    // CRITICAL: If user is not in DB or has no ownerId, try to sync from Clerk metadata
-    // This fixed the "History not showing" issue for Sellers/Staff logged in via Clerk
-    if (!user || (!user.ownerId && user.role !== "ADMIN")) {
-       try {
-          const { clerkClient } = await import('@clerk/nextjs/server');
-          const client = await clerkClient();
-          const fullUser = await client.users.getUser(userId);
-          const ownerId = (fullUser.publicMetadata?.ownerId as string) || null;
-
-          if (!user) {
-            user = await prisma.user.create({
-              data: {
-                clerkId: userId,
-                email: fullUser.emailAddresses[0].emailAddress,
-                name: `${fullUser.firstName || ""} ${fullUser.lastName || ""}`.trim() || fullUser.username || "Staff Member",
-                role: "USER",
-                ownerId: ownerId,
-              },
-              select: { id: true, role: true, ownerId: true }
-            });
-          } else if (ownerId && !user.ownerId) {
-            user = await prisma.user.update({
-              where: { clerkId: userId },
-              data: { ownerId: ownerId },
-              select: { id: true, role: true, ownerId: true }
-            });
-          }
-       } catch (err) {
-          console.error("Auth sync error:", err);
-       }
-    }
-
+  // Check for impersonation if user is ADMIN
+  if (authUser.role === "ADMIN") {
     const headersList = await (await import('next/headers')).headers();
     const headerImpersonateId = headersList.get('x-impersonate-id');
-    console.log("🔍 [getEffectiveClerkId DEBUG] userId:", userId, "userRole in DB:", user?.role, "x-impersonate-id header:", headerImpersonateId);
-    // Check for impersonation if user is ADMIN
-    if (user && user.role === "ADMIN") {
-      if (headerImpersonateId) {
-        console.log("🎯 [getEffectiveClerkId DEBUG] Overriding with headerImpersonateId:", headerImpersonateId);
-        return headerImpersonateId;
-      }
-      const referer = headersList.get('referer') || 'http://localhost';
-      const { searchParams } = new URL(referer);
-      const impersonateId = searchParams.get('asUserId');
-      if (impersonateId) {
-        console.log("🎯 [getEffectiveClerkId DEBUG] Overriding with referer impersonateId:", impersonateId);
-        return impersonateId;
-      }
+    if (headerImpersonateId) {
+      console.log("🎯 [getEffectiveClerkId] Admin impersonating via header:", headerImpersonateId);
+      return headerImpersonateId;
     }
-
-    const resolvedId = user?.ownerId || userId;
-    console.log("🎯 [getEffectiveClerkId DEBUG] Resolved ID:", resolvedId);
-    return resolvedId;
+    const referer = headersList.get('referer') || 'http://localhost';
+    const { searchParams } = new URL(referer);
+    const impersonateId = searchParams.get('asUserId');
+    if (impersonateId) {
+      console.log("🎯 [getEffectiveClerkId] Admin impersonating via referer:", impersonateId);
+      return impersonateId;
+    }
   }
 
-  // 2. Try Custom JWT Auth (Legacy Staff OR New Custom User)
-  const cookieStore = await cookies();
-  const token = cookieStore.get('kravy_auth_token')?.value || cookieStore.get('staff_token')?.value;
-
-  if (token) {
-      try {
-          const decoded: any = jwt.verify(token, JWT_SECRET);
-          const userId = decoded.userId || decoded.staffId;
-          
-          // 🔍 Fetch latest user data to get the correct business ID (clerkId/ownerId)
-          const user = await prisma.user.findUnique({ 
-            where: { id: userId },
-            select: { clerkId: true, ownerId: true }
-          });
-
-          if (user) {
-            return user.ownerId || user.clerkId;
-          }
-
-          // Fallback to decoded data
-          return decoded.clerkId || decoded.businessId || decoded.userId; 
-      } catch (err) {
-          return null;
-      }
-  }
-
-  return null;
+  return authUser.businessId || authUser.id;
 }
 
 export type AuthUser = {
