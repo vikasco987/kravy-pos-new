@@ -1639,13 +1639,6 @@ export default function ViewMenuPage() {
 
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setShowUploadMenuModal(true)}
-                  className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-md transition-all animate-pulse"
-                >
-                  <Plus size={12} strokeWidth={3} /> Upload New Menu (AI)
-                </button>
-
-                <button
                   onClick={handleSyncAllImages}
                   disabled={syncProgress !== null}
                   className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-md disabled:opacity-50 transition-all"
@@ -1708,6 +1701,13 @@ export default function ViewMenuPage() {
                    <Trash2 size={14} className="group-hover:animate-bounce" /> Clear All
                 </button>
                 <div className="w-[1px] h-8 bg-gray-100 mx-1" />
+                <button
+                  onClick={() => setShowUploadMenuModal(true)}
+                  className="px-6 py-2.5 rounded-2xl bg-orange-600 text-white font-black text-xs uppercase tracking-widest flex-shrink-0 hover:bg-orange-700 transition-all flex items-center gap-2.5 shadow-lg shadow-orange-600/20 active:scale-95 animate-pulse"
+                  title="Upload New Menu File"
+                >
+                  <Plus size={16} strokeWidth={3} /> Upload Menu (AI)
+                </button>
                 <button
                   onClick={() => {
                     if (menus.length === 0) {
