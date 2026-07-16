@@ -100,7 +100,10 @@ export default function AutoApplyClient() {
                     body: formData
                 });
                 
-                if (!res.ok) throw new Error(`OCR Failed for ${file.name}`);
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    throw new Error(`Server Error ${res.status}: ${errorText}`);
+                }
                 
                 const data = await res.json();
                 const extracted = data.items || data.menu || [];
@@ -108,9 +111,12 @@ export default function AutoApplyClient() {
                 if (data.success && extracted.length > 0) {
                     combinedMenu = combinedMenu.concat(extracted.map((e: any) => ({ ...e, assigned_image: null, img_status: 'waiting' })));
                     lastSuccessData = data;
+                } else {
+                    throw new Error(data.error || "No items were extracted");
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Error processing file", file.name, err);
+                alert(`Upload Failed for ${file.name}:\n\n${err.message}`);
             }
         }
 
