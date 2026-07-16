@@ -537,10 +537,31 @@ export default function ViewMenuPage() {
     if (!q) return;
     setSearchingImages(true);
     try {
-      const res = await fetch(`/api/proxy/image-search?q=${encodeURIComponent(q)}`);
-      if (!res.ok) throw new Error("Search failed");
-      const data = await res.json();
-      const photos = data.data || [];
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+      let photos = [];
+      try {
+        const res = await fetch(`/api/proxy/image-search?q=${encodeURIComponent(q)}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          photos = data.data || [];
+        }
+      } catch (err) {
+        console.warn("FoodSnap search timed out or failed, falling back to Deep Search...", err);
+      }
+
+      if (photos.length === 0) {
+        const resDeep = await fetch(`/api/proxy/google-image-search?q=${encodeURIComponent(q)}`);
+        if (resDeep.ok) {
+          const dataDeep = await resDeep.json();
+          photos = dataDeep.data || [];
+        }
+      }
+
       const urls = photos.map((p: any) => p.image_url || p.image || p.url).filter(Boolean);
       setSearchedImages(urls);
     } catch (e) {
@@ -588,28 +609,49 @@ export default function ViewMenuPage() {
       const promises = chunk.map(async (item) => {
         try {
           const cleanName = item.name.replace(/^\(v\)\s*/i, '').replace(/\[.*?\]|\(.*?\)/g, '').trim();
-          const res = await fetch(`/api/proxy/image-search?q=${encodeURIComponent(cleanName)}`);
-          if (res.ok) {
-            const data = await res.json();
-            const photos = data.data || [];
-            const firstImg = photos[0]?.image_url || photos[0]?.image || photos[0]?.url;
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2000);
+          let firstImg = null;
+          
+          try {
+            const res = await fetch(`/api/proxy/image-search?q=${encodeURIComponent(cleanName)}`, {
+              signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              const photos = data.data || [];
+              firstImg = photos[0]?.image_url || photos[0]?.image || photos[0]?.url;
+            }
+          } catch (err) {
+            console.warn("FoodSnap sync timed out, falling back to Deep Search for", cleanName);
+          }
+
+          if (!firstImg) {
+            const resDeep = await fetch(`/api/proxy/google-image-search?q=${encodeURIComponent(cleanName)}`);
+            if (resDeep.ok) {
+              const dataDeep = await resDeep.json();
+              const photosDeep = dataDeep.data || [];
+              firstImg = photosDeep[0]?.image_url || photosDeep[0]?.image || photosDeep[0]?.url;
+            }
+          }
+          
+          if (firstImg) {
+            const updateRes = await fetch("/api/items", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: item.id,
+                imageUrl: firstImg
+              })
+            });
             
-            if (firstImg) {
-              const updateRes = await fetch("/api/items", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  id: item.id,
-                  imageUrl: firstImg
-                })
-              });
-              
-              if (updateRes.ok) {
-                setMenus(prev => prev.map(cat => ({
-                  ...cat,
-                  items: cat.items.map(it => it.id === item.id ? { ...it, imageUrl: firstImg } : it)
-                })));
-              }
+            if (updateRes.ok) {
+              setMenus(prev => prev.map(cat => ({
+                ...cat,
+                items: cat.items.map(it => it.id === item.id ? { ...it, imageUrl: firstImg } : it)
+              })));
             }
           }
         } catch (err) {
