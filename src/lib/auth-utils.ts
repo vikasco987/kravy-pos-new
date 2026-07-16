@@ -52,22 +52,27 @@ export async function getEffectiveClerkId(): Promise<string | null> {
        }
     }
 
+    const headersList = await (await import('next/headers')).headers();
+    const headerImpersonateId = headersList.get('x-impersonate-id');
+    console.log("🔍 [getEffectiveClerkId DEBUG] userId:", userId, "userRole in DB:", user?.role, "x-impersonate-id header:", headerImpersonateId);
     // Check for impersonation if user is ADMIN
     if (user && user.role === "ADMIN") {
-      const headersList = await (await import('next/headers')).headers();
-      const headerImpersonateId = headersList.get('x-impersonate-id');
       if (headerImpersonateId) {
+        console.log("🎯 [getEffectiveClerkId DEBUG] Overriding with headerImpersonateId:", headerImpersonateId);
         return headerImpersonateId;
       }
       const referer = headersList.get('referer') || 'http://localhost';
       const { searchParams } = new URL(referer);
       const impersonateId = searchParams.get('asUserId');
       if (impersonateId) {
+        console.log("🎯 [getEffectiveClerkId DEBUG] Overriding with referer impersonateId:", impersonateId);
         return impersonateId;
       }
     }
 
-    return user?.ownerId || userId;
+    const resolvedId = user?.ownerId || userId;
+    console.log("🎯 [getEffectiveClerkId DEBUG] Resolved ID:", resolvedId);
+    return resolvedId;
   }
 
   // 2. Try Custom JWT Auth (Legacy Staff OR New Custom User)
