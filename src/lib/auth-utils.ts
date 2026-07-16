@@ -55,6 +55,10 @@ export async function getEffectiveClerkId(): Promise<string | null> {
     // Check for impersonation if user is ADMIN
     if (user && user.role === "ADMIN") {
       const headersList = await (await import('next/headers')).headers();
+      const headerImpersonateId = headersList.get('x-impersonate-id');
+      if (headerImpersonateId) {
+        return headerImpersonateId;
+      }
       const referer = headersList.get('referer') || 'http://localhost';
       const { searchParams } = new URL(referer);
       const impersonateId = searchParams.get('asUserId');

@@ -880,7 +880,10 @@ export default function ViewMenuPage() {
       const newStatus = !item.isActive;
       const res = await fetch("/api/items", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+        },
         body: JSON.stringify({ id: item.id, isActive: newStatus }),
       });
 
@@ -903,7 +906,10 @@ export default function ViewMenuPage() {
     try {
       const res = await fetch("/api/items", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+        },
         body: JSON.stringify({
           id: updated.id,
           name: updated.name,
@@ -934,7 +940,10 @@ export default function ViewMenuPage() {
     try {
       const res = await fetch("/api/items", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+        },
         body: JSON.stringify({ id: item.id }),
       });
 
@@ -952,6 +961,7 @@ export default function ViewMenuPage() {
     try {
       const res = await fetch("/api/items?all=true", {
         method: "DELETE",
+        headers: asUserId ? { "x-impersonate-id": asUserId } : undefined
       });
 
       if (!res.ok) throw new Error(await res.text().catch(() => `Failed (${res.status})`));
@@ -971,7 +981,10 @@ export default function ViewMenuPage() {
     try {
       const res = await fetch("/api/categories", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+        },
         body: JSON.stringify({ name }),
       });
 
@@ -999,7 +1012,10 @@ export default function ViewMenuPage() {
     try {
       const res = await fetch("/api/categories", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+        },
         body: JSON.stringify({ id: editingCategory.id, name: newName }),
       });
       if (res.ok) {
@@ -1017,7 +1033,10 @@ export default function ViewMenuPage() {
     try {
       const res = await fetch("/api/categories", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+        },
         body: JSON.stringify({ id: deletingCategory.id }),
       });
       if (res.ok) {
@@ -1104,7 +1123,10 @@ export default function ViewMenuPage() {
     try {
       const res = await fetch("/api/items", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+        },
         body: JSON.stringify({
           name,
           price: Number(price),
@@ -1467,7 +1489,7 @@ export default function ViewMenuPage() {
                             className={`w-full h-40 mb-4 relative rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center min-w-0 shadow-inner group ${isAdmin ? "cursor-pointer ring-offset-2 hover:ring-2 hover:ring-indigo-500 transition-all" : ""}`}
                           >
                             {item.imageUrl ? (
-                              <Image src={item.imageUrl} alt={item.name} fill className={`object-cover transition-transform duration-500 group-hover:scale-110 ${!item.isActive ? "grayscale opacity-50" : ""}`} sizes="(max-width: 768px) 50vw, 25vw" />
+                              <img src={item.imageUrl} alt={item.name} className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${!item.isActive ? "grayscale opacity-50" : ""}`} />
                             ) : (
                               <div className="text-[var(--kravy-text-faint)] font-bold text-xs uppercase tracking-widest flex flex-col items-center gap-1">
                                 <span>No Image</span>
@@ -2104,7 +2126,7 @@ export default function ViewMenuPage() {
                         onClick={() => handleSelectImage(imgUrl)}
                         className="group relative h-28 rounded-xl overflow-hidden cursor-pointer border border-[var(--kravy-border)] hover:border-indigo-500 shadow-sm transition-all"
                       >
-                        <Image src={imgUrl} alt="Thumbnail" fill className="object-cover transition-transform duration-300 group-hover:scale-105" sizes="(max-width: 768px) 50vw, 25vw" />
+                        <img src={imgUrl} alt="Thumbnail" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                         <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
                           <span className="text-[9px] font-black uppercase tracking-widest text-white bg-indigo-600 px-3 py-1.5 rounded-lg shadow-md active:scale-95">Use Image</span>
                         </div>
