@@ -1999,6 +1999,8 @@ export default function ViewMenuPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
       {/* 🚀 ADMIN IMAGE SEARCH SIDE PANEL */}
       <AnimatePresence>
         {imageSearchItem && (
