@@ -748,7 +748,9 @@ export default function ViewMenuPage() {
 
     setSavingExtractedMenu(true);
     try {
-      let existingCatsRes = await fetch(asUserId ? `/api/categories?asUserId=${asUserId}` : "/api/categories");
+      let existingCatsRes = await fetch("/api/categories", {
+        headers: asUserId ? { "x-impersonate-id": asUserId } : {}
+      });
       let existingCats = await existingCatsRes.json();
       if (!Array.isArray(existingCats)) existingCats = [];
 
