@@ -54,7 +54,7 @@ const ALL_PATHS = [
   { path: "/dashboard/billing/checkout", label: "Quick POS Billing", icon: <ShoppingCart size={16} /> },
   { path: "edit", label: "Edit POS (Add Products/Categories)", icon: <Settings size={16} /> },
   { path: "/dashboard/workflow", label: "Kitchen Workflow", icon: <Activity size={16} /> },
-  { path: "/dashboard/tables", label: "Table Status", icon: <LayoutGrid size={16} /> },
+  { path: "/dashboard/tables", label: "Tables & Floor Management", icon: <LayoutGrid size={16} /> },
   { path: "/dashboard/billing", label: "Past Bills / History", icon: <Receipt size={16} /> },
   
   // Detailed Action Permissions
