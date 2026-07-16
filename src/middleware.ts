@@ -35,6 +35,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/auth/(.*)",   // Added
   "/api/invoice/(.*)", // Added
   "/api/phonepe/webhook", // Added
+  "/api/update-token", // Added: Allow token sync without cookies
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/staff/login",
