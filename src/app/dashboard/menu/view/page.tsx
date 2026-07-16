@@ -458,6 +458,24 @@ export default function ViewMenuPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [merchants, setMerchants] = useState<any[]>([]);
   const [selectedMerchantClerkId, setSelectedMerchantClerkId] = useState<string>("");
+  const [searchMerchantQuery, setSearchMerchantQuery] = useState("");
+  const [isMerchantDropdownOpen, setIsMerchantDropdownOpen] = useState(false);
+
+  const selectedMerchantLabel = useMemo(() => {
+    if (!selectedMerchantClerkId) return "-- View My Own Menu --";
+    const found = merchants.find((m) => m.clerkId === selectedMerchantClerkId);
+    return found ? `${found.name} (${found.email})` : selectedMerchantClerkId;
+  }, [merchants, selectedMerchantClerkId]);
+
+  const filteredMerchants = useMemo(() => {
+    const q = searchMerchantQuery.toLowerCase().trim();
+    if (!q) return merchants;
+    return merchants.filter(
+      (m) =>
+        m.name?.toLowerCase().includes(q) ||
+        m.email?.toLowerCase().includes(q)
+    );
+  }, [merchants, searchMerchantQuery]);
 
   // Image search side panel states
   const [imageSearchItem, setImageSearchItem] = useState<MenuItem | null>(null);
@@ -1344,19 +1362,63 @@ export default function ViewMenuPage() {
       <div className="flex-shrink-0 z-40 bg-[var(--kravy-navbar-bg)] backdrop-blur-md border-b border-[var(--kravy-border)] transition-all">
         <div className="w-full">
           {isAdmin && (
-            <div className="px-6 py-3 bg-indigo-50 dark:bg-indigo-950/20 border-b border-indigo-100 dark:border-indigo-900/50 flex flex-wrap items-center justify-between gap-4 z-40">
-              <div className="flex items-center gap-3 flex-1 min-w-[280px]">
-                <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Active Merchant:</span>
-                <select
-                  value={selectedMerchantClerkId}
-                  onChange={(e) => handleMerchantChange(e.target.value)}
-                  className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-4 py-2 rounded-xl text-xs font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm"
-                >
-                  <option value="">-- View My Own Menu --</option>
-                  {merchants.map((m) => (
-                    <option key={m.id} value={m.clerkId}>{m.name} ({m.email})</option>
-                  ))}
-                </select>
+            <div className="px-6 py-3 bg-indigo-50 dark:bg-indigo-950/20 border-b border-indigo-100 dark:border-indigo-900/50 flex flex-wrap items-center justify-between gap-4 z-50">
+              <div className="flex items-center gap-3 flex-1 min-w-[280px] relative">
+                <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest flex-shrink-0">Active Merchant:</span>
+                
+                <div className="relative flex-1 max-w-md">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={isMerchantDropdownOpen ? searchMerchantQuery : selectedMerchantLabel}
+                      onFocus={() => {
+                        setIsMerchantDropdownOpen(true);
+                        setSearchMerchantQuery("");
+                      }}
+                      onChange={(e) => setSearchMerchantQuery(e.target.value)}
+                      placeholder="Type to search merchant..."
+                      className="w-full bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] pl-4 pr-10 py-2 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-all"
+                    />
+                    <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--kravy-text-faint)] pointer-events-none" />
+                  </div>
+
+                  {isMerchantDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsMerchantDropdownOpen(false)} />
+                      <div className="absolute left-0 right-0 mt-1 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50 py-1.5 no-scrollbar divide-y divide-[var(--kravy-border)]/30">
+                        <div
+                          onClick={() => {
+                            handleMerchantChange("");
+                            setIsMerchantDropdownOpen(false);
+                          }}
+                          className="px-4 py-2 text-xs font-black text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/10 cursor-pointer transition-all uppercase tracking-wider"
+                        >
+                          -- View My Own Menu --
+                        </div>
+
+                        {filteredMerchants.length === 0 ? (
+                          <div className="px-4 py-3 text-xs text-[var(--kravy-text-muted)] font-medium">No merchants match your search</div>
+                        ) : (
+                          filteredMerchants.map((m) => (
+                            <div
+                              key={m.id}
+                              onClick={() => {
+                                handleMerchantChange(m.clerkId);
+                                setIsMerchantDropdownOpen(false);
+                              }}
+                              className={`px-4 py-2.5 text-xs font-bold text-[var(--kravy-text-primary)] hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/20 cursor-pointer transition-all flex flex-col gap-0.5 ${
+                                selectedMerchantClerkId === m.clerkId ? "bg-indigo-50/50 text-indigo-600 border-l-4 border-indigo-500" : ""
+                              }`}
+                            >
+                              <span>{m.name}</span>
+                              <span className="text-[10px] text-[var(--kravy-text-muted)] font-medium">{m.email}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-3">
