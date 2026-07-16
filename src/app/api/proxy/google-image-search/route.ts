@@ -39,10 +39,32 @@ export async function GET(req: NextRequest) {
                 }
             }
         } catch (err) {
-            console.warn("DuckDuckGo fetch failed on proxy server, falling back to Google...", err);
+            console.warn("DuckDuckGo fetch failed on proxy server, trying Flickr/Google...", err);
         }
 
-        // Fallback to Google Images Mobile HTML Scraper if DuckDuckGo failed or returned no results
+        // Fallback 1: Flickr Public Feeds API (unblocked on Vercel, CORS-enabled, keyless)
+        if (photos.length === 0) {
+            try {
+                const tags = cleanName.toLowerCase().replace(/\s+/g, ",");
+                const flickrUrl = `https://www.flickr.com/services/feeds/photos_public.gne?tags=${encodeURIComponent(tags)}&format=json&nojsoncallback=1`;
+                const resFlickr = await fetch(flickrUrl);
+                if (resFlickr.ok) {
+                    const text = await resFlickr.text();
+                    // Flickr returns JSON with sometimes escaped single quotes, parse it safely
+                    const dataFlickr = JSON.parse(text);
+                    if (dataFlickr.items && dataFlickr.items.length > 0) {
+                        photos = dataFlickr.items.map((item: any) => ({
+                            image_url: item.media.m.replace("_m.jpg", "_b.jpg").replace("_m.png", "_b.png"),
+                            title: item.title || cleanName
+                        }));
+                    }
+                }
+            } catch (err) {
+                console.warn("Flickr fallback failed, trying Google...", err);
+            }
+        }
+
+        // Fallback 2: Google Images Mobile HTML Scraper
         if (photos.length === 0) {
             try {
                 const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(cleanName + " food")}&tbm=isch`;
