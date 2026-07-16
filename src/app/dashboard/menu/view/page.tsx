@@ -394,11 +394,8 @@
 //src/app/menu/view/page.tsx
 
 "use client";
-import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles } from "lucide-react";
+import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles, Image as ImageIcon, Loader2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /* types */
 type MenuItem = {
@@ -449,6 +446,24 @@ export default function ViewMenuPage() {
   const [cart, setCart] = useState<Record<string, CartItem>>({});
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const asUserId = searchParams.get("asUserId");
+
+  // Admin States
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [merchants, setMerchants] = useState<any[]>([]);
+  const [selectedMerchantClerkId, setSelectedMerchantClerkId] = useState<string>("");
+
+  // Image search side panel states
+  const [imageSearchItem, setImageSearchItem] = useState<MenuItem | null>(null);
+  const [searchImageQuery, setSearchImageQuery] = useState("");
+  const [searchedImages, setSearchedImages] = useState<any[]>([]);
+  const [searchingImages, setSearchingImages] = useState(false);
+
+  // Sync All state
+  const [syncProgress, setSyncProgress] = useState<{ completed: number; total: number } | null>(null);
+
   // filters & UI
   const [query, setQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string | "all">("all");
@@ -490,6 +505,123 @@ export default function ViewMenuPage() {
     return null;
   };
 
+  const handleMerchantChange = (clerkId: string) => {
+    setSelectedMerchantClerkId(clerkId);
+    if (clerkId) {
+      router.push(`/dashboard/menu/view?asUserId=${clerkId}`);
+    } else {
+      router.push("/dashboard/menu/view");
+    }
+  };
+
+  const handleWipeMenu = async () => {
+    if (!confirm("Are you sure you want to WIPE this customer's entire menu? This is permanent and deletes all products and categories.")) return;
+    try {
+      const deleteUrl = asUserId ? `/api/items?all=true&asUserId=${asUserId}` : `/api/items?all=true`;
+      const res = await fetch(deleteUrl, { method: "DELETE" });
+      if (!res.ok) throw new Error(await res.text());
+      setMenus([]);
+      setToast("Customer's menu wiped clean!");
+    } catch (e: any) {
+      console.error(e);
+      setToast("Failed to wipe menu: " + e.message);
+    }
+  };
+
+  const handleSearchImages = async (forcedQuery?: string) => {
+    const q = forcedQuery || searchImageQuery.trim();
+    if (!q) return;
+    setSearchingImages(true);
+    try {
+      const res = await fetch(`/api/proxy/image-search?q=${encodeURIComponent(q)}`);
+      if (!res.ok) throw new Error("Search failed");
+      const data = await res.json();
+      const photos = data.data || [];
+      const urls = photos.map((p: any) => p.image_url || p.image || p.url).filter(Boolean);
+      setSearchedImages(urls);
+    } catch (e) {
+      console.error(e);
+      setToast("Failed to search images");
+    } finally {
+      setSearchingImages(false);
+    }
+  };
+
+  const handleSelectImage = async (url: string) => {
+    if (!imageSearchItem) return;
+    try {
+      const editPayload = { ...imageSearchItem, imageUrl: url };
+      await saveEdit(editPayload);
+      setImageSearchItem(null);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSyncAllImages = async () => {
+    const blankItems: MenuItem[] = [];
+    menus.forEach(cat => {
+      cat.items.forEach(it => {
+        if (!it.imageUrl) {
+          blankItems.push(it);
+        }
+      });
+    });
+
+    if (blankItems.length === 0) {
+      setToast("All items already have images!");
+      return;
+    }
+
+    if (!confirm(`Sync images for ${blankItems.length} items without images?`)) return;
+
+    setSyncProgress({ completed: 0, total: blankItems.length });
+
+    const chunkSize = 5;
+    for (let i = 0; i < blankItems.length; i += chunkSize) {
+      const chunk = blankItems.slice(i, i + chunkSize);
+      
+      const promises = chunk.map(async (item) => {
+        try {
+          const cleanName = item.name.replace(/^\(v\)\s*/i, '').replace(/\[.*?\]|\(.*?\)/g, '').trim();
+          const res = await fetch(`/api/proxy/image-search?q=${encodeURIComponent(cleanName)}`);
+          if (res.ok) {
+            const data = await res.json();
+            const photos = data.data || [];
+            const firstImg = photos[0]?.image_url || photos[0]?.image || photos[0]?.url;
+            
+            if (firstImg) {
+              const updateRes = await fetch("/api/items", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  id: item.id,
+                  imageUrl: firstImg
+                })
+              });
+              
+              if (updateRes.ok) {
+                setMenus(prev => prev.map(cat => ({
+                  ...cat,
+                  items: cat.items.map(it => it.id === item.id ? { ...it, imageUrl: firstImg } : it)
+                })));
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Sync failed for item", item.name, err);
+        } finally {
+          setSyncProgress(prev => prev ? { ...prev, completed: prev.completed + 1 } : null);
+        }
+      });
+
+      await Promise.all(promises);
+    }
+
+    setSyncProgress(null);
+    setToast("Image sync complete!");
+  };
+
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 3000);
@@ -497,6 +629,29 @@ export default function ViewMenuPage() {
   }, [toast]);
 
   useEffect(() => {
+    fetch("/api/user/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.role === "ADMIN") {
+          setIsAdmin(true);
+          // Fetch merchants list
+          fetch("/api/admin/users")
+            .then(r => r.json())
+            .then(usersList => {
+              if (Array.isArray(usersList)) {
+                // Filter for merchants (OWNER / SELLER / ADMIN)
+                const merchantUsers = usersList.filter(u => u.role === "OWNER" || u.role === "SELLER" || u.role === "ADMIN");
+                setMerchants(merchantUsers);
+                
+                // If currently impersonating, set selected drop-down
+                if (asUserId) {
+                  setSelectedMerchantClerkId(asUserId);
+                }
+              }
+            }).catch(e => console.error("Failed to load merchants", e));
+        }
+      }).catch(e => console.error("Failed to check user me", e));
+
     fetch("/api/profile")
       .then(res => res.json())
       .then(data => {
@@ -504,7 +659,7 @@ export default function ViewMenuPage() {
         setTaxEnabled(data?.taxEnabled || data?.perProductTaxEnabled || false);
       })
       .catch(() => {});
-  }, []);
+  }, [asUserId]);
 
   useEffect(() => {
     const fetchMenus = async () => {
@@ -512,7 +667,8 @@ export default function ViewMenuPage() {
       setError(null);
 
       try {
-        const res = await fetch("/api/menu/view", {
+        const fetchUrl = asUserId ? `/api/menu/view?asUserId=${asUserId}` : "/api/menu/view";
+        const res = await fetch(fetchUrl, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -587,7 +743,7 @@ export default function ViewMenuPage() {
     };
 
     fetchMenus();
-  }, []);
+  }, [asUserId]);
 
   const allCategories = useMemo(() => [{ id: "all", name: "All Categories" }, ...menus.map((m) => ({ id: m.id, name: m.name }))], [menus]);
 
@@ -990,9 +1146,44 @@ export default function ViewMenuPage() {
 
   return (
     <div className="h-[calc(100vh-72px)] bg-[var(--kravy-bg)] flex flex-col -m-4 sm:-m-6 lg:-m-8 overflow-hidden transition-colors duration-300">
-      {/* 🚀 FIXED TOP HEADER */}
       <div className="flex-shrink-0 z-40 bg-[var(--kravy-navbar-bg)] backdrop-blur-md border-b border-[var(--kravy-border)] transition-all">
         <div className="w-full">
+          {isAdmin && (
+            <div className="px-6 py-3 bg-indigo-50 dark:bg-indigo-950/20 border-b border-indigo-100 dark:border-indigo-900/50 flex flex-wrap items-center justify-between gap-4 z-40">
+              <div className="flex items-center gap-3 flex-1 min-w-[280px]">
+                <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Active Merchant:</span>
+                <select
+                  value={selectedMerchantClerkId}
+                  onChange={(e) => handleMerchantChange(e.target.value)}
+                  className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-4 py-2 rounded-xl text-xs font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm"
+                >
+                  <option value="">-- View My Own Menu --</option>
+                  {merchants.map((m) => (
+                    <option key={m.id} value={m.clerkId}>{m.name} ({m.email})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSyncAllImages}
+                  disabled={syncProgress !== null}
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-md disabled:opacity-50 transition-all"
+                >
+                  <Sparkles size={12} /> {syncProgress ? `Syncing (${syncProgress.completed}/${syncProgress.total})` : "Sync All Images"}
+                </button>
+
+                {asUserId && (
+                  <button
+                    onClick={handleWipeMenu}
+                    className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-md transition-all"
+                  >
+                    <Trash2 size={12} /> Wipe Customer Menu
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           {/* Top Bar: Search & Filters */}
           <div className="px-6 py-4 border-b border-[var(--kravy-border)]/30">
             <div className="flex items-center justify-between gap-4">
@@ -1217,11 +1408,25 @@ export default function ViewMenuPage() {
                       return (
                         <motion.div key={item.id} layout whileHover={{ scale: 1.03, y: -4 }} className="bg-[var(--kravy-surface)] p-4 rounded-2xl border border-[var(--kravy-border)] shadow-sm relative cursor-pointer min-w-0 transition-all hover:border-indigo-400/50">
 
-                          <div className="w-full h-40 mb-4 relative rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center min-w-0 shadow-inner">
+                          <div
+                            onClick={(e) => {
+                              if (isAdmin) {
+                                e.stopPropagation();
+                                setImageSearchItem(item);
+                                const cleanName = item.name.replace(/^\(v\)\s*/i, '').replace(/\[.*?\]|\(.*?\)/g, '').trim();
+                                setSearchImageQuery(cleanName);
+                                handleSearchImages(cleanName);
+                              }
+                            }}
+                            className={`w-full h-40 mb-4 relative rounded-xl overflow-hidden bg-[var(--kravy-bg-2)] flex items-center justify-center min-w-0 shadow-inner group ${isAdmin ? "cursor-pointer ring-offset-2 hover:ring-2 hover:ring-indigo-500 transition-all" : ""}`}
+                          >
                             {item.imageUrl ? (
                               <Image src={item.imageUrl} alt={item.name} fill className={`object-cover transition-transform duration-500 group-hover:scale-110 ${!item.isActive ? "grayscale opacity-50" : ""}`} sizes="(max-width: 768px) 50vw, 25vw" />
                             ) : (
-                              <div className="text-[var(--kravy-text-faint)] font-bold text-xs uppercase tracking-widest">No Image</div>
+                              <div className="text-[var(--kravy-text-faint)] font-bold text-xs uppercase tracking-widest flex flex-col items-center gap-1">
+                                <span>No Image</span>
+                                {isAdmin && <span className="text-[9px] text-indigo-500 font-black lowercase normal-case tracking-normal">(click to add)</span>}
+                              </div>
                             )}
                             
                             {/* Status Badge */}
@@ -1790,8 +1995,80 @@ export default function ViewMenuPage() {
               </div>
             </div>
           </div>
-        </div>
-      )}
+      {/* 🚀 ADMIN IMAGE SEARCH SIDE PANEL */}
+      <AnimatePresence>
+        {imageSearchItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] flex justify-end"
+            onClick={() => setImageSearchItem(null)}
+          >
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="w-full max-w-md bg-[var(--kravy-surface)] border-l border-[var(--kravy-border)] h-full shadow-2xl flex flex-col p-8 overflow-hidden z-[10001]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-[var(--kravy-border)]/50 pb-4 mb-6">
+                <div>
+                  <h3 className="font-[900] text-[var(--kravy-text-primary)] text-xl tracking-tight">Search Images</h3>
+                  <p className="text-xs text-[var(--kravy-text-muted)] font-medium mt-1 truncate max-w-[280px]">For: <span className="font-bold text-indigo-500">{imageSearchItem.name}</span></p>
+                </div>
+                <button onClick={() => setImageSearchItem(null)} className="p-2 hover:bg-[var(--kravy-surface-hover)] rounded-xl text-[var(--kravy-text-secondary)] transition-all">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex gap-2 mb-6">
+                <input
+                  value={searchImageQuery}
+                  onChange={(e) => setSearchImageQuery(e.target.value)}
+                  placeholder="Enter keyword to search..."
+                  className="flex-1 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-bold text-sm"
+                  onKeyDown={(e) => e.key === "Enter" && handleSearchImages()}
+                />
+                <button
+                  onClick={() => handleSearchImages()}
+                  disabled={searchingImages}
+                  className="px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center disabled:opacity-50 active:scale-95 transition-all shadow-md shadow-indigo-600/10"
+                >
+                  {searchingImages ? <Loader2 className="animate-spin" size={16} /> : "Search"}
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto no-scrollbar min-h-0">
+                {searchingImages ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-2.5">
+                    <Loader2 className="animate-spin text-indigo-500" size={32} />
+                    <p className="text-xs text-[var(--kravy-text-muted)] font-black uppercase tracking-wider">Searching FoodSnap...</p>
+                  </div>
+                ) : searchedImages.length === 0 ? (
+                  <p className="text-center py-20 text-xs text-[var(--kravy-text-muted)] font-bold opacity-60">No images found. Try a different query.</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4 pb-12">
+                    {searchedImages.map((imgUrl, i) => (
+                      <div
+                        key={i}
+                        onClick={() => handleSelectImage(imgUrl)}
+                        className="group relative h-28 rounded-xl overflow-hidden cursor-pointer border border-[var(--kravy-border)] hover:border-indigo-500 shadow-sm transition-all"
+                      >
+                        <Image src={imgUrl} alt="Thumbnail" fill className="object-cover transition-transform duration-300 group-hover:scale-105" sizes="(max-width: 768px) 50vw, 25vw" />
+                        <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-white bg-indigo-600 px-3 py-1.5 rounded-lg shadow-md active:scale-95">Use Image</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
