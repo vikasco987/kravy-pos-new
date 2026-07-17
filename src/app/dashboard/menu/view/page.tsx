@@ -716,13 +716,18 @@ export default function ViewMenuPage() {
           const rawName = item.item_name || item.name || "";
           const cleanName = rawName.replace(/^\(v\)\s*/i, '').replace(/\[.*?\]|\(.*?\)/g, '').trim();
           
-          const res = await fetch(`/api/proxy/google-image-search?q=${encodeURIComponent(cleanName)}`);
+          const res = await fetch(`/api/proxy/image-search?q=${encodeURIComponent(cleanName)}`);
           if (res.ok) {
             const data = await res.json();
             const photos = data.data || [];
             if (photos.length > 0) {
-              currentItems[actualIndex].imageUrl = photos[0].image_url;
-              currentItems[actualIndex].img_status = 'success';
+              const firstImg = photos[0].image_url || photos[0].image || photos[0].url || photos[0].imageUrl;
+              if (firstImg) {
+                currentItems[actualIndex].imageUrl = firstImg;
+                currentItems[actualIndex].img_status = 'success';
+              } else {
+                currentItems[actualIndex].img_status = 'empty';
+              }
             } else {
               currentItems[actualIndex].img_status = 'empty';
             }
