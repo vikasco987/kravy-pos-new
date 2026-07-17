@@ -97,6 +97,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, balance: updatedParty.walletBalance });
     }
 
+    if (action === "withdraw") {
+      const currentBalance = party.walletBalance || 0;
+      if (currentBalance < amount) {
+        console.warn(`[WALLET_API] Insufficient Balance: ${currentBalance} < ${amount}`);
+        return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
+      }
+
+      const newBalance = currentBalance - amount;
+      console.log(`[WALLET_API] Manual Withdrawal: ${currentBalance} - ${amount} = ${newBalance}`);
+
+      // 1. Deduct Balance
+      const updatedParty = await prisma.party.update({
+        where: { id: partyId },
+        data: {
+          walletBalance: newBalance,
+        },
+      });
+
+      // 2. Transaction Entry
+      await prisma.walletTransaction.create({
+        data: {
+          partyId,
+          clerkId: effectiveId,
+          type: "DEBIT",
+          amount,
+          description: description || "Money Withdrawn",
+        },
+      });
+
+      return NextResponse.json({ success: true, balance: updatedParty.walletBalance });
+    }
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
   } catch (error) {

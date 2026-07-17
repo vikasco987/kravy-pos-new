@@ -24,7 +24,8 @@ import {
   FileText,
   LayoutGrid,
   List,
-  Printer
+  Printer,
+  Wallet
 } from "lucide-react";
 import { kravy } from "@/lib/sounds";
 
@@ -97,6 +98,8 @@ export default function PartiesPage() {
   const [depositingParty, setDepositingParty] = useState<Party | null>(null);
   const [depositAmount, setDepositAmount] = useState("");
   const [depositLoading, setDepositLoading] = useState(false);
+  const [depositType, setDepositType] = useState<"deposit" | "withdraw">("deposit");
+  const [depositRemark, setDepositRemark] = useState("");
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -366,28 +369,33 @@ export default function PartiesPage() {
   const handleDeposit = async () => {
     if (!depositingParty || !depositAmount || parseFloat(depositAmount) <= 0) return;
     setDepositLoading(true);
+    const actionText = depositType === 'deposit' ? 'Deposited' : 'Withdrawn';
+    const fallbackDesc = depositType === 'deposit' ? 'Manual Cash Deposit' : 'Manual Cash Withdrawal';
     try {
       const res = await fetch('/api/wallet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'deposit',
+          action: depositType,
           partyId: depositingParty.id,
           amount: parseFloat(depositAmount),
-          description: 'Manual Cash Deposit'
+          description: depositRemark.trim() || fallbackDesc
         })
       });
       if (res.ok) {
         const data = await res.json();
         setParties(p => p.map(x => x.id === depositingParty.id ? { ...x, walletBalance: data.balance } : x));
-        pushToast("success", `Deposited ₹${depositAmount} successfully!`);
+        pushToast("success", `${actionText} ₹${depositAmount} successfully!`);
         setDepositOpen(false);
         setDepositAmount("");
+        setDepositRemark("");
+        setDepositType("deposit");
       } else {
-        pushToast("error", "Deposit failed");
+        const errJson = await res.json();
+        pushToast("error", errJson.error || `${depositType === 'deposit' ? 'Deposit' : 'Withdrawal'} failed`);
       }
     } catch (err) {
-      pushToast("error", "Error processing deposit");
+      pushToast("error", `Error processing ${depositType}`);
     } finally {
       setDepositLoading(false);
     }
@@ -840,45 +848,130 @@ export default function PartiesPage() {
 
           {depositOpen && depositingParty && (
             <Modal 
-              title={`Deposit to ${depositingParty.name}'s Wallet`} 
-              onClose={() => { setDepositOpen(false); setDepositingParty(null); setDepositAmount(""); }}
+              title={`Manage ${depositingParty.name}'s Wallet`} 
+              onClose={() => { 
+                setDepositOpen(false); 
+                setDepositingParty(null); 
+                setDepositAmount(""); 
+                setDepositRemark("");
+                setDepositType("deposit");
+              }}
             >
               <div className="space-y-6">
-                <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 p-6 rounded-3xl">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-black uppercase text-amber-600 tracking-widest">Current Balance</span>
-                    <span className="text-xl font-black text-amber-600">₹{(depositingParty.walletBalance || 0).toFixed(2)}</span>
+                {/* Transaction Type Segmented Control */}
+                <div className="flex bg-[var(--kravy-bg-2)] p-1 rounded-2xl border border-[var(--kravy-border)]">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setDepositType("deposit");
+                      setDepositAmount("");
+                    }}
+                    className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                      depositType === "deposit" 
+                        ? "bg-amber-500 text-white shadow-lg shadow-amber-500/10" 
+                        : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]"
+                    }`}
+                  >
+                    🪙 Deposit Money
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setDepositType("withdraw");
+                      setDepositAmount("");
+                    }}
+                    className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                      depositType === "withdraw" 
+                        ? "bg-rose-500 text-white shadow-lg shadow-rose-500/10" 
+                        : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]"
+                    }`}
+                  >
+                    💸 Withdraw Money
+                  </button>
+                </div>
+
+                {/* Current Balance Display */}
+                <div className={`p-6 rounded-3xl border transition-all ${
+                  depositType === "deposit" 
+                    ? "bg-amber-50/50 dark:bg-amber-950/10 border-amber-200/50 dark:border-amber-900/30 text-amber-800 dark:text-amber-300"
+                    : "bg-rose-50/50 dark:bg-rose-950/10 border-rose-200/50 dark:border-rose-900/30 text-rose-800 dark:text-rose-300"
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Current Wallet Balance</span>
+                    <span className="text-2xl font-black">₹{(depositingParty.walletBalance || 0).toFixed(2)}</span>
                   </div>
-                  <div className="text-[9px] font-bold text-amber-600/70 uppercase leading-relaxed">
-                    Money added here can be used by the customer for future orders via "Wallet" payment mode.
+                  <div className="text-[9px] font-bold opacity-75 uppercase leading-relaxed">
+                    {depositType === "deposit" 
+                      ? "Money added here can be used by the customer for future orders via 'Wallet' payment mode."
+                      : "Deduct money directly from the customer's wallet balance. Make sure they have sufficient balance."}
                   </div>
                 </div>
 
+                {/* Amount Input */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] ml-2">Deposit Amount (₹)</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] ml-2">
+                    {depositType === "deposit" ? "Deposit Amount" : "Withdrawal Amount"} (₹)
+                  </label>
                   <input 
                     type="number"
                     autoFocus
                     placeholder="Enter amount (e.g. 500)"
                     value={depositAmount}
                     onChange={e => setDepositAmount(e.target.value)}
-                    className="w-full px-5 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none focus:border-amber-500 font-black text-2xl"
+                    className={`w-full px-5 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none font-black text-2xl transition-all ${
+                      depositType === "deposit" ? "focus:border-amber-500" : "focus:border-rose-500"
+                    }`}
+                  />
+                  {depositType === "withdraw" && parseFloat(depositAmount) > (depositingParty.walletBalance || 0) && (
+                    <p className="text-[10px] font-bold text-rose-500 ml-2">⚠️ Amount exceeds current wallet balance!</p>
+                  )}
+                </div>
+
+                {/* Remark Input */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] ml-2">
+                    Remark / Reason
+                  </label>
+                  <input 
+                    type="text"
+                    placeholder={depositType === "deposit" ? "e.g. Cash Topup, Advance Payment" : "e.g. Refund, Cash Handover"}
+                    value={depositRemark}
+                    onChange={e => setDepositRemark(e.target.value)}
+                    className="w-full px-5 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none focus:border-[var(--kravy-brand)] font-medium text-sm transition-all"
                   />
                 </div>
 
-                <div className="flex gap-4">
+                {/* Buttons */}
+                <div className="flex gap-4 pt-2">
                   <button 
-                    onClick={() => { setDepositOpen(false); setDepositingParty(null); setDepositAmount(""); }}
+                    type="button"
+                    onClick={() => { 
+                      setDepositOpen(false); 
+                      setDepositingParty(null); 
+                      setDepositAmount(""); 
+                      setDepositRemark("");
+                      setDepositType("deposit");
+                    }}
                     className="flex-1 py-4 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[var(--kravy-bg-2)] transition-all"
                   >
                     Cancel
                   </button>
                   <button 
+                    type="button"
                     onClick={handleDeposit}
-                    disabled={depositLoading || !depositAmount || parseFloat(depositAmount) <= 0}
-                    className="flex-[2] py-4 bg-amber-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:shadow-xl hover:shadow-amber-500/20 transition-all active:scale-95 disabled:opacity-50"
+                    disabled={
+                      depositLoading || 
+                      !depositAmount || 
+                      parseFloat(depositAmount) <= 0 || 
+                      (depositType === "withdraw" && parseFloat(depositAmount) > (depositingParty.walletBalance || 0))
+                    }
+                    className={`flex-[2] py-4 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 ${
+                      depositType === "deposit" 
+                        ? "bg-amber-500 hover:shadow-xl hover:shadow-amber-500/20" 
+                        : "bg-rose-500 hover:shadow-xl hover:shadow-rose-500/20"
+                    }`}
                   >
-                    {depositLoading ? "Processing..." : "Confirm Deposit"}
+                    {depositLoading ? "Processing..." : depositType === "deposit" ? "Confirm Deposit" : "Confirm Withdrawal"}
                   </button>
                 </div>
               </div>
@@ -1105,7 +1198,7 @@ function CustomerCard({ p, onEdit, onDelete, onViewHistory, onDeposit }: {
           onClick={(e) => { e.stopPropagation(); onDeposit(); }}
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all shadow-sm"
         >
-          <Plus size={12} /> Deposit
+          <Wallet size={12} /> Wallet
         </button>
         <div className="flex gap-1.5">
           <button onClick={onEdit} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hover:text-indigo-500 hover:border-indigo-500 transition-all">
