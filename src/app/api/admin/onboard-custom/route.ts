@@ -12,7 +12,8 @@ export async function POST(req: Request) {
     }
 
     const formData = await req.formData();
-    const email = formData.get("email")?.toString();
+    const rawEmail = formData.get("email")?.toString();
+    const email = rawEmail?.trim().toLowerCase();
     const phone = formData.get("phone")?.toString();
     const password = formData.get("password")?.toString();
     const businessName = formData.get("businessName")?.toString();

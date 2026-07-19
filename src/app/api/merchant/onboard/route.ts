@@ -8,7 +8,9 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { email, phone, password, restaurantName, address, timings, contactPhone, menu } = body;
 
-        if (!email || !password || !restaurantName) {
+        const cleanEmail = email?.trim().toLowerCase();
+
+        if (!cleanEmail || !password || !restaurantName) {
             return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
         }
 
@@ -16,7 +18,7 @@ export async function POST(req: NextRequest) {
         const existingUser = await prisma.user.findFirst({
             where: {
                 OR: [
-                    { email: email },
+                    { email: cleanEmail },
                     { phone: phone }
                 ]
             }
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
         // Create User
         const newUser = await prisma.user.create({
             data: {
-                email,
+                email: cleanEmail,
                 phone,
                 password: hashedPassword,
                 name: restaurantName,
