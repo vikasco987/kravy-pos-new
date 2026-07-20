@@ -1271,11 +1271,7 @@ export default function CheckoutClient() {
       const finalAmountPaid = amountPaid === "" ? finalTotal : Number(amountPaid);
       const balanceDue = Math.max(0, finalTotal - finalAmountPaid);
 
-      if (balanceDue > 0 && !selectedParty && !isHeld) {
-        alert("Remaining Unpaid Balance ke liye Customer (Party) select karna ya add karna zaroori hai.");
-        setIsSaving(false);
-        return null;
-      }
+      // Removed restriction: Customer selection is no longer compulsory for partial payments.
 
       // 🛡️ GST VALIDATION SYSTEM
       if (buyerGSTIN) {
