@@ -38,6 +38,8 @@ interface PrintTemplatesProps {
   selectedParty: any;
   kotNumbers: number[];
   numberToWords: (num: number) => string;
+  amountPaid?: number;
+  balanceDue?: number;
 }
 
 const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
@@ -47,7 +49,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
     items, subtotal, discountAmt, appliedOffer, taxActive, perProductEnabled,
     globalRate, totalTaxable, totalGst, taxBreakup, deliveryCharge, deliveryGst,
     packagingCharge, packagingGst, serviceCharge, finalTotal, paymentMode,
-    paymentStatus, upiTxnRef, qrUrl, prevWalletBalance, selectedParty, numberToWords, kotNumbers
+    paymentStatus, upiTxnRef, qrUrl, prevWalletBalance, selectedParty, numberToWords, kotNumbers,
+    amountPaid, balanceDue
   } = props;
 
   const ps = business?.printSettings || {};
@@ -405,6 +408,18 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             <span>GRAND TOTAL</span>
             <span>₹{finalTotal.toFixed(2)}</span>
           </div>
+          {(balanceDue !== undefined && balanceDue > 0) && (
+            <div className="px-1 border-b-2 border-black pb-1 mb-1 border-dashed">
+               <div className="flex justify-between items-center font-bold mt-1 uppercase" style={{ fontSize: 'var(--r-details-size)' }}>
+                 <span>Amount Paid</span>
+                 <span>₹{(amountPaid || 0).toFixed(2)}</span>
+               </div>
+               <div className="flex justify-between items-center font-bold mt-0.5 uppercase tracking-wide" style={{ fontSize: 'calc(var(--r-details-size) + 1px)' }}>
+                 <span>Unpaid Balance</span>
+                 <span>₹{balanceDue.toFixed(2)}</span>
+               </div>
+            </div>
+          )}
         </div>
 
         {(taxActive || perProductEnabled) && taxBreakup.length > 0 && s('showTaxBreakup') && (

@@ -458,6 +458,7 @@ export default function CheckoutClient() {
     setOrderNotes("");
     setSelectedParty(null);
     setUpiTxnRef("");
+    setAmountPaid("");
     setPaymentMode("None");
     setPaymentStatus("Pending");
     setBuyerGSTIN("");
@@ -1243,6 +1244,7 @@ export default function CheckoutClient() {
   /* ================= PAYMENT STATE ================= */
   const [paymentMode, setPaymentMode] = useState<"Cash" | "UPI" | "Card" | "Pay on Counter" | "Wallet">("Cash");
   const [paymentStatus, setPaymentStatus] = useState<"Pending" | "Paid">("Paid");
+  const [amountPaid, setAmountPaid] = useState<number | "">("");
   const [upiTxnRef, setUpiTxnRef] = useState("");
 
   /* ================= UPI ================= */
@@ -1266,6 +1268,15 @@ export default function CheckoutClient() {
     
     setIsSaving(true);
     try {
+      const finalAmountPaid = amountPaid === "" ? finalTotal : Number(amountPaid);
+      const balanceDue = Math.max(0, finalTotal - finalAmountPaid);
+
+      if (balanceDue > 0 && !selectedParty && !isHeld) {
+        alert("Remaining Unpaid Balance ke liye Customer (Party) select karna ya add karna zaroori hai.");
+        setIsSaving(false);
+        return null;
+      }
+
       // 🛡️ GST VALIDATION SYSTEM
       if (buyerGSTIN) {
         const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
@@ -1385,6 +1396,7 @@ export default function CheckoutClient() {
         kotNumbers,
         tokenNumber,
         profileId: business?.id,
+        amountPaid: finalAmountPaid,
       };
 
       const url = resumeBillId ? `/api/bill-manager/${resumeBillId}` : "/api/bill-manager";
@@ -3023,6 +3035,29 @@ export default function CheckoutClient() {
                 ))}
               </div>
 
+              {/* ✅ Partial Payment (Khata/Udhaar) */}
+              <div className="flex gap-2 items-center bg-[var(--kravy-surface)] border border-[var(--kravy-border)] p-2 rounded-xl mb-4">
+                 <div className="flex-1">
+                   <p className="text-[10px] font-black uppercase text-[var(--kravy-text-muted)] tracking-wider">Amount Paid (₹)</p>
+                   <div className="flex items-center gap-1 mt-1">
+                     <input
+                       type="number"
+                       value={amountPaid}
+                       onChange={(e) => setAmountPaid(e.target.value === "" ? "" : Number(e.target.value))}
+                       placeholder={`Full: ${finalTotal.toFixed(2)}`}
+                       className="w-full bg-transparent border-b-2 border-[var(--kravy-border)] outline-none font-black text-sm text-[var(--kravy-text-primary)] focus:border-[var(--kravy-brand)] transition-colors"
+                     />
+                   </div>
+                 </div>
+                 {(amountPaid !== "" && Number(amountPaid) < finalTotal) && (
+                   <div className="flex-1 text-right bg-rose-50 dark:bg-rose-900/20 p-2 rounded-lg border border-rose-100 dark:border-rose-900/50">
+                     <p className="text-[10px] font-black uppercase text-rose-500 tracking-wider">Unpaid Balance</p>
+                     <p className="text-sm font-black text-rose-600">₹{(finalTotal - Number(amountPaid)).toFixed(2)}</p>
+                     {!selectedParty && <p className="text-[8px] text-rose-500 font-bold mt-1 leading-tight">*Select customer required</p>}
+                   </div>
+                 )}
+              </div>
+
               {/* UPI Details - Conditional */}
               {paymentMode === "UPI" && (
                 <div className="space-y-2 p-2.5 rounded-2xl bg-indigo-50 border border-indigo-200 mb-4">
@@ -3253,6 +3288,8 @@ export default function CheckoutClient() {
           kotNumbers={kotNumbers}
           prevWalletBalance={prevWalletBalance}
           selectedParty={selectedParty}
+          amountPaid={amountPaid === "" ? finalTotal : Number(amountPaid)}
+          balanceDue={Math.max(0, finalTotal - (amountPaid === "" ? finalTotal : Number(amountPaid)))}
           numberToWords={numberToWords}
         />
 

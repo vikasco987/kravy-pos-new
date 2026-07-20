@@ -593,7 +593,9 @@ model BillManager {
   total            Float
 
   paymentMode   String
-  paymentStatus String
+  paymentStatus String // PAID, PENDING, PARTIAL
+  amountPaid    Float? @default(0) // ✅ Added for partial payments
+  balanceDue    Float? @default(0) // ✅ Added for partial payments
   upiTxnRef     String?
   isHeld        Boolean @default(false)
   tokenNumber   Int?    // Legacy support

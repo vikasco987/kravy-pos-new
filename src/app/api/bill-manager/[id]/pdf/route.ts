@@ -316,7 +316,22 @@ export async function GET(
     });
     page.drawText("GRAND TOTAL:", { x: 25, y: y, size: 10, font: fontBold, color: rgb(1, 1, 1) });
     page.drawText(`Rs. ${finalTotal.toFixed(2)}`, { x: 160, y: y, size: 11, font: fontBold, color: rgb(1, 1, 1) });
-    y -= 40;
+    y -= 25;
+
+    // ✅ ADD AMOUNT PAID & BALANCE DUE
+    const balanceDue = Number((bill as any).balanceDue || 0);
+    const amountPaid = Number((bill as any).amountPaid || finalTotal);
+
+    if (balanceDue > 0) {
+      page.drawText("AMOUNT PAID:", { x: 25, y: y, size: 9, font: fontBold });
+      page.drawText(`Rs. ${amountPaid.toFixed(2)}`, { x: 160, y: y, size: 9, font: fontBold });
+      y -= 15;
+      page.drawText("UNPAID BALANCE:", { x: 25, y: y, size: 9, font: fontBold });
+      page.drawText(`Rs. ${balanceDue.toFixed(2)}`, { x: 160, y: y, size: 9, font: fontBold });
+      y -= 15;
+    } else {
+      y -= 15;
+    }
 
     line(`Payment: ${bill.paymentMode || "Cash"} | Status: ${bill.paymentStatus || "Paid"}`, 8, 'center');
     hr();

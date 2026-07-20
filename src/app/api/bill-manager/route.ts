@@ -67,10 +67,10 @@ export async function POST(req: NextRequest) {
       discountAmount,
       isKotPrinted,
       deliveryCharges,
-      packagingCharges,
       serviceCharge,
       kotNumbers,
       skipInventoryDeduction,
+      amountPaid,
     } = body;
 
     // 🛑 1. ROBUST VALIDATION (Critical Fix for UI Crashes)
@@ -194,12 +194,21 @@ export async function POST(req: NextRequest) {
         : "Cash";
 
     let finalPaymentStatus: string;
+    
+    // ✅ Partial Payment Logic
+    const finalAmountPaid = amountPaid !== undefined ? Number(amountPaid) : finalTotal;
+    const finalBalanceDue = Math.max(0, finalTotal - finalAmountPaid);
+
     if (isHeld === true) {
       finalPaymentStatus = "HELD";
+    } else if (finalBalanceDue > 0 && finalBalanceDue < finalTotal) {
+      finalPaymentStatus = "PARTIAL";
+    } else if (finalBalanceDue === finalTotal && finalTotal > 0) {
+      finalPaymentStatus = "PENDING";
     } else if (finalPaymentMode === "Cash" || finalPaymentMode === "Card" || finalPaymentMode === "Wallet") {
-      finalPaymentStatus = "Paid";
+      finalPaymentStatus = "PAID";
     } else {
-      finalPaymentStatus = paymentStatus === "Paid" ? "Paid" : "Pending";
+      finalPaymentStatus = paymentStatus === "Paid" ? "PAID" : "PENDING";
     }
 
     // ✅ AUTO-SAVE CUSTOMER IN CRM (Party)
@@ -225,7 +234,10 @@ export async function POST(req: NextRequest) {
         partyId = party.id;
       } catch (err) {
         console.error("Party upsert error in billing:", err);
-      }
+    }
+
+    if (finalBalanceDue > 0 && !partyId && !isHeld) {
+        return NextResponse.json({ error: "Remaining Unpaid Balance ke liye Customer (Party) select karna ya add karna zaroori hai." }, { status: 400 });
     }
 
     // ✅ TOKEN NUMBER GENERATION (REUSE OR INCREMENT)
@@ -274,6 +286,8 @@ export async function POST(req: NextRequest) {
         total: finalTotal,
         paymentMode: finalPaymentMode,
         paymentStatus: finalPaymentStatus,
+        amountPaid: finalAmountPaid,
+        balanceDue: finalBalanceDue,
         isHeld: isHeld === true,
         upiTxnRef: upiTxnRef || null,
         customerName: customerName || null,
@@ -307,6 +321,27 @@ export async function POST(req: NextRequest) {
       }
     } else if (skipInventoryDeduction === true) {
       console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Inventory deduction skipped by caller.`);
+    }
+
+    // ✅ LEDGER (KHATA) TRACKING
+    if (!bill.isHeld && finalBalanceDue > 0 && partyId) {
+      try {
+        await prisma.party.update({
+          where: { id: partyId },
+          data: { walletBalance: { decrement: finalBalanceDue } }
+        });
+        await prisma.walletTransaction.create({
+          data: {
+            partyId: partyId,
+            clerkId: effectiveId || "Unknown",
+            type: "DEBIT",
+            amount: finalBalanceDue,
+            description: `Unpaid Balance for Bill ${bill.billNumber}`
+          }
+        });
+      } catch (ledgerErr) {
+        console.error("Ledger Update Error:", ledgerErr);
+      }
     }
 
     return NextResponse.json({ bill });
