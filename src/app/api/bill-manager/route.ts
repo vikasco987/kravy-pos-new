@@ -346,10 +346,10 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ bill });
-  } catch (err) {
+  } catch (err: any) {
     console.error("BILL MANAGER CREATE ERROR:", err);
     return NextResponse.json(
-      { error: "Failed to create bill" },
+      { error: "Failed to create bill: " + (err?.message || "Unknown error") },
       { status: 500 }
     );
   }
