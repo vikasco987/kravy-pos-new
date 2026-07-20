@@ -252,7 +252,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         <div className="mt-3 border-t border-dashed border-gray-400 pt-2 px-1" style={{ fontSize: 'var(--r-details-size)' }}>
           <div className="flex justify-between items-center mb-1">
             <div className="font-black uppercase tracking-tight">Bill Summary</div>
-            {selectedTable && (
+            {(selectedTable && s('showTableInfo')) && (
               <div className="font-black uppercase border-2 border-black text-black px-1.5 py-0.5 rounded-sm" style={{ fontSize: 'calc(var(--r-details-size) - 2px)' }}>
                 {selectedTable === "POS" ? "COUNTER" : selectedTable.replace("TYPE: ", "")}
               </div>
@@ -266,6 +266,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             {(() => {
               const tn = tokenNumber;
               const displayToken = (() => {
+                if (!s('showToken')) return null;
                 if (tn == null || tn === "" || tn === "---" || tn === 0) return null;
                 if (typeof tn === 'object' && tn.$numberLong) return tn.$numberLong.toString().padStart(3, '0');
                 return tn.toString().padStart(3, '0');

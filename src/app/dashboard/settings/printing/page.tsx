@@ -24,6 +24,7 @@ const defaults: any = {
     showGST: true,
     showFSSAI: true,
     showToken: true,
+    showTableInfo: true,
     showCustomerDetails: true,
     showTaxBreakup: true,
     showGreetings: true,
@@ -486,6 +487,7 @@ export default function PrintingSettings() {
                             <SettingToggle icon={Hash} label="GST Number" sKey="showGST" desc="Business GSTIN details" color="bg-amber-500" />
                             <SettingToggle icon={FileText} label="FSSAI Number" sKey="showFSSAI" desc="Food license details" color="bg-orange-500" />
                             <SettingToggle icon={Clock} label="Token Number" sKey="showToken" desc="Order sequence token" color="bg-pink-500" />
+                            <SettingToggle icon={MapPin} label="Table / Counter" sKey="showTableInfo" desc="Show table name/counter badge" color="bg-rose-400" />
                             <SettingToggle icon={User} label="Customer Info" sKey="showCustomerDetails" desc="Name, Phone, Address" color="bg-violet-500" />
                             <SettingToggle icon={Percent} label="Tax Breakup" sKey="showTaxBreakup" desc="GST Rate table" color="bg-cyan-500" />
                             <SettingToggle icon={MessageSquare} label="Greetings" sKey="showGreetings" desc="Thank you message" color="bg-teal-500" />
