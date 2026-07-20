@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
       kotNumbers,
       skipInventoryDeduction,
       amountPaid,
+      packagingCharges,
     } = body;
 
     // 🛑 1. ROBUST VALIDATION (Critical Fix for UI Crashes)
