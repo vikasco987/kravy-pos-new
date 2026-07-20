@@ -495,6 +495,31 @@ export default function PrintingSettings() {
                             <SettingToggle icon={Receipt} label="Payment Info" sKey="showPaymentStatus" desc="Mode & Status" color="bg-blue-600" />
                             <SettingToggle icon={Type} label="Food Type Suffix" sKey="showFoodTypeSuffix" desc="Show (V), (NV) or (R)" color="bg-rose-600" />
                         </div>
+                        
+                        {printSettings.showContact && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="mx-4 p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 space-y-4 mt-4"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center">
+                                        <Phone size={18} />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-black text-slate-900 dark:text-white">Secondary Phone Number</h4>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Prints below the main contact number</p>
+                                    </div>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    placeholder="e.g. 9876543210 (Optional)"
+                                    value={printSettings.secondaryPhone || ""}
+                                    onChange={(e) => setPrintSettings({ ...printSettings, secondaryPhone: e.target.value })}
+                                    className="w-full h-12 px-5 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                />
+                            </motion.div>
+                        )}
                     </div>
 
                     {/* Financial Settings */}

@@ -238,6 +238,11 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             {business?.phonePrefixType?.toString().toUpperCase() === 'SYMBOL' ? '📞 ' : 'Mob: '} {business.contactPersonPhone || business.contactPhone || business.businessPhone}
           </div>
         )}
+        {(ps.secondaryPhone && s('showContact')) && (
+          <div className="text-center font-bold mt-0.5" style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
+            {business?.phonePrefixType?.toString().toUpperCase() === 'SYMBOL' ? '📞 ' : 'Mob: '} {ps.secondaryPhone}
+          </div>
+        )}
         {(business?.gstNumber && s('showGST')) && (
           <div className="text-center font-bold border-y border-black py-1 mt-2 mb-1" style={{ fontSize: 'var(--r-details-size)', fontWeight: ps.detailsWeight || undefined }}>
             GSTIN: {business.gstNumber}
