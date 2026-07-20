@@ -234,6 +234,7 @@ export async function POST(req: NextRequest) {
         partyId = party.id;
       } catch (err) {
         console.error("Party upsert error in billing:", err);
+      }
     }
 
     if (finalBalanceDue > 0 && !partyId && !isHeld) {
