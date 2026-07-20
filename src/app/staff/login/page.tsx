@@ -41,7 +41,8 @@ export default function StaffLoginPage() {
         
         // Redirect to their first allowed path, or dashboard if none
         const allowedPaths = data.data.permissions || [];
-        const targetPath = allowedPaths.length > 0 ? allowedPaths[0] : "/dashboard";
+        const dashboardPaths = allowedPaths.filter((p: string) => p.startsWith("/dashboard"));
+        const targetPath = dashboardPaths.length > 0 ? dashboardPaths[0] : "/dashboard";
 
         // Wait a bit for toast and then hard redirect to clear Clerk state
         setTimeout(() => {

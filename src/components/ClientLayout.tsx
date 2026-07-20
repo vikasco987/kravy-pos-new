@@ -155,11 +155,7 @@ export default function ClientLayout({
     if (pathname.startsWith('/dashboard')) {
         const isAllowed = permissions.includes("*") || permissions.some((p: string) => pathname === p || pathname.startsWith(p + '/'));
         
-        // Exclude base dashboard from blocking if they have any access
-        const hasAnyAccess = permissions.length > 0;
-        const isBaseDashboard = pathname === "/dashboard";
-
-        if (!isAllowed && !(isBaseDashboard && hasAnyAccess)) {
+        if (!isAllowed) {
             return (
                 <div className="h-screen flex items-center justify-center bg-slate-50">
                     <div className="text-center p-8 bg-white rounded-3xl shadow-xl border border-slate-200 max-w-sm">

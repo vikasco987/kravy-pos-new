@@ -61,13 +61,18 @@ export async function POST(req: Request) {
     );
 
     // 5. Set Cookie for Browser access
-    (await cookies()).set("staff_token", token, {
+    const cookieStore = await cookies();
+    cookieStore.set("staff_token", token, {
         httpOnly: false, // Must be false for ClientLayout to detect staff session
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
         maxAge: 60 * 60 * 24 * 7, // 7 days
         path: "/",
     });
+
+    // Clear any existing merchant/admin sessions to prevent permission bypass when testing
+    cookieStore.delete("kravy_auth_token");
+    cookieStore.delete("__session");
 
     // 6. Return response
     const { password: _, ...staffData } = staff;
