@@ -238,9 +238,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (finalBalanceDue > 0 && !partyId && !isHeld) {
-        return NextResponse.json({ error: "Remaining Unpaid Balance ke liye Customer (Party) select karna ya add karna zaroori hai." }, { status: 400 });
-    }
+    // REMOVED: Customer requirement for unpaid balances (User requested to allow saving bill without customer details)
 
     // ✅ TOKEN NUMBER GENERATION (REUSE OR INCREMENT)
     let nextToken = body.tokenNumber || (kotNumbers && Array.isArray(kotNumbers) && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : null);

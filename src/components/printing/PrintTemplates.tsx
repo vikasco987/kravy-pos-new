@@ -525,6 +525,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             </div>
           </div>
         )}
+        {/* Wallet balance printing temporarily disabled per user request
         {selectedParty && (
           <div className="mt-2 border-t border-dashed border-black pt-2 font-bold space-y-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
             <div className="flex justify-between uppercase">
@@ -543,6 +544,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             </div>
           </div>
         )}
+        */}
 
         <div className={`mt-4 ${s('sepFooter') ? 'border-t-2 border-black' : ''} pt-2 text-center`}>
           {s('showGreetings') && (
