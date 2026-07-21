@@ -6,8 +6,9 @@ import { toast } from "sonner";
 import QRCode from "react-qr-code";
 import {
   QrCode, Plus, Trash2, Download, Copy, Eye,
-  Table as TableIcon, Search, RefreshCw, X, Edit, Layers
+  Table as TableIcon, Search, RefreshCw, X, Edit, Layers, Settings, ChevronDown
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { kravy } from "@/lib/sounds";
 import QRMenuTemplate from "@/components/printing/QRMenuTemplate";
@@ -42,6 +43,12 @@ export default function TablesPage() {
     `${getBase()}/menu/${user?.businessId || user?.id}?tableId=${encodeURIComponent(id)}&tableName=${encodeURIComponent(name)}`;
 
   const [availableZones, setAvailableZones] = useState<string[]>(["Default"]);
+  
+  const [isZoneDropdownOpen, setIsZoneDropdownOpen] = useState(false);
+  const [isZoneManagerOpen, setIsZoneManagerOpen] = useState(false);
+  const [newZoneName, setNewZoneName] = useState("");
+  const [isZoneLoading, setIsZoneLoading] = useState(false);
+  const [editingZone, setEditingZone] = useState<{old: string, new: string} | null>(null);
 
   const fetchTables = async () => {
     setLoading(true);
@@ -302,27 +309,53 @@ export default function TablesPage() {
                   />
                 </div>
                 {multiZoneEnabled && (
-                  <div className="relative w-full sm:w-48">
+                  <div className="relative w-full sm:w-48 group/zonedropdown" onMouseEnter={() => setIsZoneDropdownOpen(true)} onMouseLeave={() => setIsZoneDropdownOpen(false)}>
                     <Layers
                       size={15}
                       className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)]"
                     />
                     <input
                       type="text"
-                      list="zones-list"
                       placeholder="Zone (e.g. Rooftop)"
                       value={newZone}
                       onChange={(e) => setNewZone(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
+                      onFocus={() => setIsZoneDropdownOpen(true)}
+                      className="w-full pl-10 pr-10 py-3 bg-[var(--kravy-bg)] border border-[var(--kravy-border)]
                         text-[var(--kravy-text-primary)] rounded-xl text-sm font-medium outline-none
                         focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)]
                         transition-all placeholder:text-[var(--kravy-text-muted)]"
                     />
-                    <datalist id="zones-list">
-                      {availableZones.map(z => (
-                        <option key={z} value={z} />
-                      ))}
-                    </datalist>
+                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-muted)] pointer-events-none" />
+                    
+                    <AnimatePresence>
+                      {isZoneDropdownOpen && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-slate-900 border border-[var(--kravy-border)] rounded-xl shadow-2xl p-1 z-50"
+                        >
+                           {availableZones.map(z => (
+                             <button
+                               key={z}
+                               onClick={() => { setNewZone(z); setIsZoneDropdownOpen(false); }}
+                               className="w-full text-left px-3 py-2 rounded-lg text-sm font-bold text-[var(--kravy-text-primary)] hover:bg-[var(--kravy-bg)] transition-colors"
+                             >
+                               {z}
+                             </button>
+                           ))}
+                           <div className="border-t border-[var(--kravy-border)] mt-1 pt-1">
+                             <button
+                               onClick={(e) => { e.preventDefault(); setIsZoneManagerOpen(true); setIsZoneDropdownOpen(false); }}
+                               className="w-full text-left px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 hover:bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)]"
+                             >
+                               <Settings size={12} /> Manage Zones
+                             </button>
+                           </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 )}
                 <button
@@ -721,6 +754,173 @@ export default function TablesPage() {
             tableName={qrContext.tableName}
             qrUrl={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(generateTableUrl(qrContext.tableId, qrContext.tableName))}`}
         />
+      )}
+
+      {/* ══════════════════════════════════════
+          ZONE MANAGER MODAL
+      ══════════════════════════════════════ */}
+      {isZoneManagerOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[var(--kravy-surface)] rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-[var(--kravy-border)]"
+          >
+            <div className="p-5 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg)]/40 flex items-center justify-between">
+              <h3 className="font-black text-[var(--kravy-text-primary)] uppercase tracking-wider text-sm flex items-center gap-2">
+                <Settings size={16} className="text-[var(--kravy-brand)]" />
+                Manage Zones
+              </h3>
+              <button 
+                onClick={() => setIsZoneManagerOpen(false)}
+                className="p-2 text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)] rounded-xl hover:bg-[var(--kravy-bg)] transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="p-5 space-y-4">
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  placeholder="New Zone Name..."
+                  value={newZoneName}
+                  onChange={e => setNewZoneName(e.target.value)}
+                  className="flex-1 h-10 px-3 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] outline-none focus:border-[var(--kravy-brand)]"
+                />
+                <button 
+                  disabled={isZoneLoading || !newZoneName.trim()}
+                  onClick={async () => {
+                    if (!newZoneName.trim()) return;
+                    setIsZoneLoading(true);
+                    try {
+                      const res = await fetch("/api/profile/zones", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "add", zoneName: newZoneName.trim() })
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        toast.success("Zone added");
+                        setNewZoneName("");
+                        fetchTables(); // Refresh zones
+                      } else {
+                        toast.error(data.error || "Failed to add zone");
+                      }
+                    } catch (err: any) {
+                      toast.error(err.message);
+                    }
+                    setIsZoneLoading(false);
+                  }}
+                  className="h-10 px-4 bg-[var(--kravy-brand)] text-white font-black text-xs uppercase tracking-wider rounded-xl hover:opacity-90 disabled:opacity-50 transition-colors shadow-lg shadow-[var(--kravy-brand)]/20"
+                >
+                  {isZoneLoading ? "..." : "Add"}
+                </button>
+              </div>
+
+              <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-2 border border-[var(--kravy-border)] rounded-xl p-2 bg-[var(--kravy-bg)]">
+                {availableZones.length === 0 ? (
+                  <div className="text-center text-xs font-bold text-[var(--kravy-text-muted)] py-4 uppercase tracking-wider">No zones defined</div>
+                ) : (
+                  availableZones.map(zone => (
+                    <div key={zone} className="flex items-center justify-between p-2 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-lg group">
+                      {editingZone?.old === zone ? (
+                        <input 
+                          autoFocus
+                          value={editingZone.new}
+                          onChange={e => setEditingZone({ ...editingZone, new: e.target.value })}
+                          className="flex-1 h-8 px-2 bg-[var(--kravy-bg)] border border-[var(--kravy-brand)]/30 rounded text-xs font-bold text-[var(--kravy-text-primary)] outline-none"
+                        />
+                      ) : (
+                        <span className="text-xs font-black text-[var(--kravy-text-primary)] uppercase tracking-wider pl-1">{zone}</span>
+                      )}
+                      
+                      <div className="flex items-center gap-1">
+                        {editingZone?.old === zone ? (
+                          <>
+                            <button 
+                              disabled={isZoneLoading || !editingZone.new.trim()}
+                              onClick={async () => {
+                                if (!editingZone.new.trim() || editingZone.old === editingZone.new) {
+                                  setEditingZone(null);
+                                  return;
+                                }
+                                setIsZoneLoading(true);
+                                try {
+                                  const res = await fetch("/api/profile/zones", {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ action: "edit", oldZone: editingZone.old, newZone: editingZone.new.trim() })
+                                  });
+                                  const data = await res.json();
+                                  if (data.success) {
+                                    toast.success("Zone updated!");
+                                    setEditingZone(null);
+                                    fetchTables();
+                                  } else {
+                                    toast.error(data.error || "Failed to update zone");
+                                  }
+                                } catch (err: any) {
+                                  toast.error(err.message);
+                                }
+                                setIsZoneLoading(false);
+                              }}
+                              className="p-1.5 bg-emerald-500/10 text-emerald-600 rounded hover:bg-emerald-500/20 transition-colors"
+                            >
+                              <Plus size={14} className="rotate-45" style={{ display: 'none' }} /> 
+                              <span className="text-[9px] font-black uppercase">Save</span>
+                            </button>
+                            <button 
+                              onClick={() => setEditingZone(null)}
+                              className="p-1.5 bg-rose-500/10 text-rose-600 rounded hover:bg-rose-500/20 transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button 
+                              onClick={() => setEditingZone({ old: zone, new: zone })}
+                              className="p-1.5 text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-brand)]/10 hover:text-[var(--kravy-brand)] rounded transition-colors"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                if (!window.confirm(`Delete zone "${zone}"? Items will be kept but un-zoned.`)) return;
+                                setIsZoneLoading(true);
+                                try {
+                                  const res = await fetch("/api/profile/zones", {
+                                    method: "DELETE",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ action: "delete", zoneName: zone })
+                                  });
+                                  const data = await res.json();
+                                  if (data.success) {
+                                    toast.success("Zone deleted");
+                                    fetchTables();
+                                  } else {
+                                    toast.error(data.error || "Failed to delete zone");
+                                  }
+                                } catch (err: any) {
+                                  toast.error(err.message);
+                                }
+                                setIsZoneLoading(false);
+                              }}
+                              className="p-1.5 text-[var(--kravy-text-muted)] hover:bg-rose-500/10 hover:text-rose-600 rounded transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );
