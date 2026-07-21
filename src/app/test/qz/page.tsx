@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Printer, Power, FileCode, ImageIcon } from "lucide-react";
-// @ts-ignore
-import qz from "qz-tray";
+let qz: any = null;
 
 export default function QZTestPage() {
   const [isConnected, setIsConnected] = useState(false);
@@ -12,16 +11,25 @@ export default function QZTestPage() {
   const [printers, setPrinters] = useState<string[]>([]);
   const [selectedPrinter, setSelectedPrinter] = useState("");
   const [qzVersion, setQzVersion] = useState("");
+  const [qzLoaded, setQzLoaded] = useState(false);
 
   useEffect(() => {
-    // Check if already connected on mount
-    if (qz.websocket.isActive()) {
-      setIsConnected(true);
-      fetchPrinters();
-    }
+    // Dynamically import qz-tray only on client-side to avoid SSR errors
+    import("qz-tray").then((module) => {
+      qz = module.default || module;
+      setQzLoaded(true);
+      // Check if already connected on mount
+      if (qz.websocket.isActive()) {
+        setIsConnected(true);
+        fetchPrinters();
+      }
+    }).catch(err => {
+      console.error("Failed to load qz-tray", err);
+    });
   }, []);
 
   const connectQZ = async () => {
+    if (!qzLoaded || !qz) return toast.error("QZ Tray library is still loading");
     setIsConnecting(true);
     try {
       if (qz.websocket.isActive()) {
@@ -154,10 +162,10 @@ export default function QZTestPage() {
             
             <button
               onClick={connectQZ}
-              disabled={isConnecting || isConnected}
+              disabled={isConnecting || isConnected || !qzLoaded}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 font-bold text-sm rounded-xl hover:bg-indigo-100 transition-colors disabled:opacity-50"
             >
-              {isConnecting ? "..." : (isConnected ? "Connected" : <><Power size={14} /> Connect</>)}
+              {isConnecting ? "..." : (isConnected ? "Connected" : <><Power size={14} /> {qzLoaded ? "Connect" : "Loading..."}</>)}
             </button>
           </div>
 
