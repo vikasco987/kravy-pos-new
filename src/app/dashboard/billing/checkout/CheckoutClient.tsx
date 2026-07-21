@@ -2121,6 +2121,14 @@ export default function CheckoutClient() {
                            </button>
                          </div>
                        ))}
+                       <div className="border-t border-[var(--kravy-border)] mt-1 pt-1">
+                         <button
+                           onClick={() => { kravy.click(); setIsZoneManagerOpen(true); }}
+                           className="w-full text-left px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 hover:bg-slate-100 text-slate-700"
+                         >
+                           <Settings size={12} /> Manage Zones
+                         </button>
+                       </div>
                     </div>
                   </div>
                 )}
