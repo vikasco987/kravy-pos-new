@@ -79,3 +79,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PUT(req: NextRequest) {
+  return POST(req);
+}
+
+export async function DELETE(req: NextRequest) {
+  return POST(req);
+}
