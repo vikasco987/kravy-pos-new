@@ -50,6 +50,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "st.perplexity.ai",
       },
+      {
+        protocol: "https",
+        hostname: "live.staticflickr.com",
+      },
     ],
   },
   eslint: {
