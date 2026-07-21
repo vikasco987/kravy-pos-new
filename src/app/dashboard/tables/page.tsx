@@ -25,7 +25,7 @@ export default function TablesPage() {
   const [tables, setTables] = useState<TableRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newZone, setNewZone] = useState("Default");
+  const [newZone, setNewZone] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [previewTable, setPreviewTable] = useState<TableRecord | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
