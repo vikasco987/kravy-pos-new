@@ -490,6 +490,7 @@ model BusinessProfile {
   createdAt DateTime @default(now())
   syncQuickPosWithKitchen Boolean @default(false)
   multiZoneMenuEnabled    Boolean @default(false) // ✅ Multi-zone menu toggle
+  zones                   String[] @default([])
 
   // ✅ POS Checkout Visibility Settings
   posCashEnabled     Boolean @default(true)

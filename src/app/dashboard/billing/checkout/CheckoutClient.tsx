@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock, Trash2, Play, X, Search, ChevronDown, User, Printer, ArrowLeft,
   Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus,
-  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck, Star, Zap, Pencil
+  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck, Star, Zap, Pencil, Settings
 } from "lucide-react";
 import { calculateDiscount } from "@/lib/discount-utils";
 import { toast } from "sonner";
@@ -306,6 +306,7 @@ export default function CheckoutClient() {
     businessNameSize?: number;
     phonePrefixType?: string;
     printSettings?: any;
+    zones?: string[];
   } | null>({
     businessName: "Kravy POS",
     taxEnabled: true,
@@ -378,7 +379,8 @@ export default function CheckoutClient() {
       tokenNumberSize: data.tokenNumberSize,
       businessNameSize: data.businessNameSize,
       phonePrefixType: data.phonePrefixType || "TEXT",
-      printSettings: data.printSettings
+      printSettings: data.printSettings,
+      zones: data.zones || []
     });
   };
 
@@ -391,6 +393,12 @@ export default function CheckoutClient() {
   const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
   const [availableZones, setAvailableZones] = useState<string[]>([]);
   const [addonGroups, setAddonGroups] = useState<any[]>([]);
+
+  // Zone Manager State
+  const [isZoneManagerOpen, setIsZoneManagerOpen] = useState(false);
+  const [newZoneName, setNewZoneName] = useState("");
+  const [editingZone, setEditingZone] = useState<{old: string, new: string} | null>(null);
+  const [isZoneLoading, setIsZoneLoading] = useState(false);
 
   // Load layout preference
   useEffect(() => {
@@ -653,12 +661,12 @@ export default function CheckoutClient() {
     initPos();
   }, [menuCacheKey]);
 
-  // Compute available zones only from items that have them (to hide empty zones)
+  // Compute available zones
   useEffect(() => {
     const itemZones = menuItems.flatMap(i => i.zones || []).filter(Boolean);
-    const uniqueZones = Array.from(new Set(itemZones));
+    const uniqueZones = Array.from(new Set([...itemZones, ...(business?.zones || [])]));
     setAvailableZones(uniqueZones.sort());
-  }, [menuItems]);
+  }, [menuItems, business?.zones]);
 
   useEffect(() => {
     if (!resumeBillId) return;
@@ -3951,6 +3959,169 @@ export default function CheckoutClient() {
                      </button>
                   </div>
                </form>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {isZoneManagerOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10"
+          >
+            <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+              <h3 className="font-black text-slate-900 dark:text-white uppercase tracking-wider text-sm flex items-center gap-2">
+                <Settings size={16} className="text-indigo-500" />
+                Manage Zones
+              </h3>
+              <button 
+                onClick={() => setIsZoneManagerOpen(false)}
+                className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-xl hover:text-slate-700 dark:hover:text-white transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="p-5 space-y-4">
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  placeholder="New Zone Name..."
+                  value={newZoneName}
+                  onChange={e => setNewZoneName(e.target.value)}
+                  className="flex-1 h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold outline-none focus:border-indigo-500"
+                />
+                <button 
+                  disabled={isZoneLoading || !newZoneName.trim()}
+                  onClick={async () => {
+                    if (!newZoneName.trim()) return;
+                    setIsZoneLoading(true);
+                    try {
+                      const res = await fetch("/api/profile/zones", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "add", zoneName: newZoneName.trim() })
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        toast.success("Zone added");
+                        setNewZoneName("");
+                        setBusiness(prev => prev ? { ...prev, zones: data.zones } : prev);
+                      } else {
+                        toast.error(data.error || "Failed to add zone");
+                      }
+                    } catch (err: any) {
+                      toast.error(err.message);
+                    }
+                    setIsZoneLoading(false);
+                  }}
+                  className="h-10 px-4 bg-indigo-600 text-white font-black text-xs uppercase tracking-wider rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                >
+                  {isZoneLoading ? "..." : "Add"}
+                </button>
+              </div>
+
+              <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-2 border border-slate-100 dark:border-white/5 rounded-xl p-2 bg-slate-50/50 dark:bg-slate-800/50">
+                {availableZones.length === 0 ? (
+                  <div className="text-center text-xs font-bold text-slate-400 py-4 uppercase tracking-wider">No zones defined</div>
+                ) : (
+                  availableZones.map(zone => (
+                    <div key={zone} className="flex items-center justify-between p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-lg group">
+                      {editingZone?.old === zone ? (
+                        <input 
+                          autoFocus
+                          value={editingZone.new}
+                          onChange={e => setEditingZone({ ...editingZone, new: e.target.value })}
+                          className="flex-1 h-8 px-2 bg-slate-50 dark:bg-slate-800 border border-indigo-200 dark:border-indigo-500/30 rounded text-xs font-bold outline-none"
+                        />
+                      ) : (
+                        <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider pl-1">{zone}</span>
+                      )}
+                      
+                      <div className="flex items-center gap-1">
+                        {editingZone?.old === zone ? (
+                          <>
+                            <button 
+                              disabled={isZoneLoading || !editingZone.new.trim()}
+                              onClick={async () => {
+                                if (!editingZone.new.trim() || editingZone.old === editingZone.new) {
+                                  setEditingZone(null);
+                                  return;
+                                }
+                                setIsZoneLoading(true);
+                                try {
+                                  const res = await fetch("/api/profile/zones", {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ action: "edit", oldZone: editingZone.old, newZone: editingZone.new.trim() })
+                                  });
+                                  const data = await res.json();
+                                  if (data.success) {
+                                    toast.success("Zone updated successfully!");
+                                    window.location.reload();
+                                  } else {
+                                    toast.error(data.error || "Failed to update zone");
+                                  }
+                                } catch (err: any) {
+                                  toast.error(err.message);
+                                }
+                                setIsZoneLoading(false);
+                              }}
+                              className="p-1.5 bg-emerald-100 text-emerald-600 rounded hover:bg-emerald-200 transition-colors"
+                            >
+                              <Save size={12} />
+                            </button>
+                            <button 
+                              onClick={() => setEditingZone(null)}
+                              className="p-1.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 transition-colors"
+                            >
+                              <X size={12} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button 
+                              onClick={() => setEditingZone({ old: zone, new: zone })}
+                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors lg:opacity-0 lg:group-hover:opacity-100"
+                            >
+                              <Pencil size={12} />
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                if (await confirm(`Are you sure you want to delete zone '${zone}'? This will remove it from all items.`)) {
+                                  setIsZoneLoading(true);
+                                  try {
+                                    const res = await fetch("/api/profile/zones", {
+                                      method: "DELETE",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ action: "delete", zoneName: zone })
+                                    });
+                                    const data = await res.json();
+                                    if (data.success) {
+                                      toast.success("Zone deleted successfully!");
+                                      window.location.reload();
+                                    } else {
+                                      toast.error(data.error || "Failed to delete zone");
+                                    }
+                                  } catch (err: any) {
+                                    toast.error(err.message);
+                                  }
+                                  setIsZoneLoading(false);
+                                }
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors lg:opacity-0 lg:group-hover:opacity-100"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </motion.div>
         </div>
