@@ -278,9 +278,9 @@ export default function TablesPage() {
         {/* ══════════════════════════════════════
             ADD TABLE FORM
         ══════════════════════════════════════ */}
-        <div className="bg-[var(--kravy-surface)] rounded-2xl border border-[var(--kravy-border)] overflow-hidden shadow-sm">
+        <div className="bg-[var(--kravy-surface)] rounded-2xl border border-[var(--kravy-border)] shadow-sm">
           {/* Card header */}
-          <div className="px-5 py-4 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg)]/40
+          <div className="px-5 py-4 border-b border-[var(--kravy-border)] bg-[var(--kravy-bg)]/40 rounded-t-2xl
             flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-[var(--kravy-brand)]/10 flex items-center justify-center">
               <Plus size={14} className="text-[var(--kravy-brand)]" />
@@ -337,15 +337,19 @@ export default function TablesPage() {
                           className="absolute top-full left-0 mt-2 w-full bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl shadow-xl p-1.5 z-50 flex flex-col max-h-[250px]"
                         >
                            <div className="overflow-y-auto custom-scrollbar flex-1 mb-1 pr-1">
-                             {availableZones.map(z => (
-                               <button
-                                 key={z}
-                                 onClick={() => { setNewZone(z); setIsZoneDropdownOpen(false); }}
-                                 className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] hover:bg-[var(--kravy-brand)] hover:text-white transition-all mb-1 last:mb-0"
-                               >
-                                 {z}
-                               </button>
-                             ))}
+                             {availableZones.filter(z => z.toLowerCase().includes(newZone.toLowerCase())).length > 0 ? (
+                               availableZones.filter(z => z.toLowerCase().includes(newZone.toLowerCase())).map(z => (
+                                 <button
+                                   key={z}
+                                   onClick={() => { setNewZone(z); setIsZoneDropdownOpen(false); }}
+                                   className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] hover:bg-[var(--kravy-brand)] hover:text-white transition-all mb-1 last:mb-0"
+                                 >
+                                   {z}
+                                 </button>
+                               ))
+                             ) : (
+                               <div className="px-3 py-2 text-xs text-[var(--kravy-text-muted)] text-center font-bold">Press Enter or Add Table to create "{newZone}"</div>
+                             )}
                            </div>
                            <div className="border-t border-[var(--kravy-border)] pt-1.5 mt-auto">
                              <button
