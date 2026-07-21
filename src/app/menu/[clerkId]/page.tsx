@@ -1252,7 +1252,7 @@ function PublicMenu() {
                                             >
                                                 {/* Combo Image */}
                                                 <div className="h-28 relative overflow-hidden">
-                                                    {combo.imageUrl ? (
+                                                    {combo.imageUrl && typeof combo.imageUrl === 'string' && combo.imageUrl.trim() !== '' ? (
                                                         <Image src={combo.imageUrl} alt={combo.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
                                                     ) : (
                                                         <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center text-indigo-200">
@@ -1479,7 +1479,7 @@ function PublicMenu() {
                                           {/* Item Image & ADD Button (Right) */}
                                           <div className="relative flex-shrink-0" onClick={e => e.stopPropagation()}>
                                                <div className={`${!(item.imageUrl || item.image) ? "hidden" : "w-[156px] h-[156px] rounded-2xl overflow-hidden relative shadow-md"} border border-gray-50`}>
-                                                  {item.imageUrl || item.image ? (
+                                                  {(item.imageUrl || item.image) && typeof (item.imageUrl || item.image) === 'string' && ((item.imageUrl || item.image) as string).trim() !== '' ? (
                                                       <Image src={(item.imageUrl || item.image) as string} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                                                   ) : null}
                                               </div>
@@ -2701,8 +2701,8 @@ function PublicMenu() {
                             className="bg-white rounded-t-[2.5rem] w-full max-w-[480px] max-h-[90vh] overflow-hidden shadow-2xl relative flex flex-col"
                         >
                             <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
-                                {(customizingItem.imageUrl || customizingItem.image) && (
-                                    <div className={`relative h-[260px] overflow-hidden bg-gray-50 ${!((customizingItem as any).imageUrl || (customizingItem as any).image) ? "hidden" : ""}`}>
+                                {(customizingItem.imageUrl || customizingItem.image) && typeof (customizingItem.imageUrl || customizingItem.image) === 'string' && ((customizingItem.imageUrl || customizingItem.image) as string).trim() !== '' && (
+                                    <div className={`relative h-[260px] overflow-hidden bg-gray-50`}>
                                         <Image 
                                             src={((customizingItem as any).imageUrl || (customizingItem as any).image) as string} 
                                             alt={customizingItem.name} 
@@ -2789,7 +2789,7 @@ function PublicMenu() {
                                                                             : <Check size={12} className="text-white" strokeWidth={4} />
                                                                     )}
                                                                 </div>
-                                                                {opt.imageUrl && (
+                                                                {opt.imageUrl && typeof opt.imageUrl === 'string' && opt.imageUrl.trim() !== '' && (
                                                                     <div className="w-10 h-10 rounded-lg overflow-hidden relative shadow-sm border border-gray-100 shrink-0">
                                                                         <Image src={opt.imageUrl} alt={opt.name} fill className="object-cover" />
                                                                     </div>
@@ -2920,8 +2920,8 @@ function PublicMenu() {
                             </button>
 
                             <div className="overflow-y-auto max-h-[85vh] no-scrollbar pt-6">
-                                {(selectedMenuItem.imageUrl || selectedMenuItem.image) && (
-                                    <div className={`relative h-[280px] mx-4 rounded-2xl overflow-hidden bg-gray-100/50 ${!(selectedMenuItem.imageUrl || selectedMenuItem.image) ? "hidden" : ""}`}>
+                                {(selectedMenuItem.imageUrl || selectedMenuItem.image) && typeof (selectedMenuItem.imageUrl || selectedMenuItem.image) === 'string' && ((selectedMenuItem.imageUrl || selectedMenuItem.image) as string).trim() !== '' && (
+                                    <div className={`relative h-[280px] mx-4 rounded-2xl overflow-hidden bg-gray-100/50`}>
                                         <Image 
                                             src={(selectedMenuItem.imageUrl || selectedMenuItem.image) as string} 
                                             alt={selectedMenuItem.name} 
