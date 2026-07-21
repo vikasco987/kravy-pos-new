@@ -373,7 +373,13 @@ function PublicMenu() {
                 const menuData = await menuRes.json();
                 const reviewsData = await reviewsRes.json();
 
-                if (menuData.items) setItems(menuData.items);
+                if (menuData.items) {
+                    const parsedItems = menuData.items.map((it: any) => ({
+                        ...it,
+                        variants: typeof it.variants === 'string' ? JSON.parse(it.variants) : (it.variants || [])
+                    }));
+                    setItems(parsedItems);
+                }
                 if (menuData.profile) setProfile(menuData.profile);
                 if (menuData.combos) setCombos(menuData.combos);
                 if (menuData.offers) setOffers(menuData.offers);
