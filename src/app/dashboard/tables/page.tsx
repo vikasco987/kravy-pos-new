@@ -334,23 +334,25 @@ export default function TablesPage() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -5 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-slate-900 border border-[var(--kravy-border)] rounded-xl shadow-2xl p-1 z-50"
+                          className="absolute top-full left-0 mt-2 w-full bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl shadow-xl p-1.5 z-50 flex flex-col max-h-[250px]"
                         >
-                           {availableZones.map(z => (
-                             <button
-                               key={z}
-                               onClick={() => { setNewZone(z); setIsZoneDropdownOpen(false); }}
-                               className="w-full text-left px-3 py-2 rounded-lg text-sm font-bold text-[var(--kravy-text-primary)] hover:bg-[var(--kravy-bg)] transition-colors"
-                             >
-                               {z}
-                             </button>
-                           ))}
-                           <div className="border-t border-[var(--kravy-border)] mt-1 pt-1">
+                           <div className="overflow-y-auto custom-scrollbar flex-1 mb-1 pr-1">
+                             {availableZones.map(z => (
+                               <button
+                                 key={z}
+                                 onClick={() => { setNewZone(z); setIsZoneDropdownOpen(false); }}
+                                 className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] hover:bg-[var(--kravy-brand)] hover:text-white transition-all mb-1 last:mb-0"
+                               >
+                                 {z}
+                               </button>
+                             ))}
+                           </div>
+                           <div className="border-t border-[var(--kravy-border)] pt-1.5 mt-auto">
                              <button
                                onClick={(e) => { e.preventDefault(); setIsZoneManagerOpen(true); setIsZoneDropdownOpen(false); }}
-                               className="w-full text-left px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 hover:bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)]"
+                               className="w-full text-left px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-[var(--kravy-bg)] hover:bg-[var(--kravy-brand)]/10 hover:text-[var(--kravy-brand)] text-[var(--kravy-text-secondary)] border border-transparent hover:border-[var(--kravy-brand)]/20"
                              >
-                               <Settings size={12} /> Manage Zones
+                               <Settings size={14} /> Manage Zones
                              </button>
                            </div>
                         </motion.div>
