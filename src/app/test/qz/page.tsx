@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Printer, Power, FileCode, ImageIcon } from "lucide-react";
-let qz: any = null;
+import Script from "next/script";
 
 export default function QZTestPage() {
   const [isConnected, setIsConnected] = useState(false);
@@ -14,21 +14,16 @@ export default function QZTestPage() {
   const [qzLoaded, setQzLoaded] = useState(false);
 
   useEffect(() => {
-    // Dynamically import qz-tray only on client-side to avoid SSR errors
-    import("qz-tray").then((module) => {
-      qz = module.default || module;
-      setQzLoaded(true);
-      // Check if already connected on mount
-      if (qz.websocket.isActive()) {
-        setIsConnected(true);
-        fetchPrinters();
-      }
-    }).catch(err => {
-      console.error("Failed to load qz-tray", err);
-    });
+    // We rely on the Script onLoad event to set qzLoaded
+    // Check if already connected on mount if qz is available
+    if (typeof window !== "undefined" && (window as any).qz?.websocket.isActive()) {
+      setIsConnected(true);
+      fetchPrinters();
+    }
   }, []);
 
   const connectQZ = async () => {
+    const qz = (window as any).qz;
     if (!qzLoaded || !qz) return toast.error("QZ Tray library is still loading");
     setIsConnecting(true);
     try {
@@ -57,6 +52,7 @@ export default function QZTestPage() {
   };
 
   const fetchPrinters = async () => {
+    const qz = (window as any).qz;
     try {
       const list = await qz.printers.find();
       setPrinters(list);
@@ -67,6 +63,7 @@ export default function QZTestPage() {
   };
 
   const testPrintRaw = async () => {
+    const qz = (window as any).qz;
     if (!selectedPrinter) return toast.error("Please select a printer first");
     
     try {
@@ -98,6 +95,7 @@ export default function QZTestPage() {
   };
 
   const testPrintHTML = async () => {
+    const qz = (window as any).qz;
     if (!selectedPrinter) return toast.error("Please select a printer first");
     
     try {
@@ -134,6 +132,11 @@ export default function QZTestPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <Script 
+        src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.min.js" 
+        onLoad={() => setQzLoaded(true)}
+        onError={() => toast.error("Failed to load QZ Tray library from CDN")}
+      />
       <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
         
         {/* Header */}
