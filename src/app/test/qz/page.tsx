@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Printer, Power, FileCode, ImageIcon } from "lucide-react";
-import Script from "next/script";
 
 export default function QZTestPage() {
   const [isConnected, setIsConnected] = useState(false);
@@ -14,12 +13,22 @@ export default function QZTestPage() {
   const [qzLoaded, setQzLoaded] = useState(false);
 
   useEffect(() => {
-    // We rely on the Script onLoad event to set qzLoaded
-    // Check if already connected on mount if qz is available
-    if (typeof window !== "undefined" && (window as any).qz?.websocket.isActive()) {
-      setIsConnected(true);
-      fetchPrinters();
+    if (document.getElementById("qz-tray-script")) {
+      setQzLoaded(true);
+      return;
     }
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.min.js";
+    script.id = "qz-tray-script";
+    script.onload = () => {
+      setQzLoaded(true);
+      if (typeof window !== "undefined" && (window as any).qz?.websocket.isActive()) {
+        setIsConnected(true);
+        fetchPrinters();
+      }
+    };
+    script.onerror = () => console.error("Failed to load QZ Tray library");
+    document.body.appendChild(script);
   }, []);
 
   const connectQZ = async () => {
@@ -132,11 +141,6 @@ export default function QZTestPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <Script 
-        src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.min.js" 
-        onLoad={() => setQzLoaded(true)}
-        onError={() => toast.error("Failed to load QZ Tray library from CDN")}
-      />
       <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
         
         {/* Header */}
