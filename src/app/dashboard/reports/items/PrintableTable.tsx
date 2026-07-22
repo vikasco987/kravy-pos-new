@@ -154,9 +154,19 @@ export default function PrintableTable({ filteredItems, grandTotalRevenue }: Pri
         </div>
 
         <button 
-          onClick={() => {
+          onClick={(e) => {
+            const btn = e.currentTarget;
+            if (btn.disabled) return;
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
             setShowSettings(false);
-            setTimeout(() => window.print(), 100);
+            setTimeout(() => {
+              window.print();
+              setTimeout(() => {
+                btn.disabled = false;
+                btn.style.opacity = "1";
+              }, 1000);
+            }, 300);
           }}
           style={{
             padding: "10px 16px",
