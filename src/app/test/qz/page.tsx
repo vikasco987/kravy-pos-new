@@ -31,9 +31,15 @@ export default function QZTestPage() {
     document.body.appendChild(script);
   }, []);
 
+  const [errorMessage, setErrorMessage] = useState("");
+
   const connectQZ = async () => {
+    setErrorMessage("");
     const qz = (window as any).qz;
-    if (!qzLoaded || !qz) return toast.error("QZ Tray library is still loading");
+    if (!qzLoaded || !qz) {
+      setErrorMessage("QZ Tray library is still loading or failed to load from CDN.");
+      return toast.error("QZ Tray library is still loading");
+    }
     setIsConnecting(true);
     try {
       if (qz.websocket.isActive()) {
@@ -53,6 +59,7 @@ export default function QZTestPage() {
       fetchPrinters();
     } catch (err: any) {
       console.error(err);
+      setErrorMessage("Failed to connect. Is QZ Tray running on your computer? " + (err?.message || ""));
       toast.error("Failed to connect to QZ Tray.");
       setIsConnected(false);
     } finally {
@@ -136,6 +143,11 @@ export default function QZTestPage() {
         </div>
 
         <div className="p-6 space-y-6">
+          {errorMessage && (
+            <div className="mb-4 p-4 bg-red-50 text-red-700 text-sm font-bold rounded-xl border border-red-100">
+              {errorMessage}
+            </div>
+          )}
           <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
             <div className="flex flex-col">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Status</span>
@@ -149,9 +161,9 @@ export default function QZTestPage() {
             <button
               onClick={connectQZ}
               disabled={isConnecting || isConnected || !qzLoaded}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 font-bold text-sm rounded-xl"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 font-bold text-sm rounded-xl disabled:opacity-50"
             >
-              <Power size={14} /> Connect
+              <Power size={14} /> {isConnecting ? "Connecting..." : (isConnected ? "Connected" : "Connect")}
             </button>
           </div>
 
