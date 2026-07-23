@@ -258,7 +258,7 @@ export async function generateManualInvoicePDF(data: any) {
   }
 
   /* ---------- FOOTER TEXT ---------- */
-  const disclaimer = "This is a computer generated tax invoice and does not require signature.";
+  const disclaimer = `This is a computer generated ${data.documentType === 'proforma' ? 'proforma' : 'tax'} invoice and does not require signature.`;
   const disclaimerWidth = font.widthOfTextAtSize(disclaimer, 8);
   page.drawText(disclaimer, {
     x: (595 - disclaimerWidth) / 2,
