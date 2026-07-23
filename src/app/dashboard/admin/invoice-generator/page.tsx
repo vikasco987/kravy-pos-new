@@ -204,6 +204,71 @@ export default function InvoiceGenerator() {
         loadHistory();
     };
 
+    const updateStatus = async (id: string, currentStatus: string) => {
+        const newStatus = currentStatus === "PAID" ? "UNPAID" : "PAID";
+        try {
+            await fetch(`/api/admin/manual-invoices/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: newStatus })
+            });
+            loadHistory();
+            toast.success(`Marked as ${newStatus}`);
+        } catch (e) {
+            toast.error("Failed to update status");
+        }
+    };
+
+    const redownloadPdf = async (invoice: any) => {
+        toast.loading("Generating PDF...", { id: "redownload" });
+        try {
+            const response = await fetch("/api/admin/generate-invoice", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...invoice,
+                    total: invoice.total,
+                    subtotal: invoice.subtotal,
+                    discount: invoice.discount,
+                    taxType: "inclusive"
+                })
+            });
+            if (!response.ok) throw new Error("Failed");
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Invoice_${invoice.invoiceNumber}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            toast.success("Downloaded!", { id: "redownload" });
+        } catch (e) {
+            toast.error("Download failed", { id: "redownload" });
+        }
+    };
+
+    const handleBankImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.[0]) return;
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        try {
+            toast.loading("Uploading bank image...", { id: "bank_upload" });
+            const res = await fetch("/api/upload", { method: "POST", body: formData });
+            const data = await res.json();
+            if (res.ok && data.secure_url) {
+                setInvoiceData(prev => ({ ...prev, bankImage: data.secure_url }));
+                toast.success("Bank image uploaded!", { id: "bank_upload" });
+            } else {
+                toast.error("Upload failed", { id: "bank_upload" });
+            }
+        } catch (err) {
+            toast.error("Upload error", { id: "bank_upload" });
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-[#09090b] p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
