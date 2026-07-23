@@ -1011,8 +1011,8 @@ export default function ViewMenuPage() {
     fetch("/api/profile")
       .then(res => res.json())
       .then(data => {
-        // Enable GST UI features if either Global or Per-Product GST is enabled
         setTaxEnabled(data?.taxEnabled || data?.perProductTaxEnabled || false);
+        setExpiryTrackingEnabled(data?.expiryTrackingEnabled || false);
       })
       .catch(() => {});
   }, [asUserId]);

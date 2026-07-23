@@ -5,6 +5,7 @@ import { calculateDiscount } from "@/lib/discount-utils";
 import { clerkClient } from "@clerk/nextjs/server";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /**
  * GET → List bills
