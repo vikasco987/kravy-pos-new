@@ -121,6 +121,9 @@ model Item {
 
   reviews   Review[]
   recipe    RecipeItem[]
+  
+  expiryDate DateTime? // ✅ Added for item expiry tracking
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -518,6 +521,8 @@ model BusinessProfile {
   isPremium         Boolean?  @default(false)
   showPremiumPopup  Boolean?  @default(false)
   isFrozen          Boolean?  @default(false)
+  
+  expiryTrackingEnabled Boolean @default(false) // ✅ Added to toggle expiry feature
 
   updatedAt DateTime @updatedAt
 }

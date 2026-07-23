@@ -19,6 +19,7 @@ export default function Page() {
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isFetchingImage, setIsFetchingImage] = useState(false);
+  const [expiryTrackingEnabled, setExpiryTrackingEnabled] = useState(false);
 
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -45,6 +46,7 @@ export default function Page() {
     displayColor: "",
     hsnCode: "",
     zones: "",
+    expiryDate: "",
   });
 
   // Load categories from API
@@ -58,7 +60,19 @@ export default function Page() {
         console.error("❌ Failed to load categories:", err);
       }
     };
+    
+    const loadProfile = async () => {
+      try {
+        const res = await fetch("/api/profile");
+        const data = await res.json();
+        if (res.ok) setExpiryTrackingEnabled(data.expiryTrackingEnabled || false);
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      }
+    };
+
     loadCategories();
+    loadProfile();
   }, []);
 
   const toggleSection = (section: string) => {
@@ -143,6 +157,7 @@ export default function Page() {
       imageUrl: image,
       hsnCode: formData.hsnCode || null,
       zones: formData.zones ? formData.zones.split(',').map((z: string) => z.trim()).filter(Boolean) : [],
+      expiryDate: formData.expiryDate || null,
     };
 
     try {
@@ -178,6 +193,7 @@ export default function Page() {
         displayColor: "",
         hsnCode: "",
         zones: "",
+        expiryDate: "",
       });
       setImage(null);
       setOpenSection(null);
@@ -322,6 +338,7 @@ export default function Page() {
               toggleSection={toggleSection}
               formData={formData}
               handleChange={handleChange}
+              showExpiry={expiryTrackingEnabled}
             />
             <DisplaySection
               openSection={openSection}

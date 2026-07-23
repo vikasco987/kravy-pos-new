@@ -1026,13 +1026,24 @@ function KravyPOS() {
     const filteredTables = useMemo(() => {
         return tablesList
             .filter(t => {
-                const matchSearch = t.name.toLowerCase().includes(tableSearch.toLowerCase());
+                const searchLower = tableSearch.toLowerCase();
+                const matchSearch = (() => {
+                    if (!searchLower) return true;
+                    if (t.name.toLowerCase().includes(searchLower)) return true;
+                    const tableOrders = orders.filter(o => o.table?.id === t.id && o.status !== "COMPLETED" && !o.isDeleted);
+                    return tableOrders.some(o => 
+                        o.id.toLowerCase().includes(searchLower) ||
+                        (o.customerName && o.customerName.toLowerCase().includes(searchLower)) ||
+                        (o.zoneName && o.zoneName.toLowerCase().includes(searchLower)) ||
+                        (o.notes && o.notes.toLowerCase().includes(searchLower))
+                    );
+                })();
                 const matchFilter = tableFilter === "ALL" || (tableFilter === "RUNNING" && t.status === "PREPARING") || (tableFilter === "READY" && t.status === "READY");
                 const matchZone = activeZone === "ALL" || (t.zone ? t.zone.trim().toUpperCase() === activeZone.toUpperCase() : false);
                 return matchSearch && matchFilter && matchZone;
             })
             .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
-    }, [tablesList, tableSearch, tableFilter, activeZone]);
+    }, [tablesList, tableSearch, tableFilter, activeZone, orders]);
 
     const availableZones = useMemo(() => {
         const zones = new Set<string>();

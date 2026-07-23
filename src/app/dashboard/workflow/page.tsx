@@ -754,10 +754,21 @@ export default function KravyPOS() {
     const upiLink = business?.upi ? `upi://pay?pa=${business.upi}&pn=${encodeURIComponent(business.businessName || "Store")}&am=${grandTotal.toFixed(2)}&cu=INR` : "";
     const qrUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}` : "";
     const filteredTables = useMemo(() => tablesList.filter(t => {
-        const matchSearch = t.name.toLowerCase().includes(tableSearch.toLowerCase());
+        const searchLower = tableSearch.toLowerCase();
+        const matchSearch = (() => {
+            if (!searchLower) return true;
+            if (t.name.toLowerCase().includes(searchLower)) return true;
+            const tableOrders = orders.filter(o => o.table?.id === t.id && o.status !== "COMPLETED" && !o.isDeleted);
+            return tableOrders.some(o => 
+                o.id.toLowerCase().includes(searchLower) ||
+                (o.customerName && o.customerName.toLowerCase().includes(searchLower)) ||
+                (o.zoneName && o.zoneName.toLowerCase().includes(searchLower)) ||
+                (o.notes && o.notes.toLowerCase().includes(searchLower))
+            );
+        })();
         const matchFilter = tableFilter === "ALL" || (tableFilter === "RUNNING" && t.status === "PREPARING") || (tableFilter === "READY" && t.status === "READY");
         return matchSearch && matchFilter;
-    }), [tablesList, tableSearch, tableFilter]);
+    }), [tablesList, tableSearch, tableFilter, orders]);
 
     const stats = {
         running: orders.filter(o => o.status === "PREPARING" && !o.isDeleted).length,

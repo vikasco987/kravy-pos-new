@@ -416,6 +416,7 @@ export async function POST(req: Request) {
         variants: body.variants || null,
         addonGroupIds: body.addonGroupIds || [],
         zones: body.zones || [],
+        expiryDate: body.expiryDate ? new Date(body.expiryDate) : null,
       },
       include: {
         category: true,
@@ -527,6 +528,7 @@ export async function PUT(req: Request) {
         addonGroupIds: body.addonGroupIds !== undefined ? body.addonGroupIds : undefined,
         isActive: body.isActive !== undefined ? Boolean(body.isActive) : undefined,
         zones: body.zones !== undefined ? body.zones : undefined,
+        expiryDate: body.expiryDate !== undefined ? (body.expiryDate ? new Date(body.expiryDate) : null) : undefined,
       },
       include: {
         category: true,

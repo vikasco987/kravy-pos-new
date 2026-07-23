@@ -13,8 +13,10 @@ interface InventorySectionProps {
     openingStock: string;
     currentStock: string;
     reorderLevel: string;
+    expiryDate?: string;
   };
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  showExpiry?: boolean;
 }
 
 export default function InventorySection({
@@ -22,6 +24,7 @@ export default function InventorySection({
   toggleSection,
   formData,
   handleChange,
+  showExpiry,
 }: InventorySectionProps) {
   return (
     <ExpandableSection
@@ -54,6 +57,18 @@ export default function InventorySection({
         onChange={handleChange}
         className="w-full border rounded-lg px-4 py-2 text-gray-800 placeholder-gray-500"
       />
+      {showExpiry && (
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-gray-500 font-medium ml-1">Expiry Date</label>
+          <input
+            type="date"
+            name="expiryDate"
+            value={formData.expiryDate || ""}
+            onChange={handleChange}
+            className="w-full border rounded-lg px-4 py-2 text-gray-800 focus:ring-2 focus:ring-purple-400 outline-none"
+          />
+        </div>
+      )}
     </ExpandableSection>
   );
 }

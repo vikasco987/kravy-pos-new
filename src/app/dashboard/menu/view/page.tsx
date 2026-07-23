@@ -86,64 +86,6 @@
 //         if (Array.isArray(data.menus)) {
 //           setMenus(data.menus);
 //           if (data.menus.length > 0) setActiveCategory(data.menus[0].id);
-//         } else if (Array.isArray(data.items)) {
-//           const items: MenuItem[] = data.items.map((it: any) => ({
-//             id: it.id || it._id || String(Math.random()),
-//             name: it.name || "Unnamed",
-//             price: typeof it.sellingPrice === "number" ? it.sellingPrice : it.price ?? null,
-//             imageUrl: it.imageUrl ?? null,
-//             unit: it.unit ?? null,
-//             categoryId: it.categoryId ?? it.category?.id ?? null,
-//           }));
-
-//           const categoriesRaw: { id: string; name: string }[] =
-//             Array.isArray(data.categories)
-//               ? data.categories.map((c: any) => ({
-//                   id: c.id || c._id,
-//                   name: c.name || "Unknown",
-//                 }))
-//               : [];
-
-//           const categoryMap = new Map<string, MenuCategory>();
-//           // seed categories
-//           categoriesRaw.forEach((c) => {
-//             categoryMap.set(c.id, { id: c.id, name: c.name, items: [] });
-//           });
-
-//           // put items into categories, fallback to 'Uncategorised'
-//           const uncategorisedId = "uncategorised";
-//           if (!categoryMap.has(uncategorisedId)) {
-//             categoryMap.set(uncategorisedId, { id: uncategorisedId, name: "Uncategorised", items: [] });
-//           }
-
-//           items.forEach((it) => {
-//             const catId = it.categoryId ?? uncategorisedId;
-//             if (!categoryMap.has(catId)) {
-//               categoryMap.set(catId, { id: catId, name: "Uncategorised", items: [] });
-//             }
-//             categoryMap.get(catId)!.items.push(it);
-//           });
-
-//           const finalCategories = Array.from(categoryMap.values()).map((c) => ({
-//             ...c,
-//             items: c.items.sort((a, b) => (a.name || "").localeCompare(b.name || "")),
-//           }));
-
-//           // sort categories by name (Uncategorised last)
-//           finalCategories.sort((a, b) => {
-//             if (a.id === uncategorisedId) return 1;
-//             if (b.id === uncategorisedId) return -1;
-//             return a.name.localeCompare(b.name);
-//           });
-
-//           setMenus(finalCategories);
-//           if (finalCategories.length > 0) setActiveCategory(finalCategories[0].id);
-//         } else {
-//           // unknown shape
-//           setMenus([]);
-//           setError("Unexpected response from server");
-//         }
-//       } catch (err: any) {
 //         console.error("Error fetching menus:", err);
 //         setError(err?.message ?? "Something went wrong");
 //       } finally {
@@ -427,6 +369,7 @@ type MenuItem = {
   hsnCode?: string | null;
   shortCode?: string | null;
   isActive: boolean;
+  expiryDate?: string | null;
 };
 
 type MenuCategory = {
@@ -449,6 +392,7 @@ export default function ViewMenuPage() {
 
   const [cart, setCart] = useState<Record<string, CartItem>>({});
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [expiryTrackingEnabled, setExpiryTrackingEnabled] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1136,6 +1080,7 @@ export default function ViewMenuPage() {
           isRecommended: !!it.isRecommended,
           isNew: !!it.isNew,
           shortCode: it.shortCode ?? null,
+          expiryDate: it.expiryDate ?? null,
         });
       });
 
@@ -1288,6 +1233,7 @@ export default function ViewMenuPage() {
           isVeg: updated.isVeg,
           isEgg: updated.isEgg,
           shortCode: updated.shortCode,
+          expiryDate: updated.expiryDate,
         }),
       });
 
@@ -1950,7 +1896,22 @@ export default function ViewMenuPage() {
                                 <div className={`w-3 h-3 border-[1.2px] rounded-sm flex items-center justify-center shrink-0 ${item.isVeg ? "border-green-600" : item.isEgg ? "border-amber-500" : "border-red-600"}`}>
                                     <div className={`w-1 h-1 rounded-full ${item.isVeg ? "bg-green-600" : item.isEgg ? "bg-amber-500" : "bg-red-600"}`} />
                                 </div>
-                                <h4 className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base group-hover:text-indigo-500 transition-colors">{item.name}</h4>
+                                <div className="flex flex-col">
+                                  <h4 className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base group-hover:text-indigo-500 transition-colors">{item.name}</h4>
+                                  {expiryTrackingEnabled && item.expiryDate && (
+                                    <div className="flex items-center gap-1 mt-0.5">
+                                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                        new Date(item.expiryDate) < new Date() 
+                                          ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' 
+                                          : new Date(item.expiryDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                            : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                      }`}>
+                                        Exp: {new Date(item.expiryDate).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex items-center gap-1.5">
                                 <button onClick={(e) => { e.stopPropagation(); setEditingItem(item); }} className="p-1.5 text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:scale-110 transition-transform">Edit</button>
@@ -2910,6 +2871,16 @@ function EditModal({
                     value={local.shortCode ?? ""}
                     placeholder="e.g. 1999"
                     onChange={(e) => setLocal({ ...local, shortCode: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Expiry Date</label>
+                  <input
+                    type="date"
+                    className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+                    value={local.expiryDate ?? ""}
+                    onChange={(e) => setLocal({ ...local, expiryDate: e.target.value })}
                   />
                 </div>
 

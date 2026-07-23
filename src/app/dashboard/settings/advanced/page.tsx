@@ -15,6 +15,7 @@ import {
   Settings,
   Sparkles,
   Layers,
+  Clock,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -206,6 +207,33 @@ export default function AdvancedSettingsPage() {
             }`}
           >
             {profile.multiZoneMenuEnabled ? 'Enabled' : 'Disabled'}
+          </button>
+        </div>
+
+        {/* Expiry Tracking Control */}
+        <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] p-8 shadow-xl flex flex-col md:flex-row items-center gap-8 group">
+          <div className="w-20 h-20 rounded-3xl bg-orange-100 dark:bg-orange-900/20 flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+            <Clock size={40} />
+          </div>
+          <div className="flex-1 space-y-2">
+            <h3 className="text-xl font-black text-[var(--kravy-text-primary)] flex items-center gap-2">
+              Item Expiry Tracking
+              <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Inventory</span>
+            </h3>
+            <p className="text-sm text-[var(--kravy-text-muted)] font-medium max-w-md leading-relaxed">
+              Enable expiry date tracking for items. Expired items will be highlighted in red, and items expiring within 7 days in yellow.
+            </p>
+          </div>
+          <button
+            onClick={() => handleSave({ expiryTrackingEnabled: !profile.expiryTrackingEnabled })}
+            disabled={saving}
+            className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
+              profile.expiryTrackingEnabled 
+                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' 
+                : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+            }`}
+          >
+            {profile.expiryTrackingEnabled ? 'Enabled' : 'Disabled'}
           </button>
         </div>
 
