@@ -1080,7 +1080,7 @@ export default function ViewMenuPage() {
           isRecommended: !!it.isRecommended,
           isNew: !!it.isNew,
           shortCode: it.shortCode ?? null,
-          expiryDate: it.expiryDate ?? null,
+          expiryDate: it.expiryDate ? new Date(it.expiryDate).toISOString().split('T')[0] : null,
         });
       });
 

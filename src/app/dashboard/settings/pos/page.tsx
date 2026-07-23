@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { 
     LayoutDashboard, Check, ArrowLeft, Save, 
     Banknote, Smartphone, CreditCard, Store, Wallet,
-    PauseCircle, SaveAll, Eye, Printer, AlertCircle
+    PauseCircle, SaveAll, Eye, Printer, AlertCircle, Clock
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
@@ -24,6 +24,7 @@ export default function PosLayoutSettings() {
         posSaveEnabled: true,
         posPreviewEnabled: true,
         posKotEnabled: true,
+        expiryTrackingEnabled: true,
     });
 
     useEffect(() => {
@@ -41,6 +42,7 @@ export default function PosLayoutSettings() {
                         posSaveEnabled: data.posSaveEnabled ?? true,
                         posPreviewEnabled: data.posPreviewEnabled ?? true,
                         posKotEnabled: data.posKotEnabled ?? true,
+                        expiryTrackingEnabled: data.expiryTrackingEnabled ?? false,
                     });
                 }
             })
@@ -185,6 +187,7 @@ export default function PosLayoutSettings() {
                         <VisibilityToggle icon={SaveAll} label="Save Bill" sKey="posSaveEnabled" desc="Store in history without print" />
                         <VisibilityToggle icon={Eye} label="Preview" sKey="posPreviewEnabled" desc="View layout before final" />
                         <VisibilityToggle icon={Printer} label="KOT Print" sKey="posKotEnabled" desc="Print tokens for kitchen" />
+                        <VisibilityToggle icon={Clock} label="Expiry Tracking" sKey="expiryTrackingEnabled" desc="Show item expiration alerts" />
                     </div>
                 </div>
             </div>
