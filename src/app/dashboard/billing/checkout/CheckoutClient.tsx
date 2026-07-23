@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock, Trash2, Play, X, Search, ChevronDown, User, Printer, ArrowLeft,
   Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus,
-  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck, Star, Zap, Pencil, Settings
+  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck, Star, Zap, Pencil, Settings, Check
 } from "lucide-react";
 import { calculateDiscount } from "@/lib/discount-utils";
 import { toast } from "sonner";
@@ -41,6 +41,7 @@ type MenuItem = {
   isVeg?: boolean;
   isEgg?: boolean;
   isActive?: boolean;
+  variants?: any;
 };
 
 type BillItem = {
@@ -454,6 +455,10 @@ export default function CheckoutClient() {
   const [quickAddAddonGroup, setQuickAddAddonGroup] = useState<any | null>(null);
   const [quickAddTaxStatus, setQuickAddTaxStatus] = useState("Without Tax");
   const [quickAddGst, setQuickAddGst] = useState(0);
+
+  // Variant Modal State
+  const [variantModalItem, setVariantModalItem] = useState<MenuItem | null>(null);
+  const [selectedVariants, setSelectedVariants] = useState<{ [groupId: string]: any[] }>({});
   const [showAddCategory, setShowAddCategory] = useState(false);
 
   /* ================= PARTIES (CUSTOMERS) STATE ================= */
@@ -887,6 +892,12 @@ export default function CheckoutClient() {
 
   /* ================= CART ================= */
   function addToCart(item: MenuItem) {
+    if (item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
+      setVariantModalItem(item);
+      setSelectedVariants({});
+      return;
+    }
+
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
@@ -906,6 +917,56 @@ export default function CheckoutClient() {
         isNew: true
       }];
     });
+  }
+
+  function confirmVariantAddToCart() {
+    if (!variantModalItem) return;
+    
+    // validate required variants
+    for (const vg of (variantModalItem.variants || [])) {
+        if (vg.required) {
+            const sel = selectedVariants[vg.id];
+            if (!sel || sel.length === 0) {
+                toast.error(`Please select an option for ${vg.groupName}`);
+                return;
+            }
+        }
+    }
+
+    // calculate additional price and form the variant string
+    let additionalPrice = 0;
+    let variantDescParts: string[] = [];
+    Object.values(selectedVariants).forEach(opts => {
+        opts.forEach(opt => {
+            additionalPrice += Number(opt.price || 0);
+            variantDescParts.push(opt.name);
+        });
+    });
+
+    const variantStr = variantDescParts.length > 0 ? ` (${variantDescParts.join(", ")})` : "";
+    const uniqueId = `${variantModalItem.id}-${variantDescParts.sort().join("-")}`;
+
+    setItems((prev) => {
+      const existing = prev.find((i) => i.id === uniqueId);
+      if (existing) {
+        kravy.click();
+        return prev.map((i) => i.id === uniqueId ? { ...i, qty: i.qty + 1, isNew: (i.qty + 1) > (i.printedQty || 0) } : i);
+      }
+      kravy.add();
+      return [...prev, { 
+        id: uniqueId, 
+        name: variantModalItem.name + variantStr, 
+        qty: 1, 
+        printedQty: 0,
+        rate: (variantModalItem.price || 0) + additionalPrice,
+        gst: variantModalItem.gst ?? null,
+        hsnCode: variantModalItem.hsnCode || "",
+        taxStatus: variantModalItem.taxStatus || "Without Tax",
+        isNew: true
+      }];
+    });
+
+    setVariantModalItem(null);
   }
 
   function reduceFromCart(itemId: string) {
@@ -3705,6 +3766,108 @@ export default function CheckoutClient() {
               >
                 Save Remark
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════
+          VARIANT SELECTION MODAL
+      ════════════════════════════════════════════ */}
+      {variantModalItem && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setVariantModalItem(null)} />
+          <div className="relative bg-[var(--kravy-surface)] w-full max-w-md rounded-[2.5rem] shadow-2xl border border-[var(--kravy-border)] overflow-hidden scale-100 animate-in fade-in duration-200">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-black text-[var(--kravy-text-primary)] leading-tight">Customize</h3>
+                  <p className="text-xs text-[var(--kravy-text-muted)] font-black uppercase tracking-widest mt-1">
+                    {variantModalItem.name}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setVariantModalItem(null)}
+                  className="w-10 h-10 flex items-center justify-center rounded-2xl bg-[var(--kravy-border)]/20 text-[var(--kravy-text-primary)] hover:bg-[var(--kravy-border)]/40 transition-all"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="max-h-[50vh] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
+                {(variantModalItem.variants || []).map((vg: any) => (
+                  <div key={vg.id} className="bg-[var(--kravy-bg-app)]/50 rounded-2xl p-5 border border-[var(--kravy-border)]/30">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="text-sm font-black text-[var(--kravy-text-primary)] uppercase tracking-wider">{vg.groupName}</h4>
+                      {vg.required && <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 px-2 py-1 rounded-full">Required</span>}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {vg.options?.map((opt: any) => {
+                        const isSelected = selectedVariants[vg.id]?.some(s => s.id === opt.id);
+                        
+                        return (
+                          <label key={opt.id} className="flex items-center gap-3 cursor-pointer group">
+                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                              isSelected 
+                                ? 'bg-indigo-600 border-indigo-600' 
+                                : 'border-[var(--kravy-text-muted)] group-hover:border-indigo-400'
+                            }`}>
+                              {isSelected && (vg.type === 'checkbox' ? <Check size={12} className="text-white" /> : <div className="w-2 h-2 bg-white rounded-full" />)}
+                            </div>
+                            
+                            <input 
+                              type={vg.type === 'checkbox' ? 'checkbox' : 'radio'}
+                              name={`variant_${vg.id}`}
+                              className="hidden"
+                              checked={isSelected || false}
+                              onChange={() => {
+                                kravy.toggle();
+                                setSelectedVariants(prev => {
+                                  const currentSel = prev[vg.id] || [];
+                                  if (vg.type === 'radio') {
+                                    return { ...prev, [vg.id]: [opt] };
+                                  } else {
+                                    if (isSelected) {
+                                      return { ...prev, [vg.id]: currentSel.filter(s => s.id !== opt.id) };
+                                    } else {
+                                      return { ...prev, [vg.id]: [...currentSel, opt] };
+                                    }
+                                  }
+                                });
+                              }}
+                            />
+                            
+                            <div className="flex-1 flex justify-between items-center">
+                              <span className={`text-sm font-bold transition-all ${isSelected ? 'text-[var(--kravy-text-primary)]' : 'text-[var(--kravy-text-muted)]'}`}>
+                                {opt.name}
+                              </span>
+                              {opt.price > 0 && (
+                                <span className={`text-xs font-black ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`}>
+                                  +₹{opt.price}
+                                </span>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-[var(--kravy-border)]/50">
+                <button
+                  onClick={() => confirmVariantAddToCart()}
+                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest
+                    shadow-xl shadow-indigo-600/20 hover:scale-[1.02] active:scale-95 transition-all flex justify-between items-center px-6"
+                >
+                  <span>Add to Order</span>
+                  <span>₹{
+                    (variantModalItem.price || 0) + Object.values(selectedVariants).reduce((acc: number, opts: any[]) => acc + opts.reduce((a, b) => a + Number(b.price || 0), 0), 0)
+                  }</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
