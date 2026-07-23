@@ -1678,8 +1678,9 @@ function KravyPOS() {
                                                                         className={`flex items-center justify-between px-3 py-1.5 min-h-[52px] rounded-2xl border transition-all duration-300 group bg-white/60 dark:bg-slate-900/40 backdrop-blur-md border-white/50 dark:border-slate-800/50 hover:border-indigo-500/30 hover:bg-white/90 dark:hover:bg-slate-800/60 hover:shadow-[0_8px_30px_rgba(99,102,241,0.1)] ${roundObj.id === "New Items" ? "ring-1 ring-amber-500/20 shadow-[0_0_15px_rgba(251,191,36,0.05)]" : ""}`}
                                                                     >
                                                                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                                            {(() => {
                                                                                 const isNonVeg = item.isVeg === false || item.name?.toUpperCase().includes("(NV)");
+                                                                                const menuRef = menuItems.find(m => m.id === item.itemId);
+                                                                                const itemExpiryDate = menuRef?.expiryDate;
                                                                                 return (
                                                                                     <>
                                                                                         <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm shadow-sm border border-white/50 dark:border-slate-800 shrink-0 ${isNonVeg ? "bg-rose-50 text-rose-500" : "bg-emerald-50 text-emerald-500"}`}>
@@ -1690,6 +1691,19 @@ function KravyPOS() {
                                                                                                 <p className="text-[11px] font-black text-[#0B1B48] dark:text-white truncate leading-tight uppercase tracking-tight">{item.name}</p>
                                                                                                 <div className={`w-1 h-1 rounded-full shrink-0 ${activeOrderForSelected?.status === "READY" ? "bg-emerald-500" : "bg-amber-400"}`} />
                                                                                             </div>
+                                                                                            {business?.expiryTrackingEnabled && itemExpiryDate && (
+                                                                                                <div className="flex items-center gap-2 mt-0.5">
+                                                                                                    <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-widest border ${
+                                                                                                        new Date(itemExpiryDate) < new Date() 
+                                                                                                        ? 'bg-red-50 text-red-600 border-red-200' 
+                                                                                                        : new Date(itemExpiryDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                                                                                            ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                                                                                            : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                                                                    }`}>
+                                                                                                        Exp: {new Date(itemExpiryDate).toLocaleDateString()}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            )}
                                                                                             <div className="flex items-center gap-2 mt-0.5">
                                                                                                 <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-md ${isNonVeg ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"} uppercase tracking-widest border border-current/10`}>
                                                                                                     {isNonVeg ? "Non-Veg" : "Veg"}
