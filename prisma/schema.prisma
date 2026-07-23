@@ -273,6 +273,7 @@ model User {
   offers     Offer[]
   rewards    Reward[]
   sessions   UserSession[]
+  manualInvoices ManualInvoice[]
 }
 
 model UserSession {
@@ -525,6 +526,52 @@ model BusinessProfile {
   expiryTrackingEnabled Boolean @default(false) // ✅ Added to toggle expiry feature
 
   updatedAt DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////
+// MANUAL INVOICE
+//////////////////////////////////////////////////
+
+model ManualInvoice {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkUserId String
+  user        User     @relation(fields: [clerkUserId], references: [clerkId])
+
+  invoiceNumber String
+  date          DateTime
+  dueDate       DateTime? // Added Due Date / Validity
+  documentType  String   // "invoice" or "proforma"
+  
+  customerName    String?
+  customerPhone   String?
+  customerEmail   String?
+  customerAddress String?
+  customerCity    String?
+  customerState   String?
+  customerPincode String?
+  customerGst     String?
+
+  items Json // Array of { name, price, quantity, discountType, discountValue }
+
+  subtotal    Float
+  discount    Float @default(0) // total discount amount applied
+  tax         Float @default(0)
+  total       Float
+
+  paymentMode String?
+  status      String @default("UNPAID") // UNPAID, PAID, CANCELLED
+
+  notes           String?
+  bankDetails     String?
+  termsConditions String?
+  bankImage       String?
+  
+  pdfUrl      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clerkUserId])
 }
 
 //////////////////////////////////////////////////

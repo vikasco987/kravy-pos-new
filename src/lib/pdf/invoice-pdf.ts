@@ -124,7 +124,13 @@ export async function generateManualInvoicePDF(data: any) {
   page.drawText(String(data.invoiceNumber || "MANUAL-" + Date.now().toString().slice(-6)), { x: 480, y: metaY, size: 10, font: bold });
   metaY -= 16;
   page.drawText("Date", { x: rightX, y: metaY, size: 10, font });
-  page.drawText(new Date().toLocaleDateString(), { x: 480, y: metaY, size: 10, font });
+  page.drawText(new Date(data.date || Date.now()).toLocaleDateString(), { x: 480, y: metaY, size: 10, font });
+
+  if (data.dueDate) {
+    metaY -= 16;
+    page.drawText(data.documentType === 'proforma' ? "Valid Until" : "Due Date", { x: rightX, y: metaY, size: 10, font });
+    page.drawText(new Date(data.dueDate).toLocaleDateString(), { x: 480, y: metaY, size: 10, font });
+  }
 
   if (data.paymentMode) {
     metaY -= 16;
@@ -158,8 +164,15 @@ export async function generateManualInvoicePDF(data: any) {
     const qty = Number(item.quantity) || 1;
     const itemTotal = rate * qty;
     
+    // Add discount text to item name if there's a discount
+    let itemName = String(item.name || "N/A");
+    if (item.discountValue && item.discountValue > 0) {
+        if (item.discountType === "PERCENTAGE") itemName += ` (-${item.discountValue}%)`;
+        else itemName += ` (-₹${item.discountValue})`;
+    }
+
     page.drawText(String(index + 1), { x: 55, y: itemY, size: 10, font });
-    page.drawText(String(item.name || "N/A"), { x: 90, y: itemY, size: 10, font: bold });
+    page.drawText(itemName.slice(0, 45), { x: 90, y: itemY, size: 10, font: bold });
     page.drawText(String(qty), { x: 345, y: itemY, size: 10, font });
     page.drawText(formatRS(rate), { x: 400, y: itemY, size: 10, font });
     page.drawText(formatRS(itemTotal), { x: 490, y: itemY, size: 10, font: bold });
@@ -170,6 +183,15 @@ export async function generateManualInvoicePDF(data: any) {
   itemY -= 20;
   const summaryX = 350;
   const valX = 490;
+
+  if (data.discount && Number(data.discount) > 0) {
+      page.drawText("Subtotal", { x: summaryX, y: itemY, size: 10, font, color: greyTextColor });
+      page.drawText(formatRS(Number(data.subtotal) || 0), { x: valX, y: itemY, size: 10, font });
+      itemY -= 15;
+      page.drawText("Discount", { x: summaryX, y: itemY, size: 10, font, color: rgb(0.8, 0.2, 0.2) });
+      page.drawText("-" + formatRS(Number(data.discount) || 0), { x: valX, y: itemY, size: 10, font, color: rgb(0.8, 0.2, 0.2) });
+      itemY -= 15;
+  }
 
   page.drawText("Taxable Amount", { x: summaryX, y: itemY, size: 10, font, color: greyTextColor });
   page.drawText(formatRS(taxableAmount), { x: valX, y: itemY, size: 10, font });

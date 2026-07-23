@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
 import { 
     Download, 
     Printer, 
@@ -18,16 +19,22 @@ import {
     Hash,
     Zap,
     ShieldCheck,
-    Loader2
+    Loader2,
+    History,
+    X
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 export default function InvoiceGenerator() {
     const [loading, setLoading] = useState(false);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [history, setHistory] = useState<any[]>([]);
+    const [fetchingHistory, setFetchingHistory] = useState(false);
     
     const [invoiceData, setInvoiceData] = useState({
         invoiceNumber: `INV-${Math.floor(100000 + Math.random() * 900000)}`,
         date: new Date().toISOString().split('T')[0],
+        dueDate: "",
         documentType: "invoice",
         paymentMode: "Online / Bank Transfer",
         customer: {
@@ -41,7 +48,7 @@ export default function InvoiceGenerator() {
             state: ""
         },
         items: [
-            { name: "Kravy POS Premium - 1 Year", price: 3999, quantity: 1 }
+            { name: "Kravy POS Premium - 1 Year", price: 3999, quantity: 1, discountType: "PERCENTAGE", discountValue: 0 }
         ],
         notes: "Thank you for choosing Kravy POS! Your premium subscription is now active.",
         bankDetails: "Bank Name: YES BANK\nA/C No: 102561900003170\nIFSC Code: YESB0001025\nBranch: Udyog Vihar, Gurgaon",
@@ -75,7 +82,7 @@ export default function InvoiceGenerator() {
     const addItem = () => {
         setInvoiceData(prev => ({
             ...prev,
-            items: [...prev.items, { name: "", price: 0, quantity: 1 }]
+            items: [...prev.items, { name: "", price: 0, quantity: 1, discountType: "PERCENTAGE", discountValue: 0 }]
         }));
     };
 
@@ -95,6 +102,21 @@ export default function InvoiceGenerator() {
 
     const calculateSubtotal = () => {
         return invoiceData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    };
+
+    const calculateDiscount = () => {
+        return invoiceData.items.reduce((sum, item) => {
+            const rowTotal = item.price * item.quantity;
+            if (item.discountType === "PERCENTAGE") {
+                return sum + (rowTotal * ((item.discountValue || 0) / 100));
+            } else {
+                return sum + (item.discountValue || 0);
+            }
+        }, 0);
+    };
+
+    const calculateTotal = () => {
+        return calculateSubtotal() - calculateDiscount();
     };
 
     const handleDownload = async () => {
@@ -117,10 +139,32 @@ export default function InvoiceGenerator() {
                     customerState: invoiceData.customer.state,
                     customerPincode: invoiceData.customer.pincode,
                     paymentMode: invoiceData.paymentMode,
-                    total: calculateSubtotal(),
+                    subtotal: calculateSubtotal(),
+                    discount: calculateDiscount(),
+                    total: calculateTotal(),
                     taxType: "inclusive"
                 })
             });
+
+            // Save to History First
+            fetch("/api/admin/manual-invoices", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...invoiceData,
+                    customerName: invoiceData.customer.name,
+                    customerPhone: invoiceData.customer.phone,
+                    customerEmail: invoiceData.customer.email,
+                    customerAddress: invoiceData.customer.address,
+                    customerDistrict: invoiceData.customer.city,
+                    customerState: invoiceData.customer.state,
+                    customerPincode: invoiceData.customer.pincode,
+                    customerGst: invoiceData.customer.gst,
+                    subtotal: calculateSubtotal(),
+                    discount: calculateDiscount(),
+                    total: calculateTotal()
+                })
+            }).catch(console.error);
 
             if (!response.ok) throw new Error("Failed to generate PDF");
 
@@ -142,25 +186,23 @@ export default function InvoiceGenerator() {
         }
     };
 
-    const handleBankImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files?.[0]) return;
-        const file = e.target.files[0];
-        const formData = new FormData();
-        formData.append("file", file);
-        
+    const loadHistory = async () => {
+        setFetchingHistory(true);
         try {
-            toast.loading("Uploading bank image...", { id: "bank_upload" });
-            const res = await fetch("/api/upload", { method: "POST", body: formData });
-            const data = await res.json();
-            if (res.ok && data.secure_url) {
-                setInvoiceData(prev => ({ ...prev, bankImage: data.secure_url }));
-                toast.success("Bank image uploaded!", { id: "bank_upload" });
-            } else {
-                toast.error("Upload failed", { id: "bank_upload" });
+            const res = await fetch("/api/admin/manual-invoices");
+            if (res.ok) {
+                const data = await res.json();
+                setHistory(data);
             }
-        } catch (err) {
-            toast.error("Upload error", { id: "bank_upload" });
+        } catch (e) {
+            toast.error("Failed to load history");
         }
+        setFetchingHistory(false);
+    };
+
+    const handleOpenHistory = () => {
+        setShowHistoryModal(true);
+        loadHistory();
     };
 
     return (
@@ -178,14 +220,22 @@ export default function InvoiceGenerator() {
                             <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Create & Download SaaS Invoices</p>
                         </div>
                     </div>
-                    <button 
-                        onClick={handleDownload}
-                        disabled={loading}
-                        className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest flex items-center gap-3 transition-all shadow-xl shadow-indigo-600/20 disabled:opacity-50"
-                    >
-                        {loading ? <Loader2 className="animate-spin" /> : <Download size={18} />}
-                        Download PDF
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button 
+                            onClick={handleOpenHistory}
+                            className="flex items-center gap-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-300 px-6 py-3 rounded-2xl font-bold hover:shadow-lg transition-all"
+                        >
+                            <History size={16} /> View History
+                        </button>
+                        <button 
+                            onClick={handleDownload}
+                            disabled={loading}
+                            className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/30 transition-all disabled:opacity-50"
+                        >
+                            {loading ? <span className="animate-spin text-xl">⚪</span> : <Download size={16} />}
+                            Save & Download PDF
+                        </button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -284,7 +334,7 @@ export default function InvoiceGenerator() {
                                                 onChange={e => updateItem(index, 'name', e.target.value)}
                                                 className="w-full bg-transparent border-b border-slate-200 dark:border-white/10 pb-1 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
                                             />
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-4 gap-4">
                                                 <div className="space-y-1">
                                                     <label className="text-[8px] font-black uppercase text-slate-400">Price (₹)</label>
                                                     <input 
@@ -300,6 +350,26 @@ export default function InvoiceGenerator() {
                                                         type="number"
                                                         value={item.quantity}
                                                         onChange={e => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                                                        className="w-full bg-transparent border-b border-slate-200 dark:border-white/10 pb-1 text-xs font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[8px] font-black uppercase text-slate-400">Disc. Type</label>
+                                                    <select 
+                                                        value={item.discountType || "PERCENTAGE"}
+                                                        onChange={e => updateItem(index, 'discountType', e.target.value)}
+                                                        className="w-full bg-transparent border-b border-slate-200 dark:border-white/10 pb-1 text-xs font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
+                                                    >
+                                                        <option value="PERCENTAGE">%</option>
+                                                        <option value="FLAT">₹ (Flat)</option>
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[8px] font-black uppercase text-slate-400">Disc. Value</label>
+                                                    <input 
+                                                        type="number"
+                                                        value={item.discountValue || 0}
+                                                        onChange={e => updateItem(index, 'discountValue', parseFloat(e.target.value) || 0)}
                                                         className="w-full bg-transparent border-b border-slate-200 dark:border-white/10 pb-1 text-xs font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
                                                     />
                                                 </div>
@@ -327,7 +397,7 @@ export default function InvoiceGenerator() {
                                     </select>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
                                         <Hash size={10} /> Invoice #
@@ -350,7 +420,18 @@ export default function InvoiceGenerator() {
                                         className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
                                     />
                                 </div>
-                                <div className="space-y-1 col-span-2 mt-2">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                                        <Calendar size={10} /> {invoiceData.documentType === 'proforma' ? 'Valid Until' : 'Due Date'}
+                                    </label>
+                                    <input 
+                                        type="date"
+                                        value={invoiceData.dueDate}
+                                        onChange={e => setInvoiceData(prev => ({ ...prev, dueDate: e.target.value }))}
+                                        className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
+                                    />
+                                </div>
+                                <div className="space-y-1 col-span-3 mt-2">
                                     <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
                                         <CreditCard size={10} /> Payment Mode (Optional)
                                     </label>
@@ -567,6 +648,59 @@ export default function InvoiceGenerator() {
                     </div>
                 </div>
             </div>
+
+            {/* History Modal */}
+            {showHistoryModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] p-8 shadow-2xl overflow-y-auto border border-white/10">
+                        <div className="flex items-center justify-between mb-8">
+                            <div>
+                                <h2 className="text-2xl font-black dark:text-white">Invoice History</h2>
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Manage Past Manual Invoices</p>
+                            </div>
+                            <button onClick={() => setShowHistoryModal(false)} className="w-10 h-10 bg-slate-100 dark:bg-black/20 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-500">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {fetchingHistory ? (
+                            <div className="py-12 flex justify-center"><div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full" /></div>
+                        ) : history.length === 0 ? (
+                            <div className="py-12 text-center text-slate-400 font-bold">No invoices found.</div>
+                        ) : (
+                            <div className="space-y-4">
+                                {history.map(inv => (
+                                    <div key={inv.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-2xl">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-sm font-black dark:text-white">{inv.invoiceNumber}</span>
+                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest ${inv.documentType === 'proforma' ? 'bg-amber-500/10 text-amber-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                                                    {inv.documentType}
+                                                </span>
+                                                <button 
+                                                    onClick={() => updateStatus(inv.id, inv.status)}
+                                                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest cursor-pointer hover:opacity-80 transition-opacity ${inv.status === 'PAID' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}
+                                                >
+                                                    {inv.status}
+                                                </button>
+                                            </div>
+                                            <p className="text-xs font-bold text-slate-500">{inv.customerName} • ₹{inv.total.toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <button 
+                                                onClick={() => redownloadPdf(inv)}
+                                                className="w-10 h-10 flex items-center justify-center bg-indigo-500/10 text-indigo-500 rounded-xl hover:bg-indigo-500/20 transition-colors"
+                                            >
+                                                <Download size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
