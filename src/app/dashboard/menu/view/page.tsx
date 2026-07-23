@@ -465,6 +465,9 @@ export default function ViewMenuPage() {
   const [quickAddGst, setQuickAddGst] = useState(0);
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [showAddCategory, setShowAddCategory] = useState(false);
+
+  // Inline editing state
+  const [editingField, setEditingField] = useState<{ id: string, field: "name" | "price", value: string } | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<MenuCategory | null>(null);
   const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -1247,6 +1250,35 @@ export default function ViewMenuPage() {
     }
   }
 
+  async function handleInlineSave() {
+    if (!editingField) return;
+    const { id, field, value } = editingField;
+    
+    let targetItem: MenuItem | undefined;
+    for (const cat of menus) {
+      const found = cat.items.find(i => i.id === id);
+      if (found) {
+        targetItem = found;
+        break;
+      }
+    }
+    
+    if (!targetItem) {
+      setEditingField(null);
+      return;
+    }
+
+    if (field === "name" && targetItem.name === value) { setEditingField(null); return; }
+    if (field === "price" && targetItem.price === Number(value)) { setEditingField(null); return; }
+
+    const updated = { ...targetItem };
+    if (field === "name") updated.name = value;
+    if (field === "price") updated.price = Number(value) || 0;
+
+    setEditingField(null); // Optimistic close
+    await saveEdit(updated);
+  }
+
   async function confirmDelete(item: MenuItem) {
     if (!item?.id) return;
     try {
@@ -1897,7 +1929,27 @@ export default function ViewMenuPage() {
                                     <div className={`w-1 h-1 rounded-full ${item.isVeg ? "bg-green-600" : item.isEgg ? "bg-amber-500" : "bg-red-600"}`} />
                                 </div>
                                 <div className="flex flex-col">
-                                  <h4 className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base group-hover:text-indigo-500 transition-colors">{item.name}</h4>
+                                  {editingField?.id === item.id && editingField.field === "name" ? (
+                                    <input 
+                                      autoFocus
+                                      className="font-bold text-sm md:text-base w-full bg-slate-100 dark:bg-slate-800 border-b border-indigo-500 focus:outline-none px-1 py-0.5 rounded-sm"
+                                      value={editingField.value}
+                                      onChange={e => setEditingField({ ...editingField, value: e.target.value })}
+                                      onBlur={handleInlineSave}
+                                      onKeyDown={e => {
+                                        if (e.key === "Enter") handleInlineSave();
+                                        if (e.key === "Escape") setEditingField(null);
+                                      }}
+                                    />
+                                  ) : (
+                                    <h4 
+                                      onClick={(e) => { e.stopPropagation(); setEditingField({ id: item.id, field: "name", value: item.name }); }} 
+                                      className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base group-hover:text-indigo-500 transition-colors cursor-pointer"
+                                      title="Click to edit name"
+                                    >
+                                      {item.name}
+                                    </h4>
+                                  )}
                                   {expiryTrackingEnabled && item.expiryDate && (
                                     <div className="flex items-center gap-1 mt-0.5">
                                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
@@ -1919,7 +1971,28 @@ export default function ViewMenuPage() {
                               </div>
                             </div>
 
-                            <div className="text-indigo-600 dark:text-indigo-400 font-extrabold text-base">{formatPrice(item.price)}</div>
+                            {editingField?.id === item.id && editingField.field === "price" ? (
+                              <input 
+                                autoFocus
+                                type="number"
+                                className="w-24 font-extrabold text-base bg-slate-100 dark:bg-slate-800 border-b border-indigo-500 focus:outline-none px-1 py-0.5 rounded-sm text-indigo-600 dark:text-indigo-400"
+                                value={editingField.value}
+                                onChange={e => setEditingField({ ...editingField, value: e.target.value })}
+                                onBlur={handleInlineSave}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter") handleInlineSave();
+                                  if (e.key === "Escape") setEditingField(null);
+                                }}
+                              />
+                            ) : (
+                              <div 
+                                onClick={(e) => { e.stopPropagation(); setEditingField({ id: item.id, field: "price", value: String(item.price) }); }}
+                                className="text-indigo-600 dark:text-indigo-400 font-extrabold text-base cursor-pointer hover:underline"
+                                title="Click to edit price"
+                              >
+                                {formatPrice(item.price)}
+                              </div>
+                            )}
                             {item.unit && <div className="text-[0.65rem] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter opacity-70">{item.unit}</div>}
                           </div>
                         </motion.div>
