@@ -440,6 +440,7 @@ export default function ViewMenuPage() {
   const [newAiZone, setNewAiZone] = useState<string>("");
   const [isCreatingAiZone, setIsCreatingAiZone] = useState<boolean>(false);
   const [savingExtractedMenu, setSavingExtractedMenu] = useState(false);
+  const [business, setBusiness] = useState<any>(null);
 
   // Sync All state
   const [syncProgress, setSyncProgress] = useState<{ completed: number; total: number } | null>(null);
@@ -1075,6 +1076,7 @@ export default function ViewMenuPage() {
     fetch("/api/profile")
       .then(res => res.json())
       .then(data => {
+        setBusiness(data?.profile || data);
         setTaxEnabled(data?.taxEnabled || data?.perProductTaxEnabled || false);
         setExpiryTrackingEnabled(data?.expiryTrackingEnabled || false);
       })
