@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, DragEvent, ChangeEvent } from "react";
 import * as XLSX from "xlsx";
-import { FileUp, Layers, Play, ScanText, Sheet, LayoutGrid, Image as ImageIcon, ImageOff, X, Search, Globe, XCircle, Sparkles, Store, UserCircle, Rocket, Check } from "lucide-react";
+import { FileUp, Layers, Play, ScanText, Sheet, LayoutGrid, Image as ImageIcon, ImageOff, X, Search, Globe, XCircle, Sparkles, Store, UserCircle, Rocket, Check, Camera, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export default function AutoApplyClient() {
@@ -19,6 +19,8 @@ export default function AutoApplyClient() {
     const [fileQueue, setFileQueue] = useState<File[]>([]);
     const [extractedItems, setExtractedItems] = useState<any[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const businessFileInputRef = useRef<HTMLInputElement>(null);
+    const [isExtractingBusiness, setIsExtractingBusiness] = useState(false);
 
     const [ocrStatus, setOcrStatus] = useState({ text: "Pending", colorClass: "text-gray-500", isLoading: false });
     const [imgStatus, setImgStatus] = useState({ text: "Pending", colorClass: "text-gray-500", isLoading: false });
@@ -69,6 +71,68 @@ export default function AutoApplyClient() {
 
     const removeFileFromQueue = (idx: number) => {
         setFileQueue(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const handleBusinessFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsExtractingBusiness(true);
+        try {
+            const formData = new FormData();
+            formData.append("menuFile", file);
+            
+            const parseRes = await fetch("/api/menu/upload-ocr?parseOnly=true", {
+                method: "POST",
+                body: formData
+            });
+            if (!parseRes.ok) throw new Error("Failed to parse image");
+            const parseData = await parseRes.json();
+            
+            const keyRes = await fetch("/api/menu/get-keys");
+            const { apiKey } = await keyRes.json();
+            
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const geminiRes = await fetch(geminiUrl, {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: "Extract the following details from this business card, bill, or menu image. Respond strictly with JSON in this format: {\"restaurantName\": \"\", \"address\": \"\", \"phone\": \"\", \"email\": \"\", \"timings\": \"\"}. Leave empty if not found." },
+                            ...parseData.partsArray
+                        ]
+                    }],
+                    generationConfig: { responseMimeType: "application/json" }
+                })
+            });
+            
+            const geminiData = await geminiRes.json();
+            const textResponse = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (textResponse) {
+                const data = JSON.parse(textResponse);
+                if (data.restaurantName) {
+                    setRestName(data.restaurantName);
+                    if (!email) {
+                        let cleanEmailName = data.restaurantName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                        if (cleanEmailName) setEmail(`${cleanEmailName}@kravy.in`);
+                    }
+                }
+                if (data.address) setRestAddress(data.address);
+                if (data.phone) {
+                    setRestPhone(data.phone);
+                    if (!phone) setPhone(data.phone);
+                }
+                if (data.timings) setRestTimings(data.timings);
+                if (data.email && !email) setEmail(data.email);
+            }
+        } catch (err: any) {
+            console.error(err);
+            alert("Auto-fill failed: " + err.message);
+        } finally {
+            setIsExtractingBusiness(false);
+            if (businessFileInputRef.current) businessFileInputRef.current.value = "";
+        }
     };
 
     const startProcessingQueue = async () => {
@@ -195,23 +259,6 @@ export default function AutoApplyClient() {
 
         if (combinedMenu.length > 0) {
             setExtractedItems(combinedMenu);
-            
-            if (lastSuccessData) {
-                const data = lastSuccessData;
-                if (data.restaurantName && data.restaurantName !== "AI Scraped Restaurant") {
-                    setRestName(data.restaurantName);
-                    let cleanEmailName = data.restaurantName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                    if (cleanEmailName) {
-                        setEmail(`${cleanEmailName}@kravy.in`);
-                    }
-                }
-                if (data.address) setRestAddress(data.address);
-                if (data.timings) setRestTimings(data.timings);
-                if (data.phone) {
-                    setRestPhone(data.phone);
-                    setPhone(data.phone);
-                }
-            }
             
             setOcrStatus({ text: "Success", colorClass: "text-emerald-500", isLoading: false });
             
@@ -466,14 +513,21 @@ export default function AutoApplyClient() {
 
                 {/* Section 2: Restaurant Details */}
                 <div className="bg-white dark:bg-[#1A1A2E] rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 space-y-5">
-                    <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 pb-4">
-                        <div className="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-500">
-                            <Store className="w-5 h-5" />
+                    <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-500">
+                                <Store className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-gray-900 dark:text-white">Business Info</h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Restaurant details</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-base font-bold text-gray-900 dark:text-white">Business Info</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Restaurant details</p>
-                        </div>
+                        <input type="file" ref={businessFileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleBusinessFileUpload} />
+                        <button onClick={() => businessFileInputRef.current?.click()} className="px-3 py-1.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors flex items-center gap-1.5 shadow-sm active:scale-95">
+                            {isExtractingBusiness ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                            Auto Fill Image
+                        </button>
                     </div>
                     <div className="space-y-4">
                         <div>
