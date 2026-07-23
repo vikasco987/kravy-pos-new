@@ -2275,6 +2275,19 @@ function KravyPOS() {
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-black text-slate-900 dark:text-white uppercase leading-none mb-1">{it.name}</p>
+                                                    {business?.expiryTrackingEnabled && it.expiryDate && (
+                                                        <div className="flex items-center mb-1">
+                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+                                                                new Date(it.expiryDate) < new Date() 
+                                                                ? 'bg-red-100 text-red-600 border border-red-200' 
+                                                                : new Date(it.expiryDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                                                    ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+                                                                    : 'bg-emerald-100 text-emerald-600 border border-emerald-200'
+                                                            }`}>
+                                                                Exp: {new Date(it.expiryDate).toLocaleDateString()}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">₹{it.price}</p>
                                                 </div>
                                             </div>

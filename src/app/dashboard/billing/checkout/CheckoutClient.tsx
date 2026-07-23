@@ -139,11 +139,12 @@ const InlineRateEdit = ({ item, updateRate, taxActive, perProductEnabled, global
   );
 };
 
-const MenuItemCard = ({ m, items, addToCart, reduceFromCart }: { 
+const MenuItemCard = ({ m, items, addToCart, reduceFromCart, expiryTrackingEnabled }: { 
   m: MenuItem, 
   items: BillItem[], 
   addToCart: (item: MenuItem) => void, 
-  reduceFromCart: (id: string) => void 
+  reduceFromCart: (id: string) => void,
+  expiryTrackingEnabled?: boolean
 }) => {
   const inCart = items.find((i) => i.id === m.id);
   return (
@@ -196,6 +197,20 @@ const MenuItemCard = ({ m, items, addToCart, reduceFromCart }: {
           ${inCart ? "text-[var(--kravy-brand)]" : "text-[var(--kravy-text-primary)] group-hover:text-[var(--kravy-brand)]"}`}>
           {m.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
         </p>
+        
+        {expiryTrackingEnabled && m.expiryDate && (
+          <div className="flex items-center mt-0.5">
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+              new Date(m.expiryDate) < new Date() 
+                ? 'bg-red-100 text-red-600 border border-red-200' 
+                : new Date(m.expiryDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                  ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+                  : 'bg-emerald-100 text-emerald-600 border border-emerald-200'
+            }`}>
+              Exp: {new Date(m.expiryDate).toLocaleDateString()}
+            </span>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-1">
           <p className="text-xs md:text-sm font-black text-emerald-500 whitespace-nowrap">
             ₹{m.price.toFixed(2)}
@@ -307,6 +322,7 @@ export default function CheckoutClient() {
     phonePrefixType?: string;
     printSettings?: any;
     zones?: string[];
+    expiryTrackingEnabled?: boolean;
   } | null>({
     businessName: "Kravy POS",
     taxEnabled: true,
@@ -370,6 +386,7 @@ export default function CheckoutClient() {
       posSaveEnabled: data.posSaveEnabled ?? true,
       posPreviewEnabled: data.posPreviewEnabled ?? true,
       posKotEnabled: data.posKotEnabled ?? true,
+      expiryTrackingEnabled: data.expiryTrackingEnabled ?? false,
       multiZoneMenuEnabled: data.multiZoneMenuEnabled ?? false,
       greetingMessage: data.greetingMessage,
       contactPersonPhone: data.contactPersonPhone,
