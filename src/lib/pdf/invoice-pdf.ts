@@ -210,6 +210,53 @@ export async function generateManualInvoicePDF(data: any) {
     console.log("QR Error:", e);
   }
 
+  /* ---------- BANK DETAILS & TERMS ---------- */
+  let extraY = 190;
+  
+  if (data.bankDetails) {
+      page.drawText("Bank Details", { x: 45, y: extraY, size: 9, font: bold, color: brandColor });
+      const lines = String(data.bankDetails).split('\n');
+      let by = extraY - 12;
+      for (const line of lines) {
+          page.drawText(line, { x: 45, y: by, size: 8, font, color: greyTextColor });
+          by -= 10;
+      }
+      
+      if (data.bankImage) {
+          try {
+              // Attempt to fetch and embed bank image
+              const imgRes = await fetch(data.bankImage);
+              const imgBytes = await imgRes.arrayBuffer();
+              // Check if png or jpeg
+              let embedImg;
+              if (data.bankImage.toLowerCase().endsWith('.png')) {
+                  embedImg = await pdfDoc.embedPng(imgBytes);
+              } else {
+                  embedImg = await pdfDoc.embedJpg(imgBytes);
+              }
+              page.drawImage(embedImg, {
+                  x: 45,
+                  y: by - 50,
+                  width: 100,
+                  height: 40,
+              });
+          } catch (e) {
+              console.log("Bank Image Error:", e);
+          }
+      }
+  }
+
+  if (data.termsConditions) {
+      page.drawText("Terms & Conditions", { x: 350, y: extraY, size: 9, font: bold, color: brandColor });
+      const tLines = String(data.termsConditions).split('\n');
+      let ty = extraY - 12;
+      for (const line of tLines) {
+          // crude word wrap or just substring for safety
+          page.drawText(line.slice(0, 50), { x: 350, y: ty, size: 8, font, color: greyTextColor });
+          ty -= 10;
+      }
+  }
+
   /* ---------- FOOTER TEXT ---------- */
   const disclaimer = "This is a computer generated tax invoice and does not require signature.";
   const disclaimerWidth = font.widthOfTextAtSize(disclaimer, 8);

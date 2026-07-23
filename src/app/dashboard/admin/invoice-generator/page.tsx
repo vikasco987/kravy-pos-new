@@ -43,7 +43,10 @@ export default function InvoiceGenerator() {
         items: [
             { name: "Kravy POS Premium - 1 Year", price: 3999, quantity: 1 }
         ],
-        notes: "Thank you for choosing Kravy POS! Your premium subscription is now active."
+        notes: "Thank you for choosing Kravy POS! Your premium subscription is now active.",
+        bankDetails: "Bank Name: YES BANK\nA/C No: 102561900003170\nIFSC Code: YESB0001025\nBranch: Udyog Vihar, Gurgaon",
+        termsConditions: "1. Payment is due within 7 days.\n2. Late payment may incur a 1.5% monthly fee.\n3. All disputes are subject to Delhi jurisdiction.",
+        bankImage: ""
     });
 
     // Pincode Auto-fetch
@@ -136,6 +139,27 @@ export default function InvoiceGenerator() {
             toast.error("Download failed: " + err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleBankImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.[0]) return;
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        try {
+            toast.loading("Uploading bank image...", { id: "bank_upload" });
+            const res = await fetch("/api/upload", { method: "POST", body: formData });
+            const data = await res.json();
+            if (res.ok && data.secure_url) {
+                setInvoiceData(prev => ({ ...prev, bankImage: data.secure_url }));
+                toast.success("Bank image uploaded!", { id: "bank_upload" });
+            } else {
+                toast.error("Upload failed", { id: "bank_upload" });
+            }
+        } catch (err) {
+            toast.error("Upload error", { id: "bank_upload" });
         }
     };
 
@@ -345,6 +369,56 @@ export default function InvoiceGenerator() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Terms & Bank Details */}
+                        <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 shadow-sm border border-slate-200 dark:border-white/5 space-y-6">
+                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                <ShieldCheck size={14} /> Terms & Bank Details
+                            </h3>
+                            
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Bank Details</label>
+                                <textarea 
+                                    value={invoiceData.bankDetails}
+                                    onChange={e => setInvoiceData(prev => ({ ...prev, bankDetails: e.target.value }))}
+                                    className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white h-24 resize-none leading-relaxed"
+                                />
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Bank Image (e.g. Cheque / QR)</label>
+                                <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={handleBankImageUpload}
+                                    className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
+                                />
+                                {invoiceData.bankImage && (
+                                    <div className="mt-2 text-xs font-bold text-emerald-500 flex items-center gap-1">
+                                        <ShieldCheck size={14} /> Image Attached
+                                        <button onClick={() => setInvoiceData(prev => ({ ...prev, bankImage: "" }))} className="ml-2 text-red-500 underline text-[10px]">Remove</button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Terms & Conditions</label>
+                                <textarea 
+                                    value={invoiceData.termsConditions}
+                                    onChange={e => setInvoiceData(prev => ({ ...prev, termsConditions: e.target.value }))}
+                                    className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white h-24 resize-none leading-relaxed"
+                                />
+                            </div>
+                            
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">General Notes</label>
+                                <textarea 
+                                    value={invoiceData.notes}
+                                    onChange={e => setInvoiceData(prev => ({ ...prev, notes: e.target.value }))}
+                                    className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white h-16 resize-none leading-relaxed"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Preview Side */}
@@ -456,8 +530,29 @@ export default function InvoiceGenerator() {
                                     </div>
                                 </div>
 
+                                {/* Bank Details & Terms */}
+                                <div className="mt-12 flex items-start gap-12 border-t border-slate-100 pt-8">
+                                    <div className="flex-1">
+                                        <p className="text-[10px] font-black uppercase tracking-[3px] text-indigo-500 mb-2">Bank Details</p>
+                                        <p className="text-[10px] font-bold text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                            {invoiceData.bankDetails}
+                                        </p>
+                                        {invoiceData.bankImage && (
+                                            <div className="mt-4">
+                                                <img src={invoiceData.bankImage} alt="Bank Details" className="h-24 object-contain border border-slate-200 rounded-lg p-1" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-[10px] font-black uppercase tracking-[3px] text-indigo-500 mb-2">Terms & Conditions</p>
+                                        <p className="text-[9px] font-bold text-slate-500 leading-relaxed whitespace-pre-wrap">
+                                            {invoiceData.termsConditions}
+                                        </p>
+                                    </div>
+                                </div>
+
                                 {/* Stamp / Sign Placeholder */}
-                                <div className="mt-20 flex justify-between items-end">
+                                <div className="mt-12 flex justify-between items-end">
                                     <div>
                                         <p className="text-[8px] font-black uppercase tracking-widest text-slate-300 mb-1">Generated By</p>
                                         <p className="text-[10px] font-black uppercase tracking-widest">Kravy POS System</p>
