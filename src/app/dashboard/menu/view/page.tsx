@@ -467,7 +467,7 @@ export default function ViewMenuPage() {
   const [showAddCategory, setShowAddCategory] = useState(false);
 
   // Inline editing state
-  const [editingField, setEditingField] = useState<{ id: string, field: "name" | "price", value: string } | null>(null);
+  const [editingField, setEditingField] = useState<{ id: string, field: "name" | "price" | "expiryDate", value: string } | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<MenuCategory | null>(null);
   const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -1327,10 +1327,12 @@ export default function ViewMenuPage() {
 
     if (field === "name" && targetItem.name === value) { setEditingField(null); return; }
     if (field === "price" && targetItem.price === Number(value)) { setEditingField(null); return; }
+    if (field === "expiryDate" && targetItem.expiryDate && new Date(targetItem.expiryDate).toISOString().split('T')[0] === value) { setEditingField(null); return; }
 
     const updated = { ...targetItem };
     if (field === "name") updated.name = value;
     if (field === "price") updated.price = Number(value) || 0;
+    if (field === "expiryDate") updated.expiryDate = value ? new Date(value).toISOString() : null;
 
     setEditingField(null); // Optimistic close
     await saveEdit(updated);
@@ -1999,11 +2001,11 @@ export default function ViewMenuPage() {
                                 <div className={`w-3 h-3 border-[1.2px] rounded-sm flex items-center justify-center shrink-0 ${item.isVeg ? "border-green-600" : item.isEgg ? "border-amber-500" : "border-red-600"}`}>
                                     <div className={`w-1 h-1 rounded-full ${item.isVeg ? "bg-green-600" : item.isEgg ? "bg-amber-500" : "bg-red-600"}`} />
                                 </div>
-                                <div className="flex flex-col">
+                                  <div className="flex flex-col min-w-0 flex-1">
                                   {editingField?.id === item.id && editingField.field === "name" ? (
                                     <input 
                                       autoFocus
-                                      className="font-bold text-sm md:text-base w-full bg-slate-100 dark:bg-slate-800 border-b border-indigo-500 focus:outline-none px-1 py-0.5 rounded-sm"
+                                      className="font-bold text-sm md:text-base w-full min-w-[80px] max-w-full bg-slate-100 dark:bg-slate-800 border-b border-indigo-500 focus:outline-none px-1 py-0.5 rounded-sm text-indigo-700 dark:text-indigo-300"
                                       value={editingField.value}
                                       onChange={e => setEditingField({ ...editingField, value: e.target.value })}
                                       onBlur={handleInlineSave}
@@ -2015,7 +2017,7 @@ export default function ViewMenuPage() {
                                   ) : (
                                     <h4 
                                       onClick={(e) => { e.stopPropagation(); setEditingField({ id: item.id, field: "name", value: item.name }); }} 
-                                      className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base group-hover:text-indigo-500 transition-colors cursor-pointer"
+                                      className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base group-hover:text-indigo-500 transition-colors cursor-pointer truncate"
                                       title="Click to edit name"
                                     >
                                       {item.name}
@@ -2023,15 +2025,32 @@ export default function ViewMenuPage() {
                                   )}
                                   {expiryTrackingEnabled && item.expiryDate && (
                                     <div className="flex items-center gap-1 mt-0.5">
-                                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                        new Date(item.expiryDate) < new Date() 
-                                          ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' 
-                                          : new Date(item.expiryDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                            : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                      }`}>
-                                        Exp: {new Date(item.expiryDate).toLocaleDateString()}
-                                      </span>
+                                      {editingField?.id === item.id && editingField.field === "expiryDate" ? (
+                                        <input
+                                          autoFocus
+                                          type="date"
+                                          className="text-[10px] font-bold px-1 py-0.5 rounded border border-indigo-500 focus:outline-none bg-white dark:bg-slate-800 text-indigo-700"
+                                          value={editingField.value}
+                                          onChange={e => setEditingField({ ...editingField, value: e.target.value })}
+                                          onBlur={handleInlineSave}
+                                          onKeyDown={e => {
+                                            if (e.key === "Enter") handleInlineSave();
+                                            if (e.key === "Escape") setEditingField(null);
+                                          }}
+                                        />
+                                      ) : (
+                                        <span 
+                                          onClick={(e) => { e.stopPropagation(); setEditingField({ id: item.id, field: "expiryDate", value: new Date(item.expiryDate!).toISOString().split('T')[0] }); }}
+                                          className={`cursor-pointer hover:ring-2 hover:ring-indigo-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all ${
+                                            new Date(item.expiryDate) < new Date() 
+                                              ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' 
+                                              : new Date(item.expiryDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                                : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                          }`}>
+                                          Exp: {new Date(item.expiryDate).toLocaleDateString()}
+                                        </span>
+                                      )}
                                     </div>
                                   )}
                                 </div>
