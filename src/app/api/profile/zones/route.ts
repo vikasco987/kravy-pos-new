@@ -47,6 +47,13 @@ export async function POST(req: NextRequest) {
           data: { zones: updatedZones }
         });
       }
+
+      // Update tables that have this oldZone
+      await prisma.table.updateMany({
+        where: { clerkUserId: effectiveId, zone: oldZone },
+        data: { zone: newZone.toUpperCase() }
+      });
+
       return NextResponse.json({ success: true, zones: currentZones });
     }
 
@@ -69,6 +76,13 @@ export async function POST(req: NextRequest) {
           data: { zones: updatedZones }
         });
       }
+
+      // Reset tables with this zone back to Default
+      await prisma.table.updateMany({
+        where: { clerkUserId: effectiveId, zone: zoneName },
+        data: { zone: "Default" }
+      });
+
       return NextResponse.json({ success: true, zones: currentZones });
     }
 
