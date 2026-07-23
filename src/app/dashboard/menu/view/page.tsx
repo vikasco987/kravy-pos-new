@@ -767,7 +767,6 @@ export default function ViewMenuPage() {
 
   const handleRemoveImage = async (e: React.MouseEvent, item: MenuItem) => {
     e.stopPropagation();
-    if (!confirm(`Are you sure you want to remove the image for "${item.name}"?`)) return;
     try {
       const res = await fetch("/api/items", {
         method: "PUT",
@@ -788,6 +787,29 @@ export default function ViewMenuPage() {
     } catch (err: any) {
       console.error(err);
       setToast(err?.message ?? "Remove failed");
+    }
+  };
+
+  const handleClearAllImages = async () => {
+    if (!confirm("Are you sure you want to remove ALL menu images? This action cannot be undone.")) return;
+    try {
+      const res = await fetch("/api/items/clear-images", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+        }
+      });
+      if (!res.ok) throw new Error("Failed to clear all images");
+      
+      setMenus(prev => prev.map(cat => ({
+        ...cat,
+        items: cat.items.map(it => ({ ...it, imageUrl: null }))
+      })));
+      setToast("All images removed successfully");
+    } catch (err: any) {
+      console.error(err);
+      setToast(err?.message ?? "Failed to clear all images");
     }
   };
 
@@ -1871,9 +1893,17 @@ export default function ViewMenuPage() {
                 </p>
               </div>
               
-              <div className="flex items-center gap-2 text-xs font-black text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100">
-                <div className="w-2 h-2 rounded-full bg-indigo-600 animate-ping" />
-                {totalItems} Items Total
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={handleClearAllImages}
+                  className="flex items-center gap-2 text-xs font-black text-rose-600 bg-rose-50 hover:bg-rose-100 px-4 py-2 rounded-full border border-rose-100 transition-colors"
+                >
+                  <Trash2 size={12} /> Clear All Images
+                </button>
+                <div className="flex items-center gap-2 text-xs font-black text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100">
+                  <div className="w-2 h-2 rounded-full bg-indigo-600 animate-ping" />
+                  {totalItems} Items Total
+                </div>
               </div>
             </div>
 
