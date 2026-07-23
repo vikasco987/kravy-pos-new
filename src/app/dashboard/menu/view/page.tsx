@@ -804,6 +804,41 @@ export default function ViewMenuPage() {
   const handleDrop = async (e: React.DragEvent, item: MenuItem) => {
     e.preventDefault();
     setDraggedOverItemId(null);
+
+    // Check for internal image drag and drop
+    const internalData = e.dataTransfer.getData("application/json");
+    if (internalData) {
+      try {
+        const { sourceImageUrl } = JSON.parse(internalData);
+        if (sourceImageUrl) {
+          if (sourceImageUrl === item.imageUrl) return; // Dropped on itself
+          setToast(`Applying image to ${item.name}...`);
+          
+          const saveRes = await fetch("/api/items", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+            },
+            body: JSON.stringify({ id: item.id, imageUrl: sourceImageUrl })
+          });
+
+          if (saveRes.ok) {
+            setMenus(prev => prev.map(cat => ({
+              ...cat,
+              items: cat.items.map(it => it.id === item.id ? { ...it, imageUrl: sourceImageUrl } : it)
+            })));
+            setToast("Image applied successfully!");
+          } else {
+            throw new Error("Failed to save image reference");
+          }
+          return; // Exit early since we handled the internal drag
+        }
+      } catch (err) {
+        console.error("Failed to parse internal drag data", err);
+      }
+    }
+
     const file = e.dataTransfer.files[0];
     if (!file) return;
 
@@ -1890,7 +1925,13 @@ export default function ViewMenuPage() {
                             }`}
                           >
                             {item.imageUrl ? (
-                              <div className="relative w-full h-full group/img">
+                              <div 
+                                className="relative w-full h-full group/img"
+                                draggable={true}
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData("application/json", JSON.stringify({ sourceImageUrl: item.imageUrl }));
+                                }}
+                              >
                                 <img src={item.imageUrl} alt={item.name} className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${!item.isActive ? "grayscale opacity-50" : ""}`} />
                                 <button
                                   onClick={(e) => handleRemoveImage(e, item)}
