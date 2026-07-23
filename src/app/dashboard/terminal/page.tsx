@@ -1081,9 +1081,11 @@ function KravyPOS() {
     const productionSummary = useMemo(() => {
         const counts: Record<string, number> = {};
         orders.filter(o => (o.status === "PENDING" || o.status === "PREPARING") && !o.isDeleted).forEach(o => {
-            o.items.forEach(it => {
-                counts[it.name] = (counts[it.name] || 0) + it.quantity;
-            });
+            if (Array.isArray(o.items)) {
+                o.items.forEach(it => {
+                    counts[it.name] = (counts[it.name] || 0) + it.quantity;
+                });
+            }
         });
         return Object.entries(counts).sort((a, b) => b[1] - a[1]);
     }, [orders]);
@@ -1980,7 +1982,7 @@ function KravyPOS() {
                                         <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 dark:bg-[#111111]/50">
                                             {settleTab === "ITEMS" ? (
                                                 <div className="space-y-3">
-                                                    {activeOrderForSelected.items?.map((it, idx) => (
+                                                    {(Array.isArray(activeOrderForSelected.items) ? activeOrderForSelected.items : []).map((it: any, idx: number) => (
                                                         <div key={idx} className="group flex items-center justify-between p-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-white/60 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-500/50 hover:shadow-[0_8px_30px_rgba(99,102,241,0.08)] transition-all duration-300 transform hover:-translate-y-0.5">
                                                             <div className="flex items-center gap-4 flex-1">
                                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm shadow-sm border border-white/50 dark:border-slate-700 ${it.isVeg === false || it.name?.toUpperCase().includes("(NV)") ? "bg-rose-50 text-rose-500" : "bg-emerald-50 text-emerald-500"}`}>
@@ -2009,7 +2011,7 @@ function KravyPOS() {
                                             ) : settleTab === "KOT" ? (
                                                 <div className="h-full flex flex-col p-4">
                                                     {(() => {
-                                                        const kotList = activeOrderForSelected?.kotNumbers || [];
+                                                        const kotList = Array.isArray(activeOrderForSelected?.kotNumbers) ? activeOrderForSelected.kotNumbers : [];
                                                         if (kotList.length === 0) {
                                                             return (
                                                                 <div className="h-full flex flex-col items-center justify-center opacity-40">
