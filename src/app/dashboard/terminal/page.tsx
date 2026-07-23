@@ -285,7 +285,7 @@ function KravyPOS() {
     let calculatedGst = 0;
     let grandTotal = 0;
 
-    if (activeOrderForSelected) {
+    if (activeOrderForSelected && Array.isArray(activeOrderForSelected.items)) {
         activeOrderForSelected.items.forEach((it: any) => {
             const q = Number(it.quantity || it.qty || 0);
             const p = Number(it.price || it.rate || 0);
@@ -850,13 +850,14 @@ function KravyPOS() {
         let grandTotal = 0;
         let subtotal = 0;
 
-        activeOrderForSelected.items.forEach((it: any) => {
-            const q = Number(it.quantity || it.qty || 0);
-            const p = Number(it.price || it.rate || 0);
-            const lineTotal = q * p;
-            const rate = (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (isTaxEnabled ? globalRate : 0);
+        if (Array.isArray(activeOrderForSelected.items)) {
+            activeOrderForSelected.items.forEach((it: any) => {
+                const q = Number(it.quantity || it.qty || 0);
+                const p = Number(it.price || it.rate || 0);
+                const lineTotal = q * p;
+                const rate = (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (isTaxEnabled ? globalRate : 0);
 
-            if (it.taxStatus === "With Tax") {
+                if (it.taxStatus === "With Tax") {
                 const taxable = lineTotal / (1 + rate / 100);
                 gstAmount += (lineTotal - taxable);
                 totalTaxable += taxable;
@@ -870,6 +871,8 @@ function KravyPOS() {
                 subtotal += lineTotal;
             }
         });
+        }
+
 
         let dVal = Number(discountValue) || 0;
         let discountAmt = 0;
@@ -1551,7 +1554,7 @@ function KravyPOS() {
                                             {/* 7. Items Count */}
                                             {activeOrderForSelected && (
                                                 <div className="flex flex-col items-center px-3 border-l border-slate-100 dark:border-slate-800">
-                                                    <span className="text-[12px] font-black text-slate-900 dark:text-white leading-none">{activeOrderForSelected.items.length}</span>
+                                                    <span className="text-[12px] font-black text-slate-900 dark:text-white leading-none">{(activeOrderForSelected.items || []).length}</span>
                                                     <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">ITEMS</span>
                                                 </div>
                                             )}
@@ -1643,18 +1646,18 @@ function KravyPOS() {
                                                             <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-100/50">Kitchen Priority: HIGH</span>
                                                         </div>
                                                     {(() => {
-                                                        const rounds = activeOrderForSelected.items.reduce((acc: any, item: any) => {
+                                                        const rounds = (activeOrderForSelected.items || []).reduce((acc: any, item: any) => {
                                                             const r = item.kotNumber || "New Items";
                                                             if (!acc[r]) acc[r] = [];
                                                             acc[r].push(item);
                                                             return acc;
                                                         }, {});
 
-                                                        const kotList = activeOrderForSelected.kotNumbers || [];
+                                                        const kotList = Array.isArray(activeOrderForSelected.kotNumbers) ? activeOrderForSelected.kotNumbers : [];
                                                         
                                                         // Sort rounds: first all KOTs in sequence, then New Items
                                                         const sortedRounds = [
-                                                            ...kotList?.map((kn: number, i: number) => ({ id: kn, label: `Round ${i + 1} - KOT #${kn}`, items: rounds[kn] })),
+                                                            ...kotList.map((kn: number, i: number) => ({ id: kn, label: `Round ${i + 1} - KOT #${kn}`, items: rounds[kn] })),
                                                             ...(rounds["New Items"] ? [{ id: "New Items", label: "🛒 Current Cart (Not Printed)", items: rounds["New Items"] }] : [])
                                                         ].filter(r => r.items && r.items.length > 0);
 
