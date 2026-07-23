@@ -3010,7 +3010,7 @@ function EditModal({
   setToast: (msg: string) => void;
 }) {
     const [local, setLocal] = useState<MenuItem>(item);
-    const [tab, setTab] = useState<"basic" | "qr" | "lang" | "image">("basic");
+    const [tab, setTab] = useState<"basic" | "variants" | "qr" | "lang" | "image">("basic");
     const [uploading, setUploading] = useState(false);
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
@@ -3042,6 +3042,67 @@ function EditModal({
       }
     };
 
+    const handleAddVariantGroup = () => {
+        const newGroup = {
+            id: crypto.randomUUID(),
+            groupName: "New Group",
+            type: "radio",
+            required: false,
+            options: []
+        };
+        setLocal(prev => ({
+            ...prev,
+            variants: [...(Array.isArray(prev.variants) ? prev.variants : []), newGroup]
+        }));
+    };
+
+    const handleUpdateVariantGroup = (idx: number, updates: any) => {
+        setLocal(prev => {
+            const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
+            newVariants[idx] = { ...newVariants[idx], ...updates };
+            return { ...prev, variants: newVariants };
+        });
+    };
+
+    const handleDeleteVariantGroup = (idx: number) => {
+        setLocal(prev => {
+            const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
+            newVariants.splice(idx, 1);
+            return { ...prev, variants: newVariants };
+        });
+    };
+
+    const handleAddVariantOption = (groupIdx: number) => {
+        setLocal(prev => {
+            const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
+            newVariants[groupIdx].options = [
+                ...newVariants[groupIdx].options,
+                { id: crypto.randomUUID(), name: "New Option", price: 0 }
+            ];
+            return { ...prev, variants: newVariants };
+        });
+    };
+
+    const handleUpdateVariantOption = (groupIdx: number, optionIdx: number, updates: any) => {
+        setLocal(prev => {
+            const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
+            const newOptions = [...newVariants[groupIdx].options];
+            newOptions[optionIdx] = { ...newOptions[optionIdx], ...updates };
+            newVariants[groupIdx].options = newOptions;
+            return { ...prev, variants: newVariants };
+        });
+    };
+
+    const handleDeleteVariantOption = (groupIdx: number, optionIdx: number) => {
+        setLocal(prev => {
+            const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
+            const newOptions = [...newVariants[groupIdx].options];
+            newOptions.splice(optionIdx, 1);
+            newVariants[groupIdx].options = newOptions;
+            return { ...prev, variants: newVariants };
+        });
+    };
+
     if (!mounted) return null;
 
     return createPortal(
@@ -3055,20 +3116,114 @@ function EditModal({
               Edit Item Details
             </h3>
 
-            <div className="flex gap-2 mb-6 border-b border-[var(--kravy-border)]">
-              {(["basic", "image", "qr", "lang"] as const).map(t => (
+            <div className="flex gap-2 mb-6 border-b border-[var(--kravy-border)] overflow-x-auto no-scrollbar">
+              {(["basic", "variants", "image", "qr", "lang"] as const).map(t => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
-                  className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${tab === t ? "border-indigo-600 text-indigo-600" : "border-transparent text-[var(--kravy-text-muted)]"}`}
+                  className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 transition-all whitespace-nowrap ${tab === t ? "border-indigo-600 text-indigo-600" : "border-transparent text-[var(--kravy-text-muted)]"}`}
                 >
-                  {t === "basic" ? "Info" : t === "image" ? "Photo" : t === "qr" ? "QR Extra" : "Lang"}
+                  {t === "basic" ? "Info" : t === "variants" ? "Variants" : t === "image" ? "Photo" : t === "qr" ? "QR Extra" : "Lang"}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="px-8 max-h-[50vh] overflow-y-auto no-scrollbar pb-8">
+            {tab === "variants" && (
+              <div className="space-y-6 pb-12">
+                <div className="flex justify-between items-center bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                  <div>
+                    <h4 className="text-sm font-black text-indigo-900">Variant Groups</h4>
+                    <p className="text-[10px] font-bold text-indigo-500/70 mt-1">E.g., Size, Choice of Crust, Add-ons</p>
+                  </div>
+                  <button onClick={handleAddVariantGroup} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-sm transition-all active:scale-95">
+                    + Add Group
+                  </button>
+                </div>
+
+                {(Array.isArray(local.variants) ? local.variants : []).map((group: any, gIdx: number) => (
+                  <div key={group.id || gIdx} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                    {/* Group Header */}
+                    <div className="bg-slate-50 p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                      <div className="flex-1 space-y-3 w-full">
+                        <input
+                          className="w-full bg-white border border-slate-300 text-slate-800 font-black text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/30"
+                          value={group.groupName}
+                          onChange={(e) => handleUpdateVariantGroup(gIdx, { groupName: e.target.value })}
+                          placeholder="Group Name (e.g. Select Size)"
+                        />
+                        <div className="flex flex-wrap gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-600">
+                            <input
+                              type="radio"
+                              name={`type-${gIdx}`}
+                              checked={group.type === "radio"}
+                              onChange={() => handleUpdateVariantGroup(gIdx, { type: "radio" })}
+                              className="w-4 h-4 text-indigo-600"
+                            />
+                            Single Choice
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-600">
+                            <input
+                              type="radio"
+                              name={`type-${gIdx}`}
+                              checked={group.type === "checkbox"}
+                              onChange={() => handleUpdateVariantGroup(gIdx, { type: "checkbox" })}
+                              className="w-4 h-4 text-indigo-600"
+                            />
+                            Multiple Choice
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-600 ml-auto bg-amber-50 px-2 py-1 rounded-md border border-amber-200">
+                            <input
+                              type="checkbox"
+                              checked={group.required}
+                              onChange={(e) => handleUpdateVariantGroup(gIdx, { required: e.target.checked })}
+                              className="w-3.5 h-3.5 text-amber-500 rounded cursor-pointer"
+                            />
+                            Required
+                          </label>
+                        </div>
+                      </div>
+                      <button onClick={() => handleDeleteVariantGroup(gIdx)} className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Delete Group">
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    {/* Group Options */}
+                    <div className="p-4 space-y-2 bg-slate-50/30">
+                      {group.options.map((opt: any, oIdx: number) => (
+                        <div key={opt.id || oIdx} className="flex gap-2 items-center">
+                          <input
+                            className="flex-1 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-3 py-2 outline-none focus:border-indigo-400"
+                            value={opt.name}
+                            onChange={(e) => handleUpdateVariantOption(gIdx, oIdx, { name: e.target.value })}
+                            placeholder="Option Name"
+                          />
+                          <div className="relative w-28">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">₹</span>
+                            <input
+                              type="number"
+                              className="w-full bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg pl-7 pr-2 py-2 outline-none focus:border-indigo-400"
+                              value={opt.price}
+                              onChange={(e) => handleUpdateVariantOption(gIdx, oIdx, { price: Number(e.target.value) })}
+                              placeholder="Price"
+                            />
+                          </div>
+                          <button onClick={() => handleDeleteVariantOption(gIdx, oIdx)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      <button onClick={() => handleAddVariantOption(gIdx)} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-800 py-2 flex items-center gap-1">
+                        + Add Option
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {tab === "basic" && (
               <div className="space-y-5">
                 <div>
