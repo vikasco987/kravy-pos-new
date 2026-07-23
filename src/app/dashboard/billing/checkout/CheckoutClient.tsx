@@ -1346,35 +1346,38 @@ export default function CheckoutClient() {
           setIsSaving(false);
           return null;
         }
-        if ((selectedParty.walletBalance || 0) < finalTotal) {
-          alert(`Insufficient Wallet Balance!\nRequired: ₹${finalTotal.toFixed(2)}\nAvailable: ₹${(selectedParty.walletBalance || 0).toFixed(2)}`);
+        if ((selectedParty.walletBalance || 0) < finalAmountPaid) {
+          alert(`Insufficient Wallet Balance!\nRequired: ₹${finalAmountPaid.toFixed(2)}\nAvailable: ₹${(selectedParty.walletBalance || 0).toFixed(2)}`);
           setIsSaving(false);
           return null;
         }
 
         try {
-          const walletRes = await fetch("/api/wallet", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "payment",
-              partyId: selectedParty.id,
-              amount: finalTotal,
-              description: `Order #${billNumber}`
-            })
-          });
+          // Only make a payment deduction if they are actually paying an amount greater than 0
+          if (finalAmountPaid > 0) {
+            const walletRes = await fetch("/api/wallet", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "payment",
+                partyId: selectedParty.id,
+                amount: finalAmountPaid,
+                description: `Payment for Bill ${billNumber}`
+              })
+            });
 
-          const wData = await walletRes.json();
+            const wData = await walletRes.json();
 
-          if (!walletRes.ok) {
-            alert(wData.error || "Wallet deduction failed");
-            setIsSaving(false);
-            return null;
-          }
-          
-          // Update local state balance
-          if (wData.success) {
-            setSelectedParty({ ...selectedParty, walletBalance: wData.balance });
+            if (!walletRes.ok) {
+              alert(wData.error || "Wallet deduction failed");
+              setIsSaving(false);
+              return null;
+            }
+            
+            // Update local state balance
+            if (wData.success) {
+              setSelectedParty({ ...selectedParty, walletBalance: wData.balance });
+            }
           }
         } catch (err) {
           alert("Wallet system connection error");
