@@ -59,7 +59,15 @@ function normalizeMenuItems(data: any[]): MenuItem[] {
     const sPrice = Number(it.sellingPrice);
     const bPrice = Number(it.price);
     const finalPrice = !isNaN(sPrice) && it.sellingPrice !== null ? sPrice : !isNaN(bPrice) ? bPrice : 0;
-    return { ...it, price: finalPrice, gst: it.gst, hsnCode: it.hsnCode, taxStatus: it.taxStatus, shortCode: it.shortCode };
+    
+    let parsedVariants = it.variants;
+    if (typeof parsedVariants === 'string') {
+      try {
+        parsedVariants = JSON.parse(parsedVariants);
+      } catch(e) {}
+    }
+
+    return { ...it, price: finalPrice, gst: it.gst, hsnCode: it.hsnCode, taxStatus: it.taxStatus, shortCode: it.shortCode, variants: parsedVariants };
   });
 }
 
@@ -927,7 +935,7 @@ export default function CheckoutClient() {
         if (vg.required) {
             const sel = selectedVariants[vg.id];
             if (!sel || sel.length === 0) {
-                toast.error(`Please select an option for ${vg.groupName}`);
+                toast.error(`Please select an option for ${vg.groupName || vg.name || "this group"}`);
                 return;
             }
         }
@@ -3798,7 +3806,7 @@ export default function CheckoutClient() {
                 {(variantModalItem.variants || []).map((vg: any) => (
                   <div key={vg.id} className="bg-[var(--kravy-bg-app)]/50 rounded-2xl p-5 border border-[var(--kravy-border)]/30">
                     <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-sm font-black text-[var(--kravy-text-primary)] uppercase tracking-wider">{vg.groupName}</h4>
+                      <h4 className="text-sm font-black text-[var(--kravy-text-primary)] uppercase tracking-wider">{vg.groupName || vg.name || "Group"}</h4>
                       {vg.required && <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 px-2 py-1 rounded-full">Required</span>}
                     </div>
                     
