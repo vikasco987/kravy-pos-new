@@ -1683,6 +1683,7 @@ function KravyPOS() {
                                                                         className={`flex items-center justify-between px-3 py-1.5 min-h-[52px] rounded-2xl border transition-all duration-300 group bg-white/60 dark:bg-slate-900/40 backdrop-blur-md border-white/50 dark:border-slate-800/50 hover:border-indigo-500/30 hover:bg-white/90 dark:hover:bg-slate-800/60 hover:shadow-[0_8px_30px_rgba(99,102,241,0.1)] ${roundObj.id === "New Items" ? "ring-1 ring-amber-500/20 shadow-[0_0_15px_rgba(251,191,36,0.05)]" : ""}`}
                                                                     >
                                                                         <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                                            {(() => {
                                                                                 const isNonVeg = item.isVeg === false || item.name?.toUpperCase().includes("(NV)");
                                                                                 const menuRef = menuItems.find(m => m.id === item.itemId);
                                                                                 const itemExpiryDate = menuRef?.expiryDate;
