@@ -1300,6 +1300,7 @@ export default function ViewMenuPage() {
           isEgg: updated.isEgg,
           shortCode: updated.shortCode,
           expiryDate: updated.expiryDate,
+          variants: updated.variants,
         }),
       });
 
