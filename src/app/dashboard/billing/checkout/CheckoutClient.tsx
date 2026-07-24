@@ -966,7 +966,7 @@ export default function CheckoutClient() {
         name: variantModalItem.name + variantStr, 
         qty: 1, 
         printedQty: 0,
-        rate: (variantModalItem.price || 0) + additionalPrice,
+        rate: additionalPrice > 0 ? additionalPrice : (variantModalItem.price || 0),
         gst: variantModalItem.gst ?? null,
         hsnCode: variantModalItem.hsnCode || "",
         taxStatus: variantModalItem.taxStatus || "Without Tax",
@@ -3872,7 +3872,7 @@ export default function CheckoutClient() {
                 >
                   <span>Add to Order</span>
                   <span>₹{
-                    (variantModalItem.price || 0) + Object.values(selectedVariants).reduce((acc: number, opts: any[]) => acc + opts.reduce((a, b) => a + Number(b.price || 0), 0), 0)
+                    Object.values(selectedVariants).reduce((acc: number, opts: any[]) => acc + opts.reduce((a, b) => a + Number(b.price || 0), 0), 0) > 0 ? Object.values(selectedVariants).reduce((acc: number, opts: any[]) => acc + opts.reduce((a, b) => a + Number(b.price || 0), 0), 0) : (variantModalItem.price || 0)
                   }</span>
                 </button>
               </div>

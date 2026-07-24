@@ -432,6 +432,7 @@ export default function ViewMenuPage() {
 
   // Upload New Menu States
   const [showUploadMenuModal, setShowUploadMenuModal] = useState(false);
+  const [aiLanguagePref, setAiLanguagePref] = useState("english");
   const [menuFileQueue, setMenuFileQueue] = useState<File[]>([]);
   const [extractingMenu, setExtractingMenu] = useState(false);
   const [extractedMenuProgress, setExtractedMenuProgress] = useState({ completed: 0, total: 0 });
@@ -578,6 +579,7 @@ export default function ViewMenuPage() {
       try {
         const formData = new FormData();
         formData.append("menuFile", file);
+        formData.append("languagePref", aiLanguagePref);
 
         // Step 1: Fast Parse
         const parseRes = await fetch("/api/menu/upload-ocr?parseOnly=true", {
@@ -2829,10 +2831,23 @@ export default function ViewMenuPage() {
 
               {/* File Selected Action */}
               {menuFileQueue.length > 0 && !extractingMenu && extractedMenuItems.length === 0 && (
-                <div className="flex justify-center">
+                <div className="flex flex-col items-center justify-center gap-5 bg-[var(--kravy-surface-hover)] p-6 rounded-[1.5rem] border border-[var(--kravy-border)] shadow-inner">
+                  <div className="w-full max-w-sm space-y-2 text-center">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Menu Translation / Language</label>
+                    <select
+                      className="w-full px-5 py-3.5 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 appearance-none cursor-pointer shadow-sm transition-all"
+                      value={aiLanguagePref}
+                      onChange={(e) => setAiLanguagePref(e.target.value)}
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2em 1.2em', paddingRight: '3rem' }}
+                    >
+                      <option value="english">English Only (Default)</option>
+                      <option value="dual">English + Regional (Hindi, Marathi, etc.)</option>
+                      <option value="arabic">English + Arabian (Arabic)</option>
+                    </select>
+                  </div>
                   <button
                     onClick={startParsingMenuFiles}
-                    className="px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center gap-2"
+                    className="px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center gap-2 mt-2"
                   >
                     <Zap size={14} fill="currentColor" /> Extract Menu Items
                   </button>
@@ -3077,7 +3092,7 @@ function EditModal({
         setLocal(prev => {
             const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
             newVariants[groupIdx].options = [
-                ...newVariants[groupIdx].options,
+                ...(Array.isArray(newVariants[groupIdx].options) ? newVariants[groupIdx].options : []),
                 { id: crypto.randomUUID(), name: "New Option", price: 0 }
             ];
             return { ...prev, variants: newVariants };
@@ -3087,8 +3102,10 @@ function EditModal({
     const handleUpdateVariantOption = (groupIdx: number, optionIdx: number, updates: any) => {
         setLocal(prev => {
             const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
-            const newOptions = [...newVariants[groupIdx].options];
-            newOptions[optionIdx] = { ...newOptions[optionIdx], ...updates };
+            const newOptions = [...(Array.isArray(newVariants[groupIdx].options) ? newVariants[groupIdx].options : [])];
+            if (newOptions[optionIdx]) {
+                newOptions[optionIdx] = { ...newOptions[optionIdx], ...updates };
+            }
             newVariants[groupIdx].options = newOptions;
             return { ...prev, variants: newVariants };
         });
@@ -3097,7 +3114,7 @@ function EditModal({
     const handleDeleteVariantOption = (groupIdx: number, optionIdx: number) => {
         setLocal(prev => {
             const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
-            const newOptions = [...newVariants[groupIdx].options];
+            const newOptions = [...(Array.isArray(newVariants[groupIdx].options) ? newVariants[groupIdx].options : [])];
             newOptions.splice(optionIdx, 1);
             newVariants[groupIdx].options = newOptions;
             return { ...prev, variants: newVariants };
@@ -3193,7 +3210,7 @@ function EditModal({
 
                     {/* Group Options */}
                     <div className="p-4 space-y-2 bg-slate-50/30">
-                      {group.options.map((opt: any, oIdx: number) => (
+                      {(Array.isArray(group.options) ? group.options : []).map((opt: any, oIdx: number) => (
                         <div key={opt.id || oIdx} className="flex gap-2 items-center">
                           <input
                             className="flex-1 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-3 py-2 outline-none focus:border-indigo-400"
