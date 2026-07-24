@@ -3784,48 +3784,57 @@ export default function CheckoutClient() {
       ════════════════════════════════════════════ */}
       {variantModalItem && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setVariantModalItem(null)} />
-          <div className="relative bg-[var(--kravy-surface)] w-full max-w-md rounded-[2.5rem] shadow-2xl border border-[var(--kravy-border)] overflow-hidden scale-100 animate-in fade-in duration-200">
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-black text-[var(--kravy-text-primary)] leading-tight">Customize</h3>
-                  <p className="text-xs text-[var(--kravy-text-muted)] font-black uppercase tracking-widest mt-1">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setVariantModalItem(null)} />
+          <div className="relative bg-white dark:bg-[#121212] w-full max-w-[420px] rounded-[32px] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.5)] border border-white/20 dark:border-white/10 overflow-hidden scale-100 animate-in zoom-in-95 fade-in duration-200">
+            <div className="p-7">
+              <div className="flex items-start justify-between mb-6">
+                <div className="pr-4">
+                  <h3 className="text-[26px] font-[900] text-slate-900 dark:text-white tracking-tight leading-none mb-2">Customize</h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest leading-snug">
                     {variantModalItem.name}
                   </p>
                 </div>
                 <button 
                   onClick={() => setVariantModalItem(null)}
-                  className="w-10 h-10 flex items-center justify-center rounded-2xl bg-[var(--kravy-border)]/20 text-[var(--kravy-text-primary)] hover:bg-[var(--kravy-border)]/40 transition-all"
+                  className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-[14px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
                 >
-                  <X size={18} />
+                  <X size={18} strokeWidth={2.5} />
                 </button>
               </div>
 
-              <div className="max-h-[50vh] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
+              <div className="max-h-[50vh] overflow-y-auto space-y-5 pr-1 custom-scrollbar pb-2">
                 {(variantModalItem.variants || []).map((vg: any) => (
-                  <div key={vg.id} className="bg-[var(--kravy-bg-app)]/50 rounded-2xl p-5 border border-[var(--kravy-border)]/30">
+                  <div key={vg.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-[24px] p-5 border border-slate-100 dark:border-slate-700/50">
                     <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-sm font-black text-[var(--kravy-text-primary)] uppercase tracking-wider">{vg.groupName || vg.name || "Group"}</h4>
-                      {vg.required && <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 px-2 py-1 rounded-full">Required</span>}
+                      <h4 className="text-[12px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-[0.15em]">{vg.groupName || vg.name || "Group"}</h4>
+                      {vg.required && <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-100 dark:bg-rose-500/20 px-2.5 py-1 rounded-full">Required</span>}
                     </div>
                     
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {vg.options?.map((opt: any) => {
                         const isSelected = selectedVariants[vg.id]?.some(s => s.id === opt.id);
+                        const isRadio = vg.type === 'radio';
                         
                         return (
-                          <label key={opt.id} className="flex items-center gap-3 cursor-pointer group">
-                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                          <label key={opt.id} className="flex items-center gap-4 cursor-pointer group select-none">
+                            <div className={`flex items-center justify-center transition-all ${
+                              isRadio ? 'w-6 h-6 rounded-full border-[2.5px]' : 'w-[22px] h-[22px] rounded-lg border-[2.5px]'
+                            } ${
                               isSelected 
-                                ? 'bg-indigo-600 border-indigo-600' 
-                                : 'border-[var(--kravy-text-muted)] group-hover:border-indigo-400'
+                                ? 'bg-white dark:bg-indigo-600 border-indigo-600 shadow-[0_0_0_4px_rgba(79,70,229,0.15)]' 
+                                : 'bg-transparent border-slate-300 dark:border-slate-600 group-hover:border-indigo-400'
                             }`}>
-                              {isSelected && (vg.type === 'checkbox' ? <Check size={12} className="text-white" /> : <div className="w-2 h-2 bg-white rounded-full" />)}
+                              {isSelected && (
+                                isRadio ? (
+                                  <div className="w-2.5 h-2.5 bg-indigo-600 dark:bg-white rounded-full" />
+                                ) : (
+                                  <Check size={14} className="text-indigo-600 dark:text-white" strokeWidth={4} />
+                                )
+                              )}
                             </div>
                             
                             <input 
-                              type={vg.type === 'checkbox' ? 'checkbox' : 'radio'}
+                              type={isRadio ? 'radio' : 'checkbox'}
                               name={`variant_${vg.id}`}
                               className="hidden"
                               checked={isSelected || false}
@@ -3833,7 +3842,7 @@ export default function CheckoutClient() {
                                 kravy.toggle();
                                 setSelectedVariants(prev => {
                                   const currentSel = prev[vg.id] || [];
-                                  if (vg.type === 'radio') {
+                                  if (isRadio) {
                                     return { ...prev, [vg.id]: [opt] };
                                   } else {
                                     if (isSelected) {
@@ -3846,12 +3855,12 @@ export default function CheckoutClient() {
                               }}
                             />
                             
-                            <div className="flex-1 flex justify-between items-center">
-                              <span className={`text-sm font-bold transition-all ${isSelected ? 'text-[var(--kravy-text-primary)]' : 'text-[var(--kravy-text-muted)]'}`}>
+                            <div className="flex-1 flex justify-between items-center pt-0.5">
+                              <span className={`text-[15px] font-[700] transition-all capitalize tracking-tight ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
                                 {opt.name}
                               </span>
                               {opt.price > 0 && (
-                                <span className={`text-xs font-black ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`}>
+                                <span className={`text-[13px] font-black tracking-wide ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-500'}`}>
                                   +₹{opt.price}
                                 </span>
                               )}
@@ -3864,14 +3873,13 @@ export default function CheckoutClient() {
                 ))}
               </div>
 
-              <div className="mt-8 pt-6 border-t border-[var(--kravy-border)]/50">
+              <div className="mt-6">
                 <button
                   onClick={() => confirmVariantAddToCart()}
-                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest
-                    shadow-xl shadow-indigo-600/20 hover:scale-[1.02] active:scale-95 transition-all flex justify-between items-center px-6"
+                  className="w-full h-[60px] bg-gradient-to-r from-[#4F46E5] to-[#6366F1] hover:from-[#4338CA] hover:to-[#4F46E5] text-white rounded-[20px] font-[900] text-[15px] uppercase tracking-widest shadow-[0_12px_24px_-8px_rgba(79,70,229,0.6)] hover:shadow-[0_16px_32px_-8px_rgba(79,70,229,0.7)] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 transition-all flex justify-between items-center px-8"
                 >
                   <span>Add to Order</span>
-                  <span>₹{
+                  <span className="text-lg">₹{
                     Object.values(selectedVariants).reduce((acc: number, opts: any[]) => acc + opts.reduce((a, b) => a + Number(b.price || 0), 0), 0) > 0 ? Object.values(selectedVariants).reduce((acc: number, opts: any[]) => acc + opts.reduce((a, b) => a + Number(b.price || 0), 0), 0) : (variantModalItem.price || 0)
                   }</span>
                 </button>

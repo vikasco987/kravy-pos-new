@@ -18,6 +18,7 @@ export default function AutoApplyClient() {
 
     const [fileQueue, setFileQueue] = useState<File[]>([]);
     const [extractedItems, setExtractedItems] = useState<any[]>([]);
+    const [aiLanguagePref, setAiLanguagePref] = useState("english");
     const fileInputRef = useRef<HTMLInputElement>(null);
     const businessFileInputRef = useRef<HTMLInputElement>(null);
     const [isExtractingBusiness, setIsExtractingBusiness] = useState(false);
@@ -158,6 +159,7 @@ export default function AutoApplyClient() {
             try {
                 const formData = new FormData();
                 formData.append("menuFile", file);
+                formData.append("languagePref", aiLanguagePref);
                 
                 // Step 1: Fast Parse (gets prompt and base64/CSV from our server instantly)
                 const parseRes = await fetch("/api/menu/upload-ocr?parseOnly=true", {
@@ -586,6 +588,20 @@ export default function AutoApplyClient() {
                                     </div>
                                 ))}
                             </div>
+                            
+                            <div className="pt-2">
+                                <label className="text-[10px] font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block mb-1">Translation Language</label>
+                                <select
+                                    value={aiLanguagePref}
+                                    onChange={(e) => setAiLanguagePref(e.target.value)}
+                                    className="w-full bg-gray-50 dark:bg-[#0F0F23] border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs font-bold outline-none focus:border-blue-500 transition-all mb-2"
+                                >
+                                    <option value="english">English Only (Default)</option>
+                                    <option value="dual">English + Regional (Hindi, etc.)</option>
+                                    <option value="arabic">English + Arabian (Arabic)</option>
+                                </select>
+                            </div>
+
                             <button onClick={startProcessingQueue} className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition-all">
                                 <Play className="w-4 h-4" /> Start Extraction
                             </button>
