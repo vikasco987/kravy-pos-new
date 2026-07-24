@@ -635,9 +635,9 @@ export default function CheckoutClient() {
       try {
         // 2. Parallel fetch for latest data
         const [itemsRes, catsRes, addonsRes] = await Promise.all([
-          fetch("/api/menu/items"),
-          fetch("/api/categories"),
-          fetch("/api/menu-editor/addon-groups")
+          fetch(`/api/menu/items?t=${Date.now()}`, { cache: "no-store" }),
+          fetch(`/api/categories?t=${Date.now()}`, { cache: "no-store" }),
+          fetch(`/api/menu-editor/addon-groups?t=${Date.now()}`, { cache: "no-store" })
         ]);
 
         let finalItems: MenuItem[] = [];
