@@ -3803,20 +3803,25 @@ export default function CheckoutClient() {
               </div>
 
               <div className="max-h-[50vh] overflow-y-auto space-y-5 pr-1 custom-scrollbar pb-2">
-                {(variantModalItem.variants || []).map((vg: any) => (
-                  <div key={vg.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-[24px] p-5 border border-slate-100 dark:border-slate-700/50">
+                {(variantModalItem.variants || []).map((vg: any, vgIndex: number) => {
+                  const vgId = vg.id || vg.groupName || `group_${vgIndex}`;
+                  const vgType = vg.type === 'checkbox' ? 'checkbox' : 'radio'; // default to radio if missing
+                  return (
+                  <div key={vgId} className="bg-slate-50 dark:bg-slate-800/50 rounded-[24px] p-5 border border-slate-100 dark:border-slate-700/50">
                     <div className="flex justify-between items-center mb-4">
                       <h4 className="text-[12px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-[0.15em]">{vg.groupName || vg.name || "Group"}</h4>
                       {vg.required && <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-100 dark:bg-rose-500/20 px-2.5 py-1 rounded-full">Required</span>}
                     </div>
                     
                     <div className="space-y-4">
-                      {vg.options?.map((opt: any) => {
-                        const isSelected = selectedVariants[vg.id]?.some(s => s.id === opt.id);
-                        const isRadio = vg.type === 'radio';
+                      {vg.options?.map((opt: any, optIndex: number) => {
+                        const optId = opt.id || opt.name || `opt_${optIndex}`;
+                        const isSelected = selectedVariants[vgId]?.some(s => (s.id || s.name) === optId);
+                        const isRadio = vgType === 'radio';
+                        const optPrice = Number(opt.price || 0);
                         
                         return (
-                          <label key={opt.id} className="flex items-center gap-4 cursor-pointer group select-none">
+                          <label key={optId} className="flex items-center gap-4 cursor-pointer group select-none">
                             <div className={`flex items-center justify-center transition-all ${
                               isRadio ? 'w-6 h-6 rounded-full border-[2.5px]' : 'w-[22px] h-[22px] rounded-lg border-[2.5px]'
                             } ${
@@ -3835,20 +3840,20 @@ export default function CheckoutClient() {
                             
                             <input 
                               type={isRadio ? 'radio' : 'checkbox'}
-                              name={`variant_${vg.id}`}
+                              name={`variant_${vgId}`}
                               className="hidden"
                               checked={isSelected || false}
                               onChange={() => {
                                 kravy.toggle();
                                 setSelectedVariants(prev => {
-                                  const currentSel = prev[vg.id] || [];
+                                  const currentSel = prev[vgId] || [];
                                   if (isRadio) {
-                                    return { ...prev, [vg.id]: [opt] };
+                                    return { ...prev, [vgId]: [{ ...opt, id: optId }] };
                                   } else {
                                     if (isSelected) {
-                                      return { ...prev, [vg.id]: currentSel.filter(s => s.id !== opt.id) };
+                                      return { ...prev, [vgId]: currentSel.filter(s => (s.id || s.name) !== optId) };
                                     } else {
-                                      return { ...prev, [vg.id]: [...currentSel, opt] };
+                                      return { ...prev, [vgId]: [...currentSel, { ...opt, id: optId }] };
                                     }
                                   }
                                 });
@@ -3859,9 +3864,9 @@ export default function CheckoutClient() {
                               <span className={`text-[15px] font-[700] transition-all capitalize tracking-tight ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
                                 {opt.name}
                               </span>
-                              {opt.price > 0 && (
+                              {optPrice > 0 && (
                                 <span className={`text-[13px] font-black tracking-wide ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-500'}`}>
-                                  +₹{opt.price}
+                                  +₹{optPrice}
                                 </span>
                               )}
                             </div>
@@ -3870,7 +3875,7 @@ export default function CheckoutClient() {
                       })}
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
 
               <div className="mt-6">
