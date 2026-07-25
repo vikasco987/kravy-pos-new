@@ -131,7 +131,21 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
             }
             if (ordersRes?.ok) {
                 const oData = await ordersRes.json();
-                setOrders(oData);
+                setOrders(prevOrders => {
+                    const statusRank: Record<string, number> = { "PENDING": 0, "ACCEPTED": 1, "PREPARING": 2, "READY": 3, "COMPLETED": 4 };
+                    return oData.map((fetchedOrder: Order) => {
+                        const localOrder = prevOrders.find(o => o.id === fetchedOrder.id);
+                        if (localOrder) {
+                            const localRank = statusRank[localOrder.status] ?? 0;
+                            const fetchedRank = statusRank[fetchedOrder.status] ?? 0;
+                            // Keep local optimistic status if it's ahead of fetched data (avoids race condition reverting status)
+                            if (localRank > fetchedRank) {
+                                return { ...fetchedOrder, status: localOrder.status };
+                            }
+                        }
+                        return fetchedOrder;
+                    });
+                });
             }
             if (profilesRes?.ok) {
                 const pData = await profilesRes.json();
