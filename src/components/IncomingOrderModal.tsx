@@ -142,6 +142,16 @@ export default function IncomingOrderModal() {
                                     📍 {currentOrder.table.name}
                                 </p>
                             )}
+                            {currentOrder.customerPhone && (
+                                <p className="text-sm font-bold text-slate-600 dark:text-slate-400 mt-1">
+                                    📞 {currentOrder.customerPhone}
+                                </p>
+                            )}
+                            {currentOrder.customerAddress && (
+                                <p className="text-sm font-bold text-slate-600 dark:text-slate-400 mt-1 max-w-xs">
+                                    🏠 {currentOrder.customerAddress}
+                                </p>
+                            )}
                         </div>
                         <div className="text-right">
                             <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>

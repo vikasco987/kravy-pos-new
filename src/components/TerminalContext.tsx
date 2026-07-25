@@ -14,6 +14,7 @@ export interface Order {
     table?: { id: string; name: string };
     customerName?: string;
     customerPhone?: string;
+    customerAddress?: string;
     createdAt: string;
     isDeleted?: boolean;
     kotNumbers?: string[];
