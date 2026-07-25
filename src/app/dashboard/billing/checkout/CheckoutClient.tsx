@@ -463,6 +463,7 @@ export default function CheckoutClient() {
   const [quickAddAddonGroup, setQuickAddAddonGroup] = useState<any | null>(null);
   const [quickAddTaxStatus, setQuickAddTaxStatus] = useState("Without Tax");
   const [quickAddGst, setQuickAddGst] = useState(0);
+  const [quickAddVariantsStr, setQuickAddVariantsStr] = useState("");
 
   // Variant Modal State
   const [variantModalItem, setVariantModalItem] = useState<MenuItem | null>(null);
@@ -1968,6 +1969,25 @@ export default function CheckoutClient() {
       return;
     }
 
+    let parsedVariants: any[] = [];
+    if (quickAddVariantsStr.trim()) {
+      const options = quickAddVariantsStr.split(',').map((v, i) => {
+         const [name, p] = v.split(':');
+         return {
+            id: `opt_${Date.now()}_${i}`,
+            name: name?.trim() || `Option ${i+1}`,
+            price: Number(p) || 0
+         };
+      });
+      parsedVariants.push({
+        id: `group_${Date.now()}`,
+        groupName: "Size/Variant",
+        type: "radio",
+        required: true,
+        options
+      });
+    }
+
     const tempId = `temp-${Date.now()}`;
     const optimisticItem: MenuItem = {
       id: tempId,
@@ -1976,7 +1996,8 @@ export default function CheckoutClient() {
       category: { id: quickAddCat.id, name: quickAddCat.name },
       unit: "pcs",
       description: description || null,
-      imageUrl: imageUrl || null
+      imageUrl: imageUrl || null,
+      variants: parsedVariants
     };
 
     // 🚀 OPTIMISTIC UPDATE: Update UI immediately
@@ -1984,6 +2005,7 @@ export default function CheckoutClient() {
     setQuickAddCat(null); // Close modal right away
     setQuickAddTaxStatus("Without Tax");
     setQuickAddGst(0);
+    setQuickAddVariantsStr("");
     kravy.success(); // Play sound immediately
     toast.success(`"${name}" adding to ${quickAddCat.name}...`);
 
@@ -2000,7 +2022,8 @@ export default function CheckoutClient() {
             description: description || null,
             imageUrl: imageUrl || null,
             taxStatus: quickAddTaxStatus,
-            gst: Number(quickAddGst)
+            gst: Number(quickAddGst),
+            variants: parsedVariants
           }),
         });
 
@@ -3974,6 +3997,18 @@ export default function CheckoutClient() {
                       className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-mono font-bold"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Variants (Optional)</label>
+                  <input
+                    name="variants"
+                    placeholder="e.g. Half:100, Full:200"
+                    autoComplete="off"
+                    value={quickAddVariantsStr}
+                    onChange={(e) => setQuickAddVariantsStr(e.target.value)}
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-medium"
+                  />
                 </div>
 
                 <div className="space-y-1">
