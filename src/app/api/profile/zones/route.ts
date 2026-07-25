@@ -29,8 +29,9 @@ export async function POST(req: NextRequest) {
 
     if (action === "edit") {
       if (!oldZone || !newZone) return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
+      const upperOldZone = oldZone.toUpperCase();
       // Update in BusinessProfile
-      currentZones = currentZones.map(z => z === oldZone ? newZone.toUpperCase() : z);
+      currentZones = currentZones.map(z => z.toUpperCase() === upperOldZone ? newZone.toUpperCase() : z);
       await prisma.businessProfile.update({
         where: { id: profile.id },
         data: { zones: currentZones }
@@ -38,10 +39,11 @@ export async function POST(req: NextRequest) {
 
       // Update all items that have this oldZone
       const itemsWithZone = await prisma.item.findMany({
-        where: { clerkId: effectiveId, zones: { has: oldZone } }
+        where: { clerkId: effectiveId }
       });
       for (const item of itemsWithZone) {
-        const updatedZones = item.zones.map(z => z === oldZone ? newZone.toUpperCase() : z);
+        if (!item.zones?.some(z => z.toUpperCase() === upperOldZone)) continue;
+        const updatedZones = item.zones.map(z => z.toUpperCase() === upperOldZone ? newZone.toUpperCase() : z);
         await prisma.item.update({
           where: { id: item.id },
           data: { zones: updatedZones }
@@ -49,28 +51,38 @@ export async function POST(req: NextRequest) {
       }
 
       // Update tables that have this oldZone
-      await prisma.table.updateMany({
-        where: { clerkUserId: effectiveId, zone: oldZone },
-        data: { zone: newZone.toUpperCase() }
+      const tablesWithZone = await prisma.table.findMany({
+        where: { clerkUserId: effectiveId }
       });
+      for (const table of tablesWithZone) {
+        if (table.zone?.toUpperCase() === upperOldZone) {
+          await prisma.table.update({
+            where: { id: table.id },
+            data: { zone: newZone.toUpperCase() }
+          });
+        }
+      }
 
       return NextResponse.json({ success: true, zones: currentZones });
     }
 
     if (action === "delete") {
       if (!zoneName) return NextResponse.json({ error: "Missing zoneName" }, { status: 400 });
-      currentZones = currentZones.filter(z => z !== zoneName);
+      const upperZoneName = zoneName.toUpperCase();
+      currentZones = currentZones.filter(z => z.toUpperCase() !== upperZoneName);
       await prisma.businessProfile.update({
         where: { id: profile.id },
         data: { zones: currentZones }
       });
 
       // Remove from all items
+      // Check both exact match and uppercase match to be safe
       const itemsWithZone = await prisma.item.findMany({
-        where: { clerkId: effectiveId, zones: { has: zoneName } }
+        where: { clerkId: effectiveId }
       });
       for (const item of itemsWithZone) {
-        const updatedZones = item.zones.filter(z => z !== zoneName);
+        if (!item.zones?.some(z => z.toUpperCase() === upperZoneName)) continue;
+        const updatedZones = item.zones.filter(z => z.toUpperCase() !== upperZoneName);
         await prisma.item.update({
           where: { id: item.id },
           data: { zones: updatedZones }
@@ -78,10 +90,17 @@ export async function POST(req: NextRequest) {
       }
 
       // Reset tables with this zone back to Default
-      await prisma.table.updateMany({
-        where: { clerkUserId: effectiveId, zone: zoneName },
-        data: { zone: "Default" }
+      const tablesWithZone = await prisma.table.findMany({
+        where: { clerkUserId: effectiveId }
       });
+      for (const table of tablesWithZone) {
+        if (table.zone?.toUpperCase() === upperZoneName) {
+          await prisma.table.update({
+            where: { id: table.id },
+            data: { zone: "Default" }
+          });
+        }
+      }
 
       return NextResponse.json({ success: true, zones: currentZones });
     }

@@ -53,24 +53,29 @@ export default function TablesPage() {
   const fetchTables = async () => {
     setLoading(true);
     try {
+      const ts = Date.now();
       const [tableRes, profileRes, itemsRes] = await Promise.all([
-        fetch(`${getBase()}/api/tables`),
-        fetch(`${getBase()}/api/profile`),
-        fetch(`${getBase()}/api/menu/items`)
+        fetch(`${getBase()}/api/tables?t=${ts}`, { cache: "no-store" }),
+        fetch(`${getBase()}/api/profile?t=${ts}`, { cache: "no-store" }),
+        fetch(`${getBase()}/api/menu/items?t=${ts}`, { cache: "no-store" })
       ]);
       
       if (!tableRes.ok) throw new Error("could not load tables");
       const data: TableRecord[] = await tableRes.json();
       setTables(data);
 
+      let profileZones: string[] = [];
       if (profileRes.ok) {
         const profile = await profileRes.json();
         if (profile) {
           setMultiZoneEnabled(profile.multiZoneMenuEnabled);
+          if (Array.isArray(profile.zones)) {
+            profileZones = profile.zones;
+          }
         }
       }
 
-      // Extract unique zones from tables AND items
+      // Extract unique zones from tables, items AND profile
       const tableZones = data.map(t => t.zone).filter(Boolean);
       let itemZones: string[] = [];
       if (itemsRes.ok) {
@@ -84,7 +89,7 @@ export default function TablesPage() {
         }
       }
       
-      const allUniqueZones = Array.from(new Set([...tableZones, ...itemZones, "Default", "AC", "Non AC"]));
+      const allUniqueZones = Array.from(new Set([...tableZones, ...itemZones, ...profileZones, "Default", "AC", "Non AC"]));
       setAvailableZones(allUniqueZones.sort());
 
     } catch (e) {
