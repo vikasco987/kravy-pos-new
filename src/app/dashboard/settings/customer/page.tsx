@@ -24,6 +24,7 @@ export default function CustomerDataSettings() {
         openingTime: "00:00",
         closingTime: "23:59",
         offlineMessage: "Restaurant is currently closed or not accepting orders.",
+        servedStatusLabel: "SERVED",
     });
 
     useEffect(() => {
@@ -42,6 +43,7 @@ export default function CustomerDataSettings() {
                         openingTime: data.openingTime ?? "00:00",
                         closingTime: data.closingTime ?? "23:59",
                         offlineMessage: data.offlineMessage ?? "Restaurant is currently closed or not accepting orders.",
+                        servedStatusLabel: data.servedStatusLabel ?? "SERVED",
                     });
                 }
             })
@@ -240,6 +242,31 @@ export default function CustomerDataSettings() {
                         />
                         <p className="text-[10px] text-slate-400 italic">Visible to customers when ordering is disabled.</p>
                     </div>
+                </div>
+            </div>
+
+            {/* ✅ ORDER TRACKING LABELS */}
+            <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 space-y-6 shadow-sm">
+                <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+                        <CheckCircle2 size={24} />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-slate-900">Custom Labels</h3>
+                        <p className="text-xs text-slate-500 font-mono">Customize the text displayed on the order tracking page</p>
+                    </div>
+                </div>
+
+                <div className="space-y-4 max-w-md">
+                    <label className="text-[10px] uppercase font-black tracking-widest text-slate-500 block">Completed Status Label</label>
+                    <input 
+                        type="text" 
+                        value={(settings as any).servedStatusLabel}
+                        onChange={(e) => setSettings(prev => ({ ...prev, servedStatusLabel: e.target.value.toUpperCase() }))}
+                        placeholder="e.g. DELIVERED, SERVED"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 font-black text-lg focus:border-indigo-500/50 outline-none transition-all uppercase"
+                    />
+                    <p className="text-[10px] text-slate-400 italic">This replaces "SERVED" on the tracking page.</p>
                 </div>
             </div>
 

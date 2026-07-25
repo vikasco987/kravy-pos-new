@@ -445,6 +445,7 @@ model BusinessProfile {
   gstType              String? @default("PRODUCT") // "PRODUCT" or "UNIVERSAL"
   perProductTaxEnabled Boolean @default(false)
   taxInclusive         Boolean @default(false)
+  servedStatusLabel    String  @default("SERVED")
 
   // ✅ Customer Data Requirement Settings
   collectCustomerName    Boolean @default(true)

@@ -18,7 +18,7 @@ import BillPreview from "@/components/printing/BillPreview";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo } from "react";
 import { useConfirm } from "@/components/ConfirmContext";
-
+import ItemModal from "@/components/MenuEditor/ItemModal";
 
 /* ================= TYPES ================= */
 
@@ -3942,154 +3942,34 @@ export default function CheckoutClient() {
           QUICK ADD ITEM MODAL
       ════════════════════════════════════════════ */}
       {quickAddCat && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/10" onClick={async () => setQuickAddCat(null)} />
-          <div className="relative bg-[var(--kravy-surface)] w-full max-w-sm rounded-[2rem] shadow-2xl border border-[var(--kravy-border)] overflow-hidden scale-100 animate-in fade-in duration-200">
-            <div className="p-6">
-              <div className="flex items-center gap-4 mb-5 pb-4 border-b border-[var(--kravy-border)]/50">
-                <div className="w-12 h-12 rounded-2xl bg-[var(--kravy-brand)]/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl font-black text-[var(--kravy-brand)]">+</span>
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-lg font-black text-[var(--kravy-text-primary)] leading-tight">Quick Add</h3>
-                  <p className="text-[10px] text-[var(--kravy-text-muted)] font-black uppercase tracking-widest mt-0.5 truncate">
-                    Adding to <span className="text-[var(--kravy-brand)]">{quickAddCat.name}</span>
-                  </p>
-                </div>
-              </div>
-              
-              <form onSubmit={handleQuickAdd} className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Category</label>
-                  <select
-                    value={quickAddCat.id}
-                    onChange={(e) => {
-                      const selected = categoriesList.find(c => c.id === e.target.value) || { id: e.target.value, name: "General" };
-                      setQuickAddCat(selected);
-                    }}
-                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-2.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-bold"
-                  >
-                    {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    {!categoriesList.some(c => c.id === quickAddCat.id) && <option value={quickAddCat.id}>{quickAddCat.name}</option>}
-                  </select>
-                </div>
+        <ItemModal
+          item={{ categoryId: quickAddCat.id }}
+          addonGroups={addonGroups}
+          categories={categoriesList}
+          onSave={async (data: any) => {
+            setQuickAddCat(null);
+            const tempId = `temp-${Date.now()}`;
+            const optimisticItem = { ...data, id: tempId, category: { id: quickAddCat.id, name: quickAddCat.name } };
+            setMenuItems(prev => [optimisticItem, ...prev]);
+            kravy.success();
+            toast.success(`"${data.name}" adding...`);
 
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-                  <div className="col-span-2 space-y-1">
-                    <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Name</label>
-                    <input
-                      name="name"
-                      autoFocus
-                      autoComplete="off"
-                      placeholder="Burger"
-                      required
-                      className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-bold"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Price</label>
-                    <input
-                      name="price"
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
-                      required
-                      className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-mono font-bold"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Variants (Optional)</label>
-                  <input
-                    name="variants"
-                    placeholder="e.g. Half:100, Full:200"
-                    autoComplete="off"
-                    value={quickAddVariantsStr}
-                    onChange={(e) => setQuickAddVariantsStr(e.target.value)}
-                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-medium"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Description (Optional)</label>
-                  <input
-                    name="description"
-                    placeholder="Short description..."
-                    autoComplete="off"
-                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-medium"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Image URL (Optional)</label>
-                  <input
-                    name="imageUrl"
-                    type="url"
-                    autoComplete="off"
-                    placeholder="https://..."
-                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-[11px] outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20 focus:border-[var(--kravy-brand)] transition-all font-medium"
-                  />
-                </div>
-
-                {/* Tax Options */}
-                {taxActive && (
-                  <div className="space-y-3 pt-2">
-                    <div className="flex gap-2 p-1 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl">
-                      {["Without Tax", "With Tax"].map((status) => (
-                        <button
-                          key={status}
-                          type="button"
-                          onClick={async () => setQuickAddTaxStatus(status)}
-                          className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
-                            quickAddTaxStatus === status
-                              ? "bg-[var(--kravy-brand)] text-white shadow-lg shadow-[var(--kravy-brand)]/20"
-                              : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]/50"
-                          }`}
-                        >
-                          {status}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {[0, 5, 12, 18, 28].map((val) => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={async () => setQuickAddGst(val)}
-                          className={`px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
-                            quickAddGst === val
-                              ? "bg-[var(--kravy-brand)] text-white border-[var(--kravy-brand)]"
-                              : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-[var(--kravy-brand)]/50"
-                          }`}
-                        >
-                          GST @ {val}%
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={async () => setQuickAddCat(null)}
-                    className="flex-1 py-3 rounded-xl border border-[var(--kravy-border)] bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-xs hover:bg-[var(--kravy-surface-hover)] transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-[2] py-3 rounded-xl bg-[var(--kravy-brand)] text-white font-black text-xs shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 active:scale-[0.98] transition-all"
-                  >
-                    Save Item
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+            try {
+              const res = await fetch("/api/items", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+              });
+              if (!res.ok) throw new Error();
+              const savedItem = await res.json();
+              setMenuItems(prev => prev.map(it => it.id === tempId ? { ...savedItem, category: { id: quickAddCat.id, name: quickAddCat.name } } : it));
+            } catch {
+              toast.error("Failed to add item");
+              setMenuItems(prev => prev.filter(it => it.id !== tempId));
+            }
+          }}
+          onClose={() => setQuickAddCat(null)}
+        />
       )}
       {/* ════════════════════════════════════════════
           QUICK ADD CATEGORY MODAL

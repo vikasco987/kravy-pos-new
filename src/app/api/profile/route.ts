@@ -268,6 +268,7 @@ export async function POST(request: Request) {
 
     // ✅ MISC SETTINGS
     if (body.gstType !== undefined) updateData.gstType = s(body.gstType);
+    if (body.servedStatusLabel !== undefined) updateData.servedStatusLabel = s(body.servedStatusLabel);
     if (body.collectCustomerName !== undefined) updateData.collectCustomerName = b(body.collectCustomerName);
     if (body.requireCustomerName !== undefined) updateData.requireCustomerName = b(body.requireCustomerName);
     if (body.collectCustomerPhone !== undefined) updateData.collectCustomerPhone = b(body.collectCustomerPhone);

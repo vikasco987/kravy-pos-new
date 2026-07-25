@@ -11,7 +11,22 @@ export async function GET(req: NextRequest) {
             include: { table: true },
         });
         if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
-        return NextResponse.json(order);
+
+        const profile = await prisma.businessProfile.findFirst({
+            where: { userId: order.clerkUserId },
+            orderBy: { createdAt: 'asc' }
+        });
+
+        const businessName = profile?.businessName || "Restaurant";
+        const businessAddress = profile?.businessAddress || "Address not provided";
+        const servedStatusLabel = (profile as any)?.servedStatusLabel || "SERVED";
+
+        return NextResponse.json({
+            ...order,
+            businessName,
+            businessAddress,
+            servedStatusLabel
+        });
     } catch (error) {
         return NextResponse.json({ error: "Failed to fetch order" }, { status: 500 });
     }

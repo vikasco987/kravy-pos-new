@@ -342,7 +342,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles, Image as ImageIcon, Loader2, Globe, Zap } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-
+import ItemModal from "@/components/MenuEditor/ItemModal";
 /* types */
 type MenuItem = {
   id: string;
@@ -484,6 +484,7 @@ export default function ViewMenuPage() {
   const [bulkDiet, setBulkDiet] = useState<"veg" | "egg" | "nv" | null>(null);
   const [isBulkMode, setIsBulkMode] = useState(false);
   
+  const [addonGroups, setAddonGroups] = useState<any[]>([]);
   const detectDiet = (name: string) => {
     if (name.toUpperCase().includes("(NV)")) return "nv";
     if (name.toUpperCase().includes("(V)")) return "veg";
@@ -1083,6 +1084,11 @@ export default function ViewMenuPage() {
         setExpiryTrackingEnabled(data?.expiryTrackingEnabled || false);
       })
       .catch(() => {});
+
+    fetch("/api/menu-editor/addon-groups")
+      .then(res => res.json())
+      .then(data => setAddonGroups(data))
+      .catch(console.error);
   }, [asUserId]);
 
   const fetchMenus = async () => {
@@ -2311,206 +2317,48 @@ export default function ViewMenuPage() {
 
       {/* 🚀 QUICK ADD ITEM MODAL */}
       {quickAddCat && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setQuickAddCat(null)} />
-          <div className="relative bg-[var(--kravy-surface)] w-full max-w-sm rounded-[2rem] shadow-2xl border border-[var(--kravy-border)] overflow-hidden scale-100 animate-in fade-in duration-200">
-            <div className="p-6">
-              <div className="flex items-center gap-4 mb-5 pb-4 border-b border-[var(--kravy-border)]/50">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl font-black text-indigo-600">+</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-lg font-black text-[var(--kravy-text-primary)] leading-tight">Quick Add Item</h3>
-                  <select 
-                    value={quickAddCat.id}
-                    onChange={(e) => {
-                      const cat = menus.find(m => m.id === e.target.value);
-                      if (cat) setQuickAddCat({ id: cat.id, name: cat.name });
-                    }}
-                    className="mt-1 bg-transparent text-[10px] text-indigo-600 font-extrabold uppercase tracking-widest outline-none border-b border-indigo-200"
-                  >
-                    {menus.map(m => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+        <ItemModal
+          item={{ categoryId: quickAddCat.id }}
+          addonGroups={addonGroups}
+          categories={menus.map(m => ({ id: m.id, name: m.name }))}
+          onSave={async (data: any) => {
+            setQuickAddCat(null);
+            const tempId = `temp-${Date.now()}`;
+            const optimisticItem = { ...data, id: tempId, categoryId: quickAddCat.id };
+            setMenus(prev => prev.map(cat => 
+              cat.id === quickAddCat.id 
+                ? { ...cat, items: [optimisticItem, ...cat.items] }
+                : cat
+            ));
+            setToast(`"${data.name}" added to ${quickAddCat.name}`);
 
-              {/* Quick Image Upload UI */}
-              <div className="mb-6">
-                 <div className={`w-full h-32 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center relative overflow-hidden group ${quickAddImage ? "border-emerald-500 bg-emerald-50" : "border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50"}`}>
-                    {quickAddImage ? (
-                      <>
-                        <Image src={quickAddImage} alt="Preview" fill className="object-cover" />
-                        <button 
-                          onClick={(e) => { e.preventDefault(); setQuickAddImage(null); }}
-                          className="absolute top-2 right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg z-20"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                         {isUploading ? (
-                           <RotateCcw className="animate-spin text-indigo-500" />
-                         ) : (
-                           <>
-                             <Plus className="text-indigo-400 mb-1" size={20} />
-                             <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Upload Item Photo</p>
-                           </>
-                         )}
-                         <input 
-                           type="file"
-                           accept="image/*"
-                           className="absolute inset-0 opacity-0 cursor-pointer"
-                           onChange={async (e) => {
-                             if (!e.target.files?.[0]) return;
-                             const f = e.target.files[0];
-                             const fd = new FormData();
-                             fd.append("file", f);
-                             try {
-                               setIsUploading(true);
-                               const r = await fetch("/api/upload", { method: "POST", body: fd });
-                               const d = await r.json();
-                               if (r.ok && d.secure_url) setQuickAddImage(d.secure_url);
-                             } catch (err) {} finally { setIsUploading(false); }
-                           }}
-                         />
-                      </>
-                    )}
-                 </div>
-              </div>
-              
-              <form onSubmit={handleQuickAdd} className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="col-span-2 space-y-1">
-                    <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Name</label>
-                    <input
-                      name="name"
-                      autoFocus
-                      autoComplete="off"
-                      placeholder="Burger"
-                      required
-                      onChange={(e) => {
-                        const diet = detectDiet(e.target.value);
-                        if (diet) setQuickAddDietary(diet);
-                      }}
-                      className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Price</label>
-                    <input
-                      name="price"
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
-                      required
-                      className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono font-bold"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Item Code / Short Code (Optional)</label>
-                  <input
-                    name="shortCode"
-                    placeholder="e.g. 1999"
-                    autoComplete="off"
-                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Description (Optional)</label>
-                  <input
-                    name="description"
-                    placeholder="Short description..."
-                    autoComplete="off"
-                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Image URL (Optional)</label>
-                  <input
-                    name="imageUrl"
-                    type="url"
-                    autoComplete="off"
-                    placeholder="https://..."
-                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-[11px] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
-                  />
-                </div>
-
-                {/* Dietary Type Toggle */}
-                <div className="space-y-1 mt-2">
-                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Dietary Type</label>
-                  <div className="flex gap-2 p-1 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl">
-                    <button type="button" onClick={() => setQuickAddDietary("veg")} className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${quickAddDietary === "veg" ? "bg-green-600 text-white shadow-lg shadow-green-600/20" : "text-green-600/60 hover:bg-green-50"}`}>Veg</button>
-                    <button type="button" onClick={() => setQuickAddDietary("egg")} className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${quickAddDietary === "egg" ? "bg-amber-500 text-white shadow-lg shadow-amber-500/20" : "text-amber-500/60 hover:bg-amber-50"}`}>Egg</button>
-                    <button type="button" onClick={() => setQuickAddDietary("nv")} className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${quickAddDietary === "nv" ? "bg-red-600 text-white shadow-lg shadow-red-600/20" : "text-red-600/60 hover:bg-red-50"}`}>Non-Veg</button>
-                  </div>
-                </div>
-
-                {/* Tax Options */}
-                {taxEnabled && (
-                  <div className="space-y-3 pt-2">
-                    <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Tax Management</label>
-                    <div className="flex gap-2 p-1 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl">
-                      {["Without Tax", "With Tax"].map((status) => (
-                        <button
-                          key={status}
-                          type="button"
-                          onClick={() => setQuickAddTaxStatus(status)}
-                          className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
-                            quickAddTaxStatus === status
-                              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-                              : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]/50"
-                          }`}
-                        >
-                          {status}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {[0, 5, 12, 18, 28].map((val) => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => setQuickAddGst(val)}
-                          className={`px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
-                            quickAddGst === val
-                              ? "bg-indigo-600 text-white border-indigo-600"
-                              : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:border-indigo-600/50"
-                          }`}
-                        >
-                          GST @ {val}%
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setQuickAddCat(null)}
-                    className="flex-1 py-3 rounded-xl border border-[var(--kravy-border)] bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-xs hover:bg-[var(--kravy-surface-hover)] transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-[2] py-3 rounded-xl bg-indigo-600 text-white font-black text-xs shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 active:scale-[0.98] transition-all"
-                  >
-                    Save Item
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+            try {
+              const res = await fetch("/api/items", {
+                method: "POST",
+                headers: { 
+                  "Content-Type": "application/json",
+                  ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+                },
+                body: JSON.stringify(data)
+              });
+              if (!res.ok) throw new Error();
+              const savedItem = await res.json();
+              setMenus(prev => prev.map(cat => 
+                cat.id === quickAddCat.id 
+                  ? { ...cat, items: cat.items.map(it => it.id === tempId ? { ...savedItem, categoryId: quickAddCat.id } : it) }
+                  : cat
+              ));
+            } catch {
+              setToast("Failed to add item");
+              setMenus(prev => prev.map(cat => 
+                cat.id === quickAddCat.id 
+                  ? { ...cat, items: cat.items.filter(it => it.id !== tempId) }
+                  : cat
+              ));
+            }
+          }}
+          onClose={() => setQuickAddCat(null)}
+        />
       )}
 
       {/* 🚀 QUICK ADD CATEGORY MODAL */}

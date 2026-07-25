@@ -50,6 +50,8 @@ interface Order {
     };
     createdAt: string;
     updatedAt: string;
+    businessName?: string;
+    businessAddress?: string;
 }
 
 const statusConfig = {
@@ -239,10 +241,10 @@ export default function OrderTrackingPage() {
                             </div>
                             <div className="flex-1 text-left">
                                 <h2 className="text-[1.35rem] font-[900] tracking-tight text-[#1C1C1C] leading-tight">
-                                    {currentStatusConfig.label}
+                                    {order.status === 'SERVED' ? (order.servedStatusLabel || currentStatusConfig.label) : currentStatusConfig.label}
                                 </h2>
                                 <p className="text-[0.8rem] text-[#696969] font-[600] mt-0.5">
-                                    {currentStatusConfig.description}
+                                    {order.status === 'SERVED' ? `Your order has been ${order.servedStatusLabel?.toLowerCase() || 'served'}` : currentStatusConfig.description}
                                 </p>
                             </div>
                         </div>
@@ -281,7 +283,7 @@ export default function OrderTrackingPage() {
                                                 <span className={`block text-[9px] leading-none font-[800] uppercase tracking-tighter transition-all duration-500 whitespace-nowrap ${
                                                     isCurrent ? "text-[#EF4F5F]" : isActive ? "text-[#1C1C1C]" : "text-[#ABABAB]"
                                                 }`}>
-                                                    {status === 'PENDING' ? 'RECEIVED' : status === 'ACCEPTING' ? 'REVIEWING' : status === 'ACCEPTED' ? 'CONFIRMED' : status === 'PREPARING' ? 'PREPARING' : status === 'READY' ? 'READY' : status === 'SERVED' ? 'SERVED' : 'COMPLETED'}
+                                                    {status === 'PENDING' ? 'RECEIVED' : status === 'ACCEPTING' ? 'REVIEWING' : status === 'ACCEPTED' ? 'CONFIRMED' : status === 'PREPARING' ? 'PREPARING' : status === 'READY' ? 'READY' : status === 'SERVED' ? (order.servedStatusLabel || 'SERVED') : 'COMPLETED'}
                                                 </span>
                                             </div>
                                         </div>
@@ -415,8 +417,8 @@ export default function OrderTrackingPage() {
                                 <MapPin size={20} />
                             </div>
                             <div>
-                                <div className="font-[800] text-[#1C1C1C] text-[0.9rem]">Kravy Kitchen</div>
-                                <div className="text-[0.7rem] text-[#696969] font-[500] mt-0.5">MG Road, Food Hub</div>
+                                <div className="font-[800] text-[#1C1C1C] text-[0.9rem]">{order.businessName || "Restaurant"}</div>
+                                <div className="text-[0.7rem] text-[#696969] font-[500] mt-0.5">{order.businessAddress || "Address not provided"}</div>
                             </div>
                         </div>
                         <a href="tel:+919876543210" className="w-9 h-9 rounded-full bg-[#F8F8F8] border border-[#EBEBEB] flex items-center justify-center text-[#1C1C1C] hover:bg-[#EBEBEB] transition-colors">
