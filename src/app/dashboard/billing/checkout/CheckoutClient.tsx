@@ -901,7 +901,28 @@ export default function CheckoutClient() {
   /* ================= CART ================= */
   function addToCart(item: MenuItem) {
     if (item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
-      setVariantModalItem(item);
+      // Normalize variants if they are in the old/app format
+      const isAppFormat = item.variants.some((v: any) => !v.options);
+      
+      let normalizedVariants = item.variants;
+      
+      if (isAppFormat) {
+        normalizedVariants = [
+          {
+            id: 'legacy_app_group',
+            groupName: 'Options',
+            type: 'radio',
+            required: false,
+            options: item.variants.map((v: any, i: number) => ({
+              id: v.id || `opt_${i}`,
+              name: v.name || v.groupName || `Option ${i+1}`,
+              price: v.price || 0
+            }))
+          }
+        ];
+      }
+
+      setVariantModalItem({ ...item, variants: normalizedVariants });
       setSelectedVariants({});
       return;
     }

@@ -23,7 +23,26 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
     description: item?.description || '',
     isVeg: item?.isVeg ?? true,
     isEgg: item?.isEgg ?? false,
-    variants: item?.variants ? JSON.parse(JSON.stringify(item.variants)) : [],
+    variants: item?.variants ? (() => {
+      const parsed = JSON.parse(JSON.stringify(item.variants));
+      const isAppFormat = parsed.some((v: any) => !v.options);
+      if (isAppFormat) {
+        return [
+          {
+            id: 'legacy_app_group',
+            groupName: 'Options',
+            type: 'radio',
+            required: false,
+            options: parsed.map((v: any, i: number) => ({
+              id: v.id || `opt_${i}`,
+              name: v.name || v.groupName || `Option ${i+1}`,
+              price: v.price || 0
+            }))
+          }
+        ];
+      }
+      return parsed;
+    })() : [],
     addonGroupIds: item?.addonGroupIds || [],
     imageUrl: item?.imageUrl || item?.image || '',
     categoryId: item?.categoryId || '',
