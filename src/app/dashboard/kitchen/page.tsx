@@ -28,7 +28,6 @@ import {
 import PrintTemplates from "@/components/printing/PrintTemplates";
 import BillPreview from "@/components/printing/BillPreview";
 import { CSS } from '@dnd-kit/utilities';
-import OrderAlertLoop from "./components/order-alert-loop";
 import { useAuthContext } from "@/components/AuthContext";
 import { useConfirm } from "@/components/ConfirmContext";
 
@@ -1008,7 +1007,6 @@ function KravyPOS() {
                     </div>
                 )}
             </AnimatePresence>
-            <OrderAlertLoop pendingCount={stats.incoming} />
             {/* ── HEADER ── */}
             <header className="flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8 min-h-[64px] lg:h-[64px] shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm z-[50] py-3 lg:py-0 gap-4 lg:gap-8 transition-colors duration-300">
                 {/* Brand & Mobile Actions */}

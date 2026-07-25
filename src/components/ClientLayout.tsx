@@ -11,6 +11,7 @@ import { Lock, Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { kravy } from "@/lib/sounds";
 import PremiumAlert from "@/components/PremiumAlert";
+import IncomingOrderModal from "@/components/IncomingOrderModal";
 
 export default function ClientLayout({
   children,
@@ -187,6 +188,7 @@ export default function ClientLayout({
     <>
       {/* 🔔 Real-time order sound + popup notifications */}
       <OrderNotificationProvider />
+      <IncomingOrderModal />
       
       {/* 👑 Premium Subscription Modal */}
       <PremiumAlert profile={profile} />

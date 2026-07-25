@@ -26,7 +26,6 @@ import {
 } from '@dnd-kit/core';
 import PrintTemplates from "@/components/printing/PrintTemplates";
 import BillPreview from "@/components/printing/BillPreview";
-import OrderAlertLoop from "./components/order-alert-loop";
 import { useAuthContext } from "@/components/AuthContext";
 import { useConfirm } from "@/components/ConfirmContext";
 
@@ -497,6 +496,9 @@ function KravyPOS() {
                         --r-greeting-size: ${greetingFontSize}px;
                         font-family: var(--r-font-family) !important;
                         font-size: var(--r-details-size) !important;
+                    }
+                    #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
+                        font-family: var(--r-font-family) !important;
                     }
                     #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
                         font-family: var(--r-font-family) !important;
@@ -1188,7 +1190,6 @@ function KravyPOS() {
                     </div>
                 )}
             </AnimatePresence>
-            <OrderAlertLoop pendingCount={stats.incoming} />
             {/* ── HEADER ── */}
             <header className="flex flex-col lg:flex-row items-center justify-between px-4 lg:px-6 min-h-[60px] lg:h-[60px] shrink-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/40 dark:border-slate-800/40 shadow-lg z-[50] py-2 lg:py-0 gap-4 lg:gap-6 transition-colors duration-300">
                 {/* Brand & Navigation */}
