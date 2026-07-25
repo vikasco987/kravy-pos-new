@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, Bell, ExternalLink } from "lucide-react";
 import { kravy } from "@/lib/sounds";
+import { useTerminalContext } from "@/components/TerminalContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface OrderNotification {
@@ -106,6 +107,7 @@ function OrderPopup({ order, onClose }: { order: OrderNotification; onClose: () 
 // ─── Main Hook + Provider ─────────────────────────────────────────────────────
 export function OrderNotificationProvider() {
     const { userId } = useAuth();
+    const { fetchData } = useTerminalContext();
     const [popups, setPopups] = useState<OrderNotification[]>([]);
     const seenOrderIds = useRef<Set<string>>(new Set());
     const seenReviewIds = useRef<Set<string>>(new Set());
@@ -193,6 +195,10 @@ export function OrderNotificationProvider() {
                         );
 
                         if (newOrders.length > 0) {
+                            // 🔥 Force TerminalContext to fetch data immediately, bypassing the 30s cache!
+                            // This ensures the big IncomingOrderModal appears instantly.
+                            fetchData(false, true);
+
                             if (prefsRef.current.newOrderSound) {
                                 kravy.orderBell();
                             }
