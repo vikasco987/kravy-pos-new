@@ -53,6 +53,9 @@ interface Order {
     businessName?: string;
     businessAddress?: string;
     businessPhone?: string;
+    deliveryCharges?: number;
+    packagingCharges?: number;
+    servedStatusLabel?: string;
 }
 
 const statusConfig = {
