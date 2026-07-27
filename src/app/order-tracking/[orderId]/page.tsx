@@ -307,26 +307,7 @@ export default function OrderTrackingPage() {
                         </div>
                     </motion.div>
 
-                    {/* ── LIVE ETA CARD ── */}
-                    {(order.status === 'PREPARING' || order.status === 'ACCEPTED' || order.status === 'READY') && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.1 }}
-                            className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[#EBEBEB] flex items-center justify-between mb-6"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 relative">
-                                    <Clock size={24} />
-                                    <div className="absolute top-0 right-0 w-3 h-3 bg-blue-500 rounded-full animate-ping opacity-50" />
-                                </div>
-                                <div>
-                                    <div className="text-[0.7rem] text-[#696969] font-[700] uppercase tracking-widest mb-0.5">Estimated Time</div>
-                                    <div className="font-[900] text-[#1C1C1C] text-[1.1rem]">18 mins remaining</div>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
+
 
                     {/* ── LOYALTY PROGRESS (MASALA HOUSE SPECIAL) ── */}
                     <div className="mb-6">
