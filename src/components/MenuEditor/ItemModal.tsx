@@ -1,435 +1,470 @@
-'use client'
-import { useState, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
-import { Plus, X, Tag, Sparkles, Layers, ArrowRight, Check, Trash2, Smartphone, ShieldCheck, Zap, Info, Upload, ChevronDown, Share2, HelpCircle, ChevronRight, ChevronLeft, Save, Redo2, Wand2, Ruler, Weight, ChefHat, Lightbulb, ArrowLeft, PlusCircle, LayoutGrid, Search, CheckCircle2, ImageIcon, Flame, PackageSearch } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import Image from 'next/image'
-import AddonGroupsModal from './AddonGroupsModal'
-import { useConfirm } from "@/components/ConfirmContext";
-
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { motion } from "framer-motion";
+import { X, Plus, Image as ImageIcon, RotateCcw } from "lucide-react";
+import Image from "next/image";
 
 export default function ItemModal({ item, addonGroups = [], onSave, onClose, categories = [] }: any) {
-  const { confirm } = useConfirm();
-  const [mounted, setMounted] = useState(false)
-  const [variantState, setVariantState] = useState<'list' | 'add'>('list')
-  const [addonState, setAddonState] = useState<'list' | 'add'>('list')
-  const [addonSearch, setAddonSearch] = useState('')
-  
-  const [form, setForm] = useState({
-    name: item?.name || '',
-    shortCode: item?.shortCode || '',
-    sellingPrice: item?.sellingPrice || item?.price || '',
-    price: item?.price || '',
-    description: item?.description || '',
-    isVeg: item?.isVeg ?? true,
-    isEgg: item?.isEgg ?? false,
-    variants: item?.variants ? (() => {
-      const parsed = JSON.parse(JSON.stringify(item.variants));
-      const isAppFormat = parsed.some((v: any) => !v.options);
-      if (isAppFormat) {
-        return [
-          {
-            id: 'legacy_app_group',
-            groupName: 'Options',
-            type: 'radio',
+    const defaultItem = {
+        name: "",
+        price: null,
+        sellingPrice: null,
+        description: "",
+        isVeg: true,
+        isEgg: false,
+        variants: [],
+        addonGroupIds: [],
+        imageUrl: "",
+        categoryId: item?.categoryId || "",
+        packagingCharges: 0,
+        gstType: "goods",
+        taxRate: "5.0%",
+        ...item
+    };
+
+    const [local, setLocal] = useState(defaultItem);
+    const [tab, setTab] = useState("basic");
+    const [uploading, setUploading] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    
+    useEffect(() => setMounted(true), []);
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files?.[0]) return;
+      const file = e.target.files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        setUploading(true);
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (res.ok && data.secure_url) {
+          setLocal(prev => ({ ...prev, imageUrl: data.secure_url }));
+        } else {
+          alert("Upload failed");
+        }
+      } catch (err) {
+        alert("Upload Error");
+      } finally {
+        setUploading(false);
+      }
+    };
+
+    const handleAddVariantGroup = () => {
+        const newGroup = {
+            id: crypto.randomUUID(),
+            groupName: "New Group",
+            type: "radio",
             required: false,
-            options: parsed.map((v: any, i: number) => ({
-              id: v.id || `opt_${i}`,
-              name: v.name || v.groupName || `Option ${i+1}`,
-              price: v.price || 0
-            }))
-          }
-        ];
-      }
-      return parsed;
-    })() : [],
-    addonGroupIds: item?.addonGroupIds || [],
-    imageUrl: item?.imageUrl || item?.image || '',
-    categoryId: item?.categoryId || '',
-    packagingCharges: item?.packagingCharges || 0,
-    gstType: item?.gstType || 'goods',
-    taxRate: item?.taxRate || '5.0%',
-  })
+            options: []
+        };
+        setLocal(prev => ({
+            ...prev,
+            variants: [...(Array.isArray(prev.variants) ? prev.variants : []), newGroup]
+        }));
+    };
 
-  const [showAddonManager, setShowAddonManager] = useState(false)
-  const [localGroups, setLocalGroups] = useState(addonGroups)
+    const handleUpdateVariantGroup = (idx: number, updates: any) => {
+        setLocal(prev => {
+            const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
+            newVariants[idx] = { ...newVariants[idx], ...updates };
+            return { ...prev, variants: newVariants };
+        });
+    };
 
-  useEffect(() => {
-    setLocalGroups(addonGroups)
-  }, [addonGroups])
+    const handleDeleteVariantGroup = (idx: number) => {
+        setLocal(prev => {
+            const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
+            newVariants.splice(idx, 1);
+            return { ...prev, variants: newVariants };
+        });
+    };
 
-  async function handleQuickAddonSave(data: any) {
-    const res = await fetch(`/api/menu-editor/addon-groups`, {
-      method: data.id ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    })
-    if (res.ok) {
-      const saved = await res.json()
-      setLocalGroups((prev: any[]) => data.id ? prev.map((g: any) => g.id === data.id ? saved : g) : [saved, ...prev])
-      if (!data.id) {
-        toggleLink(saved.id)
-      }
-      setShowAddonManager(false)
-    }
-  }
+    const handleAddVariantOption = (groupIdx: number) => {
+        setLocal(prev => {
+            const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
+            newVariants[groupIdx].options = [
+                ...(Array.isArray(newVariants[groupIdx].options) ? newVariants[groupIdx].options : []),
+                { id: crypto.randomUUID(), name: "New Option", price: 0 }
+            ];
+            return { ...prev, variants: newVariants };
+        });
+    };
 
-  async function handleQuickAddonDelete(id: string) {
-    if (!await confirm("Are you sure?")) return
-    const res = await fetch(`/api/menu-editor/addon-groups?id=${id}`, { method: 'DELETE' })
-    if (res.ok) {
-       setLocalGroups((prev: any[]) => prev.filter((g: any) => g.id !== id))
-       update('addonGroupIds', form.addonGroupIds.filter((i: string) => i !== id))
-    }
-  }
+    const handleUpdateVariantOption = (groupIdx: number, optionIdx: number, updates: any) => {
+        setLocal(prev => {
+            const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
+            const newOptions = [...(Array.isArray(newVariants[groupIdx].options) ? newVariants[groupIdx].options : [])];
+            if (newOptions[optionIdx]) {
+                newOptions[optionIdx] = { ...newOptions[optionIdx], ...updates };
+            }
+            newVariants[groupIdx].options = newOptions;
+            return { ...prev, variants: newVariants };
+        });
+    };
 
-  const [openSection, setOpenSection] = useState<string | null>('variants')
-  
-  const [newVariant, setNewVariant] = useState({ 
-    groupName: '', 
-    required: true, 
-    multiSelect: false,
-    options: [{ id: '1', name: '', price: '' }] 
-  })
+    const handleDeleteVariantOption = (groupIdx: number, optionIdx: number) => {
+        setLocal(prev => {
+            const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
+            const newOptions = [...(Array.isArray(newVariants[groupIdx].options) ? newVariants[groupIdx].options : [])];
+            newOptions.splice(optionIdx, 1);
+            newVariants[groupIdx].options = newOptions;
+            return { ...prev, variants: newVariants };
+        });
+    };
 
-  const [newAddonGroup, setNewAddonGroup] = useState({ 
-    name: '', 
-    isCompulsory: false, 
-    allowMultipleUnits: false,
-    minSelection: 0, 
-    maxSelection: 5,
-    addons: [{ id: '1', name: '', price: '', foodType: 'veg', imageUrl: '' }] 
-  })
+    const handleToggleAddonGroup = (groupId: string) => {
+        setLocal(prev => {
+            const currentIds = Array.isArray(prev.addonGroupIds) ? prev.addonGroupIds : [];
+            if (currentIds.includes(groupId)) {
+                return { ...prev, addonGroupIds: currentIds.filter(id => id !== groupId) };
+            } else {
+                return { ...prev, addonGroupIds: [...currentIds, groupId] };
+            }
+        });
+    };
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+    if (!mounted) return null;
 
-  useEffect(() => {
-    setMounted(true)
-    document.body.style.overflow = 'hidden'
-    return () => {
-      setMounted(false)
-      document.body.style.overflow = 'unset'
-    }
-  }, [])
+    return createPortal(
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+        <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[var(--kravy-surface)] dark:bg-slate-900 rounded-[32px] border border-[var(--kravy-border)] shadow-2xl w-full max-w-lg p-0 z-[10000] overflow-hidden flex flex-col max-h-[90vh]">
 
-  function update(key: string, val: any) {
-    setForm(prev => ({ ...prev, [key]: val }))
-  }
+          <div className="p-8 pb-4 shrink-0">
+            <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] mb-6 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-xl">✨</div>
+              Item Details
+            </h3>
 
-  // LOGIC HELPERS
-  const addVariantOption = async () => setNewVariant(p => ({ ...p, options: [...p.options, { id: Math.random().toString(), name: '', price: '' }] }))
-  const saveVariant = async () => { if(!newVariant.groupName) return; update('variants', [...form.variants, { ...newVariant, id: Math.random().toString() }]); setVariantState('list'); setNewVariant({ groupName: '', required: true, multiSelect: false, options: [{ id: '1', name: '', price: '' }] }) }
-  const addAddonRow = async () => setNewAddonGroup(p => ({ ...p, addons: [...p.addons, { id: Math.random().toString(), name: '', price: '', foodType: 'veg', imageUrl: '' }] }))
-  const updateAddonRow = (id: string, k: string, v: any) => setNewAddonGroup(p => ({ ...p, addons: p.addons.map(a => a.id === id ? { ...a, [k]: v } : a) }))
-  const saveNewAddonGroup = async () => { if(!newAddonGroup.name) return; update('addonGroupIds', [...form.addonGroupIds, Math.random().toString()]); setAddonState('list'); }
-  const toggleLink = (id: string) => update('addonGroupIds', form.addonGroupIds.includes(id) ? form.addonGroupIds.filter((i: string) => i !== id) : [...form.addonGroupIds, id])
-
-  function handleSubmit() {
-    if (!form.name || !form.sellingPrice) return alert('Name and Price are required')
-    onSave({ ...form, price: Number(form.price || form.sellingPrice), sellingPrice: Number(form.sellingPrice) })
-  }
-
-  if (!mounted) return null
-
-  const filteredAddons = localGroups.filter((g: any) => g.name.toLowerCase().includes(addonSearch.toLowerCase()))
-
-  const content = (
-    <div className="fixed inset-0 bg-[#f5f5f5] dark:bg-slate-950 z-[999999999] flex overflow-hidden font-sans no-scrollbar text-[0.82rem] transition-colors">
-      
-      {/* 📱 LEFT: GLASS PREVIEW */}
-      <div className="hidden lg:flex w-[480px] bg-white/40 dark:bg-slate-900/40 backdrop-blur-[60px] border-r border-white/20 dark:border-slate-800/50 flex flex-col items-center justify-center p-6 sticky top-0 h-screen shrink-0 overflow-hidden shadow-[30px_0_60px_rgba(0,0,0,0.03)] border-l border-white/30 dark:border-l-slate-800/20">
-        <p className="text-[0.65rem] text-gray-400 mb-8 uppercase tracking-[0.4em] font-black opacity-30">Zomato Mirror Preview</p>
-        <div className="flex flex-col items-center transform scale-[0.68] origin-center shadow-[0_80px_160px_-40px_rgba(0,0,0,0.4)]">
-           <div className="relative w-[340px] h-[700px] bg-[#000] rounded-[4.5rem] p-3 border border-white/10 ring-[8px] ring-gray-900/50">
-              <div className="flex justify-center mb-3"><div className="w-24 h-6 bg-black rounded-full shadow-inner" /></div>
-              <div className="bg-white rounded-[3.8rem] overflow-hidden min-h-[480px] flex flex-col relative no-scrollbar shadow-inner">
-                 <div className="p-5 border-b border-gray-50 bg-white">
-                    <p className="text-[10px] text-gray-400 font-black tracking-widest uppercase mb-1">RESTAURANT NAME</p>
-                    <div className="flex items-center gap-2"><span className="bg-[#48c479] text-white text-[10px] font-black px-1.5 py-0.5 rounded">4.2 ★</span></div>
-                 </div>
-                 <div className="p-5 pt-3 flex-1 overflow-y-auto no-scrollbar scroll-smooth">
-                    <div className="bg-gray-100 rounded-[2.5rem] h-[160px] mb-5 border border-gray-50 relative overflow-hidden shadow-inner">
-                       {form.imageUrl && <Image src={form.imageUrl} alt="item" fill className="object-cover" />}
-                    </div>
-                    <div className="flex justify-between items-start gap-3 mb-8">
-                       <div className="flex-1 space-y-1">
-                          <h3 className="text-[1.1rem] font-black text-gray-900 leading-tight">{form.name || 'Main Course Item'}</h3>
-                          <p className="text-[1.1rem] font-black text-[#e23744]">₹{form.sellingPrice || '0'}</p>
-                       </div>
-                       <button className="bg-white border-2 border-rose-50 text-[#e23744] hover:border-rose-100 rounded-xl px-4 py-2 font-black text-[0.7rem] shadow-sm">ADD</button>
-                    </div>
-                    <div className="space-y-8">
-                       {form.variants.map((v: any) => (
-                          <div key={v.id} className="space-y-4">
-                             <div className="flex justify-between items-center"><span className="text-[0.85rem] font-black text-gray-900 leading-none">{v.groupName}</span><span className="text-[0.6rem] font-black text-gray-300 uppercase tracking-widest">{v.required ? 'Required' : 'Optional'}</span></div>
-                             <div className="space-y-2">
-                                {v.options.map((opt: any) => (
-                                   <div key={opt.id} className="flex justify-between items-center p-3.5 border border-gray-50 rounded-2xl bg-white/70 shadow-sm">
-                                      <div className="flex items-center gap-3"><div className={`w-4 h-4 rounded-full border border-gray-200 ${v.multiSelect ? 'rounded-md' : 'rounded-full'}`} /><span className="text-[0.75rem] font-bold text-gray-700">{opt.name || 'Selection'}</span></div>
-                                      <span className="text-[0.75rem] font-black text-gray-900">+₹{opt.price || '0'}</span>
-                                   </div>
-                                ))}
-                             </div>
-                          </div>
-                       ))}
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </div>
-      </div>
-
-      {/* 🚀 RIGHT: PROFESSIONAL DASHBOARD (ARRANGED CAREFULLY) */}
-      <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-slate-900 flex flex-col items-center selection:bg-blue-100/50 transition-colors">
-        
-        {/* Sticky Utility Header (64px) */}
-        <div className="sticky top-0 z-[100] bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 w-full px-8 h-[64px] flex justify-between items-center shadow-sm backdrop-blur-3xl bg-white/95 dark:bg-slate-900/95 transition-colors">
-           <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center shadow-inner"><Flame size={18} className="text-[#e23744] fill-[#e23744]" /></div>
-              <h1 className="text-[0.95rem] font-black text-gray-900 tracking-tight m-0">{form.name || 'New Item Detail'}</h1>
-           </div>
-           <div className="flex items-center gap-3">
-              <button onClick={onClose} className="text-gray-400 px-4 py-2 text-[0.65rem] font-black uppercase tracking-widest hover:text-gray-900 transition-all">Discard</button>
-              <button onClick={handleSubmit} className="bg-[#1a6de0] text-white px-8 py-2.5 rounded-xl text-[0.65rem] font-black shadow-xl shadow-blue-500/20 active:scale-95 transition-all uppercase tracking-widest">Update Item</button>
-           </div>
-        </div>
-
-        <div className="max-w-[760px] w-full px-12 py-10 space-y-12 pb-40">
-           
-           {/* SECTION 1: CORE IDENTITY (CLEAN GRID) */}
-           <div className="grid grid-cols-12 gap-6 items-end">
-              <div className="col-span-12 lg:col-span-5 space-y-2">
-                 <label className={labelClass}>Dish Title *</label>
-                 <input value={form.name} onChange={e => update('name', e.target.value)} placeholder="e.g. Kadai Paneer Gravy" className={inputClass} />
-              </div>
-              <div className="col-span-12 lg:col-span-3 space-y-2">
-                 <label className={labelClass}>Item Code</label>
-                 <input value={form.shortCode} onChange={e => update('shortCode', e.target.value)} placeholder="e.g. 1999" className={inputClass} />
-              </div>
-              <div className="col-span-12 lg:col-span-4 space-y-2">
-                 <label className={labelClass}>Sub-Category</label>
-                 <div className="relative group">
-                    <select value={form.categoryId} onChange={e => update('categoryId', e.target.value)} className={`${inputClass} appearance-none pr-8 !h-9 border-gray-100 uppercase text-[0.68rem] font-black tracking-widest`}>
-                       <option value="">Map Category</option>
-                       {categories.map((c: any) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 group-hover:text-blue-600 transition-all pointer-events-none" />
-                 </div>
-              </div>
-           </div>
-
-           {/* SECTION 2: SEGMENT & PRICING (ZOMATO STYLE 4-ROW) */}
-           <div className="grid grid-cols-4 gap-4 pb-2">
-              <div className="col-span-1 space-y-2">
-                 <label className={labelClass}>Base Price</label>
-                 <div className="relative group">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 font-bold">₹</span>
-                    <input type="number" value={form.sellingPrice} onChange={e => update('sellingPrice', e.target.value)} placeholder="0" className={`${inputClass} !h-10 pl-7 border-gray-100 group-hover:border-blue-500 transition-colors`} />
-                 </div>
-              </div>
-              <div className="col-span-3 space-y-2">
-                 <label className={labelClass}>Dietary Class (Select Segment)</label>
-                 <div className="flex gap-2 h-10">
-                    {['veg', 'nonveg', 'egg'].map(t => (
-                       <label key={t} className={`flex-1 flex items-center justify-center gap-2 border cursor-pointer rounded-xl transition-all ${((form.isVeg && t === 'veg') || (form.isEgg && t === 'egg') || (!form.isVeg && !form.isEgg && t === 'nonveg')) ? 'border-rose-200 bg-rose-50/20 shadow-sm' : 'border-gray-50 bg-gray-50/50 opacity-50'}`}>
-                          <input type="radio" className="hidden" onChange={() => { if(t === 'veg') { update('isVeg', true); update('isEgg', false); } else if(t === 'egg') { update('isVeg', false); update('isEgg', true); } else { update('isVeg', false); update('isEgg', false); } }} />
-                          <div className={`w-3.5 h-3.5 border rounded flex items-center justify-center ${t === 'veg' ? 'border-green-600' : t === 'egg' ? 'border-amber-500' : 'border-red-600'}`}><div className={`w-1.5 h-1.5 rounded-full ${t === 'veg' ? 'bg-green-600' : t === 'egg' ? 'bg-amber-500' : t === 'red' ? 'bg-red-600' : ''}`} style={{ backgroundColor: t === 'veg' ? '#0d9f3f' : t === 'egg' ? '#f59e0b' : '#d9001b' }} /></div>
-                          <span className="text-[0.62rem] font-black text-gray-900 uppercase tracking-tighter">{t}</span>
-                       </label>
-                    ))}
-                 </div>
-              </div>
-           </div>
-
-           {/* SECTION 3: PRICING DRILL-DOWN (4 GATES) */}
-           <div className="grid grid-cols-4 gap-4 bg-gray-50/40 p-5 rounded-[2rem] border border-gray-50 shadow-inner">
-              {[
-                { l: 'Packaging', k: 'packagingCharges' },
-                { l: 'GST Model', k: 'gstType', toggle: true },
-                { l: 'Tax Rate', k: 'taxRate', select: true }
-              ].map((f, i) => (
-                <div key={i} className="space-y-1.5">
-                   <label className="text-[0.6rem] font-black text-gray-400 uppercase tracking-widest pl-1 opacity-80">{f.l}</label>
-                   {f.toggle ? (
-                      <div className="flex h-9 border border-gray-100 rounded-lg overflow-hidden font-black text-[0.6rem] bg-white">
-                         <button onClick={async () => update('gstType', 'goods')} className={`flex-1 ${form.gstType === 'goods' ? 'bg-[#1a6de0] text-white' : 'text-gray-300'}`}>GOODS</button>
-                         <button onClick={async () => update('gstType', 'services')} className={`flex-1 border-l border-gray-50 ${form.gstType === 'services' ? 'bg-[#1a6de0] text-white' : 'text-gray-300'}`}>SERV</button>
-                      </div>
-                   ) : f.select ? (
-                      <div className="relative group">
-                        <select value={form.taxRate} onChange={e => update('taxRate', e.target.value)} className={`${inputClass} !h-9 appearance-none border-gray-100 pr-8 text-[0.75rem]`}>
-                           <option>5%</option><option>18%</option><option>0%</option>
-                        </select>
-                        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300" />
-                      </div>
-                   ) : (
-                      <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 font-bold">₹</span><input type="number" value={(form as any)[f.k]} onChange={e => update(f.k, e.target.value)} placeholder="0" className={`${inputClass} !h-9 pl-7 border-gray-100 shadow-none`} /></div>
-                   )}
-                </div>
+            <div className="flex gap-2 mb-2 border-b border-[var(--kravy-border)] overflow-x-auto no-scrollbar">
+              {["basic", "variants", "addons", "image"].map(t => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 transition-all whitespace-nowrap ${tab === t ? "border-indigo-600 text-indigo-600" : "border-transparent text-[var(--kravy-text-muted)] hover:text-indigo-400"}`}
+                >
+                  {t === "basic" ? "Info" : t === "variants" ? "Variants" : t === "addons" ? "Add-ons" : "Photo"}
+                </button>
               ))}
-              <div className="space-y-1.5 opacity-30 pointer-events-none">
-                 <label className="text-[0.6rem] font-black text-gray-400 uppercase tracking-widest pl-1">Final (A.T.)</label>
-                 <div className="h-9 border border-dashed border-gray-100 flex items-center px-3 font-black text-gray-300 text-[0.75rem]">₹ Calc...</div>
-              </div>
-           </div>
-
-           {/* SECTION 4: CONFIGURATION STACK (VARIANTS & ADDONS) */}
-           <div className="space-y-6">
-              
-              <AccordionItem title="Variant Config (Sizes/Crust)" subtitle="Customize required options for customers." isOpen={openSection === 'variants'} onToggle={() => setOpenSection(openSection === 'variants' ? null : 'variants')}>
-                 <AnimatePresence mode="wait">
-                    {variantState === 'list' ? (
-                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pt-1">
-                          {form.variants.length > 0 && (
-                            <div className="grid grid-cols-2 gap-3 pb-2">
-                               {form.variants.map((v: any, idx: number) => (
-                                  <div key={v.id} className="p-4 bg-gray-50/50 border border-gray-50 rounded-2xl flex justify-between items-center group shadow-sm transition-all hover:bg-white hover:border-blue-100">
-                                     <div>
-                                        <p className="text-[0.8rem] font-black text-gray-900 leading-tight mb-1">{v.groupName}</p>
-                                        <div className="flex gap-2">
-                                           <span className="text-[0.55rem] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md font-black uppercase tracking-widest">{v.options.length} Opt</span>
-                                           {v.required && <span className="text-[0.55rem] bg-rose-50 text-rose-500 px-2 py-0.5 rounded-md font-black uppercase tracking-widest">Compulsory</span>}
-                                        </div>
-                                     </div>
-                                     <button onClick={async () => update('variants', form.variants.filter((_: any, i: number) => i !== idx))} className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all"><Trash2 size={16} /></button>
-                                  </div>
-                               ))}
-                            </div>
-                          )}
-                          <div className="flex flex-wrap gap-2">
-                             {[
-                                { t: 'Size', opts: ['Small', 'Medium', 'Large'], i: <Ruler size={14} /> },
-                                { t: 'Spice Level', opts: ['Mild', 'Hot'], i: <Flame size={14} /> },
-                                { t: 'Portion', opts: ['Half', 'Full'], i: <PackageSearch size={14} /> }
-                             ].map((p, i) => (
-                                <button key={i} onClick={async () => { setNewVariant({ ...newVariant, groupName: p.t, options: p.opts.map(o => ({ id: Math.random().toString(), name: o, price: '' })) }); setVariantState('add'); }} className="px-4 py-2 border border-gray-100 rounded-full text-[0.68rem] font-black text-gray-400 hover:border-blue-400 hover:text-blue-600 transition-all bg-white shadow-sm flex items-center gap-2">+ {p.t}</button>
-                             ))}
-                             <button onClick={async () => setVariantState('add')} className="px-5 py-2 bg-blue-600 text-white rounded-full text-[0.68rem] font-black uppercase tracking-widest active:scale-95 shadow-lg shadow-blue-500/20 ml-auto">+ Custom</button>
-                          </div>
-                       </motion.div>
-                    ) : (
-                       <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 pt-2 bg-gray-50/50 p-6 rounded-[3rem] border border-white shadow-inner">
-                          <div className="grid grid-cols-2 gap-4 items-end">
-                             <div className="space-y-1.5"><label className="text-[0.6rem] font-black text-gray-400 uppercase tracking-widest pl-1">Variant Label *</label><input value={newVariant.groupName} onChange={e => setNewVariant(p => ({ ...p, groupName: e.target.value }))} placeholder="e.g. Set Portion" className={`${inputClass} !h-10 border-white`} /></div>
-                             <div className="flex gap-2 justify-end"><button onClick={async () => setVariantState('list')} className="text-[0.68rem] font-black text-gray-400 uppercase tracking-widest px-4">Cancel</button><button onClick={saveVariant} className="bg-blue-600 text-white px-8 py-2.5 rounded-xl text-[0.68rem] font-black uppercase shadow-lg shadow-blue-500/10">Save Group</button></div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4 border-y border-white py-3">
-                             <Toggle label="Selection mandatory (customer must choose)" value={newVariant.required} onChange={(v: boolean) => setNewVariant(p => ({ ...p, required: v }))} />
-                             <Toggle label="Allow multiple items selection" value={newVariant.multiSelect} onChange={(v: boolean) => setNewVariant(p => ({ ...p, multiSelect: v }))} />
-                          </div>
-                          <div className="space-y-2.5">
-                             {newVariant.options.map((opt, idx) => (
-                                <div key={opt.id} className="flex gap-3 items-center">
-                                   <input value={opt.name} onChange={e => setNewVariant(p => ({ ...p, options: p.options.map(o => o.id === opt.id ? { ...o, name: e.target.value } : o) }))} placeholder="e.g. Large" className={`${inputClass} !h-9 flex-1 border-white shadow-none`} />
-                                   <div className="relative w-28 shrink-0"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 font-bold">₹</span><input type="number" value={opt.price} onChange={e => setNewVariant(p => ({ ...p, options: p.options.map(o => o.id === opt.id ? { ...o, price: e.target.value } : o) }))} placeholder="0" className={`${inputClass} !h-9 pl-7 border-white shadow-none`} /></div>
-                                   <button onClick={async () => setNewVariant(p => ({ ...p, options: p.options.filter(o => o.id !== opt.id) }))} className="text-gray-200 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
-                                </div>
-                             ))}
-                             <button onClick={addVariantOption} className="text-[#1a6de0] text-[0.68rem] font-black uppercase tracking-widest pl-1 mt-2 hover:opacity-70 transition-opacity">+ Append Selection</button>
-                          </div>
-                       </motion.div>
-                    )}
-                 </AnimatePresence>
-              </AccordionItem>
-
-              <AccordionItem title="Mapping Addons" subtitle="Link global topping or beverage groups." isOpen={openSection === 'addons'} onToggle={() => setOpenSection(openSection === 'addons' ? null : 'addons')}>
-                 <div className="space-y-6 pt-2">
-                    <div className="relative group">
-                       <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-blue-600 transition-colors" />
-                       <input value={addonSearch} onChange={e => setAddonSearch(e.target.value)} placeholder="Link from global addon list..." className={`${inputClass} !h-11 pl-12 border-none bg-gray-50/50 shadow-sm`} />
-                    </div>
-                    <div className="grid grid-cols-1 gap-3 max-h-[280px] overflow-y-auto no-scrollbar py-1">
-                       {filteredAddons.map((g: any) => (
-                          <div key={g.id} className={`p-4 border rounded-2xl flex items-center justify-between transition-all duration-300 ${form.addonGroupIds.includes(g.id) ? 'border-blue-500 bg-blue-50/20' : 'border-gray-50 bg-white hover:border-gray-100 shadow-sm'}`}>
-                             <div className="flex items-center gap-4">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${form.addonGroupIds.includes(g.id) ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-300'}`}><Layers size={18} /></div>
-                                <span className={`text-[0.8rem] font-black ${form.addonGroupIds.includes(g.id) ? 'text-blue-600' : 'text-gray-900'}`}>{g.name}</span>
-                             </div>
-                             <div className="flex items-center gap-4">
-                                <span className="text-[0.6rem] text-gray-400 font-bold uppercase tracking-widest">Sync</span>
-                                <button onClick={async () => toggleLink(g.id)} className={`w-8 h-4.5 rounded-full relative transition-colors ${form.addonGroupIds.includes(g.id) ? 'bg-green-500 shadow-sm shadow-green-100' : 'bg-gray-200'}`}><span className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${form.addonGroupIds.includes(g.id) ? 'left-[16px]' : 'left-0.5'}`} /></button>
-                             </div>
-                          </div>
-                       ))}
-                    </div>
-                    <div className="pt-2 flex justify-between items-center"><button onClick={async () => setShowAddonManager(true)} className="text-blue-600 text-[0.7rem] font-black uppercase tracking-[0.2em] border-2 border-dashed border-blue-50 px-6 py-2.5 rounded-2xl hover:bg-blue-50 transition-all active:scale-95 hover:border-blue-200">+ Create fresh cluster cluster</button><span className="text-[0.6rem] text-gray-300 font-bold uppercase tracking-widest">{form.addonGroupIds.length} clusters linked</span></div>
-                 </div>
-              </AccordionItem>
-
-           </div>
-
-           {/* SECTION 5: FINAL ASSETS (DESCRIPTION & IMAGE) */}
-           <div className="pt-6 border-t border-gray-100 grid grid-cols-12 gap-8">
-              <div className="col-span-8 space-y-2">
-                 <div className="flex justify-between items-center px-1"><label className={labelClass}>Detailed Description</label><span className="text-[10px] text-gray-300 font-bold">{form.description.length}/500</span></div>
-                 <textarea value={form.description} onChange={e => update('description', e.target.value)} rows={3} placeholder="A brief about the taste profile, ingredients, and uniqueness..." className={`${inputClass} h-auto py-3 leading-relaxed resize-none shadow-inner`} style={{ borderRadius: '16px' }} />
-              </div>
-              <div className="col-span-4 space-y-2">
-                 <label className={labelClass}>Dish Snapshot</label>
-                 <div onClick={async () => fileInputRef.current?.click()} className="group border-2 border-dashed border-gray-100 rounded-[1.5rem] h-[100px] flex items-center justify-center cursor-pointer bg-gray-50/10 hover:border-blue-500 hover:bg-blue-50/20 transition-all relative overflow-hidden">
-                    {form.imageUrl ? <Image src={form.imageUrl} alt="dish" fill className="object-cover" /> : <div className="flex flex-col items-center gap-1 opacity-30"><ImageIcon size={22} /><span className="text-[0.55rem] font-black uppercase tracking-widest">Media</span></div>}
-                 </div>
-                 <input ref={fileInputRef} type="file" className="hidden" />
-              </div>
-           </div>
-
-           <div className="h-40" />
-        </div>
-
-        <AnimatePresence>
-           {showAddonManager && (
-             <AddonGroupsModal 
-               groups={localGroups}
-               onSave={handleQuickAddonSave}
-               onDelete={handleQuickAddonDelete}
-               onClose={() => setShowAddonManager(false)}
-             />
-           )}
-        </AnimatePresence>
-      </div>
-
-    </div>
-  )
-
-  return createPortal(content, document.body)
-}
-
-function AccordionItem({ title, subtitle, isOpen, onToggle, children }: any) {
-   return (
-      <div className={`border rounded-[3rem] transition-all duration-500 overflow-hidden ${isOpen ? 'bg-white border-blue-50 shadow-2xl shadow-blue-500/[0.04]' : 'bg-gray-50/20 border-gray-50 opacity-80'}`}>
-         <div onClick={onToggle} className="px-10 py-7 flex justify-between items-center cursor-pointer select-none">
-            <div className="flex items-center gap-5">
-               <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${isOpen ? 'bg-[#1a6de0] text-white shadow-xl shadow-blue-500/30 rotate-12' : 'bg-white text-gray-200 border border-gray-50 shadow-sm'}`}>
-                  {title.includes('Variant') ? <Smartphone size={22} /> : <Layers size={22} />}
-               </div>
-               <div>
-                  <h3 className={`text-[0.95rem] font-black tracking-tight ${isOpen ? 'text-[#1a6de0]' : 'text-gray-900 opacity-80'}`}>{title}</h3>
-                  <p className="text-[0.68rem] text-gray-400 font-bold mt-1 uppercase tracking-widest opacity-60 line-clamp-1">{subtitle}</p>
-               </div>
             </div>
-            <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-500 ${isOpen ? 'bg-[#1a6de0] border-[#1a6de0] text-white rotate-45 shadow-lg shadow-blue-500/20' : 'border-gray-50 bg-white text-gray-200 shadow-sm'}`}>
-               <Plus size={20} strokeWidth={3} />
-            </div>
-         </div>
-         <AnimatePresence>
-            {isOpen && (
-               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                  <div className="px-10 pb-10">{children}</div>
-               </motion.div>
+          </div>
+
+          <div className="px-8 overflow-y-auto no-scrollbar pb-8 flex-1">
+            {tab === "variants" && (
+              <div className="space-y-6 pb-4">
+                <div className="flex justify-between items-center bg-indigo-50/50 dark:bg-indigo-900/10 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
+                  <div>
+                    <h4 className="text-sm font-black text-indigo-900 dark:text-indigo-100">Variant Groups</h4>
+                    <p className="text-[10px] font-bold text-indigo-500/70 mt-1">E.g., Size, Choice of Crust</p>
+                  </div>
+                  <button onClick={handleAddVariantGroup} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-sm transition-all active:scale-95">
+                    + Add Group
+                  </button>
+                </div>
+
+                {(Array.isArray(local.variants) ? local.variants : []).map((group: any, gIdx: number) => (
+                  <div key={group.id || gIdx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-sm">
+                    {/* Group Header */}
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                      <div className="flex-1 space-y-3 w-full">
+                        <input
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200 font-black text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/30"
+                          value={group.groupName}
+                          onChange={(e) => handleUpdateVariantGroup(gIdx, { groupName: e.target.value })}
+                          placeholder="Group Name (e.g. Select Size)"
+                        />
+                        <div className="flex flex-wrap gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-600 dark:text-slate-400">
+                            <input
+                              type="radio"
+                              name={`type-${gIdx}`}
+                              checked={group.type === "radio"}
+                              onChange={() => handleUpdateVariantGroup(gIdx, { type: "radio" })}
+                              className="w-4 h-4 text-indigo-600"
+                            />
+                            Single Choice
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-600 dark:text-slate-400">
+                            <input
+                              type="radio"
+                              name={`type-${gIdx}`}
+                              checked={group.type === "checkbox"}
+                              onChange={() => handleUpdateVariantGroup(gIdx, { type: "checkbox" })}
+                              className="w-4 h-4 text-indigo-600"
+                            />
+                            Multiple Choice
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-600 ml-auto bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-md border border-amber-200 dark:border-amber-800/30">
+                            <input
+                              type="checkbox"
+                              checked={group.required}
+                              onChange={(e) => handleUpdateVariantGroup(gIdx, { required: e.target.checked })}
+                              className="w-3.5 h-3.5 text-amber-500 rounded cursor-pointer"
+                            />
+                            <span className="dark:text-amber-500">Required</span>
+                          </label>
+                        </div>
+                      </div>
+                      <button onClick={() => handleDeleteVariantGroup(gIdx)} className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors" title="Delete Group">
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    {/* Group Options */}
+                    <div className="p-4 space-y-2 bg-slate-50/30 dark:bg-slate-800/20">
+                      {(Array.isArray(group.options) ? group.options : []).map((opt: any, oIdx: number) => (
+                        <div key={opt.id || oIdx} className="flex gap-2 items-center">
+                          <input
+                            className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg px-3 py-2 outline-none focus:border-indigo-400"
+                            value={opt.name}
+                            onChange={(e) => handleUpdateVariantOption(gIdx, oIdx, { name: e.target.value })}
+                            placeholder="Option Name"
+                          />
+                          <div className="relative w-28">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">₹</span>
+                            <input
+                              type="number"
+                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg pl-7 pr-2 py-2 outline-none focus:border-indigo-400"
+                              value={opt.price}
+                              onChange={(e) => handleUpdateVariantOption(gIdx, oIdx, { price: Number(e.target.value) })}
+                              placeholder="Price"
+                            />
+                          </div>
+                          <button onClick={() => handleDeleteVariantOption(gIdx, oIdx)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-md transition-colors">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      <button onClick={() => handleAddVariantOption(gIdx)} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 py-2 flex items-center gap-1">
+                        + Add Option
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
-         </AnimatePresence>
-      </div>
-   )
+
+            {tab === "addons" && (
+              <div className="space-y-6 pb-4">
+                 <div className="flex justify-between items-center bg-indigo-50/50 dark:bg-indigo-900/10 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
+                  <div>
+                    <h4 className="text-sm font-black text-indigo-900 dark:text-indigo-100">Linked Add-on Groups</h4>
+                    <p className="text-[10px] font-bold text-indigo-500/70 mt-1">Select from your global Add-on library.</p>
+                  </div>
+                </div>
+
+                {addonGroups.length === 0 ? (
+                  <div className="text-center py-8 text-[var(--kravy-text-muted)] text-xs font-bold">
+                    No Add-on Groups found. Create them first.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {addonGroups.map((group: any) => {
+                      const isSelected = (local.addonGroupIds || []).includes(group.id);
+                      return (
+                        <div 
+                          key={group.id} 
+                          onClick={() => handleToggleAddonGroup(group.id)}
+                          className={`p-4 border rounded-xl flex items-center justify-between cursor-pointer transition-all ${
+                            isSelected 
+                              ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20 shadow-sm" 
+                              : "border-[var(--kravy-border)] bg-[var(--kravy-bg)] hover:border-indigo-300"
+                          }`}
+                        >
+                          <div>
+                             <h4 className={`text-sm font-black ${isSelected ? "text-indigo-700 dark:text-indigo-300" : "text-[var(--kravy-text-primary)]"}`}>
+                               {group.name}
+                             </h4>
+                             <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-1">
+                               {group.addons?.length || 0} Add-ons &bull; {group.isCompulsory ? "Required" : "Optional"}
+                             </p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                            isSelected ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300 dark:border-slate-600"
+                          }`}>
+                            {isSelected && <Check size={12} strokeWidth={4} />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tab === "basic" && (
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Item Name</label>
+                  <input
+                    className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
+                    value={local.name}
+                    placeholder="e.g. Kadai Paneer"
+                    onChange={(e) => setLocal({ ...local, name: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Price (₹)</label>
+                    <input
+                      className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+                      type="number"
+                      value={local.price ?? ""}
+                      placeholder="Optional"
+                      onChange={(e) => setLocal({ ...local, price: e.target.value === "" ? null : Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Selling Price (₹)</label>
+                    <input
+                      className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+                      type="number"
+                      value={local.sellingPrice ?? ""}
+                      placeholder="Selling Price"
+                      onChange={(e) => setLocal({ ...local, sellingPrice: e.target.value === "" ? null : Number(e.target.value) })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-3">Dietary Type</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setLocal({ ...local, isVeg: true, isEgg: false })}
+                      className={`flex-1 py-3 rounded-xl border-2 font-black text-[10px] uppercase tracking-wider transition-all ${local.isVeg ? "border-green-500 bg-green-50 text-green-600 dark:bg-green-900/20" : "border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-surface-hover)]"}`}
+                    >
+                      🥗 Veg
+                    </button>
+                    <button
+                      onClick={() => setLocal({ ...local, isVeg: false, isEgg: true })}
+                      className={`flex-1 py-3 rounded-xl border-2 font-black text-[10px] uppercase tracking-wider transition-all ${local.isEgg ? "border-amber-500 bg-amber-50 text-amber-600 dark:bg-amber-900/20" : "border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-surface-hover)]"}`}
+                    >
+                      🥚 Egg
+                    </button>
+                    <button
+                      onClick={() => setLocal({ ...local, isVeg: false, isEgg: false })}
+                      className={`flex-1 py-3 rounded-xl border-2 font-black text-[10px] uppercase tracking-wider transition-all ${(!local.isVeg && !local.isEgg) ? "border-red-500 bg-red-50 text-red-600 dark:bg-red-900/20" : "border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-surface-hover)]"}`}
+                    >
+                      🍗 Non-Veg
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Category</label>
+                    <select
+                      value={local.categoryId ?? "uncategorised"}
+                      onChange={(e) => setLocal({ ...local, categoryId: e.target.value })}
+                      className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+                    >
+                      {categories.map((c: any) => <option key={c.id} value={c.id === "all" ? "uncategorised" : c.id} className="bg-[var(--kravy-bg)]">{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Item Code / Short Code</label>
+                    <input
+                      className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold transition-all"
+                      value={local.shortCode ?? ""}
+                      placeholder="e.g. 1999"
+                      onChange={(e) => setLocal({ ...local, shortCode: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Description</label>
+                  <textarea
+                    className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
+                    rows={3}
+                    placeholder="Brief description about the taste..."
+                    value={local.description ?? ""}
+                    onChange={(e) => setLocal({ ...local, description: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+
+            {tab === "image" && (
+              <div className="space-y-6 flex flex-col items-center pt-2">
+                 <div className="w-full h-56 rounded-[2rem] border-2 border-dashed border-[var(--kravy-border)] bg-[var(--kravy-bg)] relative overflow-hidden flex items-center justify-center group">
+                    {uploading ? (
+                      <div className="flex flex-col items-center gap-3">
+                         <RotateCcw className="animate-spin text-indigo-500" size={24} />
+                         <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Uploading Image...</p>
+                      </div>
+                    ) : local.imageUrl ? (
+                      <>
+                        <Image src={local.imageUrl} alt="Preview" fill className="object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                           <p className="text-white text-[10px] font-black uppercase">Change Photo</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                           <ImageIcon size={24} strokeWidth={2.5} />
+                        </div>
+                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Click to Upload Photo</p>
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                      onChange={handleFileChange}
+                      disabled={uploading}
+                    />
+                 </div>
+                 <div className="w-full space-y-2">
+                    <label className="block text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest ml-1 mb-2">Or enter Image URL manually</label>
+                    <input
+                      className="w-full bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium transition-all"
+                      value={local.imageUrl ?? ""}
+                      placeholder="https://..."
+                      onChange={(e) => setLocal({ ...local, imageUrl: e.target.value })}
+                    />
+                 </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 p-6 shrink-0 border-t border-[var(--kravy-border)] bg-[var(--kravy-surface)]">
+            <button
+              onClick={onClose}
+              className="px-6 py-3 rounded-xl font-bold text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-surface-hover)] transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                if (!local.name || local.sellingPrice === null) {
+                   alert("Item Name and Selling Price are required!");
+                   return;
+                }
+                onSave({
+                   ...local,
+                   price: Number(local.price || local.sellingPrice),
+                   sellingPrice: Number(local.sellingPrice)
+                });
+              }}
+              className="px-8 py-3 font-black rounded-xl bg-indigo-600 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/30 text-white active:scale-95"
+            >
+              Save Item
+            </button>
+          </div>
+        </motion.div>
+      </div>, document.body
+    );
 }
 
-function Toggle({ label, value, onChange }: any) {
-   return (
-      <div className="flex justify-between items-center py-2.5 border-b border-gray-50/50 last:border-none">
-         <span className="text-[0.72rem] font-black text-gray-700 uppercase tracking-tighter opacity-80">{label}</span>
-         <button onClick={async () => onChange(!value)} className={`w-9 h-4.5 rounded-full relative transition-colors ${value ? 'bg-green-500 shadow-sm shadow-green-100' : 'bg-gray-200'}`}><span className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all shadow-sm ${value ? 'left-[18px]' : 'left-0.5'}`} /></button>
-      </div>
-   )
+function Check({ size, strokeWidth }: any) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  );
 }
-
-const labelClass = "text-[0.65rem] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest pl-1"
-const inputClass = "w-full h-11 border-2 border-gray-50 dark:border-slate-800 rounded-2xl px-4 text-[0.82rem] font-black text-gray-900 dark:text-white bg-white dark:bg-slate-900 outline-none focus:border-[#1a6de0] dark:focus:border-[#1a6de0]/50 transition-all placeholder:text-gray-200 dark:placeholder:text-slate-700 shadow-sm"
