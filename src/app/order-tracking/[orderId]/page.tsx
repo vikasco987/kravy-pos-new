@@ -52,6 +52,7 @@ interface Order {
     updatedAt: string;
     businessName?: string;
     businessAddress?: string;
+    businessPhone?: string;
 }
 
 const statusConfig = {
@@ -199,6 +200,11 @@ export default function OrderTrackingPage() {
     const currentStatusConfig = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.PENDING;
     const StatusIcon = currentStatusConfig.icon;
     const currentStep = getStatusStep(order.status);
+    
+    const calculatedSubtotal = order.items.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
+    const difference = order.total - calculatedSubtotal;
+    const isDiscount = difference < -0.01;
+    const isExtraCharge = difference > 0.01;
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-[#F8F8F8] to-[#FFFFFF] font-sans text-[#1C1C1C] overflow-x-hidden w-full" style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}>
@@ -393,18 +399,26 @@ export default function OrderTrackingPage() {
                             <div className="pt-4 border-t border-dashed border-[#EBEBEB] space-y-3">
                                 <div className="flex justify-between items-center text-[0.8rem] font-[500] text-[#696969]">
                                     <span>Subtotal</span>
-                                    <span className="text-[#1C1C1C] font-[600]">₹{order.total}</span>
+                                    <span className="text-[#1C1C1C] font-[600]">₹{calculatedSubtotal.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-[0.8rem] font-[500] text-[#696969]">
-                                    <span>Taxes & GST</span>
-                                    <span className="text-[#1C1C1C] font-[600]">₹{Math.round(order.total * 0.05)}</span>
-                                </div>
+                                {isExtraCharge && (
+                                    <div className="flex justify-between items-center text-[0.8rem] font-[500] text-[#696969]">
+                                        <span>Taxes & Fees</span>
+                                        <span className="text-[#1C1C1C] font-[600]">+₹{difference.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                {isDiscount && (
+                                    <div className="flex justify-between items-center text-[0.8rem] font-[500] text-[#EF4F5F]">
+                                        <span>Discount applied</span>
+                                        <span className="font-[600]">-₹{Math.abs(difference).toFixed(2)}</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="pt-4 border-t border-[#EBEBEB] flex justify-between items-center">
                                 <span className="font-[800] text-[1.05rem] text-[#1C1C1C]">Total Payable</span>
                                 <div className="bg-red-50 text-[#EF4F5F] rounded-xl px-3 py-1.5 font-[900] text-[1.15rem] shadow-inner border border-red-100/50">
-                                    ₹{Math.round(order.total * 1.05)}
+                                    ₹{order.total.toFixed(2)}
                                 </div>
                             </div>
                         </div>
@@ -421,9 +435,12 @@ export default function OrderTrackingPage() {
                                 <div className="text-[0.7rem] text-[#696969] font-[500] mt-0.5">{order.businessAddress || "Address not provided"}</div>
                             </div>
                         </div>
-                        <a href="tel:+919876543210" className="w-9 h-9 rounded-full bg-[#F8F8F8] border border-[#EBEBEB] flex items-center justify-center text-[#1C1C1C] hover:bg-[#EBEBEB] transition-colors">
-                            <Phone size={14} />
-                        </a>
+                        </div>
+                        {order.businessPhone && (
+                            <a href={`tel:+91${order.businessPhone.replace(/\\D/g, "").slice(-10)}`} className="w-9 h-9 rounded-full bg-[#F8F8F8] border border-[#EBEBEB] flex items-center justify-center text-[#1C1C1C] hover:bg-[#EBEBEB] transition-colors">
+                                <Phone size={14} />
+                            </a>
+                        )}
                     </div>
 
                     {/* ── CUSTOMER & ORDER INFO ── */}
@@ -472,7 +489,8 @@ export default function OrderTrackingPage() {
                 {/* ── FLOATING SUPPORT ACTION ── */}
                 <div className="fixed bottom-[90px] right-5 z-[90] pointer-events-none flex justify-end">
                     <motion.a
-                        href="https://wa.me/"
+                        href={order.businessPhone ? `https://wa.me/91${order.businessPhone.replace(/\\D/g, "").slice(-10)}` : "#"}
+                        onClick={(e) => { if (!order.businessPhone) { e.preventDefault(); toast.error("Business WhatsApp not available"); } }}
                         target="_blank"
                         rel="noreferrer"
                         whileHover={{ scale: 1.05 }}
@@ -489,7 +507,7 @@ export default function OrderTrackingPage() {
                     <div className="flex items-center justify-between gap-5">
                         <div className="flex flex-col min-w-[100px]">
                             <span className="text-[0.6rem] font-[800] text-[#696969] uppercase tracking-widest">Total</span>
-                            <span className="text-[1.25rem] font-[900] text-[#1C1C1C] leading-none mt-1">₹{Math.round(order.total * 1.05)}</span>
+                            <span className="text-[1.25rem] font-[900] text-[#1C1C1C] leading-none mt-1">₹{order.total.toFixed(2)}</span>
                         </div>
                         <motion.button
                             whileHover={{ scale: 1.02 }}

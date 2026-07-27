@@ -19,12 +19,14 @@ export async function GET(req: NextRequest) {
 
         const businessName = profile?.businessName || "Restaurant";
         const businessAddress = profile?.businessAddress || "Address not provided";
+        const businessPhone = profile?.contactPersonPhone || "";
         const servedStatusLabel = (profile as any)?.servedStatusLabel || "SERVED";
 
         return NextResponse.json({
             ...order,
             businessName,
             businessAddress,
+            businessPhone,
             servedStatusLabel
         });
     } catch (error) {
