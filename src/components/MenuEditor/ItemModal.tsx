@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { motion } from "framer-motion";
-import { X, Plus, Image as ImageIcon, RotateCcw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Plus, Image as ImageIcon, RotateCcw, Check } from "lucide-react";
 import Image from "next/image";
+import AddonGroupsModal from "./AddonGroupsModal";
 
 export default function ItemModal({ item, addonGroups = [], onSave, onClose, categories = [] }: any) {
     const defaultItem = {
@@ -27,7 +28,38 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
     const [uploading, setUploading] = useState(false);
     const [mounted, setMounted] = useState(false);
     
+    const [showAddonManager, setShowAddonManager] = useState(false);
+    const [localGroups, setLocalGroups] = useState(addonGroups);
+
     useEffect(() => setMounted(true), []);
+    useEffect(() => setLocalGroups(addonGroups), [addonGroups]);
+
+    async function handleQuickAddonSave(data: any) {
+        const res = await fetch(`/api/menu-editor/addon-groups`, {
+            method: data.id ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            const saved = await res.json();
+            setLocalGroups((prev: any[]) => data.id ? prev.map((g: any) => g.id === data.id ? saved : g) : [saved, ...prev]);
+            if (!data.id) {
+                handleToggleAddonGroup(saved.id);
+            }
+            setShowAddonManager(false);
+        } else {
+            alert("Failed to save addon group");
+        }
+    }
+
+    async function handleQuickAddonDelete(id: string) {
+        if (!confirm("Are you sure?")) return;
+        const res = await fetch(`/api/menu-editor/addon-groups?id=${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            setLocalGroups((prev: any[]) => prev.filter((g: any) => g.id !== id));
+            setLocal(prev => ({ ...prev, addonGroupIds: prev.addonGroupIds.filter((i: string) => i !== id) }));
+        }
+    }
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files?.[0]) return;
@@ -253,15 +285,18 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
                     <h4 className="text-sm font-black text-indigo-900 dark:text-indigo-100">Linked Add-on Groups</h4>
                     <p className="text-[10px] font-bold text-indigo-500/70 mt-1">Select from your global Add-on library.</p>
                   </div>
+                  <button onClick={() => setShowAddonManager(true)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-sm transition-all active:scale-95">
+                    + New Group
+                  </button>
                 </div>
 
-                {addonGroups.length === 0 ? (
+                {localGroups.length === 0 ? (
                   <div className="text-center py-8 text-[var(--kravy-text-muted)] text-xs font-bold">
                     No Add-on Groups found. Create them first.
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {addonGroups.map((group: any) => {
+                    {localGroups.map((group: any) => {
                       const isSelected = (local.addonGroupIds || []).includes(group.id);
                       return (
                         <div 
@@ -456,6 +491,17 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
               Save Item
             </button>
           </div>
+
+          <AnimatePresence>
+            {showAddonManager && (
+              <AddonGroupsModal 
+                groups={localGroups}
+                onSave={handleQuickAddonSave}
+                onDelete={handleQuickAddonDelete}
+                onClose={() => setShowAddonManager(false)}
+              />
+            )}
+          </AnimatePresence>
         </motion.div>
       </div>, document.body
     );
