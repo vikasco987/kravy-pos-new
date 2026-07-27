@@ -203,8 +203,13 @@ export default function OrderTrackingPage() {
     
     const calculatedSubtotal = order.items.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
     const difference = order.total - calculatedSubtotal;
+    
+    const deliveryFee = order.deliveryCharges || 0;
+    const packagingFee = order.packagingCharges || 0;
+    const remainingDifference = difference - deliveryFee - packagingFee;
+    
     const isDiscount = difference < -0.01;
-    const isExtraCharge = difference > 0.01;
+    const hasRemainingTaxes = remainingDifference > 0.01;
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-[#F8F8F8] to-[#FFFFFF] font-sans text-[#1C1C1C] overflow-x-hidden w-full" style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}>
@@ -401,10 +406,22 @@ export default function OrderTrackingPage() {
                                     <span>Subtotal</span>
                                     <span className="text-[#1C1C1C] font-[600]">₹{calculatedSubtotal.toFixed(2)}</span>
                                 </div>
-                                {isExtraCharge && (
+                                {packagingFee > 0 && (
                                     <div className="flex justify-between items-center text-[0.8rem] font-[500] text-[#696969]">
-                                        <span>Taxes & Fees</span>
-                                        <span className="text-[#1C1C1C] font-[600]">+₹{difference.toFixed(2)}</span>
+                                        <span>Packaging Charge</span>
+                                        <span className="text-[#1C1C1C] font-[600]">+₹{packagingFee.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                {deliveryFee > 0 && (
+                                    <div className="flex justify-between items-center text-[0.8rem] font-[500] text-[#696969]">
+                                        <span>Delivery Charge</span>
+                                        <span className="text-[#1C1C1C] font-[600]">+₹{deliveryFee.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                {hasRemainingTaxes && (
+                                    <div className="flex justify-between items-center text-[0.8rem] font-[500] text-[#696969]">
+                                        <span>Taxes</span>
+                                        <span className="text-[#1C1C1C] font-[600]">+₹{remainingDifference.toFixed(2)}</span>
                                     </div>
                                 )}
                                 {isDiscount && (

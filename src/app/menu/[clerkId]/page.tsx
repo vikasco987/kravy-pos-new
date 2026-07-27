@@ -2365,7 +2365,7 @@ function PublicMenu() {
                                 <div className="px-4 py-3.5 border-t-8 border-[#F4F4F4] space-y-1.5">
                                     <div className="text-[0.78rem] font-[900] uppercase tracking-wider mb-2">Order Summary</div>
                                     <div className="flex justify-between text-[0.8rem] text-[#696969] font-bold">
-                                        <span>Subtotal {isInclusive && <span className="text-[10px] text-[#ABABAB] font-normal tracking-normal lowercase">(incl. gst)</span>}</span>
+                                        <span>Subtotal {(taxEnabled && isInclusive) && <span className="text-[10px] text-[#ABABAB] font-normal tracking-normal lowercase">(incl. gst)</span>}</span>
                                         <span>₹{subtotal}</span>
                                     </div>
                                     {taxEnabled && tax > 0 && (
