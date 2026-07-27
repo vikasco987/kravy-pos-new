@@ -589,12 +589,12 @@ export default function OrderTrackingPage() {
                     )}
                 </AnimatePresence>
 
-                <style jsx global>{`
+                <style dangerouslySetInnerHTML={{ __html: `
                     .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
                     @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.95; transform: scale(1.02); } }
                     .no-scrollbar::-webkit-scrollbar { display: none; }
                     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                `}</style>
+                `}} />
             </div>
         </div>
     );
