@@ -329,6 +329,8 @@ model Order {
 
   items Json // Array of { name, price, quantity, itemId, addedAt, addedInCase }
   total Float
+  deliveryCharges  Float? @default(0)
+  packagingCharges Float? @default(0)
 
   status String @default("PENDING") // PENDING, ACCEPTING, ACCEPTED, PREPARING, READY, SERVED, COMPLETED
 
@@ -484,6 +486,12 @@ model BusinessProfile {
   packagingChargeAmount   Float   @default(0)
   packagingGstEnabled     Boolean @default(false)
   packagingGstRate        Float   @default(0)
+
+  // ✅ QR Specific Additional Charges
+  qrDeliveryChargeEnabled   Boolean @default(false)
+  qrDeliveryChargeAmount    Float   @default(0)
+  qrPackagingChargeEnabled  Boolean @default(false)
+  qrPackagingChargeAmount   Float   @default(0)
 
   // ✅ Token Management
   lastTokenNumber Int?      @default(0)

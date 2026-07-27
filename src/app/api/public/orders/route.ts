@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { clerkUserId, tableId, items, total, customerName, customerPhone, customerAddress, caseType, parentOrderId, paymentMethod } = body;
+        const { clerkUserId, tableId, items, total, customerName, customerPhone, customerAddress, caseType, parentOrderId, paymentMethod, deliveryCharges, packagingCharges } = body;
         if (!clerkUserId || !items || !total) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
@@ -94,7 +94,9 @@ export async function POST(req: NextRequest) {
                     paymentMode: paymentMethod || existing.paymentMode,
                     notes: body.notes || existing.notes || null, // ✅ Append or Update
                     preferences: body.preferences || existing.preferences || null, // ✅ Update preferences
-                    customerAddress: customerAddress || existing.customerAddress // ✅ Update address if provided
+                    customerAddress: customerAddress || existing.customerAddress, // ✅ Update address if provided
+                    deliveryCharges: (existing.deliveryCharges || 0) + (deliveryCharges || 0),
+                    packagingCharges: (existing.packagingCharges || 0) + (packagingCharges || 0)
                 },
                 include: { table: true },
             });
@@ -134,7 +136,9 @@ export async function POST(req: NextRequest) {
                 customerAddress,
                 notes: body.notes || null, // ✅ NEW
                 preferences: body.preferences || null, // ✅ NEW
-                zoneName: tableRecord?.zone || null // ✅ Multi-zone support
+                zoneName: tableRecord?.zone || null, // ✅ Multi-zone support
+                deliveryCharges: deliveryCharges || 0,
+                packagingCharges: packagingCharges || 0
             },
             include: {
                 table: true,

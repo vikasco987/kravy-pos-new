@@ -761,6 +761,27 @@ function KravyPOS() {
         }
     }, [activeTab, activeOrderForSelected?.customerPhone]);
 
+    // ✅ PRE-FILL QR CHARGES INTO POS
+    useEffect(() => {
+        if (activeOrderForSelected) {
+            if ((activeOrderForSelected as any).deliveryCharges > 0) {
+                setDeliveryChargeType("FLAT");
+                setManualDeliveryCharge(String((activeOrderForSelected as any).deliveryCharges));
+            } else {
+                setManualDeliveryCharge("");
+            }
+            if ((activeOrderForSelected as any).packagingCharges > 0) {
+                setPackagingChargeType("FLAT");
+                setManualPackagingCharge(String((activeOrderForSelected as any).packagingCharges));
+            } else {
+                setManualPackagingCharge("");
+            }
+        } else {
+            setManualDeliveryCharge("");
+            setManualPackagingCharge("");
+        }
+    }, [activeOrderForSelected?.id]);
+
     // Polling is now managed by TerminalContext
     useEffect(() => {
         const tick = async () => setClock(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));

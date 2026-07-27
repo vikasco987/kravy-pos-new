@@ -641,9 +641,15 @@ function PublicMenu() {
 
     const tax = itemTax + comboTax;
     const loyaltyDisc = loyaltyOn ? 32 : 0;
+    
+    // Auto-apply QR specific extra charges
+    const qrDeliveryFee = profile?.qrDeliveryChargeEnabled ? (profile.qrDeliveryChargeAmount || 0) : 0;
+    const qrPackagingFee = profile?.qrPackagingChargeEnabled ? (profile.qrPackagingChargeAmount || 0) : 0;
+    
     const total = useMemo(() => {
-        return isInclusive ? (subtotal - loyaltyDisc) : (subtotal + tax - loyaltyDisc);
-    }, [isInclusive, subtotal, loyaltyDisc, tax]);
+        let baseTotal = isInclusive ? (subtotal - loyaltyDisc) : (subtotal + tax - loyaltyDisc);
+        return baseTotal + qrDeliveryFee + qrPackagingFee;
+    }, [isInclusive, subtotal, loyaltyDisc, tax, qrDeliveryFee, qrPackagingFee]);
 
     // Actions
     // Auto-initialize selectedVariants when an item is selected for customization or detail view
@@ -904,7 +910,9 @@ function PublicMenu() {
                     caseType: "new",
                     paymentMethod, // ✅ NEW: capturing intent
                     notes: orderNote, // 📝 Global order note
-                    preferences: { dontSendCutlery } // 🍴 Cutlery preference
+                    preferences: { dontSendCutlery }, // 🍴 Cutlery preference
+                    deliveryCharges: qrDeliveryFee,
+                    packagingCharges: qrPackagingFee
                 })
             });
 
@@ -2367,6 +2375,18 @@ function PublicMenu() {
                                                 <span className="text-[10px] text-[#ABABAB] font-normal">Calculated @ {globalRate}%</span>
                                             </div>
                                             <span>{isInclusive ? "" : "+"}₹{tax.toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                    {qrPackagingFee > 0 && (
+                                        <div className="flex justify-between text-[0.8rem] text-[#696969] font-bold">
+                                            <span>Packaging Charge</span>
+                                            <span>+₹{qrPackagingFee.toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                    {qrDeliveryFee > 0 && (
+                                        <div className="flex justify-between text-[0.8rem] text-[#696969] font-bold">
+                                            <span>Delivery Charge</span>
+                                            <span>+₹{qrDeliveryFee.toFixed(2)}</span>
                                         </div>
                                     )}
                                     {loyaltyDisc > 0 && <div className="flex justify-between text-[0.8rem] text-[#D4A353] font-bold"><span>👑 Loyalty Discount</span><span>−₹{loyaltyDisc}</span></div>}

@@ -158,6 +158,20 @@ export default function IncomingOrderModal() {
                             <p className="text-4xl font-black text-emerald-500">
                                 ₹{currentOrder.total}
                             </p>
+                            {((currentOrder.deliveryCharges ?? 0) > 0 || (currentOrder.packagingCharges ?? 0) > 0) && (
+                                <div className="mt-2 text-right">
+                                    {(currentOrder.packagingCharges ?? 0) > 0 && (
+                                        <p className="text-[10px] font-bold text-slate-500">
+                                            +₹{currentOrder.packagingCharges} Packaging
+                                        </p>
+                                    )}
+                                    {(currentOrder.deliveryCharges ?? 0) > 0 && (
+                                        <p className="text-[10px] font-bold text-slate-500">
+                                            +₹{currentOrder.deliveryCharges} Delivery
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 

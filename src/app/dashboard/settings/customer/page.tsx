@@ -25,6 +25,10 @@ export default function CustomerDataSettings() {
         closingTime: "23:59",
         offlineMessage: "Restaurant is currently closed or not accepting orders.",
         servedStatusLabel: "SERVED",
+        qrDeliveryChargeEnabled: false,
+        qrDeliveryChargeAmount: 0,
+        qrPackagingChargeEnabled: false,
+        qrPackagingChargeAmount: 0,
     });
 
     useEffect(() => {
@@ -44,6 +48,10 @@ export default function CustomerDataSettings() {
                         closingTime: data.closingTime ?? "23:59",
                         offlineMessage: data.offlineMessage ?? "Restaurant is currently closed or not accepting orders.",
                         servedStatusLabel: data.servedStatusLabel ?? "SERVED",
+                        qrDeliveryChargeEnabled: data.qrDeliveryChargeEnabled ?? false,
+                        qrDeliveryChargeAmount: data.qrDeliveryChargeAmount ?? 0,
+                        qrPackagingChargeEnabled: data.qrPackagingChargeEnabled ?? false,
+                        qrPackagingChargeAmount: data.qrPackagingChargeAmount ?? 0,
                     });
                 }
             })
@@ -267,6 +275,77 @@ export default function CustomerDataSettings() {
                         className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-900 font-black text-lg focus:border-indigo-500/50 outline-none transition-all uppercase"
                     />
                     <p className="text-[10px] text-slate-400 italic">This replaces "SERVED" on the tracking page.</p>
+                </div>
+            </div>
+
+            {/* ✅ QR SPECIFIC ADDITIONAL CHARGES */}
+            <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 space-y-6 shadow-sm">
+                <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-600">
+                        <Zap size={24} />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-slate-900">QR Extra Charges</h3>
+                        <p className="text-xs text-slate-500 font-mono">Automatically apply these charges on QR Code orders</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Delivery Charge */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h4 className="font-bold text-slate-900">QR Delivery Charge</h4>
+                                <p className="text-[10px] text-slate-500 font-mono mt-1">Applied to all QR orders</p>
+                            </div>
+                            <button 
+                                onClick={() => toggle("qrDeliveryChargeEnabled")}
+                                className={`w-12 h-6 rounded-full transition-colors relative ${settings.qrDeliveryChargeEnabled ? "bg-emerald-500" : "bg-slate-300"}`}
+                            >
+                                <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-all ${settings.qrDeliveryChargeEnabled ? "left-7" : "left-1"}`} />
+                            </button>
+                        </div>
+                        {settings.qrDeliveryChargeEnabled && (
+                            <div className="space-y-2 mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <label className="text-[10px] uppercase font-black tracking-widest text-slate-500">Charge Amount (₹)</label>
+                                <input 
+                                    type="number"
+                                    min="0"
+                                    value={settings.qrDeliveryChargeAmount}
+                                    onChange={(e) => setSettings(prev => ({ ...prev, qrDeliveryChargeAmount: Number(e.target.value) }))}
+                                    className="w-full bg-white border border-slate-200 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-rose-500 transition-all"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Packaging Charge */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h4 className="font-bold text-slate-900">QR Packaging Charge</h4>
+                                <p className="text-[10px] text-slate-500 font-mono mt-1">Applied to all QR orders</p>
+                            </div>
+                            <button 
+                                onClick={() => toggle("qrPackagingChargeEnabled")}
+                                className={`w-12 h-6 rounded-full transition-colors relative ${settings.qrPackagingChargeEnabled ? "bg-emerald-500" : "bg-slate-300"}`}
+                            >
+                                <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-all ${settings.qrPackagingChargeEnabled ? "left-7" : "left-1"}`} />
+                            </button>
+                        </div>
+                        {settings.qrPackagingChargeEnabled && (
+                            <div className="space-y-2 mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <label className="text-[10px] uppercase font-black tracking-widest text-slate-500">Charge Amount (₹)</label>
+                                <input 
+                                    type="number"
+                                    min="0"
+                                    value={settings.qrPackagingChargeAmount}
+                                    onChange={(e) => setSettings(prev => ({ ...prev, qrPackagingChargeAmount: Number(e.target.value) }))}
+                                    className="w-full bg-white border border-slate-200 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-rose-500 transition-all"
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 

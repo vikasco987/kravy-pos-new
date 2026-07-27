@@ -252,6 +252,12 @@ export async function POST(request: Request) {
     if (body.packagingGstEnabled !== undefined) updateData.packagingGstEnabled = b(body.packagingGstEnabled);
     if (body.packagingGstRate !== undefined) updateData.packagingGstRate = n(body.packagingGstRate);
 
+    // ✅ QR SPECIFIC CHARGES
+    if (body.qrDeliveryChargeEnabled !== undefined) updateData.qrDeliveryChargeEnabled = b(body.qrDeliveryChargeEnabled);
+    if (body.qrDeliveryChargeAmount !== undefined) updateData.qrDeliveryChargeAmount = n(body.qrDeliveryChargeAmount);
+    if (body.qrPackagingChargeEnabled !== undefined) updateData.qrPackagingChargeEnabled = b(body.qrPackagingChargeEnabled);
+    if (body.qrPackagingChargeAmount !== undefined) updateData.qrPackagingChargeAmount = n(body.qrPackagingChargeAmount);
+
     // POS Checkout Visibility
     if (body.posCashEnabled !== undefined) updateData.posCashEnabled = b(body.posCashEnabled);
     if (body.posUpiEnabled !== undefined) updateData.posUpiEnabled = b(body.posUpiEnabled);
