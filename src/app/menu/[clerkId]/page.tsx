@@ -2755,7 +2755,7 @@ function PublicMenu() {
                                                 )}
                                             </div>
                                             <div className="space-y-3">
-                                                {vGroup.options.map((opt: any) => {
+                                                {vGroup.options?.map((opt: any) => {
                                                     const isSelected = vGroup.type === "radio" 
                                                         ? selectedVariants[vGroup.id]?.id === opt.id
                                                         : selectedVariants[vGroup.id]?.some((o: any) => o.id === opt.id);
@@ -2819,7 +2819,7 @@ function PublicMenu() {
                                                 )}
                                             </div>
                                             <div className="space-y-3">
-                                                {(ag.items as any[]).map((opt: any) => {
+                                                {(ag.items as any[])?.map((opt: any) => {
                                                     const isSelected = selectedVariants[`ag_${ag.id}`]?.some((o: any) => o.name === opt.name);
                                                     return (
                                                         <motion.div 
@@ -2996,7 +2996,7 @@ function PublicMenu() {
                                                         {vGroup.required && <span className="text-[0.55rem] font-black text-white bg-red-500 px-2 py-0.5 rounded uppercase tracking-widest">Required</span>}
                                                     </div>
                                                     <div className="space-y-3">
-                                                        {vGroup.options.map((opt: any) => {
+                                                        {vGroup.options?.map((opt: any) => {
                                                             const isSelected = vGroup.type === "radio" 
                                                                 ? selectedVariants[vGroup.id]?.id === opt.id
                                                                 : selectedVariants[vGroup.id]?.some((o: any) => o.id === opt.id);
@@ -3037,7 +3037,7 @@ function PublicMenu() {
                                                         {ag.isCompulsory && <span className="text-[0.55rem] font-black text-white bg-red-500 px-2 py-0.5 rounded uppercase tracking-widest">Mandatory</span>}
                                                     </div>
                                                     <div className="space-y-3">
-                                                        {(ag.items as any[]).map((opt: any) => {
+                                                        {(ag.items as any[])?.map((opt: any) => {
                                                             const isSelected = selectedVariants[`ag_${ag.id}`]?.some((o: any) => o.name === opt.name);
                                                             return (
                                                                 <div 
