@@ -14,7 +14,7 @@ import {
     RotateCcw, RefreshCw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
     Wifi, Battery, Signal, Smartphone, Timer, AlertTriangle, ChevronUp, Package2,
     Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut, Phone, MessageSquare,
-    Truck, Package, Pause, Save, Receipt, MessageCircle
+    Truck, Package, Pause, Save, Receipt, MessageCircle, Gift
 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { 
@@ -233,6 +233,7 @@ function KravyPOS() {
     const [printBillOnConfirm, setPrintBillOnConfirm] = useState(false);
     const [settleTab, setSettleTab] = useState<"ITEMS" | "KOT" | "RESERVATION">("ITEMS");
     const [tableSearch, setTableSearch] = useState("");
+    const [useLoyaltyDiscount, setUseLoyaltyDiscount] = useState(false);
     const searchParams = useSearchParams();
     const { user: authUser } = useAuthContext();
     const userRole = authUser?.type || null;
@@ -744,8 +745,10 @@ function KravyPOS() {
                         const data = await res.json();
                         if (data && data.length > 0) {
                             setSelectedParty(data[0]);
+                            setUseLoyaltyDiscount(false); // Reset toggle when customer changes
                         } else {
                             setSelectedParty(null);
+                            setUseLoyaltyDiscount(false);
                         }
                     }
                 } catch (err) {
@@ -884,7 +887,16 @@ function KravyPOS() {
             discountAmt = dVal;
         }
         
-        const netTaxable = totalTaxable - discountAmt;
+        let loyaltyRedeemed = 0;
+        if (useLoyaltyDiscount && selectedParty && selectedParty.loyaltyPoints >= (business?.loyaltyMinRedeem || 0)) {
+            loyaltyRedeemed = selectedParty.loyaltyPoints;
+            // Cap at taxable amount so it doesn't go negative
+            if (loyaltyRedeemed > (totalTaxable - discountAmt)) {
+                loyaltyRedeemed = totalTaxable - discountAmt;
+            }
+        }
+        
+        const netTaxable = totalTaxable - discountAmt - loyaltyRedeemed;
         const reCalcGst = isTaxEnabled && !perProductEnabled ? (netTaxable * globalRate) / 100 : gstAmount;
 
         let deliveryCharge = 0;
@@ -902,8 +914,8 @@ function KravyPOS() {
         
         const finalTotal = netTaxable + reCalcGst + totalCharges + totalChargesGst;
 
-        return { subtotal: totalTaxable, discountAmt, gstAmount: reCalcGst, deliveryCharge, packagingCharge, totalCharges, totalChargesGst, total: finalTotal, isTaxEnabled, perProductEnabled };
-    }, [activeOrderForSelected, discountType, discountValue, isCgstEnabled, isSgstEnabled, globalRate, business, typeof manualDeliveryCharge !== 'undefined' ? manualDeliveryCharge : null, typeof deliveryChargeType !== 'undefined' ? deliveryChargeType : null, typeof manualPackagingCharge !== 'undefined' ? manualPackagingCharge : null, typeof packagingChargeType !== 'undefined' ? packagingChargeType : null]);
+        return { subtotal: totalTaxable, discountAmt, loyaltyRedeemed, gstAmount: reCalcGst, deliveryCharge, packagingCharge, totalCharges, totalChargesGst, total: finalTotal, isTaxEnabled, perProductEnabled };
+    }, [activeOrderForSelected, discountType, discountValue, isCgstEnabled, isSgstEnabled, globalRate, business, typeof manualDeliveryCharge !== 'undefined' ? manualDeliveryCharge : null, typeof deliveryChargeType !== 'undefined' ? deliveryChargeType : null, typeof manualPackagingCharge !== 'undefined' ? manualPackagingCharge : null, typeof packagingChargeType !== 'undefined' ? packagingChargeType : null, useLoyaltyDiscount, selectedParty]);
 
     const [isSettling, setIsSettling] = useState(false);
 
@@ -918,7 +930,8 @@ function KravyPOS() {
         order.items.forEach(it => orderSubtotal += (it.price * it.quantity));
         let dVal = Number(discountValue) || 0;
         let discountAmt = discountType === "PERCENT" ? (orderSubtotal * dVal) / 100 : dVal;
-        let taxable = orderSubtotal - discountAmt;
+        let loyaltyRedeemed = settlementBill?.loyaltyRedeemed || 0;
+        let taxable = orderSubtotal - discountAmt - loyaltyRedeemed;
         let orderCgst = isCgstEnabled ? (taxable * (globalRate / 2)) / 100 : 0;
         let orderSgst = isSgstEnabled ? (taxable * (globalRate / 2)) / 100 : 0;
         let orderTotal = taxable + orderCgst + orderSgst;
@@ -973,7 +986,8 @@ function KravyPOS() {
                 customerAddress: order.customerAddress || null,
                 tableName: order.table?.name || "Counter",
                 tokenNumber: order.tokenNumber,
-                kotNumbers: order.kotNumbers || []
+                kotNumbers: order.kotNumbers || [],
+                loyaltyPointsRedeemed: settlementBill?.loyaltyRedeemed || 0
             };
             const res = await fetch("/api/bill-manager", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(billData) });
             const data = await res.json();
@@ -2086,6 +2100,7 @@ function KravyPOS() {
                                                     <div className="flex flex-wrap gap-x-2 gap-y-1 flex-1">
                                                         <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter leading-none">Sub: ₹{settlementBill?.subtotal.toFixed(2)}</p>
                                                         {(settlementBill?.discountAmt || 0) > 0 && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tighter leading-none">Disc: -₹{settlementBill?.discountAmt.toFixed(2)}</p>}
+                                                        {(settlementBill?.loyaltyRedeemed || 0) > 0 && <p className="text-[10px] font-bold text-amber-500 uppercase tracking-tighter leading-none">Loyalty: -₹{settlementBill?.loyaltyRedeemed.toFixed(2)}</p>}
                                                         <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter leading-none">Tax: ₹{settlementBill?.gstAmount.toFixed(2)}</p>
                                                     </div>
                                                     <div className="text-right shrink-0">
@@ -2156,6 +2171,28 @@ function KravyPOS() {
                                                             <input type="text" placeholder="Code" className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none dark:text-white" />
                                                             <button className="bg-blue-600 text-white px-3 rounded-lg text-xs font-bold uppercase">Apply</button>
                                                         </div>
+                                                        {selectedParty && (
+                                                            <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg text-left">
+                                                                <div className="flex justify-between items-center">
+                                                                    <div>
+                                                                        <h4 className="text-xs font-black text-amber-700 dark:text-amber-500 uppercase tracking-widest flex items-center gap-1">
+                                                                            <Gift size={12} /> Loyalty Points
+                                                                        </h4>
+                                                                        <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+                                                                            {selectedParty.loyaltyPoints} Available Points
+                                                                        </p>
+                                                                    </div>
+                                                                    {selectedParty.loyaltyPoints >= (business?.loyaltyMinRedeem || 0) ? (
+                                                                        <label className="relative inline-flex items-center cursor-pointer">
+                                                                            <input type="checkbox" checked={useLoyaltyDiscount} onChange={(e) => setUseLoyaltyDiscount(e.target.checked)} className="sr-only peer" />
+                                                                            <div className="w-9 h-5 bg-amber-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-amber-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                                                                        </label>
+                                                                    ) : (
+                                                                        <span className="text-[9px] text-amber-600/60 font-bold">Min {business?.loyaltyMinRedeem || 0} req.</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>

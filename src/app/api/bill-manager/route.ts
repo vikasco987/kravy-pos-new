@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
       skipInventoryDeduction,
       amountPaid,
       packagingCharges,
+      loyaltyPointsRedeemed,
     } = body;
 
     // 🛑 1. ROBUST VALIDATION (Critical Fix for UI Crashes)
@@ -213,11 +214,19 @@ export async function POST(req: NextRequest) {
       finalPaymentStatus = paymentStatus === "Paid" ? "PAID" : "PENDING";
     }
 
-    // ✅ AUTO-SAVE CUSTOMER IN CRM (Party)
+    // ✅ AUTO-SAVE CUSTOMER IN CRM (Party) & LOYALTY POINTS
     let partyId = null;
     if (customerPhone && customerName && customerName !== "Walk-in Customer") {
       try {
         const cleanPhone = customerPhone.replace(/[\s\-\(\)\+]/g, "").slice(-10);
+        
+        // Calculate Earned Loyalty Points based on Final Subtotal
+        const pointRatio = profile?.loyaltyPointRatio && profile.loyaltyPointRatio > 0 ? profile.loyaltyPointRatio : 0;
+        const earnedPoints = pointRatio > 0 ? Math.floor(finalSubtotal / pointRatio) : 0;
+        const redeemedPoints = Number(loyaltyPointsRedeemed) || 0;
+        
+        const netPointsChange = earnedPoints - redeemedPoints;
+
         const party = await prisma.party.upsert({
           where: {
             phone_createdBy: {
@@ -225,12 +234,17 @@ export async function POST(req: NextRequest) {
               createdBy: effectiveId,
             },
           },
-          update: { name: customerName, address: customerAddress || null },
+          update: { 
+            name: customerName, 
+            address: customerAddress || null,
+            loyaltyPoints: { increment: netPointsChange }
+          },
           create: {
             name: customerName,
             phone: cleanPhone,
             createdBy: effectiveId,
             address: customerAddress || null,
+            loyaltyPoints: Math.max(0, netPointsChange)
           },
         });
         partyId = party.id;
