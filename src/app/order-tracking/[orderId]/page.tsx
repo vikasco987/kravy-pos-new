@@ -455,7 +455,6 @@ export default function OrderTrackingPage() {
                                 <div className="text-[0.7rem] text-[#696969] font-[500] mt-0.5">{order.businessAddress || "Address not provided"}</div>
                             </div>
                         </div>
-                        </div>
                         {order.businessPhone && (
                             <a href={`tel:+91${order.businessPhone.replace(/\\D/g, "").slice(-10)}`} className="w-9 h-9 rounded-full bg-[#F8F8F8] border border-[#EBEBEB] flex items-center justify-center text-[#1C1C1C] hover:bg-[#EBEBEB] transition-colors">
                                 <Phone size={14} />
@@ -468,11 +467,11 @@ export default function OrderTrackingPage() {
                         <div className="flex-1 pr-4">
                             <div className="text-[0.65rem] font-[800] text-[#ABABAB] uppercase tracking-wider mb-1">Customer</div>
                             <div className="text-[0.85rem] font-[900] truncate text-[#1C1C1C]">{order.customerName || "Guest"}</div>
-                            <div className="text-[0.7rem] font-[600] text-[#696969] mt-1">{order.type === 'delivery' ? '🚚 Delivery' : '🍽 Dine-In'}</div>
+                            <div className="text-[0.7rem] font-[600] text-[#696969] mt-1">{(order as any).type === 'delivery' ? '🚚 Delivery' : '🍽 Dine-In'}</div>
                         </div>
                         <div className="flex-1 pl-4">
                             <div className="text-[0.65rem] font-[800] text-[#ABABAB] uppercase tracking-wider mb-1">Payment</div>
-                            <div className="text-[0.85rem] font-[900] truncate text-[#1C1C1C]">{order.paymentStatus === 'paid' ? 'Paid via UPI' : 'Pending'}</div>
+                            <div className="text-[0.85rem] font-[900] truncate text-[#1C1C1C]">{(order as any).paymentStatus === 'paid' ? 'Paid via UPI' : 'Pending'}</div>
                             <div className="text-[0.7rem] font-[600] text-[#696969] mt-1">{formatTime(order.createdAt)}</div>
                         </div>
                     </div>
