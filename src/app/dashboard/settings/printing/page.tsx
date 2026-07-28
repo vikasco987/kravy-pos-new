@@ -63,6 +63,7 @@ const defaults: any = {
     kotTokenWeight: "",
     kotItemsWeight: "",
     kotQtyWeight: "",
+    logoHeight: 50,
     businessNameSize: 18,
     businessAddressSize: 11,
     taglineSize: 11,
@@ -867,6 +868,14 @@ export default function PrintingSettings() {
                                         <Receipt size={12} /> Receipt Element Sizing (Thermal Safe Constrained)
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Sizer 
+                                            label="Logo Size / Height" 
+                                            icon={ImageIcon} 
+                                            sKey="logoHeight" 
+                                            min={20} 
+                                            max={90} 
+                                            descMap={{ 20: "20mm (Small)", 35: "35mm (Medium)", 50: "50mm (Large)", 70: "70mm (Extra Large)", 90: "90mm (Max Width)" }} 
+                                        />
                                         <Sizer 
                                             label="Business Name Font Size" 
                                             icon={Type} 

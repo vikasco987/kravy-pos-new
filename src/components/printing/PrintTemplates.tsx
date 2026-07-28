@@ -191,8 +191,10 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             <img 
               src={business.logoUrl} 
               alt="Logo" 
-              className="max-h-[35mm] object-contain" 
               style={{ 
+                height: `${ps.logoHeight || 50}mm`,
+                maxHeight: `${ps.logoHeight || 50}mm`,
+                objectFit: 'contain',
                 imageRendering: 'pixelated', 
                 filter: 'contrast(1000%) grayscale(100%) brightness(1.1)' 
               }} 

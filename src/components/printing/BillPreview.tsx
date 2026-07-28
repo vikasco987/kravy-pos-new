@@ -173,7 +173,15 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
             <div className="bill-preview-dynamic leading-tight break-words whitespace-normal overflow-hidden">
               {s('showLogo') && business?.logoUrl && (
                 <div className="flex justify-center mb-1">
-                  <img src={business?.logoUrl} alt="Logo" className="max-h-[28mm] object-contain" />
+                  <img 
+                    src={business?.logoUrl} 
+                    alt="Logo" 
+                    style={{
+                      height: `${ps.logoHeight || 50}mm`,
+                      maxHeight: `${ps.logoHeight || 50}mm`,
+                      objectFit: 'contain'
+                    }}
+                  />
                 </div>
               )}
               <div 
