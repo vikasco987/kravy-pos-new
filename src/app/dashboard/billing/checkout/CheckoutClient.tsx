@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock, Trash2, Play, X, Search, ChevronDown, User, Printer, ArrowLeft,
   Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus,
-  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck, Star, Zap, Pencil, Settings, Check
+  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck, Star, Zap, Pencil, Settings, Check, Mic, MicOff
 } from "lucide-react";
 import { calculateDiscount } from "@/lib/discount-utils";
 import { toast } from "sonner";
@@ -430,6 +430,122 @@ export default function CheckoutClient() {
   const [newZoneName, setNewZoneName] = useState("");
   const [editingZone, setEditingZone] = useState<{old: string, new: string} | null>(null);
   const [isZoneLoading, setIsZoneLoading] = useState(false);
+
+  // 🎙️ Voice Assistant / Voice Billing State & Functions
+  const [isListening, setIsListening] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState("");
+  const recognitionRef = useRef<any>(null);
+
+  const toggleVoiceBilling = () => {
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      toast.error("Voice Speech API is not supported in this browser. Please use Chrome or Edge.");
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      toast.info("🎙️ Voice billing stopped");
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "hi-IN";
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        kravy.click();
+        toast.success("🎙️ Listening... Speak item name (e.g. Burger, 2 Pizza, Coke)");
+      };
+
+      recognition.onresult = (event: any) => {
+        let currentTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          currentTranscript += event.results[i][0].transcript;
+        }
+        setVoiceTranscript(currentTranscript);
+
+        const lastResult = event.results[event.results.length - 1];
+        if (lastResult.isFinal) {
+          const finalPhrase = lastResult[0].transcript.trim();
+          handleVoiceSearchItemAdd(finalPhrase);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("Voice Recognition Error:", event.error);
+        if (event.error !== "no-speech") {
+          setIsListening(false);
+          toast.error("Voice recognition error: " + event.error);
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to start voice listener");
+      setIsListening(false);
+    }
+  };
+
+  const handleVoiceSearchItemAdd = (phrase: string) => {
+    if (!phrase || phrase.trim().length === 0) return;
+
+    const text = phrase.toLowerCase().trim();
+
+    let qty = 1;
+    let cleanText = text;
+
+    const numMatch = text.match(/^(\d+|\bdo\b|\bek\b|\bteen\b|\bchaar\b|\bpaanch\b)/i);
+    if (numMatch) {
+      const word = numMatch[1].toLowerCase();
+      if (word === "ek") qty = 1;
+      else if (word === "do") qty = 2;
+      else if (word === "teen") qty = 3;
+      else if (word === "chaar") qty = 4;
+      else if (word === "paanch") qty = 5;
+      else qty = parseInt(word, 10) || 1;
+
+      cleanText = text.replace(numMatch[0], "").trim();
+    }
+
+    cleanText = cleanText.replace(/\b(chahiye|add|karo|daal|do|aur|and|with|please|item)\b/gi, "").trim();
+
+    if (!cleanText) return;
+
+    const matchedItem = menuItems.find((i) => {
+      const itemName = i.name.toLowerCase();
+      const shortCode = i.shortCode ? String(i.shortCode).toLowerCase() : "";
+      return itemName === cleanText || shortCode === cleanText || itemName.includes(cleanText) || cleanText.includes(itemName);
+    });
+
+    if (matchedItem) {
+      for (let k = 0; k < qty; k++) {
+        handleAddToCart(matchedItem);
+      }
+      kravy.add();
+      toast.success(`🎙️ Added ${qty}x ${matchedItem.name} to Cart!`);
+      setSearchQuery("");
+      setVoiceTranscript("");
+    } else {
+      setSearchQuery(cleanText);
+      toast.info(`🎙️ Voice Searching: "${cleanText}"`);
+    }
+  };
 
   // Load layout preference
   useEffect(() => {
@@ -2364,7 +2480,7 @@ export default function CheckoutClient() {
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--kravy-text-faint)]" size={12} />
                   <input
                     type="text"
-                    placeholder="Search menu…"
+                    placeholder={isListening ? "🎙️ Listening... Speak item..." : "Search menu…"}
                     value={searchQuery}
                     onFocus={(e) => e.target.select()}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -2389,11 +2505,25 @@ export default function CheckoutClient() {
                         }
                       }
                     }}
-                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)]
-                      h-8 pl-8 pr-3 rounded-lg text-xs outline-none
+                    className={`w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)]
+                      h-8 pl-8 pr-8 rounded-lg text-xs outline-none
                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500
-                      transition-all placeholder:text-[var(--kravy-text-muted)] font-bold"
+                      transition-all placeholder:text-[var(--kravy-text-muted)] font-bold ${
+                        isListening ? "border-rose-500 ring-2 ring-rose-500/30" : ""
+                      }`}
                   />
+                  <button
+                    type="button"
+                    onClick={toggleVoiceBilling}
+                    className={`absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md transition-all flex items-center gap-1 ${
+                      isListening
+                        ? "bg-rose-500 text-white animate-pulse shadow-md shadow-rose-500/50"
+                        : "text-[var(--kravy-text-muted)] hover:text-indigo-600 hover:bg-slate-100"
+                    }`}
+                    title={isListening ? "Click to stop voice listening" : "Click to Speak & Add Items via Voice (Mic Billing)"}
+                  >
+                    {isListening ? <MicOff size={13} /> : <Mic size={13} />}
+                  </button>
                 </div>
                 {canEdit && (
                   <button
