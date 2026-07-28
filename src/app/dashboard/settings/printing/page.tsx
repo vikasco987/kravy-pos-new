@@ -63,6 +63,7 @@ const defaults: any = {
     kotTokenWeight: "",
     kotItemsWeight: "",
     kotQtyWeight: "",
+    allowWalletEditDelete: true,
     logoHeight: 50,
     businessNameSize: 18,
     businessAddressSize: 11,
@@ -509,6 +510,7 @@ export default function PrintingSettings() {
                             <SettingToggle icon={FileText} label="Amt in Words" sKey="showAmountInWords" desc="Convert total to text" color="bg-slate-500" />
                             <SettingToggle icon={Receipt} label="Payment Info" sKey="showPaymentStatus" desc="Mode & Status" color="bg-blue-600" />
                             <SettingToggle icon={Type} label="Food Type Suffix" sKey="showFoodTypeSuffix" desc="Show (V), (NV) or (R)" color="bg-rose-600" />
+                            <SettingToggle icon={Wallet} label="Wallet Tx Edit/Delete" sKey="allowWalletEditDelete" desc="Allow staff to edit or delete past wallet history" color="bg-rose-500" />
                         </div>
                         
                         {printSettings.showContact && (

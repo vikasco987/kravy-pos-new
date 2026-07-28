@@ -608,7 +608,7 @@ export default function PartiesPage() {
                 onEdit={() => { setEditing(p); setModalOpen(true); }}
                 onDelete={() => handleDelete(p.id)}
                 onViewHistory={() => fetchBillHistory(p)}
-                onDeposit={() => { setDepositingParty(p); setDepositOpen(true); }}
+                onDeposit={(type = "deposit") => { setDepositingParty(p); setDepositType(type); setDepositOpen(true); }}
               />
             ))}
           </div>
@@ -664,13 +664,27 @@ export default function PartiesPage() {
                         </td>
                         <td className="px-6 py-3 text-right">
                           <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => fetchBillHistory(p)} className="p-2 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-lg hover:bg-[var(--kravy-brand)] hover:text-white transition-all shadow-sm">
+                            <button 
+                              onClick={() => { setDepositingParty(p); setDepositType("deposit"); setDepositOpen(true); }}
+                              className="px-2.5 py-1.5 bg-amber-50 text-amber-700 border border-amber-200/60 rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-amber-500 hover:text-white transition-all shadow-sm"
+                              title="Quick Deposit"
+                            >
+                              + Deposit
+                            </button>
+                            <button 
+                              onClick={() => { setDepositingParty(p); setDepositType("withdraw"); setDepositOpen(true); }}
+                              className="px-2.5 py-1.5 bg-rose-50 text-rose-700 border border-rose-200/60 rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                              title="Quick Withdraw"
+                            >
+                              - Withdraw
+                            </button>
+                            <button onClick={() => fetchBillHistory(p)} className="p-2 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-lg hover:bg-[var(--kravy-brand)] hover:text-white transition-all shadow-sm" title="History">
                               <HistoryIcon size={14} />
                             </button>
-                            <button onClick={() => { setEditing(p); setModalOpen(true); }} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-lg hover:text-indigo-500 hover:border-indigo-500 transition-all">
+                            <button onClick={() => { setEditing(p); setModalOpen(true); }} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-lg hover:text-indigo-500 hover:border-indigo-500 transition-all" title="Edit Customer">
                               <Edit2 size={14} />
                             </button>
-                            <button onClick={() => handleDelete(p.id)} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-lg hover:text-rose-500 hover:border-rose-500 transition-all">
+                            <button onClick={() => handleDelete(p.id)} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-lg hover:text-rose-500 hover:border-rose-500 transition-all" title="Delete Customer">
                               <Trash2 size={14} />
                             </button>
                           </div>
@@ -866,25 +880,29 @@ export default function PartiesPage() {
                                 >
                                   <Printer size={12} />
                                 </button>
-                                <button 
-                                  onClick={() => { 
-                                    setEditingTx(tx); 
-                                    setEditTxType(tx.type);
-                                    setEditTxAmount(tx.amount.toString());
-                                    setEditRemarkText(tx.description || ""); 
-                                  }}
-                                  className="p-1 text-[var(--kravy-text-muted)] hover:text-indigo-500 transition-all"
-                                  title="Edit Transaction (Type / Amount / Remark)"
-                                >
-                                  <Edit2 size={12} />
-                                </button>
-                                <button 
-                                  onClick={() => handleDeleteTx(tx)}
-                                  className="p-1 text-[var(--kravy-text-muted)] hover:text-rose-500 transition-all"
-                                  title="Delete Transaction"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
+                                {business?.printSettings?.allowWalletEditDelete !== false && (
+                                  <>
+                                    <button 
+                                      onClick={() => { 
+                                        setEditingTx(tx); 
+                                        setEditTxType(tx.type);
+                                        setEditTxAmount(tx.amount.toString());
+                                        setEditRemarkText(tx.description || ""); 
+                                      }}
+                                      className="p-1 text-[var(--kravy-text-muted)] hover:text-indigo-500 transition-all"
+                                      title="Edit Transaction (Type / Amount / Remark)"
+                                    >
+                                      <Edit2 size={12} />
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDeleteTx(tx)}
+                                      className="p-1 text-[var(--kravy-text-muted)] hover:text-rose-500 transition-all"
+                                      title="Delete Transaction"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1004,9 +1022,31 @@ export default function PartiesPage() {
 
                 {/* Amount Input */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] ml-2">
-                    {depositType === "deposit" ? "Deposit Amount" : "Withdrawal Amount"} (₹)
-                  </label>
+                  <div className="flex justify-between items-center ml-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">
+                      {depositType === "deposit" ? "Deposit Amount" : "Withdrawal Amount"} (₹)
+                    </label>
+                    <span className="text-[9px] font-bold text-[var(--kravy-brand)] uppercase tracking-wider">Quick Presets</span>
+                  </div>
+
+                  {/* Quick Preset Chips */}
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {[100, 500, 1000, 2000, 5000, 10000].map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setDepositAmount(amt.toString())}
+                        className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${
+                          depositAmount === amt.toString()
+                            ? (depositType === 'deposit' ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'bg-rose-500 text-white shadow-md shadow-rose-500/20')
+                            : 'bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] hover:bg-[var(--kravy-border)]'
+                        }`}
+                      >
+                        +₹{amt.toLocaleString('en-IN')}
+                      </button>
+                    ))}
+                  </div>
+
                   <input 
                     type="number"
                     autoFocus
@@ -1345,7 +1385,7 @@ function CustomerCard({ p, onEdit, onDelete, onViewHistory, onDeposit }: {
   onEdit: () => void, 
   onDelete: () => void, 
   onViewHistory: () => void,
-  onDeposit: () => void 
+  onDeposit: (type?: "deposit" | "withdraw") => void 
 }) {
   return (
     <div className="group bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl p-5 shadow-sm hover:shadow-2xl hover:border-[var(--kravy-brand)] transition-all flex flex-col items-center text-center relative overflow-hidden">
@@ -1380,24 +1420,33 @@ function CustomerCard({ p, onEdit, onDelete, onViewHistory, onDeposit }: {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-center gap-3 w-full pt-4 border-t border-[var(--kravy-border)]">
+      <div className="flex items-center justify-center gap-2 w-full pt-4 border-t border-[var(--kravy-border)]">
         <button 
           onClick={onViewHistory}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[var(--kravy-brand)] hover:text-white transition-all shadow-sm"
+          className="p-2.5 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[var(--kravy-brand)] hover:text-white transition-all shadow-sm"
+          title="Bill & Wallet History"
         >
-          <HistoryIcon size={12} /> History
+          <HistoryIcon size={14} />
         </button>
         <button 
-          onClick={(e) => { e.stopPropagation(); onDeposit(); }}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all shadow-sm"
+          onClick={(e) => { e.stopPropagation(); onDeposit("deposit"); }}
+          className="flex-1 py-2.5 bg-amber-50 text-amber-700 border border-amber-200/60 rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-amber-500 hover:text-white transition-all shadow-sm flex items-center justify-center gap-1"
+          title="Quick Deposit Money"
         >
-          <Wallet size={12} /> Wallet
+          + Deposit
         </button>
-        <div className="flex gap-1.5">
-          <button onClick={onEdit} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hover:text-indigo-500 hover:border-indigo-500 transition-all">
+        <button 
+          onClick={(e) => { e.stopPropagation(); onDeposit("withdraw"); }}
+          className="flex-1 py-2.5 bg-rose-50 text-rose-700 border border-rose-200/60 rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center justify-center gap-1"
+          title="Quick Withdraw Money"
+        >
+          - Withdraw
+        </button>
+        <div className="flex gap-1">
+          <button onClick={onEdit} className="p-2.5 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hover:text-indigo-500 hover:border-indigo-500 transition-all" title="Edit Customer">
             <Edit2 size={14} />
           </button>
-          <button onClick={onDelete} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hover:text-rose-500 hover:border-rose-500 transition-all">
+          <button onClick={onDelete} className="p-2.5 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-xl hover:text-rose-500 hover:border-rose-500 transition-all" title="Delete Customer">
             <Trash2 size={14} />
           </button>
         </div>
