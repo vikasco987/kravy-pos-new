@@ -502,6 +502,44 @@ export default function CheckoutClient() {
     }
   };
 
+  // 🤖 AI Fuzzy & Phonetic Matcher (Levenshtein Distance + Phonetic Consonant Matcher)
+  const getFuzzySimilarity = (s1: string, s2: string): number => {
+    if (!s1 || !s2) return 0;
+    const a = s1.toLowerCase().trim();
+    const b = s2.toLowerCase().trim();
+    if (a === b) return 1.0;
+    if (a.includes(b) || b.includes(a)) return 0.85;
+
+    // Phonetic consonant compression (e.g. "barger" vs "burger" -> "brgr" vs "brgr")
+    const phonA = a.replace(/[aeiouhwy]/gi, "");
+    const phonB = b.replace(/[aeiouhwy]/gi, "");
+    if (phonA && phonB && (phonA === phonB || phonA.includes(phonB) || phonB.includes(phonA))) {
+      return 0.8;
+    }
+
+    const m = a.length;
+    const n = b.length;
+    const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,
+          dp[i][j - 1] + 1,
+          dp[i - 1][j - 1] + cost
+        );
+      }
+    }
+
+    const distance = dp[m][n];
+    const maxLen = Math.max(m, n);
+    return maxLen === 0 ? 1 : 1 - distance / maxLen;
+  };
+
   const handleVoiceSearchItemAdd = (phrase: string) => {
     if (!phrase || phrase.trim().length === 0) return;
 
@@ -541,7 +579,8 @@ export default function CheckoutClient() {
 
       if (!cleanText) return;
 
-      const matchedItem = menuItems.find((i) => {
+      // 1. Direct / Exact / Substring Match
+      let matchedItem = menuItems.find((i) => {
         const itemName = i.name.toLowerCase();
         const shortCode = i.shortCode ? String(i.shortCode).toLowerCase() : "";
         const hiName = (i as any).hiName ? String((i as any).hiName).toLowerCase() : "";
@@ -555,12 +594,34 @@ export default function CheckoutClient() {
         );
       });
 
+      // 2. 🤖 AI Fuzzy Phonetic Matcher (for mispronounced words e.g. "barger", "piza", "cofi")
+      if (!matchedItem) {
+        let bestScore = 0;
+        let bestCandidate: any = null;
+
+        menuItems.forEach((i) => {
+          const scoreName = getFuzzySimilarity(cleanText, i.name);
+          const scoreHi = (i as any).hiName ? getFuzzySimilarity(cleanText, (i as any).hiName) : 0;
+          const maxScore = Math.max(scoreName, scoreHi);
+
+          if (maxScore > bestScore) {
+            bestScore = maxScore;
+            bestCandidate = i;
+          }
+        });
+
+        if (bestCandidate && bestScore >= 0.4) {
+          matchedItem = bestCandidate;
+          console.log(`🎙️ AI Matched "${cleanText}" to "${bestCandidate.name}" (Score: ${(bestScore * 100).toFixed(0)}%)`);
+        }
+      }
+
       if (matchedItem) {
         for (let k = 0; k < qty; k++) {
           handleAddToCart(matchedItem);
         }
         itemsAddedCount++;
-        toast.success(`🎙️ Selected: ${qty}x ${matchedItem.name}`);
+        toast.success(`🎙️ AI Selected: ${qty}x ${matchedItem.name}`);
       }
     });
 
