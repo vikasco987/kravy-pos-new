@@ -155,14 +155,19 @@ const MenuItemCard = ({ m, items, addToCart, reduceFromCart, expiryTrackingEnabl
   reduceFromCart: (id: string) => void,
   expiryTrackingEnabled?: boolean
 }) => {
-  const inCart = items.find((i) => i.id === m.id);
+  const isVirtual = (m as any).isVirtualGroup;
+  const groupedIds = isVirtual ? ((m as any).groupedItems || []).map((g: any) => g.id) : [m.id];
+  const inCartItems = items.filter((i) => groupedIds.includes(i.id) || (!isVirtual && i.id.startsWith(`${m.id}-`)));
+  const totalQtyInCart = inCartItems.reduce((acc, i) => acc + i.qty, 0);
+  const lastInCartItem = inCartItems[inCartItems.length - 1];
+
   return (
     <div
       onClick={async () => addToCart(m)}
       className={`group relative border rounded-2xl overflow-hidden cursor-pointer
         transition-all duration-200 bg-[var(--kravy-surface)] flex flex-col
         hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97]
-        ${inCart
+        ${totalQtyInCart > 0
           ? "border-[var(--kravy-brand)] shadow-md shadow-indigo-500/10"
           : "border-[var(--kravy-border)] hover:border-[var(--kravy-brand)]"
         }`}
@@ -178,16 +183,16 @@ const MenuItemCard = ({ m, items, addToCart, reduceFromCart, expiryTrackingEnabl
           loading="lazy"
           onError={(e) => { e.currentTarget.src = "/no-image.png"; }}
         />
-        {inCart && (
+        {totalQtyInCart > 0 && (
           <div className="absolute top-2 left-2 bg-emerald-500 text-white
             text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg shadow-emerald-500/40
             border border-white/20 z-10">
-            ×{inCart.qty}
+            ×{totalQtyInCart}
           </div>
         )}
-        {inCart && (
+        {totalQtyInCart > 0 && (
           <button
-            onClick={async (e) => { e.stopPropagation(); reduceFromCart(m.id); }}
+            onClick={async (e) => { e.stopPropagation(); if (lastInCartItem) reduceFromCart(lastInCartItem.id); }}
             className="absolute top-2 right-2 bg-rose-500 text-white
               w-6 h-6 rounded-full flex items-center justify-center
               text-sm font-black hover:bg-rose-600 shadow-lg shadow-rose-500/40
@@ -203,26 +208,26 @@ const MenuItemCard = ({ m, items, addToCart, reduceFromCart, expiryTrackingEnabl
             <div className={`w-[6px] h-[6px] rounded-full ${m.isVeg && !m.name.includes("(NV)") && !m.name.toLowerCase().includes("egg") ? "bg-green-600" : (m.isEgg || m.name.toLowerCase().includes("egg") || m.name.includes("(E)")) ? "bg-amber-500" : "bg-red-600"}`} />
         </div>
         <p className={`text-[11px] md:text-xs font-bold leading-snug line-clamp-2 transition-colors
-          ${inCart ? "text-[var(--kravy-brand)]" : "text-[var(--kravy-text-primary)] group-hover:text-[var(--kravy-brand)]"}`}>
+          ${totalQtyInCart > 0 ? "text-[var(--kravy-brand)]" : "text-[var(--kravy-text-primary)] group-hover:text-[var(--kravy-brand)]"}`}>
           {m.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()}
         </p>
         
-        {expiryTrackingEnabled && m.expiryDate && (
+        {expiryTrackingEnabled && (m as any).expiryDate && (
           <div className="flex items-center mt-0.5">
             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
-              new Date(m.expiryDate) < new Date() 
+              new Date((m as any).expiryDate) < new Date() 
                 ? 'bg-red-100 text-red-600 border border-red-200' 
-                : new Date(m.expiryDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                : new Date((m as any).expiryDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
                   ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
                   : 'bg-emerald-100 text-emerald-600 border border-emerald-200'
             }`}>
-              Exp: {new Date(m.expiryDate).toLocaleDateString()}
+              Exp: {new Date((m as any).expiryDate).toLocaleDateString()}
             </span>
           </div>
         )}
         <div className="flex items-center justify-between gap-1">
           <p className="text-xs md:text-sm font-black text-emerald-500 whitespace-nowrap">
-            ₹{m.price.toFixed(2)}
+            ₹{m.price.toFixed(2)}{isVirtual ? "+" : ""}
           </p>
           {m.unit && (
             <p className="text-[9px] uppercase font-black text-[var(--kravy-text-muted)] tracking-wider truncate">
@@ -875,7 +880,7 @@ export default function CheckoutClient() {
   }, [menuItems, activeZone, selectedTable, tables, business?.multiZoneMenuEnabled]);
 
   const filteredMenuItems = useMemo(() => {
-    return menuItems
+    const rawFiltered = menuItems
       .filter((i) => i.isActive !== false) // 🛡️ Filter Offline Items
       .filter((i) => activeCategory === "All" ? true : i.category?.name === activeCategory)
       .filter((i) => i.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) || (i.shortCode && String(i.shortCode).toLowerCase() === searchQuery.trim().toLowerCase()))
@@ -897,6 +902,70 @@ export default function CheckoutClient() {
         const zone = tableObj.zone;
         return !i.zones || i.zones.length === 0 || i.zones.includes(zone);
       });
+
+    // 🚀 Apply Virtual Grouping for items with parenthetical variants (e.g. Small, Medium, Large, Half, Full)
+    const grouped: Record<string, MenuItem[]> = {};
+    rawFiltered.forEach(it => {
+        let baseName = it.name;
+        let cleanedName = it.name.replace(/\s*\((V|NV|Egg|R)\)\s*/gi, " ").trim();
+        const suffixMatch = cleanedName.match(/\s*\(([^)]+)\)\s*$/i);
+        if (suffixMatch) {
+            baseName = cleanedName.substring(0, suffixMatch.index).trim();
+        }
+        if (!grouped[baseName]) grouped[baseName] = [];
+        grouped[baseName].push(it);
+    });
+
+    const finalItems: MenuItem[] = [];
+    Object.entries(grouped).forEach(([baseName, group]) => {
+        const hasVariant = group.some(i => i.name.trim() !== baseName.trim());
+        
+        if (group.length === 1 && !hasVariant) {
+            finalItems.push(group[0]);
+        } else {
+            const minPrice = Math.min(...group.map(i => Number(i.price) || 0));
+            const virtualVariants = [{
+                id: 'virtual_group',
+                groupName: 'Size / Portion',
+                type: 'radio',
+                required: true,
+                options: group.map(i => {
+                    let cleanedName = i.name.replace(/\s*\((V|NV|Egg|R)\)\s*/gi, " ").trim();
+                    const match = cleanedName.match(/\(([^)]+)\)\s*$/)?.[1] || cleanedName;
+                    let niceName = match.trim();
+                    if (niceName.toUpperCase() === 'F' || niceName.toUpperCase() === 'FULL') niceName = 'Full Portion';
+                    if (niceName.toUpperCase() === 'H' || niceName.toUpperCase() === 'HALF') niceName = 'Half Portion';
+                    if (niceName.toUpperCase() === 'S' || niceName.toUpperCase() === 'SMALL') niceName = 'Small';
+                    if (niceName.toUpperCase() === 'R' || niceName.toUpperCase() === 'REGULAR') niceName = 'Regular';
+                    if (niceName.toUpperCase() === 'M' || niceName.toUpperCase() === 'MEDIUM') niceName = 'Medium';
+                    if (niceName.toUpperCase() === 'L' || niceName.toUpperCase() === 'LARGE') niceName = 'Large';
+                    
+                    return {
+                        id: i.id,
+                        name: niceName,
+                        price: Number(i.price) || 0,
+                        originalId: i.id,
+                        imageUrl: i.imageUrl || null,
+                        gst: i.gst,
+                        hsnCode: i.hsnCode,
+                        taxStatus: i.taxStatus,
+                        fullName: i.name
+                    };
+                })
+            }];
+            finalItems.push({
+                ...group[0],
+                id: "virtual_" + baseName,
+                name: baseName,
+                price: minPrice,
+                variants: virtualVariants,
+                isVirtualGroup: true,
+                groupedItems: group
+            } as any);
+        }
+    });
+
+    return finalItems;
   }, [menuItems, activeCategory, searchQuery, business, selectedTable, tables, activeZone]);
 
   /* ================= CART ================= */
@@ -966,32 +1035,49 @@ export default function CheckoutClient() {
     // calculate additional price and form the variant string
     let additionalPrice = 0;
     let variantDescParts: string[] = [];
+    let selectedOptObj: any = null;
+
     Object.values(selectedVariants).forEach(opts => {
         opts.forEach(opt => {
             additionalPrice += Number(opt.price || 0);
             variantDescParts.push(opt.name);
+            selectedOptObj = opt;
         });
     });
 
-    const variantStr = variantDescParts.length > 0 ? ` (${variantDescParts.join(", ")})` : "";
-    const uniqueId = `${variantModalItem.id}-${variantDescParts.sort().join("-")}`;
+    const isVirtual = (variantModalItem as any).isVirtualGroup;
+    let itemToAddId = `${variantModalItem.id}-${variantDescParts.sort().join("-")}`;
+    let itemToAddName = variantModalItem.name + (variantDescParts.length > 0 ? ` (${variantDescParts.join(", ")})` : "");
+    let itemRate = additionalPrice > 0 ? additionalPrice : (variantModalItem.price || 0);
+    let itemGst = variantModalItem.gst ?? null;
+    let itemHsn = variantModalItem.hsnCode || "";
+    let itemTaxStatus = variantModalItem.taxStatus || "Without Tax";
+
+    if (isVirtual && selectedOptObj) {
+      itemToAddId = selectedOptObj.originalId || selectedOptObj.id || variantModalItem.id;
+      itemToAddName = selectedOptObj.fullName || itemToAddName;
+      itemRate = Number(selectedOptObj.price) || itemRate;
+      if (selectedOptObj.gst !== undefined) itemGst = selectedOptObj.gst;
+      if (selectedOptObj.hsnCode !== undefined) itemHsn = selectedOptObj.hsnCode;
+      if (selectedOptObj.taxStatus !== undefined) itemTaxStatus = selectedOptObj.taxStatus;
+    }
 
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === uniqueId);
+      const existing = prev.find((i) => i.id === itemToAddId);
       if (existing) {
         kravy.click();
-        return prev.map((i) => i.id === uniqueId ? { ...i, qty: i.qty + 1, isNew: (i.qty + 1) > (i.printedQty || 0) } : i);
+        return prev.map((i) => i.id === itemToAddId ? { ...i, qty: i.qty + 1, isNew: (i.qty + 1) > (i.printedQty || 0) } : i);
       }
       kravy.add();
       return [...prev, { 
-        id: uniqueId, 
-        name: variantModalItem.name + variantStr, 
+        id: itemToAddId, 
+        name: itemToAddName, 
         qty: 1, 
         printedQty: 0,
-        rate: additionalPrice > 0 ? additionalPrice : (variantModalItem.price || 0),
-        gst: variantModalItem.gst ?? null,
-        hsnCode: variantModalItem.hsnCode || "",
-        taxStatus: variantModalItem.taxStatus || "Without Tax",
+        rate: itemRate,
+        gst: itemGst,
+        hsnCode: itemHsn,
+        taxStatus: itemTaxStatus,
         isNew: true
       }];
     });
@@ -3910,7 +3996,7 @@ export default function CheckoutClient() {
                               </span>
                               {optPrice > 0 && (
                                 <span className={`text-[13px] font-black tracking-wide ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-500'}`}>
-                                  +₹{optPrice}
+                                  {(variantModalItem as any).isVirtualGroup ? `₹${optPrice}` : `+₹${optPrice}`}
                                 </span>
                               )}
                             </div>
