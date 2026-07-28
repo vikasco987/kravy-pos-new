@@ -101,6 +101,11 @@ export default function PartiesPage() {
   const [depositType, setDepositType] = useState<"deposit" | "withdraw">("deposit");
   const [depositRemark, setDepositRemark] = useState("");
 
+  // Edit Transaction Remark State
+  const [editingTx, setEditingTx] = useState<any | null>(null);
+  const [editRemarkText, setEditRemarkText] = useState("");
+  const [editRemarkLoading, setEditRemarkLoading] = useState(false);
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 9; // 3x3 grid or 9 rows
@@ -398,6 +403,34 @@ export default function PartiesPage() {
       pushToast("error", `Error processing ${depositType}`);
     } finally {
       setDepositLoading(false);
+    }
+  };
+
+  const handleUpdateRemark = async () => {
+    if (!editingTx) return;
+    setEditRemarkLoading(true);
+    try {
+      const res = await fetch("/api/wallet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "edit",
+          transactionId: editingTx.id,
+          description: editRemarkText.trim()
+        })
+      });
+      if (res.ok) {
+        setWalletTransactions(prev => prev.map(tx => tx.id === editingTx.id ? { ...tx, description: editRemarkText.trim() } : tx));
+        pushToast("success", "Transaction remark updated!");
+        setEditingTx(null);
+      } else {
+        const data = await res.json();
+        pushToast("error", data.error || "Failed to update remark");
+      }
+    } catch (err) {
+      pushToast("error", "Error updating remark");
+    } finally {
+      setEditRemarkLoading(false);
     }
   };
 
@@ -777,7 +810,7 @@ export default function PartiesPage() {
                                  {tx.type === 'CREDIT' ? '↓' : '↑'}
                                </div>
                                <div>
-                                 <div className="text-sm font-black text-[var(--kravy-text-primary)]">{tx.description}</div>
+                                 <div className="text-sm font-black text-[var(--kravy-text-primary)]">{tx.description || "No remark"}</div>
                                  <div className="text-[10px] font-bold text-[var(--kravy-text-muted)]">{formatDate(tx.createdAt)}</div>
                                </div>
                             </div>
@@ -785,12 +818,22 @@ export default function PartiesPage() {
                               <div className={`font-black text-sm ${tx.type === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'}`}>
                                  {tx.type === 'CREDIT' ? '+' : '-'} ₹{tx.amount.toFixed(2)}
                               </div>
-                              <button 
-                                onClick={() => handlePrint("DEPOSIT", tx)}
-                                className="p-1 text-[var(--kravy-text-muted)] hover:text-amber-500 transition-all"
-                              >
-                                <Printer size={10} />
-                              </button>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <button 
+                                  onClick={() => handlePrint("DEPOSIT", tx)}
+                                  className="p-1 text-[var(--kravy-text-muted)] hover:text-amber-500 transition-all"
+                                  title="Print Receipt"
+                                >
+                                  <Printer size={12} />
+                                </button>
+                                <button 
+                                  onClick={() => { setEditingTx(tx); setEditRemarkText(tx.description || ""); }}
+                                  className="p-1 text-[var(--kravy-text-muted)] hover:text-indigo-500 transition-all flex items-center gap-0.5 text-[9px] font-bold"
+                                  title="Edit Remark"
+                                >
+                                  <Edit2 size={12} />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         ))
@@ -972,6 +1015,58 @@ export default function PartiesPage() {
                     }`}
                   >
                     {depositLoading ? "Processing..." : depositType === "deposit" ? "Confirm Deposit" : "Confirm Withdrawal"}
+                  </button>
+                </div>
+              </div>
+            </Modal>
+          )}
+
+          {editingTx && (
+            <Modal 
+              title="Edit Transaction Remark" 
+              onClose={() => setEditingTx(null)}
+            >
+              <div className="space-y-5">
+                <div className="p-4 bg-[var(--kravy-bg-2)] rounded-2xl border border-[var(--kravy-border)] flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider">Transaction</div>
+                    <div className="text-xs font-bold text-[var(--kravy-text-primary)] mt-0.5">{formatDate(editingTx.createdAt)}</div>
+                  </div>
+                  <div className={`font-black text-sm ${editingTx.type === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {editingTx.type === 'CREDIT' ? '+' : '-'} ₹{editingTx.amount.toFixed(2)}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] ml-2">
+                    Remark / Description
+                  </label>
+                  <input 
+                    type="text"
+                    autoFocus
+                    placeholder="Enter remark (e.g. 28 jul, Cash deposit, Note...)"
+                    value={editRemarkText}
+                    onChange={e => setEditRemarkText(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleUpdateRemark(); }}
+                    className="w-full px-5 py-3.5 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none focus:border-[var(--kravy-brand)] font-bold text-sm transition-all"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => setEditingTx(null)}
+                    className="flex-1 py-3.5 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[var(--kravy-bg-2)] transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={handleUpdateRemark}
+                    disabled={editRemarkLoading}
+                    className="flex-[2] py-3.5 bg-[var(--kravy-brand)] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:shadow-xl hover:shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {editRemarkLoading ? "Saving..." : "Save Remark"}
                   </button>
                 </div>
               </div>

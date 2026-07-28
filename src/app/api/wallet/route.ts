@@ -129,6 +129,63 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, balance: updatedParty.walletBalance });
     }
 
+    if (action === "edit") {
+      const { transactionId, description } = body;
+      if (!transactionId) {
+        return NextResponse.json({ error: "Missing transactionId" }, { status: 400 });
+      }
+
+      const tx = await prisma.walletTransaction.findUnique({
+        where: { id: transactionId }
+      });
+
+      if (!tx || tx.clerkId !== effectiveId) {
+        return NextResponse.json({ error: "Transaction not found or unauthorized" }, { status: 404 });
+      }
+
+      const updated = await prisma.walletTransaction.update({
+        where: { id: transactionId },
+        data: { description: description || "" }
+      });
+
+      return NextResponse.json({ success: true, transaction: updated });
+    }
+
+    if (action === "delete") {
+      const { transactionId, revertBalance } = body;
+      if (!transactionId) {
+        return NextResponse.json({ error: "Missing transactionId" }, { status: 400 });
+      }
+
+      const tx = await prisma.walletTransaction.findUnique({
+        where: { id: transactionId }
+      });
+
+      if (!tx || tx.clerkId !== effectiveId) {
+        return NextResponse.json({ error: "Transaction not found or unauthorized" }, { status: 404 });
+      }
+
+      let updatedPartyBalance = null;
+      if (revertBalance) {
+        const party = await prisma.party.findUnique({ where: { id: tx.partyId } });
+        if (party) {
+          const adjustment = tx.type === "CREDIT" ? -tx.amount : tx.amount;
+          const newBal = Math.max(0, (party.walletBalance || 0) + adjustment);
+          const updatedP = await prisma.party.update({
+            where: { id: tx.partyId },
+            data: { walletBalance: newBal }
+          });
+          updatedPartyBalance = updatedP.walletBalance;
+        }
+      }
+
+      await prisma.walletTransaction.delete({
+        where: { id: transactionId }
+      });
+
+      return NextResponse.json({ success: true, balance: updatedPartyBalance });
+    }
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
   } catch (error) {
