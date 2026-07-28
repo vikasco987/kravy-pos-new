@@ -23,6 +23,7 @@ const defaults: any = {
     showAddress: true,
     showGST: true,
     showFSSAI: true,
+    showInvoiceNumber: true,
     showToken: true,
     showTableInfo: true,
     showCustomerDetails: true,
@@ -486,6 +487,7 @@ export default function PrintingSettings() {
                             <SettingToggle icon={MapPin} label="Address" sKey="showAddress" desc="Full store address" color="bg-rose-500" />
                             <SettingToggle icon={Hash} label="GST Number" sKey="showGST" desc="Business GSTIN details" color="bg-amber-500" />
                             <SettingToggle icon={FileText} label="FSSAI Number" sKey="showFSSAI" desc="Food license details" color="bg-orange-500" />
+                            <SettingToggle icon={Receipt} label="Invoice Number" sKey="showInvoiceNumber" desc="Print Invoice # / Bill No on receipt" color="bg-purple-600" />
                             <SettingToggle icon={Clock} label="Token Number" sKey="showToken" desc="Order sequence token" color="bg-pink-500" />
                             <SettingToggle icon={MapPin} label="Table / Counter" sKey="showTableInfo" desc="Show table name/counter badge" color="bg-rose-400" />
                             <SettingToggle icon={User} label="Customer Info" sKey="showCustomerDetails" desc="Name, Phone, Address" color="bg-violet-500" />

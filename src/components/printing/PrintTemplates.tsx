@@ -265,7 +265,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
           <div className="flex justify-between items-start">
             <div className="space-y-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
-              <div className="font-black">No: {billNumber}</div>
+              {s('showInvoiceNumber') && <div className="font-black">No: {billNumber}</div>}
               <div className="font-black">{billDate}</div>
             </div>
             {(() => {
