@@ -459,12 +459,12 @@ export default function CheckoutClient() {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = "hi-IN";
+      recognition.lang = "en-IN";
 
       recognition.onstart = () => {
         setIsListening(true);
         kravy.click();
-        toast.success("🎙️ Listening... Speak item name (e.g. Burger, 2 Pizza, Coke)");
+        toast.success("🎙️ Voice Billing Active! Speak items (e.g. 2 Burger, 1 Coke)");
       };
 
       recognition.onresult = (event: any) => {
@@ -505,45 +505,69 @@ export default function CheckoutClient() {
   const handleVoiceSearchItemAdd = (phrase: string) => {
     if (!phrase || phrase.trim().length === 0) return;
 
-    const text = phrase.toLowerCase().trim();
+    console.log("🎙️ Voice Phrase:", phrase);
 
-    let qty = 1;
-    let cleanText = text;
+    // Split multi-item speech like "2 burger, 1 cold coffee" or "do burger aur teen coke"
+    const segments = phrase.split(/(?:,|\band\b|\baur\b|\bphir\b|\bplus\b|\n)+/gi);
+    let itemsAddedCount = 0;
 
-    const numMatch = text.match(/^(\d+|\bdo\b|\bek\b|\bteen\b|\bchaar\b|\bpaanch\b)/i);
-    if (numMatch) {
-      const word = numMatch[1].toLowerCase();
-      if (word === "ek") qty = 1;
-      else if (word === "do") qty = 2;
-      else if (word === "teen") qty = 3;
-      else if (word === "chaar") qty = 4;
-      else if (word === "paanch") qty = 5;
-      else qty = parseInt(word, 10) || 1;
+    segments.forEach((segment) => {
+      let text = segment.toLowerCase().trim();
+      if (!text) return;
 
-      cleanText = text.replace(numMatch[0], "").trim();
-    }
+      let qty = 1;
+      let cleanText = text;
 
-    cleanText = cleanText.replace(/\b(chahiye|add|karo|daal|do|aur|and|with|please|item)\b/gi, "").trim();
+      const numMatch = text.match(/^(\d+|\bek\b|\bdo\b|\bteen\b|\bchaar\b|\bchar\b|\bpaanch\b|\bpanch\b|\bchhe\b|\bsaat\b|\baath\b|\bnau\b|\bdas\b|\bone\b|\btwo\b|\bthree\b|\bfour\b|\bfive\b|\bsix\b|\bseven\b|\beight\b|\bnine\b|\bten\b)/i);
+      
+      if (numMatch) {
+        const word = numMatch[1].toLowerCase();
+        if (word === "ek" || word === "one") qty = 1;
+        else if (word === "do" || word === "two") qty = 2;
+        else if (word === "teen" || word === "three") qty = 3;
+        else if (word === "chaar" || word === "char" || word === "four") qty = 4;
+        else if (word === "paanch" || word === "panch" || word === "five") qty = 5;
+        else if (word === "chhe" || word === "che" || word === "six") qty = 6;
+        else if (word === "saat" || word === "sat" || word === "seven") qty = 7;
+        else if (word === "aath" || word === "eight") qty = 8;
+        else if (word === "nau" || word === "nine") qty = 9;
+        else if (word === "das" || word === "ten") qty = 10;
+        else qty = parseInt(word, 10) || 1;
 
-    if (!cleanText) return;
+        cleanText = text.replace(numMatch[0], "").trim();
+      }
 
-    const matchedItem = menuItems.find((i) => {
-      const itemName = i.name.toLowerCase();
-      const shortCode = i.shortCode ? String(i.shortCode).toLowerCase() : "";
-      return itemName === cleanText || shortCode === cleanText || itemName.includes(cleanText) || cleanText.includes(itemName);
+      cleanText = cleanText.replace(/\b(chahiye|add|karo|daal|do|with|please|item|pieces|pcs|plate|plates)\b/gi, "").trim();
+
+      if (!cleanText) return;
+
+      const matchedItem = menuItems.find((i) => {
+        const itemName = i.name.toLowerCase();
+        const shortCode = i.shortCode ? String(i.shortCode).toLowerCase() : "";
+        const hiName = (i as any).hiName ? String((i as any).hiName).toLowerCase() : "";
+
+        return (
+          itemName === cleanText ||
+          shortCode === cleanText ||
+          (hiName && hiName === cleanText) ||
+          itemName.includes(cleanText) ||
+          cleanText.includes(itemName)
+        );
+      });
+
+      if (matchedItem) {
+        for (let k = 0; k < qty; k++) {
+          handleAddToCart(matchedItem);
+        }
+        itemsAddedCount++;
+        toast.success(`🎙️ Selected: ${qty}x ${matchedItem.name}`);
+      }
     });
 
-    if (matchedItem) {
-      for (let k = 0; k < qty; k++) {
-        handleAddToCart(matchedItem);
-      }
+    if (itemsAddedCount > 0) {
       kravy.add();
-      toast.success(`🎙️ Added ${qty}x ${matchedItem.name} to Cart!`);
       setSearchQuery("");
       setVoiceTranscript("");
-    } else {
-      setSearchQuery(cleanText);
-      toast.info(`🎙️ Voice Searching: "${cleanText}"`);
     }
   };
 
