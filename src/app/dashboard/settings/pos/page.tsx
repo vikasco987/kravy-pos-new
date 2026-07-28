@@ -25,6 +25,7 @@ export default function PosLayoutSettings() {
         posPreviewEnabled: true,
         posKotEnabled: true,
         expiryTrackingEnabled: true,
+        allowWalletEditDelete: true,
     });
 
     useEffect(() => {
@@ -43,6 +44,7 @@ export default function PosLayoutSettings() {
                         posPreviewEnabled: data.posPreviewEnabled ?? true,
                         posKotEnabled: data.posKotEnabled ?? true,
                         expiryTrackingEnabled: data.expiryTrackingEnabled ?? false,
+                        allowWalletEditDelete: data.printSettings?.allowWalletEditDelete ?? data.allowWalletEditDelete ?? true,
                     });
                 }
             })
@@ -188,6 +190,7 @@ export default function PosLayoutSettings() {
                         <VisibilityToggle icon={Eye} label="Preview" sKey="posPreviewEnabled" desc="View layout before final" />
                         <VisibilityToggle icon={Printer} label="KOT Print" sKey="posKotEnabled" desc="Print tokens for kitchen" />
                         <VisibilityToggle icon={Clock} label="Expiry Tracking" sKey="expiryTrackingEnabled" desc="Show item expiration alerts" />
+                        <VisibilityToggle icon={Wallet} label="Wallet Tx Edit & Delete" sKey="allowWalletEditDelete" desc="Allow staff to edit or delete past wallet history" />
                     </div>
                 </div>
             </div>

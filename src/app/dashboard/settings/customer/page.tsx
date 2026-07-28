@@ -29,6 +29,7 @@ export default function CustomerDataSettings() {
         qrDeliveryChargeAmount: 0,
         qrPackagingChargeEnabled: false,
         qrPackagingChargeAmount: 0,
+        allowWalletEditDelete: true,
     });
 
     useEffect(() => {
@@ -52,6 +53,7 @@ export default function CustomerDataSettings() {
                         qrDeliveryChargeAmount: data.qrDeliveryChargeAmount ?? 0,
                         qrPackagingChargeEnabled: data.qrPackagingChargeEnabled ?? false,
                         qrPackagingChargeAmount: data.qrPackagingChargeAmount ?? 0,
+                        allowWalletEditDelete: data.printSettings?.allowWalletEditDelete ?? data.allowWalletEditDelete ?? true,
                     });
                 }
             })
@@ -347,6 +349,37 @@ export default function CustomerDataSettings() {
                         )}
                     </div>
                 </div>
+            </div>
+
+            {/* ✅ WALLET SECURITY & TRANSACTION EDITING RULES */}
+            <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 space-y-6 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-6">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+                            <Clock size={24} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold text-slate-900">Wallet History Controls</h3>
+                            <p className="text-xs text-slate-500 font-mono">Control staff permissions for editing and deleting past transactions</p>
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={() => toggle("allowWalletEditDelete")}
+                        className={`h-12 px-6 rounded-2xl border transition-all font-bold flex items-center gap-2 ${
+                            settings.allowWalletEditDelete 
+                            ? "bg-emerald-600/10 border-emerald-500/50 text-emerald-600" 
+                            : "bg-slate-100 border-slate-200 text-slate-400"
+                        }`}
+                    >
+                        <div className={`w-2 h-2 rounded-full ${settings.allowWalletEditDelete ? "bg-emerald-500" : "bg-slate-400"}`} />
+                        {settings.allowWalletEditDelete ? "Enabled (Allow Edit & Delete)" : "Disabled (Hide Edit & Delete)"}
+                    </button>
+                </div>
+
+                <p className="text-xs text-slate-500 leading-relaxed font-mono">
+                    When <b>Disabled</b>, the Edit (✏️) and Delete (🗑️) icons on customer wallet history will be hidden, preventing staff members from modifying past wallet deposits and withdrawals.
+                </p>
             </div>
 
             <div className="pt-10 border-t border-slate-100 text-center">

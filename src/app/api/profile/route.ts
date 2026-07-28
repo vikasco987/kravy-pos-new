@@ -289,9 +289,12 @@ export async function POST(request: Request) {
     if (body.expiryTrackingEnabled !== undefined) updateData.expiryTrackingEnabled = b(body.expiryTrackingEnabled);
     if (body.phonePrefixType !== undefined) updateData.phonePrefixType = s(body.phonePrefixType);
     if (body.printSettings !== undefined) updateData.printSettings = body.printSettings;
-    if (body.reviewUrl !== undefined) updateData.reviewUrl = s(body.reviewUrl);
-
-    if (body.printSettings !== undefined) updateData.printSettings = body.printSettings;
+    if (body.allowWalletEditDelete !== undefined) {
+      updateData.printSettings = {
+        ...((updateData.printSettings as any) || {}),
+        allowWalletEditDelete: b(body.allowWalletEditDelete)
+      };
+    }
     if (body.reviewUrl !== undefined) updateData.reviewUrl = s(body.reviewUrl);
 
     console.log("SERVER DEBUG: Final Update Data:", JSON.stringify(updateData, null, 2));
