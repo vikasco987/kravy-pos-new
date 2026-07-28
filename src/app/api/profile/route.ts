@@ -289,10 +289,11 @@ export async function POST(request: Request) {
     if (body.expiryTrackingEnabled !== undefined) updateData.expiryTrackingEnabled = b(body.expiryTrackingEnabled);
     if (body.phonePrefixType !== undefined) updateData.phonePrefixType = s(body.phonePrefixType);
     if (body.printSettings !== undefined) updateData.printSettings = body.printSettings;
-    if (body.allowWalletEditDelete !== undefined) {
+    if (body.allowWalletEditDelete !== undefined || body.enableVirtualGroupVariants !== undefined) {
       updateData.printSettings = {
         ...((updateData.printSettings as any) || {}),
-        allowWalletEditDelete: b(body.allowWalletEditDelete)
+        ...(body.allowWalletEditDelete !== undefined ? { allowWalletEditDelete: b(body.allowWalletEditDelete) } : {}),
+        ...(body.enableVirtualGroupVariants !== undefined ? { enableVirtualGroupVariants: b(body.enableVirtualGroupVariants) } : {})
       };
     }
     if (body.reviewUrl !== undefined) updateData.reviewUrl = s(body.reviewUrl);

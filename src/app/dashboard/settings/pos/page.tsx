@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { 
     LayoutDashboard, Check, ArrowLeft, Save, 
     Banknote, Smartphone, CreditCard, Store, Wallet,
-    PauseCircle, SaveAll, Eye, Printer, AlertCircle, Clock
+    PauseCircle, SaveAll, Eye, Printer, AlertCircle, Clock, Layers
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
@@ -26,6 +26,7 @@ export default function PosLayoutSettings() {
         posKotEnabled: true,
         expiryTrackingEnabled: true,
         allowWalletEditDelete: true,
+        enableVirtualGroupVariants: true,
     });
 
     useEffect(() => {
@@ -45,6 +46,7 @@ export default function PosLayoutSettings() {
                         posKotEnabled: data.posKotEnabled ?? true,
                         expiryTrackingEnabled: data.expiryTrackingEnabled ?? false,
                         allowWalletEditDelete: data.printSettings?.allowWalletEditDelete ?? data.allowWalletEditDelete ?? true,
+                        enableVirtualGroupVariants: data.printSettings?.enableVirtualGroupVariants ?? data.enableVirtualGroupVariants ?? true,
                     });
                 }
             })
@@ -191,6 +193,7 @@ export default function PosLayoutSettings() {
                         <VisibilityToggle icon={Printer} label="KOT Print" sKey="posKotEnabled" desc="Print tokens for kitchen" />
                         <VisibilityToggle icon={Clock} label="Expiry Tracking" sKey="expiryTrackingEnabled" desc="Show item expiration alerts" />
                         <VisibilityToggle icon={Wallet} label="Wallet Tx Edit & Delete" sKey="allowWalletEditDelete" desc="Allow staff to edit or delete past wallet history" />
+                        <VisibilityToggle icon={Layers} label="Combine Variants / Addons" sKey="enableVirtualGroupVariants" desc="Group Half/Full/Size variants into 1 card with popup" />
                     </div>
                 </div>
             </div>

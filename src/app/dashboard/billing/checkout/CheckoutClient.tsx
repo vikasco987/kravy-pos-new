@@ -904,6 +904,11 @@ export default function CheckoutClient() {
       });
 
     // 🚀 Apply Virtual Grouping for items with parenthetical variants (e.g. Small, Medium, Large, Half, Full)
+    const enableVirtualGroupVariants = (business as any)?.enableVirtualGroupVariants !== false && (business as any)?.printSettings?.enableVirtualGroupVariants !== false;
+    if (!enableVirtualGroupVariants) {
+      return rawFiltered;
+    }
+
     const grouped: Record<string, MenuItem[]> = {};
     rawFiltered.forEach(it => {
         let baseName = it.name;
@@ -1004,6 +1009,7 @@ export default function CheckoutClient() {
         return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1, isNew: (i.qty + 1) > (i.printedQty || 0) } : i);
       }
       kravy.add(); // new item added — bigger pop sound
+      setSearchQuery("");
       return [...prev, { 
         id: item.id, 
         name: item.name, 
@@ -1016,6 +1022,7 @@ export default function CheckoutClient() {
         isNew: true
       }];
     });
+    setSearchQuery("");
   }
 
   function confirmVariantAddToCart() {
@@ -1083,6 +1090,7 @@ export default function CheckoutClient() {
     });
 
     setVariantModalItem(null);
+    setSearchQuery("");
   }
 
   function reduceFromCart(itemId: string) {
@@ -2362,6 +2370,27 @@ export default function CheckoutClient() {
                     placeholder="Search menu…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && searchQuery.trim()) {
+                        e.preventDefault();
+                        const query = searchQuery.trim().toLowerCase();
+                        const matchedShortCode = menuItems.find(
+                          (i) => i.shortCode && String(i.shortCode).toLowerCase() === query
+                        );
+                        if (matchedShortCode) {
+                          handleAddToCart(matchedShortCode);
+                          setSearchQuery("");
+                          return;
+                        }
+                        const matchedItem = menuItems.find(
+                          (i) => i.name.toLowerCase() === query || (i as any).barcode?.toLowerCase() === query
+                        ) || filteredMenuItems[0];
+                        if (matchedItem) {
+                          handleAddToCart(matchedItem);
+                          setSearchQuery("");
+                        }
+                      }
+                    }}
                     className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)]
                       h-8 pl-8 pr-3 rounded-lg text-xs outline-none
                       focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500
