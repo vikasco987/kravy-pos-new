@@ -257,12 +257,24 @@ export default function PrintingSettings() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ 
+                    id: business?.id,
                     printSettings,
                     reviewUrl: business?.reviewUrl || "" 
                 }),
             });
             if (res.ok) {
-                setOriginalSettings(printSettings);
+                const data = await res.json();
+                if (data) {
+                    setBusiness(data);
+                    const merged = {
+                        ...defaults,
+                        ...(data.printSettings || {})
+                    };
+                    setPrintSettings(merged);
+                    setOriginalSettings(merged);
+                } else {
+                    setOriginalSettings(printSettings);
+                }
                 kravy.success();
                 toast.success("Printing preferences saved!");
             } else {
