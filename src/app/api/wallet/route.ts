@@ -12,11 +12,101 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { action, partyId, amount, description } = body;
+    const { action, partyId, amount, description, transactionId, type } = body;
 
-    console.log(`[WALLET_API] Action: ${action}, PartyId: ${partyId}, Amount: ${amount}`);
+    console.log(`[WALLET_API] Action: ${action}, PartyId: ${partyId}, TransactionId: ${transactionId}, Amount: ${amount}`);
 
-    if (!partyId || !amount || amount <= 0) {
+    if (action === "edit") {
+      if (!transactionId) {
+        return NextResponse.json({ error: "Missing transactionId" }, { status: 400 });
+      }
+
+      const tx = await prisma.walletTransaction.findUnique({
+        where: { id: transactionId }
+      });
+
+      if (!tx) {
+        return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+      }
+
+      const party = await prisma.party.findUnique({ where: { id: tx.partyId } });
+      if (!party) {
+        return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+      }
+
+      const oldType = tx.type;
+      const oldAmount = tx.amount;
+      const newType = type && ["CREDIT", "DEBIT"].includes(type) ? type : oldType;
+      const newAmount = amount !== undefined && !isNaN(Number(amount)) && Number(amount) >= 0 ? Number(amount) : oldAmount;
+      const newDesc = description !== undefined ? description.trim() : (tx.description || "");
+
+      // Net balance adjustment calculation
+      const oldEffect = oldType === "CREDIT" ? -oldAmount : oldAmount;
+      const newEffect = newType === "CREDIT" ? newAmount : -newAmount;
+      const netAdjustment = oldEffect + newEffect;
+
+      const currentBalance = party.walletBalance || 0;
+      const newBalance = Math.max(0, currentBalance + netAdjustment);
+
+      let updatedPartyBalance = currentBalance;
+      if (netAdjustment !== 0) {
+        const updatedParty = await prisma.party.update({
+          where: { id: tx.partyId },
+          data: { walletBalance: newBalance }
+        });
+        updatedPartyBalance = updatedParty.walletBalance;
+      }
+
+      const updatedTx = await prisma.walletTransaction.update({
+        where: { id: transactionId },
+        data: {
+          type: newType,
+          amount: newAmount,
+          description: newDesc
+        }
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        transaction: updatedTx, 
+        balance: updatedPartyBalance 
+      });
+    }
+
+    if (action === "delete") {
+      if (!transactionId) {
+        return NextResponse.json({ error: "Missing transactionId" }, { status: 400 });
+      }
+
+      const tx = await prisma.walletTransaction.findUnique({
+        where: { id: transactionId }
+      });
+
+      if (!tx) {
+        return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+      }
+
+      const party = await prisma.party.findUnique({ where: { id: tx.partyId } });
+      let updatedPartyBalance = party ? party.walletBalance : null;
+
+      if (party) {
+        const adjustment = tx.type === "CREDIT" ? -tx.amount : tx.amount;
+        const newBal = Math.max(0, (party.walletBalance || 0) + adjustment);
+        const updatedP = await prisma.party.update({
+          where: { id: tx.partyId },
+          data: { walletBalance: newBal }
+        });
+        updatedPartyBalance = updatedP.walletBalance;
+      }
+
+      await prisma.walletTransaction.delete({
+        where: { id: transactionId }
+      });
+
+      return NextResponse.json({ success: true, balance: updatedPartyBalance });
+    }
+
+    if (!partyId || amount === undefined || amount === null || isNaN(Number(amount)) || Number(amount) <= 0) {
       console.warn("[WALLET_API] Validation Failed: Missing partyId or invalid amount");
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
     }
@@ -31,11 +121,6 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(`[WALLET_API] Found Customer: ${party.name}, Current Balance: ${party.walletBalance}`);
-
-    if (party.createdBy !== effectiveId) {
-      console.warn(`[WALLET_API] Forbidden: ${party.createdBy} !== ${effectiveId}`);
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
 
     if (action === "deposit") {
       const newBalance = (party.walletBalance || 0) + amount;
@@ -127,100 +212,6 @@ export async function POST(req: NextRequest) {
       });
 
       return NextResponse.json({ success: true, balance: updatedParty.walletBalance });
-    }
-
-    if (action === "edit") {
-      const { transactionId, type, amount, description } = body;
-      if (!transactionId) {
-        return NextResponse.json({ error: "Missing transactionId" }, { status: 400 });
-      }
-
-      const tx = await prisma.walletTransaction.findUnique({
-        where: { id: transactionId }
-      });
-
-      if (!tx || tx.clerkId !== effectiveId) {
-        return NextResponse.json({ error: "Transaction not found or unauthorized" }, { status: 404 });
-      }
-
-      const party = await prisma.party.findUnique({ where: { id: tx.partyId } });
-      if (!party) {
-        return NextResponse.json({ error: "Customer not found" }, { status: 404 });
-      }
-
-      const oldType = tx.type;
-      const oldAmount = tx.amount;
-      const newType = type && ["CREDIT", "DEBIT"].includes(type) ? type : oldType;
-      const newAmount = amount !== undefined && !isNaN(Number(amount)) && Number(amount) >= 0 ? Number(amount) : oldAmount;
-      const newDesc = description !== undefined ? description.trim() : (tx.description || "");
-
-      // Net balance adjustment calculation
-      const oldEffect = oldType === "CREDIT" ? -oldAmount : oldAmount;
-      const newEffect = newType === "CREDIT" ? newAmount : -newAmount;
-      const netAdjustment = oldEffect + newEffect;
-
-      const currentBalance = party.walletBalance || 0;
-      const newBalance = Math.max(0, currentBalance + netAdjustment);
-
-      let updatedPartyBalance = currentBalance;
-      if (netAdjustment !== 0) {
-        const updatedParty = await prisma.party.update({
-          where: { id: tx.partyId },
-          data: { walletBalance: newBalance }
-        });
-        updatedPartyBalance = updatedParty.walletBalance;
-      }
-
-      const updatedTx = await prisma.walletTransaction.update({
-        where: { id: transactionId },
-        data: {
-          type: newType,
-          amount: newAmount,
-          description: newDesc
-        }
-      });
-
-      return NextResponse.json({ 
-        success: true, 
-        transaction: updatedTx, 
-        balance: updatedPartyBalance 
-      });
-    }
-
-    if (action === "delete") {
-      const { transactionId } = body;
-      if (!transactionId) {
-        return NextResponse.json({ error: "Missing transactionId" }, { status: 400 });
-      }
-
-      const tx = await prisma.walletTransaction.findUnique({
-        where: { id: transactionId }
-      });
-
-      if (!tx || tx.clerkId !== effectiveId) {
-        return NextResponse.json({ error: "Transaction not found or unauthorized" }, { status: 404 });
-      }
-
-      const party = await prisma.party.findUnique({ where: { id: tx.partyId } });
-      let updatedPartyBalance = party ? party.walletBalance : null;
-
-      if (party) {
-        const adjustment = tx.type === "CREDIT" ? -tx.amount : tx.amount;
-        const newBal = Math.max(0, (party.walletBalance || 0) + adjustment);
-        const updatedP = await prisma.party.update({
-          where: { id: tx.partyId },
-          data: { walletBalance: newBal }
-        });
-        updatedPartyBalance = updatedP.walletBalance;
-      }
-
-      await prisma.walletTransaction.delete({
-        where: { id: transactionId }
-      });
-
-      return NextResponse.json({ success: true, balance: updatedPartyBalance });
-    }
-
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
   } catch (error) {
