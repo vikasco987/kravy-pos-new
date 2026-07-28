@@ -1009,7 +1009,6 @@ export default function CheckoutClient() {
         return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1, isNew: (i.qty + 1) > (i.printedQty || 0) } : i);
       }
       kravy.add(); // new item added — bigger pop sound
-      setSearchQuery("");
       return [...prev, { 
         id: item.id, 
         name: item.name, 
@@ -1022,7 +1021,6 @@ export default function CheckoutClient() {
         isNew: true
       }];
     });
-    setSearchQuery("");
   }
 
   function confirmVariantAddToCart() {
@@ -1090,7 +1088,6 @@ export default function CheckoutClient() {
     });
 
     setVariantModalItem(null);
-    setSearchQuery("");
   }
 
   function reduceFromCart(itemId: string) {
@@ -2369,6 +2366,7 @@ export default function CheckoutClient() {
                     type="text"
                     placeholder="Search menu…"
                     value={searchQuery}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && searchQuery.trim()) {
