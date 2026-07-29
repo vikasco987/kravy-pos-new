@@ -337,6 +337,9 @@ export default function CheckoutClient() {
     printSettings?: any;
     zones?: string[];
     expiryTrackingEnabled?: boolean;
+    loyaltyValueInRupees?: number;
+    enableLoyaltyProgram?: boolean;
+    loyaltyPointRatio?: number;
   } | null>({
     businessName: "Kravy POS",
     taxEnabled: true,
@@ -411,7 +414,10 @@ export default function CheckoutClient() {
       businessNameSize: data.businessNameSize,
       phonePrefixType: data.phonePrefixType || "TEXT",
       printSettings: data.printSettings,
-      zones: data.zones || []
+      zones: data.zones || [],
+      loyaltyValueInRupees: data.loyaltyValueInRupees ?? 1,
+      enableLoyaltyProgram: data.enableLoyaltyProgram !== false,
+      loyaltyPointRatio: data.loyaltyPointRatio ?? 10
     });
   };
 
@@ -3172,7 +3178,7 @@ export default function CheckoutClient() {
                          <p className="text-base font-black text-amber-600 mt-0.5">👑 {selectedParty.loyaltyPoints || 0} Pts</p>
                        </div>
                        <span className="text-[10px] font-extrabold text-amber-700 bg-amber-500/20 px-2.5 py-1 rounded-lg">
-                         ₹{(selectedParty.loyaltyPoints || 0) * (businessProfile?.loyaltyValueInRupees || 1)} Discount Value
+                         ₹{(selectedParty.loyaltyPoints || 0) * (business?.loyaltyValueInRupees || 1)} Discount Value
                        </span>
                      </div>
                    </div>
