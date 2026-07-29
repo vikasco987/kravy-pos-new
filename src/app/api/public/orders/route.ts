@@ -144,8 +144,8 @@ export async function POST(req: NextRequest) {
                 table: true,
             }
         });
-        // Award Loyalty Points (Dynamic Ratio)
-        if (customerPhone) {
+        // Award Loyalty Points (Dynamic Ratio & Program Enable Check)
+        if (customerPhone && profile?.enableLoyaltyProgram !== false) {
             try {
                 const ratio = profile?.loyaltyPointRatio || 10;
                 const pointsToAward = Math.floor(parseFloat(total) / ratio);

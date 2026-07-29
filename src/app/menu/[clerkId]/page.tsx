@@ -101,6 +101,7 @@ type BusinessProfile = {
     collectCustomerAddress?: boolean;
     requireCustomerAddress?: boolean;
     qrMenuPriceInclusive?: boolean;
+    enableLoyaltyProgram?: boolean;
 };
 
 type ComboSelection = {
@@ -691,15 +692,25 @@ function PublicMenu() {
         const item = items.find(it => it.id === id) || filteredItems.find(it => it.id === id);
         if (!item) return;
 
-        // ✅ If item has variants OR addon groups, open selection sheet
-        if ((item.variants && (item.variants as any[]).length > 0) || (item.addonGroups && (item.addonGroups as any[]).length > 0)) {
-            setCustomizingItem(item);
+        // Count total variant options & addon groups
+        const totalVariantOptions = (item.variants as any[])?.reduce((acc: number, v: any) => acc + (v.options?.length || 0), 0) || 0;
+        const totalAddonGroups = ((item as any).addonGroups as any[])?.length || 0;
+
+        // ✅ If item has 0 addon groups AND at most 1 variant option, bypass modal and add directly!
+        if (totalAddonGroups === 0 && totalVariantOptions <= 1) {
+            if ((item as any).isVirtualGroup && (item as any).groupedItems?.[0]) {
+                const realId = (item as any).groupedItems[0].id;
+                setCart(prev => ({ ...prev, [realId]: (prev[realId] || 0) + 1 }));
+            } else {
+                setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+            }
+            kravy.add();
+            toast.success("Added to cart", { duration: 800, position: "top-center" });
             return;
         }
 
-        setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
-        kravy.add();
-        toast.success("Added to cart", { duration: 800, position: "top-center" });
+        // ✅ If item has multiple variants OR addon groups, open selection sheet
+        setCustomizingItem(item);
     };
 
     const addVariantItemToCart = () => {
@@ -2459,13 +2470,15 @@ function PublicMenu() {
                                 </div>
                             </div>
 
-                            <div className="bg-[#D4A353]/10 border border-[#D4A353]/30 rounded-xl px-5 py-2.5 flex items-center justify-between w-full mb-8">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xl">👑</span>
-                                    <span className="text-[0.75rem] font-[700] text-[#7A5A00]">Loyalty points earned!</span>
+                            {profile?.enableLoyaltyProgram !== false && (
+                                <div className="bg-[#D4A353]/10 border border-[#D4A353]/30 rounded-xl px-5 py-2.5 flex items-center justify-between w-full mb-8">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xl">👑</span>
+                                        <span className="text-[0.75rem] font-[700] text-[#7A5A00]">Loyalty points earned!</span>
+                                    </div>
+                                    <span className="font-[Syne] text-[1.1rem] font-[800] text-[#D4A353]">+{Math.floor(total / (profile?.loyaltyPointRatio || 10))} pts</span>
                                 </div>
-                                <span className="font-[Syne] text-[1.1rem] font-[800] text-[#D4A353]">+{Math.floor(total / 10)} pts</span>
-                            </div>
+                            )}
 
                             <div className="flex w-full mb-8 gap-1">
                                 {[
@@ -2806,7 +2819,7 @@ function PublicMenu() {
                                                                     {isSelected && (
                                                                         vGroup.type === 'radio' 
                                                                             ? <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                                                                            : <Check size={12} className="text-white" strokeWidth={4} />
+                                                                            : <Check size={12} className="text-[#ffffff]" strokeWidth={4} />
                                                                     )}
                                                                 </div>
                                                                 {opt.imageUrl && typeof opt.imageUrl === 'string' && opt.imageUrl.trim() !== '' && (
@@ -2816,11 +2829,9 @@ function PublicMenu() {
                                                                 )}
                                                                 <span className={`text-[0.88rem] font-[800] ${isSelected ? "text-red-700" : "text-gray-700"}`}>{opt.name}</span>
                                                             </div>
-                                                            {opt.price > 0 && (
-                                                                <span className={`text-[0.85rem] font-black italic ${isSelected ? "text-red-600" : "text-emerald-600"}`}>
-                                                                    {vGroup.id === 'virtual_group' ? `₹${opt.price}` : `+₹${opt.price}`}
-                                                                </span>
-                                                            )}
+                                                            <span className={`text-[0.85rem] font-black italic ${isSelected ? "text-red-600" : "text-emerald-600"}`}>
+                                                                {vGroup.id === 'virtual_group' ? `₹${opt.price ?? 0}` : (opt.price > 0 ? `+₹${opt.price}` : `₹0`)}
+                                                            </span>
                                                         </motion.div>
                                                     );
                                                 })}
