@@ -1009,15 +1009,20 @@ export default function ViewMenuPage() {
               firstImg = photos[0]?.image_url || photos[0]?.image || photos[0]?.url;
             }
           } catch (err) {
-            console.warn("FoodSnap sync timed out, falling back to Deep Search for", cleanName);
+            console.warn("FoodSnap sync timed out for", cleanName);
           }
 
+          // Fallback to strict SafeSearch google-image-search if FoodSnap returns nothing
           if (!firstImg) {
-            const resDeep = await fetch(`/api/proxy/google-image-search?q=${encodeURIComponent(cleanName)}`);
-            if (resDeep.ok) {
-              const dataDeep = await resDeep.json();
-              const photosDeep = dataDeep.data || [];
-              firstImg = photosDeep[0]?.image_url || photosDeep[0]?.image || photosDeep[0]?.url;
+            try {
+              const resDeep = await fetch(`/api/proxy/google-image-search?q=${encodeURIComponent(cleanName)}`);
+              if (resDeep.ok) {
+                const dataDeep = await resDeep.json();
+                const photosDeep = dataDeep.data || [];
+                firstImg = photosDeep[0]?.image_url || photosDeep[0]?.image || photosDeep[0]?.url;
+              }
+            } catch (e) {
+              console.warn("Safe image search failed for", cleanName);
             }
           }
           
