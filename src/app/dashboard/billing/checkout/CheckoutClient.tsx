@@ -624,7 +624,7 @@ export default function CheckoutClient() {
 
       if (matchedItem) {
         for (let k = 0; k < qty; k++) {
-          handleAddToCart(matchedItem);
+          addToCart(matchedItem);
         }
         itemsAddedCount++;
         toast.success(`🎙️ AI Selected: ${qty}x ${matchedItem.name}`);
@@ -1090,7 +1090,7 @@ export default function CheckoutClient() {
     const rawFiltered = menuItems
       .filter((i) => i.isActive !== false) // 🛡️ Filter Offline Items
       .filter((i) => activeCategory === "All" ? true : i.category?.name === activeCategory)
-      .filter((i) => i.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) || (i.shortCode && String(i.shortCode).toLowerCase() === searchQuery.trim().toLowerCase()))
+      .filter((i) => i.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) || (i.shortCode && String(i.shortCode).toLowerCase().includes(searchQuery.trim().toLowerCase())))
       .filter((i) => {
         // 1. Manual Zone Filter (Highest Priority)
         if (activeZone !== "All") {
@@ -1182,6 +1182,8 @@ export default function CheckoutClient() {
 
   /* ================= CART ================= */
   function addToCart(item: MenuItem) {
+    if (searchQuery) setSearchQuery(""); // 🚀 Auto-clear search/shortcode input on item add/select
+
     if (item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
       // Normalize variants if they are in the old/app format
       const isAppFormat = item.variants.some((v: any) => !v.options);
@@ -2571,7 +2573,7 @@ export default function CheckoutClient() {
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--kravy-text-faint)]" size={12} />
                   <input
                     type="text"
-                    placeholder={isListening ? "🎙️ Listening... Speak item..." : "Search menu…"}
+                    placeholder={isListening ? "🎙️ Listening... Speak item..." : "Search menu / Shortcode…"}
                     value={searchQuery}
                     onFocus={(e) => e.target.select()}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -2579,19 +2581,24 @@ export default function CheckoutClient() {
                       if (e.key === 'Enter' && searchQuery.trim()) {
                         e.preventDefault();
                         const query = searchQuery.trim().toLowerCase();
+                        
+                        // 1. Check exact match by shortCode
                         const matchedShortCode = menuItems.find(
-                          (i) => i.shortCode && String(i.shortCode).toLowerCase() === query
+                          (i) => i.shortCode && String(i.shortCode).trim().toLowerCase() === query
                         );
                         if (matchedShortCode) {
-                          handleAddToCart(matchedShortCode);
+                          addToCart(matchedShortCode);
                           setSearchQuery("");
                           return;
                         }
+                        
+                        // 2. Check exact match by name, barcode, or filtered result
                         const matchedItem = menuItems.find(
                           (i) => i.name.toLowerCase() === query || (i as any).barcode?.toLowerCase() === query
-                        ) || filteredMenuItems[0];
+                        ) || (filteredMenuItems.length > 0 ? filteredMenuItems[0] : null);
+                        
                         if (matchedItem) {
-                          handleAddToCart(matchedItem);
+                          addToCart(matchedItem);
                           setSearchQuery("");
                         }
                       }
