@@ -3147,22 +3147,34 @@ export default function CheckoutClient() {
                 )}
     
                  {selectedParty && (
-                   <div className="bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-2xl flex items-center justify-between">
-                     <div>
-                       <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Active Balance</p>
-                       <p className="text-lg font-black text-indigo-600 mt-0.5">₹{selectedParty.walletBalance?.toFixed(2) || "0.00"}</p>
+                   <div className="space-y-2">
+                     <div className="bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-2xl flex items-center justify-between">
+                       <div>
+                         <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Active Wallet Balance</p>
+                         <p className="text-lg font-black text-indigo-600 mt-0.5">₹{selectedParty.walletBalance?.toFixed(2) || "0.00"}</p>
+                       </div>
+                       <button 
+                         onClick={async () => {
+                           const amt = prompt("Enter amount to deposit (₹):");
+                           if (amt && !isNaN(Number(amt))) {
+                             handleDeposit(Number(amt));
+                           }
+                         }}
+                         className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:scale-105 active:scale-95 transition-all"
+                       >
+                         Add
+                       </button>
                      </div>
-                     <button 
-                       onClick={async () => {
-                         const amt = prompt("Enter amount to deposit (₹):");
-                         if (amt && !isNaN(Number(amt))) {
-                           handleDeposit(Number(amt));
-                         }
-                       }}
-                       className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:scale-105 active:scale-95 transition-all"
-                     >
-                       Add
-                     </button>
+
+                     <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl flex items-center justify-between">
+                       <div>
+                         <p className="text-[8px] font-black text-amber-600 uppercase tracking-widest">Loyalty Rewards</p>
+                         <p className="text-base font-black text-amber-600 mt-0.5">👑 {selectedParty.loyaltyPoints || 0} Pts</p>
+                       </div>
+                       <span className="text-[10px] font-extrabold text-amber-700 bg-amber-500/20 px-2.5 py-1 rounded-lg">
+                         ₹{(selectedParty.loyaltyPoints || 0) * (businessProfile?.loyaltyValueInRupees || 1)} Discount Value
+                       </span>
+                     </div>
                    </div>
                  )}
 

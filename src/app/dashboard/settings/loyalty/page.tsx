@@ -2,16 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { 
   Award, 
   ChevronLeft, 
   Save, 
   TrendingUp, 
   Gift, 
-  MessageCircle,
   AlertCircle,
-  Coins
+  Coins,
+  Search,
+  RefreshCw,
+  Edit3,
+  Plus,
+  Minus,
+  CheckCircle2,
+  X,
+  Users,
+  Percent,
+  Zap,
+  ShoppingBag,
+  Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,27 +29,68 @@ export default function LoyaltySettingsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
-
-  // Stats for visual flair
-  const [stats, setStats] = useState({
-    activeUsers: 42,
-    pointsIssued: 12500,
-    rewardsClaimed: 18
+  const [profile, setProfile] = useState<any>({
+    enableLoyaltyProgram: true,
+    loyaltyPointRatio: 10,
+    loyaltyMinOrderAmount: 100,
+    loyaltyValueInRupees: 1,
+    loyaltyMinRedeem: 100,
+    maxRedeemPointsPerBill: 500
   });
 
+  // Customer Loyalty Ledger State
+  const [parties, setParties] = useState<any[]>([]);
+  const [loadingParties, setLoadingParties] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Adjust Points Modal State
+  const [adjustingParty, setAdjustingParty] = useState<any | null>(null);
+  const [adjustAmount, setAdjustAmount] = useState<number>(50);
+  const [adjustType, setAdjustType] = useState<"ADD" | "DEDUCT">("ADD");
+  const [adjustRemark, setAdjustRemark] = useState("");
+  const [isAdjusting, setIsAdjusting] = useState(false);
+
   useEffect(() => {
-    fetch("/api/public/profile") // We could use a private endpoint, but this usually returns the current user's profile if user-client is logged in
-      .then(res => res.json())
-      .then(data => {
-        setProfile(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        toast.error("Failed to load settings");
-        setLoading(false);
-      });
+    fetchProfile();
+    fetchParties();
   }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch("/api/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setProfile({
+          enableLoyaltyProgram: data.enableLoyaltyProgram !== false,
+          loyaltyPointRatio: data.loyaltyPointRatio ?? 10,
+          loyaltyMinOrderAmount: data.loyaltyMinOrderAmount ?? 100,
+          loyaltyValueInRupees: data.loyaltyValueInRupees ?? 1,
+          loyaltyMinRedeem: data.loyaltyMinRedeem ?? 100,
+          maxRedeemPointsPerBill: data.maxRedeemPointsPerBill ?? 500
+        });
+      }
+    } catch (err) {
+      toast.error("Failed to load profile settings");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchParties = async () => {
+    setLoadingParties(true);
+    try {
+      const res = await fetch("/api/parties");
+      if (res.ok) {
+        const data = await res.json();
+        setParties(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load customer loyalty list");
+    } finally {
+      setLoadingParties(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -48,22 +99,71 @@ export default function LoyaltySettingsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          loyaltyPointRatio: parseFloat(profile.loyaltyPointRatio),
-          loyaltyMinRedeem: parseInt(profile.loyaltyMinRedeem)
+          enableLoyaltyProgram: profile.enableLoyaltyProgram,
+          loyaltyPointRatio: parseFloat(profile.loyaltyPointRatio) || 10,
+          loyaltyMinOrderAmount: parseFloat(profile.loyaltyMinOrderAmount) || 0,
+          loyaltyValueInRupees: parseFloat(profile.loyaltyValueInRupees) || 1,
+          loyaltyMinRedeem: parseInt(profile.loyaltyMinRedeem) || 100,
+          maxRedeemPointsPerBill: parseInt(profile.maxRedeemPointsPerBill) || 500
         })
       });
 
       if (res.ok) {
-        toast.success("Loyalty rules updated successfully");
+        toast.success("Loyalty & Rewards rules updated successfully! 👑");
       } else {
         throw new Error();
       }
     } catch (err) {
-      toast.error("Failed to save settings");
+      toast.error("Failed to save loyalty settings");
     } finally {
       setSaving(false);
     }
   };
+
+  const handleSavePointsAdjustment = async () => {
+    if (!adjustingParty) return;
+    setIsAdjusting(true);
+
+    const change = adjustType === "ADD" ? Math.abs(adjustAmount) : -Math.abs(adjustAmount);
+    const newTotal = Math.max(0, (adjustingParty.loyaltyPoints || 0) + change);
+
+    try {
+      const res = await fetch("/api/parties", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: adjustingParty.id,
+          loyaltyPoints: newTotal,
+          remarks: adjustRemark ? `Points ${adjustType === 'ADD' ? 'Added' : 'Deducted'}: ${adjustRemark}` : undefined
+        })
+      });
+
+      if (res.ok) {
+        toast.success(`Successfully updated points for ${adjustingParty.name}`);
+        setAdjustingParty(null);
+        setAdjustRemark("");
+        fetchParties();
+      } else {
+        toast.error("Failed to update points");
+      }
+    } catch (e) {
+      toast.error("Error updating customer points");
+    } finally {
+      setIsAdjusting(false);
+    }
+  };
+
+  const filteredParties = parties.filter(p => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      (p.name && p.name.toLowerCase().includes(q)) ||
+      (p.phone && p.phone.includes(q))
+    );
+  });
+
+  const totalPointsInCirculation = parties.reduce((acc, p) => acc + (p.loyaltyPoints || 0), 0);
+  const activeLoyaltyCustomers = parties.filter(p => (p.loyaltyPoints || 0) > 0).length;
 
   if (loading) {
     return (
@@ -74,145 +174,423 @@ export default function LoyaltySettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl space-y-8 pb-20 kravy-page-fade">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="max-w-6xl space-y-8 pb-20 kravy-page-fade">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] p-6 rounded-3xl shadow-sm">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => router.back()}
-            className="w-10 h-10 rounded-xl bg-[var(--kravy-surface)] border border-[var(--kravy-border)] flex items-center justify-center hover:bg-[var(--kravy-surface-hover)] transition-all"
+            className="w-10 h-10 rounded-xl bg-[var(--kravy-bg)] border border-[var(--kravy-border)] flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
           >
             <ChevronLeft size={20} />
           </button>
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-[var(--kravy-text-primary)]">Loyalty Reward Program</h1>
-            <p className="text-sm text-[var(--kravy-text-muted)] font-medium">Configure how customers earn and redeem points</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black tracking-tight text-[var(--kravy-text-primary)]">QR Loyalty & Rewards Program</h1>
+              <span className="px-2.5 py-0.5 rounded-full text-[0.65rem] font-extrabold uppercase bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                👑 Rewards Hub
+              </span>
+            </div>
+            <p className="text-xs text-[var(--kravy-text-muted)] font-medium mt-0.5">Manage earning ratios, redemption limits & view customer reward balances</p>
           </div>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-2 px-6 py-3 bg-[#D4A353] text-white rounded-2xl font-black text-sm shadow-lg shadow-[#D4A353]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
-        >
-          {saving ? "Saving..." : <><Save size={18} /> Update Logic</>}
-        </button>
-      </div>
 
-      {/* Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Main Configuration (Left - 2/3) */}
-        <div className="md:col-span-2 space-y-6">
-          <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] p-8 shadow-xl">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-[#D4A353]/10 flex items-center justify-center text-[#D4A353]">
-                <TrendingUp size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-[var(--kravy-text-primary)]">Earning Rules</h3>
-                <p className="text-xs text-[var(--kravy-text-muted)] font-monospace uppercase tracking-widest">Points Multiplier</p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-black text-[var(--kravy-text-muted)]">Points Calculation Ratio</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-[#D4A353]">
-                    <Coins size={18} />
-                  </div>
-                  <input
-                    type="number"
-                    value={profile.loyaltyPointRatio}
-                    onChange={(e) => setProfile({ ...profile, loyaltyPointRatio: e.target.value })}
-                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl py-4 pl-12 pr-4 text-lg font-black focus:ring-2 focus:ring-[#D4A353]/20 outline-none transition-all"
-                    placeholder="10"
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-lg text-[0.65rem] font-black uppercase text-gray-500">
-                    per rupee
-                  </div>
-                </div>
-                <p className="text-[0.7rem] text-gray-400 font-medium px-2 italic">Example: A value of <strong>10</strong> means customer earns 1 point for every ₹10 spent.</p>
-              </div>
-
-              <div className="space-y-2 pt-4">
-                <label className="text-sm font-black text-[var(--kravy-text-muted)]">Minimum Redemption Threshold</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-[#D4A353]">
-                    <Gift size={18} />
-                  </div>
-                  <input
-                    type="number"
-                    value={profile.loyaltyMinRedeem}
-                    onChange={(e) => setProfile({ ...profile, loyaltyMinRedeem: e.target.value })}
-                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-2xl py-4 pl-12 pr-4 text-lg font-black focus:ring-2 focus:ring-[#D4A353]/20 outline-none transition-all"
-                    placeholder="100"
-                  />
-                </div>
-                <p className="text-[0.7rem] text-gray-400 font-medium px-2 italic">Points required to unlock the first reward tier on the QR menu.</p>
-              </div>
-            </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          {/* Program Toggle Switch */}
+          <div className="flex items-center gap-2 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] px-4 py-2.5 rounded-2xl">
+            <span className="text-xs font-bold text-[var(--kravy-text-primary)]">Program Status</span>
+            <button
+              type="button"
+              onClick={() => setProfile({ ...profile, enableLoyaltyProgram: !profile.enableLoyaltyProgram })}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                profile.enableLoyaltyProgram ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-700"
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                profile.enableLoyaltyProgram ? "translate-x-6" : "translate-x-1"
+              }`} />
+            </button>
           </div>
 
-          {/* Quick Tips */}
-          <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-[28px] p-6 flex gap-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-800 flex items-center justify-center text-blue-600 shrink-0">
-               <AlertCircle size={20} />
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-2xl font-black text-xs shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+          >
+            {saving ? "Saving..." : <><Save size={16} /> Save Settings</>}
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Stats Banner */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] p-5 rounded-2xl flex items-center justify-between shadow-sm">
+          <div>
+            <span className="text-[0.65rem] font-bold text-[var(--kravy-text-muted)] uppercase tracking-wider">Active Customers</span>
+            <div className="text-2xl font-black text-[var(--kravy-text-primary)] mt-1">{activeLoyaltyCustomers}</div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
+            <Users size={22} />
+          </div>
+        </div>
+
+        <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] p-5 rounded-2xl flex items-center justify-between shadow-sm">
+          <div>
+            <span className="text-[0.65rem] font-bold text-[var(--kravy-text-muted)] uppercase tracking-wider">Points in Circulation</span>
+            <div className="text-2xl font-black text-amber-600 mt-1">👑 {totalPointsInCirculation.toLocaleString()}</div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+            <Coins size={22} />
+          </div>
+        </div>
+
+        <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] p-5 rounded-2xl flex items-center justify-between shadow-sm">
+          <div>
+            <span className="text-[0.65rem] font-bold text-[var(--kravy-text-muted)] uppercase tracking-wider">Redemption Value</span>
+            <div className="text-2xl font-black text-emerald-600 mt-1">₹{(totalPointsInCirculation * (profile.loyaltyValueInRupees || 1)).toLocaleString()}</div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+            <Gift size={22} />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Settings Card */}
+      <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="flex items-center gap-3 border-b border-[var(--kravy-border)] pb-4">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+            <TrendingUp size={20} />
+          </div>
+          <div>
+            <h3 className="text-lg font-black text-[var(--kravy-text-primary)]">Points Earning & Redemption Rules</h3>
+            <p className="text-xs text-[var(--kravy-text-muted)] font-medium">Define how customers earn points on QR orders and redeem discounts</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Earning Ratio */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[var(--kravy-text-primary)] flex items-center gap-1.5">
+              <Coins size={14} className="text-amber-500" />
+              Earning Ratio (₹ spent per 1 point)
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                value={profile.loyaltyPointRatio}
+                onChange={(e) => setProfile({ ...profile, loyaltyPointRatio: e.target.value })}
+                className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl py-3 pl-4 pr-16 text-sm font-bold focus:ring-2 focus:ring-amber-500/20 outline-none"
+                placeholder="10"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[0.65rem] font-black uppercase text-[var(--kravy-text-muted)]">
+                ₹ / point
+              </span>
+            </div>
+            <p className="text-[0.7rem] text-[var(--kravy-text-muted)] italic">e.g. Value 10 = Earns 1 point per ₹10 spent (₹100 bill = 10 pts)</p>
+          </div>
+
+          {/* Min Order Amount */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[var(--kravy-text-primary)] flex items-center gap-1.5">
+              <ShoppingBag size={14} className="text-indigo-500" />
+              Min Order Amount for Points
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                value={profile.loyaltyMinOrderAmount}
+                onChange={(e) => setProfile({ ...profile, loyaltyMinOrderAmount: e.target.value })}
+                className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl py-3 pl-4 pr-12 text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                placeholder="100"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[0.65rem] font-black uppercase text-[var(--kravy-text-muted)]">
+                ₹ Min
+              </span>
+            </div>
+            <p className="text-[0.7rem] text-[var(--kravy-text-muted)] italic">Orders below this amount will not earn loyalty points.</p>
+          </div>
+
+          {/* Point Redemption Value */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[var(--kravy-text-primary)] flex items-center gap-1.5">
+              <Gift size={14} className="text-emerald-500" />
+              1 Point Value in ₹ (Discount Rate)
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                step="0.1"
+                value={profile.loyaltyValueInRupees}
+                onChange={(e) => setProfile({ ...profile, loyaltyValueInRupees: e.target.value })}
+                className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl py-3 pl-4 pr-14 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                placeholder="1.0"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[0.65rem] font-black uppercase text-[var(--kravy-text-muted)]">
+                ₹ / pt
+              </span>
+            </div>
+            <p className="text-[0.7rem] text-[var(--kravy-text-muted)] italic">e.g. 1.0 = 100 points give ₹100 bill discount</p>
+          </div>
+
+          {/* Minimum Redemption Threshold */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[var(--kravy-text-primary)] flex items-center gap-1.5">
+              <Award size={14} className="text-amber-500" />
+              Min Points Needed to Unlock Redeem
+            </label>
+            <input
+              type="number"
+              value={profile.loyaltyMinRedeem}
+              onChange={(e) => setProfile({ ...profile, loyaltyMinRedeem: e.target.value })}
+              className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-amber-500/20 outline-none"
+              placeholder="100"
+            />
+            <p className="text-[0.7rem] text-[var(--kravy-text-muted)] italic">Customer must have at least this many points to redeem on bill.</p>
+          </div>
+
+          {/* Max Redeem Limit per Bill */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[var(--kravy-text-primary)] flex items-center gap-1.5">
+              <Sparkles size={14} className="text-rose-500" />
+              Max Redeemable Points per Bill
+            </label>
+            <input
+              type="number"
+              value={profile.maxRedeemPointsPerBill}
+              onChange={(e) => setProfile({ ...profile, maxRedeemPointsPerBill: e.target.value })}
+              className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-rose-500/20 outline-none"
+              placeholder="500"
+            />
+            <p className="text-[0.7rem] text-[var(--kravy-text-muted)] italic">Cap maximum points used in a single transaction.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Customer Points Ledger & Sync Table */}
+      <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[var(--kravy-border)] pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
+              <Users size={20} />
             </div>
             <div>
-              <h4 className="text-sm font-black text-blue-900 dark:text-blue-200 mb-1">Marketing Tip</h4>
-              <p className="text-[0.78rem] text-blue-800/70 dark:text-blue-200/60 leading-relaxed font-medium">Lowering the ratio (e.g., 1 point per ₹5 instead of ₹10) encourages frequent visits as customers see points accumulate faster!</p>
+              <h3 className="text-lg font-black text-[var(--kravy-text-primary)]">Customer Loyalty Ledger</h3>
+              <p className="text-xs text-[var(--kravy-text-muted)] font-medium">View & manage live points balance for every registered customer</p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {/* Search Input */}
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--kravy-text-faint)]" size={14} />
+              <input
+                type="text"
+                placeholder="Search name or phone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl py-2 pl-9 pr-3 text-xs font-bold outline-none"
+              />
+            </div>
+
+            <button
+              onClick={fetchParties}
+              className="p-2.5 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)] transition-all"
+              title="Sync & Refresh List"
+            >
+              <RefreshCw size={14} className={loadingParties ? "animate-spin" : ""} />
+            </button>
           </div>
         </div>
 
-        {/* Sidebar Info (Right - 1/3) */}
-        <div className="space-y-6">
-          {/* Status Card */}
-          <div className="bg-[#D4A353] rounded-[32px] p-6 text-white shadow-xl relative overflow-hidden group">
-            <div className="absolute -right-6 -bottom-6 opacity-10 group-hover:scale-110 transition-transform duration-700">
-              <Award size={140} />
-            </div>
-            <h3 className="text-lg font-black mb-1">Program Status</h3>
-            <div className="inline-flex items-center gap-1.5 bg-white/20 px-2 py-0.5 rounded-full text-[0.6rem] font-black tracking-widest uppercase mb-6">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              Live & Tracking
-            </div>
-            
-            <div className="space-y-4 relative z-10">
-              <div className="flex items-center justify-between">
-                <span className="text-[0.7rem] font-bold opacity-80 uppercase tracking-wider">Happy Customers</span>
-                <span className="text-xl font-black">{stats.activeUsers}</span>
-              </div>
-              <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
-                <div className="w-[65%] h-full bg-white rounded-fullShadow-sm" />
-              </div>
-              <p className="text-[0.65rem] font-medium opacity-70">Customers with at least 1 point earned in the last 30 days.</p>
-            </div>
-          </div>
+        {/* Customer Table */}
+        <div className="overflow-x-auto rounded-2xl border border-[var(--kravy-border)]">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-[var(--kravy-bg)] text-[0.7rem] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider border-b border-[var(--kravy-border)]">
+                <th className="py-3 px-4">Customer</th>
+                <th className="py-3 px-4">Phone Number</th>
+                <th className="py-3 px-4 text-center">Loyalty Points</th>
+                <th className="py-3 px-4 text-center">Discount Value</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--kravy-border)] text-xs font-bold">
+              {loadingParties ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-[var(--kravy-text-muted)]">
+                    <div className="inline-flex items-center gap-2">
+                      <RefreshCw size={14} className="animate-spin text-amber-500" /> Loading customer rewards...
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredParties.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-[var(--kravy-text-muted)]">
+                    No customers found. Points will accumulate automatically when customers order via QR Code!
+                  </td>
+                </tr>
+              ) : (
+                filteredParties.map((p) => {
+                  const points = p.loyaltyPoints || 0;
+                  const discountVal = points * (profile.loyaltyValueInRupees || 1);
 
-          <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] p-6 shadow-lg">
-            <div className="flex items-center gap-3 mb-4">
-              <MessageCircle size={18} className="text-[#D4A353]" />
-              <h4 className="text-[0.85rem] font-black text-[var(--kravy-text-primary)]">Customer View</h4>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-[0.6rem] font-black">75</div>
-                <div className="text-[0.65rem] font-bold text-gray-500">Points available</div>
-              </div>
-              <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full mb-3">
-                <div className="w-[75%] h-full bg-[#D4A353] rounded-full" />
-              </div>
-              <div className="text-[0.6rem] font-black text-gray-400 text-center uppercase tracking-widest">
-                25 pts more to unlock ₹50 off
-              </div>
-            </div>
-            <p className="text-[0.65rem] text-[var(--kravy-text-muted)] mt-4 text-center italic">Calculated automatically on checkout.</p>
-          </div>
+                  return (
+                    <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                      <td className="py-3 px-4 font-black text-[var(--kravy-text-primary)]">
+                        {p.name || "Walk-in Customer"}
+                      </td>
+                      <td className="py-3 px-4 font-mono text-[var(--kravy-text-muted)]">
+                        {p.phone || "—"}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black ${
+                          points > 0 
+                            ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" 
+                            : "bg-slate-100 text-slate-400 dark:bg-slate-800"
+                        }`}>
+                          👑 {points} Pts
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center text-emerald-600 font-extrabold">
+                        ₹{discountVal.toFixed(2)}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          onClick={() => {
+                            setAdjustingParty(p);
+                            setAdjustAmount(50);
+                            setAdjustType("ADD");
+                            setAdjustRemark("");
+                          }}
+                          className="px-3 py-1.5 bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white rounded-lg text-[0.7rem] font-black transition-all inline-flex items-center gap-1"
+                        >
+                          <Edit3 size={12} /> Adjust Points
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
-
       </div>
+
+      {/* Points Adjustment Modal */}
+      {adjustingParty && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-[var(--kravy-border)] pb-3">
+              <div>
+                <h3 className="text-base font-black text-[var(--kravy-text-primary)]">Adjust Loyalty Points</h3>
+                <p className="text-xs text-[var(--kravy-text-muted)]">{adjustingParty.name} ({adjustingParty.phone})</p>
+              </div>
+              <button 
+                onClick={() => setAdjustingParty(null)}
+                className="w-8 h-8 rounded-full bg-[var(--kravy-bg)] flex items-center justify-center text-[var(--kravy-text-muted)] hover:text-rose-500"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Current Balance */}
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center justify-between">
+              <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Current Balance:</span>
+              <span className="text-lg font-black text-amber-600">👑 {adjustingParty.loyaltyPoints || 0} Pts</span>
+            </div>
+
+            {/* Add / Deduct Tabs */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-[var(--kravy-bg)] rounded-xl border border-[var(--kravy-border)]">
+              <button
+                type="button"
+                onClick={() => setAdjustType("ADD")}
+                className={`py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1 ${
+                  adjustType === "ADD" 
+                    ? "bg-emerald-500 text-white shadow-md" 
+                    : "text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]"
+                }`}
+              >
+                <Plus size={14} /> Add Points
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAdjustType("DEDUCT")}
+                className={`py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1 ${
+                  adjustType === "DEDUCT" 
+                    ? "bg-rose-500 text-white shadow-md" 
+                    : "text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]"
+                }`}
+              >
+                <Minus size={14} /> Deduct Points
+              </button>
+            </div>
+
+            {/* Preset Amount Chips */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-[var(--kravy-text-primary)]">Quick Preset Chips</label>
+              <div className="flex flex-wrap gap-2">
+                {[10, 50, 100, 200, 500].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setAdjustAmount(amt)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black border transition-all ${
+                      adjustAmount === amt
+                        ? "bg-amber-500 text-white border-amber-500"
+                        : "bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-primary)] hover:border-amber-500"
+                    }`}
+                  >
+                    {adjustType === "ADD" ? "+" : "-"}{amt} Pts
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Amount */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--kravy-text-primary)]">Points Amount</label>
+              <input
+                type="number"
+                value={adjustAmount}
+                onChange={(e) => setAdjustAmount(parseInt(e.target.value) || 0)}
+                className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl py-2.5 px-4 text-sm font-black outline-none"
+              />
+            </div>
+
+            {/* Remark */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--kravy-text-primary)]">Reason / Remark (Optional)</label>
+              <input
+                type="text"
+                placeholder="e.g. Good customer bonus"
+                value={adjustRemark}
+                onChange={(e) => setAdjustRemark(e.target.value)}
+                className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl py-2.5 px-4 text-xs font-bold outline-none"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setAdjustingParty(null)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-[var(--kravy-text-muted)] hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSavePointsAdjustment}
+                disabled={isAdjusting}
+                className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 disabled:opacity-50"
+              >
+                {isAdjusting ? "Saving..." : "Confirm & Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -283,6 +283,10 @@ export async function POST(request: Request) {
     if (body.requireCustomerAddress !== undefined) updateData.requireCustomerAddress = b(body.requireCustomerAddress);
     if (body.loyaltyPointRatio !== undefined) updateData.loyaltyPointRatio = n(body.loyaltyPointRatio);
     if (body.loyaltyMinRedeem !== undefined) updateData.loyaltyMinRedeem = n(body.loyaltyMinRedeem);
+    if (body.enableLoyaltyProgram !== undefined) updateData.enableLoyaltyProgram = b(body.enableLoyaltyProgram);
+    if (body.loyaltyMinOrderAmount !== undefined) updateData.loyaltyMinOrderAmount = n(body.loyaltyMinOrderAmount);
+    if (body.loyaltyValueInRupees !== undefined) updateData.loyaltyValueInRupees = n(body.loyaltyValueInRupees);
+    if (body.maxRedeemPointsPerBill !== undefined) updateData.maxRedeemPointsPerBill = n(body.maxRedeemPointsPerBill);
     if (body.aiScraperEnabled !== undefined) updateData.aiScraperEnabled = b(body.aiScraperEnabled);
     if (body.excelImportEnabled !== undefined) updateData.excelImportEnabled = b(body.excelImportEnabled);
     if (body.multiZoneMenuEnabled !== undefined) updateData.multiZoneMenuEnabled = b(body.multiZoneMenuEnabled);
