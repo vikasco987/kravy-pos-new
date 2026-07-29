@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock, Trash2, Play, X, Search, ChevronDown, User, Printer, ArrowLeft,
   Save, PauseCircle, RefreshCw, Eye, ZoomIn, ZoomOut, Plus,
-  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck, Star, Zap, Pencil, Settings, Check, Mic, MicOff
+  LayoutGrid, Columns, StickyNote, Layers, Utensils, ShoppingBag, Truck, Star, Zap, Pencil, Settings, Check, Mic, MicOff, Split
 } from "lucide-react";
 import { calculateDiscount } from "@/lib/discount-utils";
 import { toast } from "sonner";
@@ -1658,7 +1658,11 @@ export default function CheckoutClient() {
   const auditNote = hasAuditNotes ? "Some items used global default tax rate." : null;
 
   /* ================= PAYMENT STATE ================= */
-  const [paymentMode, setPaymentMode] = useState<"Cash" | "UPI" | "Card" | "Pay on Counter" | "Wallet">("Cash");
+  const [paymentMode, setPaymentMode] = useState<"Cash" | "UPI" | "Card" | "Pay on Counter" | "Wallet" | "Split">("Cash");
+  const [splitCash, setSplitCash] = useState<number | "">("");
+  const [splitUpi, setSplitUpi] = useState<number | "">("");
+  const [splitCard, setSplitCard] = useState<number | "">("");
+  const [splitWallet, setSplitWallet] = useState<number | "">("");
   const [paymentStatus, setPaymentStatus] = useState<"Pending" | "Paid">("Paid");
   const [amountPaid, setAmountPaid] = useState<number | "">("");
   const [upiTxnRef, setUpiTxnRef] = useState("");
@@ -1731,7 +1735,61 @@ export default function CheckoutClient() {
       }
 
       // 👛 WALLET PAYMENT LOGIC
-      if (paymentMode === "Wallet") {
+      let effectivePaymentMode: string = paymentMode;
+
+      if (paymentMode === "Split") {
+        const c = Number(splitCash) || 0;
+        const u = Number(splitUpi) || 0;
+        const cd = Number(splitCard) || 0;
+        const w = Number(splitWallet) || 0;
+
+        const parts = [];
+        if (c > 0) parts.push(`Cash: ₹${c.toFixed(2)}`);
+        if (u > 0) parts.push(`UPI: ₹${u.toFixed(2)}`);
+        if (cd > 0) parts.push(`Card: ₹${cd.toFixed(2)}`);
+        if (w > 0) parts.push(`Wallet: ₹${w.toFixed(2)}`);
+
+        effectivePaymentMode = parts.length > 0 ? `Split (${parts.join(", ")})` : "Split";
+
+        if (w > 0) {
+          if (!selectedParty) {
+            alert("Please select a registered customer to use Wallet split payment.");
+            setIsSaving(false);
+            return null;
+          }
+          if ((selectedParty.walletBalance || 0) < w) {
+            alert(`Insufficient Wallet Balance for split!\nRequired: ₹${w.toFixed(2)}\nAvailable: ₹${(selectedParty.walletBalance || 0).toFixed(2)}`);
+            setIsSaving(false);
+            return null;
+          }
+
+          try {
+            const walletRes = await fetch("/api/wallet", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "payment",
+                partyId: selectedParty.id,
+                amount: w,
+                description: `Split Wallet Payment for Bill ${billNumber}`
+              })
+            });
+            const wData = await walletRes.json();
+            if (!walletRes.ok) {
+              alert(wData.error || "Wallet split deduction failed");
+              setIsSaving(false);
+              return null;
+            }
+            if (wData.success) {
+              setSelectedParty({ ...selectedParty, walletBalance: wData.balance });
+            }
+          } catch (err) {
+            alert("Wallet system connection error");
+            setIsSaving(false);
+            return null;
+          }
+        }
+      } else if (paymentMode === "Wallet") {
         if (!selectedParty) {
           alert("Please select a registered customer to use Wallet payment.");
           setIsSaving(false);
@@ -1790,7 +1848,7 @@ export default function CheckoutClient() {
         packagingCharges: packagingCharge,
         packagingGst: packagingGst,
         total: finalTotal,
-        paymentMode, 
+        paymentMode: effectivePaymentMode, 
         paymentStatus: isHeld ? "HELD" : paymentStatus,
         upiTxnRef: paymentMode === "UPI" ? upiTxnRef : null,
         isHeld, customerName: customerName || "Walk-in Customer",
@@ -3509,7 +3567,7 @@ export default function CheckoutClient() {
                   }, 1fr)` 
                 }}
               >
-                {(["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const)
+                {(["Cash", "UPI", "Card", "Pay on Counter", "Wallet", "Split"] as const)
                   .filter(mode => {
                     if (mode === "Cash") return business?.posCashEnabled !== false;
                     if (mode === "UPI") return business?.posUpiEnabled !== false;
@@ -3527,7 +3585,7 @@ export default function CheckoutClient() {
                       : "bg-white border-slate-200 text-slate-900 hover:border-indigo-400 hover:bg-indigo-50/30"
                       }`}
                   >
-                    <span className="text-[12px] leading-none">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : "🏪"}</span>
+                    <span className="text-[12px] leading-none">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : mode === "Split" ? "🔀" : "🏪"}</span>
                     <span className="truncate w-full text-center uppercase tracking-tighter">{mode === "Pay on Counter" ? "Counter" : mode}</span>
                   </button>
                 ))}
@@ -3555,6 +3613,142 @@ export default function CheckoutClient() {
                    </div>
                  )}
               </div>
+
+              {/* Split Payment Control Box */}
+              {paymentMode === "Split" && (
+                <div className="space-y-3 p-3 rounded-2xl bg-indigo-50/70 border border-indigo-200 dark:bg-white/5 dark:border-white/10 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs font-black text-indigo-700 dark:text-indigo-400">
+                      <Split size={14} /> Split Payment Breakdown
+                    </div>
+                    <div className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-white/10 text-indigo-700 dark:text-indigo-300">
+                      Bill Total: ₹{finalTotal.toFixed(2)}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    {/* Cash */}
+                    <div className="bg-white dark:bg-black/20 p-2 rounded-xl border border-slate-200 dark:border-white/10">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-slate-700 dark:text-slate-200">💵 Cash</span>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const rem = Math.max(0, finalTotal - ((Number(splitUpi)||0) + (Number(splitCard)||0) + (Number(splitWallet)||0)));
+                            setSplitCash(rem > 0 ? Number(rem.toFixed(2)) : "");
+                          }}
+                          className="text-[9px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
+                        >
+                          Auto Fill
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        value={splitCash}
+                        onChange={(e) => setSplitCash(e.target.value === "" ? "" : Number(e.target.value))}
+                        placeholder="0.00"
+                        className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-xs font-black outline-none focus:border-indigo-500"
+                      />
+                    </div>
+
+                    {/* UPI */}
+                    <div className="bg-white dark:bg-black/20 p-2 rounded-xl border border-slate-200 dark:border-white/10">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-slate-700 dark:text-slate-200">📱 UPI</span>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const rem = Math.max(0, finalTotal - ((Number(splitCash)||0) + (Number(splitCard)||0) + (Number(splitWallet)||0)));
+                            setSplitUpi(rem > 0 ? Number(rem.toFixed(2)) : "");
+                          }}
+                          className="text-[9px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
+                        >
+                          Auto Fill
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        value={splitUpi}
+                        onChange={(e) => setSplitUpi(e.target.value === "" ? "" : Number(e.target.value))}
+                        placeholder="0.00"
+                        className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-xs font-black outline-none focus:border-indigo-500"
+                      />
+                    </div>
+
+                    {/* Card */}
+                    <div className="bg-white dark:bg-black/20 p-2 rounded-xl border border-slate-200 dark:border-white/10">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-slate-700 dark:text-slate-200">💳 Card</span>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const rem = Math.max(0, finalTotal - ((Number(splitCash)||0) + (Number(splitUpi)||0) + (Number(splitWallet)||0)));
+                            setSplitCard(rem > 0 ? Number(rem.toFixed(2)) : "");
+                          }}
+                          className="text-[9px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
+                        >
+                          Auto Fill
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        value={splitCard}
+                        onChange={(e) => setSplitCard(e.target.value === "" ? "" : Number(e.target.value))}
+                        placeholder="0.00"
+                        className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-xs font-black outline-none focus:border-indigo-500"
+                      />
+                    </div>
+
+                    {/* Wallet */}
+                    <div className="bg-white dark:bg-black/20 p-2 rounded-xl border border-slate-200 dark:border-white/10">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-slate-700 dark:text-slate-200">👛 Wallet</span>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const rem = Math.max(0, finalTotal - ((Number(splitCash)||0) + (Number(splitUpi)||0) + (Number(splitCard)||0)));
+                            setSplitWallet(rem > 0 ? Number(rem.toFixed(2)) : "");
+                          }}
+                          className="text-[9px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
+                        >
+                          Auto Fill
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        value={splitWallet}
+                        onChange={(e) => setSplitWallet(e.target.value === "" ? "" : Number(e.target.value))}
+                        placeholder="0.00"
+                        className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-xs font-black outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Split Summary Footer */}
+                  {(() => {
+                    const splitSum = (Number(splitCash)||0) + (Number(splitUpi)||0) + (Number(splitCard)||0) + (Number(splitWallet)||0);
+                    const diff = Number((finalTotal - splitSum).toFixed(2));
+                    return (
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-white/10 text-[10px]">
+                        <span className="font-bold text-slate-600 dark:text-slate-300">Sum: ₹{splitSum.toFixed(2)}</span>
+                        {Math.abs(diff) < 0.01 ? (
+                          <span className="font-black text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full">
+                            ✓ Balanced
+                          </span>
+                        ) : diff > 0 ? (
+                          <span className="font-black text-amber-600 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full">
+                            Rem: ₹{diff.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="font-black text-rose-600 bg-rose-100 dark:bg-rose-900/40 px-2 py-0.5 rounded-full">
+                            Over: ₹{(-diff).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
 
               {/* UPI Details - Conditional */}
               {paymentMode === "UPI" && (
