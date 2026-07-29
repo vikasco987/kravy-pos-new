@@ -93,7 +93,7 @@ export default function AutoApplyClient() {
             const keyRes = await fetch("/api/menu/get-keys");
             const { apiKey } = await keyRes.json();
             
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
             const geminiRes = await fetch(geminiUrl, {
                 method: "POST",
                 headers: { 'Content-Type': 'application/json' },
@@ -185,10 +185,12 @@ export default function AutoApplyClient() {
                 // Step 3: Direct Client-Side Gemini Call (Bypasses Vercel 60s Timeout)
                 setOcrStatus({ text: `Analyzing with AI (Takes 1-3 mins)...`, colorClass: "text-orange-500", isLoading: true });
                 const modelsToTry = [
-                    "gemini-2.5-flash",
+                    "gemini-1.5-flash-latest",
+                    "gemini-2.0-flash-exp",
                     "gemini-2.0-flash",
-                    "gemini-2.5-flash-lite",
-                    "gemini-1.5-flash"
+                    "gemini-1.5-pro-latest",
+                    "gemini-1.5-flash",
+                    "gemini-1.5-pro"
                 ];
 
                 let textResponse = "";

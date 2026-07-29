@@ -601,7 +601,14 @@ export default function ViewMenuPage() {
         if (!apiKey) throw new Error("API Key missing");
 
         // Step 3: Call Gemini
-        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+        const modelsToTry = [
+          "gemini-1.5-flash-latest",
+          "gemini-2.0-flash-exp",
+          "gemini-2.0-flash",
+          "gemini-1.5-pro-latest",
+          "gemini-1.5-flash",
+          "gemini-1.5-pro"
+        ];
         let textResponse = "";
         for (const model of modelsToTry) {
           try {
