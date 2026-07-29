@@ -101,14 +101,17 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
   
   React.useEffect(() => { setMounted(true); }, []);
   
-  const canDelete = userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userPermissions.includes("delete-bill");
+  const isMaster = userRole === "MASTER" || userRole === "OWNER";
+  const canEdit = isMaster;
+  const canDelete = isMaster;
 
   const handleDelete = async () => {
-    if (!await confirm("Are you sure?")) return;
+    if (!await confirm("Are you sure you want to delete this transaction/bill?")) return;
     try {
       const res = await fetch(`/api/bill-manager/${bill.id}`, { method: "DELETE" });
-      if (res.ok) { toast.success("Deleted"); refresh(true); }
-    } catch (e) { toast.error("Error"); }
+      if (res.ok) { toast.success("Deleted successfully"); refresh(true); }
+      else { const err = await res.json(); toast.error(err.error || "Delete failed"); }
+    } catch (e) { toast.error("Error deleting transaction"); }
   };
 
   const handleStatusUpdate = async (status: string) => {
@@ -185,7 +188,9 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
               <MenuOption icon={<Eye size={14} color="#3B82F6" />} label="View Details" onClick={async () => { setOpenMenuId(null); setViewBillDetails(bill); }} />
               <MenuOption icon={<Eye size={14} color="#8B5CF6" />} label="Preview" onClick={async () => { setOpenMenuId(null); setPreviewBill(bill); }} />
               <MenuOption icon={<Printer size={14} color="#6B7280" />} label="Reprint Bill" onClick={async () => { setOpenMenuId(null); router.push(`/dashboard/billing/${bill.id}`); }} />
-              <MenuOption icon={<FileText size={14} color="#3B82F6" />} label="Edit Bill" onClick={async () => { setOpenMenuId(null); router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`); }} />
+              {canEdit && (
+                <MenuOption icon={<FileText size={14} color="#3B82F6" />} label="Edit Bill" onClick={async () => { setOpenMenuId(null); router.push(`/dashboard/billing/checkout?resumeBillId=${bill.id}`); }} />
+              )}
               <MenuOption icon={<MessageCircle size={14} color="#10B981" />} label="WhatsApp" onClick={async () => { setOpenMenuId(null); handleWhatsApp(); }} />
               
               <div style={{ height: "1px", background: "#F3F4F6", margin: "4px 0" }} />

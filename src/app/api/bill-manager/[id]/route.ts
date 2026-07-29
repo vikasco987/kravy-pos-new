@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getEffectiveClerkId } from "@/lib/auth-utils";
+import { getEffectiveClerkId, getAuthUser } from "@/lib/auth-utils";
 
 /* ======================================================
    GET → View / Resume bill OR order
@@ -93,6 +93,13 @@ export async function PUT(
     const effectiveId = await getEffectiveClerkId();
     if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 🔒 MASTER Role Enforcement
+    const authUser = await getAuthUser();
+    const isMaster = authUser && (authUser.role === "MASTER" || authUser.type === "MASTER" || authUser.type === "OWNER" || authUser.type === "ADMIN" || !authUser.role);
+    if (!isMaster) {
+      return NextResponse.json({ error: "Only Master Role can Edit Bills & Transactions" }, { status: 403 });
     }
 
     const { id } = await context.params;
@@ -315,6 +322,14 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
   try {
     const effectiveId = await getEffectiveClerkId();
     if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // 🔒 MASTER Role Enforcement
+    const authUser = await getAuthUser();
+    const isMaster = authUser && (authUser.role === "MASTER" || authUser.type === "MASTER" || authUser.type === "OWNER" || authUser.type === "ADMIN" || !authUser.role);
+    if (!isMaster) {
+      return NextResponse.json({ error: "Only Master Role can Delete Bills & Transactions" }, { status: 403 });
+    }
+
     const { id } = await context.params;
 
     const bill = await prisma.billManager.findFirst({ where: { id, clerkUserId: effectiveId } });
