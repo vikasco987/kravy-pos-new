@@ -85,6 +85,31 @@ type MenuItem = {
 /* hide placeholder for missing images */
 const ModernPlaceholder = (props: any) => null;
 
+function normalizeVariants(rawVariants: any[] | null | undefined): any[] {
+    if (!rawVariants || !Array.isArray(rawVariants) || rawVariants.length === 0) return [];
+    
+    // Check if any element lacks `options` array (App/Legacy format)
+    const isAppFormat = rawVariants.some((v: any) => !v.options || !Array.isArray(v.options));
+    
+    if (isAppFormat) {
+        return [{
+            id: 'legacy_app_group',
+            name: 'Portion / Size',
+            type: 'radio',
+            required: true,
+            options: rawVariants.map((v: any, i: number) => ({
+                id: v.id || `opt_${i}`,
+                name: v.name || v.groupName || v.label || `Option ${i + 1}`,
+                price: Number(v.price || v.sellingPrice || 0),
+                originalId: v.id
+            }))
+        }];
+    }
+    
+    return rawVariants;
+}
+
+
 type BusinessProfile = {
     businessName: string;
     logoUrl?: string;
@@ -102,6 +127,11 @@ type BusinessProfile = {
     requireCustomerAddress?: boolean;
     qrMenuPriceInclusive?: boolean;
     enableLoyaltyProgram?: boolean;
+    qrDeliveryChargeEnabled?: boolean;
+    qrDeliveryChargeAmount?: number;
+    qrPackagingChargeEnabled?: boolean;
+    qrPackagingChargeAmount?: number;
+    loyaltyPointRatio?: number;
 };
 
 type ComboSelection = {
@@ -662,17 +692,24 @@ function PublicMenu() {
         }
 
         const initial: Record<string, any> = {};
+        const normVariants = normalizeVariants(item.variants);
         
         // Handle virtual groups
         if ((item as any).isVirtualGroup) {
-            initial['virtual_group'] = (item.variants as any[])[0].options[0];
+            if (normVariants[0]?.options?.length > 0) {
+                initial['virtual_group'] = normVariants[0].options[0];
+            }
             setSelectedVariants(initial);
             return;
         }
 
-        // Handle standard Variants
-        (item.variants as any[])?.forEach((v: any) => {
-            if (v.required && v.options?.length > 0) {
+        // Handle standard or normalized legacy Variants
+        normVariants.forEach((v: any) => {
+            if (v.id === 'legacy_app_group') {
+                if (v.options?.length > 0) {
+                    initial[v.id] = v.options[0];
+                }
+            } else if (v.required && v.options?.length > 0) {
                 initial[v.id] = v.type === "radio" ? v.options[0] : [v.options[0]];
             }
         });
@@ -692,8 +729,10 @@ function PublicMenu() {
         const item = items.find(it => it.id === id) || filteredItems.find(it => it.id === id);
         if (!item) return;
 
+        const normVariants = normalizeVariants(item.variants);
+
         // Count total variant options & addon groups
-        const totalVariantOptions = (item.variants as any[])?.reduce((acc: number, v: any) => acc + (v.options?.length || 0), 0) || 0;
+        const totalVariantOptions = normVariants.reduce((acc: number, v: any) => acc + (v.options?.length || 0), 0);
         const totalAddonGroups = ((item as any).addonGroups as any[])?.length || 0;
 
         // ✅ If item has 0 addon groups AND at most 1 variant option, bypass modal and add directly!
@@ -717,15 +756,14 @@ function PublicMenu() {
         const item = customizingItem || selectedMenuItem;
         if (!item) return;
 
-        let extra = 0;
-        const selections: any[] = [];
-        
+        const normVariants = normalizeVariants(item.variants);
+
         // Validation check for mandatory addon groups
         const missingMandatoryGroups: string[] = [];
         ((item as any).addonGroups as any[] || []).forEach((ag: any) => {
             if (ag.isCompulsory) {
                 const selected = selectedVariants[`ag_${ag.id}`];
-                if (!selected || selected.length === 0) {
+                if (!selected || (Array.isArray(selected) && selected.length === 0)) {
                     missingMandatoryGroups.push(ag.name);
                 }
             }
@@ -743,7 +781,7 @@ function PublicMenu() {
                 toast.error("Please select a size / portion");
                 return;
             }
-            const originalItem = (item as any).groupedItems.find((i:any) => i.id === selectedOption.originalId);
+            const originalItem = (item as any).groupedItems?.find((i:any) => i.id === selectedOption.originalId);
             if (originalItem) {
                 setCart(prev => ({ ...prev, [originalItem.id]: (prev[originalItem.id] || 0) + 1 }));
                 kravy.add();
@@ -754,7 +792,20 @@ function PublicMenu() {
             }
         }
 
+        let extra = 0;
+        let basePrice = item.sellingPrice || item.price || 0;
+        const selections: any[] = [];
+
+        // Check if legacy app group option is selected
+        if (selectedVariants['legacy_app_group']) {
+            const selOpt = selectedVariants['legacy_app_group'];
+            basePrice = selOpt.price;
+            selections.push({ group: "Portion", option: selOpt.name, price: selOpt.price });
+        }
+
         Object.entries(selectedVariants).forEach(([groupId, val]) => {
+            if (groupId === 'legacy_app_group' || groupId === 'virtual_group') return;
+
             if (groupId.startsWith('ag_')) {
                const agId = groupId.replace('ag_', '');
                const ag = ((item as any).addonGroups as any[])?.find(g => g.id === agId);
@@ -767,7 +818,7 @@ function PublicMenu() {
                return;
             }
 
-            const group = (item.variants as any[])?.find((g: any) => g.id === groupId);
+            const group = normVariants.find((g: any) => g.id === groupId);
             if (!group) return;
             if (group.type === "radio" && val) {
                 extra += (val.price || 0);
@@ -783,8 +834,8 @@ function PublicMenu() {
         const newCartItem = {
             uniqueId: Date.now().toString(),
             id: item.id,
-            name: item.name,
-            totalPrice: (item.sellingPrice || item.price || 0) + extra,
+            name: item.name + (selectedVariants['legacy_app_group'] ? ` (${selectedVariants['legacy_app_group'].name})` : ""),
+            totalPrice: basePrice + extra,
             qty: 1,
             variants: selections,
             isVeg: item.isVeg
@@ -794,7 +845,7 @@ function PublicMenu() {
         setCustomizingItem(null);
         setSelectedMenuItem(null);
         kravy.success();
-        toast.success("Added customized item!");
+        toast.success("Added to cart!");
     };
 
     const updateQty = (id: string, delta: number) => {
@@ -2777,67 +2828,70 @@ function PublicMenu() {
                                     </div>
 
                                 <div className="space-y-8">
-                                    {(customizingItem.variants as any[])?.map((vGroup: any) => (
-                                        <div key={vGroup.id} className="space-y-4">
-                                            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                                                <h4 className="text-[0.85rem] font-black uppercase tracking-[0.15em] text-gray-800">{vGroup.name}</h4>
-                                                {vGroup.required && (
-                                                    <span className="text-[0.58rem] font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase tracking-widest border border-amber-100/50">
-                                                        Choice Required
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="space-y-3">
-                                                {vGroup.options?.map((opt: any) => {
-                                                    const isSelected = vGroup.type === "radio" 
-                                                        ? selectedVariants[vGroup.id]?.id === opt.id
-                                                        : selectedVariants[vGroup.id]?.some((o: any) => o.id === opt.id);
-                                                    
-                                                    return (
-                                                        <motion.div 
-                                                            key={opt.id}
-                                                            whileTap={{ scale: 0.98 }}
-                                                            onClick={() => {
-                                                                kravy.click();
-                                                                const updated = { ...selectedVariants };
-                                                                if (vGroup.type === "radio") {
-                                                                    updated[vGroup.id] = opt;
-                                                                } else {
-                                                                    const arr = updated[vGroup.id] || [];
-                                                                    if (isSelected) {
-                                                                        updated[vGroup.id] = arr.filter((o: any) => o.id !== opt.id);
+                                    {normalizeVariants(customizingItem.variants)?.map((vGroup: any) => {
+                                        const isFullPriceVariant = vGroup.id === 'virtual_group' || vGroup.id === 'legacy_app_group';
+                                        return (
+                                            <div key={vGroup.id} className="space-y-4">
+                                                <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                                                    <h4 className="text-[0.85rem] font-black uppercase tracking-[0.15em] text-gray-800">{vGroup.name}</h4>
+                                                    {vGroup.required && (
+                                                        <span className="text-[0.58rem] font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase tracking-widest border border-amber-100/50">
+                                                            Choice Required
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="space-y-3">
+                                                    {vGroup.options?.map((opt: any) => {
+                                                        const isSelected = vGroup.type === "radio" 
+                                                            ? selectedVariants[vGroup.id]?.id === opt.id
+                                                            : selectedVariants[vGroup.id]?.some((o: any) => o.id === opt.id);
+                                                        
+                                                        return (
+                                                            <motion.div 
+                                                                key={opt.id}
+                                                                whileTap={{ scale: 0.98 }}
+                                                                onClick={() => {
+                                                                    kravy.click();
+                                                                    const updated = { ...selectedVariants };
+                                                                    if (vGroup.type === "radio") {
+                                                                        updated[vGroup.id] = opt;
                                                                     } else {
-                                                                        updated[vGroup.id] = [...arr, opt];
+                                                                        const arr = updated[vGroup.id] || [];
+                                                                        if (isSelected) {
+                                                                            updated[vGroup.id] = arr.filter((o: any) => o.id !== opt.id);
+                                                                        } else {
+                                                                            updated[vGroup.id] = [...arr, opt];
+                                                                        }
                                                                     }
-                                                                }
-                                                                setSelectedVariants(updated);
-                                                            }}
-                                                            className={`flex items-center justify-between p-4 rounded-[1.25rem] border-2 transition-all cursor-pointer ${isSelected ? "border-red-600 bg-red-50/20 shadow-sm" : "border-gray-100 bg-white"}`}
-                                                        >
-                                                            <div className="flex items-center gap-3.5">
-                                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${isSelected ? "border-red-600 bg-red-600 shadow-inner" : "border-gray-300 bg-white"}`}>
-                                                                    {isSelected && (
-                                                                        vGroup.type === 'radio' 
-                                                                            ? <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                                                                            : <Check size={12} className="text-[#ffffff]" strokeWidth={4} />
-                                                                    )}
-                                                                </div>
-                                                                {opt.imageUrl && typeof opt.imageUrl === 'string' && opt.imageUrl.trim() !== '' && (
-                                                                    <div className="w-10 h-10 rounded-lg overflow-hidden relative shadow-sm border border-gray-100 shrink-0">
-                                                                        <Image src={opt.imageUrl} alt={opt.name} fill className="object-cover" />
+                                                                    setSelectedVariants(updated);
+                                                                }}
+                                                                className={`flex items-center justify-between p-4 rounded-[1.25rem] border-2 transition-all cursor-pointer ${isSelected ? "border-red-600 bg-red-50/20 shadow-sm" : "border-gray-100 bg-white"}`}
+                                                            >
+                                                                <div className="flex items-center gap-3.5">
+                                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${isSelected ? "border-red-600 bg-red-600 shadow-inner" : "border-gray-300 bg-white"}`}>
+                                                                        {isSelected && (
+                                                                            vGroup.type === 'radio' 
+                                                                                ? <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                                                                                : <Check size={12} className="text-[#ffffff]" strokeWidth={4} />
+                                                                        )}
                                                                     </div>
-                                                                )}
-                                                                <span className={`text-[0.88rem] font-[800] ${isSelected ? "text-red-700" : "text-gray-700"}`}>{opt.name}</span>
-                                                            </div>
-                                                            <span className={`text-[0.85rem] font-black italic ${isSelected ? "text-red-600" : "text-emerald-600"}`}>
-                                                                {vGroup.id === 'virtual_group' ? `₹${opt.price ?? 0}` : (opt.price > 0 ? `+₹${opt.price}` : `₹0`)}
-                                                            </span>
-                                                        </motion.div>
-                                                    );
-                                                })}
+                                                                    {opt.imageUrl && typeof opt.imageUrl === 'string' && opt.imageUrl.trim() !== '' && (
+                                                                        <div className="w-10 h-10 rounded-lg overflow-hidden relative shadow-sm border border-gray-100 shrink-0">
+                                                                            <Image src={opt.imageUrl} alt={opt.name} fill className="object-cover" />
+                                                                        </div>
+                                                                    )}
+                                                                    <span className={`text-[0.88rem] font-[800] ${isSelected ? "text-red-700" : "text-gray-700"}`}>{opt.name}</span>
+                                                                </div>
+                                                                <span className={`text-[0.85rem] font-black italic ${isSelected ? "text-red-600" : "text-emerald-600"}`}>
+                                                                    {isFullPriceVariant ? `₹${opt.price ?? 0}` : (opt.price > 0 ? `+₹${opt.price}` : `₹0`)}
+                                                                </span>
+                                                            </motion.div>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                     {/* Addon Groups */}
                                     {((customizingItem as any).addonGroups as any[])?.map((ag: any) => (
                                         <div key={ag.id} className="space-y-4">
@@ -2900,15 +2954,17 @@ function PublicMenu() {
                                     <span className="text-lg italic tracking-tighter">₹{
                                         (
                                             (customizingItem as any).isVirtualGroup 
-                                                ? (selectedVariants['virtual_group']?.price || 0) 
+                                                ? (selectedVariants['virtual_group']?.price || 0)
+                                                : selectedVariants['legacy_app_group']
+                                                ? (selectedVariants['legacy_app_group']?.price || 0)
                                                 : (customizingItem.sellingPrice || customizingItem.price || 0)
                                         ) + 
                                         Object.entries(selectedVariants).reduce((acc, [gid, val]) => {
-                                            if (gid === 'virtual_group') return acc;
+                                            if (gid === 'virtual_group' || gid === 'legacy_app_group') return acc;
                                             if (gid.startsWith('ag_')) {
                                                return acc + ((val as any[])?.reduce?.((s, o) => s + (o.price || 0), 0) || 0);
                                             }
-                                            const group = (customizingItem.variants as any[])?.find((g: any) => g.id === gid);
+                                            const group = normalizeVariants(customizingItem.variants)?.find((g: any) => g.id === gid);
                                             if (group?.type === "radio") return acc + (val?.price || 0);
                                             if (group?.type === "checkbox") return acc + (val?.reduce?.((s: number, o: any) => s + (o.price || 0), 0) || 0);
                                             return acc;
@@ -3017,10 +3073,17 @@ function PublicMenu() {
                                     </div>
 
                                     {/* Link Addon Groups Interactive Selection (Zomato Style) */}
-                                    {(selectedMenuItem.addonGroups || selectedMenuItem.variants) && (
+                                    {(selectedMenuItem.addonGroups || selectedMenuItem.variants) && (() => {
+                                        const normVariants = normalizeVariants(selectedMenuItem.variants);
+                                        const hasVariants = normVariants.length > 0;
+                                        const hasAddons = selectedMenuItem.addonGroups && (selectedMenuItem.addonGroups as any[]).length > 0;
+                                        if (!hasVariants && !hasAddons) return null;
+                                        return (
                                         <div className="mt-10 space-y-10 pb-20">
-                                            {/* Standard Variants */}
-                                            {(selectedMenuItem.variants as any[])?.map((vGroup: any) => (
+                                            {/* Standard / Normalized Variants */}
+                                            {normVariants.map((vGroup: any) => {
+                                                const isFullPriceVariant = vGroup.id === 'virtual_group' || vGroup.id === 'legacy_app_group';
+                                                return (
                                                 <div key={vGroup.id} className="space-y-4">
                                                     <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                                                         <h4 className="text-[0.7rem] font-black uppercase tracking-[0.2em] text-gray-500">{vGroup.name}</h4>
@@ -3048,17 +3111,24 @@ function PublicMenu() {
                                                                 >
                                                                     <div className="flex items-center gap-3">
                                                                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"}`}>
-                                                                            {isSelected && <Check size={12} className="text-white" strokeWidth={4} />}
+                                                                            {isSelected && (
+                                                                                vGroup.type === 'radio'
+                                                                                    ? <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                                                                                    : <Check size={12} className="text-white" strokeWidth={4} />
+                                                                            )}
                                                                         </div>
                                                                         <span className={`text-[0.85rem] font-[800] ${isSelected ? "text-red-700" : "text-gray-700"}`}>{opt.name}</span>
                                                                     </div>
-                                                                    {opt.price > 0 && <span className="text-[0.8rem] font-black text-gray-900">+₹{opt.price}</span>}
+                                                                    <span className={`text-[0.85rem] font-black ${isSelected ? "text-red-600" : "text-emerald-600"}`}>
+                                                                        {isFullPriceVariant ? `₹${opt.price ?? 0}` : (opt.price > 0 ? `+₹${opt.price}` : `₹0`)}
+                                                                    </span>
                                                                 </div>
                                                             );
                                                         })}
                                                     </div>
                                                 </div>
-                                            ))}
+                                            );
+                                            })}
 
                                             {/* Addon Groups Mapping */}
                                             {(selectedMenuItem.addonGroups as any[])?.map((ag: any) => (
@@ -3100,7 +3170,8 @@ function PublicMenu() {
                                                 </div>
                                             ))}
                                         </div>
-                                    )}
+                                    );
+                                    })()}
                                 </div>
                             </div>
 
@@ -3143,14 +3214,21 @@ function PublicMenu() {
                                             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                         </div>
                                         <span className="font-mono text-lg">₹{
-                                            ((selectedMenuItem.sellingPrice || selectedMenuItem.price || 0) + 
+                                            (
+                                                (selectedMenuItem as any).isVirtualGroup 
+                                                    ? (selectedVariants['virtual_group']?.price || 0)
+                                                    : selectedVariants['legacy_app_group']
+                                                    ? (selectedVariants['legacy_app_group']?.price || 0)
+                                                    : (selectedMenuItem.sellingPrice || selectedMenuItem.price || 0)
+                                            ) + 
                                             Object.entries(selectedVariants).reduce((acc, [gid, val]) => {
+                                                if (gid === 'virtual_group' || gid === 'legacy_app_group') return acc;
                                                 if (gid.startsWith('ag_')) return acc + ((val as any[])?.reduce?.((s, o) => s + (o.price || 0), 0) || 0);
-                                                const group = (selectedMenuItem.variants as any[])?.find((g: any) => g.id === gid);
+                                                const group = normalizeVariants(selectedMenuItem.variants)?.find((g: any) => g.id === gid);
                                                 if (group?.type === "radio") return acc + (val?.price || 0);
                                                 if (group?.type === "checkbox") return acc + (val?.reduce?.((s: number, o: any) => s + (o.price || 0), 0) || 0);
                                                 return acc;
-                                            }, 0)).toFixed(0)
+                                            }, 0)
                                         }</span>
                                     </button>
                                 )}

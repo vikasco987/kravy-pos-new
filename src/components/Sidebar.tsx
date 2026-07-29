@@ -461,6 +461,15 @@ export default function Sidebar() {
   const [aiScraperEnabled, setAiScraperEnabled] = useState(false);
   const [excelImportEnabled, setExcelImportEnabled] = useState(false);
   const [activeTablesCount, setActiveTablesCount] = useState<number | null>(null);
+  const [hiddenSidebarItems, setHiddenSidebarItems] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const local = localStorage.getItem("kravy_hidden_sidebar_items");
+        if (local) return JSON.parse(local);
+      } catch (e) {}
+    }
+    return [];
+  });
 
   // Derive from AuthContext
   const userRole = authUser?.type || "USER";
@@ -470,7 +479,7 @@ export default function Sidebar() {
   useEffect(() => {
     setMounted(true);
 
-    // Fetch profile to check tax status
+    // Fetch profile to check tax status & hidden sidebar items
     fetch("/api/profile")
       .then(res => res.json())
       .then(data => {
@@ -478,9 +487,25 @@ export default function Sidebar() {
           if (data.taxEnabled || data.perProductTaxEnabled) setTaxEnabled(true);
           if (data.aiScraperEnabled) setAiScraperEnabled(true);
           if (data.excelImportEnabled) setExcelImportEnabled(true);
+
+          const hiddenFromDb = data.printSettings?.hiddenSidebarItems || data.hiddenSidebarItems;
+          if (Array.isArray(hiddenFromDb)) {
+            setHiddenSidebarItems(hiddenFromDb);
+            localStorage.setItem("kravy_hidden_sidebar_items", JSON.stringify(hiddenFromDb));
+          }
         }
       })
       .catch(() => {});
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "kravy_hidden_sidebar_items") {
+        try {
+          const newVal = e.newValue ? JSON.parse(e.newValue) : [];
+          setHiddenSidebarItems(newVal);
+        } catch (err) {}
+      }
+    };
+    window.addEventListener("storage", handleStorage);
 
     // Fetch active tables count
     const fetchActiveCount = async () => {
@@ -502,7 +527,10 @@ export default function Sidebar() {
 
     fetchActiveCount();
     const interval = setInterval(fetchActiveCount, 15000); // 15 seconds
-    return () => clearInterval(interval);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      clearInterval(interval);
+    };
   }, []);
 
   if (!mounted) return null;
@@ -761,6 +789,13 @@ export default function Sidebar() {
         {navGroups.map((group) => {
           // Filter items based on access rules
           const visibleItems = group.items.filter((item: any) => {
+            // 0. User custom hidden items check (except critical settings link)
+            if (item.href !== "/dashboard/settings" && item.href !== "/dashboard/profile") {
+              if (hiddenSidebarItems.includes(item.href) || hiddenSidebarItems.includes(item.label)) {
+                return false;
+              }
+            }
+
             // 1. Global Admin Bypass - Show everything to administrators
             if (userRole === "ADMIN") return true;
 
