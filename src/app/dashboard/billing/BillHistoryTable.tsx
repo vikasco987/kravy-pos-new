@@ -101,17 +101,15 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
   
   React.useEffect(() => { setMounted(true); }, []);
   
-  const isMaster = userRole === "MASTER" || userRole === "OWNER";
-  const canEdit = isMaster;
-  const canDelete = isMaster;
+  const canDelete = userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userRole === "OWNER" || (userPermissions && userPermissions.includes("delete-bill"));
+  const canEdit = userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userRole === "OWNER" || (userPermissions && (userPermissions.includes("edit-bill") || userPermissions.includes("delete-bill")));
 
   const handleDelete = async () => {
-    if (!await confirm("Are you sure you want to delete this transaction/bill?")) return;
+    if (!await confirm("Are you sure?")) return;
     try {
       const res = await fetch(`/api/bill-manager/${bill.id}`, { method: "DELETE" });
-      if (res.ok) { toast.success("Deleted successfully"); refresh(true); }
-      else { const err = await res.json(); toast.error(err.error || "Delete failed"); }
-    } catch (e) { toast.error("Error deleting transaction"); }
+      if (res.ok) { toast.success("Deleted"); refresh(true); }
+    } catch (e) { toast.error("Error"); }
   };
 
   const handleStatusUpdate = async (status: string) => {

@@ -95,13 +95,6 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 🔒 MASTER Role Enforcement
-    const authUser = await getAuthUser();
-    const isMaster = authUser && (authUser.role === "MASTER" || authUser.type === "MASTER" || authUser.type === "OWNER" || authUser.type === "ADMIN" || !authUser.role);
-    if (!isMaster) {
-      return NextResponse.json({ error: "Only Master Role can Edit Bills & Transactions" }, { status: 403 });
-    }
-
     const { id } = await context.params;
     const body = await req.json();
 
@@ -322,13 +315,6 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
   try {
     const effectiveId = await getEffectiveClerkId();
     if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    // 🔒 MASTER Role Enforcement
-    const authUser = await getAuthUser();
-    const isMaster = authUser && (authUser.role === "MASTER" || authUser.type === "MASTER" || authUser.type === "OWNER" || authUser.type === "ADMIN" || !authUser.role);
-    if (!isMaster) {
-      return NextResponse.json({ error: "Only Master Role can Delete Bills & Transactions" }, { status: 403 });
-    }
 
     const { id } = await context.params;
 
