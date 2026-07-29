@@ -906,3 +906,56 @@ model ExternalSales {
   @@unique([clerkUserId, platform, date])
   @@index([date])
 }
+
+//////////////////////////////////////////////////
+// HOTEL ROOM & BOOKING MANAGEMENT
+//////////////////////////////////////////////////
+
+model HotelRoom {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkUserId   String
+  roomNumber    String   // e.g. "101", "102", "201", "Suite 301"
+  roomType      String   @default("Standard") // Single, Double, Deluxe, Suite, Executive
+  floor         String?  @default("Floor 1")
+  pricePerNight Float    @default(1500)
+  status        String   @default("AVAILABLE") // AVAILABLE | OCCUPIED | RESERVED | CLEANING
+  amenities     String[] @default([]) // AC, TV, WiFi, Geyser, King Bed
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([clerkUserId, roomNumber])
+  @@index([clerkUserId])
+}
+
+model HotelBooking {
+  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
+  clerkUserId        String
+  roomNumber         String
+  roomId             String?   @db.ObjectId
+  customerName       String
+  customerPhone      String
+  customerEmail      String?
+  gender             String?   @default("Male") // Male, Female, Other
+  idProofType        String?   @default("Aadhaar Card") // Aadhaar, Passport, Driving License, Voter ID
+  idProofNumber      String?
+  customerAddress    String?
+  city               String?
+  entryTime          DateTime  @default(now()) // Check-in time
+  exitTime           DateTime? // Expected or actual Check-out time
+  actualCheckOutTime DateTime?
+  adults             Int       @default(1)
+  children           Int       @default(0)
+  pricePerNight      Float     @default(0)
+  totalAmount        Float     @default(0)
+  advancePaid        Float     @default(0)
+  balanceDue         Float     @default(0)
+  paymentMode        String    @default("Cash") // Cash, UPI, Card, Wallet
+  status             String    @default("CHECKED_IN") // CHECKED_IN | CHECKED_OUT | CANCELLED
+  remarks            String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([clerkUserId])
+  @@index([clerkUserId, status])
+}
+
