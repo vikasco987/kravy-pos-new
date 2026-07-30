@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { 
   Printer, 
   ChevronLeft, 
@@ -62,7 +61,7 @@ export default function MenuPdfGeneratorPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [profile, setProfile] = useState<any>(null);
 
-  // Customization State (Default to Web App Replica as requested!)
+  // Customization State (Default to Web App Replica)
   const [template, setTemplate] = useState<"web_replica" | "luxury" | "bistro" | "classic">("web_replica");
   const [columns, setColumns] = useState<1 | 2>(2);
   const [fontSize, setFontSize] = useState<"sm" | "md" | "lg">("md");
@@ -123,13 +122,43 @@ export default function MenuPdfGeneratorPage() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [items]);
 
-  // 🚀 1-CLICK DIRECT AUTO PDF DOWNLOAD
+  // Convert all images to Base64 to prevent broken images & CORS failures
+  const convertImagesToBase64 = async (container: HTMLElement) => {
+    const images = Array.from(container.querySelectorAll("img"));
+    for (const img of images) {
+      const src = img.getAttribute("src");
+      if (!src || src.startsWith("data:")) continue;
+      try {
+        const res = await fetch(src, { mode: "cors" });
+        if (res.ok) {
+          const blob = await res.blob();
+          const reader = new FileReader();
+          await new Promise((resolve) => {
+            reader.onloadend = () => {
+              if (typeof reader.result === "string") {
+                img.setAttribute("src", reader.result);
+              }
+              resolve(null);
+            };
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch (e) {
+        console.warn("Image base64 conversion fallback for:", src);
+      }
+    }
+  };
+
+  // 🚀 1-CLICK DIRECT AUTO PDF DOWNLOAD (PIXEL PERFECT)
   const handleAutoDownloadPdf = async () => {
     const el = document.getElementById("pdf-menu-card-canvas");
     if (!el) return;
 
     setDownloadingPdf(true);
     try {
+      // Pre-convert images to Base64
+      await convertImagesToBase64(el);
+
       const html2pdf = (await import("html2pdf.js")).default;
       
       const fileName = `${(profile?.businessName || "Restaurant").replace(/[^a-zA-Z0-9]/g, "_")}_Web_Menu.pdf`;
@@ -143,7 +172,7 @@ export default function MenuPdfGeneratorPage() {
           useCORS: true, 
           logging: false,
           letterRendering: true,
-          allowTaint: true
+          allowTaint: false
         },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
         pagebreak: { mode: ["avoid-all", "css", "legacy"] }
@@ -159,25 +188,28 @@ export default function MenuPdfGeneratorPage() {
   };
 
   // 🌐 DOWNLOAD EXACT STANDALONE WEB PAGE (.html)
-  const handleDownloadWebHtml = () => {
+  const handleDownloadWebHtml = async () => {
     const el = document.getElementById("pdf-menu-card-canvas");
     if (!el) return;
 
     setDownloadingHtml(true);
     try {
+      // Pre-convert images to Base64 for offline portability
+      await convertImagesToBase64(el);
+
       const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${profile?.businessName || 'Restaurant'} - Menu</title>
+  <title>${profile?.businessName || 'Restaurant'} - Digital Web Menu</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { background-color: #f4f4f5; font-family: system-ui, -apple-system, sans-serif; }
     @media print { body { background: white; } }
   </style>
 </head>
-<body className="p-4 md:p-8 flex justify-center">
+<body class="p-4 md:p-8 flex justify-center">
   <div style="max-width: 800px; width: 100%;">
     ${el.outerHTML}
   </div>
@@ -355,11 +387,14 @@ export default function MenuPdfGeneratorPage() {
             <div className="w-full bg-[#f4f4f4]">
               {/* RESTAURANT HERO COVER */}
               <div className="relative overflow-hidden h-[200px] bg-slate-900">
-                <Image
+                <img
                   src={profile?.profileImageUrl || "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80"}
                   alt="Restaurant Cover"
-                  fill
-                  className="object-cover opacity-90"
+                  crossOrigin="anonymous"
+                  className="w-full h-full object-cover opacity-90"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = 'none';
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/80" />
                 <div className="absolute bottom-4 left-4 z-10 bg-black/75 backdrop-blur-md rounded-lg px-3 py-1.5 flex items-center gap-2 border border-white/20">
@@ -459,11 +494,19 @@ export default function MenuPdfGeneratorPage() {
                             </div>
 
                             {showImages && (
-                              <div className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-inner">
+                              <div className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-inner flex items-center justify-center">
                                 {item.imageUrl ? (
-                                  <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                                  <img
+                                    src={item.imageUrl}
+                                    alt={item.name}
+                                    crossOrigin="anonymous"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      (e.currentTarget as HTMLElement).style.display = 'none';
+                                    }}
+                                  />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                  <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50">
                                     <Utensils size={24} />
                                   </div>
                                 )}
@@ -496,11 +539,14 @@ export default function MenuPdfGeneratorPage() {
               <div className="text-center border-b pb-8 mb-8 relative">
                 {profile?.logoUrl || profile?.profileImageUrl ? (
                   <div className="w-24 h-24 mx-auto mb-4 relative rounded-full overflow-hidden border-2 shadow-xl border-amber-500/40">
-                    <Image
+                    <img
                       src={profile.logoUrl || profile.profileImageUrl}
                       alt={profile.businessName || "Restaurant"}
-                      fill
-                      className="object-cover"
+                      crossOrigin="anonymous"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = 'none';
+                      }}
                     />
                   </div>
                 ) : (
@@ -560,7 +606,19 @@ export default function MenuPdfGeneratorPage() {
                         <div key={item.id} className="p-3 rounded-xl border border-black/10 flex items-start gap-3 break-inside-avoid">
                           {showImages && (
                             <div className="w-14 h-14 shrink-0 relative rounded-lg overflow-hidden bg-gray-100">
-                              {item.imageUrl ? <Image src={item.imageUrl} alt={item.name} fill className="object-cover" /> : <Utensils size={18} className="m-auto opacity-30" />}
+                              {item.imageUrl ? (
+                                <img
+                                  src={item.imageUrl}
+                                  alt={item.name}
+                                  crossOrigin="anonymous"
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLElement).style.display = 'none';
+                                  }}
+                                />
+                              ) : (
+                                <Utensils size={18} className="m-auto opacity-30" />
+                              )}
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
