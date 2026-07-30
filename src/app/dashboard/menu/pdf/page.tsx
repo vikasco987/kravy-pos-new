@@ -129,7 +129,7 @@ export default function MenuPdfGeneratorPage() {
       // Import html2pdf dynamically
       const html2pdf = (await import("html2pdf.js")).default;
       
-      const fileName = `${(profile?.businessName || "Restaurant").replace(/[^a-[#a-zA-Z0-9]/g, "_")}_Menu_Card.pdf`;
+      const fileName = `${(profile?.businessName || "Restaurant").replace(/[^a-zA-Z0-9]/g, "_")}_Menu_Card.pdf`;
       
       const opt = {
         margin: [8, 8, 8, 8],
