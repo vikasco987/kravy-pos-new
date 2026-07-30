@@ -18,7 +18,11 @@ import {
   CheckCircle2,
   Sliders,
   Type,
-  FileText
+  Globe,
+  Tag,
+  Star,
+  Clock,
+  Plus
 } from "lucide-react";
 import QRCode from "react-qr-code";
 
@@ -54,19 +58,19 @@ export default function MenuPdfGeneratorPage() {
 
   const [loading, setLoading] = useState(true);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingHtml, setDownloadingHtml] = useState(false);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [profile, setProfile] = useState<any>(null);
 
-  // Customization State
-  const [template, setTemplate] = useState<"luxury" | "bistro" | "emerald" | "classic">("luxury");
-  const [columns, setColumns] = useState<1 | 2 | 3>(2);
+  // Customization State (Default to Web App Replica as requested!)
+  const [template, setTemplate] = useState<"web_replica" | "luxury" | "bistro" | "classic">("web_replica");
+  const [columns, setColumns] = useState<1 | 2>(2);
   const [fontSize, setFontSize] = useState<"sm" | "md" | "lg">("md");
   const [showImages, setShowImages] = useState(true);
   const [showDescriptions, setShowDescriptions] = useState(true);
   const [showBadges, setShowBadges] = useState(true);
   const [showQrCode, setShowQrCode] = useState(true);
   const [showPrices, setShowPrices] = useState(true);
-  const [showBusinessInfo, setShowBusinessInfo] = useState(true);
 
   const printAreaRef = useRef<HTMLDivElement>(null);
 
@@ -119,20 +123,19 @@ export default function MenuPdfGeneratorPage() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [items]);
 
-  // 🚀 DIRECT AUTO DOWNLOAD PDF
+  // 🚀 1-CLICK DIRECT AUTO PDF DOWNLOAD
   const handleAutoDownloadPdf = async () => {
     const el = document.getElementById("pdf-menu-card-canvas");
     if (!el) return;
 
     setDownloadingPdf(true);
     try {
-      // Import html2pdf dynamically
       const html2pdf = (await import("html2pdf.js")).default;
       
-      const fileName = `${(profile?.businessName || "Restaurant").replace(/[^a-zA-Z0-9]/g, "_")}_Menu_Card.pdf`;
+      const fileName = `${(profile?.businessName || "Restaurant").replace(/[^a-zA-Z0-9]/g, "_")}_Web_Menu.pdf`;
       
       const opt = {
-        margin: [8, 8, 8, 8],
+        margin: [5, 5, 5, 5],
         filename: fileName,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { 
@@ -149,10 +152,51 @@ export default function MenuPdfGeneratorPage() {
       await html2pdf().set(opt).from(el).save();
     } catch (err) {
       console.error("Direct PDF Generation error", err);
-      // Fallback to native print if html2pdf fails
       window.print();
     } finally {
       setDownloadingPdf(false);
+    }
+  };
+
+  // 🌐 DOWNLOAD EXACT STANDALONE WEB PAGE (.html)
+  const handleDownloadWebHtml = () => {
+    const el = document.getElementById("pdf-menu-card-canvas");
+    if (!el) return;
+
+    setDownloadingHtml(true);
+    try {
+      const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${profile?.businessName || 'Restaurant'} - Menu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #f4f4f5; font-family: system-ui, -apple-system, sans-serif; }
+    @media print { body { background: white; } }
+  </style>
+</head>
+<body className="p-4 md:p-8 flex justify-center">
+  <div style="max-width: 800px; width: 100%;">
+    ${el.outerHTML}
+  </div>
+</body>
+</html>`;
+
+      const blob = new Blob([htmlContent], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(profile?.businessName || "Restaurant").replace(/[^a-zA-Z0-9]/g, "_")}_Web_Menu.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to download HTML file", err);
+    } finally {
+      setDownloadingHtml(false);
     }
   };
 
@@ -162,16 +206,16 @@ export default function MenuPdfGeneratorPage() {
     return (
       <div className="flex items-center justify-center min-h-[500px]">
         <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500" />
-          <p className="text-xs font-bold text-slate-500">Loading Menu Catalog...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-600" />
+          <p className="text-xs font-bold text-slate-400">Loading Web Menu Catalog...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 pb-24 font-sans">
-      {/* ── TOP CONTROL BAR (Hidden during print) ── */}
+    <div className="min-h-screen bg-slate-950 text-slate-100 pb-24 font-sans">
+      {/* ── TOP CONTROL BAR ── */}
       <header className="print:hidden sticky top-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800 p-4 shadow-xl">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 w-full lg:w-auto">
@@ -183,19 +227,27 @@ export default function MenuPdfGeneratorPage() {
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-black tracking-tight text-white">PDF Menu Card Studio</h1>
-                <span className="px-2 py-0.5 rounded-full text-[0.6rem] font-black uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  HD Export
+                <h1 className="text-lg font-black tracking-tight text-white">Web Menu PDF & HTML Studio</h1>
+                <span className="px-2 py-0.5 rounded-full text-[0.6rem] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Exact Web Replica 📱
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-medium">Export beautiful multi-column restaurant menu cards in 1-Click</p>
+              <p className="text-xs text-slate-400 font-medium">Export pixel-perfect Web App menu or download standalone HTML file</p>
             </div>
           </div>
 
-          {/* Quick Toolbar Controls */}
+          {/* Controls & Templates */}
           <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-end">
             {/* Template Selector */}
             <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-2xl border border-slate-700">
+              <button
+                onClick={() => setTemplate("web_replica")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                  template === "web_replica" ? "bg-rose-600 text-white shadow-md shadow-rose-600/20" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                📱 Web Replica
+              </button>
               <button
                 onClick={() => setTemplate("luxury")}
                 className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
@@ -207,18 +259,10 @@ export default function MenuPdfGeneratorPage() {
               <button
                 onClick={() => setTemplate("bistro")}
                 className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                  template === "bistro" ? "bg-rose-600 text-white shadow-md shadow-rose-600/20" : "text-slate-400 hover:text-white"
+                  template === "bistro" ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20" : "text-slate-400 hover:text-white"
                 }`}
               >
                 🍕 Modern Bistro
-              </button>
-              <button
-                onClick={() => setTemplate("emerald")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                  template === "emerald" ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                🌿 Emerald
               </button>
               <button
                 onClick={() => setTemplate("classic")}
@@ -230,9 +274,9 @@ export default function MenuPdfGeneratorPage() {
               </button>
             </div>
 
-            {/* Column Layout */}
+            {/* Column Selector */}
             <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-2xl border border-slate-700">
-              {[1, 2, 3].map((col) => (
+              {[1, 2].map((col) => (
                 <button
                   key={col}
                   onClick={() => setColumns(col as any)}
@@ -245,67 +289,45 @@ export default function MenuPdfGeneratorPage() {
               ))}
             </div>
 
-            {/* Font Size */}
-            <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-2xl border border-slate-700">
-              <button
-                onClick={() => setFontSize("sm")}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold ${fontSize === "sm" ? "bg-slate-700 text-white" : "text-slate-400"}`}
-              >
-                Small
-              </button>
-              <button
-                onClick={() => setFontSize("md")}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold ${fontSize === "md" ? "bg-slate-700 text-white" : "text-slate-400"}`}
-              >
-                Normal
-              </button>
-              <button
-                onClick={() => setFontSize("lg")}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold ${fontSize === "lg" ? "bg-slate-700 text-white" : "text-slate-400"}`}
-              >
-                Large
-              </button>
-            </div>
-
-            {/* Toggles */}
+            {/* Image & Detail Toggles */}
             <button
               onClick={() => setShowImages(!showImages)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
-                showImages ? "bg-amber-500/10 text-amber-400 border-amber-500/30" : "bg-slate-800 text-slate-400 border-slate-700"
+                showImages ? "bg-rose-500/10 text-rose-400 border-rose-500/30" : "bg-slate-800 text-slate-400 border-slate-700"
               }`}
             >
               {showImages ? <Eye size={14} /> : <EyeOff size={14} />} Photos
             </button>
 
-            <button
-              onClick={() => setShowQrCode(!showQrCode)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
-                showQrCode ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/30" : "bg-slate-800 text-slate-400 border-slate-700"
-              }`}
-            >
-              <QrIcon size={14} /> QR Code
-            </button>
-
-            {/* 🚀 DIRECT 1-CLICK DOWNLOAD BUTTON */}
+            {/* 🚀 DIRECT AUTO DOWNLOAD PDF */}
             <button
               onClick={handleAutoDownloadPdf}
               disabled={downloadingPdf}
-              className="px-6 py-2.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-black font-black text-xs rounded-2xl shadow-lg shadow-amber-500/25 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white font-black text-xs rounded-2xl shadow-lg shadow-rose-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
             >
               {downloadingPdf ? (
                 <>
-                  <Loader2 size={16} className="animate-spin text-black" /> Generating PDF...
+                  <Loader2 size={16} className="animate-spin text-white" /> Saving PDF...
                 </>
               ) : (
                 <>
-                  <Download size={16} /> Direct Download PDF ⬇️
+                  <Download size={16} /> Save PDF 📄
                 </>
               )}
             </button>
 
+            {/* 🌐 DOWNLOAD HTML FILE */}
+            <button
+              onClick={handleDownloadWebHtml}
+              disabled={downloadingHtml}
+              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs shadow-lg shadow-indigo-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            >
+              <Globe size={15} /> Save Web (.html) 🌐
+            </button>
+
             <button
               onClick={() => window.print()}
-              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-2xl font-bold text-xs border border-slate-700 transition-all flex items-center gap-1.5"
+              className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl font-bold text-xs border border-slate-700 transition-all flex items-center gap-1.5"
             >
               <Printer size={15} /> Print
             </button>
@@ -314,32 +336,164 @@ export default function MenuPdfGeneratorPage() {
       </header>
 
       {/* ── CANVAS DISPLAY PREVIEW CONTAINER ── */}
-      <div className="max-w-5xl mx-auto my-8 px-4 print:p-0 print:m-0 print:max-w-none">
+      <div className="max-w-4xl mx-auto my-8 px-4 print:p-0 print:m-0 print:max-w-none">
         <div
           id="pdf-menu-card-canvas"
           ref={printAreaRef}
-          className={`rounded-3xl print:rounded-none p-8 md:p-12 print:p-6 transition-all min-h-[1100px] shadow-2xl print:shadow-none relative ${
-            template === "luxury"
-              ? "bg-[#0c0804] text-[#f4e8c1] border border-[#3b2711]"
+          className={`rounded-3xl print:rounded-none overflow-hidden transition-all shadow-2xl print:shadow-none relative ${
+            template === "web_replica"
+              ? "bg-[#f4f4f4] text-[#1e1e1e] border border-slate-300"
+              : template === "luxury"
+              ? "bg-[#0c0804] text-[#f4e8c1] border border-[#3b2711] p-8"
               : template === "bistro"
-              ? "bg-white text-slate-900 border border-slate-200"
-              : template === "emerald"
-              ? "bg-[#041e17] text-[#d1fae5] border border-[#065f46]"
-              : "bg-[#fdfbf7] text-[#2c221e] border border-[#e5dec9]"
+              ? "bg-white text-slate-900 border border-slate-200 p-8"
+              : "bg-[#fdfbf7] text-[#2c221e] border border-[#e5dec9] p-8"
           }`}
         >
-          {/* HEADER DECORATION & BRANDING */}
-          <div className={`text-center border-b pb-8 mb-8 relative ${
-            template === "luxury"
-              ? "border-[#3b2711]"
-              : template === "emerald"
-              ? "border-[#065f46]"
-              : template === "classic"
-              ? "border-[#e5dec9]"
-              : "border-slate-200"
-          }`}>
-            {showBusinessInfo && (
-              <>
+          {template === "web_replica" ? (
+            /* 📱 EXACT WEB MENU REPLICA (Matches Live QR Menu /menu/[clerkId]) */
+            <div className="w-full bg-[#f4f4f4]">
+              {/* RESTAURANT HERO COVER */}
+              <div className="relative overflow-hidden h-[200px] bg-slate-900">
+                <Image
+                  src={profile?.profileImageUrl || "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80"}
+                  alt="Restaurant Cover"
+                  fill
+                  className="object-cover opacity-90"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/80" />
+                <div className="absolute bottom-4 left-4 z-10 bg-black/75 backdrop-blur-md rounded-lg px-3 py-1.5 flex items-center gap-2 border border-white/20">
+                  <div className="w-2 h-2 rounded-full bg-[#4CD964] animate-pulse" />
+                  <span className="text-xs font-black text-white">Live Smart QR Menu</span>
+                </div>
+                {showQrCode && (
+                  <div className="absolute top-4 right-4 z-10 bg-white p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col items-center">
+                    <QRCode value={menuUrl} size={60} />
+                    <span className="text-[0.55rem] font-black uppercase text-gray-800 mt-1 tracking-wider">Scan to Order</span>
+                  </div>
+                )}
+              </div>
+
+              {/* RESTAURANT INFO HEADER */}
+              <div className="bg-white p-5 border-b border-[#EBEBEB] shadow-sm">
+                <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-1">
+                  {profile?.businessName || "Restaurant Name"}
+                </h1>
+                <p className="text-xs text-gray-500 font-semibold mb-3">
+                  {profile?.businessTagLine || "North Indian, Mughlai, Chinese, Fast Food & Beverages"}
+                </p>
+                <div className="flex items-center gap-2 flex-wrap text-xs font-bold text-gray-700">
+                  <span className="border border-[#b2dfc8] bg-[#F0FDF4] text-[#22C55E] px-2 py-1 rounded-md">★ 4.3 (2.1K)</span>
+                  <span className="w-[1px] h-4 bg-gray-200" />
+                  <span className="border border-gray-200 px-2 py-1 rounded-md">⏱ 20–30 min</span>
+                  <span className="w-[1px] h-4 bg-gray-200" />
+                  <span className="border border-gray-200 px-2 py-1 rounded-md">₹350 for two</span>
+                </div>
+
+                {/* ADDRESS & CONTACT */}
+                <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between text-[0.7rem] font-bold text-gray-500 gap-2">
+                  <span>📍 {profile?.businessAddress || "Main Market, City"}</span>
+                  <span>📞 {profile?.contactPersonPhone || "+91 9999999999"}</span>
+                  {profile?.fssaiNumber && <span>🛡️ FSSAI: {profile.fssaiNumber}</span>}
+                </div>
+              </div>
+
+              {/* CATEGORIES TAB STRIP */}
+              <div className="bg-white border-b border-[#EBEBEB] px-4 py-3 sticky top-0 z-20 shadow-sm flex gap-2 overflow-x-auto">
+                <span className="px-4 py-2 rounded-xl text-xs font-black bg-[#E23744] text-white shadow-sm">
+                  🍛 All Items ({items.length})
+                </span>
+                {categories.map((c) => (
+                  <span key={c.id} className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gray-100 text-gray-700 shrink-0">
+                    {c.name} ({c.items.length})
+                  </span>
+                ))}
+              </div>
+
+              {/* MENU ITEMS BODY */}
+              <div className="p-4 space-y-6">
+                {categories.map((cat) => (
+                  <section key={cat.id} className="bg-white rounded-2xl p-4 border border-[#EBEBEB] shadow-sm break-inside-avoid">
+                    <h2 className="text-base font-black text-gray-900 uppercase tracking-wider mb-4 border-b pb-2 border-gray-100 flex items-center justify-between">
+                      <span>{cat.name}</span>
+                      <span className="text-xs font-bold text-gray-400 font-normal">({cat.items.length} items)</span>
+                    </h2>
+
+                    <div className={`grid gap-4 ${columns === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"}`}>
+                      {cat.items.map((item) => {
+                        const displayPrice = item.sellingPrice || item.price || 0;
+
+                        return (
+                          <div key={item.id} className="bg-white border border-[#F0F0F0] rounded-2xl p-3 flex items-start justify-between gap-3 shadow-2xs break-inside-avoid hover:border-gray-300 transition-all">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                {showBadges && (
+                                  <div className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center shrink-0 ${
+                                    item.isVeg ? "border-green-600 bg-green-50" : item.isEgg ? "border-amber-500 bg-amber-50" : "border-red-600 bg-red-50"
+                                  }`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full ${
+                                      item.isVeg ? "bg-green-600" : item.isEgg ? "bg-amber-500" : "bg-red-600"
+                                    }`} />
+                                  </div>
+                                )}
+                                <h3 className="text-sm font-extrabold text-gray-900 truncate">{item.name}</h3>
+                              </div>
+
+                              {item.isBestseller && (
+                                <span className="inline-block text-[0.55rem] font-black uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 mb-1">
+                                  ★ Bestseller
+                                </span>
+                              )}
+
+                              {showPrices && (
+                                <div className="text-sm font-black text-gray-900 mt-1">
+                                  ₹{displayPrice.toFixed(2)}
+                                </div>
+                              )}
+
+                              {showDescriptions && item.description && (
+                                <p className="text-[0.68rem] text-gray-500 font-medium mt-1 line-clamp-2 leading-relaxed">
+                                  {item.description}
+                                </p>
+                              )}
+                            </div>
+
+                            {showImages && (
+                              <div className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-inner">
+                                {item.imageUrl ? (
+                                  <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                    <Utensils size={24} />
+                                  </div>
+                                )}
+                                <div className="absolute bottom-1 right-1 bg-white/90 backdrop-blur-md rounded-md px-1.5 py-0.5 text-[0.6rem] font-black text-rose-600 border border-rose-200 shadow-sm">
+                                  + ADD
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ))}
+              </div>
+
+              {/* FOOTER */}
+              <div className="bg-white p-6 border-t border-[#EBEBEB] text-center text-xs font-bold text-gray-500">
+                <p className="font-extrabold text-gray-800 text-sm mb-1">
+                  {profile?.greetingMessage || "Thank You! Visit Again 🙏"}
+                </p>
+                <p className="text-[0.65rem] text-gray-400">
+                  Powered by KravyPOS Smart QR Menu & Billing System.
+                </p>
+              </div>
+            </div>
+          ) : (
+            /* 👑 ROYAL GOLD / BISTRO / VINTAGE DESIGNS */
+            <div>
+              <div className="text-center border-b pb-8 mb-8 relative">
                 {profile?.logoUrl || profile?.profileImageUrl ? (
                   <div className="w-24 h-24 mx-auto mb-4 relative rounded-full overflow-hidden border-2 shadow-xl border-amber-500/40">
                     <Image
@@ -353,10 +507,8 @@ export default function MenuPdfGeneratorPage() {
                   <div className={`w-20 h-20 mx-auto mb-4 rounded-3xl flex items-center justify-center text-3xl shadow-lg ${
                     template === "luxury"
                       ? "bg-gradient-to-br from-amber-500 to-amber-700 text-black"
-                      : template === "emerald"
-                      ? "bg-gradient-to-br from-emerald-500 to-emerald-700 text-white"
                       : template === "bistro"
-                      ? "bg-gradient-to-br from-rose-500 to-rose-700 text-white"
+                      ? "bg-gradient-to-br from-indigo-500 to-indigo-700 text-white"
                       : "bg-[#3c2a21] text-[#fdfbf7]"
                   }`}>
                     <Utensils size={36} />
@@ -366,8 +518,6 @@ export default function MenuPdfGeneratorPage() {
                 <h1 className={`text-3xl md:text-5xl font-black uppercase tracking-tight leading-none mb-2 ${
                   template === "luxury"
                     ? "font-[Syne] text-transparent bg-clip-text bg-gradient-to-r from-[#f7e39c] via-[#d4a353] to-[#e6b85c]"
-                    : template === "emerald"
-                    ? "text-[#6ee7b7]"
                     : template === "classic"
                     ? "font-serif text-[#3c2a21]"
                     : "text-slate-900"
@@ -376,239 +526,64 @@ export default function MenuPdfGeneratorPage() {
                 </h1>
 
                 {profile?.businessTagLine && (
-                  <p className={`text-xs md:text-sm font-semibold italic mt-1 ${
-                    template === "luxury"
-                      ? "text-[#d4a353]/90"
-                      : template === "emerald"
-                      ? "text-emerald-300/80"
-                      : template === "classic"
-                      ? "text-[#6e5849]"
-                      : "text-slate-500"
-                  }`}>
+                  <p className="text-xs md:text-sm font-semibold italic mt-1 opacity-80">
                     “{profile.businessTagLine}”
                   </p>
                 )}
 
-                <div className={`flex flex-wrap items-center justify-center gap-4 text-xs font-bold mt-4 ${
-                  template === "luxury"
-                    ? "text-[#f4e8c1]/75"
-                    : template === "emerald"
-                    ? "text-emerald-200/70"
-                    : template === "classic"
-                    ? "text-[#6e5849]"
-                    : "text-slate-600"
-                }`}>
+                <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-bold mt-4 opacity-75">
                   {profile?.contactPersonPhone && <span>📞 {profile.contactPersonPhone}</span>}
                   {profile?.businessAddress && <span>📍 {profile.businessAddress}</span>}
                   {profile?.fssaiNumber && <span>🛡️ FSSAI: {profile.fssaiNumber}</span>}
                 </div>
-              </>
-            )}
 
-            {/* QR CODE OVERLAY BANNER */}
-            {showQrCode && (
-              <div className={`absolute top-0 right-0 hidden sm:flex flex-col items-center gap-1.5 p-3 rounded-2xl border shadow-lg print:flex ${
-                template === "luxury"
-                  ? "bg-[#181109] border-[#3b2711]"
-                  : template === "emerald"
-                  ? "bg-[#092d23] border-[#065f46]"
-                  : template === "classic"
-                  ? "bg-[#f5efe3] border-[#e5dec9]"
-                  : "bg-white border-slate-200"
-              }`}>
-                <div className="p-1.5 bg-white rounded-xl shadow-sm">
-                  <QRCode value={menuUrl} size={70} />
-                </div>
-                <span className="text-[0.65rem] font-black uppercase tracking-wider opacity-80">
-                  Scan to Order 📱
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* MENU CATEGORIES CONTENT */}
-          {categories.length === 0 ? (
-            <div className="text-center py-20 text-slate-400 font-bold">
-              No menu items available. Please add products in Menu Editor!
-            </div>
-          ) : (
-            <div className="space-y-10">
-              {categories.map((cat) => (
-                <section key={cat.id} className="break-inside-avoid">
-                  {/* Category Header */}
-                  <div className="flex items-center gap-3 mb-5">
-                    <h2 className={`text-lg md:text-2xl font-black uppercase tracking-wider ${
-                      template === "luxury"
-                        ? "text-[#f7e39c] border-b-2 border-[#d4a353]/60 pb-1"
-                        : template === "emerald"
-                        ? "text-[#6ee7b7] border-b-2 border-emerald-500/60 pb-1"
-                        : template === "classic"
-                        ? "font-serif text-[#3c2a21] border-b-2 border-[#3c2a21] pb-1"
-                        : "text-slate-900 border-b-2 border-rose-600 pb-1"
-                    }`}>
-                      {cat.name}
-                    </h2>
-                    <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
-                      template === "luxury"
-                        ? "bg-[#281a0b] text-[#d4a353]"
-                        : template === "emerald"
-                        ? "bg-[#0f4d3c] text-emerald-300"
-                        : template === "classic"
-                        ? "bg-[#e5dec9] text-[#3c2a21]"
-                        : "bg-rose-50 text-rose-600"
-                    }`}>
-                      {cat.items.length}
-                    </span>
+                {showQrCode && (
+                  <div className="absolute top-0 right-0 hidden sm:flex flex-col items-center gap-1.5 p-3 rounded-2xl border shadow-lg bg-white text-gray-900 print:flex">
+                    <QRCode value={menuUrl} size={70} />
+                    <span className="text-[0.6rem] font-black uppercase tracking-wider">Scan Order</span>
                   </div>
+                )}
+              </div>
 
-                  {/* Category Items Grid */}
-                  <div className={`grid gap-4 ${
-                    columns === 1
-                      ? "grid-cols-1"
-                      : columns === 2
-                      ? "grid-cols-1 md:grid-cols-2"
-                      : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                  }`}>
-                    {cat.items.map((item) => {
-                      const displayPrice = item.sellingPrice || item.price || 0;
+              {/* CATEGORIES & ITEMS */}
+              <div className="space-y-8">
+                {categories.map((cat) => (
+                  <section key={cat.id} className="break-inside-avoid">
+                    <h2 className={`text-lg md:text-xl font-black uppercase tracking-wider mb-4 border-b-2 pb-1 ${
+                      template === "luxury" ? "text-[#f7e39c] border-[#d4a353]/60" : "text-slate-900 border-slate-900"
+                    }`}>
+                      {cat.name} ({cat.items.length})
+                    </h2>
 
-                      return (
-                        <div
-                          key={item.id}
-                          className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 break-inside-avoid ${
-                            template === "luxury"
-                              ? "bg-[#160f09] border-[#2d1e0e]"
-                              : template === "emerald"
-                              ? "bg-[#092d23] border-[#0a4234]"
-                              : template === "classic"
-                              ? "bg-[#f5efe3] border-[#e8dfc9]"
-                              : "bg-white border-slate-100 shadow-sm"
-                          }`}
-                        >
-                          {/* Item Thumbnail Photo */}
+                    <div className={`grid gap-4 ${columns === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"}`}>
+                      {cat.items.map((item) => (
+                        <div key={item.id} className="p-3 rounded-xl border border-black/10 flex items-start gap-3 break-inside-avoid">
                           {showImages && (
-                            <div className="w-16 h-16 shrink-0 relative rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
-                              {item.imageUrl ? (
-                                <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center opacity-40">
-                                  <Utensils size={20} />
-                                </div>
-                              )}
+                            <div className="w-14 h-14 shrink-0 relative rounded-lg overflow-hidden bg-gray-100">
+                              {item.imageUrl ? <Image src={item.imageUrl} alt={item.name} fill className="object-cover" /> : <Utensils size={18} className="m-auto opacity-30" />}
                             </div>
                           )}
-
-                          {/* Item Text & Price */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                {/* Veg / NonVeg Badge */}
-                                {showBadges && (
-                                  <div className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center shrink-0 ${
-                                    item.isVeg ? "border-green-600 bg-green-950/20" : item.isEgg ? "border-amber-500 bg-amber-950/20" : "border-red-600 bg-red-950/20"
-                                  }`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${
-                                      item.isVeg ? "bg-green-600" : item.isEgg ? "bg-amber-500" : "bg-red-600"
-                                    }`} />
-                                  </div>
-                                )}
-
-                                <h3 className={`font-black leading-snug ${
-                                  fontSize === "sm" ? "text-xs" : fontSize === "lg" ? "text-base" : "text-sm"
-                                } ${
-                                  template === "luxury"
-                                    ? "text-[#f4e8c1]"
-                                    : template === "emerald"
-                                    ? "text-emerald-100"
-                                    : template === "classic"
-                                    ? "font-serif text-[#2c221e]"
-                                    : "text-slate-900"
-                                }`}>
-                                  {item.name}
-                                </h3>
-
-                                {item.isBestseller && (
-                                  <span className="text-[0.6rem] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/30">
-                                    ★ Bestseller
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Price Display */}
-                              {showPrices && (
-                                <span className={`font-black shrink-0 ${
-                                  fontSize === "sm" ? "text-xs" : fontSize === "lg" ? "text-base" : "text-sm"
-                                } ${
-                                  template === "luxury"
-                                    ? "text-[#f7e39c]"
-                                    : template === "emerald"
-                                    ? "text-[#6ee7b7]"
-                                    : template === "classic"
-                                    ? "text-[#8b4513]"
-                                    : "text-rose-600"
-                                }`}>
-                                  ₹{displayPrice.toFixed(2)}
-                                </span>
-                              )}
+                            <div className="flex items-center justify-between">
+                              <h3 className="font-black text-sm truncate">{item.name}</h3>
+                              {showPrices && <span className="font-black text-sm">₹{(item.sellingPrice || item.price || 0).toFixed(2)}</span>}
                             </div>
-
-                            {/* Description */}
-                            {showDescriptions && item.description && (
-                              <p className={`text-[0.7rem] font-medium mt-1 line-clamp-2 leading-relaxed ${
-                                template === "luxury"
-                                  ? "text-[#f4e8c1]/60"
-                                  : template === "emerald"
-                                  ? "text-emerald-200/60"
-                                  : template === "classic"
-                                  ? "text-[#6e5849]"
-                                  : "text-slate-500"
-                              }`}>
-                                {item.description}
-                              </p>
-                            )}
+                            {showDescriptions && item.description && <p className="text-[0.68rem] opacity-70 mt-1 line-clamp-2">{item.description}</p>}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              ))}
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+
+              {/* FOOTER */}
+              <div className="mt-12 pt-6 border-t border-black/10 text-center text-xs font-bold">
+                <p className="font-extrabold text-sm">{profile?.greetingMessage || "Thank You! Visit Again 🙏"}</p>
+                <p className="text-[0.65rem] opacity-70 mt-0.5">Powered by KravyPOS Smart Billing System.</p>
+              </div>
             </div>
           )}
-
-          {/* FOOTER & GREETING BANNER */}
-          <div className={`mt-12 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-xs font-bold ${
-            template === "luxury"
-              ? "border-[#3b2711] text-[#f4e8c1]/60"
-              : template === "emerald"
-              ? "border-[#065f46] text-emerald-200/60"
-              : template === "classic"
-              ? "border-[#e5dec9] text-[#6e5849]"
-              : "border-slate-200 text-slate-500"
-          }`}>
-            <div>
-              <p className={`font-extrabold ${
-                template === "luxury" ? "text-[#f7e39c]" : template === "emerald" ? "text-[#6ee7b7]" : "text-slate-900"
-              }`}>
-                {profile?.greetingMessage || "Thank You! Visit Again 🙏"}
-              </p>
-              <p className="text-[0.65rem] mt-0.5 opacity-70">
-                Prices subject to applicable taxes. Digitized & Managed with KravyPOS Smart Billing System.
-              </p>
-            </div>
-
-            {showQrCode && (
-              <div className="flex items-center gap-2.5">
-                <div className="p-1 bg-white rounded-lg border shadow-sm">
-                  <QRCode value={menuUrl} size={42} />
-                </div>
-                <div className="text-left text-[0.65rem]">
-                  <p className="font-black uppercase">Scan for Digital Menu</p>
-                  <p className="opacity-70 truncate max-w-[150px]">{menuUrl}</p>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
