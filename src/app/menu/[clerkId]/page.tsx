@@ -1208,7 +1208,7 @@ function PublicMenu() {
                 )}
                 
                 <div className="flex border-b border-[#EBEBEB] overflow-x-auto no-scrollbar scrollbar-none px-2">
-                    {(["menu", "reviews", "gallery", "loyalty"] as const).map((tab) => (
+                    {(["menu", "reviews", "gallery", ...(profile?.enableLoyaltyProgram !== false ? ["loyalty"] : [])] as const).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => { kravy.click(); setActiveTab(tab); }}
@@ -1238,7 +1238,7 @@ function PublicMenu() {
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#4CD964] animate-pulse" />
                                         <span className="text-[0.7rem] font-[800] text-white">Table {tableName} · Active</span>
                                     </div>
-                                    {loyaltyPoints > 0 && (
+                                    {profile?.enableLoyaltyProgram !== false && loyaltyPoints > 0 && (
                                         <div className="absolute bottom-3 right-3.5 z-10 bg-gradient-to-br from-[#D4A353] to-[#F0C060] rounded-lg px-2.5 py-1.5 flex items-center gap-1.5 shadow-lg">
                                             <span className="text-[0.7rem] font-[900] text-white">👑 {loyaltyPoints} pts</span>
                                         </div>
@@ -1289,17 +1289,35 @@ function PublicMenu() {
                                     )}
 
                                     {/* LOYALTY MINI BAR */}
-                                    <div className="bg-gradient-to-br from-[#D4A353]/10 to-[#F0C060]/5 border border-[#D4A353]/30 rounded-xl px-3.5 py-2.5 flex items-center gap-2.5 mb-2" onClick={() => { kravy.toggle(); setActiveTab("loyalty"); }}>
-                                        <span className="text-[1.3rem]">👑</span>
-                                        <div className="flex-1">
-                                            <div className="text-[0.78rem] font-[800] text-[#7A5A00]">{loyaltyPoints} Loyalty Points</div>
-                                            <div className="text-[0.65rem] text-[#696969] mt-0.5">350 more for FREE Butter Chicken!</div>
-                                            <div className="h-1 bg-[#D4A353]/20 rounded-full mt-1 overflow-hidden">
-                                                <div className="h-full bg-gradient-to-r from-[#D4A353] to-[#F0C060]" style={{ width: `${(loyaltyPoints / 1000) * 100}%` }} />
+                                    {profile?.enableLoyaltyProgram !== false && (
+                                        <div className="bg-gradient-to-br from-[#D4A353]/10 to-[#F0C060]/5 border border-[#D4A353]/30 rounded-xl px-3.5 py-2.5 flex items-center gap-2.5 mb-2 cursor-pointer" onClick={() => { kravy.toggle(); setActiveTab("loyalty"); }}>
+                                            <span className="text-[1.3rem]">👑</span>
+                                            <div className="flex-1">
+                                                <div className="text-[0.78rem] font-[800] text-[#7A5A00]">{loyaltyPoints} Loyalty Points</div>
+                                                {(() => {
+                                                    const nextReward = rewards
+                                                        .filter(r => r.pointsRequired > loyaltyPoints)
+                                                        .sort((a, b) => a.pointsRequired - b.pointsRequired)[0];
+                                                    if (nextReward) {
+                                                        const diff = nextReward.pointsRequired - loyaltyPoints;
+                                                        return (
+                                                            <div className="text-[0.65rem] text-[#696969] mt-0.5 font-medium">
+                                                                {diff} pts more to unlock <span className="font-bold text-amber-700">{nextReward.title}</span>!
+                                                            </div>
+                                                        );
+                                                    } else if (rewards.length > 0) {
+                                                        return <div className="text-[0.65rem] text-emerald-700 font-bold mt-0.5">✨ Reward ready to redeem!</div>;
+                                                    } else {
+                                                        return <div className="text-[0.65rem] text-[#696969] mt-0.5">Earn points on every order & unlock rewards!</div>;
+                                                    }
+                                                })()}
+                                                <div className="h-1 bg-[#D4A353]/20 rounded-full mt-1 overflow-hidden">
+                                                    <div className="h-full bg-gradient-to-r from-[#D4A353] to-[#F0C060]" style={{ width: `${Math.min(100, (loyaltyPoints / (rewards[0]?.pointsRequired || 500)) * 100)}%` }} />
+                                                </div>
                                             </div>
+                                            <div className="text-[#D4A353] text-[1.1rem] font-extrabold">{loyaltyPoints}</div>
                                         </div>
-                                        <div className="text-[#D4A353] text-[1.1rem] font-extrabold">{loyaltyPoints}</div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1897,7 +1915,15 @@ function PublicMenu() {
                                         <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                                             <div className="h-full bg-gradient-to-r from-[#D4A353] to-[#F0C060] transition-all duration-1000" style={{ width: `${(loyaltyPoints / 1000) * 100}%` }} />
                                         </div>
-                                        <div className="text-[0.7rem] text-[#F0EAD6]/50 mt-2">350 pts aur — Platinum Member ban jao! 🚀</div>
+                                        <div className="text-[0.7rem] text-[#F0EAD6]/50 mt-2">
+                                             {(() => {
+                                                 const nextReward = rewards.filter(r => r.pointsRequired > loyaltyPoints).sort((a, b) => a.pointsRequired - b.pointsRequired)[0];
+                                                 if (nextReward) {
+                                                     return `${nextReward.pointsRequired - loyaltyPoints} pts more to unlock ${nextReward.title}! 🚀`;
+                                                 }
+                                                 return "Earn points on every order & unlock rewards! 🚀";
+                                             })()}
+                                         </div>
                                     </div>
                                 </div>
                                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(212,163,83,0.15),transparent)]" />
@@ -1950,39 +1976,42 @@ function PublicMenu() {
                                 )}
                             </div>
 
-                            <div className="bg-white p-4 mb-2">
-                                <div className="font-[Syne] text-[0.9rem] font-[800] mb-3.5 px-0.5">🎁 Rewards Redeem Karo</div>
-                                <div className="space-y-3.5">
-                                    {rewards.length > 0 ? (
-                                        rewards.map((rew) => (
-                                            <div key={rew.id} className="flex items-center gap-3 py-3 border-b border-[#F7F7F7] last:border-0 hover:bg-gray-50/50 transition-all rounded-lg px-1">
-                                                <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl ${loyaltyPoints >= rew.pointsRequired ? "bg-amber-50" : "bg-gray-100 opacity-60"}`}>
-                                                    🎁
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="text-[0.7rem] text-[#696969] mt-0.5">{rew.description}</div>
-                                                    <div className="text-[0.7rem] font-[800] text-amber-600 mt-1 flex items-center gap-1">
-                                                        <Star size={12} fill="currentColor" /> {rew.pointsRequired} pts required
+                            {profile?.enableLoyaltyProgram !== false && (
+                                <div className="bg-white p-4 mb-2">
+                                    <div className="font-[Syne] text-[0.9rem] font-[800] mb-3.5 px-0.5">🎁 Rewards Redeem Karo</div>
+                                    <div className="space-y-3.5">
+                                        {rewards.length > 0 ? (
+                                            rewards.map((rew) => (
+                                                <div key={rew.id} className="flex items-center gap-3 py-3 border-b border-[#F7F7F7] last:border-0 hover:bg-gray-50/50 transition-all rounded-lg px-1">
+                                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl ${loyaltyPoints >= rew.pointsRequired ? "bg-amber-50" : "bg-gray-100 opacity-60"}`}>
+                                                        🎁
                                                     </div>
+                                                    <div className="flex-1">
+                                                        <div className="text-[0.82rem] font-[800] text-gray-800">{rew.title}</div>
+                                                        {rew.description && <div className="text-[0.68rem] text-[#696969] mt-0.5">{rew.description}</div>}
+                                                        <div className="text-[0.68rem] font-[800] text-amber-600 mt-1 flex items-center gap-1">
+                                                            <Star size={12} fill="currentColor" /> {rew.pointsRequired} pts required
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRedeemReward(rew.id, rew.pointsRequired)}
+                                                        className={`px-4 py-2 rounded-lg text-[0.72rem] font-[900] shadow-sm transition-all ${loyaltyPoints >= rew.pointsRequired
+                                                            ? "bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-amber-100 active:scale-95"
+                                                            : "bg-gray-100 text-gray-400 border border-gray-200"
+                                                            }`}
+                                                        disabled={loyaltyPoints < rew.pointsRequired}
+                                                    >
+                                                        {loyaltyPoints >= rew.pointsRequired ? "Redeem" : "Locked"}
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRedeemReward(rew.id, rew.pointsRequired)}
-                                                    className={`px-4 py-2 rounded-lg text-[0.72rem] font-[900] shadow-sm transition-all ${loyaltyPoints >= rew.pointsRequired
-                                                        ? "bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-amber-100 active:scale-95"
-                                                        : "bg-gray-100 text-gray-400 border border-gray-200"
-                                                        }`}
-                                                    disabled={loyaltyPoints < rew.pointsRequired}
-                                                >
-                                                    {loyaltyPoints >= rew.pointsRequired ? "Redeem" : "Locked"}
-                                                </button>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-center py-6 text-[#ABABAB] text-[0.75rem] font-bold">Stay tuned! More rewards coming soon.</div>
-                                    )}
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-6 text-[#ABABAB] text-[0.75rem] font-bold">Stay tuned! More rewards coming soon.</div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </motion.div>
                     )}
 
