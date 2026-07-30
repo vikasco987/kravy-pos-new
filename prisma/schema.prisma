@@ -467,8 +467,12 @@ model BusinessProfile {
   hsnEnabled   Boolean @default(false)
   
   // ✅ Loyalty Program Settings
-  loyaltyPointRatio Float @default(10.0) // 1 point per X rupees
-  loyaltyMinRedeem  Int   @default(100)  // Minimum points to unlock reward
+  loyaltyPointRatio      Float   @default(10.0) // 1 point per X rupees
+  loyaltyMinRedeem       Int     @default(100)  // Minimum points to unlock reward
+  enableLoyaltyProgram   Boolean @default(true)
+  loyaltyMinOrderAmount  Float   @default(0)
+  loyaltyValueInRupees   Float   @default(1.0)
+  maxRedeemPointsPerBill Int     @default(500)
 
   qrMenuPriceInclusive Boolean @default(false)
   enableKOTWithBill    Boolean @default(false)

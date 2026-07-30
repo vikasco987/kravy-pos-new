@@ -119,6 +119,22 @@ export async function GET(request: Request) {
       }
     }
 
+    if (profile) {
+      const ps = (profile.printSettings as any) || {};
+      if (profile.enableLoyaltyProgram === undefined || profile.enableLoyaltyProgram === null) {
+        (profile as any).enableLoyaltyProgram = ps.enableLoyaltyProgram ?? true;
+      }
+      if (profile.loyaltyMinOrderAmount === undefined || profile.loyaltyMinOrderAmount === null) {
+        (profile as any).loyaltyMinOrderAmount = ps.loyaltyMinOrderAmount ?? 0;
+      }
+      if (profile.loyaltyValueInRupees === undefined || profile.loyaltyValueInRupees === null) {
+        (profile as any).loyaltyValueInRupees = ps.loyaltyValueInRupees ?? 1;
+      }
+      if (profile.maxRedeemPointsPerBill === undefined || profile.maxRedeemPointsPerBill === null) {
+        (profile as any).maxRedeemPointsPerBill = ps.maxRedeemPointsPerBill ?? 500;
+      }
+    }
+
     return NextResponse.json(profile, { status: 200 });
   } catch (error) {
     console.error("GET /api/profile error:", error);
@@ -293,11 +309,15 @@ export async function POST(request: Request) {
     if (body.expiryTrackingEnabled !== undefined) updateData.expiryTrackingEnabled = b(body.expiryTrackingEnabled);
     if (body.phonePrefixType !== undefined) updateData.phonePrefixType = s(body.phonePrefixType);
     if (body.printSettings !== undefined) updateData.printSettings = body.printSettings;
-    if (body.allowWalletEditDelete !== undefined || body.enableVirtualGroupVariants !== undefined) {
+    if (body.allowWalletEditDelete !== undefined || body.enableVirtualGroupVariants !== undefined || body.enableLoyaltyProgram !== undefined || body.loyaltyMinOrderAmount !== undefined || body.loyaltyValueInRupees !== undefined || body.maxRedeemPointsPerBill !== undefined) {
       updateData.printSettings = {
         ...((updateData.printSettings as any) || {}),
         ...(body.allowWalletEditDelete !== undefined ? { allowWalletEditDelete: b(body.allowWalletEditDelete) } : {}),
-        ...(body.enableVirtualGroupVariants !== undefined ? { enableVirtualGroupVariants: b(body.enableVirtualGroupVariants) } : {})
+        ...(body.enableVirtualGroupVariants !== undefined ? { enableVirtualGroupVariants: b(body.enableVirtualGroupVariants) } : {}),
+        ...(body.enableLoyaltyProgram !== undefined ? { enableLoyaltyProgram: b(body.enableLoyaltyProgram) } : {}),
+        ...(body.loyaltyMinOrderAmount !== undefined ? { loyaltyMinOrderAmount: n(body.loyaltyMinOrderAmount) } : {}),
+        ...(body.loyaltyValueInRupees !== undefined ? { loyaltyValueInRupees: n(body.loyaltyValueInRupees) } : {}),
+        ...(body.maxRedeemPointsPerBill !== undefined ? { maxRedeemPointsPerBill: n(body.maxRedeemPointsPerBill) } : {})
       };
     }
     if (body.reviewUrl !== undefined) updateData.reviewUrl = s(body.reviewUrl);
