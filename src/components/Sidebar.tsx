@@ -807,12 +807,14 @@ export default function Sidebar() {
             const hasLegacyWorkflow = allowedPaths.includes("/dashboard/workflow");
             const isNewPath = baseHref === "/dashboard/terminal" || baseHref === "/dashboard/kitchen";
             const isExpensePath = baseHref === "/dashboard/expenses";
+            const isRoomPath = baseHref === "/dashboard/rooms";
             
             if (
               allowedPaths.includes("*") || 
               allowedPaths.includes(item.href) || 
               allowedPaths.includes(baseHref) || 
               (hasLegacyWorkflow && isNewPath) ||
+              isRoomPath ||
               (isExpensePath && (userRole === "ADMIN" || userRole === "SELLER"))
             ) return true;
 
