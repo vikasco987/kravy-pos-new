@@ -28,7 +28,9 @@ import {
   Eye,
   Key,
   IndianRupee,
-  Layers
+  Layers,
+  Sun,
+  Moon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { kravy } from "@/lib/sounds";
@@ -70,8 +72,40 @@ interface Booking {
 }
 
 export default function RoomManagementPage() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const { resolvedTheme, theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState<string>("dark");
+
+  useEffect(() => {
+    setMounted(true);
+    const isDarkClass = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+    const active = resolvedTheme || theme || (isDarkClass ? "dark" : "light");
+    setCurrentTheme(active);
+  }, [resolvedTheme, theme]);
+
+  // Real-time MutationObserver to detect dark/light class toggles instantly
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const observer = new MutationObserver(() => {
+      const isDarkClass = document.documentElement.classList.contains("dark");
+      setCurrentTheme(isDarkClass ? "dark" : "light");
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const isDark = currentTheme === "dark";
+
+  const toggleTheme = () => {
+    const nextTheme = isDark ? "light" : "dark";
+    setTheme(nextTheme);
+    setCurrentTheme(nextTheme);
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   const [rooms, setRooms] = useState<Room[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -358,6 +392,19 @@ export default function RoomManagementPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Quick Theme Switcher Button */}
+            <button
+              onClick={toggleTheme}
+              className={`p-3 rounded-2xl border transition-all flex items-center justify-center ${
+                isDark
+                  ? "bg-slate-800 hover:bg-slate-700 text-amber-400 border-slate-700"
+                  : "bg-slate-100 hover:bg-slate-200 text-indigo-600 border-slate-300"
+              }`}
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+
             <button
               onClick={() => handleOpenCheckIn()}
               className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-black uppercase tracking-wider rounded-2xl shadow-lg shadow-indigo-500/25 transition-all transform active:scale-95"
@@ -365,6 +412,7 @@ export default function RoomManagementPage() {
               <Key size={16} />
               + New Guest Check-In
             </button>
+
             <button
               onClick={() => setShowAddRoomModal(true)}
               className={`flex items-center gap-2 px-4 py-3 text-xs font-bold rounded-2xl border transition-all ${
@@ -376,6 +424,7 @@ export default function RoomManagementPage() {
               <PlusCircle size={16} />
               Add Room
             </button>
+
             <button
               onClick={fetchData}
               className={`p-3 rounded-2xl border transition-all ${
@@ -541,11 +590,11 @@ export default function RoomManagementPage() {
                     isOccupied
                       ? isDark
                         ? "bg-slate-900 border-rose-500/40 shadow-xl shadow-rose-950/20"
-                        : "bg-rose-50/50 border-rose-200 shadow-md"
+                        : "bg-rose-50/70 border-rose-300 shadow-md"
                       : isCleaning
                       ? isDark
                         ? "bg-slate-900 border-amber-500/40 shadow-xl shadow-amber-950/20"
-                        : "bg-amber-50/50 border-amber-200 shadow-md"
+                        : "bg-amber-50/70 border-amber-300 shadow-md"
                       : isDark
                       ? "bg-slate-900/90 border-slate-800 hover:border-emerald-500/40 shadow-lg"
                       : "bg-white border-slate-200/80 shadow-md hover:border-emerald-500/50"
@@ -580,7 +629,7 @@ export default function RoomManagementPage() {
                             {room.floor}
                           </span>
                         </div>
-                        <p className="text-xs font-bold text-indigo-500 dark:text-indigo-300 mt-1">{room.roomType}</p>
+                        <p className="text-xs font-bold text-indigo-500 dark:text-indigo-400 mt-1">{room.roomType}</p>
                       </div>
 
                       {/* Status Badge */}
