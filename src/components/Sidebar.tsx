@@ -33,7 +33,6 @@ import {
   PieChart,
   Database,
   Shield,
-  Printer,
   HelpCircle,
   Archive,
   Trash2,
