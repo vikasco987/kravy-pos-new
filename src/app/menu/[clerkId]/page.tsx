@@ -1208,7 +1208,7 @@ function PublicMenu() {
                 )}
                 
                 <div className="flex border-b border-[#EBEBEB] overflow-x-auto no-scrollbar scrollbar-none px-2">
-                    {(["menu", "reviews", "gallery", ...(profile?.enableLoyaltyProgram !== false ? ["loyalty"] : [])] as const).map((tab) => (
+                    {(["menu", "reviews", "gallery", ...(profile?.enableLoyaltyProgram !== false ? ["loyalty"] : [])] as any[]).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => { kravy.click(); setActiveTab(tab); }}
