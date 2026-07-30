@@ -33,6 +33,7 @@ import {
   PieChart,
   Database,
   Shield,
+  Printer,
   HelpCircle,
   Archive,
   Trash2,
@@ -141,6 +142,7 @@ const navGroups = [
     group: "STORE CATALOG",
     items: [
       { icon: <UtensilsCrossed size={18} />, label: "Browse Products", href: "/dashboard/menu/view" },
+      { icon: <Printer size={18} />, label: "PDF Menu Studio", href: "/dashboard/menu/pdf", badge: "PDF", badgeColor: "#EC4899" },
       { icon: <Sparkles size={18} />, label: "Interactive Editor", href: "/dashboard/menu-editor", badge: "New", badgeColor: "#8B5CF6" },
       { icon: <Layers size={18} />, label: "Add-on clusters", href: "/dashboard/menu/addons", badge: "Setup", badgeColor: "#10B981" },
       { icon: <Zap size={18} />, label: "AI Menu Scraper", href: "/dashboard/ai-scraper", badge: "AI", badgeColor: "#F59E0B", roles: ["ADMIN", "SELLER", "STAFF"] },

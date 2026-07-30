@@ -340,7 +340,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles, Image as ImageIcon, Loader2, Globe, Zap } from "lucide-react";
+import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles, Image as ImageIcon, Loader2, Globe, Zap, Printer } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ItemModal from "@/components/MenuEditor/ItemModal";
 /* types */
@@ -1769,6 +1769,13 @@ export default function ViewMenuPage() {
                    <Trash2 size={14} className="group-hover:animate-bounce" /> Clear All
                 </button>
                 <div className="w-[1px] h-8 bg-gray-100 mx-1" />
+                <button
+                  onClick={() => router.push(asUserId ? `/dashboard/menu/pdf?asUserId=${asUserId}` : "/dashboard/menu/pdf")}
+                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-rose-600 to-rose-700 text-white font-black text-xs uppercase tracking-widest flex-shrink-0 hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-rose-600/20 active:scale-95"
+                  title="Download / Print PDF Menu Card"
+                >
+                  <Printer size={16} strokeWidth={2.5} /> PDF Menu Card
+                </button>
                 <button
                   onClick={() => setShowUploadMenuModal(true)}
                   className="px-6 py-2.5 rounded-2xl bg-orange-600 text-white font-black text-xs uppercase tracking-widest flex-shrink-0 hover:bg-orange-700 transition-all flex items-center gap-2.5 shadow-lg shadow-orange-600/20 active:scale-95 animate-pulse"
