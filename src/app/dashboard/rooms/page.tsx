@@ -131,7 +131,7 @@ export default function RoomManagementPage() {
       }
     } catch (err) {
       console.error("Error fetching rooms/bookings:", err);
-    } fontally {
+    } finally {
       setLoading(false);
     }
   };
