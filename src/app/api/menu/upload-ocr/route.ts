@@ -14,9 +14,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No menu file uploaded." }, { status: 400 });
         }
 
-        const apiKey = process.env.GOOGLE_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
         if (!apiKey) {
-            return NextResponse.json({ error: "GOOGLE_API_KEY is not configured in the server's .env file." }, { status: 500 });
+            return NextResponse.json({ error: "GEMINI_API_KEY / GOOGLE_API_KEY is not configured in the server's .env file." }, { status: 500 });
         }
 
         const fileBuffer = await file.arrayBuffer();
@@ -63,11 +63,12 @@ export async function POST(req: NextRequest) {
         }
 
         const modelsToTry = [
-            "gemini-flash-latest",
-            "gemini-flash-lite-latest",
-            "gemini-pro-latest",
             "gemini-2.5-flash",
-            "gemini-2.0-flash"
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-2.5-flash-lite",
+            "gemini-2.0-flash-lite",
+            "gemini-flash-latest"
         ];
 
         const languagePref = formData.get("languagePref") as string || "english";

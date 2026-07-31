@@ -588,25 +588,39 @@ export default function ViewMenuPage() {
           body: formData
         });
 
-        if (!parseRes.ok) throw new Error(`Parsing failed: ${parseRes.statusText}`);
-        const parseData = await parseRes.json();
+        const parseText = await parseRes.text();
+        if (!parseRes.ok) throw new Error(`Parsing failed: ${parseText || parseRes.statusText}`);
+        let parseData: any = {};
+        try {
+          parseData = JSON.parse(parseText);
+        } catch (e) {
+          throw new Error(`Parsing response invalid: ${parseText}`);
+        }
         if (!parseData.success || !parseData.partsArray) {
-          throw new Error("Failed to parse file");
+          throw new Error("Failed to parse file for AI processing");
         }
 
         // Step 2: Get Key
         const keyRes = await fetch("/api/menu/get-keys");
-        if (!keyRes.ok) throw new Error("Failed to fetch API key");
-        const { apiKey } = await keyRes.json();
-        if (!apiKey) throw new Error("API Key missing");
+        const keyText = await keyRes.text();
+        if (!keyRes.ok) throw new Error(`Failed to fetch API key: ${keyText}`);
+        let keyData: any = {};
+        try {
+          keyData = JSON.parse(keyText);
+        } catch (e) {
+          throw new Error(`Invalid key response: ${keyText}`);
+        }
+        const { apiKey } = keyData;
+        if (!apiKey) throw new Error("API Key missing on server (Ensure GEMINI_API_KEY is set in .env)");
 
         // Step 3: Call Gemini
         const modelsToTry = [
-          "gemini-flash-latest",
-          "gemini-flash-lite-latest",
-          "gemini-pro-latest",
           "gemini-2.5-flash",
-          "gemini-2.0-flash"
+          "gemini-2.0-flash",
+          "gemini-1.5-flash",
+          "gemini-2.5-flash-lite",
+          "gemini-2.0-flash-lite",
+          "gemini-flash-latest"
         ];
         let textResponse = "";
         for (const model of modelsToTry) {
@@ -619,8 +633,9 @@ export default function ViewMenuPage() {
                 generationConfig: { responseMimeType: "application/json" }
               })
             });
+            const gemText = await geminiRes.text();
             if (geminiRes.ok) {
-              const geminiData = await geminiRes.json();
+              const geminiData = JSON.parse(gemText);
               textResponse = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
               if (textResponse) break;
             }

@@ -178,18 +178,29 @@ export default function AutoApplyClient() {
 
                 // Step 2: Get Secure API Key
                 const keyRes = await fetch("/api/menu/get-keys");
-                if (!keyRes.ok) throw new Error("Failed to fetch API configuration");
-                const { apiKey } = await keyRes.json();
-                if (!apiKey) throw new Error("API Key is missing on the server");
+                if (!keyRes.ok) {
+                    const errTxt = await keyRes.text();
+                    throw new Error(`Failed to fetch API key: ${errTxt}`);
+                }
+                const keyDataText = await keyRes.text();
+                let keyData: any = {};
+                try {
+                    keyData = JSON.parse(keyDataText);
+                } catch (e) {
+                    throw new Error(`Invalid Key Response: ${keyDataText}`);
+                }
+                const { apiKey } = keyData;
+                if (!apiKey) throw new Error("API Key is missing on the server (Ensure GEMINI_API_KEY is set in .env)");
 
                 // Step 3: Direct Client-Side Gemini Call (Bypasses Vercel 60s Timeout)
                 setOcrStatus({ text: `Analyzing with AI (Takes 1-3 mins)...`, colorClass: "text-orange-500", isLoading: true });
                 const modelsToTry = [
-                    "gemini-flash-latest",
-                    "gemini-flash-lite-latest",
-                    "gemini-pro-latest",
                     "gemini-2.5-flash",
-                    "gemini-2.0-flash"
+                    "gemini-2.0-flash",
+                    "gemini-1.5-flash",
+                    "gemini-2.5-flash-lite",
+                    "gemini-2.0-flash-lite",
+                    "gemini-flash-latest"
                 ];
 
                 let textResponse = "";
@@ -207,12 +218,24 @@ export default function AutoApplyClient() {
                             })
                         });
 
+                        const resText = await geminiRes.text();
+
                         if (!geminiRes.ok) {
-                            const errorJson = await geminiRes.json();
-                            throw new Error(errorJson.error?.message || "Unknown Gemini API Error");
+                            let errMsg = `HTTP ${geminiRes.status}: ${resText}`;
+                            try {
+                                const errorJson = JSON.parse(resText);
+                                errMsg = errorJson.error?.message || errMsg;
+                            } catch (e) {}
+                            throw new Error(errMsg);
                         }
 
-                        const geminiData = await geminiRes.json();
+                        let geminiData: any = {};
+                        try {
+                            geminiData = JSON.parse(resText);
+                        } catch (e) {
+                            throw new Error(`Gemini invalid JSON response: ${resText}`);
+                        }
+
                         textResponse = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
                         if (textResponse) break;
                     } catch (err) {
