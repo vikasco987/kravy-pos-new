@@ -449,6 +449,8 @@ export default function ViewMenuPage() {
   // filters & UI
   const [query, setQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string | "all">("all");
+  const [filterZone, setFilterZone] = useState<string | "all">("all");
+  const [availableZones, setAvailableZones] = useState<string[]>(["MAIN KITCHEN", "BAR", "GRILL", "BAKERY", "COUNTER"]);
   const [filterHasImage, setFilterHasImage] = useState<"any" | "only" | "no">("any");
   const [priceMin, setPriceMin] = useState<number | "">("");
   const [priceMax, setPriceMax] = useState<number | "">("");
@@ -1200,9 +1202,27 @@ export default function ViewMenuPage() {
 
   useEffect(() => {
     fetchMenus();
+    fetch("/api/profile/zones")
+      .then(res => res.json())
+      .then(data => {
+        if (data.zones && Array.isArray(data.zones)) setAvailableZones(data.zones);
+      })
+      .catch(() => {});
   }, [asUserId]);
 
   const allCategories = useMemo(() => [{ id: "all", name: "All Categories" }, ...menus.map((m) => ({ id: m.id, name: m.name }))], [menus]);
+
+  const allItemZones = useMemo(() => {
+    const set = new Set<string>(availableZones.map(z => z.toUpperCase()));
+    menus.forEach(cat => {
+      cat.items.forEach((item: any) => {
+        if (Array.isArray(item.zones)) {
+          item.zones.forEach((z: string) => set.add(z.toUpperCase()));
+        }
+      });
+    });
+    return Array.from(set).filter(Boolean);
+  }, [menus, availableZones]);
 
   const flattenedItems = useMemo(() => menus.flatMap((c) => c.items.map((it) => ({ ...it, categoryName: c.name }))), [menus]);
 
@@ -1217,11 +1237,21 @@ export default function ViewMenuPage() {
     return filteredByQuery.filter((it) => it.categoryId === filterCategory);
   }, [filteredByQuery, filterCategory]);
 
+  const filteredByZone = useMemo(() => {
+    if (filterZone === "all") return filteredByCategory;
+    const targetZone = filterZone.toUpperCase();
+    return filteredByCategory.filter((it: any) => {
+      const zones: string[] = Array.isArray(it.zones) ? it.zones : [];
+      if (zones.length === 0) return true; // Show all or match
+      return zones.some((z: string) => z.toUpperCase() === targetZone);
+    });
+  }, [filteredByCategory, filterZone]);
+
   const filteredByImage = useMemo(() => {
-    if (filterHasImage === "any") return filteredByCategory;
-    if (filterHasImage === "only") return filteredByCategory.filter((it) => !!it.imageUrl);
-    return filteredByCategory.filter((it) => !it.imageUrl);
-  }, [filteredByCategory, filterHasImage]);
+    if (filterHasImage === "any") return filteredByZone;
+    if (filterHasImage === "only") return filteredByZone.filter((it) => !!it.imageUrl);
+    return filteredByZone.filter((it) => !it.imageUrl);
+  }, [filteredByZone, filterHasImage]);
 
   const filteredByPrice = useMemo(() => {
     let arr = filteredByImage;
@@ -1760,6 +1790,15 @@ export default function ViewMenuPage() {
                   {allCategories.map((c) => <option key={c.id} value={c.id as any}>{c.name}</option>)}
                 </select>
 
+                <select value={filterZone} onChange={(e) => setFilterZone(e.target.value)} className="bg-[var(--kravy-surface)] border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 px-4 py-2 my-0.5 rounded-xl flex-shrink-0 outline-none font-black text-xs uppercase tracking-wider hover:border-indigo-500 transition-all cursor-pointer">
+                  <option value="all">📍 All Zones</option>
+                  {allItemZones.map((z: string) => (
+                    <option key={z} value={z} className="bg-[var(--kravy-bg)]">
+                      📍 Zone: {z}
+                    </option>
+                  ))}
+                </select>
+
                 <select value={sortMode} onChange={(e) => setSortMode(e.target.value as any)} className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-4 py-2 my-0.5 rounded-xl flex-shrink-0 outline-none font-black text-xs uppercase tracking-wider hover:border-indigo-500/50 transition-all cursor-pointer">
                   <option value="alpha_asc">Sort: A → Z</option>
                   <option value="alpha_desc">Sort: Z → A</option>
@@ -2028,8 +2067,8 @@ export default function ViewMenuPage() {
                               </div>
                             )}
                             
-                            {/* Status Badge */}
-                            <div className="absolute top-2 left-2 z-10">
+                            {/* Status Badge & Zone Badge */}
+                            <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 flex-wrap">
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleToggleStatus(item); }}
                                 className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm transition-all ${
@@ -2040,6 +2079,15 @@ export default function ViewMenuPage() {
                               >
                                 {item.isActive ? "● Online" : "○ Offline"}
                               </button>
+                              {(item as any).zones && (item as any).zones.length > 0 ? (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-900/85 backdrop-blur-md text-amber-300 border border-amber-500/40 shadow-md">
+                                  📍 {(item as any).zones.join(", ")}
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-slate-900/70 backdrop-blur-md text-slate-300 border border-slate-700 shadow-md">
+                                  🌐 All Zones
+                                </span>
+                              )}
                             </div>
                           </div>
 
@@ -2910,7 +2958,40 @@ function EditModal({
     const [tab, setTab] = useState<"basic" | "variants" | "qr" | "lang" | "image">("basic");
     const [uploading, setUploading] = useState(false);
     const [mounted, setMounted] = useState(false);
-    useEffect(() => setMounted(true), []);
+
+    const [modalAvailableZones, setModalAvailableZones] = useState<string[]>(["MAIN KITCHEN", "BAR", "GRILL", "BAKERY", "COUNTER"]);
+    const [showQuickAddZone, setShowQuickAddZone] = useState(false);
+    const [quickZoneInput, setQuickZoneInput] = useState("");
+
+    useEffect(() => {
+      setMounted(true);
+      fetch("/api/profile/zones")
+        .then(res => res.json())
+        .then(data => {
+          if (data.zones && Array.isArray(data.zones)) setModalAvailableZones(data.zones);
+        })
+        .catch(() => {});
+    }, []);
+
+    const handleSaveQuickZone = async () => {
+      const name = quickZoneInput.trim().toUpperCase();
+      if (!name) return;
+      try {
+        const res = await fetch("/api/profile/zones", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "add", zoneName: name })
+        });
+        if (res.ok) {
+          setModalAvailableZones(prev => Array.from(new Set([...prev, name])));
+          setLocal(prev => ({ ...prev, zones: [name] } as any));
+          setQuickZoneInput("");
+          setShowQuickAddZone(false);
+          setToast(`Added zone "${name}"`);
+        }
+      } catch (err) {}
+    };
+
     useEffect(() => {
       console.log("🔄 [EDIT_MODAL_INIT] Setting local state from item:", item.name, item.imageUrl);
       setLocal(item);
@@ -3204,6 +3285,57 @@ function EditModal({
                       onChange={(e) => setLocal({ ...local, unit: e.target.value })}
                     />
                   </div>
+                </div>
+
+                {/* 📍 Zone Selection & Quick Add Zone */}
+                <div className="space-y-1 bg-indigo-50/40 dark:bg-indigo-900/10 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-900/30">
+                  <div className="flex justify-between items-center ml-1 mb-1">
+                    <label className="block text-[10px] font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-widest">
+                      📍 Assigned Zone / Kitchen
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickAddZone(!showQuickAddZone)}
+                      className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 uppercase tracking-wider"
+                    >
+                      + Quick Add Zone
+                    </button>
+                  </div>
+                  
+                  <select
+                    value={(local as any).zones?.[0] || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setLocal({ ...local, zones: val ? [val] : [] } as any);
+                    }}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-[var(--kravy-text-primary)] rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-xs transition-all"
+                  >
+                    <option value="">-- All Zones (Global Menu) --</option>
+                    {modalAvailableZones.map((z: string) => (
+                      <option key={z} value={z.toUpperCase()} className="bg-[var(--kravy-bg)]">
+                        📍 {z.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+
+                  {showQuickAddZone && (
+                    <div className="mt-2 p-3 rounded-xl border border-indigo-500/30 bg-white dark:bg-slate-900 flex gap-2 items-center">
+                      <input
+                        type="text"
+                        placeholder="New Zone Name (e.g. TANDOOR)"
+                        value={quickZoneInput}
+                        onChange={(e) => setQuickZoneInput(e.target.value)}
+                        className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold rounded-lg px-3 py-2 outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveQuickZone}
+                        className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg transition-all"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div>

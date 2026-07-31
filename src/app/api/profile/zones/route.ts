@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 
+export async function GET(req: NextRequest) {
+  try {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const profile = await prisma.businessProfile.findFirst({ where: { userId: effectiveId } });
+    const zones = profile?.zones || ["MAIN KITCHEN", "BAR", "GRILL", "BAKERY", "COUNTER"];
+    return NextResponse.json({ success: true, zones });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const effectiveId = await getEffectiveClerkId();

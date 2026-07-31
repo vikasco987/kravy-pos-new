@@ -20,6 +20,7 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
         packagingCharges: 0,
         gstType: "goods",
         taxRate: "5.0%",
+        zones: Array.isArray(item?.zones) ? item.zones : [],
         ...item
     };
 
@@ -31,7 +32,45 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
     const [showAddonManager, setShowAddonManager] = useState(false);
     const [localGroups, setLocalGroups] = useState(addonGroups);
 
-    useEffect(() => setMounted(true), []);
+    // Zone states
+    const [availableZones, setAvailableZones] = useState<string[]>(["MAIN KITCHEN", "BAR", "GRILL", "BAKERY", "COUNTER"]);
+    const [showQuickAddZone, setShowQuickAddZone] = useState(false);
+    const [quickZoneInput, setQuickZoneInput] = useState("");
+
+    useEffect(() => {
+      setMounted(true);
+      fetch("/api/profile/zones")
+        .then(res => res.json())
+        .then(data => {
+          if (data.zones && Array.isArray(data.zones)) {
+            setAvailableZones(data.zones);
+          }
+        })
+        .catch(() => {});
+    }, []);
+
+    const handleSaveQuickZone = async () => {
+      const name = quickZoneInput.trim().toUpperCase();
+      if (!name) return;
+      try {
+        const res = await fetch("/api/profile/zones", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "add", zoneName: name })
+        });
+        if (res.ok) {
+          setAvailableZones(prev => Array.from(new Set([...prev, name])));
+          setLocal(prev => ({ ...prev, zones: [name] }));
+          setQuickZoneInput("");
+          setShowQuickAddZone(false);
+        } else {
+          const data = await res.json();
+          alert(data.error || "Failed to add zone");
+        }
+      } catch (err) {
+        console.error("Error adding zone:", err);
+      }
+    };
     useEffect(() => setLocalGroups(addonGroups), [addonGroups]);
 
     async function handleQuickAddonSave(data: any) {
@@ -408,6 +447,57 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
                       onChange={(e) => setLocal({ ...local, shortCode: e.target.value })}
                     />
                   </div>
+                </div>
+
+                {/* 📍 Zone Selection & Quick Add Zone */}
+                <div className="space-y-1 bg-indigo-50/40 dark:bg-indigo-900/10 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-900/30">
+                  <div className="flex justify-between items-center ml-1 mb-1">
+                    <label className="block text-[10px] font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-widest">
+                      📍 Assigned Zone / Kitchen
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickAddZone(!showQuickAddZone)}
+                      className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 uppercase tracking-wider"
+                    >
+                      + Quick Add Zone
+                    </button>
+                  </div>
+                  
+                  <select
+                    value={local.zones?.[0] || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setLocal({ ...local, zones: val ? [val] : [] });
+                    }}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-[var(--kravy-text-primary)] rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-xs transition-all"
+                  >
+                    <option value="">-- All Zones (Global Menu) --</option>
+                    {availableZones.map((z: string) => (
+                      <option key={z} value={z.toUpperCase()} className="bg-[var(--kravy-bg)]">
+                        📍 {z.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+
+                  {showQuickAddZone && (
+                    <div className="mt-2 p-3 rounded-xl border border-indigo-500/30 bg-white dark:bg-slate-900 flex gap-2 items-center">
+                      <input
+                        type="text"
+                        placeholder="New Zone Name (e.g. TANDOOR)"
+                        value={quickZoneInput}
+                        onChange={(e) => setQuickZoneInput(e.target.value)}
+                        className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold rounded-lg px-3 py-2 outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveQuickZone}
+                        className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg transition-all"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div>
