@@ -18,6 +18,7 @@ import {
   BarChart3,
   FileText,
   TrendingUp,
+  ShieldCheck,
   Building,
   Settings,
   Bell,
