@@ -26,9 +26,16 @@ export async function POST(req: NextRequest) {
     // 2. Hash New Password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // 3. Update User
-    await prisma.user.update({
-      where: { id: user.id },
+    // 3. Update User & Linked Accounts
+    await prisma.user.updateMany({
+      where: {
+        OR: [
+          { id: user.id },
+          { email: user.email },
+          { secondaryEmails: { has: user.email } },
+          ...(user.phone ? [{ phone: user.phone }, { secondaryPhones: { has: user.phone } }] : [])
+        ]
+      },
       data: {
         password: hashedPassword,
         otpCode: null, // Clear OTP
