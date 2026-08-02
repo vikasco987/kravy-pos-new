@@ -174,7 +174,6 @@ const navGroups = [
     group: "REPORTS & ANALYTICS",
     items: [
       { icon: <TrendingUp size={18} />, label: "Daily Sales Report", href: "/dashboard/reports/sales/daily", badge: "Live", badgeColor: "#10B981" },
-      { icon: <ShieldCheck size={18} />, label: "Staff P&L Audit", href: "/dashboard/reports/staff-pnl", badge: "Master", badgeColor: "#F59E0B" },
       { icon: <PieChart size={18} />, label: "GST Reports", href: "/dashboard/reports/gst", badge: "GST", badgeColor: "#F59E0B" },
       { icon: <FileText size={18} />, label: "Manual Invoice", href: "/dashboard/admin/invoice-generator", badge: "PDF", badgeColor: "#8B5CF6", roles: ["ADMIN"] },
     ]
