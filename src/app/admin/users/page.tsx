@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, UserPlus, Shield, ShieldAlert, Mail, Search, Filter, 
   MoreVertical, CheckCircle2, XCircle, Lock, Unlock, ArrowRight,
-  ShieldCheck, ArrowLeft, RefreshCw, Eye, Loader2
+  ShieldCheck, ArrowLeft, RefreshCw, Eye, Loader2, Trash2
 } from "lucide-react";
 
 type Role = "USER" | "SELLER" | "ADMIN" | "STAFF";
@@ -38,6 +38,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [navigatingId, setNavigatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"ALL" | Role>("ALL");
   const [loginTypeFilter, setLoginTypeFilter] = useState<"ALL" | "CLERK" | "CUSTOM">("ALL");
@@ -208,6 +209,30 @@ export default function AdminUsersPage() {
       toast.error("Network error");
     } finally {
       setActionUserId(null);
+    }
+  };
+
+  const deleteUser = async (user: User) => {
+    if (!confirm(`Are you sure you want to permanently delete user "${user.name || user.email}"? This action cannot be undone.`)) {
+      return;
+    }
+    setDeletingId(user.id);
+    try {
+      const res = await fetch(`/api/admin/users?userId=${user.id}&isStaffModel=${Boolean(user.isStaffModel)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        toast.success("User deleted successfully");
+        setUsers(prev => prev.filter(u => u.id !== user.id));
+        if (selectedUser?.id === user.id) setSelectedUser(null);
+      } else {
+        const data = await res.json();
+        toast.error(data?.error || "Failed to delete user");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -517,16 +542,31 @@ export default function AdminUsersPage() {
 
                                     <div className="w-[1px] h-6 bg-slate-100" />
 
-                                    <button 
-                                      disabled={actionUserId === u.id}
-                                      onClick={() => toggleUserStatus(u)}
-                                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${u.isDisabled ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white' : 'bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white'} shadow-sm active:scale-90`}
-                                      title={u.isDisabled ? "Grant Access" : "Revoke Access"}
-                                    >
-                                       {actionUserId === u.id ? <RefreshCw className="animate-spin" size={16} /> : (
-                                          u.isDisabled ? <Unlock size={18} /> : <Lock size={18} />
-                                       )}
-                                    </button>
+                                     <button 
+                                       disabled={actionUserId === u.id || deletingId === u.id}
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         toggleUserStatus(u);
+                                       }}
+                                       className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${u.isDisabled ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white' : 'bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white'} shadow-sm active:scale-90`}
+                                       title={u.isDisabled ? "Grant Access" : "Revoke Access"}
+                                     >
+                                        {actionUserId === u.id ? <RefreshCw className="animate-spin" size={16} /> : (
+                                           u.isDisabled ? <Unlock size={18} /> : <Lock size={18} />
+                                        )}
+                                     </button>
+
+                                     <button 
+                                       disabled={deletingId === u.id || actionUserId === u.id}
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         deleteUser(u);
+                                       }}
+                                       className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90"
+                                       title="Delete User Permanently"
+                                     >
+                                        {deletingId === u.id ? <RefreshCw className="animate-spin" size={16} /> : <Trash2 size={18} />}
+                                     </button>
 
                                     <button className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-900 hover:text-white transition-all">
                                        <MoreVertical size={18} />
@@ -629,20 +669,29 @@ export default function AdminUsersPage() {
                            </button>
                         </div>
 
-                        <div className="pt-4 flex gap-3">
-                           <button 
-                             onClick={() => toggleUserStatus(selectedUser)}
-                             className={`flex-1 py-3 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${selectedUser.isDisabled ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100'}`}
-                           >
-                              {selectedUser.isDisabled ? "Resume Access" : "Revoke Access"}
-                           </button>
-                           <button 
-                             onClick={() => setIsEditing(true)}
-                             className="flex-1 py-3 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg hover:bg-black transition-all"
-                           >
-                              Edit Profile
-                           </button>
-                        </div>
+                         <div className="pt-4 flex gap-2">
+                            <button 
+                              onClick={() => toggleUserStatus(selectedUser)}
+                              className={`flex-1 py-3 rounded-2xl font-black uppercase text-[10px] tracking-wider transition-all ${selectedUser.isDisabled ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100'}`}
+                            >
+                               {selectedUser.isDisabled ? "Resume" : "Revoke"}
+                            </button>
+                            <button 
+                              onClick={() => setIsEditing(true)}
+                              className="flex-1 py-3 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-wider shadow-lg hover:bg-black transition-all"
+                            >
+                               Edit Profile
+                            </button>
+                            <button 
+                              onClick={() => deleteUser(selectedUser)}
+                              disabled={deletingId === selectedUser.id}
+                              className="py-3 px-4 rounded-2xl bg-rose-600 text-white font-black uppercase text-[10px] tracking-wider shadow-lg hover:bg-rose-700 transition-all flex items-center justify-center gap-1.5"
+                              title="Delete Account Permanently"
+                            >
+                               {deletingId === selectedUser.id ? <RefreshCw className="animate-spin" size={14} /> : <Trash2 size={14} />}
+                               Delete
+                            </button>
+                         </div>
                      </div>
                    ) : (
                      <div className="space-y-4">

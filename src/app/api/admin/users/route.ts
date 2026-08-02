@@ -333,3 +333,55 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: error.message || "Update failed" }, { status: 500 });
   }
 }
+
+/* =========================
+   DELETE → DELETE USER
+========================= */
+export async function DELETE(req: Request) {
+  try {
+    const admin = await getAuthUser();
+    if (!admin || admin.role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
+    const isStaffModel = searchParams.get("isStaffModel") === "true";
+
+    if (!userId) {
+      return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+    }
+
+    // 1. Handle Staff Model Users
+    if (isStaffModel) {
+      await prisma.userSession.deleteMany({ where: { staffId: userId } }).catch(() => {});
+      await prisma.staff.delete({ where: { id: userId } });
+      return NextResponse.json({ success: true, message: "Staff user deleted successfully" });
+    }
+
+    // 2. Handle User Model (Clerk / Custom OTP)
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Delete from Clerk if applicable
+    if (user.clerkId && !user.clerkId.startsWith("custom_")) {
+      try {
+        const client = await clerkClient();
+        await client.users.deleteUser(user.clerkId);
+      } catch (clerkErr: any) {
+        console.warn("Clerk deleteUser error (proceeding with local DB deletion):", clerkErr?.message);
+      }
+    }
+
+    // Delete user sessions & User record from DB
+    await prisma.userSession.deleteMany({ where: { userId: user.id } }).catch(() => {});
+    await prisma.user.delete({ where: { id: user.id } });
+
+    return NextResponse.json({ success: true, message: "User deleted successfully" });
+  } catch (error: any) {
+    console.error("ADMIN DELETE USER ERROR:", error);
+    return NextResponse.json({ error: error.message || "Delete failed" }, { status: 500 });
+  }
+}
