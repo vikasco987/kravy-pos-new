@@ -25,7 +25,8 @@ import {
   LayoutGrid,
   List,
   Printer,
-  Wallet
+  Wallet,
+  Share2
 } from "lucide-react";
 import { kravy } from "@/lib/sounds";
 
@@ -609,6 +610,12 @@ export default function PartiesPage() {
                 onDelete={() => handleDelete(p.id)}
                 onViewHistory={() => fetchBillHistory(p)}
                 onDeposit={(type = "deposit") => { setDepositingParty(p); setDepositType(type); setDepositOpen(true); }}
+                onShareLink={() => {
+                  kravy.click();
+                  const publicUrl = `${window.location.origin}/public/ledger/${p.id}`;
+                  navigator.clipboard.writeText(publicUrl);
+                  pushToast("success", "Shareable ledger link copied!");
+                }}
               />
             ))}
           </div>
@@ -680,6 +687,18 @@ export default function PartiesPage() {
                             </button>
                             <button onClick={() => fetchBillHistory(p)} className="p-2 bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] rounded-lg hover:bg-[var(--kravy-brand)] hover:text-white transition-all shadow-sm" title="History">
                               <HistoryIcon size={14} />
+                            </button>
+                            <button 
+                              onClick={() => {
+                                kravy.click();
+                                const publicUrl = `${window.location.origin}/public/ledger/${p.id}`;
+                                navigator.clipboard.writeText(publicUrl);
+                                pushToast("success", "Shareable ledger link copied!");
+                              }} 
+                              className="p-2 bg-indigo-50 border border-indigo-200/50 text-indigo-700 rounded-lg hover:bg-indigo-500 hover:text-white transition-all shadow-sm" 
+                              title="Copy Shareable Public Ledger Link"
+                            >
+                              <Share2 size={14} />
                             </button>
                             <button onClick={() => { setEditing(p); setModalOpen(true); }} className="p-2 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-lg hover:text-indigo-500 hover:border-indigo-500 transition-all" title="Edit Customer">
                               <Edit2 size={14} />
@@ -1380,12 +1399,13 @@ function StatCard({ icon, label, value, sub }: { icon: any, label: string, value
   );
 }
 
-function CustomerCard({ p, onEdit, onDelete, onViewHistory, onDeposit }: { 
+function CustomerCard({ p, onEdit, onDelete, onViewHistory, onDeposit, onShareLink }: { 
   p: Party, 
   onEdit: () => void, 
   onDelete: () => void, 
   onViewHistory: () => void,
-  onDeposit: (type?: "deposit" | "withdraw") => void 
+  onDeposit: (type?: "deposit" | "withdraw") => void,
+  onShareLink: () => void
 }) {
   return (
     <div className="group bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-2xl p-5 shadow-sm hover:shadow-2xl hover:border-[var(--kravy-brand)] transition-all flex flex-col items-center text-center relative overflow-hidden">
@@ -1427,6 +1447,13 @@ function CustomerCard({ p, onEdit, onDelete, onViewHistory, onDeposit }: {
           title="Bill & Wallet History"
         >
           <HistoryIcon size={14} />
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); onShareLink(); }}
+          className="p-2.5 bg-indigo-50 text-indigo-700 border border-indigo-200/60 rounded-xl text-[9px] font-black hover:bg-indigo-500 hover:text-white transition-all shadow-sm"
+          title="Copy Shareable Public Ledger Link"
+        >
+          <Share2 size={14} />
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); onDeposit("deposit"); }}
