@@ -5,7 +5,7 @@ import Link from "next/link";
 import { 
   ChevronLeft, IndianRupee, TrendingUp, Sparkles, Filter, 
   Download, Calendar, BarChart3, Clock, Smartphone, Banknote, 
-  CheckCircle, X, ShoppingBag, Eye, Printer, FileText, Share2, 
+  CheckCircle, X, ShoppingBag, Eye, EyeOff, Printer, FileText, Share2, 
   ChevronRight, RefreshCw, Search, ArrowRight, User, Award, 
   MapPin, HelpCircle, AlertCircle, Percent
 } from "lucide-react";
@@ -86,6 +86,13 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
   
   // Selected Bill details for invoice modal
   const [selectedBill, setSelectedBill] = useState<BillItemDetail | null>(null);
+
+  const [showBalances, setShowBalances] = useState(false);
+
+  const mask = (value: string | number) => {
+    if (showBalances) return value;
+    return "••••";
+  };
 
   // Compute current effective drill-down level
   const currentLevel: DrilldownLevel = useMemo(() => {
@@ -271,6 +278,25 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
             </div>
           )}
           
+          <button
+            onClick={() => { kravy.click(); setShowBalances(s => !s); }}
+            style={{
+              padding: "10px 18px",
+              background: "var(--kravy-surface)",
+              border: "1px solid var(--kravy-border)",
+              borderRadius: "14px",
+              color: "var(--kravy-text-primary)",
+              fontWeight: 850,
+              fontSize: "0.75rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              cursor: "pointer"
+            }}
+          >
+            {showBalances ? <EyeOff size={14} /> : <Eye size={14} />} {showBalances ? "Hide" : "Reveal"}
+          </button>
+
           <button
             onClick={resetFilters}
             style={{
@@ -465,26 +491,42 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px" }}>
               <div style={{ background: "linear-gradient(135deg, #065F46 0%, #064E3B 100%)", borderRadius: "24px", padding: "24px", color: "white", boxShadow: "var(--kravy-shadow-md)" }}>
                 <span style={{ fontSize: "0.68rem", fontWeight: 900, opacity: 0.7, textTransform: "uppercase", letterSpacing: "1.5px" }}>Total Volume (Sales)</span>
-                <div style={{ fontSize: "2rem", fontWeight: 950, letterSpacing: "-1.5px", marginTop: "8px" }}>₹{format(summary.totalSales)}</div>
-                <div style={{ fontSize: "0.7rem", opacity: 0.8, marginTop: "6px" }}>Gross: ₹{format(summary.grossSales)}</div>
+                <div style={{ fontSize: "2rem", fontWeight: 950, letterSpacing: "-1.5px", marginTop: "8px" }}>
+                  {showBalances ? "₹" : ""}{mask(format(summary.totalSales))}
+                </div>
+                <div style={{ fontSize: "0.7rem", opacity: 0.8, marginTop: "6px" }}>
+                  Gross: {showBalances ? "₹" : ""}{mask(format(summary.grossSales))}
+                </div>
               </div>
               
               <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
                 <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Net Assets (Excl. Tax)</span>
-                <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>₹{format(summary.netSales)}</div>
-                <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>GST Value: ₹{format(summary.grossSales - summary.netSales)}</div>
+                <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>
+                  {showBalances ? "₹" : ""}{mask(format(summary.netSales))}
+                </div>
+                <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>
+                  GST Value: {showBalances ? "₹" : ""}{mask(format(summary.grossSales - summary.netSales))}
+                </div>
               </div>
 
               <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
                 <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Invoice Clearing Count</span>
-                <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>{summary.totalBills}</div>
-                <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>Cancelled: {summary.cancelledBills} (₹{format(summary.cancelledValue)})</div>
+                <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>
+                  {mask(summary.totalBills)}
+                </div>
+                <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>
+                  Cancelled: {mask(summary.cancelledBills)} ({showBalances ? "₹" : ""}{mask(format(summary.cancelledValue))})
+                </div>
               </div>
 
               <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
                 <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Average Ticket Value</span>
-                <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>₹{format(summary.avgBill)}</div>
-                <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>Max Ticket: ₹{format(summary.highestBill)}</div>
+                <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>
+                  {showBalances ? "₹" : ""}{mask(format(summary.avgBill))}
+                </div>
+                <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>
+                  Max Ticket: {showBalances ? "₹" : ""}{mask(format(summary.highestBill))}
+                </div>
               </div>
             </div>
           )}
@@ -495,10 +537,12 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
               <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Unique Customers</div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>{summary.uniqueCustomers}</div>
+                  <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>
+                    {mask(summary.uniqueCustomers)}
+                  </div>
                 </div>
                 <div style={{ fontSize: "0.7rem", fontWeight: 850, color: "var(--kravy-brand)", background: "rgba(99,102,241,0.1)", padding: "6px 12px", borderRadius: "8px" }}>
-                  {summary.returningCustomers} RETURNING ({summary.uniqueCustomers > 0 ? ((summary.returningCustomers / summary.uniqueCustomers) * 100).toFixed(0) : 0}%)
+                  {mask(summary.returningCustomers)} RETURNING ({summary.uniqueCustomers > 0 ? ((summary.returningCustomers / summary.uniqueCustomers) * 100).toFixed(0) : 0}%)
                 </div>
               </div>
 
@@ -515,7 +559,9 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
               <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Lowest clearing bill</div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>₹{format(summary.lowestBill)}</div>
+                  <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>
+                    {showBalances ? "₹" : ""}{mask(format(summary.lowestBill))}
+                  </div>
                 </div>
                 <div style={{ fontSize: "0.7rem", fontWeight: 850, color: "var(--kravy-purple)", background: "rgba(139,92,246,0.1)", padding: "6px 12px", borderRadius: "8px" }}>
                   MIN VALUE
@@ -541,7 +587,9 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
                       return (
                         <div key={mode} style={{ flex: 1, minWidth: "100px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", padding: "12px", borderRadius: "14px", display: "flex", flexDirection: "column", gap: "4px" }}>
                           <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>{mode}</span>
-                          <span style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>₹{format(sales)}</span>
+                          <span style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>
+                            {showBalances ? "₹" : ""}{mask(format(sales))}
+                          </span>
                           <span style={{ fontSize: "0.65rem", fontWeight: 850, color: "var(--kravy-brand)" }}>{pct.toFixed(0)}% share</span>
                         </div>
                       );
@@ -559,7 +607,9 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
                       return (
                         <div key={type} style={{ flex: 1, minWidth: "100px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", padding: "12px", borderRadius: "14px", display: "flex", flexDirection: "column", gap: "4px" }}>
                           <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>{type}</span>
-                          <span style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>₹{format(sales)}</span>
+                          <span style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>
+                            {showBalances ? "₹" : ""}{mask(format(sales))}
+                          </span>
                           <span style={{ fontSize: "0.65rem", fontWeight: 850, color: "var(--kravy-purple)" }}>{pct.toFixed(0)}% share</span>
                         </div>
                       );
