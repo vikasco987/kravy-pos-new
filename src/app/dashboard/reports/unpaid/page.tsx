@@ -5,16 +5,37 @@ import UnpaidDuesClient from "./UnpaidDuesClient";
 
 export const revalidate = 0;
 
-export default async function UnpaidDuesReportPage() {
+export default async function UnpaidDuesReportPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ startDate?: string; endDate?: string }>;
+}) {
   const effectiveId = await getEffectiveClerkId();
   if (!effectiveId) redirect("/sign-in");
 
-  // Fetch all active unpaid/pending bills
+  const params = await searchParams;
+  const { startDate, endDate } = params;
+
+  // Build date-range query filters
+  const dateFilter: any = {};
+  if (startDate) {
+    dateFilter.gte = new Date(startDate);
+  }
+  if (endDate) {
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    dateFilter.lte = end;
+  }
+
+  const dateQuery = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
+  // Fetch all active unpaid/pending bills matching the date filter
   const unpaidBills = await prisma.billManager.findMany({
     where: {
       clerkUserId: effectiveId,
       isDeleted: false,
       paymentStatus: { notIn: ["PAID", "Paid", "CANCELLED", "Cancelled"] },
+      ...dateQuery,
     },
     select: {
       id: true,
@@ -58,15 +79,36 @@ export default async function UnpaidDuesReportPage() {
     }>;
   }>();
 
+  // Helper structures for trends
+  const dailyDuesMap = new Map<string, { date: string; amount: number; count: number }>();
+  const weeklyDuesMap = new Map<string, { week: string; amount: number; count: number }>();
+
+  const getWeekRangeString = (date: Date) => {
+    const temp = new Date(date);
+    const day = temp.getDay();
+    const diff = temp.getDate() - day + (day === 0 ? -6 : 1);
+    const startOfWeek = new Date(temp.setDate(diff));
+    return `Week of ${startOfWeek.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}`;
+  };
+
   unpaidBills.forEach((b) => {
     const phone = b.customerPhone?.trim() || "";
-    const name = b.customerName?.trim() || "Walk-in Guest";
-    const key = phone || `name:${name}`;
+    const name = b.customerName?.trim() || "";
 
     const due = (b.balanceDue && b.balanceDue > 0) ? b.balanceDue : (b.total - (b.amountPaid || 0));
     const pendingAmt = Math.max(0, due);
 
-    const existing = customerUnpaidMap.get(key);
+    // Dynamic key: registered customers grouped by phone, unregistered/walk-ins listed as unique entries
+    let key = "";
+    let displayName = "";
+    if (phone) {
+      key = phone;
+      displayName = name || "Registered Customer";
+    } else {
+      key = `bill:${b.id}`;
+      displayName = name ? `${name} (Bill #${b.billNumber})` : `Walk-in Guest (Bill #${b.billNumber})`;
+    }
+
     const billObj = {
       id: b.id,
       billNumber: b.billNumber,
@@ -78,6 +120,8 @@ export default async function UnpaidDuesReportPage() {
       tableName: b.tableName || "POS",
     };
 
+    // 1. Grouping into debtor list
+    const existing = customerUnpaidMap.get(key);
     if (existing) {
       existing.totalUnpaid += pendingAmt;
       existing.billsCount += 1;
@@ -87,7 +131,7 @@ export default async function UnpaidDuesReportPage() {
       }
     } else {
       customerUnpaidMap.set(key, {
-        customerName: name,
+        customerName: displayName,
         customerPhone: phone,
         totalUnpaid: pendingAmt,
         billsCount: 1,
@@ -95,15 +139,45 @@ export default async function UnpaidDuesReportPage() {
         bills: [billObj],
       });
     }
+
+    // 2. Accumulate daily trend
+    const dateStr = b.createdAt.toISOString().split("T")[0];
+    const daily = dailyDuesMap.get(dateStr);
+    if (daily) {
+      daily.amount += pendingAmt;
+      daily.count += 1;
+    } else {
+      dailyDuesMap.set(dateStr, { date: dateStr, amount: pendingAmt, count: 1 });
+    }
+
+    // 3. Accumulate weekly trend
+    const weekStr = getWeekRangeString(b.createdAt);
+    const weekly = weeklyDuesMap.get(weekStr);
+    if (weekly) {
+      weekly.amount += pendingAmt;
+      weekly.count += 1;
+    } else {
+      weeklyDuesMap.set(weekStr, { week: weekStr, amount: pendingAmt, count: 1 });
+    }
   });
 
   const customerUnpaidList = Array.from(customerUnpaidMap.values())
     .sort((a, b) => b.totalUnpaid - a.totalUnpaid);
 
+  const dailyTrend = Array.from(dailyDuesMap.values())
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const weeklyTrend = Array.from(weeklyDuesMap.values())
+    .sort((a, b) => b.week.localeCompare(a.week)); // chronological sort roughly or string-based
+
   return (
     <UnpaidDuesClient 
       initialDuesList={customerUnpaidList} 
-      businessName={businessName} 
+      businessName={businessName}
+      dailyTrend={dailyTrend}
+      weeklyTrend={weeklyTrend}
+      initStartDate={startDate || ""}
+      initEndDate={endDate || ""}
     />
   );
 }

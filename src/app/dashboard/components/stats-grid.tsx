@@ -48,17 +48,7 @@ interface Props {
 
 export default function StatsGrid({ data, range = 30 }: Props) {
   const router = useRouter();
-  const [duesModalOpen, setDuesModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [localDuesList, setLocalDuesList] = useState(data.customerDuesList || []);
-  const [settlingBillId, setSettlingBillId] = useState<string | null>(null);
-
-  // Sync state if prop updates
-  useState(() => {
-    if (data.customerDuesList) {
-      setLocalDuesList(data.customerDuesList);
-    }
-  });
+  const [localDuesList] = useState(data.customerDuesList || []);
 
   const totalRevenue = data.monthlyRevenue?.reduce((s, m) => s + (m.revenue || 0), 0) || 0;
   const growth = data.growth || 0;
@@ -98,7 +88,7 @@ export default function StatsGrid({ data, range = 30 }: Props) {
       sub: `${unpaidCustomerCount} customers pending`,
       icon: <AlertCircle size={20} strokeWidth={2.5} />,
       accent: "#EF4444",
-      path: "#dues",
+      path: `/dashboard/reports/unpaid`,
       gradient: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
       glow: "rgba(239, 68, 68, 0.35)",
       trend: false,
@@ -366,12 +356,10 @@ export default function StatsGrid({ data, range = 30 }: Props) {
             variants={card}
             whileHover={{ y: -5, transition: { duration: 0.2 } }}
             className="kravy-stat-card"
-            style={{ minWidth: "260px", flex: "0 0 auto", cursor: s.path === "#dues" ? "pointer" : "default" }}
+            style={{ minWidth: "260px", flex: "0 0 auto", cursor: "pointer" }}
             onClick={() => {
-              if (s.path === "#dues") {
-                kravy.click();
-                setDuesModalOpen(true);
-              }
+              kravy.click();
+              router.push(s.path);
             }}
           >
             {/* Colored accent top bar */}
@@ -421,11 +409,7 @@ export default function StatsGrid({ data, range = 30 }: Props) {
                   onClick={(e) => {
                     e.stopPropagation();
                     kravy.click();
-                    if (s.path === "#dues") {
-                      setDuesModalOpen(true);
-                    } else {
-                      router.push(s.path);
-                    }
+                    router.push(s.path);
                   }}
                   style={{
                     width: "32px",
@@ -533,196 +517,6 @@ export default function StatsGrid({ data, range = 30 }: Props) {
       </motion.div>
 
       {/* Customer Dues Modal Overlay */}
-      <AnimatePresence>
-        {duesModalOpen && (
-          <div style={{
-            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-            background: "rgba(0, 0, 0, 0.65)",
-            backdropFilter: "blur(8px)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            zIndex: 9999, padding: "16px"
-          }}>
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              style={{
-                width: "100%", maxWidth: "680px",
-                background: "var(--kravy-surface)",
-                border: "1px solid var(--kravy-border)",
-                borderRadius: "32px",
-                boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
-                display: "flex", flexDirection: "column",
-                maxHeight: "85vh", overflow: "hidden"
-              }}
-            >
-              {/* Modal Header */}
-              <div style={{
-                padding: "24px 32px",
-                borderBottom: "1px solid var(--kravy-border)",
-                display: "flex", justifyContent: "space-between", alignItems: "center"
-              }}>
-                <div>
-                  <h3 style={{ fontSize: "1.35rem", fontWeight: 950, color: "var(--kravy-text-primary)" }}>Customer Outstanding Udhaar</h3>
-                  <p style={{ fontSize: "0.78rem", color: "var(--kravy-text-muted)", fontWeight: 700, textTransform: "uppercase", marginTop: "4px" }}>
-                    Total Owed: <span style={{ color: "#EF4444" }}>₹{fmt(totalUnpaidAmount)}</span> • {unpaidCustomerCount} Debtors
-                  </p>
-                </div>
-                <button
-                  onClick={() => { kravy.click(); setDuesModalOpen(false); }}
-                  style={{
-                    width: "36px", height: "36px", borderRadius: "12px",
-                    background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", color: "var(--kravy-text-primary)"
-                  }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Search Bar */}
-              <div style={{ padding: "16px 32px", borderBottom: "1px solid var(--kravy-border)" }}>
-                <div style={{ position: "relative" }}>
-                  <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--kravy-text-muted)" }} />
-                  <input
-                    type="text"
-                    placeholder="Search by customer name or phone..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{
-                      width: "100%", padding: "10px 12px 10px 40px",
-                      borderRadius: "14px", border: "1px solid var(--kravy-border)",
-                      background: "var(--kravy-input-bg)", color: "var(--kravy-text-primary)",
-                      fontSize: "0.85rem", outline: "none"
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Debtors List */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "24px 32px" }} className="no-scrollbar">
-                {filteredDues.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "48px 0", color: "var(--kravy-text-muted)" }}>
-                    <AlertCircle size={40} style={{ margin: "0 auto 16px", color: "var(--kravy-text-muted)" }} />
-                    <p style={{ fontWeight: 800 }}>No outstanding customer dues found.</p>
-                  </div>
-                ) : (
-                  filteredDues.map((customer) => {
-                    const cKey = customer.customerPhone || `name:${customer.customerName}`;
-                    return (
-                      <div key={cKey} style={{
-                        background: "var(--kravy-bg-2)",
-                        border: "1px solid var(--kravy-border)",
-                        borderRadius: "20px",
-                        padding: "20px",
-                        marginBottom: "16px"
-                      }}>
-                        {/* Customer Info Header */}
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
-                          <div>
-                            <h4 style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>{customer.customerName}</h4>
-                            <p style={{ fontSize: "0.78rem", color: "var(--kravy-text-muted)", fontFamily: "monospace", marginTop: "2px" }}>
-                              {customer.customerPhone || "Walk-in Dues"}
-                            </p>
-                          </div>
-                          <div style={{ textAlign: "right" }}>
-                            <div style={{ fontSize: "1.15rem", fontWeight: 950, color: "#EF4444" }}>₹{fmt(customer.totalUnpaid)}</div>
-                            <div style={{ fontSize: "0.68rem", color: "var(--kravy-text-muted)", fontWeight: 700, uppercase: true }}>
-                              {customer.billsCount} pending bill{customer.billsCount > 1 ? "s" : ""}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Pending Bills for this Customer */}
-                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                          {customer.bills.map((b) => (
-                            <div key={b.id} style={{
-                              display: "flex", justifyContent: "space-between", alignItems: "center",
-                              background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)",
-                              borderRadius: "12px", padding: "10px 14px"
-                            }}>
-                              <div>
-                                <div style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--kravy-text-primary)", fontFamily: "monospace" }}>
-                                  #{b.billNumber}
-                                </div>
-                                <div style={{ fontSize: "0.68rem", color: "var(--kravy-text-faint)", marginTop: "2px" }}>
-                                  {new Date(b.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                                </div>
-                              </div>
-                              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                <div style={{ textAlign: "right" }}>
-                                  <div style={{ fontSize: "0.85rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>₹{fmt(b.balanceDue)}</div>
-                                  {b.amountPaid > 0 && (
-                                    <div style={{ fontSize: "0.65rem", color: "#10B981" }}>Paid: ₹{fmt(b.amountPaid)}</div>
-                                  )}
-                                </div>
-                                <button
-                                  onClick={() => handleSettleBill(b.id, cKey)}
-                                  disabled={settlingBillId === b.id}
-                                  style={{
-                                    padding: "6px 12px", borderRadius: "8px",
-                                    background: "#10B981", color: "white",
-                                    border: "none", fontSize: "0.7rem", fontWeight: 850,
-                                    cursor: "pointer", display: "flex", alignItems: "center", gap: "4px",
-                                    boxShadow: "0 4px 10px rgba(16, 185, 129, 0.2)",
-                                    opacity: settlingBillId === b.id ? 0.7 : 1
-                                  }}
-                                >
-                                  {settlingBillId === b.id ? (
-                                    <div style={{ width: "12px", height: "12px", border: "2px solid white", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                                  ) : (
-                                    <>
-                                      <Check size={10} strokeWidth={3} />
-                                      Mark Paid
-                                    </>
-                                  )}
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Modal Footer */}
-              <div style={{
-                padding: "20px 32px",
-                borderTop: "1px solid var(--kravy-border)",
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                background: "var(--kravy-bg-2)"
-              }}>
-                <button
-                  onClick={() => { kravy.click(); setDuesModalOpen(false); router.push("/dashboard/reports/unpaid"); }}
-                  style={{
-                    padding: "10px 20px", borderRadius: "12px",
-                    background: "var(--kravy-text-primary)", color: "var(--kravy-surface)",
-                    border: "none", fontSize: "0.8rem", fontWeight: 850,
-                    cursor: "pointer"
-                  }}
-                >
-                  View Dues Report
-                </button>
-                <button
-                  onClick={() => { kravy.click(); setDuesModalOpen(false); }}
-                  style={{
-                    padding: "10px 20px", borderRadius: "12px",
-                    background: "transparent", border: "1px solid var(--kravy-border)",
-                    color: "var(--kravy-text-primary)", fontSize: "0.8rem", fontWeight: 850,
-                    cursor: "pointer"
-                  }}
-                >
-                  Close
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       <style jsx global>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
