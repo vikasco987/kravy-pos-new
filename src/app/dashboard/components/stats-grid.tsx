@@ -276,49 +276,6 @@ export default function StatsGrid({ data, range = 30 }: Props) {
     },
   ];
 
-  const handleSettleBill = async (billId: string, customerKey: string) => {
-    kravy.click();
-    setSettlingBillId(billId);
-    try {
-      const res = await fetch(`/api/bill-manager/${billId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentStatus: "Paid" }),
-      });
-      if (res.ok) {
-        kravy.success?.();
-        // Update local dues state
-        setLocalDuesList((prev) => {
-          return prev
-            .map((c) => {
-              const matches = (c.customerPhone && c.customerPhone === customerKey) ||
-                (!c.customerPhone && `name:${c.customerName}` === customerKey);
-              if (matches) {
-                const remainingBills = c.bills.filter((b) => b.id !== billId);
-                const unpaidSum = remainingBills.reduce((s, b) => s + b.balanceDue, 0);
-                return {
-                  ...c,
-                  bills: remainingBills,
-                  totalUnpaid: unpaidSum,
-                  billsCount: remainingBills.length,
-                };
-              }
-              return c;
-            })
-            .filter((c) => c.billsCount > 0);
-        });
-        router.refresh();
-      } else {
-        alert("Failed to settle outstanding bill. Please try again.");
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Error settling bill.");
-    } finally {
-      setSettlingBillId(null);
-    }
-  };
-
   const container = {
     hidden: {},
     show: { transition: { staggerChildren: 0.07 } }
@@ -327,14 +284,6 @@ export default function StatsGrid({ data, range = 30 }: Props) {
     hidden: { opacity: 0, y: 24, scale: 0.97 },
     show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.45, ease: "easeOut" as const } }
   };
-
-  const filteredDues = localDuesList.filter((c) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      c.customerName.toLowerCase().includes(q) ||
-      c.customerPhone.toLowerCase().includes(q)
-    );
-  });
 
   return (
     <>
