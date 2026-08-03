@@ -174,6 +174,7 @@ const navGroups = [
     group: "REPORTS & ANALYTICS",
     items: [
       { icon: <TrendingUp size={18} />, label: "Daily Sales Report", href: "/dashboard/reports/sales/daily", badge: "Live", badgeColor: "#10B981" },
+      { icon: <BarChart3 size={18} />, label: "Sales Analytics", href: "/dashboard/reports/sales/drilldown", badge: "BI", badgeColor: "#6366F1" },
       { icon: <AlertCircle size={18} />, label: "Customer Dues / Udhaar", href: "/dashboard/reports/unpaid", badge: "Dues", badgeColor: "#EF4444" },
       { icon: <CreditCard size={18} />, label: "Wallet Deposits", href: "/dashboard/reports/wallet-deposits", badge: "New", badgeColor: "#8B5CF6" },
       { icon: <PieChart size={18} />, label: "GST Reports", href: "/dashboard/reports/gst", badge: "GST", badgeColor: "#F59E0B" },

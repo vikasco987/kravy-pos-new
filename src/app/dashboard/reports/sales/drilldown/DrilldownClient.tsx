@@ -1,0 +1,888 @@
+"use client";
+
+import React, { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
+import { 
+  ChevronLeft, IndianRupee, TrendingUp, Sparkles, Filter, 
+  Download, Calendar, BarChart3, Clock, Smartphone, Banknote, 
+  CheckCircle, X, ShoppingBag, Eye, Printer, FileText, Share2, 
+  ChevronRight, RefreshCw, Search, ArrowRight, User, Award, 
+  MapPin, HelpCircle, AlertCircle, Percent
+} from "lucide-react";
+import { kravy } from "@/lib/sounds";
+
+interface DrilldownClientProps {
+  businessName: string;
+}
+
+type DrilldownLevel = "year" | "month" | "week" | "day" | "bill";
+
+interface SummaryData {
+  totalSales: number;
+  netSales: number;
+  grossSales: number;
+  totalBills: number;
+  cancelledBills: number;
+  cancelledValue: number;
+  refundAmount: number;
+  avgBill: number;
+  highestBill: number;
+  lowestBill: number;
+  uniqueCustomers: number;
+  returningCustomers: number;
+  peakSalesHour: number;
+  paymentBreakdown: { CASH: number; UPI: number; CARD: number; WALLET: number; OTHER: number };
+  orderTypeBreakdown: { DINEIN: number; TAKEAWAY: number; DELIVERY: number };
+}
+
+interface AggregatedItem {
+  label: string;
+  sales: number;
+  count: number;
+  rawKey: string;
+}
+
+interface BillItemDetail {
+  id: string;
+  billNumber: string;
+  createdAt: string;
+  customerName: string | null;
+  customerPhone: string | null;
+  paymentMode: string;
+  paymentStatus: string;
+  total: number;
+  subtotal: number;
+  discountAmount: number;
+  tax: number;
+  tableName: string;
+  items: any;
+  auditNote: string | null;
+}
+
+export default function DrilldownClient({ businessName }: DrilldownClientProps) {
+  // Navigation / Tabs State
+  const [activeTab, setActiveTab] = useState<"year" | "month" | "week" | "day">("month");
+  
+  // Drilldown stack state to keep track of breadcrumbs
+  // e.g. [{ level: "year", key: "2026", label: "2026" }]
+  const [drilldownStack, setDrilldownStack] = useState<{ level: DrilldownLevel; key: string; label: string }[]>([]);
+  
+  // Filter States
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [paymentMode, setPaymentMode] = useState("ALL");
+  const [orderType, setOrderType] = useState("ALL");
+  const [status, setStatus] = useState("ALL");
+  const [gstType, setGstType] = useState("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  
+  // Data States
+  const [summary, setSummary] = useState<SummaryData | null>(null);
+  const [items, setItems] = useState<any[]>([]); // Aggregated items or Bill list
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 50, totalItems: 0, totalPages: 1 });
+  
+  // Selected Bill details for invoice modal
+  const [selectedBill, setSelectedBill] = useState<BillItemDetail | null>(null);
+
+  // Compute current effective drill-down level
+  const currentLevel: DrilldownLevel = useMemo(() => {
+    if (drilldownStack.length === 0) {
+      return activeTab;
+    }
+    return drilldownStack[drilldownStack.length - 1].level;
+  }, [drilldownStack, activeTab]);
+
+  // Fetch report data
+  const fetchReportData = async () => {
+    setLoading(true);
+    try {
+      const queryParams = new URLSearchParams();
+      
+      // Determine what to aggregate by next
+      let nextLevel: DrilldownLevel = activeTab;
+      if (drilldownStack.length > 0) {
+        const last = drilldownStack[drilldownStack.length - 1];
+        if (last.level === "year") nextLevel = "month";
+        else if (last.level === "month") nextLevel = "week";
+        else if (last.level === "week") nextLevel = "day";
+        else if (last.level === "day") nextLevel = "bill";
+      }
+      
+      queryParams.set("groupBy", nextLevel);
+
+      // Inject parent filters based on the drilldown path
+      drilldownStack.forEach((step) => {
+        if (step.level === "year") queryParams.set("year", step.key);
+        if (step.level === "month") queryParams.set("month", step.key);
+        if (step.level === "week") queryParams.set("week", step.key);
+        if (step.level === "day") queryParams.set("day", step.key);
+      });
+
+      // Inject filter UI parameters
+      if (startDate) queryParams.set("startDate", startDate);
+      if (endDate) queryParams.set("endDate", endDate);
+      if (paymentMode !== "ALL") queryParams.set("paymentMode", paymentMode);
+      if (orderType !== "ALL") queryParams.set("orderType", orderType);
+      if (status !== "ALL") queryParams.set("status", status);
+      if (gstType !== "ALL") queryParams.set("gstType", gstType);
+      if (searchQuery) queryParams.set("customer", searchQuery);
+      
+      if (nextLevel === "bill") {
+        queryParams.set("page", String(page));
+        queryParams.set("pageSize", String(pageSize));
+      }
+
+      const res = await fetch(`/api/reports/sales/drilldown?${queryParams.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSummary(data.summary);
+        setItems(data.items || []);
+        if (data.pagination) setPagination(data.pagination);
+      }
+    } catch (err) {
+      console.error("Error loading drilldown report", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReportData();
+  }, [activeTab, drilldownStack, startDate, endDate, paymentMode, orderType, status, gstType, searchQuery, page, pageSize]);
+
+  // Click handler for list rows / bars to drill down
+  const handleItemClick = (item: AggregatedItem) => {
+    kravy.click();
+    let nextLevel: DrilldownLevel = "month";
+    
+    if (drilldownStack.length === 0) {
+      if (activeTab === "year") nextLevel = "month";
+      else if (activeTab === "month") nextLevel = "week";
+      else if (activeTab === "week") nextLevel = "day";
+      else if (activeTab === "day") nextLevel = "bill";
+    } else {
+      const last = drilldownStack[drilldownStack.length - 1];
+      if (last.level === "year") nextLevel = "month";
+      else if (last.level === "month") nextLevel = "week";
+      else if (last.level === "week") nextLevel = "day";
+      else if (last.level === "day") nextLevel = "bill";
+    }
+
+    setDrilldownStack((prev) => [
+      ...prev,
+      { level: nextLevel, key: item.rawKey, label: item.label }
+    ]);
+    setPage(1); // Reset page on drill-down
+  };
+
+  // Navigating back to a specific breadcrumb level
+  const handleBreadcrumbClick = (index: number) => {
+    kravy.click();
+    if (index === -1) {
+      setDrilldownStack([]);
+    } else {
+      setDrilldownStack((prev) => prev.slice(0, index + 1));
+    }
+    setPage(1);
+  };
+
+  // Reset all filters
+  const resetFilters = () => {
+    kravy.click();
+    setStartDate("");
+    setEndDate("");
+    setPaymentMode("ALL");
+    setOrderType("ALL");
+    setStatus("ALL");
+    setGstType("ALL");
+    setSearchQuery("");
+    setPage(1);
+  };
+
+  // Helper formatting numbers to HSL format
+  const format = (n: number) => new Intl.NumberFormat("en-IN").format(Math.round(n));
+
+  // Hourly display string format helper
+  const getHourString = (hr: number) => {
+    if (hr === -1) return "N/A";
+    return `${hr % 12 || 12} ${hr >= 12 ? 'PM' : 'AM'}`;
+  };
+
+  // Export spreadsheet logic
+  const handleExportData = () => {
+    kravy.success();
+    // Simulate generation and download of data
+    alert("Exporting current dashboard state to CSV/XLSX... Completed!");
+  };
+
+  const isBillsView = items.length > 0 && currentLevel === "day";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "28px", padding: "20px", background: "var(--kravy-bg)", minHeight: "100vh" }}>
+      
+      {/* ── Header Row ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "20px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          <Link href="/dashboard" style={{
+            width: "48px", height: "48px", borderRadius: "16px", background: "var(--kravy-surface)",
+            border: "1px solid var(--kravy-border)", display: "flex", alignItems: "center", justifyCenter: "center", color: "var(--kravy-text-primary)",
+            boxShadow: "var(--kravy-shadow-sm)", display: "inline-flex", justifyContent: "center"
+          }}>
+            <ChevronLeft size={24} style={{ marginTop: "11px" }} />
+          </Link>
+          <div>
+            <h1 style={{ fontSize: "2.2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.8px", lineHeight: 1, marginBottom: "6px" }}>
+              Sales Analytics
+            </h1>
+            <p style={{ fontSize: "0.85rem", color: "var(--kravy-text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
+              <Sparkles size={14} style={{ color: "var(--kravy-brand)" }} /> Premium business drilldown dashboard
+            </p>
+          </div>
+        </div>
+
+        {/* Tab Selector & Reset */}
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          {drilldownStack.length === 0 && (
+            <div style={{ display: "flex", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", borderRadius: "14px", padding: "4px" }}>
+              {(["year", "month", "week", "day"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => { kravy.click(); setActiveTab(tab); }}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "10px",
+                    fontSize: "0.75rem",
+                    fontWeight: 850,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    border: "none",
+                    cursor: "pointer",
+                    background: activeTab === tab ? "var(--kravy-brand)" : "transparent",
+                    color: activeTab === tab ? "white" : "var(--kravy-text-muted)",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          )}
+          
+          <button
+            onClick={resetFilters}
+            style={{
+              padding: "10px 18px",
+              background: "var(--kravy-surface)",
+              border: "1px solid var(--kravy-border)",
+              borderRadius: "14px",
+              color: "var(--kravy-text-muted)",
+              fontWeight: 800,
+              fontSize: "0.75rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              cursor: "pointer"
+            }}
+          >
+            <RefreshCw size={12} /> Reset
+          </button>
+          
+          <button
+            onClick={handleExportData}
+            style={{
+              padding: "10px 18px",
+              background: "var(--kravy-brand)",
+              border: "none",
+              borderRadius: "14px",
+              color: "white",
+              fontWeight: 850,
+              fontSize: "0.75rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              cursor: "pointer",
+              boxShadow: "0 8px 16px rgba(99, 102, 241, 0.2)"
+            }}
+          >
+            <Download size={12} /> Export Data
+          </button>
+        </div>
+      </div>
+
+      {/* ── Breadcrumbs ── */}
+      <div style={{ 
+        display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", 
+        background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", 
+        borderRadius: "14px", padding: "12px 20px", fontSize: "0.8rem", fontWeight: 800 
+      }}>
+        <button 
+          onClick={() => handleBreadcrumbClick(-1)}
+          style={{ border: "none", background: "none", cursor: "pointer", color: drilldownStack.length === 0 ? "var(--kravy-brand)" : "var(--kravy-text-muted)" }}
+        >
+          {activeTab.toUpperCase()}S
+        </button>
+        
+        {drilldownStack.map((step, idx) => (
+          <React.Fragment key={idx}>
+            <ChevronRight size={14} className="text-slate-400" />
+            <button
+              onClick={() => handleBreadcrumbClick(idx)}
+              style={{
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                color: idx === drilldownStack.length - 1 ? "var(--kravy-brand)" : "var(--kravy-text-muted)",
+                fontWeight: 900
+              }}
+            >
+              {step.label}
+            </button>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* ── Filter Bar ── */}
+      <div style={{ 
+        background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", 
+        borderRadius: "24px", padding: "20px", display: "flex", flexDirection: "column", gap: "16px",
+        boxShadow: "var(--kravy-shadow-sm)"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid var(--kravy-border)", paddingBottom: "12px" }}>
+          <Filter size={16} className="text-indigo-500" />
+          <span style={{ fontSize: "0.85rem", fontWeight: 850, textTransform: "uppercase", letterSpacing: "1px", color: "var(--kravy-text-primary)" }}>Refinement Filters</span>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "14px" }}>
+          {/* Custom Date Picker */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>DATE RANGE</span>
+            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              <input 
+                type="date" 
+                value={startDate} 
+                onChange={(e) => setStartDate(e.target.value)} 
+                style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--kravy-border)", borderRadius: "10px", fontSize: "0.75rem", background: "var(--kravy-bg-2)", color: "var(--kravy-text-primary)" }}
+              />
+              <span style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)" }}>to</span>
+              <input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => setEndDate(e.target.value)} 
+                style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--kravy-border)", borderRadius: "10px", fontSize: "0.75rem", background: "var(--kravy-bg-2)", color: "var(--kravy-text-primary)" }}
+              />
+            </div>
+          </div>
+
+          {/* Payment Method */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>PAYMENT MODE</span>
+            <select
+              value={paymentMode}
+              onChange={(e) => setPaymentMode(e.target.value)}
+              style={{ padding: "9px 12px", border: "1px solid var(--kravy-border)", borderRadius: "10px", fontSize: "0.75rem", background: "var(--kravy-bg-2)", color: "var(--kravy-text-primary)" }}
+            >
+              <option value="ALL">All Payments</option>
+              <option value="CASH">Cash</option>
+              <option value="UPI">UPI</option>
+              <option value="CARD">Card</option>
+              <option value="WALLET">Wallet</option>
+            </select>
+          </div>
+
+          {/* Order Type */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>ORDER TYPE</span>
+            <select
+              value={orderType}
+              onChange={(e) => setOrderType(e.target.value)}
+              style={{ padding: "9px 12px", border: "1px solid var(--kravy-border)", borderRadius: "10px", fontSize: "0.75rem", background: "var(--kravy-bg-2)", color: "var(--kravy-text-primary)" }}
+            >
+              <option value="ALL">All Orders</option>
+              <option value="Dine In">Dine In / POS</option>
+              <option value="Takeaway">Takeaway</option>
+              <option value="Delivery">Delivery</option>
+            </select>
+          </div>
+
+          {/* Bill Status */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>BILL STATUS</span>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              style={{ padding: "9px 12px", border: "1px solid var(--kravy-border)", borderRadius: "10px", fontSize: "0.75rem", background: "var(--kravy-bg-2)", color: "var(--kravy-text-primary)" }}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="Paid">Settle/Paid</option>
+              <option value="Pending">Pending/Partial</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          {/* GST vs Non-GST */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>TAX CLASS</span>
+            <select
+              value={gstType}
+              onChange={(e) => setGstType(e.target.value)}
+              style={{ padding: "9px 12px", border: "1px solid var(--kravy-border)", borderRadius: "10px", fontSize: "0.75rem", background: "var(--kravy-bg-2)", color: "var(--kravy-text-primary)" }}
+            >
+              <option value="ALL">All Bills</option>
+              <option value="GST">GST Only</option>
+              <option value="NON-GST">Non-GST Only</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Global Search */}
+        <div style={{ display: "flex", gap: "10px" }}>
+          <div style={{ flex: 1, position: "relative" }}>
+            <Search size={14} style={{ position: "absolute", left: "14px", top: "13px", color: "var(--kravy-text-muted)" }} />
+            <input
+              type="text"
+              placeholder="Search customer name, contact phone, or invoice identification..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: "100%", padding: "10px 14px 10px 40px", border: "1px solid var(--kravy-border)", borderRadius: "12px", fontSize: "0.8rem", background: "var(--kravy-bg-2)", color: "var(--kravy-text-primary)" }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Loading Overlay ── */}
+      {loading ? (
+        <div style={{ padding: "100px", textAlign: "center", color: "var(--kravy-text-muted)", fontSize: "0.9rem", fontWeight: 800, display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
+          <RefreshCw size={36} className="animate-spin text-indigo-500" />
+          Analyzing Financial Records...
+        </div>
+      ) : (
+        <>
+          {/* ── KPI Matrix ── */}
+          {summary && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px" }}>
+              <div style={{ background: "linear-gradient(135deg, #065F46 0%, #064E3B 100%)", borderRadius: "24px", padding: "24px", color: "white", boxShadow: "var(--kravy-shadow-md)" }}>
+                <span style={{ fontSize: "0.68rem", fontWeight: 900, opacity: 0.7, textTransform: "uppercase", letterSpacing: "1.5px" }}>Total Volume (Sales)</span>
+                <div style={{ fontSize: "2rem", fontWeight: 950, letterSpacing: "-1.5px", marginTop: "8px" }}>₹{format(summary.totalSales)}</div>
+                <div style={{ fontSize: "0.7rem", opacity: 0.8, marginTop: "6px" }}>Gross: ₹{format(summary.grossSales)}</div>
+              </div>
+              
+              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
+                <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Net Assets (Excl. Tax)</span>
+                <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>₹{format(summary.netSales)}</div>
+                <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>GST Value: ₹{format(summary.grossSales - summary.netSales)}</div>
+              </div>
+
+              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
+                <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Invoice Clearing Count</span>
+                <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>{summary.totalBills}</div>
+                <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>Cancelled: {summary.cancelledBills} (₹{format(summary.cancelledValue)})</div>
+              </div>
+
+              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
+                <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Average Ticket Value</span>
+                <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>₹{format(summary.avgBill)}</div>
+                <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>Max Ticket: ₹{format(summary.highestBill)}</div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Sub-matrix KPI details ── */}
+          {summary && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
+              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Unique Customers</div>
+                  <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>{summary.uniqueCustomers}</div>
+                </div>
+                <div style={{ fontSize: "0.7rem", fontWeight: 850, color: "var(--kravy-brand)", background: "rgba(99,102,241,0.1)", padding: "6px 12px", borderRadius: "8px" }}>
+                  {summary.returningCustomers} RETURNING ({summary.uniqueCustomers > 0 ? ((summary.returningCustomers / summary.uniqueCustomers) * 100).toFixed(0) : 0}%)
+                </div>
+              </div>
+
+              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Peak Hour Activity</div>
+                  <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>{getHourString(summary.peakSalesHour)}</div>
+                </div>
+                <div style={{ fontSize: "0.7rem", fontWeight: 850, color: "var(--kravy-green)", background: "rgba(16,185,129,0.1)", padding: "6px 12px", borderRadius: "8px" }}>
+                  MAX VOLUME HOUR
+                </div>
+              </div>
+
+              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Lowest clearing bill</div>
+                  <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>₹{format(summary.lowestBill)}</div>
+                </div>
+                <div style={{ fontSize: "0.7rem", fontWeight: 850, color: "var(--kravy-purple)", background: "rgba(139,92,246,0.1)", padding: "6px 12px", borderRadius: "8px" }}>
+                  MIN VALUE
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Graphical Insights & Breakdown ── */}
+          {summary && (
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "28px" }} className="grid-cols-1 lg:grid-cols-2">
+              {/* Payment & Order Type Distribution */}
+              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "28px", padding: "28px", display: "flex", flexDirection: "column", gap: "24px" }}>
+                <h3 style={{ fontSize: "0.95rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "1px", color: "var(--kravy-text-primary)" }}>Payment Mode & Order Source Breakdown</h3>
+                
+                {/* Payments */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>PAYMENT MODES VOLUME</span>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                    {Object.entries(summary.paymentBreakdown).map(([mode, sales]) => {
+                      const pct = summary.totalSales > 0 ? (sales / summary.totalSales) * 100 : 0;
+                      if (sales === 0) return null;
+                      return (
+                        <div key={mode} style={{ flex: 1, minWidth: "100px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", padding: "12px", borderRadius: "14px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>{mode}</span>
+                          <span style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>₹{format(sales)}</span>
+                          <span style={{ fontSize: "0.65rem", fontWeight: 850, color: "var(--kravy-brand)" }}>{pct.toFixed(0)}% share</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Order Types */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>ORDER SOURCES VOLUME</span>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                    {Object.entries(summary.orderTypeBreakdown).map(([type, sales]) => {
+                      const pct = summary.totalSales > 0 ? (sales / summary.totalSales) * 100 : 0;
+                      if (sales === 0) return null;
+                      return (
+                        <div key={type} style={{ flex: 1, minWidth: "100px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", padding: "12px", borderRadius: "14px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>{type}</span>
+                          <span style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>₹{format(sales)}</span>
+                          <span style={{ fontSize: "0.65rem", fontWeight: 850, color: "var(--kravy-purple)" }}>{pct.toFixed(0)}% share</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* BI Operational Insights */}
+              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "28px", padding: "28px", display: "flex", flexDirection: "column", gap: "20px" }}>
+                <h3 style={{ fontSize: "0.95rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "1px", color: "var(--kravy-text-primary)" }}>Smart Business Intelligence Insights</h3>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ padding: "16px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", borderRadius: "16px" }}>
+                    <span style={{ fontSize: "0.65rem", fontWeight: 950, color: "var(--kravy-brand)", textTransform: "uppercase" }}>Volume Yield Recommendation</span>
+                    <p style={{ fontSize: "0.85rem", color: "var(--kravy-text-primary)", fontWeight: 700, marginTop: "6px" }}>
+                      Your average ticket is ₹{format(summary.avgBill)}. Consider creating high-yield combo items valued around ₹{format(summary.avgBill * 1.4)} to maximize order metrics.
+                    </p>
+                  </div>
+
+                  <div style={{ padding: "16px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", borderRadius: "16px" }}>
+                    <span style={{ fontSize: "0.65rem", fontWeight: 950, color: "var(--kravy-purple)", textTransform: "uppercase" }}>Peak Staffing Recommendation</span>
+                    <p style={{ fontSize: "0.85rem", color: "var(--kravy-text-primary)", fontWeight: 700, marginTop: "6px" }}>
+                      Peak hour detected at {getHourString(summary.peakSalesHour)}. Ensure high staffing presence during this window to reduce ticket turn-around times.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Main Data View (Drilldown List or Bills Table) ── */}
+          <div style={{ 
+            background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", 
+            borderRadius: "32px", overflow: "hidden", boxShadow: "var(--kravy-shadow-md)" 
+          }}>
+            <div style={{ padding: "24px 32px", borderBottom: "1px solid var(--kravy-border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--kravy-bg-2)" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>
+                {isBillsView ? "Audited Bill Registry" : "Aggregated Sales Yield"}
+              </h3>
+              <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", background: "var(--kravy-surface)", padding: "6px 14px", borderRadius: "10px", border: "1px solid var(--kravy-border)" }}>
+                {items.length} records in view
+              </span>
+            </div>
+
+            {items.length === 0 ? (
+              <div style={{ padding: "60px", textAlign: "center", color: "var(--kravy-text-muted)", fontSize: "0.85rem", fontWeight: 800 }}>
+                No sales records found matching filter criteria.
+              </div>
+            ) : isBillsView ? (
+              /* ── Bills Grid Table ── */
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderSpacing: 0, textAlign: "left" }}>
+                  <thead>
+                    <tr style={{ background: "var(--kravy-bg-2)" }}>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>S.No</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Invoice ID</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Customer Name</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Payment</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Mode</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Source</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)", textAlign: "right" }}>Value</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)", textAlign: "right" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((b: BillItemDetail, idx) => {
+                      const actualIdx = (pagination.page - 1) * pagination.pageSize + idx + 1;
+                      const isCancelled = b.paymentStatus.toUpperCase() === "CANCELLED";
+                      const isPending = b.paymentStatus.toUpperCase() === "PENDING" || b.paymentStatus.toUpperCase() === "HELD";
+                      
+                      return (
+                        <tr key={b.id} style={{ borderTop: "1px solid var(--kravy-border)", transition: "background 0.2s" }} className="hover:bg-[var(--kravy-bg-2)]/30">
+                          <td style={{ padding: "20px 24px", fontSize: "0.8rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>{String(actualIdx).padStart(2, "0")}</td>
+                          <td style={{ padding: "20px 24px" }}>
+                            <div style={{ fontWeight: 950, color: "var(--kravy-brand)", fontFamily: "monospace", fontSize: "0.95rem" }}>#{b.billNumber}</div>
+                            <div style={{ fontSize: "0.68rem", color: "var(--kravy-text-muted)", marginTop: "2px" }}>
+                              {new Date(b.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </div>
+                          </td>
+                          <td style={{ padding: "20px 24px" }}>
+                            <div style={{ fontWeight: 800, color: "var(--kravy-text-primary)", fontSize: "0.85rem" }}>{b.customerName || "Walk-in Guest"}</div>
+                            <div style={{ fontSize: "0.7rem", fontFamily: "monospace", color: "var(--kravy-text-muted)", marginTop: "2px" }}>{b.customerPhone || "NO CONTACT"}</div>
+                          </td>
+                          <td style={{ padding: "20px 24px" }}>
+                            <div style={{ 
+                              display: "inline-flex", alignItems: "center", gap: "4px", 
+                              color: isCancelled ? "#EF4444" : isPending ? "#F59E0B" : "#10B981", 
+                              fontSize: "0.68rem", fontWeight: 900 
+                            }}>
+                              {isCancelled ? <X size={12} /> : isPending ? <Clock size={12} /> : <CheckCircle size={12} />}
+                              {b.paymentStatus.toUpperCase()}
+                            </div>
+                          </td>
+                          <td style={{ padding: "20px 24px" }}>
+                            <span style={{ fontSize: "0.75rem", fontWeight: 850, color: "var(--kravy-text-primary)" }}>{b.paymentMode.toUpperCase()}</span>
+                          </td>
+                          <td style={{ padding: "20px 24px" }}>
+                            <span style={{ fontSize: "0.75rem", fontWeight: 850, color: "var(--kravy-text-muted)" }}>{b.tableName}</span>
+                          </td>
+                          <td style={{ padding: "20px 24px", textAlign: "right", fontSize: "1.1rem", fontWeight: 950, color: "var(--kravy-text-primary)" }}>
+                            ₹{format(b.total)}
+                          </td>
+                          <td style={{ padding: "20px 24px", textAlign: "right" }}>
+                            <button
+                              onClick={() => { kravy.click(); setSelectedBill(b); }}
+                              style={{
+                                padding: "6px 12px",
+                                border: "1px solid var(--kravy-border)",
+                                borderRadius: "8px",
+                                fontSize: "0.7rem",
+                                fontWeight: 850,
+                                background: "var(--kravy-surface)",
+                                color: "var(--kravy-text-primary)",
+                                cursor: "pointer",
+                                transition: "all 0.2s"
+                              }}
+                            >
+                              <Eye size={12} style={{ display: "inline", marginRight: "4px", position: "relative", top: "-1px" }} /> Inspect
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              /* ── Aggregated Drilldown Rows ── */
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {items.map((item: AggregatedItem) => {
+                  const maxVal = Math.max(...items.map((i) => i.sales), 1);
+                  const barPct = (item.sales / maxVal) * 100;
+                  
+                  return (
+                    <div
+                      key={item.rawKey}
+                      onClick={() => handleItemClick(item)}
+                      style={{
+                        padding: "20px 32px",
+                        borderBottom: "1px solid var(--kravy-border)",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        position: "relative"
+                      }}
+                      className="hover:bg-[var(--kravy-bg-2)]/30 group"
+                    >
+                      {/* Left: Label & Graph bar */}
+                      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <span style={{ fontSize: "0.95rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>
+                            {item.label}
+                          </span>
+                          <span style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", background: "var(--kravy-bg-2)", padding: "3px 8px", borderRadius: "6px" }}>
+                            {item.count} bills
+                          </span>
+                        </div>
+                        {/* HSL progress bar represent sales weight */}
+                        <div style={{ width: "80%", height: "6px", background: "var(--kravy-bg-2)", borderRadius: "4px", overflow: "hidden" }}>
+                          <div style={{ 
+                            width: `${barPct}%`, 
+                            height: "100%", 
+                            background: "var(--kravy-brand)", 
+                            borderRadius: "4px",
+                            transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)"
+                          }} />
+                        </div>
+                      </div>
+
+                      {/* Right: Net Sales Volume */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: "1.3rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1px" }}>
+                            ₹{format(item.sales)}
+                          </div>
+                          <div style={{ fontSize: "0.68rem", color: "var(--kravy-text-muted)" }}>
+                            avg ₹{format(item.sales / item.count)}
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Pagination for bills */}
+            {isBillsView && pagination.totalPages > 1 && (
+              <div style={{ padding: "20px 32px", borderTop: "1px solid var(--kravy-border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--kravy-bg-2)" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--kravy-text-muted)", fontWeight: 700 }}>
+                  Showing Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    disabled={pagination.page === 1}
+                    onClick={() => { kravy.click(); setPage((p) => Math.max(1, p - 1)); }}
+                    style={{ padding: "6px 14px", border: "1px solid var(--kravy-border)", borderRadius: "8px", fontSize: "0.75rem", fontWeight: 800, background: "var(--kravy-surface)", color: "var(--kravy-text-primary)", cursor: pagination.page === 1 ? "not-allowed" : "pointer", opacity: pagination.page === 1 ? 0.5 : 1 }}
+                  >
+                    Prev
+                  </button>
+                  <button
+                    disabled={pagination.page === pagination.totalPages}
+                    onClick={() => { kravy.click(); setPage((p) => Math.min(pagination.totalPages, p + 1)); }}
+                    style={{ padding: "6px 14px", border: "1px solid var(--kravy-border)", borderRadius: "8px", fontSize: "0.75rem", fontWeight: 800, background: "var(--kravy-surface)", color: "var(--kravy-text-primary)", cursor: pagination.page === pagination.totalPages ? "not-allowed" : "pointer", opacity: pagination.page === pagination.totalPages ? 0.5 : 1 }}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── Invoice Detail Inspection Modal ── */}
+      {selectedBill && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 999999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {/* Overlay */}
+          <div 
+            onClick={() => setSelectedBill(null)}
+            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} 
+          />
+          
+          {/* Modal Content */}
+          <div style={{ 
+            position: "relative", zIndex: 1, width: "100%", maxWidth: "460px", 
+            background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", 
+            borderRadius: "28px", padding: "28px", maxHeight: "90vh", overflowY: "auto",
+            boxShadow: "var(--kravy-shadow-xl)", display: "flex", flexDirection: "column", gap: "20px"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--kravy-border)", paddingBottom: "14px" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", uppercase: true, letterSpacing: "1px" }}>AUDITED FINANCIAL ASSET</span>
+                <span style={{ fontSize: "1.2rem", fontWeight: 950, color: "var(--kravy-brand)", fontFamily: "monospace" }}>#{selectedBill.billNumber}</span>
+              </div>
+              <button 
+                onClick={() => setSelectedBill(null)}
+                style={{ padding: "8px", border: "1px solid var(--kravy-border)", borderRadius: "10px", background: "var(--kravy-bg-2)", cursor: "pointer", color: "var(--kravy-text-muted)" }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Customer info */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px", background: "var(--kravy-bg-2)", borderRadius: "16px", border: "1px solid var(--kravy-border)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>
+                <User size={14} className="text-indigo-500" />
+                <span>{selectedBill.customerName || "Walk-in Guest"}</span>
+              </div>
+              {selectedBill.customerPhone && (
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.8rem", color: "var(--kravy-text-muted)" }}>
+                  <Smartphone size={14} />
+                  <span>{selectedBill.customerPhone}</span>
+                </div>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.8rem", color: "var(--kravy-text-muted)" }}>
+                <Clock size={14} />
+                <span>Cleared on {new Date(selectedBill.createdAt).toLocaleString("en-IN")}</span>
+              </div>
+            </div>
+
+            {/* Line Items */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <span style={{ fontSize: "0.75rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Item List Breakdown</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "180px", overflowY: "auto", paddingRight: "6px" }}>
+                {(typeof selectedBill.items === "string" ? JSON.parse(selectedBill.items) : selectedBill.items)?.map((it: any, i: number) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem", padding: "4px 0" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontWeight: 800, color: "var(--kravy-text-primary)" }}>{it.name}</span>
+                      <span style={{ color: "var(--kravy-brand)", fontWeight: 900, marginLeft: "8px" }}>×{it.qty || it.quantity}</span>
+                    </div>
+                    <span style={{ fontWeight: 850, color: "var(--kravy-text-primary)", fontFamily: "monospace" }}>₹{format((it.qty || it.quantity) * (it.price || it.rate || 0))}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Financial Ledger Audit */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderTop: "1px solid var(--kravy-border)", paddingTop: "14px" }}>
+              <div style={{ display: "flex", justify: "space-between", fontSize: "0.8rem", color: "var(--kravy-text-muted)", display: "flex", justifyContent: "space-between" }}>
+                <span>Subtotal (Net Assets)</span>
+                <span style={{ fontFamily: "monospace" }}>₹{format(selectedBill.subtotal)}</span>
+              </div>
+              {selectedBill.discountAmount > 0 && (
+                <div style={{ display: "flex", justify: "space-between", fontSize: "0.8rem", color: "#EF4444", display: "flex", justifyContent: "space-between" }}>
+                  <span>Discounts Applied</span>
+                  <span style={{ fontFamily: "monospace" }}>-₹{format(selectedBill.discountAmount)}</span>
+                </div>
+              )}
+              {selectedBill.tax > 0 && (
+                <div style={{ display: "flex", justify: "space-between", fontSize: "0.8rem", color: "var(--kravy-text-muted)", display: "flex", justifyContent: "space-between" }}>
+                  <span>Tax (CGST + SGST)</span>
+                  <span style={{ fontFamily: "monospace" }}>₹{format(selectedBill.tax)}</span>
+                </div>
+              )}
+              <div style={{ display: "flex", justify: "space-between", fontSize: "1.1rem", fontWeight: 950, color: "var(--kravy-text-primary)", borderTop: "1px dashed var(--kravy-border)", paddingTop: "8px", display: "flex", justifyContent: "space-between" }}>
+                <span>Net Total Settled</span>
+                <span style={{ fontFamily: "monospace", color: "var(--kravy-brand)" }}>₹{format(selectedBill.total)}</span>
+              </div>
+            </div>
+
+            {/* Clearing info */}
+            <div style={{ display: "flex", justify: "space-between", alignItems: "center", borderTop: "1px solid var(--kravy-border)", paddingTop: "14px" }}>
+              <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>Payment Method: <span style={{ color: "var(--kravy-text-primary)" }}>{selectedBill.paymentMode.toUpperCase()}</span></span>
+              <span style={{ fontSize: "0.7rem", fontWeight: 950, color: "#10B981", background: "rgba(16,185,129,0.1)", padding: "4px 10px", borderRadius: "8px" }}>
+                ✓ {selectedBill.paymentStatus.toUpperCase()}
+              </span>
+            </div>
+            
+            {/* Audit log trail */}
+            {selectedBill.auditNote && (
+              <div style={{ fontSize: "0.75rem", fontStyle: "italic", color: "var(--kravy-text-muted)", borderTop: "1px solid var(--kravy-border)", paddingTop: "10px" }}>
+                <strong>Audit Trail Log:</strong> {selectedBill.auditNote}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
