@@ -81,7 +81,8 @@ export default async function DashboardPage({
     weeklyBills,
     preRangeCustomerBills,
     activeOrderCount,
-    completedTodayCount
+    completedTodayCount,
+    allUnpaidBills
   ] = await Promise.all([
     prisma.billManager.findMany({
       where: {
@@ -99,6 +100,9 @@ export default async function DashboardPage({
         customerName: true,
         customerPhone: true,
         paymentMode: true,
+        paymentStatus: true,
+        amountPaid: true,
+        balanceDue: true,
         total: true,
         createdAt: true,
         items: true,
@@ -110,6 +114,7 @@ export default async function DashboardPage({
       where: {
         clerkUserId: effectiveId,
         isDeleted: false,
+        paymentStatus: { in: ["PAID", "Paid"] },
         createdAt: {
           gte: startDate,
           lte: endDate,
@@ -122,6 +127,7 @@ export default async function DashboardPage({
       where: {
         clerkUserId: effectiveId,
         isDeleted: false,
+        paymentStatus: { in: ["PAID", "Paid"] },
         createdAt: {
           gte: previousStart,
           lt: startDate,
@@ -146,19 +152,19 @@ export default async function DashboardPage({
     prisma.combo.count({ where: { clerkUserId: effectiveId, isActive: true } }),
     prisma.offer.count({ where: { clerkUserId: effectiveId, isActive: true } }),
     prisma.billManager.aggregate({
-      where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startOfDay } },
+      where: { clerkUserId: effectiveId, isDeleted: false, paymentStatus: { in: ["PAID", "Paid"] }, createdAt: { gte: startOfDay } },
       _sum: { total: true },
     }),
     prisma.billManager.aggregate({
-      where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startOfWeek } },
+      where: { clerkUserId: effectiveId, isDeleted: false, paymentStatus: { in: ["PAID", "Paid"] }, createdAt: { gte: startOfWeek } },
       _sum: { total: true },
     }),
     prisma.billManager.aggregate({
-      where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startOfMonth } },
+      where: { clerkUserId: effectiveId, isDeleted: false, paymentStatus: { in: ["PAID", "Paid"] }, createdAt: { gte: startOfMonth } },
       _sum: { total: true },
     }),
     prisma.billManager.findMany({
-      where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: last7Start } },
+      where: { clerkUserId: effectiveId, isDeleted: false, paymentStatus: { in: ["PAID", "Paid"] }, createdAt: { gte: last7Start } },
       select: { total: true, createdAt: true },
     }),
     prisma.billManager.findMany({
@@ -174,28 +180,116 @@ export default async function DashboardPage({
       where: { clerkUserId: effectiveId, status: { not: "COMPLETED" } }
     }),
     prisma.billManager.count({
-      where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startOfDay } }
+      where: { clerkUserId: effectiveId, isDeleted: false, paymentStatus: { in: ["PAID", "Paid"] }, createdAt: { gte: startOfDay } }
+    }),
+    prisma.billManager.findMany({
+      where: {
+        clerkUserId: effectiveId,
+        isDeleted: false,
+        paymentStatus: { notIn: ["PAID", "Paid", "CANCELLED", "Cancelled"] },
+      },
+      select: {
+        id: true,
+        billNumber: true,
+        customerName: true,
+        customerPhone: true,
+        total: true,
+        amountPaid: true,
+        balanceDue: true,
+        paymentStatus: true,
+        paymentMode: true,
+        createdAt: true,
+        tableName: true,
+      },
+      orderBy: { createdAt: "desc" },
     }),
   ]);
 
   const totalRevenue = currentStats._sum.total || 0;
   const totalBills = currentStats._count._all;
 
+  // Filter bills to only include paid bills for revenue/breakdown computations
+  const paidBills = bills.filter((b: any) => b.paymentStatus?.toLowerCase() === "paid");
+
   let cash = 0;
   let upi = 0;
 
-  bills.forEach((bill: any) => {
+  paidBills.forEach((bill: any) => {
     const mode = (bill.paymentMode || "").toLowerCase();
     if (mode.includes("cash")) cash += bill.total;
     if (mode.includes("upi")) upi += bill.total;
   });
 
+  // Compute Store Unpaid Udhaar Dues
+  const totalUnpaidAmount = allUnpaidBills.reduce((sum: number, b: any) => {
+    const due = (b.balanceDue && b.balanceDue > 0) ? b.balanceDue : (b.total - (b.amountPaid || 0));
+    return sum + Math.max(0, due);
+  }, 0);
+
+  const customerUnpaidMap = new Map<string, {
+    customerName: string;
+    customerPhone: string;
+    totalUnpaid: number;
+    billsCount: number;
+    lastBillDate: Date;
+    bills: Array<{
+      id: string;
+      billNumber: string;
+      total: number;
+      amountPaid: number;
+      balanceDue: number;
+      paymentStatus: string;
+      createdAt: string;
+    }>;
+  }>();
+
+  allUnpaidBills.forEach((b: any) => {
+    const phone = b.customerPhone?.trim() || "";
+    const name = b.customerName?.trim() || "Walk-in Guest";
+    const key = phone || `name:${name}`;
+
+    const due = (b.balanceDue && b.balanceDue > 0) ? b.balanceDue : (b.total - (b.amountPaid || 0));
+    const pendingAmt = Math.max(0, due);
+
+    const existing = customerUnpaidMap.get(key);
+    const billObj = {
+      id: b.id,
+      billNumber: b.billNumber,
+      total: b.total,
+      amountPaid: b.amountPaid || 0,
+      balanceDue: pendingAmt,
+      paymentStatus: b.paymentStatus,
+      createdAt: b.createdAt.toISOString(),
+    };
+
+    if (existing) {
+      existing.totalUnpaid += pendingAmt;
+      existing.billsCount += 1;
+      existing.bills.push(billObj);
+      if (b.createdAt > existing.lastBillDate) {
+        existing.lastBillDate = b.createdAt;
+      }
+    } else {
+      customerUnpaidMap.set(key, {
+        customerName: name,
+        customerPhone: phone,
+        totalUnpaid: pendingAmt,
+        billsCount: 1,
+        lastBillDate: b.createdAt,
+        bills: [billObj],
+      });
+    }
+  });
+
+  const customerUnpaidList = Array.from(customerUnpaidMap.values())
+    .sort((a, b) => b.totalUnpaid - a.totalUnpaid);
+
   const previousRevenue = previousStats._sum.total || 0;
   const growth = previousRevenue === 0 ? 100 : ((totalRevenue - previousRevenue) / previousRevenue) * 100;
 
-  // Chart Mapping
+  // Chart Mapping (Paid Bills Only)
   const chartMap: Record<string, { revenue: number; bills: number }> = {};
-  bills.forEach((bill: any) => {
+  paidBills.forEach((bill: any) => {
     const date = bill.createdAt.toISOString().split("T")[0];
     if (!chartMap[date]) chartMap[date] = { revenue: 0, bills: 0 };
     chartMap[date].revenue += bill.total;
@@ -493,7 +587,10 @@ export default async function DashboardPage({
           peakDay: peakDayName,
           activeOrders: activeOrderCount,
           completedOrders: completedTodayCount,
-          avgOrderValue: avgOrderValue
+          avgOrderValue: avgOrderValue,
+          totalUnpaidAmount: totalUnpaidAmount,
+          unpaidCustomerCount: customerUnpaidList.length,
+          customerDuesList: customerUnpaidList
         }}
         range={range}
       />

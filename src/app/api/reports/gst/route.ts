@@ -28,6 +28,13 @@ export async function GET(req: Request) {
     const globalGstRate = profile?.taxEnabled ? (profile?.taxRate || 0) : 0;
     const businessState = profile?.state?.trim().toLowerCase() || "";
 
+    // Parse dates and set proper time boundaries (inclusive of full start and end dates)
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
     // 2. Fetch all bills for the user in the date range
     const bills = await prisma.billManager.findMany({
       where: {
@@ -35,8 +42,8 @@ export async function GET(req: Request) {
         isDeleted: false,
         isHeld: false,
         createdAt: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
+          gte: start,
+          lte: end,
         },
       },
       orderBy: { createdAt: "desc" },

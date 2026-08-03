@@ -39,8 +39,9 @@ type GSTReportData = {
 
 export default function GSTReportPage() {
   const [activeTab, setActiveTab] = useState<"GSTR-1" | "GSTR-3B" | "HSN" | "Daily">("GSTR-1");
-  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<GSTReportData | null>(null);
   const [gstEnabled, setGstEnabled] = useState<boolean | null>(null);
@@ -48,6 +49,12 @@ export default function GSTReportPage() {
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
     "billNumber", "date", "customerName", "buyerGSTIN", "rates", "hsns", "taxable", "cgst", "sgst", "igst", "grandTotal", "type"
   ]);
+
+  useEffect(() => {
+    setStartDate(format(startOfMonth(new Date()), "yyyy-MM-dd"));
+    setEndDate(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+    setMounted(true);
+  }, []);
 
   const allColumns = [
     { key: "billNumber", label: "Invoice No" },
@@ -72,6 +79,7 @@ export default function GSTReportPage() {
   };
 
   const fetchReport = async () => {
+    if (!startDate || !endDate) return;
     try {
       setLoading(true);
       const res = await fetch(`/api/reports/gst?startDate=${startDate}&endDate=${endDate}`);
@@ -92,7 +100,9 @@ export default function GSTReportPage() {
   };
 
   useEffect(() => {
-    fetchReport();
+    if (startDate && endDate) {
+      fetchReport();
+    }
   }, [startDate, endDate]);
 
   const exportToExcel = async (reportData: any[], filename: string) => {
@@ -104,6 +114,15 @@ export default function GSTReportPage() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
     XLSX.writeFile(workbook, `${filename}_${startDate}_to_${endDate}.xlsx`);
   };
+
+  if (!mounted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-[var(--kravy-text-muted)] font-bold animate-pulse">Loading GST Reports...</p>
+      </div>
+    );
+  }
 
   if (gstEnabled === false) {
     return (

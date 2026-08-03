@@ -40,12 +40,20 @@ import Link from "next/link";
 const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
 export default function GSTDashboardPage() {
-  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
 
+  useEffect(() => {
+    setStartDate(format(startOfMonth(new Date()), "yyyy-MM-dd"));
+    setEndDate(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+    setMounted(true);
+  }, []);
+
   const fetchReport = async () => {
+    if (!startDate || !endDate) return;
     try {
       setLoading(true);
       const res = await fetch(`/api/reports/gst?startDate=${startDate}&endDate=${endDate}`);
@@ -60,7 +68,9 @@ export default function GSTDashboardPage() {
   };
 
   useEffect(() => {
-    fetchReport();
+    if (startDate && endDate) {
+      fetchReport();
+    }
   }, [startDate, endDate]);
 
   const stats = useMemo(() => {
@@ -109,6 +119,15 @@ export default function GSTDashboardPage() {
       sales: d.gross
     }));
   }, [data]);
+
+  if (!mounted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-[var(--kravy-text-muted)] font-bold animate-pulse">Loading GST Dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--kravy-bg)] p-4 md:p-8 space-y-8 no-scrollbar">
