@@ -60,41 +60,25 @@ export async function GET(req: NextRequest) {
       profiles.map((p) => [p.userId, p.businessName])
     );
 
-    // 3. Fetch Bill Counts
-    console.log("🕵️ [API reports/sellers] Querying prisma.billManager.groupBy for bill counts...");
-    const billCounts = await prisma.billManager.groupBy({
+    // 3. Fetch Aggregated Stats (Count, Revenue, Latest Bill)
+    console.log("🕵️ [API reports/sellers] Querying prisma.billManager.groupBy for aggregated stats...");
+    const aggregatedStats = await prisma.billManager.groupBy({
       by: ["clerkUserId"],
       where: { isDeleted: false, clerkUserId: { in: clerkIds } },
       _count: { id: true },
-    });
-    console.log(`✅ [API reports/sellers] Loaded ${billCounts.length} bill counts.`);
-    const billCountMap = Object.fromEntries(
-      billCounts.map((b) => [b.clerkUserId, b._count.id])
-    );
-
-    // 4. Fetch Revenue
-    console.log("🕵️ [API reports/sellers] Querying prisma.billManager.groupBy for revenue...");
-    const revenueStats = await prisma.billManager.groupBy({
-      by: ["clerkUserId"],
-      where: { isDeleted: false, clerkUserId: { in: clerkIds } },
       _sum: { total: true },
+      _max: { createdAt: true },
     });
-    console.log(`✅ [API reports/sellers] Loaded ${revenueStats.length} revenue stats.`);
-    const revenueMap = Object.fromEntries(
-      revenueStats.map((s) => [s.clerkUserId, s._sum.total || 0])
+    console.log(`✅ [API reports/sellers] Loaded ${aggregatedStats.length} aggregated stats.`);
+    
+    const billCountMap = Object.fromEntries(
+      aggregatedStats.map((s) => [s.clerkUserId, s._count.id])
     );
-
-    // 5. Fetch Latest Bills
-    console.log("🕵️ [API reports/sellers] Querying prisma.billManager.findMany for latest bill dates...");
-    const latestBills = await prisma.billManager.findMany({
-      where: { isDeleted: false, clerkUserId: { in: clerkIds } },
-      orderBy: { createdAt: "desc" },
-      select: { clerkUserId: true, createdAt: true },
-      distinct: ["clerkUserId"],
-    });
-    console.log(`✅ [API reports/sellers] Loaded ${latestBills.length} latest bills.`);
+    const revenueMap = Object.fromEntries(
+      aggregatedStats.map((s) => [s.clerkUserId, s._sum.total || 0])
+    );
     const lastBillMap = Object.fromEntries(
-      latestBills.map((b) => [b.clerkUserId, b.createdAt])
+      aggregatedStats.map((s) => [s.clerkUserId, s._max.createdAt])
     );
 
     const sevenDaysAgo = new Date();

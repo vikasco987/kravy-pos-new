@@ -112,11 +112,7 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
       // Determine what to aggregate by next
       let nextLevel: DrilldownLevel = activeTab;
       if (drilldownStack.length > 0) {
-        const last = drilldownStack[drilldownStack.length - 1];
-        if (last.level === "year") nextLevel = "month";
-        else if (last.level === "month") nextLevel = "week";
-        else if (last.level === "week") nextLevel = "day";
-        else if (last.level === "day") nextLevel = "bill";
+        nextLevel = drilldownStack[drilldownStack.length - 1].level;
       }
       
       queryParams.set("groupBy", nextLevel);
