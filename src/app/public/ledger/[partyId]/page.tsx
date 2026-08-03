@@ -31,7 +31,7 @@ export default async function PublicLedgerPage({ params }: PageProps) {
     where: { userId: party.createdBy },
   });
 
-  const businessName = business?.name || "Merchant";
+  const businessName = business?.businessName || "Merchant";
 
   return (
     <div className="min-h-screen bg-[#070913] text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-white">

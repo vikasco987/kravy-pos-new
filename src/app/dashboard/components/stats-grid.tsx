@@ -42,6 +42,8 @@ interface Props {
         createdAt: string;
       }>;
     }>;
+    totalWalletAdvance?: number;
+    walletCustomersCount?: number;
   };
   range?: number;
 }
@@ -65,6 +67,9 @@ export default function StatsGrid({ data, range = 30 }: Props) {
 
   const totalUnpaidAmount = localDuesList.reduce((sum, c) => sum + c.totalUnpaid, 0);
   const unpaidCustomerCount = localDuesList.length;
+
+  const totalWalletAdvance = data.totalWalletAdvance || 0;
+  const walletCustomersCount = data.walletCustomersCount || 0;
 
   const rangeShort = range === 1 ? "Today" : range === 2 ? "Yesterday" : `${range} Days`;
   const rangeSub = range === 1 ? "today" : range === 2 ? "yesterday" : `in last ${range} days`;
@@ -91,6 +96,18 @@ export default function StatsGrid({ data, range = 30 }: Props) {
       path: `/dashboard/reports/unpaid`,
       gradient: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
       glow: "rgba(239, 68, 68, 0.35)",
+      trend: false,
+      showTrend: false,
+    },
+    {
+      label: "Total Wallet Advance",
+      value: `₹${fmt(totalWalletAdvance)}`,
+      sub: `${walletCustomersCount} active deposits`,
+      icon: <Smartphone size={20} strokeWidth={2.5} />,
+      accent: "#8B5CF6",
+      path: `/dashboard/reports/wallet-deposits`,
+      gradient: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+      glow: "rgba(139, 92, 246, 0.35)",
       trend: false,
       showTrend: false,
     },
@@ -407,7 +424,7 @@ export default function StatsGrid({ data, range = 30 }: Props) {
                     color: s.accent,
                     border: `1px solid ${s.accent}30`,
                   }}>
-                    {s.label.includes("Udhaar") ? "⚠️ Dues" : s.label.includes("Today") ? "📋 Today" : "📊 Stats"}
+                    {s.label.includes("Udhaar") ? "⚠️ Dues" : s.label.includes("Wallet") ? "💰 Advance" : s.label.includes("Today") ? "📋 Today" : "📊 Stats"}
                   </div>
                 )}
               </div>
@@ -453,7 +470,7 @@ export default function StatsGrid({ data, range = 30 }: Props) {
               </div>
               <div style={{
                 fontSize: "0.72rem",
-                color: s.label.includes("Udhaar") ? "#EF4444" : s.showTrend ? (s.trend ? "#10B981" : "#EF4444") : "var(--kravy-text-faint)",
+                color: s.label.includes("Udhaar") ? "#EF4444" : s.label.includes("Wallet") ? "#10B981" : s.showTrend ? (s.trend ? "#10B981" : "#EF4444") : "var(--kravy-text-faint)",
                 fontWeight: 600,
                 display: "flex", alignItems: "center", gap: "4px",
               }}>
