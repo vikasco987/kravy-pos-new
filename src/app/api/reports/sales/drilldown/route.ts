@@ -250,7 +250,17 @@ export async function GET(req: NextRequest) {
         auditNote: b.auditNote,
       }));
     } else {
-      const aggregationMap = new Map<string, { label: string; sales: number; count: number; rawKey: string }>();
+      const aggregationMap = new Map<string, { 
+        label: string; 
+        sales: number; 
+        count: number; 
+        rawKey: string;
+        collected: number;
+        outstanding: number;
+        upiSales: number;
+        cashSales: number;
+        cardSales: number;
+      }>();
 
       allBills.forEach((b) => {
         if (b.paymentStatus.toUpperCase() === "CANCELLED") return;
@@ -280,16 +290,56 @@ export async function GET(req: NextRequest) {
           label = new Date(key).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
         }
 
+        const collected = b.amountPaid || 0;
+        const outstanding = b.balanceDue || 0;
+        const pm = (b.paymentMode || "").toUpperCase();
+        const upi = pm.includes("UPI") ? b.total : 0;
+        const cash = pm.includes("CASH") ? b.total : 0;
+        const card = pm.includes("CARD") ? b.total : 0;
+
         const existing = aggregationMap.get(key);
         if (existing) {
           existing.sales += b.total;
           existing.count += 1;
+          existing.collected += collected;
+          existing.outstanding += outstanding;
+          existing.upiSales += upi;
+          existing.cashSales += cash;
+          existing.cardSales += card;
         } else {
-          aggregationMap.set(key, { label, sales: b.total, count: 1, rawKey: key });
+          aggregationMap.set(key, { 
+            label, 
+            sales: b.total, 
+            count: 1, 
+            rawKey: key,
+            collected,
+            outstanding,
+            upiSales: upi,
+            cashSales: cash,
+            cardSales: card
+          });
         }
       });
 
-      responseItems = Array.from(aggregationMap.values()).sort((a, b) => b.rawKey.localeCompare(a.rawKey));
+      // Sort oldest first to calculate MoM growth chronologically
+      const sortedArray = Array.from(aggregationMap.values()).sort((a, b) => a.rawKey.localeCompare(b.rawKey));
+      
+      const arrayWithGrowth = sortedArray.map((item, idx, arr) => {
+        let growth: number | null = null;
+        if (idx > 0) {
+          const prev = arr[idx - 1];
+          if (prev.sales > 0) {
+            growth = ((item.sales - prev.sales) / prev.sales) * 100;
+          }
+        }
+        return {
+          ...item,
+          growth,
+        };
+      });
+
+      // Sort reverse-chronologically (latest first) to display to user
+      responseItems = arrayWithGrowth.reverse();
       totalItemsCount = responseItems.length;
     }
 

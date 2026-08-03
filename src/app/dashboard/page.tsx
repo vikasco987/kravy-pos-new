@@ -12,7 +12,7 @@ import OrderTypeChart from "./components/order-type-chart";
 import PeakHoursChart from "./components/peak-hours-chart";
 import WeeklyRevenueChart from "./components/weekly-revenue-chart";
 import DashboardSoundAlerts from "./components/dashboard-sound-alerts";
-import { Sparkles, Tag, Fingerprint, Copy, ShieldCheck, Zap, Smartphone, Ticket, ArrowRight, FileText, Grid } from "lucide-react";
+import { Sparkles, Tag, Fingerprint, Copy, ShieldCheck, Zap, Smartphone, Ticket, ArrowRight, FileText, Grid, BarChart3 } from "lucide-react";
 import CopyButton from "./components/copy-button";
 import AutoRefresh from "./components/auto-refresh";
 
@@ -605,6 +605,30 @@ export default async function DashboardPage({
         }}
         range={range}
       />
+
+      {/* ── Advanced Analytics Link ── */}
+      <div className="mb-2">
+        <a 
+          href="/dashboard/reports/sales/drilldown"
+          className="group relative overflow-hidden flex items-center justify-between p-6 rounded-[24px] bg-gradient-to-r from-indigo-900 via-indigo-800 to-indigo-900 text-white shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.01] border border-indigo-700/50"
+        >
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+          <div className="relative z-10 flex items-center gap-6">
+            <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/20">
+              <BarChart3 size={28} className="text-indigo-300" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                Advanced Sales Drilldown <span className="bg-indigo-500/40 text-indigo-100 text-[10px] uppercase tracking-widest px-2 py-1 rounded-md font-bold">New</span>
+              </h3>
+              <p className="text-indigo-200 text-sm font-medium mt-1">Deep-dive into Month, Week, and Day level analytics with interactive charts.</p>
+            </div>
+          </div>
+          <div className="relative z-10 bg-white text-indigo-900 px-6 py-3 rounded-xl font-black text-sm uppercase tracking-wider flex items-center gap-2 group-hover:bg-indigo-50 transition-colors shadow-lg">
+            Open Report <ArrowRight size={16} />
+          </div>
+        </a>
+      </div>
 
       {/* ── Store Management & Quick Actions ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

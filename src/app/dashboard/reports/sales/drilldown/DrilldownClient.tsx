@@ -88,6 +88,7 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
   const [selectedBill, setSelectedBill] = useState<BillItemDetail | null>(null);
 
   const [showBalances, setShowBalances] = useState(false);
+  const [viewMode, setViewMode] = useState<"visual" | "table">("table");
 
   const mask = (value: string | number) => {
     if (showBalances) return value;
@@ -225,7 +226,7 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
     alert("Exporting current dashboard state to CSV/XLSX... Completed!");
   };
 
-  const isBillsView = items.length > 0 && currentLevel === "bill";
+  const isBillsView = items.length > 0 && "billNumber" in items[0];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px", padding: "20px", background: "var(--kravy-bg)", minHeight: "100vh" }}>
@@ -670,7 +671,6 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
                 </div>
               )}
             </>
-          )}iv>
           )}
 
           {/* ── Main Data View (Drilldown List or Bills Table) ── */}
@@ -679,9 +679,27 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
             borderRadius: "32px", overflow: "hidden", boxShadow: "var(--kravy-shadow-md)" 
           }}>
             <div style={{ padding: "24px 32px", borderBottom: "1px solid var(--kravy-border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--kravy-bg-2)" }}>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>
-                {isBillsView ? "Audited Bill Registry" : "Aggregated Sales Yield"}
-              </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>
+                  {isBillsView ? "Audited Bill Registry" : "Aggregated Sales Yield"}
+                </h3>
+                {!isBillsView && (
+                  <div style={{ display: "flex", background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "10px", padding: "2px" }}>
+                    <button
+                      onClick={() => setViewMode("table")}
+                      style={{ padding: "4px 10px", fontSize: "0.68rem", fontWeight: 800, border: "none", borderRadius: "8px", background: viewMode === "table" ? "var(--kravy-brand)" : "transparent", color: viewMode === "table" ? "white" : "var(--kravy-text-muted)", cursor: "pointer" }}
+                    >
+                      Table View
+                    </button>
+                    <button
+                      onClick={() => setViewMode("visual")}
+                      style={{ padding: "4px 10px", fontSize: "0.68rem", fontWeight: 800, border: "none", borderRadius: "8px", background: viewMode === "visual" ? "var(--kravy-brand)" : "transparent", color: viewMode === "visual" ? "white" : "var(--kravy-text-muted)", cursor: "pointer" }}
+                    >
+                      Bar View
+                    </button>
+                  </div>
+                )}
+              </div>
               <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)", background: "var(--kravy-surface)", padding: "6px 14px", borderRadius: "10px", border: "1px solid var(--kravy-border)" }}>
                 {items.length} records in view
               </span>
@@ -769,8 +787,68 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
                   </tbody>
                 </table>
               </div>
+            ) : viewMode === "table" ? (
+              /* ── Comparison Table View ── */
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderSpacing: 0, textAlign: "left" }}>
+                  <thead>
+                    <tr style={{ background: "var(--kravy-bg-2)" }}>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Period</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Bills</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Total Sales</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>MoM Growth</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Avg Bill</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Collected</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Outstanding</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>UPI %</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Cash %</th>
+                      <th style={{ padding: "16px 24px", fontSize: "0.72rem", fontWeight: 900, color: "var(--kravy-text-muted)" }}>Card %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item: any) => {
+                      const momGrowth = item.growth;
+                      const upiPct = item.sales > 0 ? Math.round((item.upiSales / item.sales) * 100) : 0;
+                      const cashPct = item.sales > 0 ? Math.round((item.cashSales / item.sales) * 100) : 0;
+                      const cardPct = item.sales > 0 ? Math.round((item.cardSales / item.sales) * 100) : 0;
+                      
+                      return (
+                        <tr 
+                          key={item.rawKey} 
+                          onClick={() => handleItemClick(item)}
+                          style={{ borderTop: "1px solid var(--kravy-border)", transition: "background 0.2s", cursor: "pointer" }} 
+                          className="hover:bg-[var(--kravy-bg-2)]/30"
+                        >
+                          <td style={{ padding: "20px 24px", fontSize: "0.85rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>{item.label}</td>
+                          <td style={{ padding: "20px 24px", fontSize: "0.85rem", fontWeight: 800, color: "var(--kravy-text-primary)" }}>{item.count}</td>
+                          <td style={{ padding: "20px 24px", fontSize: "0.85rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>₹{format(item.sales)}</td>
+                          <td style={{ padding: "20px 24px", fontSize: "0.85rem", fontWeight: 850 }}>
+                            {momGrowth !== null ? (
+                              momGrowth > 0 ? (
+                                <span style={{ color: "#10B981" }}>▲ {Math.round(momGrowth)}%</span>
+                              ) : momGrowth < 0 ? (
+                                <span style={{ color: "#EF4444" }}>▼ {Math.round(Math.abs(momGrowth))}%</span>
+                              ) : (
+                                <span style={{ color: "var(--kravy-text-muted)" }}>0%</span>
+                              )
+                            ) : (
+                              <span style={{ color: "var(--kravy-text-muted)" }}>▲ n/a</span>
+                            )}
+                          </td>
+                          <td style={{ padding: "20px 24px", fontSize: "0.85rem", fontWeight: 800, color: "var(--kravy-text-secondary)" }}>₹{format(item.sales / item.count)}</td>
+                          <td style={{ padding: "20px 24px", fontSize: "0.85rem", fontWeight: 800, color: "var(--kravy-green)" }}>₹{format(item.collected)}</td>
+                          <td style={{ padding: "20px 24px", fontSize: "0.85rem", fontWeight: 800, color: item.outstanding > 0 ? "#EF4444" : "var(--kravy-text-muted)" }}>₹{format(item.outstanding)}</td>
+                          <td style={{ padding: "20px 24px", fontSize: "0.85rem", fontWeight: 800, color: "var(--kravy-text-secondary)" }}>{upiPct > 0 ? `${upiPct}%` : "—"}</td>
+                          <td style={{ padding: "20px 24px", fontSize: "0.85rem", fontWeight: 800, color: "var(--kravy-text-secondary)" }}>{cashPct > 0 ? `${cashPct}%` : "—"}</td>
+                          <td style={{ padding: "20px 24px", fontSize: "0.85rem", fontWeight: 800, color: "var(--kravy-text-secondary)" }}>{cardPct > 0 ? `${cardPct}%` : "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              /* ── Aggregated Drilldown Rows ── */
+              /* ── Aggregated Drilldown Rows (Bar View) ── */
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {items.map((item: AggregatedItem) => {
                   const maxVal = Math.max(...items.map((i) => i.sales), 1);
