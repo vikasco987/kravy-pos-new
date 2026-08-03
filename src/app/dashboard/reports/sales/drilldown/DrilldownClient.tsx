@@ -486,159 +486,191 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
         </div>
       ) : (
         <>
-          {/* ── KPI Matrix ── */}
-          {summary && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px" }}>
-              <div style={{ background: "linear-gradient(135deg, #065F46 0%, #064E3B 100%)", borderRadius: "24px", padding: "24px", color: "white", boxShadow: "var(--kravy-shadow-md)" }}>
-                <span style={{ fontSize: "0.68rem", fontWeight: 900, opacity: 0.7, textTransform: "uppercase", letterSpacing: "1.5px" }}>Total Volume (Sales)</span>
-                <div style={{ fontSize: "2rem", fontWeight: 950, letterSpacing: "-1.5px", marginTop: "8px" }}>
-                  {showBalances ? "₹" : ""}{mask(format(summary.totalSales))}
-                </div>
-                <div style={{ fontSize: "0.7rem", opacity: 0.8, marginTop: "6px" }}>
-                  Gross: {showBalances ? "₹" : ""}{mask(format(summary.grossSales))}
-                </div>
-              </div>
-              
-              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
-                <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Net Assets (Excl. Tax)</span>
-                <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>
-                  {showBalances ? "₹" : ""}{mask(format(summary.netSales))}
-                </div>
-                <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>
-                  GST Value: {showBalances ? "₹" : ""}{mask(format(summary.grossSales - summary.netSales))}
-                </div>
-              </div>
-
-              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
-                <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Invoice Clearing Count</span>
-                <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>
-                  {mask(summary.totalBills)}
-                </div>
-                <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>
-                  Cancelled: {mask(summary.cancelledBills)} ({showBalances ? "₹" : ""}{mask(format(summary.cancelledValue))})
-                </div>
-              </div>
-
-              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
-                <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Average Ticket Value</span>
-                <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>
-                  {showBalances ? "₹" : ""}{mask(format(summary.avgBill))}
-                </div>
-                <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>
-                  Max Ticket: {showBalances ? "₹" : ""}{mask(format(summary.highestBill))}
-                </div>
-              </div>
+          {/* Reveal button banner when cards are collapsed */}
+          {!showBalances && (
+            <div 
+              onClick={() => { kravy.click(); setShowBalances(true); }}
+              style={{
+                background: "linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)",
+                border: "1px dashed var(--kravy-border)",
+                borderRadius: "20px",
+                padding: "20px",
+                textAlign: "center",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px",
+                color: "var(--kravy-brand)",
+                fontWeight: 850,
+                fontSize: "0.85rem",
+                boxShadow: "var(--kravy-shadow-sm)",
+                transition: "all 0.2s"
+              }}
+              className="hover:scale-[1.01]"
+            >
+              <Eye size={16} /> REVEAL SALES PERFORMANCE METRIC CARDS & BREAKDOWNS
             </div>
           )}
 
-          {/* ── Sub-matrix KPI details ── */}
-          {summary && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
-              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Unique Customers</div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>
-                    {mask(summary.uniqueCustomers)}
+          {showBalances && (
+            <>
+              {/* ── KPI Matrix ── */}
+              {summary && (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px" }}>
+                  <div style={{ background: "linear-gradient(135deg, #065F46 0%, #064E3B 100%)", borderRadius: "24px", padding: "24px", color: "white", boxShadow: "var(--kravy-shadow-md)" }}>
+                    <span style={{ fontSize: "0.68rem", fontWeight: 900, opacity: 0.7, textTransform: "uppercase", letterSpacing: "1.5px" }}>Total Volume (Sales)</span>
+                    <div style={{ fontSize: "2rem", fontWeight: 950, letterSpacing: "-1.5px", marginTop: "8px" }}>
+                      {showBalances ? "₹" : ""}{mask(format(summary.totalSales))}
+                    </div>
+                    <div style={{ fontSize: "0.7rem", opacity: 0.8, marginTop: "6px" }}>
+                      Gross: {showBalances ? "₹" : ""}{mask(format(summary.grossSales))}
+                    </div>
                   </div>
-                </div>
-                <div style={{ fontSize: "0.7rem", fontWeight: 850, color: "var(--kravy-brand)", background: "rgba(99,102,241,0.1)", padding: "6px 12px", borderRadius: "8px" }}>
-                  {mask(summary.returningCustomers)} RETURNING ({summary.uniqueCustomers > 0 ? ((summary.returningCustomers / summary.uniqueCustomers) * 100).toFixed(0) : 0}%)
-                </div>
-              </div>
-
-              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Peak Hour Activity</div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>{getHourString(summary.peakSalesHour)}</div>
-                </div>
-                <div style={{ fontSize: "0.7rem", fontWeight: 850, color: "var(--kravy-green)", background: "rgba(16,185,129,0.1)", padding: "6px 12px", borderRadius: "8px" }}>
-                  MAX VOLUME HOUR
-                </div>
-              </div>
-
-              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Lowest clearing bill</div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>
-                    {showBalances ? "₹" : ""}{mask(format(summary.lowestBill))}
-                  </div>
-                </div>
-                <div style={{ fontSize: "0.7rem", fontWeight: 850, color: "var(--kravy-purple)", background: "rgba(139,92,246,0.1)", padding: "6px 12px", borderRadius: "8px" }}>
-                  MIN VALUE
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── Graphical Insights & Breakdown ── */}
-          {summary && (
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "28px" }} className="grid-cols-1 lg:grid-cols-2">
-              {/* Payment & Order Type Distribution */}
-              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "28px", padding: "28px", display: "flex", flexDirection: "column", gap: "24px" }}>
-                <h3 style={{ fontSize: "0.95rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "1px", color: "var(--kravy-text-primary)" }}>Payment Mode & Order Source Breakdown</h3>
-                
-                {/* Payments */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>PAYMENT MODES VOLUME</span>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                    {Object.entries(summary.paymentBreakdown).map(([mode, sales]) => {
-                      const pct = summary.totalSales > 0 ? (sales / summary.totalSales) * 100 : 0;
-                      if (sales === 0) return null;
-                      return (
-                        <div key={mode} style={{ flex: 1, minWidth: "100px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", padding: "12px", borderRadius: "14px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>{mode}</span>
-                          <span style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>
-                            {showBalances ? "₹" : ""}{mask(format(sales))}
-                          </span>
-                          <span style={{ fontSize: "0.65rem", fontWeight: 850, color: "var(--kravy-brand)" }}>{pct.toFixed(0)}% share</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Order Types */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>ORDER SOURCES VOLUME</span>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                    {Object.entries(summary.orderTypeBreakdown).map(([type, sales]) => {
-                      const pct = summary.totalSales > 0 ? (sales / summary.totalSales) * 100 : 0;
-                      if (sales === 0) return null;
-                      return (
-                        <div key={type} style={{ flex: 1, minWidth: "100px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", padding: "12px", borderRadius: "14px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>{type}</span>
-                          <span style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>
-                            {showBalances ? "₹" : ""}{mask(format(sales))}
-                          </span>
-                          <span style={{ fontSize: "0.65rem", fontWeight: 850, color: "var(--kravy-purple)" }}>{pct.toFixed(0)}% share</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* BI Operational Insights */}
-              <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "28px", padding: "28px", display: "flex", flexDirection: "column", gap: "20px" }}>
-                <h3 style={{ fontSize: "0.95rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "1px", color: "var(--kravy-text-primary)" }}>Smart Business Intelligence Insights</h3>
-                
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <div style={{ padding: "16px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", borderRadius: "16px" }}>
-                    <span style={{ fontSize: "0.65rem", fontWeight: 950, color: "var(--kravy-brand)", textTransform: "uppercase" }}>Volume Yield Recommendation</span>
-                    <p style={{ fontSize: "0.85rem", color: "var(--kravy-text-primary)", fontWeight: 700, marginTop: "6px" }}>
-                      Your average ticket is ₹{format(summary.avgBill)}. Consider creating high-yield combo items valued around ₹{format(summary.avgBill * 1.4)} to maximize order metrics.
-                    </p>
+                  
+                  <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
+                    <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Net Assets (Excl. Tax)</span>
+                    <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>
+                      {showBalances ? "₹" : ""}{mask(format(summary.netSales))}
+                    </div>
+                    <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>
+                      GST Value: {showBalances ? "₹" : ""}{mask(format(summary.grossSales - summary.netSales))}
+                    </div>
                   </div>
 
-                  <div style={{ padding: "16px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", borderRadius: "16px" }}>
-                    <span style={{ fontSize: "0.65rem", fontWeight: 950, color: "var(--kravy-purple)", textTransform: "uppercase" }}>Peak Staffing Recommendation</span>
-                    <p style={{ fontSize: "0.85rem", color: "var(--kravy-text-primary)", fontWeight: 700, marginTop: "6px" }}>
-                      Peak hour detected at {getHourString(summary.peakSalesHour)}. Ensure high staffing presence during this window to reduce ticket turn-around times.
-                    </p>
+                  <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
+                    <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Invoice Clearing Count</span>
+                    <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>
+                      {mask(summary.totalBills)}
+                    </div>
+                    <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>
+                      Cancelled: {mask(summary.cancelledBills)} ({showBalances ? "₹" : ""}{mask(format(summary.cancelledValue))})
+                    </div>
+                  </div>
+
+                  <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
+                    <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Average Ticket Value</span>
+                    <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>
+                      {showBalances ? "₹" : ""}{mask(format(summary.avgBill))}
+                    </div>
+                    <div style={{ fontSize: "0.7rem", color: "var(--kravy-text-muted)", marginTop: "6px" }}>
+                      Max Ticket: {showBalances ? "₹" : ""}{mask(format(summary.highestBill))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              )}
+
+              {/* ── Sub-matrix KPI details ── */}
+              {summary && (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
+                  <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Unique Customers</div>
+                      <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>
+                        {mask(summary.uniqueCustomers)}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: "0.7rem", fontWeight: 850, color: "var(--kravy-brand)", background: "rgba(99,102,241,0.1)", padding: "6px 12px", borderRadius: "8px" }}>
+                      {mask(summary.returningCustomers)} RETURNING ({summary.uniqueCustomers > 0 ? ((summary.returningCustomers / summary.uniqueCustomers) * 100).toFixed(0) : 0}%)
+                    </div>
+                  </div>
+
+                  <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Peak Hour Activity</div>
+                      <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>{getHourString(summary.peakSalesHour)}</div>
+                    </div>
+                    <div style={{ fontSize: "0.7rem", fontWeight: 850, color: "var(--kravy-green)", background: "rgba(16,185,129,0.1)", padding: "6px 12px", borderRadius: "8px" }}>
+                      MAX VOLUME HOUR
+                    </div>
+                  </div>
+
+                  <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Lowest clearing bill</div>
+                      <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>
+                        {showBalances ? "₹" : ""}{mask(format(summary.lowestBill))}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: "0.7rem", fontWeight: 850, color: "var(--kravy-purple)", background: "rgba(139,92,246,0.1)", padding: "6px 12px", borderRadius: "8px" }}>
+                      MIN VALUE
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Graphical Insights & Breakdown ── */}
+              {summary && (
+                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "28px" }} className="grid-cols-1 lg:grid-cols-2">
+                  {/* Payment & Order Type Distribution */}
+                  <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "28px", padding: "28px", display: "flex", flexDirection: "column", gap: "24px" }}>
+                    <h3 style={{ fontSize: "0.95rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "1px", color: "var(--kravy-text-primary)" }}>Payment Mode & Order Source Breakdown</h3>
+                    
+                    {/* Payments */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>PAYMENT MODES VOLUME</span>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                        {Object.entries(summary.paymentBreakdown).map(([mode, sales]) => {
+                          const pct = summary.totalSales > 0 ? (sales / summary.totalSales) * 100 : 0;
+                          if (sales === 0) return null;
+                          return (
+                            <div key={mode} style={{ flex: 1, minWidth: "100px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", padding: "12px", borderRadius: "14px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                              <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>{mode}</span>
+                              <span style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>
+                                {showBalances ? "₹" : ""}{mask(format(sales))}
+                              </span>
+                              <span style={{ fontSize: "0.65rem", fontWeight: 850, color: "var(--kravy-brand)" }}>{pct.toFixed(0)}% share</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Order Types */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>ORDER SOURCES VOLUME</span>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                        {Object.entries(summary.orderTypeBreakdown).map(([type, sales]) => {
+                          const pct = summary.totalSales > 0 ? (sales / summary.totalSales) * 100 : 0;
+                          if (sales === 0) return null;
+                          return (
+                            <div key={type} style={{ flex: 1, minWidth: "100px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", padding: "12px", borderRadius: "14px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                              <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>{type}</span>
+                              <span style={{ fontSize: "1rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>
+                                {showBalances ? "₹" : ""}{mask(format(sales))}
+                              </span>
+                              <span style={{ fontSize: "0.65rem", fontWeight: 850, color: "var(--kravy-purple)" }}>{pct.toFixed(0)}% share</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* BI Operational Insights */}
+                  <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "28px", padding: "28px", display: "flex", flexDirection: "column", gap: "20px" }}>
+                    <h3 style={{ fontSize: "0.95rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "1px", color: "var(--kravy-text-primary)" }}>Smart Business Intelligence Insights</h3>
+                    
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <div style={{ padding: "16px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", borderRadius: "16px" }}>
+                        <span style={{ fontSize: "0.65rem", fontWeight: 950, color: "var(--kravy-brand)", textTransform: "uppercase" }}>Volume Yield Recommendation</span>
+                        <p style={{ fontSize: "0.85rem", color: "var(--kravy-text-primary)", fontWeight: 700, marginTop: "6px" }}>
+                          Your average ticket is ₹{format(summary.avgBill)}. Consider creating high-yield combo items valued around ₹{format(summary.avgBill * 1.4)} to maximize order metrics.
+                        </p>
+                      </div>
+
+                      <div style={{ padding: "16px", background: "var(--kravy-bg-2)", border: "1px solid var(--kravy-border)", borderRadius: "16px" }}>
+                        <span style={{ fontSize: "0.65rem", fontWeight: 950, color: "var(--kravy-purple)", textTransform: "uppercase" }}>Peak Staffing Recommendation</span>
+                        <p style={{ fontSize: "0.85rem", color: "var(--kravy-text-primary)", fontWeight: 700, marginTop: "6px" }}>
+                          Peak hour detected at {getHourString(summary.peakSalesHour)}. Ensure high staffing presence during this window to reduce ticket turn-around times.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}iv>
           )}
 
           {/* ── Main Data View (Drilldown List or Bills Table) ── */}
