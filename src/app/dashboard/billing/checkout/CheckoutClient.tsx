@@ -1058,33 +1058,11 @@ export default function CheckoutClient() {
     }
   }, [selectedTable, tables, business?.multiZoneMenuEnabled]);
 
-  // Only show categories that have items in them (respecting zone filter)
+  // Show all created categories in categoriesList regardless of whether they have items in them
   const categories = useMemo(() => {
-    const itemsInZone = menuItems.filter(i => {
-      // 1. Manual Zone Filter (Highest Priority)
-      if (activeZone !== "All") {
-        const hasSelectedZone = i.zones?.includes(activeZone);
-        const isGlobal = !i.zones || i.zones.length === 0;
-        return hasSelectedZone || isGlobal;
-      }
-
-      // 2. Auto Table Zone Filter (Only if manual filter is "All")
-      if (business?.multiZoneMenuEnabled && selectedTable && !["POS", "TAKEAWAY", "DELIVERY"].includes(selectedTable) && tables.length > 0) {
-        const tableObj = tables.find(t => t.name === selectedTable);
-        if (tableObj && tableObj.zone && tableObj.zone.toUpperCase() !== "DEFAULT") {
-          const zone = tableObj.zone;
-          const hasTableZone = i.zones?.includes(zone);
-          const isGlobal = !i.zones || i.zones.length === 0;
-          return hasTableZone || isGlobal;
-        }
-      }
-
-      return true;
-    });
-
-    const catNames = itemsInZone.map(i => i.category?.name || "Others");
+    const catNames = categoriesList.map(c => c.name);
     return Array.from(new Set(catNames)).filter(Boolean).sort();
-  }, [menuItems, activeZone, selectedTable, tables, business?.multiZoneMenuEnabled]);
+  }, [categoriesList]);
 
   const filteredMenuItems = useMemo(() => {
     const rawFiltered = menuItems
