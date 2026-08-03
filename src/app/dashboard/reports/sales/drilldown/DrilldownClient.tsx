@@ -628,8 +628,8 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
                   <tbody>
                     {items.map((b: BillItemDetail, idx) => {
                       const actualIdx = (pagination.page - 1) * pagination.pageSize + idx + 1;
-                      const isCancelled = b.paymentStatus.toUpperCase() === "CANCELLED";
-                      const isPending = b.paymentStatus.toUpperCase() === "PENDING" || b.paymentStatus.toUpperCase() === "HELD";
+                      const isCancelled = (b.paymentStatus || "").toUpperCase() === "CANCELLED";
+                      const isPending = (b.paymentStatus || "").toUpperCase() === "PENDING" || (b.paymentStatus || "").toUpperCase() === "HELD";
                       
                       return (
                         <tr key={b.id} style={{ borderTop: "1px solid var(--kravy-border)", transition: "background 0.2s" }} className="hover:bg-[var(--kravy-bg-2)]/30">
@@ -651,11 +651,11 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
                               fontSize: "0.68rem", fontWeight: 900 
                             }}>
                               {isCancelled ? <X size={12} /> : isPending ? <Clock size={12} /> : <CheckCircle size={12} />}
-                              {b.paymentStatus.toUpperCase()}
+                              {(b.paymentStatus || "").toUpperCase()}
                             </div>
                           </td>
                           <td style={{ padding: "20px 24px" }}>
-                            <span style={{ fontSize: "0.75rem", fontWeight: 850, color: "var(--kravy-text-primary)" }}>{b.paymentMode.toUpperCase()}</span>
+                            <span style={{ fontSize: "0.75rem", fontWeight: 850, color: "var(--kravy-text-primary)" }}>{(b.paymentMode || "").toUpperCase()}</span>
                           </td>
                           <td style={{ padding: "20px 24px" }}>
                             <span style={{ fontSize: "0.75rem", fontWeight: 850, color: "var(--kravy-text-muted)" }}>{b.tableName}</span>
@@ -867,9 +867,9 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
 
             {/* Clearing info */}
             <div style={{ display: "flex", justify: "space-between", alignItems: "center", borderTop: "1px solid var(--kravy-border)", paddingTop: "14px" }}>
-              <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>Payment Method: <span style={{ color: "var(--kravy-text-primary)" }}>{selectedBill.paymentMode.toUpperCase()}</span></span>
+              <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--kravy-text-muted)" }}>Payment Method: <span style={{ color: "var(--kravy-text-primary)" }}>{(selectedBill.paymentMode || "").toUpperCase()}</span></span>
               <span style={{ fontSize: "0.7rem", fontWeight: 950, color: "#10B981", background: "rgba(16,185,129,0.1)", padding: "4px 10px", borderRadius: "8px" }}>
-                ✓ {selectedBill.paymentStatus.toUpperCase()}
+                ✓ {(selectedBill.paymentStatus || "").toUpperCase()}
               </span>
             </div>
             
