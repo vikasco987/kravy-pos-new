@@ -225,7 +225,7 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
     alert("Exporting current dashboard state to CSV/XLSX... Completed!");
   };
 
-  const isBillsView = items.length > 0 && currentLevel === "day";
+  const isBillsView = items.length > 0 && currentLevel === "bill";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px", padding: "20px", background: "var(--kravy-bg)", minHeight: "100vh" }}>
