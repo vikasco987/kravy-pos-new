@@ -21,19 +21,34 @@ export const revalidate = 0;
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string }>;
+  searchParams: Promise<{ range?: string; from?: string; to?: string; type?: string }>;
 }) {
   const effectiveId = await getEffectiveClerkId();
 
   if (!effectiveId) redirect("/sign-in");
 
-  const { range: rangeParam } = await searchParams;
-  const range = Number(rangeParam || 30);
+  const { range: rangeParam, from, to, type } = await searchParams;
+  let range = Number(rangeParam || 30);
 
   const endDate = new Date();
   const startDate = new Date();
   
-  if (range === 1) {
+  if (from && to) {
+    startDate.setTime(new Date(from).getTime());
+    endDate.setTime(new Date(to).getTime());
+    range = Math.max(1, Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+  } else if (type === "this_month") {
+    startDate.setDate(1);
+    startDate.setHours(0,0,0,0);
+    range = Math.max(1, Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+  } else if (type === "last_month") {
+    startDate.setMonth(startDate.getMonth() - 1);
+    startDate.setDate(1);
+    startDate.setHours(0,0,0,0);
+    endDate.setDate(0);
+    endDate.setHours(23,59,59,999);
+    range = Math.max(1, Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+  } else if (range === 1) {
     // Today: From 00:00 AM to Now
     startDate.setHours(0, 0, 0, 0);
   } else if (range === 2) {
@@ -45,6 +60,7 @@ export default async function DashboardPage({
   } else {
     // Last X days
     startDate.setDate(endDate.getDate() - range);
+    startDate.setHours(0,0,0,0);
   }
 
   const previousStart = new Date(startDate);

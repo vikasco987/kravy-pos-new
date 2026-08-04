@@ -49,23 +49,35 @@ export default function DateFilter() {
       year: "numeric",
     });
 
-  const updateURL = (days: number) => {
+  const updateURL = (paramsToSet: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("range", days.toString());
-    // Keep category if it exists (for reports)
+    Object.entries(paramsToSet).forEach(([key, val]) => {
+      if (val) params.set(key, val);
+      else params.delete(key);
+    });
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  const applyQuick = (text: string, days: number) => {
+  const applyQuick = (text: string, days: number, type?: string) => {
     setLabel(text);
-    updateURL(days);
+    if (type) {
+      updateURL({ range: days.toString(), type: type, from: null, to: null });
+    } else {
+      updateURL({ range: days.toString(), type: null, from: null, to: null });
+    }
     setOpen(false);
   };
 
   const applySingle = () => {
     if (!selectedDate) return;
     setLabel(formatDate(selectedDate));
-    updateURL(1);
+    // Pass from and to so it selects exact single day bounds
+    updateURL({ 
+      range: "1", 
+      type: null, 
+      from: selectedDate.toISOString(), 
+      to: new Date(selectedDate.setHours(23, 59, 59, 999)).toISOString() 
+    });
     setOpen(false);
   };
 
@@ -73,7 +85,12 @@ export default function DateFilter() {
     if (!range?.from || !range?.to) return;
     const diff = (range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24) + 1;
     setLabel(`${formatDate(range.from)} - ${formatDate(range.to)}`);
-    updateURL(Math.floor(diff));
+    updateURL({
+      range: Math.floor(diff).toString(),
+      type: null,
+      from: range.from.toISOString(),
+      to: new Date(range.to.setHours(23, 59, 59, 999)).toISOString()
+    });
     setOpen(false);
   };
 
@@ -148,16 +165,16 @@ export default function DateFilter() {
           <>
             <h4 style={{ fontSize: "0.75rem", fontWeight: 700, color: "#4A5568", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>Quick Selection</h4>
             {[
-              { label: "Today", value: 1 },
-              { label: "Yesterday", value: 2 },
-              { label: "Last 7 Days", value: 7 },
-              { label: "Last 30 Days", value: 30 },
-              { label: "This Month", value: new Date().getDate() },
-              { label: "Last Month", value: 30 },
+              { label: "Today", value: 1, type: undefined },
+              { label: "Yesterday", value: 2, type: undefined },
+              { label: "Last 7 Days", value: 7, type: undefined },
+              { label: "Last 30 Days", value: 30, type: undefined },
+              { label: "This Month", value: new Date().getDate(), type: "this_month" },
+              { label: "Last Month", value: 30, type: "last_month" },
             ].map((item) => (
               <button
                 key={item.label}
-                onClick={() => applyQuick(item.label, item.value)}
+                onClick={() => applyQuick(item.label, item.value, item.type)}
                 style={{
                   textAlign: "left",
                   padding: "10px 14px",
