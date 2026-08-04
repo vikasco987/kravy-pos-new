@@ -134,7 +134,7 @@ export async function GET(
            console.warn("Could not parse printSettings", e);
         }
         const logoHeightSetting = Number(printSettings?.logoHeight || 50);
-        const logoWidth = 40 * (logoHeightSetting / 50);
+        const logoWidth = 80 * (logoHeightSetting / 50); // Increased from 40 to 80 for better visibility
         
         const dims = logoImage.scale(0.5);
         const logoHeight = (dims.height / dims.width) * logoWidth;
