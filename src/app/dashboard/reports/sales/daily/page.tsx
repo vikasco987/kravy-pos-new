@@ -128,10 +128,13 @@ export default async function DailySalesReportPage({
   const statusFilter = params.status || "ALL";
   const searchQuery = params.query || "";
 
-  const startRange = new Date(fromDateStr);
-  startRange.setHours(0, 0, 0, 0);
-  const endRange = new Date(toDateStr);
-  endRange.setHours(23, 59, 59, 999);
+  const [sY, sM, sD] = fromDateStr.split('-').map(Number);
+  const startRange = new Date(Date.UTC(sY, sM - 1, sD, 0, 0, 0, 0));
+  startRange.setMinutes(startRange.getMinutes() - 330);
+
+  const [eY, eM, eD] = toDateStr.split('-').map(Number);
+  const endRange = new Date(Date.UTC(eY, eM - 1, eD, 23, 59, 59, 999));
+  endRange.setMinutes(endRange.getMinutes() - 330);
 
   // Profile data
   const profile = await prisma.businessProfile.findFirst({ where: { userId: effectiveId }, orderBy: { createdAt: 'asc' } });

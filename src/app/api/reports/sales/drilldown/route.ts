@@ -39,35 +39,45 @@ export async function GET(req: NextRequest) {
     let dateGte: Date | undefined;
     let dateLte: Date | undefined;
 
+    // Helper to get IST boundaries
+    const getISTBoundary = (dateStr: string, isEndOfDay: boolean = false) => {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d, isEndOfDay ? 23 : 0, isEndOfDay ? 59 : 0, isEndOfDay ? 59 : 0, isEndOfDay ? 999 : 0));
+      dt.setMinutes(dt.getMinutes() - 330);
+      return dt;
+    };
+
     if (filterDay) {
-      dateGte = new Date(filterDay);
-      dateGte.setHours(0, 0, 0, 0);
-      dateLte = new Date(filterDay);
-      dateLte.setHours(23, 59, 59, 999);
+      dateGte = getISTBoundary(filterDay, false);
+      dateLte = getISTBoundary(filterDay, true);
     } else if (filterWeek) {
-      // Assuming filterWeek is the starting date of the week (Monday)
-      dateGte = new Date(filterWeek);
-      dateGte.setHours(0, 0, 0, 0);
-      dateLte = new Date(dateGte);
-      dateLte.setDate(dateLte.getDate() + 6);
-      dateLte.setHours(23, 59, 59, 999);
+      dateGte = getISTBoundary(filterWeek, false);
+      const endOfWeek = new Date(dateGte);
+      endOfWeek.setDate(endOfWeek.getDate() + 6);
+      endOfWeek.setHours(endOfWeek.getHours() + 23);
+      endOfWeek.setMinutes(endOfWeek.getMinutes() + 59);
+      endOfWeek.setSeconds(endOfWeek.getSeconds() + 59);
+      endOfWeek.setMilliseconds(999);
+      dateLte = endOfWeek;
     } else if (filterMonth) {
       const [y, m] = filterMonth.split("-").map(Number);
-      dateGte = new Date(y, m - 1, 1, 0, 0, 0, 0);
-      dateLte = new Date(y, m, 0, 23, 59, 59, 999);
+      const start = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0, 0));
+      start.setMinutes(start.getMinutes() - 330);
+      dateGte = start;
+      const end = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
+      end.setMinutes(end.getMinutes() - 330);
+      dateLte = end;
     } else if (filterYear) {
       const y = Number(filterYear);
-      dateGte = new Date(y, 0, 1, 0, 0, 0, 0);
-      dateLte = new Date(y, 11, 31, 23, 59, 59, 999);
+      const start = new Date(Date.UTC(y, 0, 1, 0, 0, 0, 0));
+      start.setMinutes(start.getMinutes() - 330);
+      dateGte = start;
+      const end = new Date(Date.UTC(y, 11, 31, 23, 59, 59, 999));
+      end.setMinutes(end.getMinutes() - 330);
+      dateLte = end;
     } else if (startDateParam || endDateParam) {
-      if (startDateParam) {
-        dateGte = new Date(startDateParam);
-        dateGte.setHours(0, 0, 0, 0);
-      }
-      if (endDateParam) {
-        dateLte = new Date(endDateParam);
-        dateLte.setHours(23, 59, 59, 999);
-      }
+      if (startDateParam) dateGte = getISTBoundary(startDateParam, false);
+      if (endDateParam) dateLte = getISTBoundary(endDateParam, true);
     }
 
     // 2. Build where clause
