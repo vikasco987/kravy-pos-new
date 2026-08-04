@@ -90,7 +90,14 @@ export async function GET(req: Request) {
         let taxable = 0;
         let gst = 0;
 
-        if (item.taxStatus === "With Tax") {
+        let isInclusive = false;
+        if (perProductEnabled) {
+          isInclusive = item.taxStatus === "With Tax";
+        } else {
+          isInclusive = profile?.taxInclusive ?? false;
+        }
+
+        if (isInclusive) {
           taxable = gross / (1 + rate / 100);
           gst = gross - taxable;
         } else {
