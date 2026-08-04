@@ -50,9 +50,36 @@ const StatusIndicator = ({ status, isHeld }: { status: string, isHeld?: boolean 
   );
 };
 
-const PaymentBadge = ({ mode, status }: { mode: string, status: string }) => {
+const PaymentBadge = ({ mode, status, amountPaid, balanceDue, total }: { mode: string, status: string, amountPaid?: number, balanceDue?: number, total?: number }) => {
   const m = (mode || "Cash").toLowerCase();
   
+  const formatNum = (num: number) => new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num || 0);
+  const isPartial = status?.toUpperCase() === "PARTIAL";
+
+  const renderStatus = () => {
+    if (isPartial) {
+       return (
+         <div style={{ display: "flex", flexDirection: "column", gap: "2px", border: "1px solid #FCD34D", background: "#FFFBEB", padding: "4px 8px", borderRadius: "6px", width: "fit-content" }}>
+           <div style={{ fontSize: "0.6rem", fontWeight: 900, color: "#D97706" }}>⏱ PARTIAL</div>
+           <div style={{ fontSize: "0.55rem", fontWeight: 800, color: "#64748B" }}>Paid: <span style={{ color: "#10B981" }}>₹{formatNum(amountPaid!)}</span></div>
+           <div style={{ fontSize: "0.55rem", fontWeight: 800, color: "#64748B" }}>Due: <span style={{ color: "#EF4444" }}>₹{formatNum(balanceDue!)}</span></div>
+         </div>
+       );
+    }
+    
+    const isPaid = status === "Paid" || status === "PAID";
+    return (
+      <div style={{ 
+        fontSize: "0.6rem", fontWeight: 900, 
+        color: isPaid ? "#10B981" : "#EF4444", 
+        border: `1px solid ${isPaid ? "#D1FAE5" : "#FEE2E2"}`, 
+        padding: "2px 6px", borderRadius: "4px", width: "fit-content" 
+      }}>
+        {isPaid ? "✓" : "✗"} {status?.toUpperCase()}
+      </div>
+    );
+  };
+
   if (m.startsWith("split")) {
     const breakdownMatch = mode.match(/\((.*?)\)/);
     const breakdownText = breakdownMatch ? breakdownMatch[1] : "";
@@ -75,14 +102,7 @@ const PaymentBadge = ({ mode, status }: { mode: string, status: string }) => {
              ))}
           </div>
         )}
-        <div style={{ 
-          fontSize: "0.6rem", fontWeight: 900, 
-          color: status === "Paid" ? "#10B981" : "#EF4444", 
-          border: `1px solid ${status === "Paid" ? "#D1FAE5" : "#FEE2E2"}`, 
-          padding: "2px 6px", borderRadius: "4px", width: "fit-content" 
-        }}>
-          ✓ {status?.toUpperCase()}
-        </div>
+        {renderStatus()}
       </div>
     );
   }
@@ -105,14 +125,7 @@ const PaymentBadge = ({ mode, status }: { mode: string, status: string }) => {
       }}>
         {icon} {mode || "Cash"}
       </div>
-      <div style={{ 
-        fontSize: "0.6rem", fontWeight: 900, 
-        color: status === "Paid" ? "#10B981" : "#EF4444", 
-        border: `1px solid ${status === "Paid" ? "#D1FAE5" : "#FEE2E2"}`, 
-        padding: "2px 6px", borderRadius: "4px", width: "fit-content" 
-      }}>
-        ✓ {status?.toUpperCase()}
-      </div>
+      {renderStatus()}
     </div>
   );
 };
@@ -373,7 +386,7 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
                   {visibleCols.discount && <td style={{ textAlign: "right", fontWeight: 700, color: "#EF4444" }}>₹{format(bill.discountAmount || 0)}</td>}
                   {visibleCols.gst && <td style={{ textAlign: "right", fontWeight: 700, color: "#F59E0B" }}>₹{format(bill.tax || 0)}</td>}
                   {visibleCols.total && <td style={{ textAlign: "right", fontSize: "1rem", fontWeight: 950, color: "#1E293B" }}>₹{format(bill.total)}</td>}
-                  {visibleCols.payment && <td><PaymentBadge mode={bill.paymentMode} status={bill.paymentStatus} /></td>}
+                  {visibleCols.payment && <td><PaymentBadge mode={bill.paymentMode} status={bill.paymentStatus} amountPaid={bill.amountPaid} balanceDue={bill.balanceDue} total={bill.total} /></td>}
                   {visibleCols.token && (
                     <td>
                       {(bill.kotNumbers && bill.kotNumbers.length > 0) ? (
