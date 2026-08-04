@@ -3347,10 +3347,10 @@ export default function CheckoutClient() {
           </div>
 
           {/* Checkout Footer (Pinned at Bottom) */}
-          <div className="border-t border-[var(--kravy-border)] px-4 md:px-5 py-2 bg-[var(--kravy-surface)] space-y-2 shrink-0 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
+          <div className="border-t border-[var(--kravy-border)] px-4 md:px-5 py-1.5 bg-[var(--kravy-surface)] space-y-1.5 shrink-0 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
 
             {/* Totals - Dynamic Height */}
-            <div className="space-y-0.5">
+            <div className="space-y-0">
                 <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">
                   <span>Items Base</span>
                   <span>₹{totalTaxable.toFixed(2)}</span>
@@ -3366,8 +3366,8 @@ export default function CheckoutClient() {
                   </div>
                 )}
               </div>
-            <div className="flex justify-between items-center border-b border-dashed border-[var(--kravy-border)] pb-1.5 gap-4">
-              <div className="flex flex-wrap gap-x-2 gap-y-0.5 flex-1">
+            <div className="flex justify-between items-center border-b border-dashed border-[var(--kravy-border)] pb-1 gap-2">
+              <div className="flex flex-wrap gap-x-2 gap-y-0 flex-1">
                 <p className="text-[9px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter leading-none">Sub: ₹{subtotal.toFixed(2)}</p>
                 {discountAmt > 0 && <p className="text-[9px] font-bold text-rose-500 uppercase tracking-tighter leading-none">Disc: -₹{discountAmt.toFixed(2)}</p>}
                 {(taxActive || perProductEnabled) && <p className="text-[9px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter leading-none">Tax: ₹{gstAmount.toFixed(2)}</p>}
@@ -3375,15 +3375,15 @@ export default function CheckoutClient() {
                 {packagingCharge > 0 && <p className="text-[9px] font-bold text-rose-500 uppercase tracking-tighter leading-none">Pkg: ₹{packagingCharge.toFixed(2)}</p>}
               </div>
               <div className="text-right shrink-0">
-                <p className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest leading-none mb-0.5">PAYABLE</p>
+                <p className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-widest leading-none mb-0">PAYABLE</p>
                 <p className="text-xl font-black text-[var(--kravy-brand)] leading-none">₹{finalTotal.toFixed(2)}</p>
               </div>
             </div>
 
             {/* 🎟️ ADJUSTMENTS SECTION (Discount / Charges) */}
             {!(selectedTable !== "POS" && selectedTable !== "TAKEAWAY" && selectedTable !== "DELIVERY" && searchParams.get("returnTo")) && (
-              <div className="space-y-1.5">
-                <div className="flex border border-[var(--kravy-border)] rounded-xl overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
+              <div className="space-y-1">
+                <div className="flex border border-[var(--kravy-border)] rounded-lg overflow-hidden p-0.5 bg-[var(--kravy-bg-2)]">
                    <button 
                     onClick={async () => {
                       if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
@@ -3392,7 +3392,7 @@ export default function CheckoutClient() {
                       }
                       setDiscountMode('PROMO');
                     }}
-                    className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'PROMO' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+                    className={`flex-1 py-0.5 rounded text-[9px] font-black uppercase transition-all ${discountMode === 'PROMO' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
                    >
                      Promo
                    </button>
@@ -3404,29 +3404,29 @@ export default function CheckoutClient() {
                       }
                       setDiscountMode('INSTANT');
                     }}
-                    className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'INSTANT' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+                    className={`flex-1 py-0.5 rounded text-[9px] font-black uppercase transition-all ${discountMode === 'INSTANT' ? 'bg-[var(--kravy-brand)] text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
                    >
                      Discount
                    </button>
                    <button 
                     onClick={async () => setDiscountMode('CHARGES')}
-                    className={`flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${discountMode === 'CHARGES' ? 'bg-indigo-600 text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
+                    className={`flex-1 py-0.5 rounded text-[9px] font-black uppercase transition-all ${discountMode === 'CHARGES' ? 'bg-indigo-600 text-white' : 'text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)]'}`}
                    >
                      Charges
                    </button>
                 </div>
 
                 {discountMode === 'CHARGES' ? (
-                  <div className="grid grid-cols-1 gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                    <div className="flex gap-2">
-                      <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
-                        <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
+                  <div className="grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="flex gap-1">
+                      <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-lg overflow-hidden shadow-sm">
+                        <div className="bg-slate-100 dark:bg-slate-800 px-1.5 flex items-center border-r border-[var(--kravy-border)]">
                           <Truck size={10} className="text-slate-500" />
                         </div>
                         <select 
                           value={deliveryChargeType}
                           onChange={(e) => { kravy.click(); setDeliveryChargeType(e.target.value as 'FLAT' | 'PERCENT'); }}
-                          className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-1.5 text-[9px] font-black outline-none cursor-pointer"
+                          className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-1 text-[9px] font-black outline-none cursor-pointer"
                         >
                           <option value="FLAT">₹</option>
                           <option value="PERCENT">%</option>
@@ -3436,18 +3436,18 @@ export default function CheckoutClient() {
                           placeholder="Delivery Charge..."
                           value={manualDeliveryCharge || ""}
                           onChange={e => setManualDeliveryCharge(Number(e.target.value))}
-                          className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
+                          className="bg-transparent text-[var(--kravy-text-primary)] px-1.5 py-1 w-full outline-none text-[9px] font-black"
                         />
                       </div>
 
-                      <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
-                        <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
+                      <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-lg overflow-hidden shadow-sm">
+                        <div className="bg-slate-100 dark:bg-slate-800 px-1.5 flex items-center border-r border-[var(--kravy-border)]">
                           <ShoppingBag size={10} className="text-slate-500" />
                         </div>
                         <select 
                           value={packagingChargeType}
                           onChange={(e) => { kravy.click(); setPackagingChargeType(e.target.value as 'FLAT' | 'PERCENT'); }}
-                          className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-1.5 text-[9px] font-black outline-none cursor-pointer"
+                          className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-1 text-[9px] font-black outline-none cursor-pointer"
                         >
                           <option value="FLAT">₹</option>
                           <option value="PERCENT">%</option>
@@ -3457,19 +3457,19 @@ export default function CheckoutClient() {
                           placeholder="Package Charge..."
                           value={manualPackagingCharge || ""}
                           onChange={e => setManualPackagingCharge(Number(e.target.value))}
-                          className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
+                          className="bg-transparent text-[var(--kravy-text-primary)] px-1.5 py-1 w-full outline-none text-[9px] font-black"
                         />
                       </div>
                     </div>
 
-                    <div className="flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
-                      <div className="bg-slate-100 dark:bg-slate-800 px-2 flex items-center border-r border-[var(--kravy-border)]">
+                    <div className="flex bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-lg overflow-hidden shadow-sm">
+                      <div className="bg-slate-100 dark:bg-slate-800 px-1.5 flex items-center border-r border-[var(--kravy-border)]">
                         <Star size={10} className="text-slate-500" />
                       </div>
                       <select 
                         value={serviceChargeType}
                         onChange={(e) => { kravy.click(); setServiceChargeType(e.target.value as 'FLAT' | 'PERCENT'); }}
-                        className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-2 text-[9px] font-black outline-none cursor-pointer"
+                        className="bg-slate-50 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-1.5 text-[9px] font-black outline-none cursor-pointer"
                       >
                         <option value="FLAT">₹ Flat Service Charge</option>
                         <option value="PERCENT">% Percentage Service Charge</option>
@@ -3479,26 +3479,26 @@ export default function CheckoutClient() {
                         placeholder="Amount..."
                         value={serviceCharge || ""}
                         onChange={e => setServiceCharge(Number(e.target.value))}
-                        className="bg-transparent text-[var(--kravy-text-primary)] px-2 py-1.5 w-full outline-none text-[10px] font-black"
+                        className="bg-transparent text-[var(--kravy-text-primary)] px-1.5 py-1 w-full outline-none text-[9px] font-black"
                       />
                     </div>
                   </div>
                 ) : (
-                  <div className="flex gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="flex gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
                      {discountMode === 'PROMO' ? (
                        <input 
                          placeholder="PROMO CODE..."
                          value={discountCode}
                          onChange={e => setDiscountCode(e.target.value.toUpperCase())}
                          disabled={!!appliedOffer}
-                         className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 rounded-xl outline-none text-[10px] font-black tracking-widest uppercase"
+                         className="bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-2.5 py-1 flex-1 rounded-lg outline-none text-[9px] font-black tracking-widest uppercase"
                        />
                      ) : (
-                       <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-xl overflow-hidden shadow-sm">
+                       <div className="flex flex-1 bg-[var(--kravy-bg-2)] border border-[var(--kravy-border)] rounded-lg overflow-hidden shadow-sm">
                           <select 
                             value={customDiscountType}
                             onChange={(e) => { kravy.click(); setCustomDiscountType(e.target.value as 'PERCENT' | 'FLAT'); }}
-                            className="bg-slate-100 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-2.5 text-[10px] font-black outline-none cursor-pointer"
+                            className="bg-slate-100 dark:bg-slate-800 border-r border-[var(--kravy-border)] text-[var(--kravy-text-primary)] px-2 text-[9px] font-black outline-none cursor-pointer"
                           >
                             <option value="PERCENT">%</option>
                             <option value="FLAT">₹</option>
@@ -3508,13 +3508,13 @@ export default function CheckoutClient() {
                             placeholder="Amount..."
                             value={customDiscountValue}
                             onChange={e => setCustomDiscountValue(e.target.value)}
-                            className="bg-transparent text-[var(--kravy-text-primary)] px-3 py-1.5 flex-1 outline-none text-[10px] font-black"
+                            className="bg-transparent text-[var(--kravy-text-primary)] px-2.5 py-1 flex-1 outline-none text-[9px] font-black"
                           />
                        </div>
                      )}
                      <button 
                        onClick={appliedOffer || (discountMode === 'INSTANT' && customDiscountValue) ? removeCoupon : handleApplyCoupon}
-                       className={`px-4 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm ${
+                       className={`px-3 rounded-lg text-[9px] font-black uppercase transition-all shadow-sm ${
                          appliedOffer || (discountMode === 'INSTANT' && customDiscountValue) 
                          ? "bg-rose-500 text-white" 
                          : "bg-[var(--kravy-brand)] text-white"
@@ -3531,7 +3531,7 @@ export default function CheckoutClient() {
             {!(selectedTable !== "POS" && selectedTable !== "TAKEAWAY" && selectedTable !== "DELIVERY" && searchParams.get("returnTo")) ? (
               <>
               <div 
-                className="grid gap-1.5 mb-2"
+                className="grid gap-1 mb-1"
                 style={{ 
                   gridTemplateColumns: `repeat(${
                     (["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const).filter(mode => {
@@ -3558,7 +3558,7 @@ export default function CheckoutClient() {
                   <button
                     key={mode}
                     onClick={async () => { kravy.toggle(); setPaymentMode(mode); }}
-                    className={`py-1.5 px-0.5 rounded-xl border-2 font-black text-[7px] transition-all flex flex-col items-center justify-center gap-1 ${paymentMode === mode
+                    className={`py-1 px-0.5 rounded-lg border-2 font-black text-[7px] transition-all flex flex-col items-center justify-center gap-0.5 ${paymentMode === mode
                       ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20"
                       : "bg-white border-slate-200 text-slate-900 hover:border-indigo-400 hover:bg-indigo-50/30"
                       }`}
@@ -3570,44 +3570,44 @@ export default function CheckoutClient() {
               </div>
 
               {/* ✅ Partial Payment (Khata/Udhaar) */}
-              <div className="flex gap-2 items-center bg-[var(--kravy-surface)] border border-[var(--kravy-border)] p-2 rounded-xl mb-4">
+              <div className="flex gap-2 items-center bg-[var(--kravy-surface)] border border-[var(--kravy-border)] p-1.5 rounded-lg mb-1.5">
                  <div className="flex-1">
-                   <p className="text-[10px] font-black uppercase text-[var(--kravy-text-muted)] tracking-wider">Amount Paid (₹)</p>
-                   <div className="flex items-center gap-1 mt-1">
+                   <p className="text-[9px] font-black uppercase text-[var(--kravy-text-muted)] tracking-wider">Amount Paid (₹)</p>
+                   <div className="flex items-center gap-1 mt-0.5">
                      <input
                        type="number"
                        value={amountPaid}
                        onChange={(e) => setAmountPaid(e.target.value === "" ? "" : Number(e.target.value))}
                        placeholder={`Full: ${finalTotal.toFixed(2)}`}
-                       className="w-full bg-transparent border-b-2 border-[var(--kravy-border)] outline-none font-black text-sm text-[var(--kravy-text-primary)] focus:border-[var(--kravy-brand)] transition-colors"
+                       className="w-full bg-transparent border-b-2 border-[var(--kravy-border)] outline-none font-black text-xs text-[var(--kravy-text-primary)] focus:border-[var(--kravy-brand)] transition-colors"
                      />
                    </div>
                  </div>
                  {(amountPaid !== "" && Number(amountPaid) < finalTotal) && (
-                   <div className="flex-1 text-right bg-rose-50 dark:bg-rose-900/20 p-2 rounded-lg border border-rose-100 dark:border-rose-900/50">
-                     <p className="text-[10px] font-black uppercase text-rose-500 tracking-wider">Unpaid Balance</p>
-                     <p className="text-sm font-black text-rose-600">₹{(finalTotal - Number(amountPaid)).toFixed(2)}</p>
-                     {!selectedParty && <p className="text-[8px] text-rose-500 font-bold mt-1 leading-tight">*Select customer required</p>}
+                   <div className="flex-1 text-right bg-rose-50 dark:bg-rose-900/20 p-1.5 rounded-md border border-rose-100 dark:border-rose-900/50">
+                     <p className="text-[9px] font-black uppercase text-rose-500 tracking-wider">Unpaid Balance</p>
+                     <p className="text-xs font-black text-rose-600">₹{(finalTotal - Number(amountPaid)).toFixed(2)}</p>
+                     {!selectedParty && <p className="text-[7px] text-rose-500 font-bold mt-0.5 leading-tight">*Select customer required</p>}
                    </div>
                  )}
               </div>
 
               {/* Split Payment Control Box */}
               {paymentMode === "Split" && (
-                <div className="space-y-3 p-3 rounded-2xl bg-indigo-50/70 border border-indigo-200 dark:bg-white/5 dark:border-white/10 mb-4">
+                <div className="space-y-2 p-2 rounded-xl bg-indigo-50/70 border border-indigo-200 dark:bg-white/5 dark:border-white/10 mb-2">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-black text-indigo-700 dark:text-indigo-400">
-                      <Split size={14} /> Split Payment Breakdown
+                    <div className="flex items-center gap-1.5 text-[10px] font-black text-indigo-700 dark:text-indigo-400">
+                      <Split size={12} /> Split Breakdown
                     </div>
-                    <div className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-white/10 text-indigo-700 dark:text-indigo-300">
-                      Bill Total: ₹{finalTotal.toFixed(2)}
+                    <div className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-white/10 text-indigo-700 dark:text-indigo-300">
+                      Total: ₹{finalTotal.toFixed(2)}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="grid grid-cols-2 gap-1.5 text-[10px]">
                     {/* Cash */}
-                    <div className="bg-white dark:bg-black/20 p-2 rounded-xl border border-slate-200 dark:border-white/10">
-                      <div className="flex items-center justify-between mb-1">
+                    <div className="bg-white dark:bg-black/20 p-1.5 rounded-lg border border-slate-200 dark:border-white/10">
+                      <div className="flex items-center justify-between mb-0.5">
                         <span className="font-bold text-slate-700 dark:text-slate-200">💵 Cash</span>
                         <button 
                           type="button" 
@@ -3615,7 +3615,7 @@ export default function CheckoutClient() {
                             const rem = Math.max(0, finalTotal - ((Number(splitUpi)||0) + (Number(splitCard)||0) + (Number(splitWallet)||0)));
                             setSplitCash(rem > 0 ? Number(rem.toFixed(2)) : "");
                           }}
-                          className="text-[9px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
+                          className="text-[8px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
                         >
                           Auto Fill
                         </button>
@@ -3625,13 +3625,13 @@ export default function CheckoutClient() {
                         value={splitCash}
                         onChange={(e) => setSplitCash(e.target.value === "" ? "" : Number(e.target.value))}
                         placeholder="0.00"
-                        className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-xs font-black outline-none focus:border-indigo-500"
+                        className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-[10px] font-black outline-none focus:border-indigo-500"
                       />
                     </div>
 
                     {/* UPI */}
-                    <div className="bg-white dark:bg-black/20 p-2 rounded-xl border border-slate-200 dark:border-white/10">
-                      <div className="flex items-center justify-between mb-1">
+                    <div className="bg-white dark:bg-black/20 p-1.5 rounded-lg border border-slate-200 dark:border-white/10">
+                      <div className="flex items-center justify-between mb-0.5">
                         <span className="font-bold text-slate-700 dark:text-slate-200">📱 UPI</span>
                         <button 
                           type="button" 
@@ -3639,7 +3639,7 @@ export default function CheckoutClient() {
                             const rem = Math.max(0, finalTotal - ((Number(splitCash)||0) + (Number(splitCard)||0) + (Number(splitWallet)||0)));
                             setSplitUpi(rem > 0 ? Number(rem.toFixed(2)) : "");
                           }}
-                          className="text-[9px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
+                          className="text-[8px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
                         >
                           Auto Fill
                         </button>
@@ -3649,13 +3649,13 @@ export default function CheckoutClient() {
                         value={splitUpi}
                         onChange={(e) => setSplitUpi(e.target.value === "" ? "" : Number(e.target.value))}
                         placeholder="0.00"
-                        className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-xs font-black outline-none focus:border-indigo-500"
+                        className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-[10px] font-black outline-none focus:border-indigo-500"
                       />
                     </div>
 
                     {/* Card */}
-                    <div className="bg-white dark:bg-black/20 p-2 rounded-xl border border-slate-200 dark:border-white/10">
-                      <div className="flex items-center justify-between mb-1">
+                    <div className="bg-white dark:bg-black/20 p-1.5 rounded-lg border border-slate-200 dark:border-white/10">
+                      <div className="flex items-center justify-between mb-0.5">
                         <span className="font-bold text-slate-700 dark:text-slate-200">💳 Card</span>
                         <button 
                           type="button" 
@@ -3663,7 +3663,7 @@ export default function CheckoutClient() {
                             const rem = Math.max(0, finalTotal - ((Number(splitCash)||0) + (Number(splitUpi)||0) + (Number(splitWallet)||0)));
                             setSplitCard(rem > 0 ? Number(rem.toFixed(2)) : "");
                           }}
-                          className="text-[9px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
+                          className="text-[8px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
                         >
                           Auto Fill
                         </button>
@@ -3673,13 +3673,13 @@ export default function CheckoutClient() {
                         value={splitCard}
                         onChange={(e) => setSplitCard(e.target.value === "" ? "" : Number(e.target.value))}
                         placeholder="0.00"
-                        className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-xs font-black outline-none focus:border-indigo-500"
+                        className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-[10px] font-black outline-none focus:border-indigo-500"
                       />
                     </div>
 
                     {/* Wallet */}
-                    <div className="bg-white dark:bg-black/20 p-2 rounded-xl border border-slate-200 dark:border-white/10">
-                      <div className="flex items-center justify-between mb-1">
+                    <div className="bg-white dark:bg-black/20 p-1.5 rounded-lg border border-slate-200 dark:border-white/10">
+                      <div className="flex items-center justify-between mb-0.5">
                         <span className="font-bold text-slate-700 dark:text-slate-200">👛 Wallet</span>
                         <button 
                           type="button" 
@@ -3687,7 +3687,7 @@ export default function CheckoutClient() {
                             const rem = Math.max(0, finalTotal - ((Number(splitCash)||0) + (Number(splitUpi)||0) + (Number(splitCard)||0)));
                             setSplitWallet(rem > 0 ? Number(rem.toFixed(2)) : "");
                           }}
-                          className="text-[9px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
+                          className="text-[8px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
                         >
                           Auto Fill
                         </button>
@@ -3697,7 +3697,7 @@ export default function CheckoutClient() {
                         value={splitWallet}
                         onChange={(e) => setSplitWallet(e.target.value === "" ? "" : Number(e.target.value))}
                         placeholder="0.00"
-                        className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-xs font-black outline-none focus:border-indigo-500"
+                        className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-[10px] font-black outline-none focus:border-indigo-500"
                       />
                     </div>
                   </div>
@@ -3707,18 +3707,18 @@ export default function CheckoutClient() {
                     const splitSum = (Number(splitCash)||0) + (Number(splitUpi)||0) + (Number(splitCard)||0) + (Number(splitWallet)||0);
                     const diff = Number((finalTotal - splitSum).toFixed(2));
                     return (
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-white/10 text-[10px]">
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-white/10 text-[9px]">
                         <span className="font-bold text-slate-600 dark:text-slate-300">Sum: ₹{splitSum.toFixed(2)}</span>
                         {Math.abs(diff) < 0.01 ? (
-                          <span className="font-black text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full">
+                          <span className="font-black text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded-full">
                             ✓ Balanced
                           </span>
                         ) : diff > 0 ? (
-                          <span className="font-black text-amber-600 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full">
+                          <span className="font-black text-amber-600 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded-full">
                             Rem: ₹{diff.toFixed(2)}
                           </span>
                         ) : (
-                          <span className="font-black text-rose-600 bg-rose-100 dark:bg-rose-900/40 px-2 py-0.5 rounded-full">
+                          <span className="font-black text-rose-600 bg-rose-100 dark:bg-rose-900/40 px-1.5 py-0.5 rounded-full">
                             Over: ₹{(-diff).toFixed(2)}
                           </span>
                         )}
@@ -3730,9 +3730,9 @@ export default function CheckoutClient() {
 
               {/* UPI Details - Conditional */}
               {paymentMode === "UPI" && (
-                <div className="space-y-2 p-2.5 rounded-2xl bg-indigo-50 border border-indigo-200 mb-4">
-                  <div className="grid grid-cols-2 gap-2">
-                    <a href={upiLink} className="text-center text-indigo-700 font-black text-[10px] py-2 border-2 border-dashed border-indigo-300 rounded-xl bg-white flex items-center justify-center gap-2">
+                <div className="space-y-1.5 p-2 rounded-xl bg-indigo-50 border border-indigo-200 mb-1.5">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <a href={upiLink} className="text-center text-indigo-700 font-black text-[9px] py-1 border-2 border-dashed border-indigo-300 rounded-lg bg-white flex items-center justify-center gap-1.5">
                       📱 UPI App
                     </a>
                     <div className="grid grid-cols-2 gap-1">
@@ -3740,8 +3740,8 @@ export default function CheckoutClient() {
                         <button
                           key={s}
                           onClick={async () => setPaymentStatus(s)}
-                          className={`py-1.5 rounded-lg border-2 font-black text-[8px] transition-all uppercase tracking-wider ${paymentStatus === s
-                            ? s === "Paid" ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/20" : "bg-amber-600 border-amber-600 text-white shadow-md shadow-amber-500/20"
+                          className={`py-1 rounded-md border-2 font-black text-[7px] transition-all uppercase tracking-wider ${paymentStatus === s
+                            ? s === "Paid" ? "bg-emerald-600 border-emerald-600 text-white shadow-sm shadow-emerald-500/20" : "bg-amber-600 border-amber-600 text-white shadow-sm shadow-amber-500/20"
                             : "bg-white border-slate-200 text-slate-500"
                             }`}
                         >
@@ -3754,14 +3754,14 @@ export default function CheckoutClient() {
                     placeholder="Txn Ref No."
                     value={upiTxnRef}
                     onChange={(e) => setUpiTxnRef(e.target.value)}
-                    className="bg-white border-2 border-slate-200 text-slate-900 p-2 w-full rounded-xl text-[11px] outline-none focus:ring-1 focus:ring-indigo-500 font-bold"
+                    className="bg-white border-2 border-slate-200 text-slate-900 p-1.5 w-full rounded-lg text-[10px] outline-none focus:ring-1 focus:ring-indigo-500 font-bold"
                   />
                 </div>
               )}
 
               {/* 💎 SMART DYNAMIC ACTIONS: Prominent if few, Compact if many */}
               {(() => {
-                if (!business) return <div className="h-10 animate-pulse bg-slate-50 rounded-xl mb-4" />;
+                if (!business) return <div className="h-8 animate-pulse bg-slate-50 rounded-lg mb-1.5" />;
 
                 const enabledActions = [
                   { id: 'hold', enabled: business.posHoldEnabled !== false },
@@ -3774,7 +3774,7 @@ export default function CheckoutClient() {
 
                 return (
                   <div 
-                    className={`grid gap-2 mb-4 ${isCompact ? "" : "grid-cols-2"}`}
+                    className={`grid gap-1 mb-2 ${isCompact ? "" : "grid-cols-2"}`}
                     style={isCompact ? { 
                       gridTemplateColumns: `repeat(${enabledActions.length}, 1fr)`
                     } : {}}
@@ -3790,10 +3790,10 @@ export default function CheckoutClient() {
                           if (resumeBillId) router.replace("/dashboard/billing/checkout");
                         }}
                         disabled={items.length === 0 || isSaving}
-                        className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all font-black active:scale-95`}
+                        className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-2.5"} items-center justify-center gap-1 rounded-lg border-2 border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all font-black active:scale-95`}
                       >
-                        <span className={isCompact ? "text-[16px]" : "text-[20px]"}>⏸️</span>
-                        <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Hold</span>
+                        <span className={isCompact ? "text-[14px]" : "text-[16px]"}>⏸️</span>
+                        <span className={`${isCompact ? "text-[7px]" : "text-[9px]"} uppercase tracking-wider`}>Hold</span>
                       </button>
                     )}
 
@@ -3821,10 +3821,10 @@ export default function CheckoutClient() {
                           if (resumeBillId) router.replace("/dashboard/billing/checkout");
                         }}
                         disabled={items.length === 0 || isSaving}
-                        className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-slate-300 text-slate-900 bg-slate-50 hover:bg-slate-200 transition-all font-black active:scale-95`}
+                        className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-2.5"} items-center justify-center gap-1 rounded-lg border-2 border-slate-300 text-slate-900 bg-slate-50 hover:bg-slate-200 transition-all font-black active:scale-95`}
                       >
-                        <span className={isCompact ? "text-[16px]" : "text-[20px]"}>💾</span>
-                        <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Save</span>
+                        <span className={isCompact ? "text-[14px]" : "text-[16px]"}>💾</span>
+                        <span className={`${isCompact ? "text-[7px]" : "text-[9px]"} uppercase tracking-wider`}>Save</span>
                       </button>
                     )}
 
@@ -3832,10 +3832,10 @@ export default function CheckoutClient() {
                       <button
                         onClick={async () => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
                         disabled={items.length === 0 || isSaving}
-                        className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 text-indigo-800 bg-indigo-50 hover:bg-indigo-100 transition-all font-black active:scale-95`}
+                        className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-2.5"} items-center justify-center gap-1 rounded-lg border-2 border-indigo-200 text-indigo-800 bg-indigo-50 hover:bg-indigo-100 transition-all font-black active:scale-95`}
                       >
-                        <span className={isCompact ? "text-[16px]" : "text-[20px]"}>👁️</span>
-                        <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>Preview</span>
+                        <span className={isCompact ? "text-[14px]" : "text-[16px]"}>👁️</span>
+                        <span className={`${isCompact ? "text-[7px]" : "text-[9px]"} uppercase tracking-wider`}>Preview</span>
                       </button>
                     )}
 
@@ -3843,10 +3843,10 @@ export default function CheckoutClient() {
                       <button
                         onClick={handlePrintKOT}
                         disabled={items.length === 0 || isSaving}
-                        className={`flex ${isCompact ? "flex-col py-2" : "flex-row py-4"} items-center justify-center gap-2 rounded-xl border-2 border-orange-300 text-orange-800 bg-orange-50 hover:bg-orange-100 transition-all font-black active:scale-95`}
+                        className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-2.5"} items-center justify-center gap-1 rounded-lg border-2 border-orange-300 text-orange-800 bg-orange-50 hover:bg-orange-100 transition-all font-black active:scale-95`}
                       >
-                        <span className={isCompact ? "text-[16px]" : "text-[20px]"}>🧾</span>
-                        <span className={`${isCompact ? "text-[8px]" : "text-[10px]"} uppercase tracking-wider`}>KOT</span>
+                        <span className={isCompact ? "text-[14px]" : "text-[16px]"}>🧾</span>
+                        <span className={`${isCompact ? "text-[7px]" : "text-[9px]"} uppercase tracking-wider`}>KOT</span>
                       </button>
                     )}
                   </div>
