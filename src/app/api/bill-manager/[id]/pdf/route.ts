@@ -373,7 +373,7 @@ export async function GET(
     hr();
 
     /* ================= UPI QR CODE ================= */
-    if (bill.paymentMode === "UPI" && business?.upi && (business as any).upiQrEnabled !== false) {
+    if (business?.upi && (business as any).upiQrEnabled !== false) {
       try {
         const upiUrl = `upi://pay?pa=${business.upi}&pn=${business.businessName?.replace(/\s/g, '%20')}&am=${finalTotal.toFixed(2)}&cu=INR&tn=Bill%20${bill.billNumber}`;
         const qrDataUrl = await QRCode.toDataURL(upiUrl, { margin: 1, width: 120 });
