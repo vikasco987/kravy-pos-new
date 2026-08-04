@@ -12,9 +12,10 @@ interface BillActionsProps {
   billId: string;
   bill: any;
   business?: any;
+  onPreview?: (bill: any) => void;
 }
 
-export const BillActionsReport = ({ billId, bill, business }: BillActionsProps) => {
+export const BillActionsReport = ({ billId, bill, business, onPreview }: BillActionsProps) => {
   const { confirm } = useConfirm();
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
@@ -99,7 +100,6 @@ export const BillActionsReport = ({ billId, bill, business }: BillActionsProps) 
   };
 
   const handlePrint = async () => {
-    // Navigate to the view page which has the print logic
     router.push(`/dashboard/billing/${billId}`);
     setShowMenu(false);
   };
@@ -129,7 +129,10 @@ export const BillActionsReport = ({ billId, bill, business }: BillActionsProps) 
             background: "var(--kravy-surface)", borderRadius: "18px", border: "1px solid var(--kravy-border)",
             boxShadow: "var(--kravy-shadow-lg)", padding: "8px", zIndex: 101, display: "flex", flexDirection: "column", gap: "2px"
           }}>
-            <MenuOption icon={<Eye size={14} color="#8B5CF6" />} label="View Details" onClick={handleView} />
+            <MenuOption icon={<Eye size={14} color="#3B82F6" />} label="View Details" onClick={handleView} />
+            {onPreview && (
+              <MenuOption icon={<Eye size={14} color="#8B5CF6" />} label="Preview" onClick={async () => { setShowMenu(false); onPreview(bill); }} />
+            )}
             <MenuOption icon={<Printer size={14} color="#6B7280" />} label="Reprint Bill" onClick={handlePrint} />
             <MenuOption icon={<FileText size={14} color="#3B82F6" />} label="Edit Bill" onClick={handleEdit} />
             <MenuOption icon={<MessageCircle size={14} color="#10B981" />} label="WhatsApp" onClick={handleWhatsApp} />

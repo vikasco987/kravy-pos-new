@@ -10,6 +10,7 @@ import {
   MapPin, HelpCircle, AlertCircle, Percent
 } from "lucide-react";
 import { kravy } from "@/lib/sounds";
+import { BillActionsReport } from "@/app/dashboard/reports/sales/daily/BillActionsReport";
 
 interface DrilldownClientProps {
   businessName: string;
@@ -760,22 +761,14 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
                             ₹{format(b.total)}
                           </td>
                           <td style={{ padding: "20px 24px", textAlign: "right" }}>
-                            <button
-                              onClick={() => { kravy.click(); setSelectedBill(b); }}
-                              style={{
-                                padding: "6px 12px",
-                                border: "1px solid var(--kravy-border)",
-                                borderRadius: "8px",
-                                fontSize: "0.7rem",
-                                fontWeight: 850,
-                                background: "var(--kravy-surface)",
-                                color: "var(--kravy-text-primary)",
-                                cursor: "pointer",
-                                transition: "all 0.2s"
-                              }}
-                            >
-                              <Eye size={12} style={{ display: "inline", marginRight: "4px", position: "relative", top: "-1px" }} /> Inspect
-                            </button>
+                            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                              <BillActionsReport 
+                                billId={b.id} 
+                                bill={b} 
+                                business={{ businessName }} 
+                                onPreview={() => { kravy.click(); setSelectedBill(b); }}
+                              />
+                            </div>
                           </td>
                         </tr>
                       );
