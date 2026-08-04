@@ -94,20 +94,46 @@ export default function UnpaidDuesClient({
     kravy.click();
     setSettlingBillId(billId);
     try {
-      const res = await fetch(`/api/bill-manager/${billId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentStatus: "Paid" }),
-      });
+      let res;
+      if (billId.startsWith("wallet-")) {
+        const partyId = billId.replace("wallet-", "");
+        const customer = duesList.find((c) => {
+          return (c.customerPhone && c.customerPhone === customerKey) ||
+                 (!c.customerPhone && `name:${c.customerName}` === customerKey) ||
+                 (!c.customerPhone && `bill:${c.bills[0]?.id}` === customerKey) ||
+                 (!c.customerPhone && `party:${partyId}` === customerKey);
+        });
+        const bill = customer?.bills.find(b => b.id === billId);
+        
+        res = await fetch("/api/wallet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "deposit",
+            partyId,
+            amount: bill?.balanceDue || 0,
+            description: "Udhar Cleared (Wallet Deposit)",
+          }),
+        });
+      } else {
+        res = await fetch(`/api/bill-manager/${billId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentStatus: "Paid" }),
+        });
+      }
+
       if (res.ok) {
         kravy.success?.();
         // Update local state
         setDuesList((prev) => {
           return prev
             .map((c) => {
+              const partyId = billId.startsWith("wallet-") ? billId.replace("wallet-", "") : "";
               const matches = (c.customerPhone && c.customerPhone === customerKey) ||
                 (!c.customerPhone && `name:${c.customerName}` === customerKey) ||
-                (!c.customerPhone && `bill:${c.bills[0]?.id}` === customerKey);
+                (!c.customerPhone && `bill:${c.bills[0]?.id}` === customerKey) ||
+                (!c.customerPhone && `party:${partyId}` === customerKey);
               if (matches) {
                 const remainingBills = c.bills.filter((b) => b.id !== billId);
                 const unpaidSum = remainingBills.reduce((s, b) => s + b.balanceDue, 0);
@@ -141,11 +167,25 @@ export default function UnpaidDuesClient({
     for (const b of customer.bills) {
       setSettlingBillId(b.id);
       try {
-        await fetch(`/api/bill-manager/${b.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentStatus: "Paid" }),
-        });
+        if (b.id.startsWith("wallet-")) {
+          const partyId = b.id.replace("wallet-", "");
+          await fetch("/api/wallet", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "deposit",
+              partyId,
+              amount: b.balanceDue,
+              description: "Udhar Cleared (Wallet Deposit)",
+            }),
+          });
+        } else {
+          await fetch(`/api/bill-manager/${b.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentStatus: "Paid" }),
+          });
+        }
       } catch (e) {
         console.error("Failed to settle bill", b.id, e);
       }
@@ -155,7 +195,8 @@ export default function UnpaidDuesClient({
     setDuesList((prev) => prev.filter((c) => {
       const matches = (c.customerPhone && c.customerPhone === customerKey) ||
         (!c.customerPhone && `name:${c.customerName}` === customerKey) ||
-        (!c.customerPhone && `bill:${c.bills[0]?.id}` === customerKey);
+        (!c.customerPhone && c.bills[0] && `bill:${c.bills[0].id}` === customerKey) ||
+        (!c.customerPhone && c.bills[0] && c.bills[0].id.startsWith("wallet-") && `party:${c.bills[0].id.replace("wallet-", "")}` === customerKey);
       return !matches;
     }));
     setSettlingBillId(null);

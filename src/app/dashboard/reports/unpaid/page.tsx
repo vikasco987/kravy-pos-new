@@ -60,6 +60,24 @@ export default async function UnpaidDuesReportPage({
   });
   const businessName = profile?.businessName || "Your Restaurant";
 
+  // Fetch all customers with negative wallet balance (Udhar)
+  // Since wallet updates don't easily map to the same `createdAt` filter as bills,
+  // we typically consider current wallet balance regardless of date range, 
+  // or use the date filter on party.updatedAt. For simplicity and accuracy of "current dues", we fetch all negative balances.
+  const negativeWalletParties = await prisma.party.findMany({
+    where: {
+      createdBy: effectiveId,
+      walletBalance: { lt: 0 },
+    },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      walletBalance: true,
+      updatedAt: true,
+    }
+  });
+
   // Group by customer
   const customerUnpaidMap = new Map<string, {
     customerName: string;
@@ -152,6 +170,68 @@ export default async function UnpaidDuesReportPage({
 
     // 3. Accumulate weekly trend
     const weekStr = getWeekRangeString(b.createdAt);
+    const weekly = weeklyDuesMap.get(weekStr);
+    if (weekly) {
+      weekly.amount += pendingAmt;
+      weekly.count += 1;
+    } else {
+      weeklyDuesMap.set(weekStr, { week: weekStr, amount: pendingAmt, count: 1 });
+    }
+  });
+
+  // 4. Process negative wallet balances
+  negativeWalletParties.forEach((party) => {
+    if (party.walletBalance === null || party.walletBalance >= 0) return;
+
+    const phone = party.phone?.trim() || "";
+    const name = party.name?.trim() || "";
+    const pendingAmt = Math.abs(party.walletBalance);
+    
+    const key = phone || `party:${party.id}`;
+    const displayName = name || "Registered Customer";
+
+    const mockBill = {
+      id: `wallet-${party.id}`,
+      billNumber: "WALLET",
+      total: pendingAmt,
+      amountPaid: 0,
+      balanceDue: pendingAmt,
+      paymentStatus: "Unpaid",
+      createdAt: party.updatedAt.toISOString(),
+      tableName: "Wallet Advance",
+    };
+
+    const existing = customerUnpaidMap.get(key);
+    if (existing) {
+      existing.totalUnpaid += pendingAmt;
+      existing.billsCount += 1;
+      existing.bills.push(mockBill);
+      if (party.updatedAt > existing.lastBillDate) {
+        existing.lastBillDate = party.updatedAt;
+      }
+    } else {
+      customerUnpaidMap.set(key, {
+        customerName: displayName,
+        customerPhone: phone,
+        totalUnpaid: pendingAmt,
+        billsCount: 1,
+        lastBillDate: party.updatedAt,
+        bills: [mockBill],
+      });
+    }
+
+    // Accumulate daily trend for wallet udhar
+    const dateStr = party.updatedAt.toISOString().split("T")[0];
+    const daily = dailyDuesMap.get(dateStr);
+    if (daily) {
+      daily.amount += pendingAmt;
+      daily.count += 1;
+    } else {
+      dailyDuesMap.set(dateStr, { date: dateStr, amount: pendingAmt, count: 1 });
+    }
+
+    // Accumulate weekly trend for wallet udhar
+    const weekStr = getWeekRangeString(party.updatedAt);
     const weekly = weeklyDuesMap.get(weekStr);
     if (weekly) {
       weekly.amount += pendingAmt;
