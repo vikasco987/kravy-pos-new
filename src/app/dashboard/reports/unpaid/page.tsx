@@ -74,7 +74,7 @@ export default async function UnpaidDuesReportPage({
       name: true,
       phone: true,
       walletBalance: true,
-      updatedAt: true,
+      createdAt: true,
     }
   });
 
@@ -197,7 +197,7 @@ export default async function UnpaidDuesReportPage({
       amountPaid: 0,
       balanceDue: pendingAmt,
       paymentStatus: "Unpaid",
-      createdAt: party.updatedAt.toISOString(),
+      createdAt: party.createdAt.toISOString(),
       tableName: "Wallet Advance",
     };
 
@@ -206,8 +206,8 @@ export default async function UnpaidDuesReportPage({
       existing.totalUnpaid += pendingAmt;
       existing.billsCount += 1;
       existing.bills.push(mockBill);
-      if (party.updatedAt > existing.lastBillDate) {
-        existing.lastBillDate = party.updatedAt;
+      if (party.createdAt > existing.lastBillDate) {
+        existing.lastBillDate = party.createdAt;
       }
     } else {
       customerUnpaidMap.set(key, {
@@ -215,13 +215,13 @@ export default async function UnpaidDuesReportPage({
         customerPhone: phone,
         totalUnpaid: pendingAmt,
         billsCount: 1,
-        lastBillDate: party.updatedAt,
+        lastBillDate: party.createdAt,
         bills: [mockBill],
       });
     }
 
     // Accumulate daily trend for wallet udhar
-    const dateStr = party.updatedAt.toISOString().split("T")[0];
+    const dateStr = party.createdAt.toISOString().split("T")[0];
     const daily = dailyDuesMap.get(dateStr);
     if (daily) {
       daily.amount += pendingAmt;
@@ -231,7 +231,7 @@ export default async function UnpaidDuesReportPage({
     }
 
     // Accumulate weekly trend for wallet udhar
-    const weekStr = getWeekRangeString(party.updatedAt);
+    const weekStr = getWeekRangeString(party.createdAt);
     const weekly = weeklyDuesMap.get(weekStr);
     if (weekly) {
       weekly.amount += pendingAmt;
