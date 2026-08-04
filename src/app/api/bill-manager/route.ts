@@ -191,10 +191,16 @@ export async function POST(req: NextRequest) {
         }
     }
 
-    const finalPaymentMode: "Cash" | "UPI" | "Card" | "Pay on Counter" | "Wallet" =
-      paymentMode === "UPI" || paymentMode === "Card" || paymentMode === "Pay on Counter" || paymentMode === "Wallet"
-        ? paymentMode
-        : "Cash";
+    let finalPaymentMode = paymentMode || "Cash";
+    if (
+      finalPaymentMode !== "UPI" && 
+      finalPaymentMode !== "Card" && 
+      finalPaymentMode !== "Pay on Counter" && 
+      finalPaymentMode !== "Wallet" && 
+      !finalPaymentMode.startsWith("Split")
+    ) {
+      finalPaymentMode = "Cash";
+    }
 
     let finalPaymentStatus: string;
     
@@ -208,7 +214,7 @@ export async function POST(req: NextRequest) {
       finalPaymentStatus = "PARTIAL";
     } else if (finalBalanceDue === finalTotal && finalTotal > 0) {
       finalPaymentStatus = "PENDING";
-    } else if (finalPaymentMode === "Cash" || finalPaymentMode === "Card" || finalPaymentMode === "Wallet") {
+    } else if (finalPaymentMode === "Cash" || finalPaymentMode === "Card" || finalPaymentMode === "Wallet" || finalPaymentMode.startsWith("Split")) {
       finalPaymentStatus = "PAID";
     } else {
       finalPaymentStatus = paymentStatus === "Paid" ? "PAID" : "PENDING";

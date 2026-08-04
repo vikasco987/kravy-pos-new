@@ -51,7 +51,42 @@ const StatusIndicator = ({ status, isHeld }: { status: string, isHeld?: boolean 
 };
 
 const PaymentBadge = ({ mode, status }: { mode: string, status: string }) => {
-  const m = mode?.toLowerCase();
+  const m = (mode || "Cash").toLowerCase();
+  
+  if (m.startsWith("split")) {
+    const breakdownMatch = mode.match(/\((.*?)\)/);
+    const breakdownText = breakdownMatch ? breakdownMatch[1] : "";
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: "6px",
+          padding: "4px 8px", borderRadius: "6px", background: "#FFFBEB", color: "#D97706",
+          fontSize: "0.65rem", fontWeight: 900, textTransform: "uppercase", width: "fit-content"
+        }}>
+          <ShoppingBag size={10} /> SPLIT
+        </div>
+        {breakdownText && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+             {breakdownText.split(",").map((part, i) => (
+                <span key={i} style={{ fontSize: "0.55rem", fontWeight: 800, color: "#64748B" }}>
+                   • {part.trim()}
+                </span>
+             ))}
+          </div>
+        )}
+        <div style={{ 
+          fontSize: "0.6rem", fontWeight: 900, 
+          color: status === "Paid" ? "#10B981" : "#EF4444", 
+          border: `1px solid ${status === "Paid" ? "#D1FAE5" : "#FEE2E2"}`, 
+          padding: "2px 6px", borderRadius: "4px", width: "fit-content" 
+        }}>
+          ✓ {status?.toUpperCase()}
+        </div>
+      </div>
+    );
+  }
+
   let icon = <Banknote size={10} />;
   let color = "#6B7280";
   let bg = "#F3F4F6";
