@@ -377,8 +377,8 @@ export default function PartiesPage() {
   const handleDeposit = async () => {
     if (!depositingParty || !depositAmount || parseFloat(depositAmount) <= 0) return;
     setDepositLoading(true);
-    const actionText = depositType === 'deposit' ? 'Deposited' : 'Withdrawn';
-    const fallbackDesc = depositType === 'deposit' ? 'Manual Cash Deposit' : 'Manual Cash Withdrawal';
+    const actionText = depositType === 'deposit' ? 'Deposited' : depositType === 'withdraw' ? 'Withdrawn' : 'Given as Udhar';
+    const fallbackDesc = depositType === 'deposit' ? 'Manual Cash Deposit' : depositType === 'withdraw' ? 'Manual Cash Withdrawal' : 'Udhar (Credit Given)';
     try {
       const res = await fetch('/api/wallet', {
         method: 'POST',
@@ -991,20 +991,20 @@ export default function PartiesPage() {
             >
               <div className="space-y-6">
                 {/* Transaction Type Segmented Control */}
-                <div className="flex bg-[var(--kravy-bg-2)] p-1 rounded-2xl border border-[var(--kravy-border)]">
+                <div className="flex bg-[var(--kravy-bg-2)] p-1 rounded-2xl border border-[var(--kravy-border)] overflow-x-auto">
                   <button 
                     type="button"
                     onClick={() => {
                       setDepositType("deposit");
                       setDepositAmount("");
                     }}
-                    className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                    className={`flex-1 py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                       depositType === "deposit" 
                         ? "bg-amber-500 text-white shadow-lg shadow-amber-500/10" 
                         : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]"
                     }`}
                   >
-                    🪙 Deposit Money
+                    🪙 Deposit
                   </button>
                   <button 
                     type="button"
@@ -1012,13 +1012,27 @@ export default function PartiesPage() {
                       setDepositType("withdraw");
                       setDepositAmount("");
                     }}
-                    className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                    className={`flex-1 py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                       depositType === "withdraw" 
                         ? "bg-rose-500 text-white shadow-lg shadow-rose-500/10" 
                         : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]"
                     }`}
                   >
-                    💸 Withdraw Money
+                    💸 Withdraw
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setDepositType("udhar");
+                      setDepositAmount("");
+                    }}
+                    className={`flex-1 py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                      depositType === "udhar" 
+                        ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/10" 
+                        : "text-[var(--kravy-text-muted)] hover:bg-[var(--kravy-border)]"
+                    }`}
+                  >
+                    💳 Give Udhar
                   </button>
                 </div>
 
@@ -1026,7 +1040,9 @@ export default function PartiesPage() {
                 <div className={`p-6 rounded-3xl border transition-all ${
                   depositType === "deposit" 
                     ? "bg-amber-50/50 dark:bg-amber-950/10 border-amber-200/50 dark:border-amber-900/30 text-amber-800 dark:text-amber-300"
-                    : "bg-rose-50/50 dark:bg-rose-950/10 border-rose-200/50 dark:border-rose-900/30 text-rose-800 dark:text-rose-300"
+                    : depositType === "withdraw" 
+                      ? "bg-rose-50/50 dark:bg-rose-950/10 border-rose-200/50 dark:border-rose-900/30 text-rose-800 dark:text-rose-300"
+                      : "bg-indigo-50/50 dark:bg-indigo-950/10 border-indigo-200/50 dark:border-indigo-900/30 text-indigo-800 dark:text-indigo-300"
                 }`}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Current Wallet Balance</span>
@@ -1035,7 +1051,9 @@ export default function PartiesPage() {
                   <div className="text-[9px] font-bold opacity-75 uppercase leading-relaxed">
                     {depositType === "deposit" 
                       ? "Money added here can be used by the customer for future orders via 'Wallet' payment mode."
-                      : "Deduct money directly from the customer's wallet balance. Make sure they have sufficient balance."}
+                      : depositType === "withdraw" 
+                        ? "Deduct money directly from the customer's wallet balance. Make sure they have sufficient balance."
+                        : "Give a loan or credit (Udhar) to the customer. This will deduct their balance, potentially into negative."}
                   </div>
                 </div>
 
@@ -1043,7 +1061,7 @@ export default function PartiesPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center ml-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">
-                      {depositType === "deposit" ? "Deposit Amount" : "Withdrawal Amount"} (₹)
+                      {depositType === "deposit" ? "Deposit Amount" : depositType === "withdraw" ? "Withdrawal Amount" : "Udhar Amount"} (₹)
                     </label>
                     <span className="text-[9px] font-bold text-[var(--kravy-brand)] uppercase tracking-wider">Quick Presets</span>
                   </div>
@@ -1057,7 +1075,7 @@ export default function PartiesPage() {
                         onClick={() => setDepositAmount(amt.toString())}
                         className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${
                           depositAmount === amt.toString()
-                            ? (depositType === 'deposit' ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'bg-rose-500 text-white shadow-md shadow-rose-500/20')
+                            ? (depositType === 'deposit' ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : depositType === 'withdraw' ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20' : 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20')
                             : 'bg-[var(--kravy-bg-2)] text-[var(--kravy-text-primary)] hover:bg-[var(--kravy-border)]'
                         }`}
                       >
@@ -1073,7 +1091,7 @@ export default function PartiesPage() {
                     value={depositAmount}
                     onChange={e => setDepositAmount(e.target.value)}
                     className={`w-full px-5 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none font-black text-2xl transition-all ${
-                      depositType === "deposit" ? "focus:border-amber-500" : "focus:border-rose-500"
+                      depositType === "deposit" ? "focus:border-amber-500" : depositType === "withdraw" ? "focus:border-rose-500" : "focus:border-indigo-500"
                     }`}
                   />
                   {depositType === "withdraw" && parseFloat(depositAmount) > (depositingParty.walletBalance || 0) && (
@@ -1088,7 +1106,7 @@ export default function PartiesPage() {
                   </label>
                   <input 
                     type="text"
-                    placeholder={depositType === "deposit" ? "e.g. Cash Topup, Advance Payment" : "e.g. Refund, Cash Handover"}
+                    placeholder={depositType === "deposit" ? "e.g. Cash Topup, Advance Payment" : depositType === "withdraw" ? "e.g. Refund, Cash Handover" : "e.g. Goods taken on credit"}
                     value={depositRemark}
                     onChange={e => setDepositRemark(e.target.value)}
                     className="w-full px-5 py-4 bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)] rounded-2xl outline-none focus:border-[var(--kravy-brand)] font-medium text-sm transition-all"
@@ -1122,10 +1140,12 @@ export default function PartiesPage() {
                     className={`flex-[2] py-4 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 ${
                       depositType === "deposit" 
                         ? "bg-amber-500 hover:shadow-xl hover:shadow-amber-500/20" 
-                        : "bg-rose-500 hover:shadow-xl hover:shadow-rose-500/20"
+                        : depositType === "withdraw"
+                          ? "bg-rose-500 hover:shadow-xl hover:shadow-rose-500/20"
+                          : "bg-indigo-500 hover:shadow-xl hover:shadow-indigo-500/20"
                     }`}
                   >
-                    {depositLoading ? "Processing..." : depositType === "deposit" ? "Confirm Deposit" : "Confirm Withdrawal"}
+                    {depositLoading ? "Processing..." : depositType === "deposit" ? "Confirm Deposit" : depositType === "withdraw" ? "Confirm Withdrawal" : "Confirm Udhar"}
                   </button>
                 </div>
               </div>

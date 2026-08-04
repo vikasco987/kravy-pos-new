@@ -214,6 +214,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, balance: updatedParty.walletBalance });
     }
 
+    if (action === "udhar") {
+      const currentBalance = party.walletBalance || 0;
+      const newBalance = currentBalance - amount;
+      console.log(`[WALLET_API] Manual Udhar: ${currentBalance} - ${amount} = ${newBalance}`);
+
+      const updatedParty = await prisma.party.update({
+        where: { id: partyId },
+        data: {
+          walletBalance: newBalance,
+        },
+      });
+
+      await prisma.walletTransaction.create({
+        data: {
+          partyId,
+          clerkId: effectiveId,
+          type: "DEBIT",
+          amount,
+          description: description || "Udhar (Credit Given)",
+        },
+      });
+
+      return NextResponse.json({ success: true, balance: updatedParty.walletBalance });
+    }
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
   } catch (error) {
