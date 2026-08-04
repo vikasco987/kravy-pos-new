@@ -207,7 +207,8 @@ export async function GET(
 
     /* ================= TABLE HEADER ================= */
     page.drawText("Item / HSN", { x: 15, y, size: 8, font: fontBold });
-    page.drawText("Qty", { x: 130, y, size: 8, font: fontBold });
+    page.drawText("Rate", { x: 120, y, size: 8, font: fontBold });
+    page.drawText("Qty", { x: 165, y, size: 8, font: fontBold });
     page.drawText("Total", { x: 200, y, size: 8, font: fontBold });
     y -= 12;
     hr();
@@ -249,7 +250,7 @@ export async function GET(
       }
 
       const displayName = `${name} ${hsn}`;
-      const maxWidthName = 110; 
+      const maxWidthName = 100; 
       const words = displayName.split(" ");
       let currentLine = "";
       let itemLines: string[] = [];
@@ -265,9 +266,10 @@ export async function GET(
       });
       if (currentLine) itemLines.push(currentLine);
 
-      // First line includes Qty and Total
+      // First line includes Rate, Qty and Total
       page.drawText(itemLines[0] || "", { x: 15, y, size: 7, font });
-      page.drawText(`${qty}`, { x: 130, y, size: 8, font });
+      page.drawText(`${rate.toFixed(2)}`, { x: 120, y, size: 8, font });
+      page.drawText(`${qty}`, { x: 165, y, size: 8, font });
       page.drawText(`${gross.toFixed(2)}`, { x: 200, y, size: 8, font });
       y -= 10;
 
