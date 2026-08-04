@@ -3317,27 +3317,35 @@ export default function CheckoutClient() {
                         >
                           −
                         </button>
-                        <input
-                          type="number"
-                          step="any"
-                          value={i.qty}
-                          onChange={(e) => updateQty(i.id, e.target.value)}
-                          onBlur={(e) => {
-                            let val = parseFloat(e.target.value);
-                            if (isNaN(val) || val <= 0) {
-                              if (userRole === "STAFF" && !userPermissions.includes("pos-delete-item")) {
-                                toast.error("Permission Denied: Cannot delete item from cart.");
-                                updateQty(i.id, 1);
+                        <div className="flex flex-col items-center">
+                          <input
+                            type="number"
+                            step="any"
+                            value={i.qty}
+                            onChange={(e) => updateQty(i.id, e.target.value)}
+                            onBlur={(e) => {
+                              let val = parseFloat(e.target.value);
+                              if (isNaN(val) || val <= 0) {
+                                if (userRole === "STAFF" && !userPermissions.includes("pos-delete-item")) {
+                                  toast.error("Permission Denied: Cannot delete item from cart.");
+                                  updateQty(i.id, 1);
+                                } else {
+                                  remove(i.id);
+                                }
                               } else {
-                                remove(i.id);
+                                 updateQty(i.id, val);
                               }
-                            } else {
-                               updateQty(i.id, val);
-                            }
-                          }}
-                          className="w-12 text-center font-black text-sm text-[var(--kravy-text-primary)] bg-transparent outline-none border-b border-transparent focus:border-[var(--kravy-brand)] transition-colors"
-                        />
+                            }}
+                            className="w-12 text-center font-black text-sm text-[var(--kravy-text-primary)] bg-transparent outline-none border-b border-transparent focus:border-[var(--kravy-brand)] transition-colors"
+                          />
+                          <div className="flex gap-1 mt-0.5 justify-center opacity-60 hover:opacity-100 transition-opacity">
+                            <button onClick={() => updateQty(i.id, 0.1)} className="text-[8px] font-black text-[var(--kravy-text-muted)] hover:text-[var(--kravy-brand)] bg-[var(--kravy-bg-2)] px-1 rounded">100g</button>
+                            <button onClick={() => updateQty(i.id, 0.25)} className="text-[8px] font-black text-[var(--kravy-text-muted)] hover:text-[var(--kravy-brand)] bg-[var(--kravy-bg-2)] px-1 rounded">250g</button>
+                            <button onClick={() => updateQty(i.id, 0.5)} className="text-[8px] font-black text-[var(--kravy-text-muted)] hover:text-[var(--kravy-brand)] bg-[var(--kravy-bg-2)] px-1 rounded">500g</button>
+                          </div>
+                        </div>
                         <button
+                          onClick={async () => inc(i.id)}
                           className="w-7 h-7 rounded-lg border border-[var(--kravy-border)] bg-[var(--kravy-surface)]
                             text-[var(--kravy-text-secondary)] font-black text-base flex items-center justify-center
                             hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-500 transition-all"
