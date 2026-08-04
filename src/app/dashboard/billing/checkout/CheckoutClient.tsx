@@ -1406,6 +1406,14 @@ export default function CheckoutClient() {
     kravy.trash(); 
     setItems((s) => s.filter((i) => i.id !== id)); 
   };
+  const updateQty = (id: string, newQty: number | string) => {
+    if (userRole === "STAFF" && !userPermissions.includes("pos-delete-item") && (newQty === 0 || newQty === "")) {
+      toast.error("Permission Denied: Cannot delete item from cart.");
+      return;
+    }
+    kravy.click();
+    setItems((s) => s.map((i) => i.id === id ? { ...i, qty: newQty as any } : i));
+  };
   const updateRate = (id: string, newRate: number) => {
     if (userRole === "STAFF" && !userPermissions.includes("pos-discount")) {
       toast.error("Permission Denied: Cannot change item price.");
@@ -3309,9 +3317,27 @@ export default function CheckoutClient() {
                         >
                           −
                         </button>
-                        <span className="w-6 text-center font-black text-sm text-[var(--kravy-text-primary)]">{i.qty}</span>
+                        <input
+                          type="number"
+                          step="any"
+                          value={i.qty}
+                          onChange={(e) => updateQty(i.id, e.target.value)}
+                          onBlur={(e) => {
+                            let val = parseFloat(e.target.value);
+                            if (isNaN(val) || val <= 0) {
+                              if (userRole === "STAFF" && !userPermissions.includes("pos-delete-item")) {
+                                toast.error("Permission Denied: Cannot delete item from cart.");
+                                updateQty(i.id, 1);
+                              } else {
+                                remove(i.id);
+                              }
+                            } else {
+                               updateQty(i.id, val);
+                            }
+                          }}
+                          className="w-12 text-center font-black text-sm text-[var(--kravy-text-primary)] bg-transparent outline-none border-b border-transparent focus:border-[var(--kravy-brand)] transition-colors"
+                        />
                         <button
-                          onClick={async () => inc(i.id)}
                           className="w-7 h-7 rounded-lg border border-[var(--kravy-border)] bg-[var(--kravy-surface)]
                             text-[var(--kravy-text-secondary)] font-black text-base flex items-center justify-center
                             hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-500 transition-all"
