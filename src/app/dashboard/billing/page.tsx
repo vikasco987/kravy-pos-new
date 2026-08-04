@@ -141,7 +141,7 @@ export default function BillingPage() {
   const itemsPerPage = 10;
   const { query } = useSearch();
   const [showColPicker, setShowColPicker] = useState(false);
-  const [showStats, setShowStats] = useState(true);
+  const [showStats, setShowStats] = useState(false);
   const [visibleCols, setVisibleCols] = useState({
     sno: true, billInfo: true, items: true, source: true, customer: true, customerPhone: true,
     subtotal: true, gst: true, discount: true, total: true, timeline: true, payment: true, token: true
@@ -188,11 +188,18 @@ export default function BillingPage() {
   async function fetchBills(silent = false) {
     try {
       if (!silent) setLoading(true);
-      const querySuffix = asUserId ? `?asUserId=${asUserId}` : "";
+      
+      const queryParams = new URLSearchParams();
+      if (asUserId) queryParams.append("asUserId", asUserId);
+      if (dateRange.start) queryParams.append("startDate", dateRange.start);
+      if (dateRange.end) queryParams.append("endDate", dateRange.end);
+      
+      const querySuffix = `?${queryParams.toString()}`;
+
       const [billsRes, ordersRes, profileRes] = await Promise.all([
         fetch(`/api/bill-manager${querySuffix}`, { cache: "no-store" }),
         fetch(`/api/orders${querySuffix}`, { cache: "no-store" }),
-        fetch(`/api/profile${querySuffix}`, { cache: "no-store" })
+        fetch(`/api/profile${asUserId ? `?asUserId=${asUserId}` : ""}`, { cache: "no-store" })
       ]);
       
       const prof = profileRes.ok ? await profileRes.json() : business;

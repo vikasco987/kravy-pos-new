@@ -16,15 +16,35 @@ export async function GET(req: NextRequest) {
         const includeDeleted = searchParams.get("includeDeleted") === "true";
 
         const active = searchParams.get("active") === "true";
+        const startDate = searchParams.get("startDate");
+        const endDate = searchParams.get("endDate");
+
+        const whereClause: any = {
+            clerkUserId: effectiveId,
+            ...(tableId ? { tableId } : {}),
+            ...(status ? { status } : {}),
+            ...(active ? { NOT: { status: "COMPLETED" } } : {}),
+            isDeleted: includeDeleted ? undefined : { not: true },
+        };
+
+        if (startDate || endDate) {
+            whereClause.createdAt = {};
+            if (startDate) {
+                const [y, m, d] = startDate.split('-').map(Number);
+                const start = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
+                start.setMinutes(start.getMinutes() - 330);
+                whereClause.createdAt.gte = start;
+            }
+            if (endDate) {
+                const [y, m, d] = endDate.split('-').map(Number);
+                const end = new Date(Date.UTC(y, m - 1, d, 23, 59, 59, 999));
+                end.setMinutes(end.getMinutes() - 330);
+                whereClause.createdAt.lte = end;
+            }
+        }
 
         const orders = await prisma.order.findMany({
-            where: { 
-                clerkUserId: effectiveId,
-                ...(tableId ? { tableId } : {}),
-                ...(status ? { status } : {}),
-                ...(active ? { NOT: { status: "COMPLETED" } } : {}),
-                isDeleted: includeDeleted ? undefined : { not: true },
-            },
+            where: whereClause,
             take: limit,
             orderBy: { createdAt: "desc" },
             include: { table: true },

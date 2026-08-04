@@ -18,11 +18,33 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+
+    const whereClause: any = {
+      clerkUserId: effectiveId,
+      isDeleted: false,
+    };
+
+    if (startDate || endDate) {
+      whereClause.createdAt = {};
+      if (startDate) {
+        const [y, m, d] = startDate.split('-').map(Number);
+        const start = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
+        start.setMinutes(start.getMinutes() - 330); // IST 00:00:00
+        whereClause.createdAt.gte = start;
+      }
+      if (endDate) {
+        const [y, m, d] = endDate.split('-').map(Number);
+        const end = new Date(Date.UTC(y, m - 1, d, 23, 59, 59, 999));
+        end.setMinutes(end.getMinutes() - 330); // IST 23:59:59
+        whereClause.createdAt.lte = end;
+      }
+    }
+
     const bills = await prisma.billManager.findMany({
-      where: {
-        clerkUserId: effectiveId,
-        isDeleted: false,
-      },
+      where: whereClause,
       include: {
         party: true
       },
