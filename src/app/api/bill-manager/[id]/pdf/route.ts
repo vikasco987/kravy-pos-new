@@ -58,7 +58,7 @@ export async function GET(
     const items = Array.isArray(bill.items) ? bill.items : [];
     const baseHeight = 450; // Header, Footer, Meta, Tax Breakdown (increased for more info)
     const itemHeight = items.length * 15;
-    const qrHeight = (bill.paymentMode === "UPI" && business?.upi) ? 120 : 0;
+    const qrHeight = (business?.upi && (business as any).upiQrEnabled !== false) ? 120 : 0;
     const finalHeight = baseHeight + itemHeight + qrHeight;
 
     const page = pdfDoc.addPage([250, finalHeight]);
@@ -127,8 +127,16 @@ export async function GET(
             logoImage = await pdfDoc.embedJpg(logoBytes);
         }
         
+        let printSettings: any = {};
+        try {
+           printSettings = business.printSettings ? (typeof business.printSettings === 'string' ? JSON.parse(business.printSettings) : business.printSettings) : {};
+        } catch (e) {
+           console.warn("Could not parse printSettings", e);
+        }
+        const logoHeightSetting = Number(printSettings?.logoHeight || 50);
+        const logoWidth = 40 * (logoHeightSetting / 50);
+        
         const dims = logoImage.scale(0.5);
-        const logoWidth = 40;
         const logoHeight = (dims.height / dims.width) * logoWidth;
         
         page.drawImage(logoImage, {
@@ -281,6 +289,32 @@ export async function GET(
     page.drawText("Subtotal:", { x: 130, y, size: 8, font });
     page.drawText(`${subtotal.toFixed(2)}`, { x: 200, y, size: 8, font });
     y -= 12;
+
+    const discountAmount = Number((bill as any).discountAmount || 0);
+    const deliveryCharges = Number((bill as any).deliveryCharges || 0);
+    const packagingCharges = Number((bill as any).packagingCharges || 0);
+    const serviceCharge = Number((bill as any).serviceCharge || 0);
+
+    if (discountAmount > 0) {
+      page.drawText("Discount:", { x: 130, y, size: 8, font });
+      page.drawText(`-${discountAmount.toFixed(2)}`, { x: 200, y, size: 8, font });
+      y -= 12;
+    }
+    if (deliveryCharges > 0) {
+      page.drawText("Delivery Chg:", { x: 130, y, size: 8, font });
+      page.drawText(`${deliveryCharges.toFixed(2)}`, { x: 200, y, size: 8, font });
+      y -= 12;
+    }
+    if (packagingCharges > 0) {
+      page.drawText("Packaging Chg:", { x: 130, y, size: 8, font });
+      page.drawText(`${packagingCharges.toFixed(2)}`, { x: 200, y, size: 8, font });
+      y -= 12;
+    }
+    if (serviceCharge > 0) {
+      page.drawText("Service Chg:", { x: 130, y, size: 8, font });
+      page.drawText(`${serviceCharge.toFixed(2)}`, { x: 200, y, size: 8, font });
+      y -= 12;
+    }
 
     // ✅ DETAILED GST BREAKDOWN
     Object.values(taxGroups).forEach((g: any) => {
