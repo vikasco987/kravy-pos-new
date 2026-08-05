@@ -1447,8 +1447,8 @@ export default function CheckoutClient() {
     fetchBusinessProfile();
 
     const handleFocus = () => fetchBusinessProfile();
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
+    // window.addEventListener("focus", handleFocus);
+    // return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
   const handleDeposit = async (amount: number) => {
