@@ -101,7 +101,11 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
     if (drilldownStack.length === 0) {
       return activeTab;
     }
-    return drilldownStack[drilldownStack.length - 1].level;
+    const lastFilter = drilldownStack[drilldownStack.length - 1].level;
+    if (lastFilter === "year") return "month";
+    if (lastFilter === "month") return "week";
+    if (lastFilter === "week") return "day";
+    return "bill";
   }, [drilldownStack, activeTab]);
 
   // Fetch report data
@@ -113,7 +117,11 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
       // Determine what to aggregate by next
       let nextLevel: DrilldownLevel = activeTab;
       if (drilldownStack.length > 0) {
-        nextLevel = drilldownStack[drilldownStack.length - 1].level;
+        const lastFilter = drilldownStack[drilldownStack.length - 1].level;
+        if (lastFilter === "year") nextLevel = "month";
+        else if (lastFilter === "month") nextLevel = "week";
+        else if (lastFilter === "week") nextLevel = "day";
+        else if (lastFilter === "day") nextLevel = "bill";
       }
       
       queryParams.set("groupBy", nextLevel);
@@ -161,24 +169,22 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
   // Click handler for list rows / bars to drill down
   const handleItemClick = (item: AggregatedItem) => {
     kravy.click();
-    let nextLevel: DrilldownLevel = "month";
     
-    if (drilldownStack.length === 0) {
-      if (activeTab === "year") nextLevel = "month";
-      else if (activeTab === "month") nextLevel = "week";
-      else if (activeTab === "week") nextLevel = "day";
-      else if (activeTab === "day") nextLevel = "bill";
-    } else {
-      const last = drilldownStack[drilldownStack.length - 1];
-      if (last.level === "year") nextLevel = "month";
-      else if (last.level === "month") nextLevel = "week";
-      else if (last.level === "week") nextLevel = "day";
-      else if (last.level === "day") nextLevel = "bill";
+    let filterLevel: DrilldownLevel = activeTab;
+    
+    if (drilldownStack.length > 0) {
+      const lastFilter = drilldownStack[drilldownStack.length - 1].level;
+      if (lastFilter === "year") filterLevel = "month";
+      else if (lastFilter === "month") filterLevel = "week";
+      else if (lastFilter === "week") filterLevel = "day";
+      else if (lastFilter === "day") filterLevel = "bill";
     }
+
+    if (filterLevel === "bill") return;
 
     setDrilldownStack((prev) => [
       ...prev,
-      { level: nextLevel, key: item.rawKey, label: item.label }
+      { level: filterLevel, key: item.rawKey, label: item.label }
     ]);
     setPage(1); // Reset page on drill-down
   };
