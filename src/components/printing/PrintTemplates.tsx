@@ -620,7 +620,10 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                   if (kotNumbers && kotNumbers.length > 0) {
                     return kotNumbers[kotNumbers.length - 1];
                   }
-                  return "KOT_PLACEHOLDER";
+                  if (tokenNumber && tokenNumber !== "---" && tokenNumber !== 0) {
+                    return tokenNumber;
+                  }
+                  return billNumber || "NEW";
                 })()}
               </div>
             </div>

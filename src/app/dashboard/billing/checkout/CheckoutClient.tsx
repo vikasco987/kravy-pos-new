@@ -2117,9 +2117,9 @@ export default function CheckoutClient() {
     const containerId = `print-container-checkout-${type}`;
     const styleId = `print-style-checkout-${type}`;
 
-    // Clean ONLY this specific type's old containers to prevent interrupting concurrent KOT/Bill spooling
-    document.getElementById(containerId)?.remove();
-    document.getElementById(styleId)?.remove();
+    // Clean up ALL previous print styles and containers to prevent conflicting CSS rules
+    document.querySelectorAll("[id^='print-container-checkout-']").forEach(el => el.remove());
+    document.querySelectorAll("[id^='print-style-checkout-']").forEach(el => el.remove());
 
     const ps = (business as any)?.printSettings || {};
     const is80 = ps.paperWidth === '80mm';
