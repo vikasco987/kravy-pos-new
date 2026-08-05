@@ -3303,7 +3303,7 @@ export default function CheckoutClient() {
                         hover:border-[var(--kravy-brand)]/30 transition-all group shrink-0 shadow-sm"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-[var(--kravy-text-primary)] truncate text-sm">{i.name}</p>
+                        <p className="font-bold text-[var(--kravy-text-primary)] break-words whitespace-normal text-sm">{i.name}</p>
                         <InlineRateEdit item={i} updateRate={updateRate} taxActive={taxActive} perProductEnabled={perProductEnabled} globalRate={globalRate} />
                       </div>
 
@@ -3338,11 +3338,6 @@ export default function CheckoutClient() {
                             }}
                             className="w-12 text-center font-black text-sm text-[var(--kravy-text-primary)] bg-transparent outline-none border-b border-transparent focus:border-[var(--kravy-brand)] transition-colors"
                           />
-                          <div className="flex gap-1 mt-0.5 justify-center opacity-60 hover:opacity-100 transition-opacity">
-                            <button onClick={() => updateQty(i.id, 0.1)} className="text-[8px] font-black text-[var(--kravy-text-muted)] hover:text-[var(--kravy-brand)] bg-[var(--kravy-bg-2)] px-1 rounded">100g</button>
-                            <button onClick={() => updateQty(i.id, 0.25)} className="text-[8px] font-black text-[var(--kravy-text-muted)] hover:text-[var(--kravy-brand)] bg-[var(--kravy-bg-2)] px-1 rounded">250g</button>
-                            <button onClick={() => updateQty(i.id, 0.5)} className="text-[8px] font-black text-[var(--kravy-text-muted)] hover:text-[var(--kravy-brand)] bg-[var(--kravy-bg-2)] px-1 rounded">500g</button>
-                          </div>
                         </div>
                         <button
                           onClick={async () => inc(i.id)}
