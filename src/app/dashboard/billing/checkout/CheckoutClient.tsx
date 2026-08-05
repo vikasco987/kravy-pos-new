@@ -937,8 +937,29 @@ export default function CheckoutClient() {
         })));
         setCustomerName(bill.customerName || "");
         setCustomerPhone(bill.customerPhone || "");
-        setPaymentMode(bill.paymentMode);
+        if (bill.paymentMode && bill.paymentMode.startsWith("Split (")) {
+          setPaymentMode("Split");
+          const mStr = bill.paymentMode;
+          const c = mStr.match(/Cash:\s*₹([\d.]+)/);
+          const u = mStr.match(/UPI:\s*₹([\d.]+)/);
+          const cd = mStr.match(/Card:\s*₹([\d.]+)/);
+          const w = mStr.match(/Wallet:\s*₹([\d.]+)/);
+          if (c) setSplitCash(Number(c[1]));
+          if (u) setSplitUpi(Number(u[1]));
+          if (cd) setSplitCard(Number(cd[1]));
+          if (w) setSplitWallet(Number(w[1]));
+        } else {
+          setPaymentMode(bill.paymentMode || "Cash");
+        }
         setPaymentStatus(bill.paymentStatus);
+        
+        // Exact restoration of amount paid
+        if (bill.amountPaid !== undefined && bill.amountPaid !== null) {
+          setAmountPaid(bill.amountPaid);
+        } else {
+          setAmountPaid(0); // Show 0 instead of defaulting to full total
+        }
+        
         setUpiTxnRef(bill.upiTxnRef || "");
         setBuyerGSTIN(bill.buyerGSTIN || "");
         setPlaceOfSupply(bill.placeOfSupply || "");
