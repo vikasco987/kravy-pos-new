@@ -255,6 +255,8 @@ export async function GET(req: NextRequest) {
         subtotal: b.subtotal,
         discountAmount: b.discountAmount || 0,
         tax: b.tax || 0,
+        amountPaid: b.amountPaid,
+        balanceDue: b.balanceDue,
         tableName: b.tableName || "POS",
         items: b.items,
         auditNote: b.auditNote,

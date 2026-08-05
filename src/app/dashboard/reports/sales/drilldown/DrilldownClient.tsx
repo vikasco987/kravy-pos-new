@@ -757,8 +757,16 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
                           <td style={{ padding: "20px 24px" }}>
                             <span style={{ fontSize: "0.75rem", fontWeight: 850, color: "var(--kravy-text-muted)" }}>{b.tableName}</span>
                           </td>
-                          <td style={{ padding: "20px 24px", textAlign: "right", fontSize: "1.1rem", fontWeight: 950, color: "var(--kravy-text-primary)" }}>
-                            ₹{format(b.total)}
+                          <td style={{ padding: "20px 24px", textAlign: "right" }}>
+                            <div style={{ fontSize: "1.1rem", fontWeight: 950, color: "var(--kravy-text-primary)" }}>
+                              ₹{format(b.total)}
+                            </div>
+                            {(b.paymentStatus || "").toUpperCase() === "PARTIAL" && (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginTop: "4px", fontSize: "0.65rem", fontWeight: 800 }}>
+                                <span style={{ color: "#10B981" }}>Paid: ₹{format(b.amountPaid || 0)}</span>
+                                <span style={{ color: "#EF4444" }}>Unpaid: ₹{format(b.balanceDue || 0)}</span>
+                              </div>
+                            )}
                           </td>
                           <td style={{ padding: "20px 24px", textAlign: "right" }}>
                             <div style={{ display: "flex", justifyContent: "flex-end" }}>
