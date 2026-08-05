@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       const netAdjustment = oldEffect + newEffect;
 
       const currentBalance = party.walletBalance || 0;
-      const newBalance = Math.max(0, currentBalance + netAdjustment);
+      const newBalance = currentBalance + netAdjustment;
 
       let updatedPartyBalance = currentBalance;
       if (netAdjustment !== 0) {
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 
       if (party) {
         const adjustment = tx.type === "CREDIT" ? -tx.amount : tx.amount;
-        const newBal = Math.max(0, (party.walletBalance || 0) + adjustment);
+        const newBal = (party.walletBalance || 0) + adjustment;
         const updatedP = await prisma.party.update({
           where: { id: tx.partyId },
           data: { walletBalance: newBal }
