@@ -549,6 +549,7 @@ export default function PrintingSettings() {
                             <SettingToggle icon={Percent} label="Discount" sKey="showDiscount" desc="Offer & coupon lines" color="bg-amber-500" />
                             <SettingToggle icon={FileText} label="Taxable Amount" sKey="showTaxableAmt" desc="Amount liable for tax" color="bg-cyan-500" />
                             <SettingToggle icon={Receipt} label="Total GST" sKey="showTotalTax" desc="Sum of CGST+SGST" color="bg-blue-500" />
+                            <SettingToggle icon={Receipt} label="Per Product GST" sKey="showPerProductGST" desc="Show GST rate below each item" color="bg-indigo-600" />
                             <SettingToggle icon={MapPin} label="Delivery Fee" sKey="showDeliveryCharges" desc="Shipping/Delivery line" color="bg-indigo-500" />
                             <SettingToggle icon={Hash} label="Packaging" sKey="showPackagingCharges" desc="Container/Packing line" color="bg-violet-500" />
                             <SettingToggle icon={Users} label="Service Charge" sKey="showServiceCharge" desc="Additional service fee" color="bg-rose-500" />

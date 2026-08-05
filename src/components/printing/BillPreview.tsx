@@ -283,7 +283,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
                   </div>
                   <div className="flex justify-between text-[8px] text-gray-600">
                     <span>{i.qty} x {Number(i.rate ?? 0).toFixed(2)}</span>
-                    <span>{((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} {(taxActive || perProductEnabled) ? `| GST: ${i.gst || 0}%` : ""}</span>
+                    <span>{((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} {(s('showPerProductGST') !== false && (taxActive || perProductEnabled)) ? `| GST: ${i.gst || 0}%` : ""}</span>
                   </div>
                 </div>
               ))}

@@ -350,7 +350,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                     <span>{i.qty} x ₹{Number(i.rate ?? 0).toFixed(2)}</span>
                     <span className="font-bold">
                       {((business?.hsnEnabled && i.hsnCode) ? `HSN: ${i.hsnCode}` : "")} 
-                      {(taxActive || perProductEnabled) ? ` | GST: ${itemRate}%` : ""}
+                      {(s('showPerProductGST') !== false && (taxActive || perProductEnabled)) ? ` | GST: ${itemRate}%` : ""}
                     </span>
                   </div>
                 </>
