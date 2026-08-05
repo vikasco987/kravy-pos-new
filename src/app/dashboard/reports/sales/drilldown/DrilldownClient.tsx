@@ -225,6 +225,26 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
 
   const isBillsView = items.length > 0 && "billNumber" in items[0];
 
+  const periodStr = useMemo(() => {
+    if (startDate && endDate) return `${startDate} to ${endDate}`;
+    if (startDate) return `Since ${startDate}`;
+    if (endDate) return `Until ${endDate}`;
+
+    if (drilldownStack.length > 0) {
+      const last = drilldownStack[drilldownStack.length - 1];
+      if (last.level === "year") return `Year: ${last.label}`;
+      if (last.level === "month") return `Month: ${last.label}`;
+      if (last.level === "week") return `Week: ${last.label}`;
+      if (last.level === "day") return `Date: ${last.label}`;
+    }
+
+    if (activeTab === "year") return "All Time";
+    if (activeTab === "month") return "This Year";
+    if (activeTab === "week") return "This Month";
+    if (activeTab === "day") return "This Week";
+    return "All Time";
+  }, [startDate, endDate, drilldownStack, activeTab]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px", padding: "20px", background: "var(--kravy-bg)", minHeight: "100vh" }}>
       
@@ -516,8 +536,11 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
               {/* ── KPI Matrix ── */}
               {summary && (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px" }}>
-                  <div style={{ background: "linear-gradient(135deg, #065F46 0%, #064E3B 100%)", borderRadius: "24px", padding: "24px", color: "white", boxShadow: "var(--kravy-shadow-md)" }}>
-                    <span style={{ fontSize: "0.68rem", fontWeight: 900, opacity: 0.7, textTransform: "uppercase", letterSpacing: "1.5px" }}>Total Volume (Sales)</span>
+                  <div style={{ background: "linear-gradient(135deg, #065F46 0%, #064E3B 100%)", borderRadius: "24px", padding: "24px", color: "white", boxShadow: "var(--kravy-shadow-md)", position: "relative" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 900, opacity: 0.7, textTransform: "uppercase", letterSpacing: "1.5px" }}>Total Volume (Sales)</span>
+                      <span style={{ fontSize: "0.6rem", fontWeight: 800, background: "rgba(255,255,255,0.15)", padding: "2px 8px", borderRadius: "8px" }}>{periodStr}</span>
+                    </div>
                     <div style={{ fontSize: "2rem", fontWeight: 950, letterSpacing: "-1.5px", marginTop: "8px" }}>
                       {showBalances ? "₹" : ""}{mask(format(summary.totalSales))}
                     </div>
@@ -527,7 +550,10 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
                   </div>
                   
                   <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
-                    <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Net Assets (Excl. Tax)</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Net Assets (Excl. Tax)</span>
+                      <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "var(--kravy-text-muted)", background: "var(--kravy-bg-2)", padding: "2px 8px", borderRadius: "8px" }}>{periodStr}</span>
+                    </div>
                     <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>
                       {showBalances ? "₹" : ""}{mask(format(summary.netSales))}
                     </div>
@@ -537,7 +563,10 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
                   </div>
 
                   <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
-                    <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Invoice Clearing Count</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Invoice Clearing Count</span>
+                      <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "var(--kravy-text-muted)", background: "var(--kravy-bg-2)", padding: "2px 8px", borderRadius: "8px" }}>{periodStr}</span>
+                    </div>
                     <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>
                       {mask(summary.totalBills)}
                     </div>
@@ -547,7 +576,10 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
                   </div>
 
                   <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "24px", padding: "24px", boxShadow: "var(--kravy-shadow-sm)" }}>
-                    <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Average Ticket Value</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 900, color: "var(--kravy-text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Average Ticket Value</span>
+                      <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "var(--kravy-text-muted)", background: "var(--kravy-bg-2)", padding: "2px 8px", borderRadius: "8px" }}>{periodStr}</span>
+                    </div>
                     <div style={{ fontSize: "2rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-1.5px", marginTop: "8px" }}>
                       {showBalances ? "₹" : ""}{mask(format(summary.avgBill))}
                     </div>
@@ -563,7 +595,10 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
                   <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Unique Customers</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Unique Customers</div>
+                        <span style={{ fontSize: "0.55rem", fontWeight: 800, color: "var(--kravy-text-muted)", background: "var(--kravy-bg-2)", padding: "2px 6px", borderRadius: "6px" }}>{periodStr}</span>
+                      </div>
                       <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>
                         {mask(summary.uniqueCustomers)}
                       </div>
@@ -575,7 +610,10 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
 
                   <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Peak Hour Activity</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Peak Hour Activity</div>
+                        <span style={{ fontSize: "0.55rem", fontWeight: 800, color: "var(--kravy-text-muted)", background: "var(--kravy-bg-2)", padding: "2px 6px", borderRadius: "6px" }}>{periodStr}</span>
+                      </div>
                       <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>{getHourString(summary.peakSalesHour)}</div>
                     </div>
                     <div style={{ fontSize: "0.7rem", fontWeight: 850, color: "var(--kravy-green)", background: "rgba(16,185,129,0.1)", padding: "6px 12px", borderRadius: "8px" }}>
@@ -585,7 +623,10 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
 
                   <div style={{ background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Lowest clearing bill</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--kravy-text-muted)", textTransform: "uppercase" }}>Lowest clearing bill</div>
+                        <span style={{ fontSize: "0.55rem", fontWeight: 800, color: "var(--kravy-text-muted)", background: "var(--kravy-bg-2)", padding: "2px 6px", borderRadius: "6px" }}>{periodStr}</span>
+                      </div>
                       <div style={{ fontSize: "1.5rem", fontWeight: 950, color: "var(--kravy-text-primary)", marginTop: "4px" }}>
                         {showBalances ? "₹" : ""}{mask(format(summary.lowestBill))}
                       </div>
