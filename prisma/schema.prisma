@@ -474,6 +474,13 @@ model BusinessProfile {
   loyaltyValueInRupees   Float   @default(1.0)
   maxRedeemPointsPerBill Int     @default(500)
 
+  // ✅ QR Menu Appearance
+  qrMenuShowDetails  Boolean @default(true)
+  qrMenuCuisines     String? @default("North Indian, Mughlai, Biryani")
+  qrMenuRating       String? @default("4.3 (2.1K)")
+  qrMenuDeliveryTime String? @default("20-30 min")
+  qrMenuCostForTwo   String? @default("₹350 for two")
+
   qrMenuPriceInclusive Boolean @default(false)
   enableKOTWithBill    Boolean @default(false)
   enableMenuQRInBill   Boolean @default(false)

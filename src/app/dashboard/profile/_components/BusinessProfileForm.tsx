@@ -56,6 +56,12 @@ const schema = z.object({
   tokenNumberSize: z.number().nullable().optional(),
   businessAddressSize: z.number().nullable().optional(),
   phonePrefixType: z.string().nullable().optional(),
+  
+  qrMenuShowDetails: z.boolean().nullable().optional(),
+  qrMenuCuisines: z.string().nullable().optional(),
+  qrMenuRating: z.string().nullable().optional(),
+  qrMenuDeliveryTime: z.string().nullable().optional(),
+  qrMenuCostForTwo: z.string().nullable().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -139,6 +145,12 @@ export default function BusinessProfileForm({
         state: json.state ?? defaultValues?.state,
         district: json.district ?? defaultValues?.district,
         pinCode: json.pinCode ?? defaultValues?.pinCode,
+        
+        qrMenuShowDetails: json.qrMenuShowDetails ?? defaultValues?.qrMenuShowDetails,
+        qrMenuCuisines: json.qrMenuCuisines ?? defaultValues?.qrMenuCuisines,
+        qrMenuRating: json.qrMenuRating ?? defaultValues?.qrMenuRating,
+        qrMenuDeliveryTime: json.qrMenuDeliveryTime ?? defaultValues?.qrMenuDeliveryTime,
+        qrMenuCostForTwo: json.qrMenuCostForTwo ?? defaultValues?.qrMenuCostForTwo,
       };
 
       // 2. Direct POST to API
@@ -236,6 +248,12 @@ export default function BusinessProfileForm({
         tokenNumberSize: values.tokenNumberSize || 22,
         businessAddressSize: values.businessAddressSize || 12,
         phonePrefixType: values.phonePrefixType || "TEXT",
+        
+        qrMenuShowDetails: values.qrMenuShowDetails !== undefined ? values.qrMenuShowDetails : true,
+        qrMenuCuisines: values.qrMenuCuisines || "North Indian, Mughlai, Biryani",
+        qrMenuRating: values.qrMenuRating || "4.3 (2.1K)",
+        qrMenuDeliveryTime: values.qrMenuDeliveryTime || "20-30 min",
+        qrMenuCostForTwo: values.qrMenuCostForTwo || "₹350 for two",
       };
 
       const res = await fetch("/api/profile", {
@@ -582,6 +600,36 @@ export default function BusinessProfileForm({
             <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Allow users to sign up using Phone/Email with OTP</p>
           </div>
         </label>
+      </Section>
+
+      {/* QR MENU APPEARANCE */}
+      <Section title="QR Menu Appearance">
+        <div className="md:col-span-2 space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer bg-[var(--kravy-bg-2)] p-4 rounded-xl border border-[var(--kravy-border)] hover:border-indigo-500/50 transition-colors">
+            <input 
+              type="checkbox" 
+              {...register("qrMenuShowDetails")} 
+              className="w-5 h-5 rounded min-w-[20px] accent-indigo-500"
+            />
+            <div>
+              <p className="text-sm font-bold text-[var(--kravy-text-primary)]">Show Restaurant Details Banner</p>
+              <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Displays cuisines, rating, delivery time, and cost for two below the logo</p>
+            </div>
+          </label>
+        </div>
+
+        <Field label="Cuisines / Tags">
+          <Input {...register("qrMenuCuisines")} placeholder="e.g. North Indian, Mughlai, Biryani" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
+        </Field>
+        <Field label="Rating Text">
+          <Input {...register("qrMenuRating")} placeholder="e.g. 4.3 (2.1K)" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
+        </Field>
+        <Field label="Preparation / Delivery Time">
+          <Input {...register("qrMenuDeliveryTime")} placeholder="e.g. 20-30 min" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
+        </Field>
+        <Field label="Cost for Two">
+          <Input {...register("qrMenuCostForTwo")} placeholder="e.g. ₹350 for two" className="h-11 rounded-xl bg-[var(--kravy-input-bg)] border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]" />
+        </Field>
       </Section>
 
       {/* MEDIA */}

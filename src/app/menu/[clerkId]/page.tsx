@@ -1246,14 +1246,18 @@ function PublicMenu() {
                                 </div>
                                 <div className="px-3.5 py-3">
                                     <div className="text-[1.25rem] font-[900] mb-0.5">{profile?.businessName || "Restaurant"}</div>
-                                    <div className="text-[0.75rem] text-[#696969] font-[600] mb-2">North Indian, Mughlai, Biryani</div>
-                                    <div className="flex items-center gap-1.5 flex-wrap mb-2">
-                                        <div className="flex items-center gap-1 border border-[#b2dfc8] bg-[#F0FDF4] rounded-md px-2 py-1 text-[0.72rem] font-[700] text-[#22C55E]">★ 4.3 (2.1K)</div>
-                                        <div className="w-[1px] h-4 bg-[#EBEBEB]" />
-                                        <div className="flex items-center gap-1 border border-[#EBEBEB] rounded-md px-2 py-1 text-[0.72rem] font-[700]">⏱ 20–30 min</div>
-                                        <div className="w-[1px] h-4 bg-[#EBEBEB]" />
-                                        <div className="flex items-center gap-1 border border-[#EBEBEB] rounded-md px-2 py-1 text-[0.72rem] font-[700]">₹350 for two</div>
-                                    </div>
+                                    {profile?.qrMenuShowDetails !== false && (
+                                        <>
+                                            <div className="text-[0.75rem] text-[#696969] font-[600] mb-2">{profile?.qrMenuCuisines || "North Indian, Mughlai, Biryani"}</div>
+                                            <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                                                <div className="flex items-center gap-1 border border-[#b2dfc8] bg-[#F0FDF4] rounded-md px-2 py-1 text-[0.72rem] font-[700] text-[#22C55E]">★ {profile?.qrMenuRating || "4.3 (2.1K)"}</div>
+                                                <div className="w-[1px] h-4 bg-[#EBEBEB]" />
+                                                <div className="flex items-center gap-1 border border-[#EBEBEB] rounded-md px-2 py-1 text-[0.72rem] font-[700]">⏱ {profile?.qrMenuDeliveryTime || "20–30 min"}</div>
+                                                <div className="w-[1px] h-4 bg-[#EBEBEB]" />
+                                                <div className="flex items-center gap-1 border border-[#EBEBEB] rounded-md px-2 py-1 text-[0.72rem] font-[700]">{profile?.qrMenuCostForTwo || "₹350 for two"}</div>
+                                            </div>
+                                        </>
+                                    )}
 
                                     {/* DYNAMIC OFFERS SLIDER */}
                                     {offers.length > 0 ? (

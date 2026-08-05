@@ -308,6 +308,14 @@ export async function POST(request: Request) {
     if (body.multiZoneMenuEnabled !== undefined) updateData.multiZoneMenuEnabled = b(body.multiZoneMenuEnabled);
     if (body.expiryTrackingEnabled !== undefined) updateData.expiryTrackingEnabled = b(body.expiryTrackingEnabled);
     if (body.phonePrefixType !== undefined) updateData.phonePrefixType = s(body.phonePrefixType);
+    
+    // ✅ QR Menu Settings
+    if (body.qrMenuShowDetails !== undefined) updateData.qrMenuShowDetails = b(body.qrMenuShowDetails);
+    if (body.qrMenuCuisines !== undefined) updateData.qrMenuCuisines = s(body.qrMenuCuisines);
+    if (body.qrMenuRating !== undefined) updateData.qrMenuRating = s(body.qrMenuRating);
+    if (body.qrMenuDeliveryTime !== undefined) updateData.qrMenuDeliveryTime = s(body.qrMenuDeliveryTime);
+    if (body.qrMenuCostForTwo !== undefined) updateData.qrMenuCostForTwo = s(body.qrMenuCostForTwo);
+
     if (body.printSettings !== undefined) updateData.printSettings = body.printSettings;
     if (body.allowWalletEditDelete !== undefined || body.enableVirtualGroupVariants !== undefined || body.enableLoyaltyProgram !== undefined || body.loyaltyMinOrderAmount !== undefined || body.loyaltyValueInRupees !== undefined || body.maxRedeemPointsPerBill !== undefined) {
       updateData.printSettings = {
