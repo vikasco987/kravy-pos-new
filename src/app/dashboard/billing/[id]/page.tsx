@@ -976,12 +976,37 @@ export default function ViewBillPage() {
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Payment Mode</p>
-                  <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">{bill.paymentMode || "Cash"}</p>
+                  <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">
+                    {bill.paymentMode?.startsWith("Split") ? "Split Payment" : (bill.paymentMode || "Cash")}
+                  </p>
                 </div>
-                <div className={`p-2 rounded-xl ${bill.paymentStatus?.toLowerCase() === 'paid' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/30'}`}>
+                <div className={`p-2 rounded-xl ${bill.paymentStatus?.toLowerCase() === 'paid' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30' : bill.paymentStatus?.toLowerCase() === 'partial' ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/30' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/30'}`}>
                   {bill.paymentStatus?.toLowerCase() === 'paid' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
                 </div>
               </div>
+
+              {bill.paymentMode?.startsWith("Split") && (
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {bill.paymentMode.replace("Split (", "").replace(")", "").split(",").map((s, i) => (
+                    <span key={i} className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-[11px] font-black tracking-wide border border-slate-200 dark:border-slate-700 uppercase">
+                      {s.trim()}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {bill.paymentStatus?.toLowerCase() === 'partial' && (
+                <div className="flex justify-between items-center bg-amber-50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-100 dark:border-amber-900/50 mt-2">
+                  <div>
+                    <p className="text-[10px] font-bold text-amber-600/70 dark:text-amber-500/70 uppercase tracking-tighter">Amount Paid</p>
+                    <p className="text-sm font-black text-amber-700 dark:text-amber-400">₹{(bill.amountPaid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold text-rose-600/70 dark:text-rose-500/70 uppercase tracking-tighter">Balance Due</p>
+                    <p className="text-sm font-black text-rose-700 dark:text-rose-400">₹{(bill.balanceDue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+              )}
               
               {bill.upiTxnRef && (
                 <div>

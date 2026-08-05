@@ -477,11 +477,31 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
 
         {s('showPaymentStatus') && (
           <div 
-            className={`mt-3 ${s('sepPayment') ? 'border-t-2 border-dashed border-black' : ''} pt-1 flex justify-between font-bold`}
+            className={`mt-3 ${s('sepPayment') ? 'border-t-2 border-dashed border-black' : ''} pt-1 font-bold space-y-0.5`}
             style={{ fontSize: 'var(--r-items-size)' }}
           >
-            <span>Payment: {paymentMode === "None" ? "Pending" : paymentMode}</span>
-            <span>Status: {paymentStatus}</span>
+            <div className="flex justify-between">
+              <span>Payment Mode</span>
+              <span>{paymentMode?.startsWith("Split") ? "SPLIT" : (paymentMode === "None" ? "Pending" : paymentMode)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Status</span>
+              <span>{paymentStatus}</span>
+            </div>
+            {paymentMode?.startsWith("Split") && (
+              <div className="mt-1 pt-1 border-t border-dotted border-black/30">
+                {paymentMode.replace("Split (", "").replace(")", "").split(",").map((s, i) => {
+                  const parts = s.split(":");
+                  if (parts.length !== 2) return <div key={i}>{s.trim()}</div>;
+                  return (
+                    <div key={i} className="flex justify-between" style={{ fontSize: 'calc(var(--r-items-size) - 1px)' }}>
+                      <span>- {parts[0].trim()}</span>
+                      <span>₹{Number(parts[1].trim()).toFixed(2)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
         
