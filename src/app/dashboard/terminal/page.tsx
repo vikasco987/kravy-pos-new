@@ -918,7 +918,10 @@ function KravyPOS() {
         }
         
         const netTaxable = totalTaxable - discountAmt - loyaltyRedeemed;
-        const reCalcGst = isTaxEnabled && !perProductEnabled ? (netTaxable * globalRate) / 100 : gstAmount;
+        const discountRatio = totalTaxable > 0 ? (netTaxable / totalTaxable) : 1;
+        const reCalcGst = isTaxEnabled 
+            ? (perProductEnabled ? gstAmount * discountRatio : (netTaxable * globalRate) / 100) 
+            : 0;
 
         let deliveryCharge = 0;
         let packagingCharge = 0;

@@ -169,17 +169,20 @@ export async function POST(req: NextRequest) {
     });
 
     const finalSubtotal = Number(calcSubtotal.toFixed(2));
-    const calculatedTax = Number(totalTax.toFixed(2));
     
     let serverDiscountAmt = 0;
     let validatedDiscountCode = null;
+    let loyaltyPointsRedeemedAmt = Number(loyaltyPointsRedeemed) || 0;
+
     if (offer) {
       serverDiscountAmt = calculateDiscount(offer as any, finalSubtotal, items);
       validatedDiscountCode = offer.code;
     } else if (discountAmount > 0) {
-      // 🛡️ TRUST MANUAL DISCOUNT IF NO CODE IS USED
       serverDiscountAmt = Number(discountAmount);
     }
+
+    const discountRatio = finalSubtotal > 0 ? Math.max(0, 1 - ((serverDiscountAmt + loyaltyPointsRedeemedAmt) / finalSubtotal)) : 1;
+    const calculatedTax = Number((totalTax * discountRatio).toFixed(2));
 
     const finalDeliveryCharge = Number(deliveryCharges) || 0;
     const finalPackagingCharge = Number(packagingCharges) || 0;
@@ -194,7 +197,7 @@ export async function POST(req: NextRequest) {
       serverPackagingGst = (finalPackagingCharge * (profile.packagingGstRate || 0)) / 100;
     }
 
-    const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt + finalDeliveryCharge + serverDeliveryGst + finalPackagingCharge + serverPackagingGst + finalServiceCharge).toFixed(2));
+    const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt - loyaltyPointsRedeemedAmt + finalDeliveryCharge + serverDeliveryGst + finalPackagingCharge + serverPackagingGst + finalServiceCharge).toFixed(2));
 
     let nextSerial = 1;
     if (lastBill && lastBill.billNumber) {
