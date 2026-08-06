@@ -232,7 +232,19 @@ export async function GET(
 
       let taxable = gross;
       let gstAmount = 0;
-      if (taxStatus === "With Tax") {
+
+      let isInclusive = taxStatus === "With Tax";
+      
+      if ((bill.tax || 0) > 0 && (bill.total || 0) > 0) {
+        const expectedExclusive = (bill.subtotal || 0) + (bill.tax || 0) + ((bill as any).deliveryCharges || 0) + ((bill as any).packagingCharges || 0) + ((bill as any).serviceCharge || 0);
+        if (Math.abs(bill.total - expectedExclusive) < 0.5) {
+          isInclusive = false;
+        } else {
+          isInclusive = true;
+        }
+      }
+
+      if (isInclusive) {
         taxable = gross / (1 + itemGstRate / 100);
         gstAmount = gross - taxable;
       } else {

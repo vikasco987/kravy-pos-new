@@ -574,6 +574,8 @@ const BillPreviewModal = ({ bill, business, onClose }: { bill: any, business: an
        const expectedExclusive = bill.subtotal + bill.tax + (bill.deliveryCharges || 0) + (bill.packagingCharges || 0) + (bill.serviceCharge || 0);
        if (Math.abs(bill.total - expectedExclusive) < 0.5) {
          isInclusive = false;
+       } else {
+         isInclusive = true;
        }
     }
 
