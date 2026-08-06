@@ -997,7 +997,7 @@ function KravyPOS() {
                 })),
                 subtotal: orderSubtotal,
                 total: orderTotal,
-                discount: discountAmt,
+                discountAmount: discountAmt,
                 cgst: orderCgst,
                 sgst: orderSgst,
                 paymentMode: payMethod.toUpperCase(),
