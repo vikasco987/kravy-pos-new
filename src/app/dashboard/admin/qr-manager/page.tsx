@@ -376,35 +376,43 @@ export default function QRManagerPage() {
                         key={qr.id} 
                         data-code={qr.code} 
                         data-name={qr.shopName}
-                        className="qr-download-item bg-white flex flex-col items-center justify-center p-12 w-[450px] border border-gray-100 shadow-2xl rounded-[2.5rem]"
+                        className="qr-download-item bg-white p-12 w-[500px] border border-gray-100 shadow-2xl rounded-[2.5rem]"
                         style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
                     >
-                        <div className="flex gap-2 text-yellow-400 mb-6">
+                        <div className="flex justify-center gap-2 text-yellow-400 mb-8">
                             {[1, 2, 3, 4, 5].map(i => (
-                                <svg key={i} className="w-10 h-10 fill-current" viewBox="0 0 20 20">
+                                <svg key={i} className="w-12 h-12 fill-current" viewBox="0 0 20 20">
                                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                 </svg>
                             ))}
                         </div>
-                        <h2 className="text-4xl font-extrabold text-slate-900 mb-3 text-center leading-tight tracking-tight px-4">
-                            {qr.shopName || "Enjoyed our service?"}
-                        </h2>
-                        <p className="text-slate-500 mb-8 font-medium text-xl text-center leading-snug px-4">
-                            Scan to leave a Google Review
-                        </p>
                         
-                        <div className="bg-white p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100 mb-8">
-                            <QRCode 
-                                value={`${typeof window !== 'undefined' ? window.location.origin : 'https://kravy.in'}/qr/${qr.code}`} 
-                                size={240}
-                                level="H"
-                            />
+                        <div style={{ minHeight: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <h2 className="text-4xl font-extrabold text-slate-900 mb-4 text-center leading-[1.3] tracking-tight px-4">
+                                {qr.shopName || "Enjoyed our service?"}
+                            </h2>
+                            <p className="text-slate-500 mb-8 font-medium text-xl text-center px-4">
+                                Scan to leave a Google Review
+                            </p>
                         </div>
                         
-                        <div className="text-2xl font-bold text-slate-800 flex items-center gap-3 bg-slate-50 px-6 py-3 rounded-full border border-slate-200">
-                            Thank You <span className="text-red-500 text-3xl">❤️</span>
+                        <div className="flex justify-center mb-10">
+                            <div className="bg-white p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100">
+                                <QRCode 
+                                    value={`${typeof window !== 'undefined' ? window.location.origin : 'https://kravy.in'}/qr/${qr.code}`} 
+                                    size={260}
+                                    level="H"
+                                />
+                            </div>
                         </div>
-                        <div className="text-sm text-slate-400 mt-6 font-mono tracking-wider font-semibold">
+                        
+                        <div className="flex justify-center mb-6">
+                            <div className="text-2xl font-bold text-slate-800 flex items-center gap-3 bg-slate-50 px-8 py-4 rounded-full border border-slate-200 whitespace-nowrap">
+                                Thank You <span className="text-red-500 text-3xl">❤️</span>
+                            </div>
+                        </div>
+                        
+                        <div className="text-center text-sm text-slate-400 font-mono tracking-wider font-semibold">
                             ID: {qr.code}
                         </div>
                     </div>
