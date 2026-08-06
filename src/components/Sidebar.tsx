@@ -118,7 +118,8 @@ import {
   Layers,
   Sparkles,
   Zap,
-  LayoutDashboard
+  LayoutDashboard,
+  Fuel
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { kravy } from "@/lib/sounds";
@@ -133,6 +134,7 @@ const navGroups = [
       { icon: <LayoutDashboard size={18} />, label: "Floor Management", href: "/dashboard/terminal" },
       { icon: <Activity size={18} />, label: "Kitchen Workflow", href: "/dashboard/kitchen" },
       { icon: <LayoutGrid size={18} />, label: "Table Status", href: "/dashboard/tables" },
+      { icon: <Fuel size={18} />, label: "Fuel Billing", href: "/dashboard/fuel", badge: "Fuel", badgeColor: "#EC4899" },
       { icon: <Building size={18} />, label: "Hotel Room Stay", href: "/dashboard/rooms", badge: "Hotel", badgeColor: "#8B5CF6" },
       { icon: <Receipt size={18} />, label: "Past Bills / History", href: "/dashboard/billing" },
       { icon: <Zap size={18} />, label: "Go to Billing Panel", href: "https://billing.kravy.in", external: true },
@@ -466,6 +468,7 @@ export default function Sidebar() {
   const [taxEnabled, setTaxEnabled] = useState(false);
   const [aiScraperEnabled, setAiScraperEnabled] = useState(false);
   const [excelImportEnabled, setExcelImportEnabled] = useState(false);
+  const [fuelBillingEnabled, setFuelBillingEnabled] = useState(false);
   const [activeTablesCount, setActiveTablesCount] = useState<number | null>(null);
   const [hiddenSidebarItems, setHiddenSidebarItems] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
@@ -493,6 +496,7 @@ export default function Sidebar() {
           if (data.taxEnabled || data.perProductTaxEnabled) setTaxEnabled(true);
           if (data.aiScraperEnabled) setAiScraperEnabled(true);
           if (data.excelImportEnabled) setExcelImportEnabled(true);
+          if (data.enableFuelBilling) setFuelBillingEnabled(true);
 
           const hiddenFromDb = data.printSettings?.hiddenSidebarItems || data.hiddenSidebarItems;
           if (Array.isArray(hiddenFromDb)) {
@@ -826,6 +830,7 @@ export default function Sidebar() {
             if (item.label === "GST Reports" && !taxEnabled) return false;
             if (item.label === "AI Menu Scraper" && !aiScraperEnabled) return false;
             if (item.label === "Excel Bulk Import" && !excelImportEnabled) return false;
+            if (item.label === "Fuel Billing" && !fuelBillingEnabled) return false;
             
             // 4. Permission List Constraint
             // If the user has a populated list of allowedPaths, but this item isn't in it,

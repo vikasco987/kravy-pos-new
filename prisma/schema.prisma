@@ -274,6 +274,7 @@ model User {
   rewards    Reward[]
   sessions   UserSession[]
   manualInvoices ManualInvoice[]
+  fuelBills  FuelBill[]
 }
 
 model UserSession {
@@ -450,6 +451,7 @@ model BusinessProfile {
   perProductTaxEnabled Boolean @default(false)
   taxInclusive         Boolean @default(false)
   servedStatusLabel    String  @default("SERVED")
+  enableFuelBilling    Boolean @default(false)
 
   // ✅ Customer Data Requirement Settings
   collectCustomerName    Boolean @default(true)
@@ -984,4 +986,26 @@ model GoogleReviewQR {
   createdAt         DateTime        @default(now())
 
   @@index([businessProfileId])
+}
+
+//////////////////////////////////////////////////
+// FUEL BILL
+//////////////////////////////////////////////////
+
+model FuelBill {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkUserId String
+  user        User     @relation(fields: [clerkUserId], references: [clerkId])
+  
+  billNumber  String
+  vehicleNo   String?
+  fuelType    String
+  rate        Float
+  saleAmount  Float
+  volume      Float
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([clerkUserId])
 }

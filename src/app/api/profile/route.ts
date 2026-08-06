@@ -287,6 +287,7 @@ export async function POST(request: Request) {
     if (body.posSaveEnabled !== undefined) updateData.posSaveEnabled = b(body.posSaveEnabled);
     if (body.posPreviewEnabled !== undefined) updateData.posPreviewEnabled = b(body.posPreviewEnabled);
     if (body.posKotEnabled !== undefined) updateData.posKotEnabled = b(body.posKotEnabled);
+    if (body.enableFuelBilling !== undefined) updateData.enableFuelBilling = b(body.enableFuelBilling);
 
     // ✅ MISC SETTINGS
     if (body.gstType !== undefined) updateData.gstType = s(body.gstType);
