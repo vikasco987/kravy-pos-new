@@ -447,8 +447,8 @@ function KravyPOS() {
             const totalFontSize = getClamped(ps.totalFontSize, 13, 11, 24);
             const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
             const kotTokenSize = getClamped(ps.kotTokenSize, 16, 12, 28);
-            const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 18);
-            const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 22);
+            const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 40);
+            const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 40);
 
             const nameLen = ((business as any)?.businessName || "").length;
             let finalBusinessNameSize = rawBusinessNameSize;
@@ -2409,21 +2409,21 @@ function KravyPOS() {
                     gst: it.gst,
                     isNew: it.isNew
                 })) || []}
-                subtotal={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
-                discountAmt={0}
+                subtotal={printOrder?.id === activeOrderForSelected?.id && settlementBill ? settlementBill.subtotal : printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
+                discountAmt={printOrder?.id === activeOrderForSelected?.id && settlementBill ? (settlementBill.discountAmt + (settlementBill.loyaltyRedeemed || 0)) : 0}
                 appliedOffer={null}
                 taxActive={isTaxEnabled}
                 perProductEnabled={perProductEnabled}
                 globalRate={globalRate}
-                totalTaxable={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
-                totalGst={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).gst : 0}
+                totalTaxable={printOrder?.id === activeOrderForSelected?.id && settlementBill ? settlementBill.subtotal - settlementBill.discountAmt - (settlementBill.loyaltyRedeemed || 0) : printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
+                totalGst={printOrder?.id === activeOrderForSelected?.id && settlementBill ? settlementBill.gstAmount : printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).gst : 0}
                 taxBreakup={[]}
-                deliveryCharge={0}
-                deliveryGst={0}
-                packagingCharge={0}
+                deliveryCharge={printOrder?.id === activeOrderForSelected?.id && settlementBill ? settlementBill.deliveryCharge : 0}
+                deliveryGst={printOrder?.id === activeOrderForSelected?.id && settlementBill ? (settlementBill.totalChargesGst || 0) : 0}
+                packagingCharge={printOrder?.id === activeOrderForSelected?.id && settlementBill ? settlementBill.packagingCharge : 0}
                 packagingGst={0}
                 serviceCharge={0}
-                finalTotal={printOrder?.total || 0}
+                finalTotal={printOrder?.id === activeOrderForSelected?.id && settlementBill ? settlementBill.total : printOrder?.total || 0}
                 paymentMode={payMethod || "Cash"}
                 paymentStatus="Paid"
                 upiTxnRef=""

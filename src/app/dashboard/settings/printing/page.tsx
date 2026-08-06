@@ -995,8 +995,8 @@ export default function PrintingSettings() {
                                             sKey="kotItemsFontSize" 
                                             weightKey="kotItemsWeight"
                                             min={9} 
-                                            max={18} 
-                                            descMap={{ 9: "Compact", 11: "Standard Mono", 18: "Spacious Large" }} 
+                                            max={40} 
+                                            descMap={{ 9: "Compact", 11: "Standard Mono", 40: "Spacious Large" }} 
                                         />
                                         <Sizer 
                                             label="KOT Quantity Font Size" 
@@ -1004,8 +1004,8 @@ export default function PrintingSettings() {
                                             sKey="kotQtyFontSize" 
                                             weightKey="kotQtyWeight"
                                             min={10} 
-                                            max={22} 
-                                            descMap={{ 10: "Standard", 14: "Bold Standout", 22: "Giant Bold" }} 
+                                            max={40} 
+                                            descMap={{ 10: "Standard", 14: "Bold Standout", 40: "Giant Bold" }} 
                                         />
                                     </div>
                                 </div>

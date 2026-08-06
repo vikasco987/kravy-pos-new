@@ -86,8 +86,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
   const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
   
   const kotTokenSize = getClamped(ps.kotTokenSize, 16, 12, 28);
-  const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 18);
-  const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 22);
+  const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 40);
+  const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 40);
 
   // --- Auto-Shrink Logic for Long Texts ---
   const getAutoShrunkNameSize = () => {
