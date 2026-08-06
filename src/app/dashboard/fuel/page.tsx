@@ -101,26 +101,33 @@ export default function FuelBillingPage() {
       <html>
         <head>
           <style>
+            @page {
+              margin: 0;
+              size: 58mm auto;
+            }
             body {
               font-family: monospace;
-              width: 58mm; /* Standard thermal width */
-              margin: 0;
+              width: 100%;
+              max-width: 58mm;
+              margin: 0 auto;
               padding: 10px;
-              font-size: 13px;
+              font-size: 24px;
+              font-weight: bold;
               line-height: 1.2;
               color: black;
+              box-sizing: border-box;
             }
             .center { text-align: center; }
             .logo-container {
               display: flex;
               flex-direction: column;
               align-items: center;
-              margin-bottom: 15px;
+              margin-bottom: 25px;
             }
             .logo-circle {
-              width: 60px;
-              height: 60px;
-              border: 2px solid black;
+              width: 110px;
+              height: 110px;
+              border: 3px solid black;
               border-radius: 50%;
               display: flex;
               align-items: center;
@@ -128,45 +135,45 @@ export default function FuelBillingPage() {
               position: relative;
             }
             .logo-text-hi {
-              font-size: 10px;
-              font-weight: bold;
+              font-size: 18px;
+              font-weight: 900;
               z-index: 2;
               background: white;
-              padding: 0 4px;
+              padding: 0 8px;
             }
             .logo-line {
               position: absolute;
               top: 50%;
               left: 0;
               right: 0;
-              border-top: 2px solid black;
-              border-bottom: 2px solid black;
-              height: 4px;
+              border-top: 3px solid black;
+              border-bottom: 3px solid black;
+              height: 6px;
               transform: translateY(-50%);
               z-index: 1;
             }
             .brand-name {
-              font-weight: bold;
-              font-size: 16px;
-              margin-top: 5px;
+              font-weight: 900;
+              font-size: 30px;
+              margin-top: 10px;
               font-family: sans-serif;
             }
             .text-left { text-align: left; }
-            .mb { margin-bottom: 10px; }
+            .mb { margin-bottom: 20px; }
             table {
               width: 100%;
               border-collapse: collapse;
             }
             td {
-              padding: 1px 0;
+              padding: 2px 0;
               vertical-align: top;
             }
             .col1 {
-              width: 70px;
+              width: 120px;
               white-space: nowrap;
             }
             .col2 {
-              width: 10px;
+              width: 20px;
               text-align: center;
             }
             .col3 {
