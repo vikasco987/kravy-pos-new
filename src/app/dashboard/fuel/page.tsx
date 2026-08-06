@@ -183,17 +183,20 @@ export default function FuelBillingPage() {
         </head>
         <body>
           <div class="logo-container">
-            <div class="logo-circle">
-              <div class="logo-line"></div>
-              <div class="logo-text-hi">इंडियनऑयल</div>
-            </div>
-            <div class="brand-name">IndianOil</div>
+            ${profile.logoUrl 
+              ? `<img src="${profile.logoUrl}" style="height: 60px; object-fit: contain; filter: contrast(1000%) grayscale(100%) brightness(1.1);" />` 
+              : `
+              <div class="logo-circle">
+                <div class="logo-line"></div>
+                <div class="logo-text-hi">इंडियनऑयल</div>
+              </div>
+              <div class="brand-name">IndianOil</div>
+            `}
           </div>
           
           <div class="text-left mb">
             ${businessName}<br>
-            7 0<br>
-            70<br>
+            ${profile.businessAddress ? profile.businessAddress.replace(/\n/g, '<br>') : '7 0<br>70'}<br>
             ${profile.contactPersonPhone || "7894364780"}
           </div>
           
@@ -413,17 +416,28 @@ export default function FuelBillingPage() {
                 className="w-full max-w-[280px] bg-white text-black p-4 shadow-2xl font-mono text-[11px] leading-[1.2] relative overflow-hidden"
               >
                 <div className="flex flex-col items-center mb-4 relative z-10">
-                  <div className="w-14 h-14 border-[1.5px] border-black rounded-full flex items-center justify-center relative bg-white">
-                    <div className="absolute top-1/2 left-0 right-0 border-t-[1.5px] border-b-[1.5px] border-black h-[3px] -translate-y-1/2 z-0"></div>
-                    <div className="text-[8px] font-bold z-10 bg-white px-1">इंडियनऑयल</div>
-                  </div>
-                  <div className="font-bold text-[13px] mt-1 font-sans">IndianOil</div>
+                  {profile?.logoUrl ? (
+                    <img src={profile.logoUrl} alt="Logo" className="h-14 object-contain grayscale contrast-200" />
+                  ) : (
+                    <>
+                      <div className="w-14 h-14 border-[1.5px] border-black rounded-full flex items-center justify-center relative bg-white">
+                        <div className="absolute top-1/2 left-0 right-0 border-t-[1.5px] border-b-[1.5px] border-black h-[3px] -translate-y-1/2 z-0"></div>
+                        <div className="text-[8px] font-bold z-10 bg-white px-1">इंडियनऑयल</div>
+                      </div>
+                      <div className="font-bold text-[13px] mt-1 font-sans">IndianOil</div>
+                    </>
+                  )}
                 </div>
 
                 <div className="text-left mb-3">
                   {profile?.businessName || "SARAT FILLING POINT"}<br />
-                  7 0<br />
-                  70<br />
+                  {profile?.businessAddress ? (
+                    profile.businessAddress.split('\n').map((line: string, i: number) => (
+                      <span key={i}>{line}<br /></span>
+                    ))
+                  ) : (
+                    <>7 0<br />70<br /></>
+                  )}
                   {profile?.contactPersonPhone || "7894364780"}
                 </div>
                 
