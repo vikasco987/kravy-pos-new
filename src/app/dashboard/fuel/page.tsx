@@ -211,9 +211,9 @@ export default function FuelBillingPage() {
           <div className="flex p-1 bg-slate-100 dark:bg-slate-800/50 rounded-2xl">
             <button
               onClick={() => setFuelType("PETROL")}
-              className={\`flex-1 py-3 rounded-xl font-bold text-sm transition-all \${
+              className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
                 fuelType === "PETROL" ? "bg-amber-500 text-white shadow-md" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-              }\`}
+              }`}
             >
               <div className="flex justify-center items-center gap-2">
                 <Droplet size={16} />
@@ -222,9 +222,9 @@ export default function FuelBillingPage() {
             </button>
             <button
               onClick={() => setFuelType("DIESEL")}
-              className={\`flex-1 py-3 rounded-xl font-bold text-sm transition-all \${
+              className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
                 fuelType === "DIESEL" ? "bg-blue-600 text-white shadow-md" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-              }\`}
+              }`}
             >
               <div className="flex justify-center items-center gap-2">
                 <Fuel size={16} />
