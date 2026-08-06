@@ -114,6 +114,7 @@ Strictly follow these rules:
 3. Normalize all spelling and format.
 4. Ensure the output is valid JSON. VERY IMPORTANT: You MUST properly escape any double quotes inside string values using a backslash (e.g., "description": "A \\"delicious\\" meal") to prevent JSON parsing errors.
 ${languageRule}
+6. EXTREME IMPORTANCE: DO NOT SKIP ANY ITEMS. YOU MUST EXTRACT EVERY SINGLE ROW, NO MATTER HOW LONG THE DOCUMENT IS. NEVER TRUNCATE OR USE ELLIPSES (...). EXTRACT 100% OF THE ITEMS.
 `;
 
         const searchParams = req.nextUrl.searchParams;
@@ -151,7 +152,8 @@ ${languageRule}
                         }
                     ],
                     generationConfig: {
-                        responseMimeType: "application/json"
+                        responseMimeType: "application/json",
+                        maxOutputTokens: 8192
                     }
                 }, {
                     headers: {
