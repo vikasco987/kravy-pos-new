@@ -86,6 +86,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
   const greetingFontSize = getClamped(ps.greetingFontSize, 12, 9, 18);
   
   const kotTokenSize = getClamped(ps.kotTokenSize, 16, 12, 28);
+  const kotHeaderFontSize = getClamped(ps.kotHeaderFontSize, 11, 8, 32);
   const kotItemsFontSize = getClamped(ps.kotItemsFontSize, 11, 9, 40);
   const kotQtyFontSize = getClamped(ps.kotQtyFontSize, 14, 10, 40);
 
@@ -128,6 +129,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
     }
     .kot-container-dynamic {
       --k-font-family: ${kotFontFamilyVal};
+      --k-header-size: ${kotHeaderFontSize}px;
       --k-items-size: ${kotItemsFontSize}px;
       --k-qty-size: ${kotQtyFontSize}px;
       --k-token-size: ${kotTokenSize}px;
@@ -602,8 +604,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
       >
         <div className="text-center font-black border-b-2 border-black pb-1 mb-2" style={{ fontSize: 'calc(var(--k-items-size) * 1.8)' }}>K.O.T</div>
         
-        <div className="flex flex-wrap justify-between items-center font-black mb-2 px-0.5 gap-y-1" style={{ fontSize: 'var(--k-items-size)' }}>
-          <div className="border-2 border-black text-black px-1.5 py-1 rounded-sm font-black whitespace-nowrap" style={{ fontSize: 'calc(var(--k-items-size) - 1px)' }}>
+        <div className="flex flex-wrap justify-between items-center font-black mb-2 px-0.5 gap-y-1" style={{ fontSize: 'var(--k-header-size)' }}>
+          <div className="border-2 border-black text-black px-1.5 py-1 rounded-sm font-black whitespace-nowrap" style={{ fontSize: 'calc(var(--k-header-size) + 1px)' }}>
             {selectedTable === "POS" ? "COUNTER" : 
              selectedTable === "TAKEAWAY" ? "TAKEAWAY" : 
              selectedTable === "DELIVERY" ? "DELIVERY" : 
@@ -611,7 +613,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           </div>
           {s('showKOTToken') && (
             <div className="text-right leading-none">
-              <div style={{ fontSize: 'calc(var(--k-items-size) - 3px)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>KOT No.</div>
+              <div style={{ fontSize: 'calc(var(--k-header-size) - 2px)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>KOT No.</div>
               <div 
                 className="font-black"
                 style={{ fontSize: 'var(--k-token-size)', fontWeight: ps.kotTokenWeight || undefined }}
@@ -630,7 +632,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           )}
         </div>
 
-        <div className="border-y border-dashed border-black py-1 mb-2 font-bold" style={{ fontSize: 'calc(var(--k-items-size) - 1px)' }}>
+        <div className="border-y border-dashed border-black py-1 mb-2 font-bold" style={{ fontSize: 'var(--k-header-size)' }}>
           {s('showKOTBillNo') && (
             <div className="flex justify-between">
               <span>Bill: {billNumber}</span>

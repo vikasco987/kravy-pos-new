@@ -75,6 +75,7 @@ const defaults: any = {
     totalFontSize: 13,
     greetingFontSize: 12,
     kotTokenSize: 16,
+    kotHeaderFontSize: 11,
     kotItemsFontSize: 11,
     kotQtyFontSize: 14
 };
@@ -91,6 +92,7 @@ const TYPOGRAPHY_PRESETS = {
         totalFontSize: 13,
         greetingFontSize: 12,
         kotTokenSize: 16,
+        kotHeaderFontSize: 11,
         kotItemsFontSize: 11,
         kotQtyFontSize: 14,
         fontFamily: "",
@@ -121,6 +123,7 @@ const TYPOGRAPHY_PRESETS = {
         totalFontSize: 11,
         greetingFontSize: 9,
         kotTokenSize: 12,
+        kotHeaderFontSize: 9,
         kotItemsFontSize: 9,
         kotQtyFontSize: 11,
         fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
@@ -151,6 +154,7 @@ const TYPOGRAPHY_PRESETS = {
         totalFontSize: 16,
         greetingFontSize: 14,
         kotTokenSize: 20,
+        kotHeaderFontSize: 13,
         kotItemsFontSize: 13,
         kotQtyFontSize: 16,
         fontFamily: 'Georgia, Cambria, "Times New Roman", serif',
@@ -181,6 +185,7 @@ const TYPOGRAPHY_PRESETS = {
         totalFontSize: 12,
         greetingFontSize: 10,
         kotTokenSize: 14,
+        kotHeaderFontSize: 10,
         kotItemsFontSize: 10,
         kotQtyFontSize: 12,
         fontFamily: '"Trebuchet MS", Helvetica, sans-serif',
@@ -988,6 +993,14 @@ export default function PrintingSettings() {
                                             min={12} 
                                             max={28} 
                                             descMap={{ 12: "Regular", 16: "Standard", 28: "Large Block" }} 
+                                        />
+                                        <Sizer 
+                                            label="KOT Header Details Size" 
+                                            icon={FileText} 
+                                            sKey="kotHeaderFontSize" 
+                                            min={8} 
+                                            max={32} 
+                                            descMap={{ 8: "Tiny", 11: "Standard", 32: "Spacious Large" }} 
                                         />
                                         <Sizer 
                                             label="KOT Items Font Size" 
