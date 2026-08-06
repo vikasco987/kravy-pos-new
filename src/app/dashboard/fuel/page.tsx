@@ -473,22 +473,22 @@ export default function FuelBillingPage() {
               >
                 <div className="flex flex-col items-center mb-4 relative z-10">
                   {profile?.logoUrl ? (
-                    <img src={profile.logoUrl} alt="Logo" style={{ height: \`\${fuelLogoSize / 4}px\` }} className="object-contain grayscale contrast-200" />
+                    <img src={profile.logoUrl} alt="Logo" style={{ height: (fuelLogoSize / 4) + 'px' }} className="object-contain grayscale contrast-200" />
                   ) : (
                     <>
-                      <div className="border-[1.5px] border-black rounded-full flex items-center justify-center relative bg-white" style={{ width: \`\${fuelLogoSize / 4}px\`, height: \`\${fuelLogoSize / 4}px\` }}>
+                      <div className="border-[1.5px] border-black rounded-full flex items-center justify-center relative bg-white" style={{ width: (fuelLogoSize / 4) + 'px', height: (fuelLogoSize / 4) + 'px' }}>
                         <div className="absolute top-1/2 left-0 right-0 border-t-[1.5px] border-b-[1.5px] border-black h-[3px] -translate-y-1/2 z-0"></div>
-                        <div className="font-bold z-10 bg-white px-1" style={{ fontSize: \`\${fuelLogoSize / 15}px\` }}>इंडियनऑयल</div>
+                        <div className="font-bold z-10 bg-white px-1" style={{ fontSize: (fuelLogoSize / 15) + 'px' }}>इंडियनऑयल</div>
                       </div>
-                      <div className="font-bold mt-1 font-sans" style={{ fontSize: \`\${fuelLogoSize / 9}px\` }}>IndianOil</div>
+                      <div className="font-bold mt-1 font-sans" style={{ fontSize: (fuelLogoSize / 9) + 'px' }}>IndianOil</div>
                     </>
                   )}
                 </div>
 
-                <div className="text-left mb-3" style={{ fontSize: \`\${fuelAddressSize / 2}px\` }}>
+                <div className="text-left mb-3" style={{ fontSize: (fuelAddressSize / 2) + 'px' }}>
                   {profile?.businessName || "SARAT FILLING POINT"}<br />
                   {profile?.businessAddress ? (
-                    profile.businessAddress.split('\\n').map((line: string, i: number) => (
+                    profile.businessAddress.split('\n').map((line: string, i: number) => (
                       <span key={i}>{line}<br /></span>
                     ))
                   ) : (
