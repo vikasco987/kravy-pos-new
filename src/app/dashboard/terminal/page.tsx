@@ -2383,124 +2383,143 @@ function KravyPOS() {
 
 
             {/* Modular Shared Templates for Thermal Printing */}
-            <PrintTemplates
-                receiptRef={billReceiptRef}
-                kotRef={kotReceiptRef}
-                business={business}
-                billNumber={printOrder?.orderNumber || printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
-                billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -') : new Date().toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -')}
-                tokenNumber={(() => {
-                    const tn = printOrder?.tokenNumber;
-                    if (tn == null || tn === "" || tn === 0) return "---";
-                    if (typeof tn === 'object' && (tn as any).$numberLong) return (tn as any).$numberLong.toString().padStart(3, '0');
-                    return tn.toString().padStart(3, '0');
-                })()}
-                selectedTable={printOrder?.table?.name || "Counter"}
-                customerName={printOrder?.customerName?.trim() || "Walk-in Customer"}
-                customerPhone={printOrder?.customerPhone || ""}
-                customerAddress={printOrder?.customerAddress || ""}
-                orderNotes={printOrder?.notes || ""}
-                buyerGSTIN=""
-                placeOfSupply=""
-                items={printOrder?.items?.map(it => ({
-                    name: it.name,
-                    qty: it.quantity,
-                    rate: it.price,
-                    gst: it.gst,
-                    isNew: it.isNew
-                })) || []}
-                subtotal={printOrder?.id === activeOrderForSelected?.id && settlementBill ? settlementBill.subtotal : printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
-                discountAmt={printOrder?.id === activeOrderForSelected?.id && settlementBill ? (settlementBill.discountAmt + (settlementBill.loyaltyRedeemed || 0)) : 0}
-                appliedOffer={null}
-                taxActive={isTaxEnabled}
-                perProductEnabled={perProductEnabled}
-                globalRate={globalRate}
-                totalTaxable={printOrder?.id === activeOrderForSelected?.id && settlementBill ? settlementBill.subtotal - settlementBill.discountAmt - (settlementBill.loyaltyRedeemed || 0) : printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
-                totalGst={printOrder?.id === activeOrderForSelected?.id && settlementBill ? settlementBill.gstAmount : printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).gst : 0}
-                taxBreakup={[]}
-                deliveryCharge={printOrder?.id === activeOrderForSelected?.id && settlementBill ? settlementBill.deliveryCharge : 0}
-                deliveryGst={printOrder?.id === activeOrderForSelected?.id && settlementBill ? (settlementBill.totalChargesGst || 0) : 0}
-                packagingCharge={printOrder?.id === activeOrderForSelected?.id && settlementBill ? settlementBill.packagingCharge : 0}
-                packagingGst={0}
-                serviceCharge={0}
-                finalTotal={printOrder?.id === activeOrderForSelected?.id && settlementBill ? settlementBill.total : printOrder?.total || 0}
-                paymentMode={payMethod || "Cash"}
-                paymentStatus="Paid"
-                upiTxnRef=""
-                qrUrl={qrUrl}
-                kotNumbers={printOrder?.kotNumbers || []}
-                prevWalletBalance={null}
-                selectedParty={null}
-                numberToWords={numberToWords}
-            />
+            {(() => {
+                const isPrintOrderActive = printOrder?.id === activeOrderForSelected?.id && settlementBill;
 
-            {/* Modular Bill Preview Modal */}
-            <BillPreview 
-                showPreview={showPreview}
-                setShowPreview={setShowPreview}
-                previewZoom={previewZoom}
-                setPreviewZoom={setPreviewZoom}
-                business={business}
-                billNumber={printOrder?.orderNumber || printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
-                billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}
-                tokenNumber={(() => {
-                    const tn = printOrder?.tokenNumber || activeOrderForSelected?.tokenNumber;
-                    if (tn == null || tn === "" || tn === 0) return "---";
-                    if (typeof tn === 'object' && (tn as any).$numberLong) return (tn as any).$numberLong.toString().padStart(3, '0');
-                    return tn.toString().padStart(3, '0');
-                })()}
-                selectedTable={printOrder?.table?.name || "Counter"}
-                customerName={printOrder?.customerName?.trim() || "Walk-in Customer"}
-                customerPhone={printOrder?.customerPhone || ""}
-                customerAddress={printOrder?.customerAddress || ""}
-                orderNotes={printOrder?.notes || ""}
-                placeOfSupply=""
-                items={printOrder?.items?.map((it: any) => ({
-                    name: it.name,
-                    qty: Number(it.qty || it.quantity || 0),
-                    rate: Number(it.rate || it.price || 0),
-                    gst: it.gst || 0,
-                    taxStatus: it.taxStatus || "Without Tax"
-                })) || []}
-                subtotal={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
-                discountAmt={0}
-                appliedOffer={null}
-                taxActive={isTaxEnabled}
-                perProductEnabled={perProductEnabled}
-                totalTaxable={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0}
-                totalGst={printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).gst : 0}
-                taxBreakup={[]}
-                deliveryCharge={0}
-                deliveryGst={0}
-                packagingCharge={0}
-                packagingGst={0}
-                finalTotal={printOrder?.total || 0}
-                paymentMode={payMethod || "Cash"}
-                paymentStatus="Paid"
-                qrUrl={qrUrl}
-                numberToWords={numberToWords}
-                kravy={kravy}
-                kotNumbers={printOrder?.kotNumbers || []}
-                // Actions - Adapting for workflow
-                printKOT={() => handlePrint("KOT", printOrder || undefined)}
-                printReceipt={(enableKOT, customBill) => {
-                    handlePrint("BILL", customBill || printOrder || undefined);
-                    setTimeout(resetForm, 500);
-                }}
-                saveBill={async () => {
-                    if (printOrder?.id) {
-                        return await handleCheckout(printOrder.id, true);
-                    }
-                    return null;
-                }}
-                resetForm={() => setShowPreview(false)}
-                isSaving={false}
-                lastSavedBillId={printOrder?.id || null}
-                userRole={userRole || "ADMIN"}
-                userPermissions={userPermissions || []}
-                resumeBillId={null}
-                router={router}
-            />
+                const resolvedPrintSubtotal = isPrintOrderActive ? settlementBill.subtotal : ((printOrder as any)?.subtotal || (printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0));
+                const resolvedPrintDiscountAmt = isPrintOrderActive ? (settlementBill.discountAmt + (settlementBill.loyaltyRedeemed || 0)) : ((printOrder as any)?.discountAmount || (printOrder as any)?.discountAmt || (printOrder as any)?.discount || 0);
+                const resolvedPrintTotalTaxable = isPrintOrderActive ? (settlementBill.subtotal - settlementBill.discountAmt - (settlementBill.loyaltyRedeemed || 0)) : (((printOrder as any)?.subtotal ? ((printOrder as any)?.subtotal - ((printOrder as any)?.discountAmount || (printOrder as any)?.discountAmt || (printOrder as any)?.discount || 0)) : (printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).subtotal : 0)));
+                const resolvedPrintTotalGst = isPrintOrderActive ? settlementBill.gstAmount : ((printOrder as any)?.tax || (printOrder as any)?.gstAmount || (printOrder as any)?.gst || (printOrder ? calculateOrderTotals(printOrder.items, isTaxEnabled, globalRate, perProductEnabled).gst : 0));
+                const resolvedPrintDeliveryCharge = isPrintOrderActive ? settlementBill.deliveryCharge : ((printOrder as any)?.deliveryCharges || (printOrder as any)?.deliveryCharge || 0);
+                const resolvedPrintDeliveryGst = isPrintOrderActive ? (settlementBill.totalChargesGst || 0) : ((printOrder as any)?.deliveryGst || 0);
+                const resolvedPrintPackagingCharge = isPrintOrderActive ? settlementBill.packagingCharge : ((printOrder as any)?.packagingCharges || (printOrder as any)?.packagingCharge || 0);
+                const resolvedPrintPackagingGst = ((printOrder as any)?.packagingGst || 0);
+                const resolvedPrintServiceCharge = ((printOrder as any)?.serviceCharge || 0);
+                const resolvedPrintFinalTotal = isPrintOrderActive ? settlementBill.total : (printOrder?.total || 0);
+
+                return (
+                    <>
+                        <PrintTemplates
+                            receiptRef={billReceiptRef}
+                            kotRef={kotReceiptRef}
+                            business={business}
+                            billNumber={printOrder?.orderNumber || printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
+                            billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -') : new Date().toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -')}
+                            tokenNumber={(() => {
+                                const tn = printOrder?.tokenNumber;
+                                if (tn == null || tn === "" || tn === 0) return "---";
+                                if (typeof tn === 'object' && (tn as any).$numberLong) return (tn as any).$numberLong.toString().padStart(3, '0');
+                                return tn.toString().padStart(3, '0');
+                            })()}
+                            selectedTable={printOrder?.table?.name || "Counter"}
+                            customerName={printOrder?.customerName?.trim() || "Walk-in Customer"}
+                            customerPhone={printOrder?.customerPhone || ""}
+                            customerAddress={printOrder?.customerAddress || ""}
+                            orderNotes={printOrder?.notes || ""}
+                            buyerGSTIN=""
+                            placeOfSupply=""
+                            items={printOrder?.items?.map(it => ({
+                                name: it.name,
+                                qty: it.quantity,
+                                rate: it.price,
+                                gst: it.gst,
+                                isNew: it.isNew
+                            })) || []}
+                            subtotal={resolvedPrintSubtotal}
+                            discountAmt={resolvedPrintDiscountAmt}
+                            appliedOffer={null}
+                            taxActive={isTaxEnabled}
+                            perProductEnabled={perProductEnabled}
+                            globalRate={globalRate}
+                            totalTaxable={resolvedPrintTotalTaxable}
+                            totalGst={resolvedPrintTotalGst}
+                            taxBreakup={[]}
+                            deliveryCharge={resolvedPrintDeliveryCharge}
+                            deliveryGst={resolvedPrintDeliveryGst}
+                            packagingCharge={resolvedPrintPackagingCharge}
+                            packagingGst={resolvedPrintPackagingGst}
+                            serviceCharge={resolvedPrintServiceCharge}
+                            finalTotal={resolvedPrintFinalTotal}
+                            paymentMode={payMethod || "Cash"}
+                            paymentStatus="Paid"
+                            upiTxnRef=""
+                            qrUrl={qrUrl}
+                            kotNumbers={printOrder?.kotNumbers || []}
+                            prevWalletBalance={null}
+                            selectedParty={null}
+                            numberToWords={numberToWords}
+                        />
+
+                        {/* Modular Bill Preview Modal */}
+                        <BillPreview 
+                            showPreview={showPreview}
+                            setShowPreview={setShowPreview}
+                            previewZoom={previewZoom}
+                            setPreviewZoom={setPreviewZoom}
+                            business={business}
+                            billNumber={printOrder?.orderNumber || printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
+                            billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}
+                            tokenNumber={(() => {
+                                const tn = printOrder?.tokenNumber || activeOrderForSelected?.tokenNumber;
+                                if (tn == null || tn === "" || tn === 0) return "---";
+                                if (typeof tn === 'object' && (tn as any).$numberLong) return (tn as any).$numberLong.toString().padStart(3, '0');
+                                return tn.toString().padStart(3, '0');
+                            })()}
+                            selectedTable={printOrder?.table?.name || "Counter"}
+                            customerName={printOrder?.customerName?.trim() || "Walk-in Customer"}
+                            customerPhone={printOrder?.customerPhone || ""}
+                            customerAddress={printOrder?.customerAddress || ""}
+                            orderNotes={printOrder?.notes || ""}
+                            placeOfSupply=""
+                            items={printOrder?.items?.map((it: any) => ({
+                                name: it.name,
+                                qty: Number(it.qty || it.quantity || 0),
+                                rate: Number(it.rate || it.price || 0),
+                                gst: it.gst || 0,
+                                taxStatus: it.taxStatus || "Without Tax"
+                            })) || []}
+                            subtotal={resolvedPrintSubtotal}
+                            discountAmt={resolvedPrintDiscountAmt}
+                            appliedOffer={null}
+                            taxActive={isTaxEnabled}
+                            perProductEnabled={perProductEnabled}
+                            totalTaxable={resolvedPrintTotalTaxable}
+                            totalGst={resolvedPrintTotalGst}
+                            taxBreakup={[]}
+                            deliveryCharge={resolvedPrintDeliveryCharge}
+                            deliveryGst={resolvedPrintDeliveryGst}
+                            packagingCharge={resolvedPrintPackagingCharge}
+                            packagingGst={resolvedPrintPackagingGst}
+                            finalTotal={resolvedPrintFinalTotal}
+                            paymentMode={payMethod || "Cash"}
+                            paymentStatus="Paid"
+                            qrUrl={qrUrl}
+                            numberToWords={numberToWords}
+                            kravy={kravy}
+                            kotNumbers={printOrder?.kotNumbers || []}
+                            // Actions - Adapting for workflow
+                            printKOT={() => handlePrint("KOT", printOrder || undefined)}
+                            printReceipt={(enableKOT, customBill) => {
+                                handlePrint("BILL", customBill || printOrder || undefined);
+                                setTimeout(resetForm, 500);
+                            }}
+                            saveBill={async () => {
+                                if (printOrder?.id) {
+                                    return await handleCheckout(printOrder.id, true);
+                                }
+                                return null;
+                            }}
+                            resetForm={() => setShowPreview(false)}
+                            isSaving={false}
+                            lastSavedBillId={printOrder?.id || null}
+                            userRole={userRole || "ADMIN"}
+                            userPermissions={userPermissions || []}
+                            resumeBillId={null}
+                            router={router}
+                        />
+                    </>
+                );
+            })()}
             {/* Quick Table Add/Edit Modal */}
             <AnimatePresence>
                 {isTableModalOpen && (

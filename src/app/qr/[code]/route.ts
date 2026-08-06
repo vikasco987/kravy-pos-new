@@ -25,13 +25,16 @@ export async function GET(request: Request, { params }: { params: { code: string
             `, { status: 404, headers: { 'Content-Type': 'text/html' } });
         }
 
-        // Increment scan count asynchronously
+        // Increment scan count and update lastScannedAt asynchronously
         prisma.googleReviewQR.update({
             where: { id: qr.id },
-            data: { scanCount: { increment: 1 } }
-        }).catch(err => console.error("Failed to increment QR scan count:", err));
+            data: { 
+                scanCount: { increment: 1 },
+                lastScannedAt: new Date()
+            }
+        }).catch(err => console.error("Failed to update QR scan analytics:", err));
 
-        const reviewUrl = qr.businessProfile?.googleReviewUrl;
+        const reviewUrl = qr.destinationUrl;
 
         if (!reviewUrl) {
             // Fallback page requested by the user

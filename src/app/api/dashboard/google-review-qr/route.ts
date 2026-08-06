@@ -31,7 +31,7 @@ export async function GET(request: Request) {
             orderBy: { createdAt: 'desc' }
         });
 
-        return NextResponse.json({ qrs, googleReviewUrl: profile.googleReviewUrl });
+        return NextResponse.json({ qrs });
 
     } catch (error) {
         console.error("Error fetching Google Review QRs:", error);
@@ -84,6 +84,64 @@ export async function POST(request: Request) {
 
     } catch (error) {
         console.error("Error generating Google Review QRs:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
+
+export async function PUT(request: Request) {
+    try {
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const body = await request.json();
+        const { id, shopName, destinationUrl } = body;
+
+        if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
+
+        const profile = await prisma.businessProfile.findFirst({
+            where: { userId: effectiveId }
+        });
+        if (!profile) return NextResponse.json({ error: "Business profile not found" }, { status: 404 });
+
+        const updatedQR = await prisma.googleReviewQR.updateMany({
+            where: { id, businessProfileId: profile.id },
+            data: { shopName, destinationUrl }
+        });
+
+        if (updatedQR.count === 0) return NextResponse.json({ error: "QR not found or not owned by you" }, { status: 404 });
+
+        return NextResponse.json({ success: true });
+
+    } catch (error) {
+        console.error("Error updating Google Review QR:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
+
+export async function DELETE(request: Request) {
+    try {
+        const effectiveId = await getEffectiveClerkId();
+        if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const url = new URL(request.url);
+        const id = url.searchParams.get("id");
+        if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
+
+        const profile = await prisma.businessProfile.findFirst({
+            where: { userId: effectiveId }
+        });
+        if (!profile) return NextResponse.json({ error: "Business profile not found" }, { status: 404 });
+
+        const deleted = await prisma.googleReviewQR.deleteMany({
+            where: { id, businessProfileId: profile.id }
+        });
+
+        if (deleted.count === 0) return NextResponse.json({ error: "QR not found or not owned by you" }, { status: 404 });
+
+        return NextResponse.json({ success: true });
+
+    } catch (error) {
+        console.error("Error deleting Google Review QR:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

@@ -1,24 +1,26 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Loader2, Plus, RefreshCcw, Save, Download, DownloadCloud, FileDown, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, RefreshCcw, Save, DownloadCloud, FileDown, CheckCircle2, Upload, Trash2, Edit2, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import QRCode from "react-qr-code";
 import { domToPng } from "modern-screenshot";
+import * as XLSX from "xlsx";
 
 export default function QRManagerPage() {
     const [qrs, setQrs] = useState<any[]>([]);
-    const [googleReviewUrl, setGoogleReviewUrl] = useState("");
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
     const [generating, setGenerating] = useState(false);
     const [downloading, setDownloading] = useState(false);
     
-    const [customQty, setCustomQty] = useState(100);
+    const [customQty, setCustomQty] = useState(10);
+    const [editingQrId, setEditingQrId] = useState<string | null>(null);
+    const [editShopName, setEditShopName] = useState("");
+    const [editDestUrl, setEditDestUrl] = useState("");
 
-    // Hidden container to render all QRs for zip downloading
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const printContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -30,37 +32,11 @@ export default function QRManagerPage() {
         try {
             const res = await fetch("/api/dashboard/google-review-qr");
             const data = await res.json();
-            if (data.qrs) {
-                setQrs(data.qrs);
-            }
-            if (data.googleReviewUrl) {
-                setGoogleReviewUrl(data.googleReviewUrl);
-            }
+            if (data.qrs) setQrs(data.qrs);
         } catch (err) {
             toast.error("Failed to load QR codes");
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleSaveUrl = async () => {
-        setSaving(true);
-        try {
-            const res = await fetch("/api/dashboard/business-profile/google-review-url", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ googleReviewUrl })
-            });
-            const data = await res.json();
-            if (data.success) {
-                toast.success("Google Review URL saved!");
-            } else {
-                toast.error(data.error || "Failed to save URL");
-            }
-        } catch (err) {
-            toast.error("Failed to save URL");
-        } finally {
-            setSaving(false);
         }
     };
 
@@ -91,12 +67,97 @@ export default function QRManagerPage() {
         }
     };
 
-    const handleDownloadAll = async () => {
-        if (qrs.length === 0) {
-            toast.error("No QR codes to download");
-            return;
+    const handleSaveInline = async (qrId: string) => {
+        try {
+            const res = await fetch("/api/dashboard/google-review-qr", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: qrId, shopName: editShopName, destinationUrl: editDestUrl })
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast.success("Updated successfully!");
+                setQrs(qrs.map(q => q.id === qrId ? { ...q, shopName: editShopName, destinationUrl: editDestUrl } : q));
+                setEditingQrId(null);
+            } else {
+                toast.error(data.error || "Failed to update");
+            }
+        } catch (err) {
+            toast.error("Failed to update QR");
         }
+    };
 
+    const handleDelete = async (qrId: string) => {
+        if (!confirm("Are you sure you want to delete this QR code? It will break if printed.")) return;
+        try {
+            const res = await fetch(`/api/dashboard/google-review-qr?id=${qrId}`, { method: "DELETE" });
+            const data = await res.json();
+            if (data.success) {
+                toast.success("Deleted");
+                setQrs(qrs.filter(q => q.id !== qrId));
+            } else {
+                toast.error(data.error || "Failed to delete");
+            }
+        } catch (err) {
+            toast.error("Failed to delete QR");
+        }
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            try {
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws);
+
+                if (data.length === 0) {
+                    toast.error("File is empty");
+                    return;
+                }
+
+                // Map to required structure
+                const items = data.map((row: any) => ({
+                    code: row['QR Code'] || row['code'] || row['Short Code'] || null,
+                    shopName: row['Shop Name'] || row['shopName'] || row['Name'] || null,
+                    destinationUrl: row['Google Review URL'] || row['destinationUrl'] || row['URL'] || row['Link'] || null,
+                })).filter(i => i.code);
+
+                if (items.length === 0) {
+                    toast.error("No valid QR Codes found in file. Ensure you have a 'QR Code' column.");
+                    return;
+                }
+
+                const res = await fetch("/api/dashboard/google-review-qr/import", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ items })
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    toast.success(`Imported! Updated: ${result.updatedCount}, Not Found: ${result.notFoundCount}`);
+                    fetchQRs();
+                } else {
+                    toast.error(result.error || "Import failed");
+                }
+            } catch (err) {
+                console.error(err);
+                toast.error("Failed to parse file");
+            }
+        };
+        reader.readAsBinaryString(file);
+        // reset input
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handleDownloadAll = async () => {
+        if (qrs.length === 0) return toast.error("No QR codes to download");
         setDownloading(true);
         const toastId = toast.loading("Preparing ZIP file... this may take a moment.");
         
@@ -107,41 +168,35 @@ export default function QRManagerPage() {
             for (let i = 0; i < qrNodes.length; i++) {
                 const node = qrNodes[i] as HTMLElement;
                 const code = node.getAttribute('data-code');
+                const name = node.getAttribute('data-name')?.replace(/[^a-zA-Z0-9]/g, '_') || 'QR';
                 
-                // domToPng gives base64
                 const dataUrl = await domToPng(node, {
-                    scale: 2, // High quality
-                    backgroundColor: "#ffffff",
-                    filter: (n) => !n.classList?.contains('ignore-print')
+                    scale: 2, 
+                    backgroundColor: "#ffffff"
                 });
                 
-                // Convert base64 to blob
                 const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
-                zip.file(`Review-QR-${code}.png`, base64Data, { base64: true });
+                zip.file(`${name}-${code}.png`, base64Data, { base64: true });
             }
 
             const content = await zip.generateAsync({ type: "blob" });
             saveAs(content, "Google-Review-QRs.zip");
             toast.success("Download complete!", { id: toastId });
         } catch (err) {
-            console.error("Download failed:", err);
-            toast.error("Failed to generate zip file", { id: toastId });
+            toast.error("Failed to generate zip", { id: toastId });
         } finally {
             setDownloading(false);
         }
     };
 
-    const handleDownloadSingle = async (code: string) => {
+    const handleDownloadSingle = async (code: string, shopName: string) => {
         const node = document.querySelector(`.qr-download-item[data-code="${code}"]`) as HTMLElement;
         if (!node) return;
-        
         const toastId = toast.loading("Generating image...");
         try {
-            const dataUrl = await domToPng(node, {
-                scale: 2,
-                backgroundColor: "#ffffff"
-            });
-            saveAs(dataUrl, `Review-QR-${code}.png`);
+            const dataUrl = await domToPng(node, { scale: 2, backgroundColor: "#ffffff" });
+            const name = (shopName || 'QR').replace(/[^a-zA-Z0-9]/g, '_');
+            saveAs(dataUrl, `${name}-${code}.png`);
             toast.success("Downloaded!", { id: toastId });
         } catch (err) {
             toast.error("Failed to download image", { id: toastId });
@@ -157,146 +212,161 @@ export default function QRManagerPage() {
     }
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold">Google Review QR Manager</h1>
-                <p className="text-slate-500 mt-1">Manage and generate dynamic Google Review QR codes.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Master URL Section */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold mb-2">Google Review URL</h2>
-                    <p className="text-sm text-slate-500 mb-4">Set the master URL. All printed QR codes will redirect here.</p>
-                    
-                    <div className="flex gap-3">
-                        <input 
-                            type="url"
-                            value={googleReviewUrl}
-                            onChange={(e) => setGoogleReviewUrl(e.target.value)}
-                            placeholder="https://g.page/r/YOUR_ID/review"
-                            className="flex-1 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-primary/50"
-                        />
-                        <button 
-                            onClick={handleSaveUrl}
-                            disabled={saving}
-                            className="bg-primary text-white px-5 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-50"
-                        >
-                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            Save
-                        </button>
-                    </div>
+        <div className="p-6 max-w-[1400px] mx-auto space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold">Dynamic QR Manager</h1>
+                    <p className="text-slate-500 mt-1">Manage individual QR codes for multiple shops/clients.</p>
                 </div>
-
-                {/* Generator Section */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold mb-2">Generate QR Codes</h2>
-                    <p className="text-sm text-slate-500 mb-4">Bulk generate unique dynamic QR codes for printing.</p>
-                    
-                    <div className="flex gap-3 items-center">
-                        <div className="relative">
-                            <input 
-                                type="number"
-                                min="1"
-                                max="1000"
-                                value={customQty}
-                                onChange={(e) => setCustomQty(parseInt(e.target.value) || 0)}
-                                className="w-32 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-primary/50"
-                            />
-                            <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-medium pointer-events-none">Qty</span>
-                        </div>
-                        <button 
-                            onClick={handleGenerate}
-                            disabled={generating || customQty <= 0}
-                            className="bg-emerald-500 text-white px-5 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-emerald-600 transition-colors disabled:opacity-50"
-                        >
-                            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                            Generate
-                        </button>
-                    </div>
+                <div className="flex gap-3">
+                    <input type="file" ref={fileInputRef} className="hidden" accept=".csv,.xlsx" onChange={handleFileUpload} />
+                    <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+                    >
+                        <Upload className="w-4 h-4" /> Bulk Import
+                    </button>
+                    <button 
+                        onClick={handleDownloadAll}
+                        disabled={downloading || qrs.length === 0}
+                        className="bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-indigo-600 transition-colors disabled:opacity-50"
+                    >
+                        {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <DownloadCloud className="w-4 h-4" />}
+                        Download ZIP
+                    </button>
                 </div>
             </div>
 
-            {/* List Section */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm flex items-center gap-4">
+                <div className="flex-1">
+                    <h2 className="text-lg font-semibold">Generate Empty QR Codes</h2>
+                    <p className="text-sm text-slate-500">Create unused dynamic shortcodes that you can configure later.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <input 
+                        type="number" min="1" max="500" value={customQty}
+                        onChange={(e) => setCustomQty(parseInt(e.target.value) || 0)}
+                        className="w-24 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none"
+                    />
+                    <button 
+                        onClick={handleGenerate}
+                        disabled={generating || customQty <= 0}
+                        className="bg-emerald-500 text-white px-5 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                    >
+                        {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Generate
+                    </button>
+                </div>
+            </div>
+
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                    <div>
-                        <h2 className="text-lg font-semibold">Generated QR Codes</h2>
-                        <p className="text-sm text-slate-500">Total: {qrs.length} codes</p>
-                    </div>
-                    <div className="flex gap-3">
-                        <button 
-                            onClick={fetchQRs}
-                            className="text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-lg transition-colors"
-                            title="Refresh"
-                        >
-                            <RefreshCcw className="w-5 h-5" />
-                        </button>
-                        <button 
-                            onClick={handleDownloadAll}
-                            disabled={downloading || qrs.length === 0}
-                            className="bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-indigo-600 transition-colors disabled:opacity-50"
-                        >
-                            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <DownloadCloud className="w-4 h-4" />}
-                            Download All (ZIP)
-                        </button>
-                    </div>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold">All QR Codes ({qrs.length})</h2>
+                    <button onClick={fetchQRs} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                        <RefreshCcw className="w-4 h-4 text-slate-500" />
+                    </button>
                 </div>
 
-                {qrs.length === 0 ? (
-                    <div className="text-center py-12 text-slate-500 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                        No QR codes generated yet.
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-slate-200 dark:border-slate-800">
-                                    <th className="py-3 px-4 text-sm font-medium text-slate-500">Preview</th>
-                                    <th className="py-3 px-4 text-sm font-medium text-slate-500">Short Code</th>
-                                    <th className="py-3 px-4 text-sm font-medium text-slate-500">Link</th>
-                                    <th className="py-3 px-4 text-sm font-medium text-slate-500">Scans</th>
-                                    <th className="py-3 px-4 text-sm font-medium text-slate-500">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {qrs.slice(0, 50).map((qr) => (
-                                    <tr key={qr.id} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20">
-                                        <td className="py-3 px-4">
-                                            <div className="w-12 h-12 bg-white p-1 rounded border overflow-hidden">
-                                                <QRCode value={`${window.location.origin}/qr/${qr.code}`} size={128} style={{ width: '100%', height: '100%' }} />
-                                            </div>
-                                        </td>
-                                        <td className="py-3 px-4 font-mono text-sm">{qr.code}</td>
-                                        <td className="py-3 px-4 text-sm text-blue-500">
-                                            <a href={`/qr/${qr.code}`} target="_blank" rel="noreferrer">
-                                                /qr/{qr.code}
-                                            </a>
-                                        </td>
-                                        <td className="py-3 px-4">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-semibold">
-                                                {qr.scanCount}
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50">
+                            <tr className="border-b border-slate-200 dark:border-slate-800">
+                                <th className="py-3 px-4 text-sm font-medium text-slate-500 w-24">QR</th>
+                                <th className="py-3 px-4 text-sm font-medium text-slate-500 w-32">Short Code</th>
+                                <th className="py-3 px-4 text-sm font-medium text-slate-500 w-1/4">Shop Name</th>
+                                <th className="py-3 px-4 text-sm font-medium text-slate-500">Destination URL</th>
+                                <th className="py-3 px-4 text-sm font-medium text-slate-500 text-center w-24">Scans</th>
+                                <th className="py-3 px-4 text-sm font-medium text-slate-500 text-right w-48">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {qrs.map((qr) => (
+                                <tr key={qr.id} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20">
+                                    <td className="py-2 px-4">
+                                        <div className="w-10 h-10 bg-white p-1 rounded border">
+                                            <QRCode value={`${window.location.origin}/qr/${qr.code}`} size={128} style={{ width: '100%', height: '100%' }} />
+                                        </div>
+                                    </td>
+                                    <td className="py-2 px-4 font-mono text-sm font-bold text-slate-700 dark:text-slate-300">
+                                        <a href={`/qr/${qr.code}`} target="_blank" rel="noreferrer" className="hover:text-primary hover:underline">{qr.code}</a>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        {editingQrId === qr.id ? (
+                                            <input 
+                                                autoFocus
+                                                value={editShopName} 
+                                                onChange={e => setEditShopName(e.target.value)} 
+                                                placeholder="e.g. Raju Dhaba"
+                                                className="w-full px-2 py-1.5 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded outline-none focus:border-primary"
+                                            />
+                                        ) : (
+                                            <span className={`text-sm ${!qr.shopName ? 'text-slate-400 italic' : 'font-medium'}`}>
+                                                {qr.shopName || "Unnamed Shop"}
                                             </span>
-                                        </td>
-                                        <td className="py-3 px-4">
-                                            <button 
-                                                onClick={() => handleDownloadSingle(qr.code)}
-                                                className="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-medium"
-                                            >
-                                                <FileDown className="w-4 h-4" /> Download
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        {qrs.length > 50 && (
-                            <div className="py-4 text-center text-sm text-slate-500 bg-slate-50 dark:bg-slate-800/30 rounded-b-xl border-t border-slate-100 dark:border-slate-800">
-                                Showing top 50 out of {qrs.length}. Download ZIP to get all.
-                            </div>
-                        )}
-                    </div>
-                )}
+                                        )}
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        {editingQrId === qr.id ? (
+                                            <input 
+                                                value={editDestUrl} 
+                                                onChange={e => setEditDestUrl(e.target.value)} 
+                                                placeholder="https://g.page/r/..."
+                                                className="w-full px-2 py-1.5 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded outline-none focus:border-primary"
+                                            />
+                                        ) : (
+                                            <span className={`text-sm truncate max-w-[200px] inline-block ${!qr.destinationUrl ? 'text-rose-400 font-medium' : 'text-slate-600 dark:text-slate-400'}`}>
+                                                {qr.destinationUrl || "Not Configured"}
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="py-2 px-4 text-center">
+                                        <div className="flex flex-col items-center">
+                                            <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs font-bold">{qr.scanCount}</span>
+                                            {qr.lastScannedAt && <span className="text-[9px] text-slate-400 mt-0.5" title={new Date(qr.lastScannedAt).toLocaleString()}>Active</span>}
+                                        </div>
+                                    </td>
+                                    <td className="py-2 px-4 text-right">
+                                        {editingQrId === qr.id ? (
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button onClick={() => handleSaveInline(qr.id)} className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded" title="Save">
+                                                    <Save className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={() => setEditingQrId(null)} className="p-1.5 text-slate-500 bg-slate-100 hover:bg-slate-200 rounded" title="Cancel">
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button 
+                                                    onClick={() => {
+                                                        setEditingQrId(qr.id);
+                                                        setEditShopName(qr.shopName || "");
+                                                        setEditDestUrl(qr.destinationUrl || "");
+                                                    }} 
+                                                    className="p-1.5 text-slate-500 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors" title="Edit"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={() => handleDownloadSingle(qr.code, qr.shopName)} className="p-1.5 text-slate-500 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors" title="Download">
+                                                    <FileDown className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={() => handleDelete(qr.id)} className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Delete">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                            {qrs.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="py-12 text-center text-slate-500">
+                                        No QR Codes found. Generate some to get started.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* Hidden Templates for rendering high-res QRs */}
@@ -305,6 +375,7 @@ export default function QRManagerPage() {
                     <div 
                         key={qr.id} 
                         data-code={qr.code} 
+                        data-name={qr.shopName}
                         className="qr-download-item bg-white flex flex-col items-center justify-center p-8 w-[400px] border border-gray-100 rounded-2xl shadow-sm"
                         style={{ fontFamily: 'sans-serif' }}
                     >
@@ -315,7 +386,7 @@ export default function QRManagerPage() {
                                 </svg>
                             ))}
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-1">Enjoyed our service?</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-1">{qr.shopName || "Enjoyed our service?"}</h2>
                         <p className="text-gray-500 mb-6 font-medium text-lg">Scan to leave a Google Review</p>
                         
                         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">

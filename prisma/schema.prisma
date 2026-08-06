@@ -429,7 +429,6 @@ model BusinessProfile {
   contactPersonEmail String?
   businessEmail      String?
 
-  googleReviewUrl    String?
   googleReviewQRs    GoogleReviewQR[]
 
   upi             String?
@@ -978,7 +977,10 @@ model GoogleReviewQR {
   code              String          @unique
   businessProfileId String          @db.ObjectId
   businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id])
+  shopName          String?
+  destinationUrl    String?
   scanCount         Int             @default(0)
+  lastScannedAt     DateTime?
   createdAt         DateTime        @default(now())
 
   @@index([businessProfileId])

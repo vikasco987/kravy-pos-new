@@ -104,7 +104,7 @@ export default function AutoApplyClient() {
                             ...parseData.partsArray
                         ]
                     }],
-                    generationConfig: { responseMimeType: "application/json" }
+                    generationConfig: { responseMimeType: "application/json", maxOutputTokens: 8192 }
                 })
             });
             
@@ -214,7 +214,7 @@ export default function AutoApplyClient() {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 contents: [{ parts: parseData.partsArray }],
-                                generationConfig: { responseMimeType: "application/json" }
+                                generationConfig: { responseMimeType: "application/json", maxOutputTokens: 8192 }
                             })
                         });
 
@@ -249,7 +249,24 @@ export default function AutoApplyClient() {
                 }
 
                 // Step 4: Parse AI JSON response and apply the same smart grouping logic
-                const parsedMenu = JSON.parse(textResponse);
+                let parsedMenu;
+                try {
+                    parsedMenu = JSON.parse(textResponse);
+                } catch (parseErr: any) {
+                    console.warn("JSON parse failed, attempting auto-repair...", parseErr);
+                    try {
+                        let repaired = textResponse.replace(/,[^,]*$/, ''); // remove trailing incomplete property
+                        parsedMenu = JSON.parse(repaired + ']}');
+                    } catch (e2) {
+                        try {
+                            let repaired = textResponse.replace(/,[^,]*$/, '');
+                            parsedMenu = JSON.parse(repaired + ']}]}');
+                        } catch (e3) {
+                            throw new Error(`AI JSON is truncated and cannot be parsed. Try a smaller file. Error: ${parseErr.message}`);
+                        }
+                    }
+                }
+                
                 let menuItems: any[] = parsedMenu.menu || [];
                 
                 // Send to our backend to run the identical smart merging logic
