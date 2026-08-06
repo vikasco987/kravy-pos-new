@@ -76,8 +76,7 @@ export async function POST(request: Request) {
 
         // Insert in bulk
         const result = await prisma.googleReviewQR.createMany({
-            data: newQRs,
-            skipDuplicates: true // Just in case of rare collision
+            data: newQRs
         });
 
         return NextResponse.json({ success: true, count: result.count });
