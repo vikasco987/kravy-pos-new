@@ -103,74 +103,140 @@ export default function FuelBillingPage() {
           <style>
             body {
               font-family: monospace;
-              width: 80mm;
+              width: 58mm; /* Standard thermal width */
               margin: 0;
-              padding: 0;
-              font-size: 12px;
-              line-height: 1.5;
+              padding: 10px;
+              font-size: 13px;
+              line-height: 1.2;
               color: black;
             }
             .center { text-align: center; }
-            .bold { font-weight: bold; }
-            .text-xl { font-size: 16px; }
-            .mb-1 { margin-bottom: 4px; }
-            .mb-2 { margin-bottom: 8px; }
-            .divider { border-bottom: 1px dashed black; margin: 6px 0; }
-            
-            .row { display: flex; justify-content: space-between; }
-            .col { display: flex; flex-direction: column; }
-            .ml-2 { margin-left: 8px; }
+            .logo-container {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              margin-bottom: 15px;
+            }
+            .logo-circle {
+              width: 60px;
+              height: 60px;
+              border: 2px solid black;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              position: relative;
+            }
+            .logo-text-hi {
+              font-size: 10px;
+              font-weight: bold;
+              z-index: 2;
+              background: white;
+              padding: 0 4px;
+            }
+            .logo-line {
+              position: absolute;
+              top: 50%;
+              left: 0;
+              right: 0;
+              border-top: 2px solid black;
+              border-bottom: 2px solid black;
+              height: 4px;
+              transform: translateY(-50%);
+              z-index: 1;
+            }
+            .brand-name {
+              font-weight: bold;
+              font-size: 16px;
+              margin-top: 5px;
+              font-family: sans-serif;
+            }
+            .text-left { text-align: left; }
+            .mb { margin-bottom: 10px; }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            td {
+              padding: 1px 0;
+              vertical-align: top;
+            }
+            .col1 {
+              width: 70px;
+              white-space: nowrap;
+            }
+            .col2 {
+              width: 10px;
+              text-align: center;
+            }
+            .col3 {
+              text-align: left;
+            }
           </style>
         </head>
         <body>
-          <div class="center bold text-xl mb-1">${businessName}</div>
-          <div class="center mb-2">${profile.businessAddress || ""}</div>
-          
-          <div class="row">
-            <div>Bill No: ${bill.billNumber}</div>
-            <div>${dateStr} ${timeStr}</div>
+          <div class="logo-container">
+            <div class="logo-circle">
+              <div class="logo-line"></div>
+              <div class="logo-text-hi">इंडियनऑयल</div>
+            </div>
+            <div class="brand-name">IndianOil</div>
           </div>
           
-          <div class="divider"></div>
-          <div class="center bold mb-1">Receipt : Physical Receipt</div>
-          <div class="divider"></div>
-          
-          <div class="row">
-            <div>Vehi.No : ${bill.vehicleNo || "N/A"}</div>
-            <div>Mob.No  : ${profile.contactPersonPhone || ""}</div>
+          <div class="text-left mb">
+            ${businessName}<br>
+            7 0<br>
+            70<br>
+            ${profile.contactPersonPhone || "7894364780"}
           </div>
           
-          <div class="row">
-            <div>FP. ID  : ${fpId}</div>
-            <div>Nozl No : ${nozzleNo}</div>
-          </div>
-          
-          <div class="divider"></div>
-          
-          <div class="bold mb-1">Fuel: ${bill.fuelType}</div>
-          
-          <div class="row">
-            <div>Preset  : Rs.</div>
-            <div class="bold">${parseFloat(bill.saleAmount).toFixed(2)}</div>
-          </div>
-          
-          <div class="row">
-            <div>Rate    : Rs.</div>
-            <div>${parseFloat(bill.rate).toFixed(2)}</div>
-          </div>
-          
-          <div class="row">
-            <div class="bold">Sale    : Rs.</div>
-            <div class="bold text-xl">${parseFloat(bill.saleAmount).toFixed(2)}</div>
-          </div>
-          
-          <div class="row">
-            <div>Volume  : L</div>
-            <div class="bold">${parseFloat(bill.volume).toFixed(2)}</div>
-          </div>
-          
-          <div class="divider"></div>
-          <div class="center bold mt-2">Thank You. Please Visit Again</div>
+          <table>
+            <tr>
+              <td colspan="3">Bill No:${bill.billNumber}-ORGNL</td>
+            </tr>
+            <tr>
+              <td colspan="3">Trns.ID:</td>
+            </tr>
+            <tr>
+              <td colspan="3">Atnd.ID:</td>
+            </tr>
+            <tr>
+              <td colspan="3">Receipt:Physical Receipt</td>
+            </tr>
+            <tr>
+              <td class="col1">Vehi.No</td><td class="col2">:</td><td class="col3">${bill.vehicleNo || ""}</td>
+            </tr>
+            <tr>
+              <td class="col1">Mob.No</td><td class="col2">:</td><td class="col3">NotEntered</td>
+            </tr>
+            <tr>
+              <td class="col1">Date</td><td class="col2">:</td><td class="col3">${format(new Date(bill.createdAt), "dd/MM/yyyy")}</td>
+            </tr>
+            <tr>
+              <td class="col1">Time</td><td class="col2">:</td><td class="col3">${format(new Date(bill.createdAt), "HH:mm:ss")}</td>
+            </tr>
+            <tr>
+              <td class="col1">FP. ID</td><td class="col2">:</td><td class="col3">${fpId}</td>
+            </tr>
+            <tr>
+              <td class="col1">Nozl No</td><td class="col2">:</td><td class="col3">${nozzleNo}</td>
+            </tr>
+            <tr>
+              <td class="col1">Fuel</td><td class="col2">:</td><td class="col3">${bill.fuelType}</td>
+            </tr>
+            <tr>
+              <td class="col1">Preset</td><td class="col2">:</td><td class="col3">Rs.${parseFloat(bill.saleAmount).toFixed(0)}</td>
+            </tr>
+            <tr>
+              <td class="col1">Rate</td><td class="col2">:</td><td class="col3">Rs.${parseFloat(bill.rate).toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td class="col1">Sale</td><td class="col2">:</td><td class="col3">Rs.${parseFloat(bill.saleAmount).toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td class="col1">Volume</td><td class="col2">:</td><td class="col3">${parseFloat(bill.volume).toFixed(2)}L</td>
+            </tr>
+          </table>
         </body>
       </html>
     `;
@@ -337,54 +403,42 @@ export default function FuelBillingPage() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-[280px] bg-white text-black p-6 shadow-2xl font-mono text-sm leading-tight space-y-4 relative"
-                style={{
-                  backgroundImage: "radial-gradient(circle at 100% 100%, rgba(200,200,200,0.1) 0, transparent 20px)",
-                  borderTop: "4px dashed #cbd5e1"
-                }}
+                className="w-full max-w-[280px] bg-white text-black p-4 shadow-2xl font-mono text-[11px] leading-[1.2] relative overflow-hidden"
               >
-                <div className="text-center font-bold text-lg mb-2">{profile?.businessName || "FILLING POINT"}</div>
-                
-                <div className="flex justify-between text-xs">
-                  <span>Bill No: {lastBill.billNumber}</span>
-                  <span>{format(new Date(lastBill.createdAt), "HH:mm")}</span>
+                <div className="flex flex-col items-center mb-4 relative z-10">
+                  <div className="w-14 h-14 border-[1.5px] border-black rounded-full flex items-center justify-center relative bg-white">
+                    <div className="absolute top-1/2 left-0 right-0 border-t-[1.5px] border-b-[1.5px] border-black h-[3px] -translate-y-1/2 z-0"></div>
+                    <div className="text-[8px] font-bold z-10 bg-white px-1">इंडियनऑयल</div>
+                  </div>
+                  <div className="font-bold text-[13px] mt-1 font-sans">IndianOil</div>
                 </div>
-                
-                <div className="border-b border-dashed border-slate-400"></div>
-                <div className="text-center font-bold text-xs">Receipt : Physical Receipt</div>
-                <div className="border-b border-dashed border-slate-400"></div>
 
-                <div className="flex justify-between text-xs">
-                  <span>Vehi.No : {lastBill.vehicleNo || "N/A"}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span>FP. ID  : 1</span>
-                  <span>Nozl No : 2</span>
-                </div>
-                
-                <div className="border-b border-dashed border-slate-400"></div>
-                
-                <div className="font-bold text-xs">Fuel: {lastBill.fuelType}</div>
-                
-                <div className="flex justify-between text-xs">
-                  <span>Preset  : Rs.</span>
-                  <span className="font-bold">{parseFloat(lastBill.saleAmount).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span>Rate    : Rs.</span>
-                  <span>{parseFloat(lastBill.rate).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-base font-bold my-1">
-                  <span>Sale    : Rs.</span>
-                  <span>{parseFloat(lastBill.saleAmount).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span>Volume  : L</span>
-                  <span className="font-bold">{parseFloat(lastBill.volume).toFixed(2)}</span>
+                <div className="text-left mb-3">
+                  {profile?.businessName || "SARAT FILLING POINT"}<br />
+                  7 0<br />
+                  70<br />
+                  {profile?.contactPersonPhone || "7894364780"}
                 </div>
                 
-                <div className="border-b border-dashed border-slate-400"></div>
-                <div className="text-center font-bold text-xs">Thank You. Please Visit Again</div>
+                <table className="w-full border-collapse">
+                  <tbody>
+                    <tr><td colSpan={3}>Bill No:{lastBill.billNumber}-ORGNL</td></tr>
+                    <tr><td colSpan={3}>Trns.ID:</td></tr>
+                    <tr><td colSpan={3}>Atnd.ID:</td></tr>
+                    <tr><td colSpan={3}>Receipt:Physical Receipt</td></tr>
+                    <tr><td className="w-[60px] whitespace-nowrap py-[1px]">Vehi.No</td><td className="w-[10px] text-center">:</td><td className="text-left">{lastBill.vehicleNo || ""}</td></tr>
+                    <tr><td className="w-[60px] whitespace-nowrap py-[1px]">Mob.No</td><td className="w-[10px] text-center">:</td><td className="text-left">NotEntered</td></tr>
+                    <tr><td className="w-[60px] whitespace-nowrap py-[1px]">Date</td><td className="w-[10px] text-center">:</td><td className="text-left">{format(new Date(lastBill.createdAt), "dd/MM/yyyy")}</td></tr>
+                    <tr><td className="w-[60px] whitespace-nowrap py-[1px]">Time</td><td className="w-[10px] text-center">:</td><td className="text-left">{format(new Date(lastBill.createdAt), "HH:mm:ss")}</td></tr>
+                    <tr><td className="w-[60px] whitespace-nowrap py-[1px]">FP. ID</td><td className="w-[10px] text-center">:</td><td className="text-left">1</td></tr>
+                    <tr><td className="w-[60px] whitespace-nowrap py-[1px]">Nozl No</td><td className="w-[10px] text-center">:</td><td className="text-left">2</td></tr>
+                    <tr><td className="w-[60px] whitespace-nowrap py-[1px]">Fuel</td><td className="w-[10px] text-center">:</td><td className="text-left">{lastBill.fuelType}</td></tr>
+                    <tr><td className="w-[60px] whitespace-nowrap py-[1px]">Preset</td><td className="w-[10px] text-center">:</td><td className="text-left">Rs.{parseFloat(lastBill.saleAmount).toFixed(0)}</td></tr>
+                    <tr><td className="w-[60px] whitespace-nowrap py-[1px]">Rate</td><td className="w-[10px] text-center">:</td><td className="text-left">Rs.{parseFloat(lastBill.rate).toFixed(2)}</td></tr>
+                    <tr><td className="w-[60px] whitespace-nowrap py-[1px]">Sale</td><td className="w-[10px] text-center">:</td><td className="text-left">Rs.{parseFloat(lastBill.saleAmount).toFixed(2)}</td></tr>
+                    <tr><td className="w-[60px] whitespace-nowrap py-[1px]">Volume</td><td className="w-[10px] text-center">:</td><td className="text-left">{parseFloat(lastBill.volume).toFixed(2)}L</td></tr>
+                  </tbody>
+                </table>
               </motion.div>
             )}
           </div>
