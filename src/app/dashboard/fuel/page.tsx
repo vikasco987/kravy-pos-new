@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuthContext } from "@/components/AuthContext";
 import { toast } from "react-hot-toast";
-import { Fuel, Car, IndianRupee, Printer, Save, FileText, Droplet } from "lucide-react";
+import { Fuel, Car, IndianRupee, Printer, Save, FileText, Droplet, Settings, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 
@@ -23,10 +23,22 @@ export default function FuelBillingPage() {
   const [lastBill, setLastBill] = useState<any>(null);
   const printIframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Settings State
+  const [showSettings, setShowSettings] = useState(false);
+  const [fuelLogoSize, setFuelLogoSize] = useState<number>(60);
+  const [fuelAddressSize, setFuelAddressSize] = useState<number>(24);
+  const [savingSettings, setSavingSettings] = useState(false);
+
   useEffect(() => {
     fetch("/api/profile")
       .then(res => res.json())
-      .then(data => setProfile(data))
+      .then(data => {
+        setProfile(data);
+        if (data?.printSettings) {
+          if (data.printSettings.fuelLogoSize) setFuelLogoSize(data.printSettings.fuelLogoSize);
+          if (data.printSettings.fuelAddressSize) setFuelAddressSize(data.printSettings.fuelAddressSize);
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -80,6 +92,38 @@ export default function FuelBillingPage() {
     }
   };
 
+  const saveFuelSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const updatedPrintSettings = {
+        ...(profile?.printSettings || {}),
+        fuelLogoSize,
+        fuelAddressSize
+      };
+      
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          id: profile?.id,
+          printSettings: updatedPrintSettings
+        }),
+      });
+      
+      if (res.ok) {
+        setProfile((prev: any) => ({ ...prev, printSettings: updatedPrintSettings }));
+        toast.success("Print settings saved!");
+        setShowSettings(false);
+      } else {
+        toast.error("Failed to save settings");
+      }
+    } catch (error) {
+      toast.error("Error saving settings");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const handlePrint = (bill: any) => {
     if (!profile) return;
 
@@ -125,8 +169,8 @@ export default function FuelBillingPage() {
               margin-bottom: 25px;
             }
             .logo-circle {
-              width: 110px;
-              height: 110px;
+              width: ${fuelLogoSize * 1.83}px;
+              height: ${fuelLogoSize * 1.83}px;
               border: 3px solid black;
               border-radius: 50%;
               display: flex;
@@ -135,7 +179,7 @@ export default function FuelBillingPage() {
               position: relative;
             }
             .logo-text-hi {
-              font-size: 18px;
+              font-size: ${fuelLogoSize * 0.3}px;
               font-weight: 900;
               z-index: 2;
               background: white;
@@ -154,11 +198,14 @@ export default function FuelBillingPage() {
             }
             .brand-name {
               font-weight: 900;
-              font-size: 30px;
+              font-size: ${fuelLogoSize * 0.5}px;
               margin-top: 10px;
               font-family: sans-serif;
             }
-            .text-left { text-align: left; }
+            .text-left { 
+              text-align: left; 
+              font-size: ${fuelAddressSize}px;
+            }
             .mb { margin-bottom: 20px; }
             table {
               width: 100%;
@@ -184,7 +231,7 @@ export default function FuelBillingPage() {
         <body>
           <div class="logo-container">
             ${profile.logoUrl 
-              ? `<img src="${profile.logoUrl}" style="height: 60px; object-fit: contain; filter: contrast(1000%) grayscale(100%) brightness(1.1);" />` 
+              ? `<img src="${profile.logoUrl}" style="height: ${fuelLogoSize}px; object-fit: contain; filter: contrast(1000%) grayscale(100%) brightness(1.1);" />` 
               : `
               <div class="logo-circle">
                 <div class="logo-line"></div>
@@ -398,10 +445,19 @@ export default function FuelBillingPage() {
 
         {/* RECENT BILLS OR PREVIEW */}
         <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] p-6 shadow-xl flex flex-col">
-          <h3 className="text-lg font-black text-[var(--kravy-text-primary)] flex items-center gap-2 mb-6">
-            <Save size={18} className="text-indigo-500" />
-            Last Generated Bill
-          </h3>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-black text-[var(--kravy-text-primary)] flex items-center gap-2">
+              <Save size={18} className="text-indigo-500" />
+              Last Generated Bill
+            </h3>
+            <button 
+              onClick={() => setShowSettings(true)}
+              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-500 transition-colors"
+              title="Print Settings"
+            >
+              <Settings size={18} />
+            </button>
+          </div>
           
           <div className="flex-1 bg-slate-100/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 flex flex-col items-center justify-center relative overflow-hidden">
             {!lastBill ? (
@@ -417,22 +473,22 @@ export default function FuelBillingPage() {
               >
                 <div className="flex flex-col items-center mb-4 relative z-10">
                   {profile?.logoUrl ? (
-                    <img src={profile.logoUrl} alt="Logo" className="h-14 object-contain grayscale contrast-200" />
+                    <img src={profile.logoUrl} alt="Logo" style={{ height: \`\${fuelLogoSize / 4}px\` }} className="object-contain grayscale contrast-200" />
                   ) : (
                     <>
-                      <div className="w-14 h-14 border-[1.5px] border-black rounded-full flex items-center justify-center relative bg-white">
+                      <div className="border-[1.5px] border-black rounded-full flex items-center justify-center relative bg-white" style={{ width: \`\${fuelLogoSize / 4}px\`, height: \`\${fuelLogoSize / 4}px\` }}>
                         <div className="absolute top-1/2 left-0 right-0 border-t-[1.5px] border-b-[1.5px] border-black h-[3px] -translate-y-1/2 z-0"></div>
-                        <div className="text-[8px] font-bold z-10 bg-white px-1">इंडियनऑयल</div>
+                        <div className="font-bold z-10 bg-white px-1" style={{ fontSize: \`\${fuelLogoSize / 15}px\` }}>इंडियनऑयल</div>
                       </div>
-                      <div className="font-bold text-[13px] mt-1 font-sans">IndianOil</div>
+                      <div className="font-bold mt-1 font-sans" style={{ fontSize: \`\${fuelLogoSize / 9}px\` }}>IndianOil</div>
                     </>
                   )}
                 </div>
 
-                <div className="text-left mb-3">
+                <div className="text-left mb-3" style={{ fontSize: \`\${fuelAddressSize / 2}px\` }}>
                   {profile?.businessName || "SARAT FILLING POINT"}<br />
                   {profile?.businessAddress ? (
-                    profile.businessAddress.split('\n').map((line: string, i: number) => (
+                    profile.businessAddress.split('\\n').map((line: string, i: number) => (
                       <span key={i}>{line}<br /></span>
                     ))
                   ) : (
@@ -479,6 +535,73 @@ export default function FuelBillingPage() {
       
       {/* Invisible Iframe for Printing */}
       <iframe ref={printIframeRef} style={{ display: 'none' }} title="Print Receipt" />
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-6 w-full max-w-md border border-slate-200 dark:border-slate-800"
+          >
+            <div className="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <h2 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+                <Settings size={20} className="text-indigo-500" />
+                Receipt Customization
+              </h2>
+              <button 
+                onClick={() => setShowSettings(false)}
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Logo Size</label>
+                  <span className="text-xs font-black text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-lg">{fuelLogoSize}px</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="20" 
+                  max="120" 
+                  value={fuelLogoSize} 
+                  onChange={(e) => setFuelLogoSize(Number(e.target.value))}
+                  className="w-full accent-indigo-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Address Font Size</label>
+                  <span className="text-xs font-black text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-lg">{fuelAddressSize}px</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="12" 
+                  max="48" 
+                  value={fuelAddressSize} 
+                  onChange={(e) => setFuelAddressSize(Number(e.target.value))}
+                  className="w-full accent-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <button
+                onClick={saveFuelSettings}
+                disabled={savingSettings}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+              >
+                <Save size={18} />
+                {savingSettings ? "SAVING..." : "SAVE SETTINGS"}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
