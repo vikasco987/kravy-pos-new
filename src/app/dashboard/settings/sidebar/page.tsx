@@ -20,6 +20,7 @@ const allSidebarGroups = [
     items: [
       { icon: Home, label: "Store Dashboard", href: "/dashboard" },
       { icon: ShoppingCart, label: "Quick POS Billing", href: "/dashboard/billing/checkout" },
+      { icon: Zap, label: "Fuel Billing", href: "/dashboard/fuel" },
       { icon: LayoutDashboard, label: "Floor Management", href: "/dashboard/terminal" },
       { icon: Activity, label: "Kitchen Workflow", href: "/dashboard/kitchen" },
       { icon: LayoutGrid, label: "Table Status", href: "/dashboard/tables" },

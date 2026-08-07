@@ -496,7 +496,7 @@ export default function Sidebar() {
           if (data.taxEnabled || data.perProductTaxEnabled) setTaxEnabled(true);
           if (data.aiScraperEnabled) setAiScraperEnabled(true);
           if (data.excelImportEnabled) setExcelImportEnabled(true);
-          if (data.enableFuelBilling) setFuelBillingEnabled(true);
+          setFuelBillingEnabled(!!data.enableFuelBilling);
 
           const hiddenFromDb = data.printSettings?.hiddenSidebarItems || data.hiddenSidebarItems;
           if (Array.isArray(hiddenFromDb)) {
@@ -806,10 +806,16 @@ export default function Sidebar() {
               }
             }
 
-            // 1. Global Admin Bypass - Show everything to administrators
+            // 1. Application-wide Feature Flags (Controlled by profile settings)
+            if (item.label === "GST Reports" && !taxEnabled) return false;
+            if (item.label === "AI Menu Scraper" && !aiScraperEnabled) return false;
+            if (item.label === "Excel Bulk Import" && !excelImportEnabled) return false;
+            if (item.label === "Fuel Billing" && !fuelBillingEnabled) return false;
+
+            // 2. Global Admin Bypass - Show everything else to administrators
             if (userRole === "ADMIN") return true;
 
-            // 2. Explicit Path-based Access (from DB allowedPaths)
+            // 3. Explicit Path-based Access (from DB allowedPaths)
             // If the current user has this specific path in their allowed list, grant access
             const baseHref = item.href.split("?")[0];
             const hasLegacyWorkflow = allowedPaths.includes("/dashboard/workflow");
@@ -826,11 +832,6 @@ export default function Sidebar() {
               (isExpensePath && (userRole === "ADMIN" || userRole === "SELLER"))
             ) return true;
 
-            // 3. Application-wide Feature Flags (Controlled by profile settings)
-            if (item.label === "GST Reports" && !taxEnabled) return false;
-            if (item.label === "AI Menu Scraper" && !aiScraperEnabled) return false;
-            if (item.label === "Excel Bulk Import" && !excelImportEnabled) return false;
-            if (item.label === "Fuel Billing" && !fuelBillingEnabled) return false;
             
             // 4. Permission List Constraint
             // If the user has a populated list of allowedPaths, but this item isn't in it,
