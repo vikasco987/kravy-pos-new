@@ -2088,6 +2088,7 @@ export default function CheckoutClient() {
                 : (serverToken || "---");
               
               finalHtmlToPrint = finalHtmlToPrint.replace(/#KOT_PLACEHOLDER/g, `#${latestKot}`);
+              finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${latestKot}`);
               if (serverToken != null) {
                 finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${serverToken}`);
               }

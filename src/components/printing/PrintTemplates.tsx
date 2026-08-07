@@ -625,7 +625,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                   if (tokenNumber && tokenNumber !== "---" && tokenNumber !== 0) {
                     return tokenNumber;
                   }
-                  return billNumber || "NEW";
+                  return "---";
                 })()}
               </div>
             </div>
