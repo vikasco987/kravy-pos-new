@@ -734,7 +734,7 @@ export default function ViewBillPage() {
     let isInclusive = taxStatus === "With Tax";
 
     if ((bill.tax || 0) > 0 && (bill.total || 0) > 0) {
-      const expectedExclusive = (bill.subtotal || 0) + (bill.tax || 0) + (bill.deliveryCharges || 0) + (bill.packagingCharges || 0) + (bill.serviceCharge || 0);
+      const expectedExclusive = (bill.subtotal || 0) + (bill.tax || 0) + (bill.deliveryCharges || 0) + (bill.packagingCharges || 0) + (bill.serviceCharge || 0) - (bill.discountAmount || 0);
       if (Math.abs(bill.total - expectedExclusive) < 0.5) {
         isInclusive = false;
       } else {

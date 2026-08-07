@@ -134,7 +134,6 @@ const navGroups = [
       { icon: <LayoutDashboard size={18} />, label: "Floor Management", href: "/dashboard/terminal" },
       { icon: <Activity size={18} />, label: "Kitchen Workflow", href: "/dashboard/kitchen" },
       { icon: <LayoutGrid size={18} />, label: "Table Status", href: "/dashboard/tables" },
-      { icon: <Fuel size={18} />, label: "Fuel Billing", href: "/dashboard/fuel", badge: "Fuel", badgeColor: "#EC4899" },
       { icon: <Building size={18} />, label: "Hotel Room Stay", href: "/dashboard/rooms", badge: "Hotel", badgeColor: "#8B5CF6" },
       { icon: <Receipt size={18} />, label: "Past Bills / History", href: "/dashboard/billing" },
       { icon: <Zap size={18} />, label: "Go to Billing Panel", href: "https://billing.kravy.in", external: true },
