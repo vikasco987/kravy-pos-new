@@ -847,6 +847,7 @@ model WalletTransaction {
   type        String   // "CREDIT" (Deposit) | "DEBIT" (Payment)
   amount      Float
   description String?  // e.g., "Order #123" or "Manual Deposit"
+  paymentProof String?
   createdAt   DateTime @default(now())
 
   @@index([partyId])

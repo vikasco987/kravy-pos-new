@@ -26,7 +26,10 @@ import {
   List,
   Printer,
   Wallet,
-  Share2
+  Share2,
+  Paperclip,
+  ExternalLink,
+  Image as ImageIcon
 } from "lucide-react";
 import { kravy } from "@/lib/sounds";
 
@@ -99,8 +102,9 @@ export default function PartiesPage() {
   const [depositingParty, setDepositingParty] = useState<Party | null>(null);
   const [depositAmount, setDepositAmount] = useState("");
   const [depositLoading, setDepositLoading] = useState(false);
-  const [depositType, setDepositType] = useState<"deposit" | "withdraw">("deposit");
+  const [depositType, setDepositType] = useState<"deposit" | "withdraw" | "udhar">("deposit");
   const [depositRemark, setDepositRemark] = useState("");
+  const [depositProof, setDepositProof] = useState<File | null>(null);
 
   // Edit Transaction State
   const [editingTx, setEditingTx] = useState<any | null>(null);
@@ -379,6 +383,23 @@ export default function PartiesPage() {
     setDepositLoading(true);
     const actionText = depositType === 'deposit' ? 'Deposited' : depositType === 'withdraw' ? 'Withdrawn' : 'Given as Udhar';
     const fallbackDesc = depositType === 'deposit' ? 'Manual Cash Deposit' : depositType === 'withdraw' ? 'Manual Cash Withdrawal' : 'Udhar (Credit Given)';
+    let proofUrl = null;
+    if (depositProof) {
+      const formData = new FormData();
+      formData.append("file", depositProof);
+      try {
+        const uploadRes = await fetch("/api/upload/image", { method: "POST", body: formData });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          proofUrl = uploadData.url;
+        }
+      } catch(e) {
+        pushToast("error", "Failed to upload proof");
+        setDepositLoading(false);
+        return;
+      }
+    }
+
     try {
       const res = await fetch('/api/wallet', {
         method: 'POST',
@@ -387,7 +408,8 @@ export default function PartiesPage() {
           action: depositType,
           partyId: depositingParty.id,
           amount: parseFloat(depositAmount),
-          description: depositRemark.trim() || fallbackDesc
+          description: depositRemark.trim() || fallbackDesc,
+          paymentProof: proofUrl
         })
       });
       if (res.ok) {
@@ -398,6 +420,7 @@ export default function PartiesPage() {
         setDepositAmount("");
         setDepositRemark("");
         setDepositType("deposit");
+        setDepositProof(null);
       } else {
         const errJson = await res.json();
         pushToast("error", errJson.error || `${depositType === 'deposit' ? 'Deposit' : 'Withdrawal'} failed`);
@@ -899,6 +922,17 @@ export default function PartiesPage() {
                                 >
                                   <Printer size={12} />
                                 </button>
+                                {tx.paymentProof && (
+                                  <a 
+                                    href={tx.paymentProof} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="p-1 text-[var(--kravy-text-muted)] hover:text-emerald-500 transition-all"
+                                    title="View Payment Proof"
+                                  >
+                                    <ExternalLink size={12} />
+                                  </a>
+                                )}
                                 {business?.printSettings?.allowWalletEditDelete !== false && (
                                   <>
                                     <button 
@@ -987,6 +1021,7 @@ export default function PartiesPage() {
                 setDepositAmount(""); 
                 setDepositRemark("");
                 setDepositType("deposit");
+                setDepositProof(null);
               }}
             >
               <div className="space-y-6">
@@ -1113,6 +1148,38 @@ export default function PartiesPage() {
                   />
                 </div>
 
+                {/* Proof Upload */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] ml-2">
+                    Payment Proof (Optional)
+                  </label>
+                  <label className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-[var(--kravy-bg-2)] border border-dashed border-[var(--kravy-input-border)] text-[var(--kravy-text-muted)] hover:text-[var(--kravy-brand)] hover:border-[var(--kravy-brand)] rounded-2xl cursor-pointer transition-all">
+                    <Paperclip size={16} />
+                    <span className="text-xs font-bold">{depositProof ? depositProof.name : "Attach Image/Screenshot"}</span>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setDepositProof(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </label>
+                  {depositProof && (
+                    <div className="flex justify-end">
+                      <button 
+                        type="button" 
+                        onClick={() => setDepositProof(null)}
+                        className="text-[9px] text-rose-500 font-black uppercase tracking-widest hover:underline"
+                      >
+                        Remove Attachment
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Buttons */}
                 <div className="flex gap-4 pt-2">
                   <button 
@@ -1123,6 +1190,7 @@ export default function PartiesPage() {
                       setDepositAmount(""); 
                       setDepositRemark("");
                       setDepositType("deposit");
+                      setDepositProof(null);
                     }}
                     className="flex-1 py-4 border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[var(--kravy-bg-2)] transition-all"
                   >

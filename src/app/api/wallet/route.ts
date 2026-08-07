@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { action, partyId, amount, description, transactionId, type } = body;
+    const { action, partyId, amount, description, transactionId, type, paymentProof } = body;
 
     console.log(`[WALLET_API] Action: ${action}, PartyId: ${partyId}, TransactionId: ${transactionId}, Amount: ${amount}`);
 
@@ -144,6 +144,7 @@ export async function POST(req: NextRequest) {
           type: "CREDIT",
           amount,
           description: description || "Money Deposited",
+          paymentProof,
         },
       });
 
@@ -176,6 +177,7 @@ export async function POST(req: NextRequest) {
           type: "DEBIT",
           amount,
           description: description || "Paid for Order",
+          paymentProof,
         },
       });
 
@@ -208,6 +210,7 @@ export async function POST(req: NextRequest) {
           type: "DEBIT",
           amount,
           description: description || "Money Withdrawn",
+          paymentProof,
         },
       });
 
@@ -233,6 +236,7 @@ export async function POST(req: NextRequest) {
           type: "DEBIT",
           amount,
           description: description || "Udhar (Credit Given)",
+          paymentProof,
         },
       });
 
