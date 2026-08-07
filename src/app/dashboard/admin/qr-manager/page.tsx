@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Loader2, Plus, RefreshCcw, Save, DownloadCloud, FileDown, CheckCircle2, Upload, Trash2, Edit2, X } from "lucide-react";
+import { Loader2, Plus, RefreshCcw, Save, DownloadCloud, FileDown, CheckCircle2, Upload, Trash2, Edit2, X, Search } from "lucide-react";
 import { toast } from "react-hot-toast";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -14,6 +14,9 @@ export default function QRManagerPage() {
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [downloading, setDownloading] = useState(false);
+    
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filterConfigured, setFilterConfigured] = useState<"ALL" | "CONFIGURED" | "NOT_CONFIGURED">("ALL");
     
     const [customQty, setCustomQty] = useState(10);
     const [editingQrId, setEditingQrId] = useState<string | null>(null);
@@ -259,11 +262,45 @@ export default function QRManagerPage() {
             </div>
 
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold">All QR Codes ({qrs.length})</h2>
-                    <button onClick={fetchQRs} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-                        <RefreshCcw className="w-4 h-4 text-slate-500" />
-                    </button>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-4">
+                    <h2 className="text-lg font-semibold whitespace-nowrap">All QR Codes ({qrs.filter(qr => {
+                        const matchesSearch = (qr.shopName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) || qr.code.toLowerCase().includes(searchQuery.toLowerCase());
+                        if (!matchesSearch) return false;
+                        if (filterConfigured === "CONFIGURED") return !!qr.destinationUrl;
+                        if (filterConfigured === "NOT_CONFIGURED") return !qr.destinationUrl;
+                        return true;
+                    }).length}{qrs.filter(qr => {
+                        const matchesSearch = (qr.shopName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) || qr.code.toLowerCase().includes(searchQuery.toLowerCase());
+                        if (!matchesSearch) return false;
+                        if (filterConfigured === "CONFIGURED") return !!qr.destinationUrl;
+                        if (filterConfigured === "NOT_CONFIGURED") return !qr.destinationUrl;
+                        return true;
+                    }).length !== qrs.length ? ` / ${qrs.length}` : ''})</h2>
+                    
+                    <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                        <div className="relative flex-1 md:w-64">
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input 
+                                type="text"
+                                placeholder="Search Shop or Code..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-primary"
+                            />
+                        </div>
+                        <select 
+                            value={filterConfigured}
+                            onChange={e => setFilterConfigured(e.target.value as any)}
+                            className="px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-primary"
+                        >
+                            <option value="ALL">All QRs</option>
+                            <option value="CONFIGURED">Configured ✅</option>
+                            <option value="NOT_CONFIGURED">Not Configured ⚠️</option>
+                        </select>
+                        <button onClick={fetchQRs} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg shrink-0">
+                            <RefreshCcw className="w-4 h-4 text-slate-500" />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
@@ -279,7 +316,13 @@ export default function QRManagerPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {qrs.map((qr) => (
+                            {qrs.filter(qr => {
+                                const matchesSearch = (qr.shopName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) || qr.code.toLowerCase().includes(searchQuery.toLowerCase());
+                                if (!matchesSearch) return false;
+                                if (filterConfigured === "CONFIGURED") return !!qr.destinationUrl;
+                                if (filterConfigured === "NOT_CONFIGURED") return !qr.destinationUrl;
+                                return true;
+                            }).map((qr) => (
                                 <tr key={qr.id} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20">
                                     <td className="py-2 px-4">
                                         <div className="w-10 h-10 bg-white p-1 rounded border">
@@ -357,7 +400,13 @@ export default function QRManagerPage() {
                                     </td>
                                 </tr>
                             ))}
-                            {qrs.length === 0 && (
+                            {qrs.filter(qr => {
+                                const matchesSearch = (qr.shopName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) || qr.code.toLowerCase().includes(searchQuery.toLowerCase());
+                                if (!matchesSearch) return false;
+                                if (filterConfigured === "CONFIGURED") return !!qr.destinationUrl;
+                                if (filterConfigured === "NOT_CONFIGURED") return !qr.destinationUrl;
+                                return true;
+                            }).length === 0 && (
                                 <tr>
                                     <td colSpan={6} className="py-12 text-center text-slate-500">
                                         No QR Codes found. Generate some to get started.
