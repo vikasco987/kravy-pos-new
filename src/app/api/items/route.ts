@@ -377,38 +377,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const targetCategoryId = (body.categoryId && isValidObjectId(String(body.categoryId))) 
-      ? String(body.categoryId)
-      : null;
-
-    // Smart Upsert Check: Prevent duplicate items under the same category
-    const existingItem = await prisma.item.findFirst({
-      where: {
-        name: { equals: body.name, mode: 'insensitive' },
-        clerkId: effectiveId,
-        categoryId: targetCategoryId
-      }
-    });
-
-    if (existingItem) {
-      console.log(`ℹ️ [API_ITEMS_POST] Item already exists. Updating price for: ${body.name}`);
-      const updatedItem = await prisma.item.update({
-        where: { id: existingItem.id },
-        data: {
-          price: Number(body.price),
-          sellingPrice: body.sellingPrice != null ? Number(body.sellingPrice) : Number(body.price),
-          isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : undefined,
-          isEgg: body.isEgg !== undefined ? Boolean(body.isEgg) : undefined,
-          description: body.description !== undefined ? body.description : undefined,
-        },
-        include: {
-          category: true,
-          addonGroups: true
-        }
-      });
-      return NextResponse.json(updatedItem, { status: 200 });
-    }
-
     const item = await prisma.item.create({
       data: {
         name: body.name,
@@ -422,7 +390,9 @@ export async function POST(req: Request) {
         image: body.imageUrl || null,
         description: body.description || null,
         clerkId: effectiveId,
-        categoryId: targetCategoryId || undefined,
+        categoryId: (body.categoryId && isValidObjectId(String(body.categoryId))) 
+          ? String(body.categoryId)
+          : undefined,
         userId: dbUser.id,
         // Enhanced Fields
         isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : true,
