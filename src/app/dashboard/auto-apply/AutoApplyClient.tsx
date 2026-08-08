@@ -262,18 +262,34 @@ export default function AutoApplyClient() {
                     parsedMenu = JSON.parse(cleanText);
                 } catch (parseErr: any) {
                     console.warn("JSON parse failed, attempting auto-repair...", parseErr);
-                    try {
-                        let cleanText = textResponse.replace(/[\\n\\r]+/g, ' ');
-                        let repaired = cleanText.replace(/,[^,]*$/, ''); // remove trailing incomplete property
-                        parsedMenu = JSON.parse(repaired + ']}');
-                    } catch (e2) {
+                    let cleanText = textResponse.replace(/[\\n\\r]+/g, ' ');
+                    let repaired = cleanText.replace(/,[^,]*$/, ''); // remove trailing incomplete property
+                    
+                    const closingOptions = [']', '}]', ']}', ']}]}', '}', '}}'];
+                    let success = false;
+                    
+                    for (const closing of closingOptions) {
                         try {
-                            let cleanText = textResponse.replace(/[\\n\\r]+/g, ' ');
-                            let repaired = cleanText.replace(/,[^,]*$/, '');
-                            parsedMenu = JSON.parse(repaired + ']}]}');
-                        } catch (e3) {
-                            throw new Error(`AI JSON is truncated and cannot be parsed. Try a smaller file. Error: ${parseErr.message}`);
+                            parsedMenu = JSON.parse(repaired + closing);
+                            success = true;
+                            break;
+                        } catch(e) {}
+                    }
+                    
+                    if (!success) {
+                        // try more aggressive removal of the last two items in case it was deeply truncated
+                        repaired = repaired.replace(/,[^,]*$/, '');
+                        for (const closing of closingOptions) {
+                            try {
+                                parsedMenu = JSON.parse(repaired + closing);
+                                success = true;
+                                break;
+                            } catch(e) {}
                         }
+                    }
+                    
+                    if (!success) {
+                        throw new Error(`AI JSON is truncated and cannot be parsed. Try a smaller file. Error: ${parseErr.message}`);
                     }
                 }
                 

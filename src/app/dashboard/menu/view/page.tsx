@@ -658,18 +658,33 @@ export default function ViewMenuPage() {
             parsedJson = JSON.parse(cleanText);
         } catch (parseErr: any) {
             console.warn("JSON parse failed, attempting auto-repair...", parseErr);
-            try {
-                let cleanText = textResponse.replace(/[\\n\\r]+/g, ' ');
-                let repaired = cleanText.replace(/,[^,]*$/, ''); 
-                parsedJson = JSON.parse(repaired + ']}');
-            } catch (e2) {
+            let cleanText = textResponse.replace(/[\\n\\r]+/g, ' ');
+            let repaired = cleanText.replace(/,[^,]*$/, ''); 
+            
+            const closingOptions = [']', '}]', ']}', ']}]}', '}', '}}'];
+            let success = false;
+            
+            for (const closing of closingOptions) {
                 try {
-                    let cleanText = textResponse.replace(/[\\n\\r]+/g, ' ');
-                    let repaired = cleanText.replace(/,[^,]*$/, '');
-                    parsedJson = JSON.parse(repaired + ']}]}');
-                } catch (e3) {
-                    throw new Error(`AI JSON is truncated and cannot be parsed. Try a smaller file. Error: ${parseErr.message}`);
+                    parsedJson = JSON.parse(repaired + closing);
+                    success = true;
+                    break;
+                } catch(e) {}
+            }
+            
+            if (!success) {
+                repaired = repaired.replace(/,[^,]*$/, '');
+                for (const closing of closingOptions) {
+                    try {
+                        parsedJson = JSON.parse(repaired + closing);
+                        success = true;
+                        break;
+                    } catch(e) {}
                 }
+            }
+            
+            if (!success) {
+                throw new Error(`AI JSON is truncated and cannot be parsed. Try a smaller file. Error: ${parseErr.message}`);
             }
         }
         const processRes = await fetch("/api/menu/post-process", {
