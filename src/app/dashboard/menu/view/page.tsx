@@ -655,13 +655,18 @@ export default function ViewMenuPage() {
             if (cleanText.endsWith('```')) cleanText = cleanText.substring(0, cleanText.length - 3);
             
             cleanText = cleanText.replace(/[\\n\\r\\t]+/g, ' ');
+            
+            // Remove trailing commas inside objects and arrays (fixes "Expected double-quoted property name")
+            cleanText = cleanText.replace(/,\\s*}/g, '}').replace(/,\\s*]/g, ']');
+            
             parsedJson = JSON.parse(cleanText);
         } catch (parseErr: any) {
             console.warn("JSON parse failed, attempting auto-repair...", parseErr);
             let cleanText = textResponse.replace(/[\\n\\r]+/g, ' ');
+            cleanText = cleanText.replace(/,\\s*}/g, '}').replace(/,\\s*]/g, ']');
             let repaired = cleanText.replace(/,[^,]*$/, ''); 
             
-            const closingOptions = [']', '}]', ']}', ']}]}', '}', '}}'];
+            const closingOptions = [']', '}]', ']}', ']}]}', '}', '}}', '}]}'];
             let success = false;
             
             for (const closing of closingOptions) {

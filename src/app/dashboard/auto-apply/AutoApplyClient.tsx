@@ -259,13 +259,17 @@ export default function AutoApplyClient() {
                     // Replace literal newlines and control chars with space to prevent 'Unterminated string' errors
                     cleanText = cleanText.replace(/[\\n\\r\\t]+/g, ' ');
                     
+                    // Remove trailing commas inside objects and arrays (fixes "Expected double-quoted property name")
+                    cleanText = cleanText.replace(/,\\s*}/g, '}').replace(/,\\s*]/g, ']');
+                    
                     parsedMenu = JSON.parse(cleanText);
                 } catch (parseErr: any) {
                     console.warn("JSON parse failed, attempting auto-repair...", parseErr);
                     let cleanText = textResponse.replace(/[\\n\\r]+/g, ' ');
+                    cleanText = cleanText.replace(/,\\s*}/g, '}').replace(/,\\s*]/g, ']');
                     let repaired = cleanText.replace(/,[^,]*$/, ''); // remove trailing incomplete property
                     
-                    const closingOptions = [']', '}]', ']}', ']}]}', '}', '}}'];
+                    const closingOptions = [']', '}]', ']}', ']}]}', '}', '}}', '}]}'];
                     let success = false;
                     
                     for (const closing of closingOptions) {
