@@ -109,10 +109,10 @@ Please return a structured JSON response matching the following structure:
 }
 
 Strictly follow these rules:
-1. Return ONLY the raw JSON object inside the JSON block. Do not add any conversational text or explanation.
+1. Return ONLY the raw JSON object. Do not add any conversational text. The JSON MUST NOT contain literal newlines inside string values. Please do not pretty-print.
 2. Group items under correct logical categories.
 3. Normalize all spelling and format.
-4. Ensure the output is valid JSON. VERY IMPORTANT: You MUST properly escape any double quotes inside string values using a backslash (e.g., "description": "A \\"delicious\\" meal") to prevent JSON parsing errors.
+4. Ensure the output is valid JSON. VERY IMPORTANT: You MUST properly escape any double quotes inside string values using a backslash (e.g., "name": "10\\" Pizza") to prevent JSON parsing errors. Never use literal newlines inside strings.
 ${languageRule}
 6. EXTREME IMPORTANCE: DO NOT SKIP ANY ITEMS. YOU MUST EXTRACT EVERY SINGLE ROW, NO MATTER HOW LONG THE DOCUMENT IS. NEVER TRUNCATE OR USE ELLIPSES (...). EXTRACT 100% OF THE ITEMS.
 `;

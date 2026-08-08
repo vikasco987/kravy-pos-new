@@ -647,7 +647,31 @@ export default function ViewMenuPage() {
         if (!textResponse) throw new Error("Gemini models failed to extract menu.");
 
         // Step 4: Post Process
-        const parsedJson = JSON.parse(textResponse);
+        let parsedJson;
+        try {
+            let cleanText = textResponse.trim();
+            if (cleanText.startsWith('```json')) cleanText = cleanText.substring(7);
+            if (cleanText.startsWith('```')) cleanText = cleanText.substring(3);
+            if (cleanText.endsWith('```')) cleanText = cleanText.substring(0, cleanText.length - 3);
+            
+            cleanText = cleanText.replace(/[\\n\\r\\t]+/g, ' ');
+            parsedJson = JSON.parse(cleanText);
+        } catch (parseErr: any) {
+            console.warn("JSON parse failed, attempting auto-repair...", parseErr);
+            try {
+                let cleanText = textResponse.replace(/[\\n\\r]+/g, ' ');
+                let repaired = cleanText.replace(/,[^,]*$/, ''); 
+                parsedJson = JSON.parse(repaired + ']}');
+            } catch (e2) {
+                try {
+                    let cleanText = textResponse.replace(/[\\n\\r]+/g, ' ');
+                    let repaired = cleanText.replace(/,[^,]*$/, '');
+                    parsedJson = JSON.parse(repaired + ']}]}');
+                } catch (e3) {
+                    throw new Error(`AI JSON is truncated and cannot be parsed. Try a smaller file. Error: ${parseErr.message}`);
+                }
+            }
+        }
         const processRes = await fetch("/api/menu/post-process", {
           method: "POST",
           headers: { 'Content-Type': 'application/json' },

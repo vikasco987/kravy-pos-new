@@ -251,15 +251,25 @@ export default function AutoApplyClient() {
                 // Step 4: Parse AI JSON response and apply the same smart grouping logic
                 let parsedMenu;
                 try {
-                    parsedMenu = JSON.parse(textResponse);
+                    let cleanText = textResponse.trim();
+                    if (cleanText.startsWith('```json')) cleanText = cleanText.substring(7);
+                    if (cleanText.startsWith('```')) cleanText = cleanText.substring(3);
+                    if (cleanText.endsWith('```')) cleanText = cleanText.substring(0, cleanText.length - 3);
+                    
+                    // Replace literal newlines and control chars with space to prevent 'Unterminated string' errors
+                    cleanText = cleanText.replace(/[\\n\\r\\t]+/g, ' ');
+                    
+                    parsedMenu = JSON.parse(cleanText);
                 } catch (parseErr: any) {
                     console.warn("JSON parse failed, attempting auto-repair...", parseErr);
                     try {
-                        let repaired = textResponse.replace(/,[^,]*$/, ''); // remove trailing incomplete property
+                        let cleanText = textResponse.replace(/[\\n\\r]+/g, ' ');
+                        let repaired = cleanText.replace(/,[^,]*$/, ''); // remove trailing incomplete property
                         parsedMenu = JSON.parse(repaired + ']}');
                     } catch (e2) {
                         try {
-                            let repaired = textResponse.replace(/,[^,]*$/, '');
+                            let cleanText = textResponse.replace(/[\\n\\r]+/g, ' ');
+                            let repaired = cleanText.replace(/,[^,]*$/, '');
                             parsedMenu = JSON.parse(repaired + ']}]}');
                         } catch (e3) {
                             throw new Error(`AI JSON is truncated and cannot be parsed. Try a smaller file. Error: ${parseErr.message}`);
