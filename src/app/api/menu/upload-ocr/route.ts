@@ -103,7 +103,7 @@ Please return a structured JSON response matching the following structure:
       "name": "Formatted Item Name. FOR FOOD ONLY: ALWAYS add the (V) or (NV) badge. DO NOT add (V) or (NV) badges for Retail/Hardware/Non-Food items! CRUCIAL RULE: If the item has different sizes (like Regular, Medium, Large, Half, Full), you MUST append the size suffix inside brackets AT THE END OF THE NAME for EVERY size variant! Each size MUST have its own row with its specific price.",
       "price": 250, // Extract the price as a number. Crucial: If one item has multiple sizes/prices, create a SEPARATE row for each size in this list.
       "type": "Pure Veg", // FOR FOOD ONLY: Veg items MUST be 'Pure Veg'. Meat MUST be 'Non-Veg'. Egg items MUST be 'Non-Veg (Egg)'. FOR RETAIL/HARDWARE/NON-FOOD: ALWAYS use 'General'.
-      "description": "A unique, 1-line description for this individual row. FOR FOOD: A gourmet description. FOR RETAIL/HARDWARE: A professional product description. Crucial: Every single row must have a completely unique description. No two descriptions must be identical!"
+      "description": "" // Leave empty to save tokens, unless a description is explicitly printed on the menu document.
     }
   ]
 }
