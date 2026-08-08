@@ -692,6 +692,21 @@ export default function ViewMenuPage() {
             }
             
             if (!success) {
+                // Bulletproof strategy: discard the broken object completely by truncating at the last '}'
+                const lastBrace = textResponse.lastIndexOf('}');
+                if (lastBrace !== -1) {
+                    let aggressiveRepair = textResponse.substring(0, lastBrace + 1);
+                    for (const closing of closingOptions) {
+                        try {
+                            parsedJson = JSON.parse(aggressiveRepair + closing);
+                            success = true;
+                            break;
+                        } catch(e) {}
+                    }
+                }
+            }
+            
+            if (!success) {
                 throw new Error(`AI JSON is truncated and cannot be parsed. Try a smaller file. Error: ${parseErr.message}`);
             }
         }
