@@ -617,9 +617,9 @@ export default function ViewMenuPage() {
 
         // Step 3: Call Gemini
         const modelsToTry = [
+          "gemini-3.5-flash",
           "gemini-2.5-flash",
-          "gemini-1.5-flash-latest",
-          "gemini-1.5-pro-latest",
+          "gemini-2.0-flash",
           "gemini-flash-latest"
         ];
         const apiKeys = apiKey.split(',').map((k: string) => k.trim());
