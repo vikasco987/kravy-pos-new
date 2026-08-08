@@ -4,7 +4,24 @@ export async function POST(req: NextRequest) {
     try {
         const parsedMenu = await req.json();
         
-        let menuItems: any[] = parsedMenu.menu || [];
+        let menuItems: any[] = [];
+        if (Array.isArray(parsedMenu)) {
+            menuItems = parsedMenu;
+        } else if (parsedMenu.menu && Array.isArray(parsedMenu.menu)) {
+            menuItems = parsedMenu.menu;
+        } else if (parsedMenu.items && Array.isArray(parsedMenu.items)) {
+            menuItems = parsedMenu.items;
+        } else if (parsedMenu.data && Array.isArray(parsedMenu.data)) {
+            menuItems = parsedMenu.data;
+        } else {
+            // fallback: find any array property
+            for (const key in parsedMenu) {
+                if (Array.isArray(parsedMenu[key])) {
+                    menuItems = parsedMenu[key];
+                    break;
+                }
+            }
+        }
 
         // --- Post-Processing: Smart Merge Sizes & Portions ---
         let lastNormalItem: any = null;
