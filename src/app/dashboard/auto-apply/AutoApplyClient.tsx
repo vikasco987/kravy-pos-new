@@ -196,10 +196,8 @@ export default function AutoApplyClient() {
                 setOcrStatus({ text: `Analyzing with AI (Takes 1-3 mins)...`, colorClass: "text-orange-500", isLoading: true });
                 const modelsToTry = [
                     "gemini-2.5-flash",
-                    "gemini-2.0-flash",
-                    "gemini-1.5-flash",
-                    "gemini-2.5-flash-lite",
-                    "gemini-2.0-flash-lite",
+                    "gemini-1.5-flash-latest",
+                    "gemini-1.5-pro-latest",
                     "gemini-flash-latest"
                 ];
 
