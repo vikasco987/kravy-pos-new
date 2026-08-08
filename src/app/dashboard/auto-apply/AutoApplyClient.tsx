@@ -201,45 +201,50 @@ export default function AutoApplyClient() {
                     "gemini-flash-latest"
                 ];
 
+                const apiKeys = apiKey.split(',').map((k: string) => k.trim());
+                
                 let textResponse = "";
-                let lastError = null;
+                let lastError: any = null;
 
                 for (const model of modelsToTry) {
-                    try {
-                        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-                        const geminiRes = await fetch(geminiUrl, {
-                            method: "POST",
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                contents: [{ parts: parseData.partsArray }],
-                                generationConfig: { responseMimeType: "application/json", maxOutputTokens: 8192 }
-                            })
-                        });
-
-                        const resText = await geminiRes.text();
-
-                        if (!geminiRes.ok) {
-                            let errMsg = `HTTP ${geminiRes.status}: ${resText}`;
-                            try {
-                                const errorJson = JSON.parse(resText);
-                                errMsg = errorJson.error?.message || errMsg;
-                            } catch (e) {}
-                            throw new Error(errMsg);
-                        }
-
-                        let geminiData: any = {};
+                    for (const currentKey of apiKeys) {
                         try {
-                            geminiData = JSON.parse(resText);
-                        } catch (e) {
-                            throw new Error(`Gemini invalid JSON response: ${resText}`);
-                        }
+                            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`;
+                            const geminiRes = await fetch(geminiUrl, {
+                                method: "POST",
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    contents: [{ parts: parseData.partsArray }],
+                                    generationConfig: { responseMimeType: "application/json", maxOutputTokens: 8192 }
+                                })
+                            });
 
-                        textResponse = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
-                        if (textResponse) break;
-                    } catch (err) {
-                        lastError = err;
-                        console.warn(`Model ${model} failed`, err);
+                            const resText = await geminiRes.text();
+
+                            if (!geminiRes.ok) {
+                                let errMsg = `HTTP ${geminiRes.status}: ${resText}`;
+                                try {
+                                    const errorJson = JSON.parse(resText);
+                                    errMsg = errorJson.error?.message || errMsg;
+                                } catch (e) {}
+                                throw new Error(errMsg);
+                            }
+
+                            let geminiData: any = {};
+                            try {
+                                geminiData = JSON.parse(resText);
+                            } catch (e) {
+                                throw new Error(`Gemini invalid JSON response: ${resText}`);
+                            }
+
+                            textResponse = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                            if (textResponse) break; // Break API key loop
+                        } catch (err) {
+                            lastError = err;
+                            console.warn(`Model ${model} with key ${currentKey.substring(0, 5)}... failed`, err);
+                        }
                     }
+                    if (textResponse) break; // Break model loop
                 }
 
                 if (!textResponse) {

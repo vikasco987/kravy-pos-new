@@ -622,24 +622,29 @@ export default function ViewMenuPage() {
           "gemini-1.5-pro-latest",
           "gemini-flash-latest"
         ];
+        const apiKeys = apiKey.split(',').map((k: string) => k.trim());
         let textResponse = "";
+        
         for (const model of modelsToTry) {
-          try {
-            const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-              method: "POST",
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ parts: parseData.partsArray }],
-                generationConfig: { responseMimeType: "application/json", maxOutputTokens: 8192 }
-              })
-            });
-            const gemText = await geminiRes.text();
-            if (geminiRes.ok) {
-              const geminiData = JSON.parse(gemText);
-              textResponse = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (textResponse) break;
-            }
-          } catch {}
+          for (const currentKey of apiKeys) {
+            try {
+              const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`, {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: parseData.partsArray }],
+                  generationConfig: { responseMimeType: "application/json", maxOutputTokens: 8192 }
+                })
+              });
+              const gemText = await geminiRes.text();
+              if (geminiRes.ok) {
+                const geminiData = JSON.parse(gemText);
+                textResponse = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (textResponse) break; // Break API key loop
+              }
+            } catch {}
+          }
+          if (textResponse) break; // Break model loop
         }
 
         if (!textResponse) throw new Error("Gemini models failed to extract menu.");
