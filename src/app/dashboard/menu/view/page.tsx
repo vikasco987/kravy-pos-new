@@ -2095,10 +2095,6 @@ export default function ViewMenuPage() {
                             onDrop={(e) => handleDrop(e, item)}
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (!isAdmin) {
-                                setToast("Admin access required for AI Image Search");
-                                return;
-                              }
                               setSearchProvider("foodsnap"); // default back to FoodSnap
                               setImageSearchItem(item);
                               const cleanName = item.name.replace(/^\(v\)\s*/i, '').replace(/\[.*?\]|\(.*?\)/g, '').trim();
