@@ -152,8 +152,7 @@ ${languageRule}
                         }
                     ],
                     generationConfig: {
-                        responseMimeType: "application/json",
-                        maxOutputTokens: 8192
+                        responseMimeType: "application/json"
                     }
                 }, {
                     headers: {
