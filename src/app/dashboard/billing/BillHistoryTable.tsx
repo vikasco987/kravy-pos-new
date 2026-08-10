@@ -755,22 +755,47 @@ const BillPreviewModal = ({ bill, business, onClose }: { bill: any, business: an
                       <span>₹{format(totalTaxable)}</span>
                    </div>
                  )}
-                 {(bill.tax > 0) && (
-                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>Total Tax</span>
-                      <span>₹{format(bill.tax)}</span>
-                   </div>
-                 )}
+                 {(bill.tax > 0) && (() => {
+                      const totalCGST = taxBreakup.reduce((sum, g: any) => sum + (g.cgst || 0), 0);
+                      const totalSGST = taxBreakup.reduce((sum, g: any) => sum + (g.sgst || 0), 0);
+                      const totalIGST = taxBreakup.reduce((sum, g: any) => sum + (g.igst || 0), 0);
+                      if (totalCGST > 0 || totalSGST > 0) {
+                        return (
+                          <>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}><span>CGST{taxBreakup.length === 1 ? ` (${taxBreakup[0].rate / 2}%)` : ''}</span><span>₹{format(totalCGST)}</span></div>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}><span>SGST{taxBreakup.length === 1 ? ` (${taxBreakup[0].rate / 2}%)` : ''}</span><span>₹{format(totalSGST)}</span></div>
+                          </>
+                        );
+                      } else if (totalIGST > 0) {
+                        return <div style={{ display: "flex", justifyContent: "space-between" }}><span>IGST{taxBreakup.length === 1 ? ` (${taxBreakup[0].rate}%)` : ''}</span><span>₹{format(totalIGST)}</span></div>;
+                      }
+                      return <div style={{ display: "flex", justifyContent: "space-between" }}><span>Total Tax</span><span>₹{format(bill.tax)}</span></div>;
+                 })()}
               </div>
 
               <div style={{ borderTop: "2px dashed black", margin: "8px 0" }} />
               <div style={{ borderTop: "4px solid black", margin: "8px 0" }} />
               
               {/* Grand Total */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "12px 0" }}>
-                 <span style={{ fontSize: "1.2rem", fontWeight: 950, textTransform: "uppercase" }}>GRAND TOTAL</span>
-                 <span style={{ fontSize: "1.4rem", fontWeight: 950 }}>₹{format(bill.total)}</span>
-              </div>
+              {(() => {
+                const finalTotalNum = Number(bill.total);
+                const roundedTotal = Math.round(finalTotalNum);
+                const roundOff = roundedTotal - finalTotalNum;
+                return (
+                  <>
+                    {Math.abs(roundOff) > 0.001 && (
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px", fontSize: "0.9rem", fontWeight: 900 }}>
+                        <span>ROUND OFF</span>
+                        <span>{roundOff > 0 ? '+' : ''}{roundOff.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "12px 0" }}>
+                       <span style={{ fontSize: "1.2rem", fontWeight: 950, textTransform: "uppercase" }}>GRAND TOTAL</span>
+                       <span style={{ fontSize: "1.4rem", fontWeight: 950 }}>₹{format(roundedTotal)}</span>
+                    </div>
+                  </>
+                );
+              })()}
 
               <div style={{ borderTop: "4px solid black", margin: "8px 0" }} />
 
@@ -800,7 +825,7 @@ const BillPreviewModal = ({ bill, business, onClose }: { bill: any, business: an
 
               {/* Amount in words */}
               <div style={{ fontSize: "0.8rem", fontStyle: "italic", fontWeight: 800, marginTop: "12px", marginBottom: "16px", lineHeight: 1.3 }}>
-                Amount in Words: {numberToWords(bill.total)}
+                Amount in Words: {numberToWords(Math.round(bill.total))}
               </div>
 
               <div style={{ borderTop: "2px dashed black", margin: "8px 0" }} />
