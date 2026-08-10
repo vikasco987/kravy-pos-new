@@ -493,11 +493,11 @@ export default function PrintingSettings() {
                 {/* Left: Controls */}
                 <div className={`xl:col-span-8 space-y-10 ${activeTab === 'configure' ? 'block' : 'hidden xl:block'}`}>
                     
-                    {/* Bill Settings */}
+                    {/* Header & Business Info */}
                     <div className="space-y-6">
                         <div className="flex items-center gap-3 px-4">
                             <div className="w-2 h-2 rounded-full bg-violet-500" />
-                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Bill (Receipt) Layout</h2>
+                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Header & Business Info</h2>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <SettingToggle icon={ImageIcon} label="Business Logo" sKey="showLogo" desc="Your restaurant logo" color="bg-blue-500" />
@@ -506,15 +506,6 @@ export default function PrintingSettings() {
                             <SettingToggle icon={MapPin} label="Address" sKey="showAddress" desc="Full store address" color="bg-rose-500" />
                             <SettingToggle icon={Hash} label="GST Number" sKey="showGST" desc="Business GSTIN details" color="bg-amber-500" />
                             <SettingToggle icon={FileText} label="FSSAI Number" sKey="showFSSAI" desc="Food license details" color="bg-orange-500" />
-                            <SettingToggle icon={Receipt} label="Invoice Number" sKey="showInvoiceNumber" desc="Print Invoice # / Bill No on receipt" color="bg-purple-600" />
-                            <SettingToggle icon={Clock} label="Token Number" sKey="showToken" desc="Order sequence token" color="bg-pink-500" />
-                            <SettingToggle icon={MapPin} label="Table / Counter" sKey="showTableInfo" desc="Show table name/counter badge" color="bg-rose-400" />
-                            <SettingToggle icon={User} label="Customer Info" sKey="showCustomerDetails" desc="Name, Phone, Address" color="bg-violet-500" />
-                            <SettingToggle icon={Percent} label="Tax Breakup" sKey="showTaxBreakup" desc="GST Rate table" color="bg-cyan-500" />
-                            <SettingToggle icon={MessageSquare} label="Greetings" sKey="showGreetings" desc="Thank you message" color="bg-teal-500" />
-                            <SettingToggle icon={FileText} label="Amt in Words" sKey="showAmountInWords" desc="Convert total to text" color="bg-slate-500" />
-                            <SettingToggle icon={Receipt} label="Payment Info" sKey="showPaymentStatus" desc="Mode & Status" color="bg-blue-600" />
-                            <SettingToggle icon={Type} label="Food Type Suffix" sKey="showFoodTypeSuffix" desc="Show (V), (NV) or (R)" color="bg-rose-600" />
                         </div>
                         
                         {printSettings.showContact && (
@@ -543,11 +534,36 @@ export default function PrintingSettings() {
                         )}
                     </div>
 
-                    {/* Financial Settings */}
+                    {/* Order & Customer Details */}
+                    <div className="space-y-6 pt-4">
+                        <div className="flex items-center gap-3 px-4">
+                            <div className="w-2 h-2 rounded-full bg-pink-500" />
+                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Order & Customer Details</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <SettingToggle icon={Receipt} label="Invoice Number" sKey="showInvoiceNumber" desc="Print Invoice # / Bill No on receipt" color="bg-purple-600" />
+                            <SettingToggle icon={Clock} label="Token Number" sKey="showToken" desc="Order sequence token" color="bg-pink-500" />
+                            <SettingToggle icon={MapPin} label="Table / Counter" sKey="showTableInfo" desc="Show table name/counter badge" color="bg-rose-400" />
+                            <SettingToggle icon={User} label="Customer Info" sKey="showCustomerDetails" desc="Name, Phone, Address" color="bg-violet-500" />
+                        </div>
+                    </div>
+
+                    {/* Item List Configuration */}
+                    <div className="space-y-6 pt-4">
+                        <div className="flex items-center gap-3 px-4">
+                            <div className="w-2 h-2 rounded-full bg-rose-500" />
+                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Items List Setup</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <SettingToggle icon={Type} label="Food Type Suffix" sKey="showFoodTypeSuffix" desc="Show (V), (NV) or (R)" color="bg-rose-600" />
+                        </div>
+                    </div>
+
+                    {/* Financial Summary & Taxes */}
                     <div className="space-y-6 pt-4">
                         <div className="flex items-center gap-3 px-4">
                             <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Financial Summary</h2>
+                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Financial Summary & Taxes</h2>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <SettingToggle icon={Hash} label="Subtotal" sKey="showSubtotal" desc="Sum before taxes" color="bg-emerald-500" />
@@ -555,19 +571,23 @@ export default function PrintingSettings() {
                             <SettingToggle icon={FileText} label="Taxable Amount" sKey="showTaxableAmt" desc="Amount liable for tax" color="bg-cyan-500" />
                             <SettingToggle icon={Receipt} label="Total GST" sKey="showTotalTax" desc="Sum of CGST+SGST" color="bg-blue-500" />
                             <SettingToggle icon={Receipt} label="Per Product GST" sKey="showPerProductGST" desc="Show GST rate below each item" color="bg-indigo-600" />
+                            <SettingToggle icon={Percent} label="Tax Breakup Table" sKey="showTaxBreakup" desc="Detailed GST Rate table at bottom" color="bg-cyan-600" />
                             <SettingToggle icon={MapPin} label="Delivery Fee" sKey="showDeliveryCharges" desc="Shipping/Delivery line" color="bg-indigo-500" />
                             <SettingToggle icon={Hash} label="Packaging" sKey="showPackagingCharges" desc="Container/Packing line" color="bg-violet-500" />
                             <SettingToggle icon={Users} label="Service Charge" sKey="showServiceCharge" desc="Additional service fee" color="bg-rose-500" />
+                            <SettingToggle icon={FileText} label="Amt in Words" sKey="showAmountInWords" desc="Convert total to text" color="bg-slate-500" />
                         </div>
                     </div>
 
-                    {/* Footer Settings */}
+                    {/* Payment & Footer */}
                     <div className="space-y-6 pt-4">
                         <div className="flex items-center gap-3 px-4">
                             <div className="w-2 h-2 rounded-full bg-slate-500" />
-                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Footer & Branding</h2>
+                            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Payment & Footer Branding</h2>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <SettingToggle icon={Receipt} label="Payment Info" sKey="showPaymentStatus" desc="Mode & Status" color="bg-blue-600" />
+                            <SettingToggle icon={MessageSquare} label="Greetings" sKey="showGreetings" desc="Thank you message" color="bg-teal-500" />
                             <SettingToggle icon={MessageSquare} label="Visit Again" sKey="showVisitAgain" desc="Greeting footer line" color="bg-slate-600" />
                             <SettingToggle icon={Zap} label="Powered By" sKey="showPoweredBy" desc="Kravy branding line" color="bg-violet-600" />
                         </div>
