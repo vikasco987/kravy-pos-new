@@ -127,30 +127,29 @@ export default async function DashboardPage({
         tableName: true,
       },
     }),
-    prisma.billManager.aggregate({
+    prisma.billManager.findMany({
       where: {
         clerkUserId: effectiveId,
         isDeleted: false,
-        paymentStatus: { in: ["PAID", "Paid"] },
+        paymentStatus: { in: ["PAID", "Paid", "PENDING", "Pending", "PARTIAL", "Partial"] },
         createdAt: {
           gte: startDate,
           lte: endDate,
         },
       },
-      _sum: { total: true },
-      _count: { _all: true },
+      select: { total: true, amountPaid: true, paymentStatus: true },
     }),
-    prisma.billManager.aggregate({
+    prisma.billManager.findMany({
       where: {
         clerkUserId: effectiveId,
         isDeleted: false,
-        paymentStatus: { in: ["PAID", "Paid"] },
+        paymentStatus: { in: ["PAID", "Paid", "PENDING", "Pending", "PARTIAL", "Partial"] },
         createdAt: {
           gte: previousStart,
           lt: startDate,
         },
       },
-      _sum: { total: true },
+      select: { total: true, amountPaid: true, paymentStatus: true },
     }),
     prisma.billManager.findMany({
       where: { clerkUserId: effectiveId, isDeleted: true },
@@ -168,17 +167,17 @@ export default async function DashboardPage({
     }),
     prisma.combo.count({ where: { clerkUserId: effectiveId, isActive: true } }),
     prisma.offer.count({ where: { clerkUserId: effectiveId, isActive: true } }),
-    prisma.billManager.aggregate({
-      where: { clerkUserId: effectiveId, isDeleted: false, paymentStatus: { in: ["PAID", "Paid"] }, createdAt: { gte: startOfDay } },
-      _sum: { total: true },
+    prisma.billManager.findMany({
+      where: { clerkUserId: effectiveId, isDeleted: false, paymentStatus: { in: ["PAID", "Paid", "PENDING", "Pending", "PARTIAL", "Partial"] }, createdAt: { gte: startOfDay } },
+      select: { total: true, amountPaid: true, paymentStatus: true },
     }),
-    prisma.billManager.aggregate({
-      where: { clerkUserId: effectiveId, isDeleted: false, paymentStatus: { in: ["PAID", "Paid"] }, createdAt: { gte: startOfWeek } },
-      _sum: { total: true },
+    prisma.billManager.findMany({
+      where: { clerkUserId: effectiveId, isDeleted: false, paymentStatus: { in: ["PAID", "Paid", "PENDING", "Pending", "PARTIAL", "Partial"] }, createdAt: { gte: startOfWeek } },
+      select: { total: true, amountPaid: true, paymentStatus: true },
     }),
-    prisma.billManager.aggregate({
-      where: { clerkUserId: effectiveId, isDeleted: false, paymentStatus: { in: ["PAID", "Paid"] }, createdAt: { gte: startOfMonth } },
-      _sum: { total: true },
+    prisma.billManager.findMany({
+      where: { clerkUserId: effectiveId, isDeleted: false, paymentStatus: { in: ["PAID", "Paid", "PENDING", "Pending", "PARTIAL", "Partial"] }, createdAt: { gte: startOfMonth } },
+      select: { total: true, amountPaid: true, paymentStatus: true },
     }),
     prisma.billManager.findMany({
       where: { clerkUserId: effectiveId, isDeleted: false, paymentStatus: { in: ["PAID", "Paid"] }, createdAt: { gte: last7Start } },
@@ -226,19 +225,26 @@ export default async function DashboardPage({
     }),
   ]);
 
-  const totalRevenue = currentStats._sum.total || 0;
-  const totalBills = currentStats._count._all;
+  const calculateSale = (billList: any[]) => billList.reduce((sum, b) => {
+    if (b.paymentStatus?.toUpperCase() === "PAID") return sum + b.total;
+    if (["PENDING", "PARTIAL"].includes(b.paymentStatus?.toUpperCase() || "")) return sum + (b.amountPaid || 0);
+    return sum;
+  }, 0);
 
-  // Filter bills to only include paid bills for revenue/breakdown computations
-  const paidBills = bills.filter((b: any) => b.paymentStatus?.toLowerCase() === "paid");
+  const totalRevenue = calculateSale(bills);
+  const totalBills = bills.length;
+
+  // Filter bills to only include paid and partially paid bills for revenue/breakdown computations
+  const revenueBills = bills.filter((b: any) => ["paid", "partial", "pending"].includes(b.paymentStatus?.toLowerCase() || ""));
 
   let cash = 0;
   let upi = 0;
 
-  paidBills.forEach((bill: any) => {
+  revenueBills.forEach((bill: any) => {
+    const amountToAdd = bill.paymentStatus?.toLowerCase() === "paid" ? bill.total : (bill.amountPaid || 0);
     const mode = (bill.paymentMode || "").toLowerCase();
-    if (mode.includes("cash")) cash += bill.total;
-    if (mode.includes("upi")) upi += bill.total;
+    if (mode.includes("cash")) cash += amountToAdd;
+    if (mode.includes("upi")) upi += amountToAdd;
   });
 
   // Compute Store Unpaid Udhaar Dues
@@ -309,15 +315,16 @@ export default async function DashboardPage({
   const totalWalletAdvance = allActiveParties.reduce((sum: number, p: any) => sum + (p.walletBalance || 0), 0);
   const walletCustomersCount = allActiveParties.filter((p: any) => (p.walletBalance || 0) > 0).length;
 
-  const previousRevenue = previousStats._sum.total || 0;
+  const previousRevenue = calculateSale(previousStats);
   const growth = previousRevenue === 0 ? 100 : ((totalRevenue - previousRevenue) / previousRevenue) * 100;
 
-  // Chart Mapping (Paid Bills Only)
+  // Chart Mapping (Paid and partially paid bills)
   const chartMap: Record<string, { revenue: number; bills: number }> = {};
-  paidBills.forEach((bill: any) => {
+  revenueBills.forEach((bill: any) => {
+    const amountToAdd = bill.paymentStatus?.toLowerCase() === "paid" ? bill.total : (bill.amountPaid || 0);
     const date = bill.createdAt.toISOString().split("T")[0];
     if (!chartMap[date]) chartMap[date] = { revenue: 0, bills: 0 };
-    chartMap[date].revenue += bill.total;
+    chartMap[date].revenue += amountToAdd;
     chartMap[date].bills += 1;
   });
 
@@ -397,9 +404,9 @@ export default async function DashboardPage({
   const format = (num: number) => new Intl.NumberFormat("en-IN").format(Math.round(num));
 
   // ── Calculate Day, Week, and Month Sales ──
-  const daySale = daySaleStats._sum.total || 0;
-  const weekSale = weekSaleStats._sum.total || 0;
-  const monthSale = monthSaleStats._sum.total || 0;
+  const daySale = calculateSale(daySaleStats);
+  const weekSale = calculateSale(weekSaleStats);
+  const monthSale = calculateSale(monthSaleStats);
 
   // ── Calculate Dynamic Customer Stats (New vs Repeat for the selected RANGE) ──
   const currentRangeBills = bills;
