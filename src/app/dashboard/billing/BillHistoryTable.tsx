@@ -543,6 +543,8 @@ const BillPreviewModal = ({ bill, business, onClose }: { bill: any, business: an
   const timeStr = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
   const format = (num: number) => new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
 
+  const ps = typeof business?.printSettings === "string" ? JSON.parse(business.printSettings) : (business?.printSettings || {});
+
   const addressParts = [business?.businessAddress, business?.district, business?.state, business?.pinCode].filter(Boolean);
   const fullAddress = addressParts.length > 0 ? addressParts.join(", ") : "";
 
@@ -800,7 +802,7 @@ const BillPreviewModal = ({ bill, business, onClose }: { bill: any, business: an
               <div style={{ borderTop: "4px solid black", margin: "8px 0" }} />
 
               {/* GST Tax Breakup */}
-              {taxBreakup.length > 0 && (
+              {ps.showTaxBreakup !== false && taxBreakup.length > 0 && (
                 <div style={{ marginTop: "16px", marginBottom: "16px" }}>
                   <div style={{ fontSize: "0.8rem", fontWeight: 900, textTransform: "uppercase", marginBottom: "4px" }}>GST TAX BREAKUP</div>
                   <div style={{ borderTop: "1.5px dashed black", margin: "4px 0" }} />
