@@ -633,7 +633,7 @@ export default function ViewMenuPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   contents: [{ parts: parseData.partsArray }],
-                  generationConfig: { responseMimeType: "application/json", maxOutputTokens: 8192 }
+                  generationConfig: { responseMimeType: "application/json" }
                 })
               });
               const gemText = await geminiRes.text();
