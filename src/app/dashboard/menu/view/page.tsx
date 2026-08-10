@@ -1892,13 +1892,15 @@ export default function ViewMenuPage() {
                 >
                   <Printer size={16} strokeWidth={2.5} /> PDF Menu Card
                 </button>
-                <button
-                  onClick={() => setShowUploadMenuModal(true)}
-                  className="px-6 py-2.5 rounded-2xl bg-orange-600 text-white font-black text-xs uppercase tracking-widest flex-shrink-0 hover:bg-orange-700 transition-all flex items-center gap-2.5 shadow-lg shadow-orange-600/20 active:scale-95 animate-pulse"
-                  title="Upload New Menu File"
-                >
-                  <Plus size={16} strokeWidth={3} /> Upload Menu (AI)
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => setShowUploadMenuModal(true)}
+                    className="px-6 py-2.5 rounded-2xl bg-orange-600 text-white font-black text-xs uppercase tracking-widest flex-shrink-0 hover:bg-orange-700 transition-all flex items-center gap-2.5 shadow-lg shadow-orange-600/20 active:scale-95 animate-pulse"
+                    title="Upload New Menu File"
+                  >
+                    <Plus size={16} strokeWidth={3} /> Upload Menu (AI)
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     if (menus.length === 0) {
@@ -2093,6 +2095,10 @@ export default function ViewMenuPage() {
                             onDrop={(e) => handleDrop(e, item)}
                             onClick={(e) => {
                               e.stopPropagation();
+                              if (!isAdmin) {
+                                setToast("Admin access required for AI Image Search");
+                                return;
+                              }
                               setSearchProvider("foodsnap"); // default back to FoodSnap
                               setImageSearchItem(item);
                               const cleanName = item.name.replace(/^\(v\)\s*/i, '').replace(/\[.*?\]|\(.*?\)/g, '').trim();
