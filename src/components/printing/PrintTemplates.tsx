@@ -373,7 +373,22 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           {(taxActive || perProductEnabled) && (
             <>
               {s('showTaxableAmt') && <div className="flex justify-between font-bold" style={{ fontSize: 'var(--r-details-size)' }}><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>}
-              {s('showTotalTax') && <div className="flex justify-between font-bold" style={{ fontSize: 'var(--r-details-size)' }}><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>}
+              {s('showTotalTax') && (() => {
+                const totalCGST = taxBreakup.reduce((sum, g) => sum + (g.cgst || 0), 0);
+                const totalSGST = taxBreakup.reduce((sum, g) => sum + (g.sgst || 0), 0);
+                const totalIGST = taxBreakup.reduce((sum, g) => sum + (g.igst || 0), 0);
+                if (totalCGST > 0 || totalSGST > 0) {
+                  return (
+                    <>
+                      <div className="flex justify-between font-bold" style={{ fontSize: 'var(--r-details-size)' }}><span>CGST{taxBreakup.length === 1 ? ` (${taxBreakup[0].rate / 2}%)` : ''}</span><span>₹{totalCGST.toFixed(2)}</span></div>
+                      <div className="flex justify-between font-bold" style={{ fontSize: 'var(--r-details-size)' }}><span>SGST{taxBreakup.length === 1 ? ` (${taxBreakup[0].rate / 2}%)` : ''}</span><span>₹{totalSGST.toFixed(2)}</span></div>
+                    </>
+                  );
+                } else if (totalIGST > 0) {
+                  return <div className="flex justify-between font-bold" style={{ fontSize: 'var(--r-details-size)' }}><span>IGST{taxBreakup.length === 1 ? ` (${taxBreakup[0].rate}%)` : ''}</span><span>₹{totalIGST.toFixed(2)}</span></div>;
+                }
+                return <div className="flex justify-between font-bold" style={{ fontSize: 'var(--r-details-size)' }}><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>;
+              })()}
             </>
           )}
           {(deliveryCharge > 0 && s('showDeliveryCharges')) && (
@@ -411,13 +426,27 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             </div>
           )}
           {s('sepTotalTop') && <div className="border-t-2 border-dashed border-black my-1" />}
-          <div 
-            className={`flex justify-between font-black ${s('sepTotalBottom') ? 'border-y-2 border-black py-2 my-1.5' : 'my-1.5'} uppercase bg-white px-1`} 
-            style={{ fontSize: 'var(--r-total-size)', fontWeight: ps.totalWeight || undefined }}
-          >
-            <span>GRAND TOTAL</span>
-            <span>₹{finalTotal.toFixed(2)}</span>
-          </div>
+          {(() => {
+            const roundedTotal = Math.round(finalTotal);
+            const roundOff = roundedTotal - finalTotal;
+            return (
+              <>
+                {Math.abs(roundOff) > 0.001 && (
+                  <div className="flex justify-between font-bold" style={{ fontSize: 'var(--r-details-size)' }}>
+                    <span>Round Off</span>
+                    <span>{roundOff > 0 ? '+' : ''}{roundOff.toFixed(2)}</span>
+                  </div>
+                )}
+                <div 
+                  className={`flex justify-between font-black ${s('sepTotalBottom') ? 'border-y-2 border-black py-2 my-1.5' : 'my-1.5'} uppercase bg-white px-1`} 
+                  style={{ fontSize: 'var(--r-total-size)', fontWeight: ps.totalWeight || undefined }}
+                >
+                  <span>GRAND TOTAL</span>
+                  <span>₹{roundedTotal.toFixed(2)}</span>
+                </div>
+              </>
+            );
+          })()}
           {(balanceDue !== undefined && balanceDue > 0) && (
             <div className="px-1 border-b-2 border-black pb-1 mb-1 border-dashed">
                <div className="flex justify-between items-center font-bold mt-1 uppercase" style={{ fontSize: 'var(--r-details-size)' }}>

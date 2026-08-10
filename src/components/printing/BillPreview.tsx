@@ -300,7 +300,22 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
                 {s('showTaxBreakup') && (taxActive || perProductEnabled) && (
                   <>
                     <div className="flex justify-between text-[9px]"><span>Taxable Amt</span><span>₹{totalTaxable.toFixed(2)}</span></div>
-                    <div className="flex justify-between text-[9px]"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>
+                    {(() => {
+                      const totalCGST = taxBreakup.reduce((sum, g) => sum + (g.cgst || 0), 0);
+                      const totalSGST = taxBreakup.reduce((sum, g) => sum + (g.sgst || 0), 0);
+                      const totalIGST = taxBreakup.reduce((sum, g) => sum + (g.igst || 0), 0);
+                      if (totalCGST > 0 || totalSGST > 0) {
+                        return (
+                          <>
+                            <div className="flex justify-between text-[9px]"><span>CGST{taxBreakup.length === 1 ? ` (${taxBreakup[0].rate / 2}%)` : ''}</span><span>₹{totalCGST.toFixed(2)}</span></div>
+                            <div className="flex justify-between text-[9px]"><span>SGST{taxBreakup.length === 1 ? ` (${taxBreakup[0].rate / 2}%)` : ''}</span><span>₹{totalSGST.toFixed(2)}</span></div>
+                          </>
+                        );
+                      } else if (totalIGST > 0) {
+                        return <div className="flex justify-between text-[9px]"><span>IGST{taxBreakup.length === 1 ? ` (${taxBreakup[0].rate}%)` : ''}</span><span>₹{totalIGST.toFixed(2)}</span></div>;
+                      }
+                      return <div className="flex justify-between text-[9px]"><span>Total Tax</span><span>₹{totalGst.toFixed(2)}</span></div>;
+                    })()}
                   </>
                 )}
                 {s('showDeliveryCharges') && deliveryCharge > 0 && (
@@ -326,10 +341,24 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
                   </>
                 )}
                 {s('sepTotalBottom') && <div className="border-t border-dashed border-gray-400 my-1" />}
-                <div className="flex justify-between font-bold text-[11px] bg-black text-white px-1 py-0.5">
-                  <span>GRAND TOTAL</span>
-                  <span>₹{finalTotal.toFixed(2)}</span>
-                </div>
+                {(() => {
+                  const roundedTotal = Math.round(finalTotal);
+                  const roundOff = roundedTotal - finalTotal;
+                  return (
+                    <>
+                      {Math.abs(roundOff) > 0.001 && (
+                        <div className="flex justify-between text-[9px] px-1 font-bold">
+                          <span>Round Off</span>
+                          <span>{roundOff > 0 ? '+' : ''}{roundOff.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-bold text-[11px] bg-black text-white px-1 py-0.5">
+                        <span>GRAND TOTAL</span>
+                        <span>₹{roundedTotal.toFixed(2)}</span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               {s('showTaxBreakup') && (taxActive || perProductEnabled) && taxBreakup.length > 0 && (

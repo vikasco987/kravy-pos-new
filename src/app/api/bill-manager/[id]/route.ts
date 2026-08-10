@@ -186,7 +186,6 @@ export async function PUT(
     });
 
     const finalSubtotal = Number(calcSubtotal.toFixed(2));
-    const tax = Number(totalTax.toFixed(2));
 
     // DISCOUNT
     let serverDiscountAmt = 0;
@@ -200,7 +199,12 @@ export async function PUT(
         serverDiscountAmt = calculateDiscount(offer, finalSubtotal, items);
         validatedDiscountCode = offer.code;
       }
+    } else if (body.discountAmount !== undefined && Number(body.discountAmount) > 0) {
+      serverDiscountAmt = Number(body.discountAmount);
     }
+
+    const discountRatio = finalSubtotal > 0 ? Math.max(0, 1 - (serverDiscountAmt / finalSubtotal)) : 1;
+    const tax = Number((totalTax * discountRatio).toFixed(2));
 
     const finalDeliveryCharge = Number(deliveryCharges) || 0;
     const finalPackagingCharge = Number(packagingCharges) || 0;
