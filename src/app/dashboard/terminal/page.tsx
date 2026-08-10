@@ -14,7 +14,7 @@ import {
     RotateCcw, RefreshCw, MoreHorizontal, Zap, Star, ShieldCheck, Layers, CheckCircle2,
     Wifi, Battery, Signal, Smartphone, Timer, AlertTriangle, ChevronUp, Package2,
     Terminal as TerminalIcon, LayoutGrid, ListTodo, ZoomIn, ZoomOut, Phone, MessageSquare,
-    Truck, Package, Pause, Save, Receipt, MessageCircle, Gift
+    Truck, Package, Pause, Save, Receipt, MessageCircle, Gift, Split
 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { 
@@ -221,6 +221,12 @@ function KravyPOS() {
     };
 
     const [payMethod, setPayMethod] = useState("CASH");
+    const [paymentStatus, setPaymentStatus] = useState<"Paid" | "Pending">("Paid");
+    const [splitCash, setSplitCash] = useState<number | "">("");
+    const [splitUpi, setSplitUpi] = useState<number | "">("");
+    const [splitCard, setSplitCard] = useState<number | "">("");
+    const [splitWallet, setSplitWallet] = useState<number | "">("");
+    const [amountPaid, setAmountPaid] = useState<number | "">("");
     const [discountMode, setDiscountMode] = useState<'PROMO' | 'INSTANT' | 'CHARGES'>('INSTANT');
     const [manualDeliveryCharge, setManualDeliveryCharge] = useState<string>("");
     const [deliveryChargeType, setDeliveryChargeType] = useState<'FLAT' | 'PERCENT'>('FLAT');
@@ -989,6 +995,18 @@ function KravyPOS() {
                 setSelectedParty((prev: any) => ({ ...prev, walletBalance: walletData.balance }));
             }
 
+            let finalPaymentMode = payMethod.toUpperCase();
+            if (payMethod === "SPLIT") {
+                const parts = [];
+                if (Number(splitCash) > 0) parts.push(`Cash: ${splitCash}`);
+                if (Number(splitUpi) > 0) parts.push(`UPI: ${splitUpi}`);
+                if (Number(splitCard) > 0) parts.push(`Card: ${splitCard}`);
+                if (Number(splitWallet) > 0) parts.push(`Wallet: ${splitWallet}`);
+                finalPaymentMode = parts.length > 0 ? `Split (${parts.join(", ")})` : "Split";
+            }
+
+            const finalAmountPaid = amountPaid === "" ? orderTotal : Number(amountPaid);
+
             const billData = {
                 items: order.items?.map(it => ({
                     name: it.name,
@@ -1003,15 +1021,16 @@ function KravyPOS() {
                 discountAmount: discountAmt,
                 cgst: orderCgst,
                 sgst: orderSgst,
-                paymentMode: payMethod.toUpperCase(),
-                paymentStatus: "Paid",
+                paymentMode: finalPaymentMode,
+                paymentStatus: paymentStatus,
                 customerName: order.customerName || "Walk-in",
                 customerPhone: order.customerPhone || null,
                 customerAddress: order.customerAddress || null,
                 tableName: order.table?.name || "Counter",
                 tokenNumber: order.tokenNumber,
                 kotNumbers: order.kotNumbers || [],
-                loyaltyPointsRedeemed: settlementBill?.loyaltyRedeemed || 0
+                loyaltyPointsRedeemed: settlementBill?.loyaltyRedeemed || 0,
+                amountPaid: finalAmountPaid
             };
             const res = await fetch("/api/bill-manager", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(billData) });
             const data = await res.json();
@@ -2221,14 +2240,39 @@ function KravyPOS() {
                                                 )}
                                             </div>
 
+                                            {/* ✅ Partial Payment (Khata/Udhaar) */}
+                                            <div className="px-4 pb-2">
+                                                <div className="flex gap-2 items-center bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-2 rounded-xl">
+                                                    <div className="flex-1">
+                                                        <p className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">Amount Paid (₹)</p>
+                                                        <div className="flex items-center gap-1 mt-0.5">
+                                                            <input
+                                                                type="number"
+                                                                value={amountPaid}
+                                                                onChange={(e) => setAmountPaid(e.target.value === "" ? "" : Number(e.target.value))}
+                                                                placeholder={`Full: ${(settlementBill?.total || 0).toFixed(2)}`}
+                                                                className="w-full bg-transparent border-b-2 border-slate-200 dark:border-slate-600 outline-none font-black text-xs text-slate-800 dark:text-white focus:border-indigo-500 transition-colors"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    {(amountPaid !== "" && Number(amountPaid) < (settlementBill?.total || 0)) && (
+                                                        <div className="flex-1 text-right bg-rose-50 dark:bg-rose-900/20 p-2 rounded-lg border border-rose-100 dark:border-rose-900/50">
+                                                            <p className="text-[9px] font-black uppercase text-rose-500 tracking-wider">Unpaid Balance</p>
+                                                            <p className="text-xs font-black text-rose-600">₹{((settlementBill?.total || 0) - Number(amountPaid)).toFixed(2)}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
                                             {/* Payment Methods */}
-                                            <div className="p-4 grid grid-cols-5 gap-3">
+                                            <div className="px-4 pb-4 grid grid-cols-3 md:grid-cols-6 gap-3">
                                                 {[
                                                     { id: 'CASH', icon: <div className="text-2xl drop-shadow-sm">💵</div>, color: 'from-emerald-500 to-teal-500' },
                                                     { id: 'UPI', icon: <div className="text-2xl drop-shadow-sm">📱</div>, color: 'from-purple-500 to-indigo-600' },
                                                     { id: 'CARD', icon: <div className="text-2xl drop-shadow-sm">💳</div>, color: 'from-slate-700 to-slate-900' },
                                                     { id: 'COUNTER', icon: <div className="text-2xl drop-shadow-sm">🏪</div>, color: 'from-amber-500 to-orange-500' },
-                                                    { id: 'WALLET', icon: <div className="text-2xl drop-shadow-sm">👛</div>, color: 'from-pink-500 to-rose-500' }
+                                                    { id: 'WALLET', icon: <div className="text-2xl drop-shadow-sm">👛</div>, color: 'from-pink-500 to-rose-500' },
+                                                    { id: 'SPLIT', icon: <div className="text-2xl drop-shadow-sm">🔀</div>, color: 'from-blue-500 to-cyan-500' }
                                                 ].map(method => (
                                                     <button
                                                         key={method.id}
@@ -2245,6 +2289,139 @@ function KravyPOS() {
                                                     </button>
                                                 ))}
                                             </div>
+
+                                            {payMethod === 'SPLIT' && (
+                                                <div className="px-4 pb-4">
+                                                    <div className="space-y-2 p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 dark:bg-white/5 dark:border-white/10">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-1.5 text-[10px] font-black text-indigo-700 dark:text-indigo-400">
+                                                                <Split size={12} /> Split Breakdown
+                                                            </div>
+                                                            <div className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-white/10 text-indigo-700 dark:text-indigo-300">
+                                                                Total: ₹{(settlementBill?.total || 0).toFixed(2)}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                                            {/* Cash */}
+                                                            <div className="bg-white dark:bg-black/20 p-2 rounded-lg border border-slate-200 dark:border-white/10">
+                                                                <div className="flex items-center justify-between mb-1">
+                                                                    <span className="font-bold text-slate-700 dark:text-slate-200">💵 Cash</span>
+                                                                    <button 
+                                                                        type="button" 
+                                                                        onClick={() => {
+                                                                            const rem = Math.max(0, (settlementBill?.total || 0) - ((Number(splitUpi)||0) + (Number(splitCard)||0) + (Number(splitWallet)||0)));
+                                                                            setSplitCash(rem > 0 ? Number(rem.toFixed(2)) : "");
+                                                                        }}
+                                                                        className="text-[8px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
+                                                                    >
+                                                                        Auto Fill
+                                                                    </button>
+                                                                </div>
+                                                                <input
+                                                                    type="number"
+                                                                    value={splitCash}
+                                                                    onChange={(e) => setSplitCash(e.target.value === "" ? "" : Number(e.target.value))}
+                                                                    placeholder="0.00"
+                                                                    className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-xs font-black outline-none focus:border-indigo-500 text-slate-900 dark:text-white"
+                                                                />
+                                                            </div>
+
+                                                            {/* UPI */}
+                                                            <div className="bg-white dark:bg-black/20 p-2 rounded-lg border border-slate-200 dark:border-white/10">
+                                                                <div className="flex items-center justify-between mb-1">
+                                                                    <span className="font-bold text-slate-700 dark:text-slate-200">📱 UPI</span>
+                                                                    <button 
+                                                                        type="button" 
+                                                                        onClick={() => {
+                                                                            const rem = Math.max(0, (settlementBill?.total || 0) - ((Number(splitCash)||0) + (Number(splitCard)||0) + (Number(splitWallet)||0)));
+                                                                            setSplitUpi(rem > 0 ? Number(rem.toFixed(2)) : "");
+                                                                        }}
+                                                                        className="text-[8px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
+                                                                    >
+                                                                        Auto Fill
+                                                                    </button>
+                                                                </div>
+                                                                <input
+                                                                    type="number"
+                                                                    value={splitUpi}
+                                                                    onChange={(e) => setSplitUpi(e.target.value === "" ? "" : Number(e.target.value))}
+                                                                    placeholder="0.00"
+                                                                    className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-xs font-black outline-none focus:border-indigo-500 text-slate-900 dark:text-white"
+                                                                />
+                                                            </div>
+
+                                                            {/* Card */}
+                                                            <div className="bg-white dark:bg-black/20 p-2 rounded-lg border border-slate-200 dark:border-white/10">
+                                                                <div className="flex items-center justify-between mb-1">
+                                                                    <span className="font-bold text-slate-700 dark:text-slate-200">💳 Card</span>
+                                                                    <button 
+                                                                        type="button" 
+                                                                        onClick={() => {
+                                                                            const rem = Math.max(0, (settlementBill?.total || 0) - ((Number(splitCash)||0) + (Number(splitUpi)||0) + (Number(splitWallet)||0)));
+                                                                            setSplitCard(rem > 0 ? Number(rem.toFixed(2)) : "");
+                                                                        }}
+                                                                        className="text-[8px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
+                                                                    >
+                                                                        Auto Fill
+                                                                    </button>
+                                                                </div>
+                                                                <input
+                                                                    type="number"
+                                                                    value={splitCard}
+                                                                    onChange={(e) => setSplitCard(e.target.value === "" ? "" : Number(e.target.value))}
+                                                                    placeholder="0.00"
+                                                                    className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-xs font-black outline-none focus:border-indigo-500 text-slate-900 dark:text-white"
+                                                                />
+                                                            </div>
+
+                                                            {/* Wallet */}
+                                                            <div className="bg-white dark:bg-black/20 p-2 rounded-lg border border-slate-200 dark:border-white/10">
+                                                                <div className="flex items-center justify-between mb-1">
+                                                                    <span className="font-bold text-slate-700 dark:text-slate-200">👛 Wallet</span>
+                                                                    <button 
+                                                                        type="button" 
+                                                                        onClick={() => {
+                                                                            const rem = Math.max(0, (settlementBill?.total || 0) - ((Number(splitCash)||0) + (Number(splitUpi)||0) + (Number(splitCard)||0)));
+                                                                            setSplitWallet(rem > 0 ? Number(rem.toFixed(2)) : "");
+                                                                        }}
+                                                                        className="text-[8px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline uppercase"
+                                                                    >
+                                                                        Auto Fill
+                                                                    </button>
+                                                                </div>
+                                                                <input
+                                                                    type="number"
+                                                                    value={splitWallet}
+                                                                    onChange={(e) => setSplitWallet(e.target.value === "" ? "" : Number(e.target.value))}
+                                                                    placeholder="0.00"
+                                                                    className="w-full bg-transparent border-b border-slate-300 dark:border-white/20 text-xs font-black outline-none focus:border-indigo-500 text-slate-900 dark:text-white"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Payment Status */}
+                                            <div className="px-4 pb-4">
+                                                <div className="flex gap-2">
+                                                    {(["Pending", "Paid"] as const).map((s) => (
+                                                        <button
+                                                            key={s}
+                                                            onClick={() => setPaymentStatus(s)}
+                                                            className={`flex-1 py-2 rounded-xl border-2 font-black text-[10px] transition-all uppercase tracking-wider ${
+                                                                paymentStatus === s 
+                                                                ? (s === 'Paid' ? 'bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/20' : 'bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/20')
+                                                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'
+                                                            }`}
+                                                        >
+                                                            {s === 'Pending' ? '🕒 PENDING' : '✅ PAID'}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
 
                                             {/* Action Buttons */}
                                             <div className="px-4 pb-4 grid grid-cols-2 gap-2">
