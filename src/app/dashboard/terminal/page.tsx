@@ -2436,7 +2436,28 @@ function KravyPOS() {
                             globalRate={globalRate}
                             totalTaxable={resolvedPrintTotalTaxable}
                             totalGst={resolvedPrintTotalGst}
-                            taxBreakup={[]}
+                            taxBreakup={(() => {
+                                const taxGroups = (printOrder?.items || []).reduce((acc: any, item: any) => {
+                                    let rate = 0;
+                                    if (perProductEnabled) rate = item.gst || 0;
+                                    else if (isTaxEnabled) rate = globalRate;
+                                    if (rate === 0 && resolvedPrintTotalGst > 0 && resolvedPrintTotalTaxable > 0) rate = Math.round((resolvedPrintTotalGst / resolvedPrintTotalTaxable) * 100);
+                                    if (rate <= 0) return acc;
+                                    if (!acc[rate]) acc[rate] = { rate, taxable: 0, cgst: 0, sgst: 0, igst: 0, totalTax: 0 };
+                                    const qty = Number(item.qty || item.quantity || 1);
+                                    const price = Number(item.rate || item.price || 0);
+                                    const itemTotal = qty * price;
+                                    const discountRatio = resolvedPrintSubtotal > 0 ? (resolvedPrintDiscountAmt / resolvedPrintSubtotal) : 0;
+                                    const itemTaxable = itemTotal - (itemTotal * discountRatio);
+                                    const gst = (itemTaxable * rate) / 100;
+                                    acc[rate].taxable += itemTaxable;
+                                    acc[rate].cgst += gst / 2;
+                                    acc[rate].sgst += gst / 2;
+                                    acc[rate].totalTax += gst;
+                                    return acc;
+                                }, {});
+                                return Object.values(taxGroups);
+                            })()}
                             deliveryCharge={resolvedPrintDeliveryCharge}
                             deliveryGst={resolvedPrintDeliveryGst}
                             packagingCharge={resolvedPrintPackagingCharge}
@@ -2488,7 +2509,28 @@ function KravyPOS() {
                             perProductEnabled={perProductEnabled}
                             totalTaxable={resolvedPrintTotalTaxable}
                             totalGst={resolvedPrintTotalGst}
-                            taxBreakup={[]}
+                            taxBreakup={(() => {
+                                const taxGroups = (printOrder?.items || []).reduce((acc: any, item: any) => {
+                                    let rate = 0;
+                                    if (perProductEnabled) rate = item.gst || 0;
+                                    else if (isTaxEnabled) rate = globalRate;
+                                    if (rate === 0 && resolvedPrintTotalGst > 0 && resolvedPrintTotalTaxable > 0) rate = Math.round((resolvedPrintTotalGst / resolvedPrintTotalTaxable) * 100);
+                                    if (rate <= 0) return acc;
+                                    if (!acc[rate]) acc[rate] = { rate, taxable: 0, cgst: 0, sgst: 0, igst: 0, totalTax: 0 };
+                                    const qty = Number(item.qty || item.quantity || 1);
+                                    const price = Number(item.rate || item.price || 0);
+                                    const itemTotal = qty * price;
+                                    const discountRatio = resolvedPrintSubtotal > 0 ? (resolvedPrintDiscountAmt / resolvedPrintSubtotal) : 0;
+                                    const itemTaxable = itemTotal - (itemTotal * discountRatio);
+                                    const gst = (itemTaxable * rate) / 100;
+                                    acc[rate].taxable += itemTaxable;
+                                    acc[rate].cgst += gst / 2;
+                                    acc[rate].sgst += gst / 2;
+                                    acc[rate].totalTax += gst;
+                                    return acc;
+                                }, {});
+                                return Object.values(taxGroups);
+                            })()}
                             deliveryCharge={resolvedPrintDeliveryCharge}
                             deliveryGst={resolvedPrintDeliveryGst}
                             packagingCharge={resolvedPrintPackagingCharge}
