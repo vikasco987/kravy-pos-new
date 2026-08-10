@@ -195,7 +195,11 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full lg:w-auto">
                     {/* Premium Toggle */}
                     <button 
-                        onClick={() => setControls(prev => ({ ...prev, isPremium: !prev.isPremium }))}
+                        onClick={() => setControls(prev => ({ 
+                            ...prev, 
+                            isPremium: !prev.isPremium,
+                            ...( !prev.isPremium ? { isFrozen: false, showPremiumPopup: false } : {} )
+                        }))}
                         className={`p-4 rounded-2xl border transition-all text-left flex flex-col gap-1 ${
                             controls.isPremium 
                             ? "bg-indigo-600/20 border-indigo-500/50 text-indigo-400" 

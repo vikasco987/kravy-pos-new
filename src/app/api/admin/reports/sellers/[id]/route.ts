@@ -68,7 +68,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const body = await req.json();
     
     const updateData: any = {};
-    if (body.isPremium !== undefined) updateData.isPremium = body.isPremium;
+    if (body.isPremium !== undefined) {
+      updateData.isPremium = body.isPremium;
+      if (body.isPremium === true) {
+        // Auto-unfreeze when upgrading to premium
+        updateData.isFrozen = false;
+        updateData.showPremiumPopup = false;
+      }
+    }
     if (body.showPremiumPopup !== undefined) updateData.showPremiumPopup = body.showPremiumPopup;
     if (body.isFrozen !== undefined) updateData.isFrozen = body.isFrozen;
     
