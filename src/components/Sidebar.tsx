@@ -623,35 +623,45 @@ export default function Sidebar() {
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            style={{ display: "flex", alignItems: "center", gap: "14px", position: "relative", zIndex: 5 }}
+            whileHover={{ scale: 1.02, x: 2 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            style={{ display: "flex", alignItems: "center", gap: "12px", position: "relative", zIndex: 5, cursor: "pointer" }}
+            onClick={() => window.location.href = '/dashboard'}
           >
-            <img 
-              src="/kravylogo.png" 
-              alt="Kravy Logo" 
-              style={{ 
-                height: "44px", 
-                width: "44px",
-                objectFit: "cover",
-                objectPosition: "top", // crop out the text in the image
-                borderRadius: "12px",
-                boxShadow: isDark ? "0 4px 15px rgba(139,92,246,0.3)" : "0 4px 12px rgba(0,0,0,0.15)"
-              }} 
-            />
+            <div style={{ position: "relative" }}>
+              <div style={{ 
+                position: "absolute", inset: -4, borderRadius: "16px",
+                background: "linear-gradient(135deg, rgba(59,130,246,0.5), rgba(37,99,235,0.1))",
+                filter: "blur(8px)", zIndex: 0
+              }} />
+              <img 
+                src="/kravylogo.png" 
+                alt="Kravy Logo" 
+                style={{ 
+                  height: "46px", 
+                  width: "46px",
+                  objectFit: "cover",
+                  objectPosition: "top", // crop out the text in the image
+                  borderRadius: "14px",
+                  boxShadow: isDark ? "0 4px 15px rgba(37,99,235,0.3)" : "0 4px 15px rgba(37,99,235,0.2)",
+                  position: "relative", zIndex: 1
+                }} 
+              />
+            </div>
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, ease: "easeOut" }}
+                transition={{ delay: 0.1, ease: "easeOut" }}
                 style={{
-                  fontSize: "1.35rem",
+                  fontSize: "1.5rem",
                   fontWeight: 900,
-                  letterSpacing: "-0.5px",
+                  letterSpacing: "-0.8px",
                   lineHeight: 1,
-                  background: isDark ? "linear-gradient(to right, #FFFFFF, #A78BFA)" : "linear-gradient(to right, #1E293B, #6D28D9)",
+                  background: isDark ? "linear-gradient(135deg, #FFFFFF, #93C5FD)" : "linear-gradient(135deg, #1E3A8A, #2563EB)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
-                  filter: isDark ? "drop-shadow(0 2px 10px rgba(167,139,250,0.3))" : "none"
+                  filter: isDark ? "drop-shadow(0 2px 12px rgba(147,197,253,0.3))" : "drop-shadow(0 2px 10px rgba(37,99,235,0.2))"
                 }}
               >
                 Kravy
@@ -659,14 +669,15 @@ export default function Sidebar() {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, ease: "easeOut" }}
+                transition={{ delay: 0.2, ease: "easeOut" }}
                 style={{ 
-                  fontSize: "0.6rem", 
-                  color: isDark ? "rgba(167, 139, 250, 0.9)" : "rgba(109, 40, 217, 0.9)", 
-                  letterSpacing: "2.5px", 
+                  fontSize: "0.55rem", 
+                  color: isDark ? "rgba(147, 197, 253, 0.9)" : "rgba(37, 99, 235, 0.85)", 
+                  letterSpacing: "3.5px", 
                   fontWeight: 800, 
-                  marginTop: "5px",
-                  textTransform: "uppercase"
+                  marginTop: "4px",
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap"
                 }}
               >
                 Billing Software
