@@ -97,9 +97,17 @@ export default function ClientLayout({
     );
   }
 
-  // 2. If NOT Clerk User AND NOT Staff User -> Redirect to Clerk login
+  // 2. If NOT Clerk User AND NOT Staff User -> Redirect to Home/Login
   if (!isSignedIn && !authUser) {
-    return <RedirectToSignIn />;
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
+    return (
+        <div className="h-screen flex items-center justify-center bg-slate-50">
+            <Loader2 className="animate-spin text-indigo-600" size={32} />
+            <span className="ml-3 text-slate-500 font-medium">Session expired, redirecting...</span>
+        </div>
+    );
   }
 
   // 3. SaaS / Premium UI Blocker (Early Return)
