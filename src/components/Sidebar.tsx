@@ -624,17 +624,54 @@ export default function Sidebar() {
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            style={{ display: "flex", alignItems: "center", position: "relative", zIndex: 5 }}
+            style={{ display: "flex", alignItems: "center", gap: "14px", position: "relative", zIndex: 5 }}
           >
             <img 
               src="/kravylogo.png" 
-              alt="Kravy POS" 
+              alt="Kravy Logo" 
               style={{ 
-                height: "56px", 
-                objectFit: "contain",
-                filter: isDark ? "drop-shadow(0 0 20px rgba(139,92,246,0.5))" : "none"
+                height: "44px", 
+                width: "44px",
+                objectFit: "cover",
+                objectPosition: "top", // crop out the text in the image
+                borderRadius: "12px",
+                boxShadow: isDark ? "0 4px 15px rgba(139,92,246,0.3)" : "0 4px 12px rgba(0,0,0,0.15)"
               }} 
             />
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, ease: "easeOut" }}
+                style={{
+                  fontSize: "1.35rem",
+                  fontWeight: 900,
+                  letterSpacing: "-0.5px",
+                  lineHeight: 1,
+                  background: isDark ? "linear-gradient(to right, #FFFFFF, #A78BFA)" : "linear-gradient(to right, #1E293B, #6D28D9)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  filter: isDark ? "drop-shadow(0 2px 10px rgba(167,139,250,0.3))" : "none"
+                }}
+              >
+                Kravy
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, ease: "easeOut" }}
+                style={{ 
+                  fontSize: "0.6rem", 
+                  color: isDark ? "rgba(167, 139, 250, 0.9)" : "rgba(109, 40, 217, 0.9)", 
+                  letterSpacing: "2.5px", 
+                  fontWeight: 800, 
+                  marginTop: "5px",
+                  textTransform: "uppercase"
+                }}
+              >
+                Billing Software
+              </motion.div>
+            </div>
           </motion.div>
         )}
         {collapsed && (
