@@ -634,19 +634,27 @@ export default function Sidebar() {
                 background: "linear-gradient(135deg, rgba(59,130,246,0.5), rgba(37,99,235,0.1))",
                 filter: "blur(8px)", zIndex: 0
               }} />
-              <img 
-                src="/kravylogo.png" 
-                alt="Kravy Logo" 
-                style={{ 
+              <div style={{
                   height: "46px", 
                   width: "46px",
-                  objectFit: "cover",
-                  objectPosition: "top", // crop out the text in the image
                   borderRadius: "14px",
                   boxShadow: isDark ? "0 4px 15px rgba(37,99,235,0.3)" : "0 4px 15px rgba(37,99,235,0.2)",
-                  position: "relative", zIndex: 1
-                }} 
-              />
+                  position: "relative", zIndex: 1,
+                  overflow: "hidden",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "center"
+              }}>
+                <img 
+                  src="/kravylogo.png" 
+                  alt="Kravy Logo" 
+                  style={{ 
+                    width: "100%", 
+                    height: "auto",
+                    display: "block"
+                  }} 
+                />
+              </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <motion.div
@@ -695,17 +703,25 @@ export default function Sidebar() {
               display: "flex", alignItems: "center", justifyContent: "center"
             }}
           >
-            <img 
-              src="/kravylogo.png" 
-              alt="Kravy POS" 
-              style={{ 
+            <div style={{
                 height: "40px", 
                 width: "40px",
-                objectFit: "cover",
-                objectPosition: "top", // crop out the text if it's a tall image
-                borderRadius: "8px"
-              }} 
-            />
+                borderRadius: "10px",
+                overflow: "hidden",
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "center"
+            }}>
+              <img 
+                src="/kravylogo.png" 
+                alt="Kravy POS" 
+                style={{ 
+                  width: "100%",
+                  height: "auto",
+                  display: "block"
+                }} 
+              />
+            </div>
           </motion.div>
         )}
         <motion.button
