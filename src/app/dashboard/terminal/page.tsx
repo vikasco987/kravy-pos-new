@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import { kravy } from "@/lib/sounds";
 import {
     LayoutDashboard, ChefHat, MapPin, CreditCard,
-    Clock, Bell, TrendingUp, ArrowRight, Check,
+    Clock, Bell, TrendingUp, ArrowRight, ArrowLeft, Check,
     Flame, UtensilsCrossed, Plus, Trash2, Eye, Edit2,
     Printer, X, Filter, Search, User, ChevronRight,
     Edit3, LogOut, Table as TableIcon, History,
@@ -1254,6 +1254,14 @@ function KravyPOS() {
                 {/* Brand & Navigation */}
                 <div className="flex items-center gap-8">
                     <div className="flex items-center gap-4">
+                        {/* BACK BUTTON */}
+                        <button
+                            onClick={() => router.push('/dashboard')}
+                            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm"
+                        >
+                            <ArrowLeft size={18} />
+                        </button>
+                        
                         <div className="w-10 h-10 bg-gradient-to-br from-slate-800 to-slate-950 rounded-2xl flex items-center justify-center font-mono text-xl font-black text-white shadow-xl shadow-slate-950/20 flex-shrink-0 border border-white/10">
                             <span>K</span>
                         </div>
