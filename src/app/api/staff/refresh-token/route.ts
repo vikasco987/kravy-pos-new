@@ -85,8 +85,13 @@ export async function POST(req: Request) {
             }
         });
 
-        // 4. Set Cookies
-        cookieStore.set("staff_token", newAccessToken, {
+        const response = NextResponse.json({
+            success: true,
+            message: "Tokens refreshed successfully"
+        });
+
+        // 4. Set Cookies on the response object
+        response.cookies.set("staff_token", newAccessToken, {
             httpOnly: false, 
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
@@ -94,7 +99,7 @@ export async function POST(req: Request) {
             path: "/",
         });
         
-        cookieStore.set("staff_refresh_token", newRefreshToken, {
+        response.cookies.set("staff_refresh_token", newRefreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
@@ -102,10 +107,7 @@ export async function POST(req: Request) {
             path: "/",
         });
 
-        return NextResponse.json({
-            success: true,
-            message: "Tokens refreshed successfully"
-        });
+        return response;
 
     } catch (error) {
         console.error("Refresh Token Error:", error);

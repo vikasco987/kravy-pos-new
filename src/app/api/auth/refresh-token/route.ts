@@ -84,8 +84,13 @@ export async function POST(req: Request) {
             }
         });
 
-        // 4. Set Cookies
-        cookieStore.set("kravy_auth_token", newAccessToken, {
+        const response = NextResponse.json({
+            success: true,
+            message: "Tokens refreshed successfully"
+        });
+
+        // 4. Set Cookies on the response object
+        response.cookies.set("kravy_auth_token", newAccessToken, {
             httpOnly: true, 
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
@@ -93,7 +98,7 @@ export async function POST(req: Request) {
             path: "/",
         });
         
-        cookieStore.set("kravy_refresh_token", newRefreshToken, {
+        response.cookies.set("kravy_refresh_token", newRefreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
@@ -101,10 +106,7 @@ export async function POST(req: Request) {
             path: "/",
         });
 
-        return NextResponse.json({
-            success: true,
-            message: "Tokens refreshed successfully"
-        });
+        return response;
 
     } catch (error) {
         console.error("Custom Auth Refresh Token Error:", error);
