@@ -885,9 +885,13 @@ model SubscriptionOrder {
 }
 
 model SystemSettings {
-  id               String @id @default(auto()) @map("_id") @db.ObjectId
-  defaultTrialDays Int    @default(3)
-  updatedAt        DateTime @updatedAt
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  defaultTrialDays      Int      @default(3)
+  appLatestVersion      String?  @default("1.0.0")
+  appMinRequiredVersion String?  @default("1.0.0")
+  appUpdateUrl          String?  @default("https://play.google.com/store/apps/details?id=com.kravy.pos")
+  appReleaseNotes       String?  @default("Initial release")
+  updatedAt             DateTime @updatedAt
 }
 
 model GmailConnection {

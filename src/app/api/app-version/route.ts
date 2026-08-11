@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    // TODO: In the future, you can fetch this from your database (e.g. SystemSettings)
-    // For now, simply update these values whenever you release a new app version.
+    // Fetch system settings from DB
+    let settings = await prisma.systemSettings.findFirst();
+
+    // If no settings exist yet, provide the default values
     const versionConfig = {
-      latestVersion: "1.0.0",
-      minRequiredVersion: "1.0.0",
-      updateUrl: "https://play.google.com/store/apps/details?id=com.kravy.pos", // Update with your actual play store ID
-      releaseNotes: "Initial release of Kravy POS Billing App.",
+      latestVersion: settings?.appLatestVersion || "1.0.0",
+      minRequiredVersion: settings?.appMinRequiredVersion || "1.0.0",
+      updateUrl: settings?.appUpdateUrl || "https://play.google.com/store/apps/details?id=com.kravy.pos",
+      releaseNotes: settings?.appReleaseNotes || "Initial release",
     };
 
     return NextResponse.json(
