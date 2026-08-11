@@ -138,6 +138,47 @@ export default function InventoryPage() {
     }
   };
 
+  const handleStockUpdate = async (id: string, newStock: number, isRaw: boolean = false) => {
+    try {
+      if (isRaw) {
+        setRawMaterials(prev => prev.map(m => m.id === id ? { ...m, stock: newStock } : m));
+        await fetch('/api/inventory/materials', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, stock: newStock })
+        });
+      } else {
+        setItems(prev => prev.map(m => m.id === id ? { ...m, currentStock: newStock } : m));
+        await fetch('/api/items', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, currentStock: newStock })
+        });
+      }
+    } catch (err) {
+      console.error("Stock inline update failed:", err);
+      toast.error("Failed to update stock");
+      // Re-fetch to revert to actual server state on error
+      if (isRaw) fetchRawMaterials();
+      else fetchInventory();
+    }
+  };
+
+  const handleInlineKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number, type: 'finished' | 'raw') => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const nextInput = document.querySelector(`input[data-index="${index + 1}"][data-type="${type}"]`) as HTMLInputElement;
+      if (nextInput) nextInput.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prevInput = document.querySelector(`input[data-index="${index - 1}"][data-type="${type}"]`) as HTMLInputElement;
+      if (prevInput) prevInput.focus();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
   const fetchCategories = async () => {
     try {
       const res = await fetch("/api/categories");
@@ -469,7 +510,20 @@ export default function InventoryPage() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="text-sm font-black text-[var(--kravy-text-primary)]">{item.currentStock ?? 0}</div>
+                          <input
+                            type="number"
+                            defaultValue={item.currentStock ?? 0}
+                            data-index={index}
+                            data-type="finished"
+                            onKeyDown={(e) => handleInlineKeyDown(e, index, 'finished')}
+                            onBlur={(e) => {
+                               const val = parseFloat(e.target.value);
+                               if (!isNaN(val) && val !== (item.currentStock ?? 0)) {
+                                 handleStockUpdate(item.id, val, false);
+                               }
+                            }}
+                            className="w-20 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-md px-2 py-1 text-sm font-black text-[var(--kravy-text-primary)] focus:outline-none focus:border-[var(--kravy-brand)] transition-colors"
+                          />
                           <div className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter ${
                             status === 'out-of-stock' ? 'bg-rose-500/10 text-rose-600' : 
                             status === 'low-stock' ? 'bg-amber-500/10 text-amber-600' : 
@@ -557,7 +611,21 @@ export default function InventoryPage() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="text-sm font-black text-[var(--kravy-text-primary)]">{mat.stock} {mat.unit}</div>
+                            <input
+                              type="number"
+                              defaultValue={mat.stock}
+                              data-index={index}
+                              data-type="raw"
+                              onKeyDown={(e) => handleInlineKeyDown(e, index, 'raw')}
+                              onBlur={(e) => {
+                                 const val = parseFloat(e.target.value);
+                                 if (!isNaN(val) && val !== mat.stock) {
+                                   handleStockUpdate(mat.id, val, true);
+                                 }
+                              }}
+                              className="w-20 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-md px-2 py-1 text-sm font-black text-[var(--kravy-text-primary)] focus:outline-none focus:border-orange-500 transition-colors"
+                            />
+                            <span className="text-xs font-bold text-[var(--kravy-text-muted)]">{mat.unit}</span>
                             {isLow && (
                               <div className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter bg-rose-500/10 text-rose-600">
                                 LOW STOCK
