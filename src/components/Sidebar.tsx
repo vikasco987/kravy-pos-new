@@ -624,69 +624,40 @@ export default function Sidebar() {
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            style={{ display: "flex", alignItems: "center", gap: "16px", position: "relative", zIndex: 5 }}
+            style={{ display: "flex", alignItems: "center", position: "relative", zIndex: 5 }}
           >
-            <motion.div
-              whileHover={{ scale: 1.08, rotate: 5 }}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                width: "48px", height: "48px", borderRadius: "16px",
-                background: "linear-gradient(135deg, #8B5CF6, #3B82F6)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 12px 40px rgba(139,92,246,0.4), 0 4px 12px rgba(0,0,0,0.2)",
-                flexShrink: 0,
-                position: "relative",
-                overflow: "hidden"
-              }}
-            >
-              {/* Inner Glow */}
-              <div style={{
-                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-                background: "linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%)",
-                transform: "translateX(-100%)",
-              }} />
-              <UtensilsCrossed size={26} color="white" style={{ position: "relative", zIndex: 1 }} />
-            </motion.div>
-            <div>
-              <motion.div
-                initial={{ opacity: 0, y: -15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, ease: "easeOut" }}
-                style={{
-                  fontSize: "1.2rem",
-                  fontWeight: 900,
-                  color: isDark ? "#FFFFFF" : "#1E293B",
-                  letterSpacing: "-1px",
-                  lineHeight: 1
-                }}
-              >
-                kravy<span style={{ color: "#8B5CF6", textShadow: isDark ? "0 0 20px rgba(139,92,246,0.7)" : "none" }}>POS</span>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, ease: "easeOut" }}
-                style={{ fontSize: "0.6rem", color: "rgba(139,92,246,0.8)", letterSpacing: "3px", fontWeight: 700, marginTop: "3px" }}
-              >
-                BILLING SYSTEM
-              </motion.div>
-            </div>
+            <img 
+              src="/kravylogo.png" 
+              alt="Kravy POS" 
+              style={{ 
+                height: "56px", 
+                objectFit: "contain",
+                filter: isDark ? "drop-shadow(0 0 20px rgba(139,92,246,0.5))" : "none"
+              }} 
+            />
           </motion.div>
         )}
         {collapsed && (
           <motion.div
-            whileHover={{ scale: 1.15, rotate: 180 }}
+            whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             style={{
-              width: "48px", height: "48px", borderRadius: "16px",
-              background: "linear-gradient(135deg, #8B5CF6, #3B82F6)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 12px 40px rgba(139,92,246,0.4), 0 4px 12px rgba(0,0,0,0.2)",
               position: "relative",
-              zIndex: 5
+              zIndex: 5,
+              display: "flex", alignItems: "center", justifyContent: "center"
             }}
           >
-            <UtensilsCrossed size={26} color="white" />
+            <img 
+              src="/kravylogo.png" 
+              alt="Kravy POS" 
+              style={{ 
+                height: "40px", 
+                width: "40px",
+                objectFit: "cover",
+                objectPosition: "top", // crop out the text if it's a tall image
+                borderRadius: "8px"
+              }} 
+            />
           </motion.div>
         )}
         <motion.button
