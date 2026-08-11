@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 const JWT_SECRET = process.env.JWT_SECRET || "kravy_pos_secret_key_123";
 
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Incorrect Password" }, { status: 401 });
     }
 
-    // 🎟️ 4. Generate JWT
+    // 🎟️ 4. Generate Access JWT (15m)
     const token = jwt.sign(
       { 
         userId: user.id, 
@@ -61,10 +62,36 @@ export async function POST(req: NextRequest) {
         name: user.name
       },
       JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "15m" }
     );
 
-    // 🍪 5. Set Cookie (Optional but recommended for Next.js)
+    // 🎟️ 5. Generate Refresh JWT (90d)
+    const jti = crypto.randomUUID();
+    const refreshToken = jwt.sign(
+      { userId: user.id, jti },
+      JWT_SECRET,
+      { expiresIn: "90d" }
+    );
+
+    // Hash the jti to store securely
+    const hashedJti = crypto.createHash('sha256').update(jti).digest('hex');
+
+    // Update user privateMetadata to store valid refresh tokens
+    const currentMeta = (user.privateMetadata as any) || {};
+    const existingTokens = currentMeta.refreshTokens || [];
+    const updatedTokens = [...existingTokens, { jtiHash: hashedJti, createdAt: Date.now() }];
+    
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            privateMetadata: {
+                ...currentMeta,
+                refreshTokens: updatedTokens
+            }
+        }
+    });
+
+    // 🍪 6. Set Cookies
     const response = NextResponse.json({
       success: true,
       user: {
@@ -82,7 +109,14 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 // 7 days
+      maxAge: 15 * 60 // 15 minutes
+    });
+
+    response.cookies.set("kravy_refresh_token", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 90 * 24 * 60 * 60 // 90 days
     });
 
     // 🔐 6. Track Session
