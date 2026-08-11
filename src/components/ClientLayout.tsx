@@ -97,10 +97,12 @@ export default function ClientLayout({
     );
   }
 
-  // 2. If NOT Clerk User AND NOT Staff User -> Redirect to Home/Login
+  // 2. If NOT Clerk User AND NOT Staff User -> Clear cookies and redirect to Home/Login
   if (!isSignedIn && !authUser) {
     if (typeof window !== "undefined") {
-      window.location.href = "/";
+      fetch('/api/auth/logout', { method: 'POST' })
+        .then(() => { window.location.href = "/"; })
+        .catch(() => { window.location.href = "/"; });
     }
     return (
         <div className="h-screen flex items-center justify-center bg-slate-50">
