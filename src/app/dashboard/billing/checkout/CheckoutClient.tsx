@@ -177,13 +177,15 @@ const MenuItemCard = ({ m, items, addToCart, reduceFromCart, expiryTrackingEnabl
         className="relative w-full bg-[var(--kravy-bg)] overflow-hidden flex-shrink-0 border-b border-[var(--kravy-border)]/50"
         style={{ height: "90px" }}
       >
-        <img
-          src={m.imageUrl || "/no-image.png"}
-          alt={m.name}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          loading="lazy"
-          onError={(e) => { e.currentTarget.src = "/no-image.png"; }}
-        />
+        {m.imageUrl && (
+          <img
+            src={m.imageUrl}
+            alt={m.name}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+        )}
         {totalQtyInCart > 0 && (
           <div className="absolute top-2 left-2 bg-emerald-500 text-white
             text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg shadow-emerald-500/40
@@ -2510,7 +2512,7 @@ export default function CheckoutClient() {
                   userPermissions.includes("EDIT_POS");
 
   return (
-    <div className="flex-1 h-full bg-[var(--kravy-bg)] flex flex-col overflow-hidden">
+    <div className="flex-1 h-full bg-slate-50 dark:bg-[var(--kravy-bg)] flex flex-col overflow-hidden">
 
       {/* ════════════════════════════════════════════
           MAIN LAYOUT
