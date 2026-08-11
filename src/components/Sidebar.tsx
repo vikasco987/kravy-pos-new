@@ -839,6 +839,14 @@ export default function Sidebar() {
         {navGroups.map((group, groupIndex) => {
           // Filter items based on access rules
           const visibleItems = group.items.filter((item: any) => {
+            // 6. Search query filtering (Applied universally before role checks)
+            const matchesSearch = searchQuery 
+              ? item.label.toLowerCase().includes(searchQuery.toLowerCase()) 
+                || (item.subItems && item.subItems.some((sub: any) => sub.label.toLowerCase().includes(searchQuery.toLowerCase())))
+              : true;
+
+            if (!matchesSearch) return false;
+
             // 0. User custom hidden items check (except critical settings link)
             if (item.href !== "/dashboard/settings" && item.href !== "/dashboard/profile") {
               if (hiddenSidebarItems.includes(item.href) || hiddenSidebarItems.includes(item.label)) {
@@ -881,13 +889,7 @@ export default function Sidebar() {
             // 5. Legacy Role-based Fallback (used when allowedPaths is empty)
             const hasRoleAccess = allowedPaths.length === 0 && item.roles ? item.roles.includes(userRole) : (allowedPaths.length === 0);
               
-            // 6. Search query filtering
-            const matchesSearch = searchQuery 
-              ? item.label.toLowerCase().includes(searchQuery.toLowerCase()) 
-                || (item.subItems && item.subItems.some((sub: any) => sub.label.toLowerCase().includes(searchQuery.toLowerCase())))
-              : true;
-
-            return hasRoleAccess && matchesSearch;
+            return hasRoleAccess;
           });
 
           // 2. If no items are allowed in this group, don't show the group at all
