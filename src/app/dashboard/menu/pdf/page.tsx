@@ -385,52 +385,40 @@ export default function MenuPdfGeneratorPage() {
           {template === "web_replica" ? (
             /* 📱 EXACT WEB MENU REPLICA (Matches Live QR Menu /menu/[clerkId]) */
             <div className="w-full bg-[#f4f4f4]">
-              {/* RESTAURANT HERO COVER */}
-              <div className="relative overflow-hidden h-[200px] bg-slate-900">
-                <img
-                  src={profile?.profileImageUrl || "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80"}
-                  alt="Restaurant Cover"
-                  crossOrigin="anonymous"
-                  className="w-full h-full object-cover opacity-90"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLElement).style.display = 'none';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/80" />
-                <div className="absolute bottom-4 left-4 z-10 bg-black/75 backdrop-blur-md rounded-lg px-3 py-1.5 flex items-center gap-2 border border-white/20">
-                  <div className="w-2 h-2 rounded-full bg-[#4CD964] animate-pulse" />
-                  <span className="text-xs font-black text-white">Live Smart QR Menu</span>
+              {/* RESTAURANT INFO HEADER */}
+              <div className="bg-white p-5 border-b border-[#EBEBEB] shadow-sm flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">
+                    {profile?.businessName || "Restaurant Name"}
+                  </h1>
+                  {profile?.businessTagLine && (
+                    <p className="text-xs text-gray-500 font-semibold mb-3">
+                      {profile.businessTagLine}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 flex-wrap text-xs font-bold text-gray-700">
+                    <span className="border border-[#b2dfc8] bg-[#F0FDF4] text-[#22C55E] px-2 py-1 rounded-md">★ 4.3 (2.1K)</span>
+                    <span className="w-[1px] h-4 bg-gray-200" />
+                    <span className="border border-gray-200 px-2 py-1 rounded-md">⏱ 20–30 min</span>
+                    <span className="w-[1px] h-4 bg-gray-200" />
+                    <span className="border border-gray-200 px-2 py-1 rounded-md">₹350 for two</span>
+                  </div>
+
+                  {/* ADDRESS & CONTACT */}
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-center text-[0.7rem] font-bold text-gray-500 gap-2">
+                    <span>📍 {profile?.businessAddress || "Main Market, City"}</span>
+                    <span>📞 {profile?.contactPersonPhone || "+91 9999999999"}</span>
+                    {profile?.fssaiNumber && <span>🛡️ FSSAI: {profile.fssaiNumber}</span>}
+                  </div>
                 </div>
+
+                {/* QR CODE IN HEADER */}
                 {showQrCode && (
-                  <div className="absolute top-4 right-4 z-10 bg-white p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col items-center">
+                  <div className="shrink-0 bg-white p-2 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center">
                     <QRCode value={menuUrl} size={60} />
                     <span className="text-[0.55rem] font-black uppercase text-gray-800 mt-1 tracking-wider">Scan to Order</span>
                   </div>
                 )}
-              </div>
-
-              {/* RESTAURANT INFO HEADER */}
-              <div className="bg-white p-5 border-b border-[#EBEBEB] shadow-sm">
-                <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-1">
-                  {profile?.businessName || "Restaurant Name"}
-                </h1>
-                <p className="text-xs text-gray-500 font-semibold mb-3">
-                  {profile?.businessTagLine || "North Indian, Mughlai, Chinese, Fast Food & Beverages"}
-                </p>
-                <div className="flex items-center gap-2 flex-wrap text-xs font-bold text-gray-700">
-                  <span className="border border-[#b2dfc8] bg-[#F0FDF4] text-[#22C55E] px-2 py-1 rounded-md">★ 4.3 (2.1K)</span>
-                  <span className="w-[1px] h-4 bg-gray-200" />
-                  <span className="border border-gray-200 px-2 py-1 rounded-md">⏱ 20–30 min</span>
-                  <span className="w-[1px] h-4 bg-gray-200" />
-                  <span className="border border-gray-200 px-2 py-1 rounded-md">₹350 for two</span>
-                </div>
-
-                {/* ADDRESS & CONTACT */}
-                <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between text-[0.7rem] font-bold text-gray-500 gap-2">
-                  <span>📍 {profile?.businessAddress || "Main Market, City"}</span>
-                  <span>📞 {profile?.contactPersonPhone || "+91 9999999999"}</span>
-                  {profile?.fssaiNumber && <span>🛡️ FSSAI: {profile.fssaiNumber}</span>}
-                </div>
               </div>
 
               {/* CATEGORIES TAB STRIP */}
