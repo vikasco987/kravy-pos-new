@@ -433,6 +433,7 @@ export default function ViewMenuPage() {
   // Upload New Menu States
   const [showUploadMenuModal, setShowUploadMenuModal] = useState(false);
   const [aiLanguagePref, setAiLanguagePref] = useState("english");
+  const [chunkingMode, setChunkingMode] = useState<"batch" | "single" | "stream">("batch");
   const [menuFileQueue, setMenuFileQueue] = useState<File[]>([]);
   const [extractingMenu, setExtractingMenu] = useState(false);
   const [extractedMenuProgress, setExtractedMenuProgress] = useState({ completed: 0, total: 0 });
@@ -571,12 +572,20 @@ export default function ViewMenuPage() {
   const startParsingMenuFiles = async () => {
     if (menuFileQueue.length === 0) return;
     setExtractingMenu(true);
-    setExtractedMenuItems([]);
     setExtractedMenuProgress({ completed: 0, total: 0 });
 
+    if (chunkingMode !== "stream") {
+      setExtractedMenuItems([]);
+    }
+
     let combinedMenu: any[] = [];
-    const filesToProcess = [...menuFileQueue];
-    setMenuFileQueue([]);
+    const filesToProcess = chunkingMode === "single" ? [menuFileQueue[0]] : [...menuFileQueue];
+    
+    if (chunkingMode === "single") {
+      setMenuFileQueue(prev => prev.slice(1));
+    } else {
+      setMenuFileQueue([]);
+    }
 
     for (let file of filesToProcess) {
       try {
@@ -720,12 +729,20 @@ export default function ViewMenuPage() {
         const items = processedData.menu || [];
 
         if (items.length > 0) {
-          combinedMenu = combinedMenu.concat(items.map((item: any) => ({
+          const newItems = items.map((item: any) => ({
             ...item,
+            _tempId: Math.random().toString(36).substr(2, 9),
             checked: true,
             imageUrl: null,
             img_status: 'loading'
-          })));
+          }));
+          combinedMenu = combinedMenu.concat(newItems);
+
+          if (chunkingMode === "stream") {
+            setExtractedMenuItems(prev => [...prev, ...newItems]);
+            // Run image search for this chunk in the background
+            autoApplyExtractedImages(newItems, true);
+          }
         }
       } catch (err: any) {
         console.error(err);
@@ -733,24 +750,28 @@ export default function ViewMenuPage() {
       }
     }
 
-    if (combinedMenu.length > 0) {
-      setExtractedMenuItems(combinedMenu);
-      autoApplyExtractedImages(combinedMenu);
+    if (chunkingMode !== "stream") {
+      if (combinedMenu.length > 0) {
+        setExtractedMenuItems(combinedMenu);
+        autoApplyExtractedImages(combinedMenu, false);
+      } else {
+        setExtractingMenu(false);
+      }
     } else {
       setExtractingMenu(false);
     }
   };
 
-  const autoApplyExtractedImages = async (items: any[]) => {
+  const autoApplyExtractedImages = async (items: any[], isStream = false) => {
     const total = items.length;
     let completed = 0;
-    let currentItems = [...items];
 
     const chunkSize = 3;
     for (let i = 0; i < total; i += chunkSize) {
-      const chunk = currentItems.slice(i, i + chunkSize);
-      const promises = chunk.map(async (item, idx) => {
-        const actualIndex = i + idx;
+      const chunk = items.slice(i, i + chunkSize);
+      const promises = chunk.map(async (item) => {
+        let foundImg = null;
+        let foundStatus = 'empty';
         try {
           const rawName = item.item_name || item.name || "";
           const cleanName = rawName.replace(/^\(v\)\s*/i, '').replace(/\[.*?\]|\(.*?\)/g, '').trim();
@@ -762,25 +783,36 @@ export default function ViewMenuPage() {
             if (photos.length > 0) {
               const firstImg = photos[0].image_url || photos[0].image || photos[0].url || photos[0].imageUrl;
               if (firstImg) {
-                currentItems[actualIndex].imageUrl = firstImg;
-                currentItems[actualIndex].img_status = 'success';
-              } else {
-                currentItems[actualIndex].img_status = 'empty';
+                foundImg = firstImg;
+                foundStatus = 'success';
               }
-            } else {
-              currentItems[actualIndex].img_status = 'empty';
             }
           }
         } catch {
-          currentItems[actualIndex].img_status = 'error';
+          foundStatus = 'error';
         }
+
+        // Functional state update to avoid overriding stream data
+        setExtractedMenuItems(prev => {
+          const updated = [...prev];
+          const idx = updated.findIndex(u => u._tempId === item._tempId);
+          if (idx > -1) {
+            updated[idx].imageUrl = foundImg;
+            updated[idx].img_status = foundStatus;
+          }
+          return updated;
+        });
+
         completed++;
-        setExtractedMenuProgress({ completed, total });
-        setExtractedMenuItems([...currentItems]);
+        if (!isStream) {
+          setExtractedMenuProgress({ completed, total });
+        }
       });
       await Promise.all(promises);
     }
-    setExtractingMenu(false);
+    if (!isStream) {
+      setExtractingMenu(false);
+    }
   };
 
   const handleAddExtractedMenu = async () => {
@@ -2769,41 +2801,69 @@ export default function ViewMenuPage() {
               
               {/* Drag and Drop Zone */}
               {extractedMenuItems.length === 0 && (
-                <div 
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (e.dataTransfer.files) {
-                      setMenuFileQueue(Array.from(e.dataTransfer.files));
-                    }
-                  }}
-                  className="border-[3px] border-dashed border-[var(--kravy-border)] hover:border-orange-500 rounded-[2rem] p-12 text-center space-y-4 bg-[var(--kravy-bg-2)]/40 hover:bg-orange-50/10 transition-all cursor-pointer relative"
-                  onClick={() => {
-                    const input = document.createElement("input");
-                    input.type = "file";
-                    input.multiple = true;
-                    input.accept = ".pdf,.xlsx,.xls,.doc,.docx,.png,.jpg,.jpeg,.webp";
-                    input.onchange = (e: any) => {
-                      if (e.target.files) {
-                        setMenuFileQueue(Array.from(e.target.files));
-                      }
-                    };
-                    input.click();
-                  }}
-                >
-                  <div className="w-16 h-16 bg-orange-100 dark:bg-orange-950/20 text-orange-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                    <ImageIcon size={28} />
-                  </div>
-                  <div>
-                    <h4 className="font-black text-sm text-[var(--kravy-text-primary)] uppercase tracking-wider">Drag & Drop Menu File Here</h4>
-                    <p className="text-xs text-[var(--kravy-text-muted)] font-bold mt-1.5">Supports PDF, Excel, Word, or Images (JPG/PNG/WebP)</p>
-                  </div>
-                  
+                <div className="space-y-6">
+                  {/* Selected Files List */}
                   {menuFileQueue.length > 0 && (
-                    <div className="inline-block px-4 py-2 bg-orange-500/10 border border-orange-200 rounded-xl text-[10px] font-black text-orange-600 uppercase tracking-widest mt-4">
-                      {menuFileQueue.length} files selected
+                    <div className="bg-[var(--kravy-surface-hover)] border border-[var(--kravy-border)] rounded-2xl p-4 shadow-sm">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] mb-3">Selected Files ({menuFileQueue.length})</h4>
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                        {menuFileQueue.map((file, idx) => (
+                          <div key={`${file.name}-${idx}`} className="flex items-center justify-between bg-[var(--kravy-surface)] border border-[var(--kravy-border)] p-3 rounded-xl shadow-sm">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+                                {file.type.includes("image") ? <ImageIcon size={16} /> : <File size={16} />}
+                              </div>
+                              <div className="truncate">
+                                <p className="text-xs font-bold text-[var(--kravy-text-primary)] truncate">{file.name}</p>
+                                <p className="text-[10px] text-[var(--kravy-text-muted)]">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setMenuFileQueue(prev => prev.filter((_, i) => i !== idx));
+                              }}
+                              className="p-1.5 hover:bg-red-50 text-[var(--kravy-text-muted)] hover:text-red-500 rounded-lg transition-colors shrink-0"
+                              title="Remove file"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
+
+                  {/* Dropzone */}
+                  <div 
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (e.dataTransfer.files) {
+                        setMenuFileQueue(prev => [...prev, ...Array.from(e.dataTransfer.files!)]);
+                      }
+                    }}
+                    className={`border-[2px] border-dashed border-[var(--kravy-border)] hover:border-orange-500 rounded-2xl text-center bg-[var(--kravy-bg-2)]/40 hover:bg-orange-50/10 transition-all cursor-pointer relative flex flex-col items-center justify-center gap-3 ${menuFileQueue.length > 0 ? 'p-6' : 'p-12'}`}
+                    onClick={() => {
+                      const input = document.createElement("input");
+                      input.type = "file";
+                      input.multiple = true;
+                      input.accept = ".pdf,.xlsx,.xls,.doc,.docx,.png,.jpg,.jpeg,.webp";
+                      input.onchange = (e: any) => {
+                        if (e.target.files) {
+                          setMenuFileQueue(prev => [...prev, ...Array.from(e.target.files)]);
+                        }
+                      };
+                      input.click();
+                    }}
+                  >
+                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-950/20 text-orange-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                      <ImageIcon size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-sm text-[var(--kravy-text-primary)] uppercase tracking-wider">{menuFileQueue.length > 0 ? "Add More Files" : "Drag & Drop Menu File Here"}</h4>
+                      <p className="text-[10px] text-[var(--kravy-text-muted)] font-bold mt-1">Supports PDF, Excel, Word, or Images (JPG/PNG/WebP)</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -2815,7 +2875,7 @@ export default function ViewMenuPage() {
                     <p className="text-xs font-black text-orange-500 uppercase tracking-widest animate-pulse">AI Digitizing & Scraping Menu...</p>
                     {extractedMenuProgress.total > 0 && (
                       <p className="text-[10px] text-[var(--kravy-text-muted)] font-bold mt-1">
-                        Auto-matching Food Images: {extractedMenuProgress.completed} of {extractedMenuProgress.total} items
+                        Processing Chunk: {extractedMenuProgress.completed} of {extractedMenuProgress.total} items
                       </p>
                     )}
                   </div>
@@ -2825,24 +2885,40 @@ export default function ViewMenuPage() {
               {/* File Selected Action */}
               {menuFileQueue.length > 0 && !extractingMenu && extractedMenuItems.length === 0 && (
                 <div className="flex flex-col items-center justify-center gap-5 bg-[var(--kravy-surface-hover)] p-6 rounded-[1.5rem] border border-[var(--kravy-border)] shadow-inner">
-                  <div className="w-full max-w-sm space-y-2 text-center">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Menu Translation / Language</label>
-                    <select
-                      className="w-full px-5 py-3.5 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 appearance-none cursor-pointer shadow-sm transition-all"
-                      value={aiLanguagePref}
-                      onChange={(e) => setAiLanguagePref(e.target.value)}
-                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2em 1.2em', paddingRight: '3rem' }}
-                    >
-                      <option value="english">English Only (Default)</option>
-                      <option value="dual">English + Regional (Hindi, Marathi, etc.)</option>
-                      <option value="arabic">English + Arabian (Arabic)</option>
-                    </select>
+                  <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Extraction Mode</label>
+                      <select
+                        className="w-full px-4 py-3 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 appearance-none cursor-pointer shadow-sm transition-all"
+                        value={chunkingMode}
+                        onChange={(e) => setChunkingMode(e.target.value as any)}
+                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2em 1.2em', paddingRight: '2.5rem' }}
+                      >
+                        <option value="batch">Batch / Default (All at once)</option>
+                        <option value="single">Single Mode (One by one)</option>
+                        <option value="stream">Stream Mode (Automated Chunking)</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)]">Menu Translation</label>
+                      <select
+                        className="w-full px-4 py-3 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 appearance-none cursor-pointer shadow-sm transition-all"
+                        value={aiLanguagePref}
+                        onChange={(e) => setAiLanguagePref(e.target.value)}
+                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2em 1.2em', paddingRight: '2.5rem' }}
+                      >
+                        <option value="english">English Only</option>
+                        <option value="dual">English + Regional (Hindi/Marathi)</option>
+                        <option value="arabic">English + Arabian (Arabic)</option>
+                      </select>
+                    </div>
                   </div>
                   <button
                     onClick={startParsingMenuFiles}
-                    className="px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center gap-2 mt-2"
+                    className="px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center gap-2 mt-2 w-full max-w-2xl justify-center"
                   >
-                    <Zap size={14} fill="currentColor" /> Extract Menu Items
+                    <Zap size={14} fill="currentColor" /> 
+                    {chunkingMode === "stream" ? "Start Automated Extraction" : "Extract Menu Items"}
                   </button>
                 </div>
               )}
