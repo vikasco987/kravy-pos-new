@@ -26,24 +26,23 @@ export async function deductInventory(orderItems: any[]) {
       });
 
       if (recipeItems.length === 0) {
-        console.warn(`[INVENTORY_DEBUG] No recipe found for ${itemName} (ID: ${itemId}). Deduction skipped.`);
-        continue;
-      }
+        console.warn(`[INVENTORY_DEBUG] No recipe found for ${itemName} (ID: ${itemId}). Skipping raw materials deduction.`);
+      } else {
+        console.log(`[INVENTORY_DEBUG] Found recipe with ${recipeItems.length} ingredients for ${itemName}.`);
 
-      console.log(`[INVENTORY_DEBUG] Found recipe with ${recipeItems.length} ingredients for ${itemName}.`);
-
-      for (const ri of recipeItems) {
-        const totalDeduction = ri.quantity * quantitySold;
-        console.log(`[INVENTORY_DEBUG] Deducting ${totalDeduction} ${ri.material?.unit || ''} of ${ri.material?.name || ri.materialId} for ${itemName}`);
-        
-        try {
-          const updated = await prisma.rawMaterial.update({
-            where: { id: ri.materialId },
-            data: { stock: { decrement: totalDeduction } },
-          });
-          console.log(`[INVENTORY_DEBUG] Success: New stock for ${updated.name} is ${updated.stock}`);
-        } catch (updateErr) {
-          console.error(`[INVENTORY_DEBUG] Failed to update material ${ri.materialId}:`, updateErr);
+        for (const ri of recipeItems) {
+          const totalDeduction = ri.quantity * quantitySold;
+          console.log(`[INVENTORY_DEBUG] Deducting ${totalDeduction} ${ri.material?.unit || ''} of ${ri.material?.name || ri.materialId} for ${itemName}`);
+          
+          try {
+            const updated = await prisma.rawMaterial.update({
+              where: { id: ri.materialId },
+              data: { stock: { decrement: totalDeduction } },
+            });
+            console.log(`[INVENTORY_DEBUG] Success: New stock for ${updated.name} is ${updated.stock}`);
+          } catch (updateErr) {
+            console.error(`[INVENTORY_DEBUG] Failed to update material ${ri.materialId}:`, updateErr);
+          }
         }
       }
 

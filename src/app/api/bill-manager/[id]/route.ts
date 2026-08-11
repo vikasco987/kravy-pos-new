@@ -422,6 +422,18 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
         where: { id },
         data,
       });
+
+      // ✅ AUTO-DEDUCT INVENTORY WHEN SETTLING A HELD BILL
+      if (existingBill.isHeld && data.isHeld === false) {
+        try {
+          console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} settled from HELD state. Triggering inventory deduction.`);
+          const { deductInventory } = await import("@/lib/inventory-utils");
+          await deductInventory(bill.items as any[]);
+        } catch (deductErr) {
+          console.error("Failed to deduct inventory on settling held bill:", deductErr);
+        }
+      }
+
       return NextResponse.json({ bill });
     }
 
