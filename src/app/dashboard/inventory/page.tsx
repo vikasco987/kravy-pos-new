@@ -50,6 +50,7 @@ export default function InventoryPage() {
   const [sortBy, setSortBy] = useState<"name" | "stock-low" | "stock-high" | "price-low" | "price-high">("name");
   const [filterMode, setFilterMode] = useState<"all" | "critical">("all");
   const [activeTab, setActiveTab] = useState<"finished" | "raw">("finished");
+  const [isStockEditMode, setIsStockEditMode] = useState(false);
   
   // Raw Materials State
   const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);
@@ -327,6 +328,12 @@ export default function InventoryPage() {
             <BarChart3 size={16} /> REPORT
           </Link>
           <button 
+            onClick={() => setIsStockEditMode(!isStockEditMode)}
+            className={`h-10 px-6 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 shadow-md ${isStockEditMode ? 'bg-orange-500 text-white shadow-orange-500/20 border border-orange-500' : 'bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] hover:border-orange-500 hover:text-orange-500'}`}
+          >
+            <Edit size={16} strokeWidth={isStockEditMode ? 3 : 2} /> {isStockEditMode ? 'Finish Editing' : 'Edit Stock'}
+          </button>
+          <button 
             onClick={async () => {
               if (activeTab === 'finished') {
                 setEditingItem(null);
@@ -510,21 +517,27 @@ export default function InventoryPage() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <input
-                            type="number"
-                            defaultValue={item.currentStock ?? 0}
-                            data-index={index}
-                            data-type="finished"
-                            onWheel={(e) => e.currentTarget.blur()}
-                            onKeyDown={(e) => handleInlineKeyDown(e, index, 'finished')}
-                            onBlur={(e) => {
-                               const val = parseFloat(e.target.value);
-                               if (!isNaN(val) && val !== (item.currentStock ?? 0)) {
-                                 handleStockUpdate(item.id, val, false);
-                               }
-                            }}
-                            className="w-20 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-md px-2 py-1 text-sm font-black text-[var(--kravy-text-primary)] focus:outline-none focus:border-[var(--kravy-brand)] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          />
+                          {isStockEditMode ? (
+                            <input
+                              type="number"
+                              defaultValue={item.currentStock ?? 0}
+                              data-index={index}
+                              data-type="finished"
+                              onWheel={(e) => e.currentTarget.blur()}
+                              onKeyDown={(e) => handleInlineKeyDown(e, index, 'finished')}
+                              onBlur={(e) => {
+                                 const val = parseFloat(e.target.value);
+                                 if (!isNaN(val) && val !== (item.currentStock ?? 0)) {
+                                   handleStockUpdate(item.id, val, false);
+                                 }
+                              }}
+                              className="w-20 bg-[var(--kravy-surface)] border border-orange-500/50 rounded-md px-2 py-1 text-sm font-black text-orange-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                          ) : (
+                            <div className="w-20 px-2 py-1 text-sm font-black text-[var(--kravy-text-primary)] cursor-pointer" onClick={() => setIsStockEditMode(true)}>
+                              {item.currentStock ?? 0}
+                            </div>
+                          )}
                           <div className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter ${
                             status === 'out-of-stock' ? 'bg-rose-500/10 text-rose-600' : 
                             status === 'low-stock' ? 'bg-amber-500/10 text-amber-600' : 
@@ -612,21 +625,27 @@ export default function InventoryPage() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
-                            <input
-                              type="number"
-                              defaultValue={mat.stock}
-                              data-index={index}
-                              data-type="raw"
-                              onWheel={(e) => e.currentTarget.blur()}
-                              onKeyDown={(e) => handleInlineKeyDown(e, index, 'raw')}
-                              onBlur={(e) => {
-                                 const val = parseFloat(e.target.value);
-                                 if (!isNaN(val) && val !== mat.stock) {
-                                   handleStockUpdate(mat.id, val, true);
-                                 }
-                              }}
-                              className="w-20 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-md px-2 py-1 text-sm font-black text-[var(--kravy-text-primary)] focus:outline-none focus:border-orange-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
+                            {isStockEditMode ? (
+                              <input
+                                type="number"
+                                defaultValue={mat.stock}
+                                data-index={index}
+                                data-type="raw"
+                                onWheel={(e) => e.currentTarget.blur()}
+                                onKeyDown={(e) => handleInlineKeyDown(e, index, 'raw')}
+                                onBlur={(e) => {
+                                   const val = parseFloat(e.target.value);
+                                   if (!isNaN(val) && val !== mat.stock) {
+                                     handleStockUpdate(mat.id, val, true);
+                                   }
+                                }}
+                                className="w-20 bg-[var(--kravy-surface)] border border-orange-500/50 rounded-md px-2 py-1 text-sm font-black text-orange-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                            ) : (
+                              <div className="w-20 px-2 py-1 text-sm font-black text-[var(--kravy-text-primary)] cursor-pointer" onClick={() => setIsStockEditMode(true)}>
+                                {mat.stock}
+                              </div>
+                            )}
                             <span className="text-xs font-bold text-[var(--kravy-text-muted)]">{mat.unit}</span>
                             {isLow && (
                               <div className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter bg-rose-500/10 text-rose-600">
