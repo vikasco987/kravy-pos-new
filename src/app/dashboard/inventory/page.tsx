@@ -515,6 +515,7 @@ export default function InventoryPage() {
                             defaultValue={item.currentStock ?? 0}
                             data-index={index}
                             data-type="finished"
+                            onWheel={(e) => e.currentTarget.blur()}
                             onKeyDown={(e) => handleInlineKeyDown(e, index, 'finished')}
                             onBlur={(e) => {
                                const val = parseFloat(e.target.value);
@@ -522,7 +523,7 @@ export default function InventoryPage() {
                                  handleStockUpdate(item.id, val, false);
                                }
                             }}
-                            className="w-20 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-md px-2 py-1 text-sm font-black text-[var(--kravy-text-primary)] focus:outline-none focus:border-[var(--kravy-brand)] transition-colors"
+                            className="w-20 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-md px-2 py-1 text-sm font-black text-[var(--kravy-text-primary)] focus:outline-none focus:border-[var(--kravy-brand)] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                           <div className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter ${
                             status === 'out-of-stock' ? 'bg-rose-500/10 text-rose-600' : 
@@ -616,6 +617,7 @@ export default function InventoryPage() {
                               defaultValue={mat.stock}
                               data-index={index}
                               data-type="raw"
+                              onWheel={(e) => e.currentTarget.blur()}
                               onKeyDown={(e) => handleInlineKeyDown(e, index, 'raw')}
                               onBlur={(e) => {
                                  const val = parseFloat(e.target.value);
@@ -623,7 +625,7 @@ export default function InventoryPage() {
                                    handleStockUpdate(mat.id, val, true);
                                  }
                               }}
-                              className="w-20 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-md px-2 py-1 text-sm font-black text-[var(--kravy-text-primary)] focus:outline-none focus:border-orange-500 transition-colors"
+                              className="w-20 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-md px-2 py-1 text-sm font-black text-[var(--kravy-text-primary)] focus:outline-none focus:border-orange-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
                             <span className="text-xs font-bold text-[var(--kravy-text-muted)]">{mat.unit}</span>
                             {isLow && (
