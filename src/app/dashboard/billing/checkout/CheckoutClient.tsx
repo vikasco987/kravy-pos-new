@@ -2524,8 +2524,8 @@ export default function CheckoutClient() {
 
           {/* Left Header — STICKY & SOLID */}
           <div className="bg-[var(--kravy-surface)] border-b border-[var(--kravy-border)] px-4 md:px-6 py-3 flex-shrink-0 sticky top-0 z-20 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2 min-w-0">
                 {searchParams.get("returnTo") && (
                   <button 
                     onClick={async () => { 
@@ -2578,7 +2578,7 @@ export default function CheckoutClient() {
                   </div>
                 )}
                 {business && (
-                  <div className="hidden lg:flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-lg shrink-0">
+                  <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-lg shrink-0">
                     <Layers size={12} className="text-indigo-500" />
                     <span className="text-[10px] font-black text-indigo-700 uppercase tracking-tighter whitespace-nowrap">Tokens: {business.lastTokenNumber || 0}</span>
                   </div>
@@ -2586,7 +2586,7 @@ export default function CheckoutClient() {
 
                 {/* Compact Zone Dropdown */}
                 {business?.multiZoneMenuEnabled && availableZones.length > 0 && (
-                  <div className="relative group/zone ml-1">
+                  <div className="relative group/zone ml-1 shrink-0">
                     <button className="h-8 px-3 rounded-lg border border-[var(--kravy-border)] bg-white hover:border-indigo-500 transition-all flex items-center gap-2 shadow-sm">
                       <Layers size={12} className="text-indigo-500" />
                       <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tight truncate max-w-[80px]">
@@ -2642,7 +2642,7 @@ export default function CheckoutClient() {
               </div>
 
               {/* Combined Search & New Category — COMPACT */}
-              <div className="flex items-center gap-1.5 flex-1 max-w-[400px]">
+              <div className="flex items-center gap-1.5 w-full xl:w-auto xl:max-w-[400px]">
                 <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--kravy-text-faint)]" size={12} />
                   <input
