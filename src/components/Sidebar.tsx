@@ -470,6 +470,7 @@ export default function Sidebar() {
   const [excelImportEnabled, setExcelImportEnabled] = useState(false);
   const [fuelBillingEnabled, setFuelBillingEnabled] = useState(false);
   const [activeTablesCount, setActiveTablesCount] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [hiddenSidebarItems, setHiddenSidebarItems] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -794,9 +795,48 @@ export default function Sidebar() {
         </motion.div>
       )}
 
+      )}
+
+      {/* SEARCH INPUT */}
+      {!collapsed && (
+        <div style={{ padding: "0 20px", marginBottom: "16px" }}>
+          <div style={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center"
+          }}>
+            <Search size={14} style={{ position: "absolute", left: "12px", color: "var(--kravy-text-muted)" }} />
+            <input
+              type="text"
+              placeholder="Search menus..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "8px 12px 8px 32px",
+                borderRadius: "10px",
+                border: "1px solid var(--kravy-border)",
+                background: isDark ? "rgba(255,255,255,0.05)" : "var(--kravy-surface)",
+                color: "var(--kravy-text-primary)",
+                fontSize: "0.75rem",
+                outline: "none",
+                fontWeight: 600
+              }}
+            />
+            {searchQuery && (
+              <X 
+                size={14} 
+                onClick={() => setSearchQuery("")} 
+                style={{ position: "absolute", right: "12px", color: "var(--kravy-text-muted)", cursor: "pointer" }} 
+              />
+            )}
+          </div>
+        </div>
+      )}
+
       {/* NAV ITEMS */}
       <nav style={{ flex: 1, overflowY: "auto", padding: "8px 10px", scrollbarWidth: "none" }}>
-        {navGroups.map((group) => {
+        {navGroups.map((group, groupIndex) => {
           // Filter items based on access rules
           const visibleItems = group.items.filter((item: any) => {
             // 0. User custom hidden items check (except critical settings link)
@@ -839,20 +879,22 @@ export default function Sidebar() {
             if (allowedPaths.length > 0) return false;
 
             // 5. Legacy Role-based Fallback (used when allowedPaths is empty)
-            if (item.roles) {
-               return item.roles.includes(userRole);
-            }
+            const hasRoleAccess = allowedPaths.length === 0 && item.roles ? item.roles.includes(userRole) : (allowedPaths.length === 0);
+              
+            // 6. Search query filtering
+            const matchesSearch = searchQuery 
+              ? item.label.toLowerCase().includes(searchQuery.toLowerCase()) 
+                || (item.subItems && item.subItems.some((sub: any) => sub.label.toLowerCase().includes(searchQuery.toLowerCase())))
+              : true;
 
-            // 6. Default Default: Items without role restrictions are visible to everyone
-            // when no specific allowedPaths have been configured for the user yet.
-            return true;
+            return hasRoleAccess && matchesSearch;
           });
 
           // 2. If no items are allowed in this group, don't show the group at all
           if (visibleItems.length === 0) return null;
 
           return (
-            <div key={group.group} style={{ marginBottom: "12px" }}>
+            <div key={group.group || `group-${groupIndex}`} style={{ marginBottom: "20px" }}>
               {!collapsed && (
                 <div style={{
                   fontSize: "0.58rem", fontWeight: 800,
