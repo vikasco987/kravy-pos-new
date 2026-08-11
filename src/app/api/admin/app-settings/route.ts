@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function GET() {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -32,8 +32,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const effectiveId = await getEffectiveClerkId();
+    if (!effectiveId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
