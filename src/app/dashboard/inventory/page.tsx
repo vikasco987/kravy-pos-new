@@ -482,7 +482,7 @@ export default function InventoryPage() {
                   </td>
                 </tr>
               ) : activeTab === 'finished' ? (
-                filteredItems.map((item) => {
+                filteredItems.map((item, index) => {
                   const status = getStatus(item);
                   return (
                     <motion.tr 
@@ -585,7 +585,7 @@ export default function InventoryPage() {
               ) : (
                 rawMaterials
                   .filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                  .map((mat) => {
+                  .map((mat, index) => {
                     const isLow = mat.stock <= mat.minStock;
                     return (
                       <motion.tr 
