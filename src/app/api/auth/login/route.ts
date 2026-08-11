@@ -73,13 +73,29 @@ export async function POST(req: NextRequest) {
       { expiresIn: "90d" }
     );
 
+    const userAgent = req.headers.get("user-agent") || "";
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const deviceType = /mobile|android|iphone/i.test(userAgent) ? "mobile" : "desktop";
+    const browser = /chrome/i.test(userAgent) ? "Chrome" : /safari/i.test(userAgent) ? "Safari" : /firefox/i.test(userAgent) ? "Firefox" : /edg/i.test(userAgent) ? "Edge" : "Other";
+    const os = /windows/i.test(userAgent) ? "Windows" : /mac/i.test(userAgent) ? "macOS" : /linux/i.test(userAgent) ? "Linux" : /android/i.test(userAgent) ? "Android" : /iphone|ipad/i.test(userAgent) ? "iOS" : "Other";
+
     // Hash the jti to store securely
     const hashedJti = crypto.createHash('sha256').update(jti).digest('hex');
 
     // Update user privateMetadata to store valid refresh tokens
     const currentMeta = (user.privateMetadata as any) || {};
     const existingTokens = currentMeta.refreshTokens || [];
-    const updatedTokens = [...existingTokens, { jtiHash: hashedJti, createdAt: Date.now() }];
+    const maxSessions = currentMeta.maxSessions || 15;
+    
+    const updatedTokens = [...existingTokens, { 
+      jtiHash: hashedJti, 
+      createdAt: Date.now(),
+      ipAddress: ip,
+      userAgent: userAgent,
+      deviceType: deviceType,
+      browser: browser,
+      os: os
+    }].slice(-maxSessions);
     
     await prisma.user.update({
         where: { id: user.id },
@@ -121,17 +137,14 @@ export async function POST(req: NextRequest) {
 
     // 🔐 6. Track Session
     try {
-      const userAgent = req.headers.get("user-agent") || "";
-      const ip = req.headers.get("x-forwarded-for") || req.ip || "unknown";
-      
       await prisma.userSession.create({
         data: {
           userId: user.id,
           ipAddress: ip,
           userAgent: userAgent,
-          deviceType: /mobile|android|iphone/i.test(userAgent) ? "mobile" : "desktop",
-          browser: /chrome/i.test(userAgent) ? "Chrome" : /safari/i.test(userAgent) ? "Safari" : /firefox/i.test(userAgent) ? "Firefox" : /edg/i.test(userAgent) ? "Edge" : "Other",
-          os: /windows/i.test(userAgent) ? "Windows" : /mac/i.test(userAgent) ? "macOS" : /linux/i.test(userAgent) ? "Linux" : /android/i.test(userAgent) ? "Android" : /iphone|ipad/i.test(userAgent) ? "iOS" : "Other",
+          deviceType: deviceType,
+          browser: browser,
+          os: os,
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
         }
       });

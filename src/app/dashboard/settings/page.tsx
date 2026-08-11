@@ -98,10 +98,17 @@ export default function SettingsPage() {
           icon: <Shield size={20} />,
           color: "#EF4444",
           label: "Security",
-          desc: "Password, 2FA and access control settings"
+          desc: "Manage passwords, 2FA, and security logs"
         },
         {
-          href: "/dashboard/backup",
+          href: "/dashboard/settings/sessions",
+          icon: <Activity size={20} />,
+          color: "#0EA5E9",
+          label: "Active Sessions",
+          desc: "View and manage active devices and login limits"
+        },
+        {
+          href: "/dashboard/settings/backup",
           icon: <Database size={20} />,
           color: "#F59E0B",
           label: "Data Backup",

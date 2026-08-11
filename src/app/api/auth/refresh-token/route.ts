@@ -68,11 +68,23 @@ export async function POST(req: Request) {
             { expiresIn: "15m" }
         );
 
-        // Remove old hash, add new hash, and cleanup old tokens (keep max 5 active sessions)
+        // Find the specific old token to inherit its device metadata
+        const oldTokenData = existingTokens.find((t: any) => t.jtiHash === hashedJti) || {};
+        const maxSessions = currentMeta.maxSessions || 15;
+
+        // Remove old hash, add new hash with inherited info, and cleanup old tokens
         const updatedTokens = existingTokens
             .filter((t: any) => t.jtiHash !== hashedJti)
-            .concat({ jtiHash: newHashedJti, createdAt: Date.now() })
-            .slice(-5);
+            .concat({ 
+                jtiHash: newHashedJti, 
+                createdAt: Date.now(),
+                ipAddress: oldTokenData.ipAddress,
+                userAgent: oldTokenData.userAgent,
+                deviceType: oldTokenData.deviceType,
+                browser: oldTokenData.browser,
+                os: oldTokenData.os
+            })
+            .slice(-maxSessions);
 
         await prisma.user.update({
             where: { id: user.id },
