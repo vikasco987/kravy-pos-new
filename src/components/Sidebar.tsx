@@ -119,7 +119,8 @@ import {
   Sparkles,
   Zap,
   LayoutDashboard,
-  Fuel
+  Fuel,
+  Smartphone
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { kravy } from "@/lib/sounds";
