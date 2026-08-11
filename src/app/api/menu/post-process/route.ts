@@ -30,14 +30,18 @@ export async function POST(req: NextRequest) {
 
         for (let i = 0; i < menuItems.length; i++) {
             let item = menuItems[i];
+            if (!item || typeof item !== 'object') continue;
+            
             let name = (item.name || "").trim();
+            if (!name) continue; // Skip items with no name
+            item.name = name; // Ensure it's set properly
 
-            if (modifierRegex.test(name) && lastNormalItem) {
-                let baseName = lastNormalItem.name.replace(/\s*\(Half\)$/, '');
+            if (modifierRegex.test(name) && lastNormalItem && lastNormalItem.name) {
+                let baseName = String(lastNormalItem.name).replace(/\s*\(Half\)$/, '');
 
                 if (name.toLowerCase().includes('f') || name.includes('/-')) {
                     item.name = `${baseName} (Full)`;
-                    if (!lastNormalItem.name.includes('(Half)')) {
+                    if (!String(lastNormalItem.name).includes('(Half)')) {
                         lastNormalItem.name = `${baseName} (Half)`;
                     }
                 } else {
@@ -56,7 +60,8 @@ export async function POST(req: NextRequest) {
         // --- Post-Processing: Group & Enforce Portions ---
         const groups: { [key: string]: any[] } = {};
         for (let item of cleanedMenu) {
-            let baseName = item.name.split('(')[0].trim();
+            if (!item.name) continue;
+            let baseName = String(item.name).split('(')[0].trim();
             if (!groups[baseName]) groups[baseName] = [];
             groups[baseName].push(item);
         }
@@ -80,14 +85,14 @@ export async function POST(req: NextRequest) {
             let activeItems = groupItems.filter((i: any) => !toRemove.has(i));
 
             if (activeItems.length > 1) {
-                let itemsWithoutBrackets = activeItems.filter((i: any) => !i.name.includes('('));
+                let itemsWithoutBrackets = activeItems.filter((i: any) => i.name && !String(i.name).includes('('));
 
                 if (itemsWithoutBrackets.length === 2) {
-                    itemsWithoutBrackets.sort((a: any, b: any) => a.price - b.price);
+                    itemsWithoutBrackets.sort((a: any, b: any) => (a.price || 0) - (b.price || 0));
                     itemsWithoutBrackets[0].name = `${itemsWithoutBrackets[0].name} (Half)`;
                     itemsWithoutBrackets[1].name = `${itemsWithoutBrackets[1].name} (Full)`;
                 } else if (itemsWithoutBrackets.length === 3) {
-                    itemsWithoutBrackets.sort((a: any, b: any) => a.price - b.price);
+                    itemsWithoutBrackets.sort((a: any, b: any) => (a.price || 0) - (b.price || 0));
                     itemsWithoutBrackets[0].name = `${itemsWithoutBrackets[0].name} (Small)`;
                     itemsWithoutBrackets[1].name = `${itemsWithoutBrackets[1].name} (Medium)`;
                     itemsWithoutBrackets[2].name = `${itemsWithoutBrackets[2].name} (Large)`;

@@ -46,6 +46,7 @@ type MenuItem = {
 
 type BillItem = {
   id: string;
+  itemId?: string;
   name: string;
   qty: number;
   rate: number;
@@ -924,6 +925,7 @@ export default function CheckoutClient() {
         
         setItems(bill.items.map((i: any) => ({ 
           id: i.id || i.itemId || i._id || `item-${Math.random().toString(36).substr(2, 9)}`, 
+          itemId: i.itemId || i.id,
           name: i.name, 
           qty: Number(i.qty) || Number(i.quantity) || 1, 
           printedQty: Number(i.printedQty) || Number(i.qty) || Number(i.quantity) || 0,
@@ -1001,6 +1003,7 @@ export default function CheckoutClient() {
               setSyncedOrderId(cachedOrder.id);
               setItems(cachedOrder.items.map((i: any) => ({
                 id: i.itemId || i.id || i._id || `item-${Math.random().toString(36).substr(2, 9)}`,
+                itemId: i.itemId || i.id,
                 name: i.name,
                 qty: Number(i.quantity || i.qty || 0),
                 printedQty: Number(i.quantity || i.qty || 0),
@@ -1035,6 +1038,7 @@ export default function CheckoutClient() {
           
           setItems(order.items.map((i: any) => ({
             id: i.itemId || i.id || i._id || `item-${Math.random().toString(36).substr(2, 9)}`,
+            itemId: i.itemId || i.id,
             name: i.name,
             qty: Number(i.quantity || i.qty || 0),
             printedQty: Number(i.quantity || i.qty || 0),
@@ -1219,6 +1223,7 @@ export default function CheckoutClient() {
       kravy.add(); // new item added — bigger pop sound
       return [...prev, { 
         id: item.id, 
+        itemId: item.id,
         name: item.name, 
         qty: 1, 
         printedQty: 0,
@@ -1284,6 +1289,7 @@ export default function CheckoutClient() {
       kravy.add();
       return [...prev, { 
         id: itemToAddId, 
+        itemId: isVirtual && selectedOptObj ? (selectedOptObj.originalId || selectedOptObj.id || variantModalItem.id) : variantModalItem.id,
         name: itemToAddName, 
         qty: 1, 
         printedQty: 0,
@@ -1900,6 +1906,7 @@ export default function CheckoutClient() {
       if (Array.isArray(savedBill?.items)) {
         const serverItems = savedBill.items.map((i: any) => ({
           id: i.id || i.itemId || i._id || `item-${Math.random().toString(36).substr(2, 9)}`,
+          itemId: i.itemId || i.id,
           name: i.name,
           qty: i.qty,
           rate: i.rate,
@@ -2073,6 +2080,7 @@ export default function CheckoutClient() {
             setItems(serverItems.map((it: any) => ({
               ...it,
               id: it.itemId || it.id || it._id || `item-${Math.random().toString(36).substr(2, 9)}`,
+              itemId: it.itemId || it.id,
               rate: it.price || it.rate,
               qty: it.quantity || it.qty,
               printedQty: it.quantity || it.qty,

@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import crypto from "crypto";
 
 const JWT_SECRET = process.env.JWT_SECRET || "kravy_pos_secret_key_123";
 
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4. Generate JWT
+    // 4. Generate Access JWT (15m)
     const token = jwt.sign(
         { 
             staffId: staff.id, 
@@ -57,16 +58,50 @@ export async function POST(req: Request) {
             name: staff.name
         },
         JWT_SECRET,
-        { expiresIn: "7d" }
+        { expiresIn: "15m" }
     );
 
-    // 5. Set Cookie for Browser access
+    // 5. Generate Refresh JWT (90d)
+    const jti = crypto.randomUUID();
+    const refreshToken = jwt.sign(
+        { staffId: staff.id, jti },
+        JWT_SECRET,
+        { expiresIn: "90d" }
+    );
+
+    // Hash the jti to store in DB securely
+    const hashedJti = crypto.createHash('sha256').update(jti).digest('hex');
+
+    // Update staff privateMetadata to store valid refresh tokens
+    const currentMeta = staff.privateMetadata as any || {};
+    const existingTokens = currentMeta.refreshTokens || [];
+    // Keep only recent tokens (optional cleanup), here we just add the new one
+    const updatedTokens = [...existingTokens, { jtiHash: hashedJti, createdAt: Date.now() }];
+    
+    await prisma.staff.update({
+        where: { id: staff.id },
+        data: {
+            privateMetadata: {
+                ...currentMeta,
+                refreshTokens: updatedTokens
+            }
+        }
+    });
+
+    // 6. Set Cookies
     const cookieStore = await cookies();
     cookieStore.set("staff_token", token, {
         httpOnly: false, // Must be false for ClientLayout to detect staff session
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
+        maxAge: 60 * 15, // 15 minutes
+        path: "/",
+    });
+    cookieStore.set("staff_refresh_token", refreshToken, {
+        httpOnly: true, // Secure, not accessible to JS
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 60 * 60 * 24 * 90, // 90 days
         path: "/",
     });
 

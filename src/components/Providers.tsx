@@ -6,6 +6,7 @@ import { SearchProvider } from "@/components/SearchContext";
 import ThemeProvider from "@/components/ThemeProvider";
 import { Toaster } from "react-hot-toast";
 import { ConfirmProvider } from "@/components/ConfirmContext";
+import FetchInterceptor from "@/components/FetchInterceptor";
 
 export default function Providers({
   children,
@@ -16,6 +17,7 @@ export default function Providers({
     <ClerkProvider>
       <ThemeProvider>
         <ConfirmProvider>
+          <FetchInterceptor />
           <SidebarProvider>
             <SearchProvider>
               <Toaster position="top-right" />

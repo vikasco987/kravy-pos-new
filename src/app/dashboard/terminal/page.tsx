@@ -1009,6 +1009,8 @@ function KravyPOS() {
 
             const billData = {
                 items: order.items?.map(it => ({
+                    id: it.itemId || it.id,
+                    itemId: it.itemId || it.id,
                     name: it.name,
                     price: it.price,
                     quantity: it.quantity,
