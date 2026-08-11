@@ -783,18 +783,8 @@ export default function Sidebar() {
             >
               SYSTEM ACTIVE
             </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, ease: "easeOut" }}
-              style={{ fontSize: "0.68rem", color: "#10B981", fontFamily: "monospace", fontWeight: 600 }}
-            >
-              ⚡ Cloud Connected
-            </motion.div>
           </div>
         </motion.div>
-      )}
-
       )}
 
       {/* SEARCH INPUT */}
