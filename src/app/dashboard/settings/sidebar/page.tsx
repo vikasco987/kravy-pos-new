@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
-import { kravy } from "@/lib/kravy";
+import { kravy } from "@/lib/sounds";
 import { useAuthContext } from "@/components/AuthContext";
 
 // Complete list of sidebar groups & items mirroring Sidebar.tsx
