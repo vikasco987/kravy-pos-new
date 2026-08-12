@@ -40,9 +40,30 @@ export default function StaffLoginPage() {
         localStorage.setItem("staff_user", JSON.stringify(data.data));
         
         // Redirect to their first allowed path, or dashboard if none
-        const allowedPaths = data.data.permissions || [];
-        const dashboardPaths = allowedPaths.filter((p: string) => p.startsWith("/dashboard"));
-        const targetPath = dashboardPaths.length > 0 ? dashboardPaths[0] : "/dashboard";
+        // Expand permissions to find a valid dashboard path to redirect to
+        const PERMISSION_MAPPING: Record<string, string[]> = {
+          "Dashboard Permissions": ["/dashboard"],
+          "Order & Billing Permissions": ["/dashboard/billing/checkout", "/dashboard/terminal", "/dashboard/kitchen", "/dashboard/tables"],
+          "Invoices & Receipts": ["/dashboard/billing", "/dashboard/billing/deleted"],
+          "Customer Permissions": ["/dashboard/parties"],
+          "Menu & Items Permissions": ["/dashboard/menu/view", "/dashboard/menu-editor", "/dashboard/menu/addons", "/dashboard/menu/upload", "/dashboard/store-item-upload", "/dashboard/menu/edit", "/dashboard/inventory"],
+          "AI Intelligence Tools": ["/dashboard/ai-scraper"],
+          "Report Permissions": ["/dashboard/reports/sales/daily", "/dashboard/reports/gst"],
+          "Settings Permissions": ["/dashboard/profile", "/dashboard/settings", "/dashboard/settings/tax", "/dashboard/staff", "/dashboard/settings/advanced"]
+        };
+        
+        let expandedPaths: string[] = [...allowedPaths];
+        allowedPaths.forEach((p: string) => {
+          if (PERMISSION_MAPPING[p]) {
+            expandedPaths = [...expandedPaths, ...PERMISSION_MAPPING[p]];
+          }
+        });
+
+        const dashboardPaths = expandedPaths.filter((p: string) => p.startsWith("/dashboard") && p !== "/dashboard");
+        // Always try to redirect to a specific sub-path if they don't have explicit root dashboard access
+        const targetPath = allowedPaths.includes("Dashboard Permissions") || allowedPaths.includes("/dashboard") 
+            ? "/dashboard" 
+            : (dashboardPaths.length > 0 ? dashboardPaths[0] : "/dashboard");
 
         // Wait a bit for toast and then hard redirect to clear Clerk state
         setTimeout(() => {

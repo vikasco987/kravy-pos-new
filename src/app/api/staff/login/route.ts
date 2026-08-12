@@ -144,6 +144,7 @@ export async function POST(req: Request) {
 
     // Clear any existing merchant/admin sessions to prevent permission bypass when testing
     cookieStore.delete("kravy_auth_token");
+    cookieStore.delete("kravy_refresh_token");
     cookieStore.delete("__session");
 
     // 6. Return response
