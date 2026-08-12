@@ -13,6 +13,21 @@ import { kravy } from "@/lib/sounds";
 import PremiumAlert from "@/components/PremiumAlert";
 import IncomingOrderModal from "@/components/IncomingOrderModal";
 
+function SessionExpiredRedirect() {
+  useEffect(() => {
+    fetch('/api/auth/logout', { method: 'POST' })
+      .then(() => { window.location.href = "/"; })
+      .catch(() => { window.location.href = "/"; });
+  }, []);
+
+  return (
+    <div className="h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="animate-spin text-indigo-600" size={32} />
+        <span className="ml-3 text-slate-500 font-medium">Session expired, redirecting...</span>
+    </div>
+  );
+}
+
 export default function ClientLayout({
   children,
 }: {
@@ -99,17 +114,7 @@ export default function ClientLayout({
 
   // 2. If NOT Clerk User AND NOT Staff User -> Clear cookies and redirect to Home/Login
   if (!isSignedIn && !authUser) {
-    if (typeof window !== "undefined") {
-      fetch('/api/auth/logout', { method: 'POST' })
-        .then(() => { window.location.href = "/"; })
-        .catch(() => { window.location.href = "/"; });
-    }
-    return (
-        <div className="h-screen flex items-center justify-center bg-slate-50">
-            <Loader2 className="animate-spin text-indigo-600" size={32} />
-            <span className="ml-3 text-slate-500 font-medium">Session expired, redirecting...</span>
-        </div>
-    );
+    return <SessionExpiredRedirect />;
   }
 
   // 3. SaaS / Premium UI Blocker (Early Return)
