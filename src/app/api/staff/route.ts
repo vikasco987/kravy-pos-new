@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { name, email, password, accessType, permissions, businessId, phone } = body;
+        const { name, email, password, accessType, permissions, businessId, phone, createdFrom } = body;
 
         // 1. Basic Validation
         if (!email || !password) {
@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
                 accessType: accessType || "Sales Access",
                 permissions: permissions || [],
                 businessId: businessId,
-                status: "active"
+                status: "active",
+                privateMetadata: (createdFrom === "app" ? { createdFrom: "app" } : {}) as any
             }
         });
 

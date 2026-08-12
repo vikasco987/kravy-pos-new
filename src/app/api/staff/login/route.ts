@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "kravy_pos_secret_key_123";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const { email, password, source } = await req.json();
 
     if (!email || !password) {
         return NextResponse.json(
@@ -28,6 +28,16 @@ export async function POST(req: Request) {
         { success: false, message: "Staff not found!" },
         { status: 404 }
       );
+    }
+
+    if (source === "app") {
+      const metadata = (staff.privateMetadata as any) || {};
+      if (metadata.createdFrom !== "app") {
+        return NextResponse.json(
+          { success: false, message: "Staff created from web cannot login to the app." },
+          { status: 403 }
+        );
+      }
     }
 
     // 2. Check status
