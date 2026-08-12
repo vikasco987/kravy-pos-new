@@ -40,6 +40,7 @@ export default function StaffLoginPage() {
         localStorage.setItem("staff_user", JSON.stringify(data.data));
         
         // Redirect to their first allowed path, or dashboard if none
+        const allowedPaths = data.data.permissions || [];
         // Expand permissions to find a valid dashboard path to redirect to
         const PERMISSION_MAPPING: Record<string, string[]> = {
           "Dashboard Permissions": ["/dashboard"],
