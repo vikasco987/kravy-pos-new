@@ -79,7 +79,13 @@ export async function getAuthUser(): Promise<AuthUser | null> {
             const user = await prisma.user.findUnique({ where: { id: userId } });
             
             if (user) {
-                // 🛑 Enforce session revocation
+                // 🛑 Enforce session revocation via jtiHash for immediate logout
+                const refreshTokens = (user.privateMetadata as any)?.refreshTokens || [];
+                if (decoded.jtiHash && !refreshTokens.some((t: any) => t.jtiHash === decoded.jtiHash)) {
+                    return null; // Session revoked
+                }
+
+                // Fallback global revocation check
                 const revokedAt = (user.privateMetadata as any)?.sessionsRevokedAt;
                 if (revokedAt && decoded.iat && (decoded.iat * 1000) < revokedAt) {
                     return null; 
@@ -99,7 +105,13 @@ export async function getAuthUser(): Promise<AuthUser | null> {
             // Fallback for legacy staff model if not in User table
             const staff = await prisma.staff.findUnique({ where: { id: userId } });
             if (staff) {
-                // 🛑 Enforce session revocation
+                // 🛑 Enforce session revocation via jtiHash for immediate logout
+                const refreshTokens = (staff.privateMetadata as any)?.refreshTokens || [];
+                if (decoded.jtiHash && !refreshTokens.some((t: any) => t.jtiHash === decoded.jtiHash)) {
+                    return null; // Session revoked
+                }
+
+                // Fallback global revocation check
                 const revokedAt = (staff.privateMetadata as any)?.sessionsRevokedAt;
                 if (revokedAt && decoded.iat && (decoded.iat * 1000) < revokedAt) {
                     return null; 

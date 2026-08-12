@@ -62,7 +62,8 @@ export async function POST(req: Request) {
                 clerkId: user.ownerId || user.clerkId, 
                 role: user.role,
                 email: user.email,
-                name: user.name
+                name: user.name,
+                jtiHash: newHashedJti
             },
             JWT_SECRET,
             { expiresIn: "15m" }

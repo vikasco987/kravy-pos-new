@@ -47,6 +47,9 @@ export async function POST(req: Request) {
       );
     }
 
+    const jti = crypto.randomUUID();
+    const hashedJti = crypto.createHash('sha256').update(jti).digest('hex');
+
     // 4. Generate Access JWT (15m)
     const token = jwt.sign(
         { 
@@ -55,7 +58,8 @@ export async function POST(req: Request) {
             businessId: staff.businessId,
             accessType: staff.accessType,
             permissions: staff.permissions,
-            name: staff.name
+            name: staff.name,
+            jtiHash: hashedJti
         },
         JWT_SECRET,
         { expiresIn: "15m" }
@@ -68,15 +72,11 @@ export async function POST(req: Request) {
     const os = /windows/i.test(userAgent) ? "Windows" : /mac/i.test(userAgent) ? "macOS" : /linux/i.test(userAgent) ? "Linux" : /android/i.test(userAgent) ? "Android" : /iphone|ipad/i.test(userAgent) ? "iOS" : "Other";
 
     // 5. Generate Refresh JWT (90d)
-    const jti = crypto.randomUUID();
     const refreshToken = jwt.sign(
         { staffId: staff.id, jti },
         JWT_SECRET,
         { expiresIn: "90d" }
     );
-
-    // Hash the jti to store in DB securely
-    const hashedJti = crypto.createHash('sha256').update(jti).digest('hex');
 
     // Update staff privateMetadata to store valid refresh tokens
     const currentMeta = staff.privateMetadata as any || {};

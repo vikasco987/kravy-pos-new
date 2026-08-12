@@ -51,6 +51,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Incorrect Password" }, { status: 401 });
     }
 
+    const jti = crypto.randomUUID();
+    const hashedJti = crypto.createHash('sha256').update(jti).digest('hex');
+
     // 🎟️ 4. Generate Access JWT (15m)
     const token = jwt.sign(
       { 
@@ -59,14 +62,14 @@ export async function POST(req: NextRequest) {
         clerkId: user.ownerId || user.clerkId, 
         role: user.role,
         email: user.email,
-        name: user.name
+        name: user.name,
+        jtiHash: hashedJti
       },
       JWT_SECRET,
       { expiresIn: "15m" }
     );
 
     // 🎟️ 5. Generate Refresh JWT (90d)
-    const jti = crypto.randomUUID();
     const refreshToken = jwt.sign(
       { userId: user.id, jti },
       JWT_SECRET,
@@ -78,9 +81,6 @@ export async function POST(req: NextRequest) {
     const deviceType = /mobile|android|iphone/i.test(userAgent) ? "mobile" : "desktop";
     const browser = /chrome/i.test(userAgent) ? "Chrome" : /safari/i.test(userAgent) ? "Safari" : /firefox/i.test(userAgent) ? "Firefox" : /edg/i.test(userAgent) ? "Edge" : "Other";
     const os = /windows/i.test(userAgent) ? "Windows" : /mac/i.test(userAgent) ? "macOS" : /linux/i.test(userAgent) ? "Linux" : /android/i.test(userAgent) ? "Android" : /iphone|ipad/i.test(userAgent) ? "iOS" : "Other";
-
-    // Hash the jti to store securely
-    const hashedJti = crypto.createHash('sha256').update(jti).digest('hex');
 
     // Update user privateMetadata to store valid refresh tokens
     const currentMeta = (user.privateMetadata as any) || {};

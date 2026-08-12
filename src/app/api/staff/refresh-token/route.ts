@@ -63,7 +63,8 @@ export async function POST(req: Request) {
                 businessId: staff.businessId,
                 accessType: staff.accessType,
                 permissions: staff.permissions,
-                name: staff.name
+                name: staff.name,
+                jtiHash: newHashedJti
             },
             JWT_SECRET,
             { expiresIn: "15m" }
