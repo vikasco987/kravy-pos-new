@@ -106,8 +106,17 @@ export async function GET() {
         secondaryPhones: true,
         phone: true,
         uiPreferences: true,
+        privateMetadata: true,
       }
     });
+
+    const staff = !user ? await prisma.staff.findUnique({
+      where: { id: authUser.id },
+      select: { privateMetadata: true }
+    }) : null;
+
+    const metadata: any = user?.privateMetadata || staff?.privateMetadata || {};
+    const hiddenSidebarItems = metadata.hiddenSidebarItems || [];
 
     return NextResponse.json({ 
         id: authUser.id,
@@ -120,7 +129,8 @@ export async function GET() {
         role: authUser.type, // Maintain original role for frontend
         businessId: authUser.businessId,
         allowedPaths: finalPaths,
-        uiPreferences: user?.uiPreferences || {}
+        uiPreferences: user?.uiPreferences || {},
+        hiddenSidebarItems
     });
 
   } catch (error) {

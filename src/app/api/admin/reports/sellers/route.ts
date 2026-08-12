@@ -61,24 +61,38 @@ export async function GET(req: NextRequest) {
     );
 
     // 3. Fetch Aggregated Stats (Count, Revenue, Latest Bill)
-    console.log("🕵️ [API reports/sellers] Querying prisma.billManager.groupBy for aggregated stats...");
-    const aggregatedStats = await prisma.billManager.groupBy({
-      by: ["clerkUserId"],
-      where: { isDeleted: false, clerkUserId: { in: clerkIds } },
-      _count: { id: true },
-      _sum: { total: true },
-      _max: { createdAt: true },
-    });
+    console.log("🕵️ [API reports/sellers] Querying prisma.billManager.aggregateRaw for aggregated stats...");
+    const aggregatedStats = await prisma.billManager.aggregateRaw({
+      pipeline: [
+        {
+          $match: {
+            isDeleted: false,
+            clerkUserId: { $in: clerkIds }
+          }
+        },
+        {
+          $group: {
+            _id: "$clerkUserId",
+            count: { $sum: 1 },
+            totalRevenue: { $sum: "$total" },
+            lastBillDate: { $max: "$createdAt" }
+          }
+        }
+      ],
+      options: {
+        allowDiskUse: true
+      }
+    }) as any[];
     console.log(`✅ [API reports/sellers] Loaded ${aggregatedStats.length} aggregated stats.`);
     
     const billCountMap = Object.fromEntries(
-      aggregatedStats.map((s) => [s.clerkUserId, s._count.id])
+      aggregatedStats.map((s) => [s._id, s.count])
     );
     const revenueMap = Object.fromEntries(
-      aggregatedStats.map((s) => [s.clerkUserId, s._sum.total || 0])
+      aggregatedStats.map((s) => [s._id, s.totalRevenue || 0])
     );
     const lastBillMap = Object.fromEntries(
-      aggregatedStats.map((s) => [s.clerkUserId, s._max.createdAt])
+      aggregatedStats.map((s) => [s._id, s.lastBillDate?.$date ? new Date(s.lastBillDate.$date) : s.lastBillDate])
     );
 
     const sevenDaysAgo = new Date();

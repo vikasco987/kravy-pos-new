@@ -7,11 +7,21 @@ import {
     Home, ShoppingCart, LayoutDashboard, Activity, Building, Receipt, Zap,
     UtensilsCrossed, Layers, PlusCircle, Upload, Settings, Users, UserPlus,
     Package, IndianRupee, QrCode, Camera, TrendingUp, PieChart, FileText,
-    BarChart3, UserCircle, Mail, Printer, Lock, Shield, Archive, HelpCircle
+    BarChart3, UserCircle, Mail, Printer, Trash2,
+    Building2,
+    Calendar,
+    Hash,
+    ShieldCheck,
+    Loader2,
+    History,
+    ChevronLeft,
+    CheckCircle2,
+    Lock, Shield, Archive, HelpCircle
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
-import { kravy } from "@/lib/sounds";
+import { kravy } from "@/lib/kravy";
+import { useAuthContext } from "@/components/AuthContext";
 
 // Complete list of sidebar groups & items mirroring Sidebar.tsx
 const allSidebarGroups = [
@@ -93,32 +103,51 @@ const allSidebarGroups = [
 ];
 
 export default function SidebarSettingsPage() {
+    const { user: authUser, loading: authLoading, refresh: refreshUser } = useAuthContext();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [hiddenHrefs, setHiddenHrefs] = useState<string[]>([]);
 
-    useEffect(() => {
-        // Load initial from localStorage
-        try {
-            const local = localStorage.getItem("kravy_hidden_sidebar_items");
-            if (local) setHiddenHrefs(JSON.parse(local));
-        } catch (e) {}
+    const userRole = authUser?.type || "USER";
+    const allowedPaths = authUser?.permissions || [];
 
-        // Load from DB Profile
-        fetch('/api/profile', { cache: 'no-store' })
-            .then(res => res.json())
-            .then(data => {
-                if (data) {
-                    const hiddenFromDb = data.printSettings?.hiddenSidebarItems || data.hiddenSidebarItems;
-                    if (Array.isArray(hiddenFromDb)) {
-                        setHiddenHrefs(hiddenFromDb);
-                        localStorage.setItem("kravy_hidden_sidebar_items", JSON.stringify(hiddenFromDb));
-                    }
-                }
-            })
-            .catch(() => toast.error("Failed to load settings"))
-            .finally(() => setLoading(false));
-    }, []);
+    useEffect(() => {
+        if (authLoading) return;
+        
+        // Use user's own hidden items from AuthContext
+        if (authUser && authUser.hiddenSidebarItems) {
+            setHiddenHrefs(authUser.hiddenSidebarItems);
+            localStorage.setItem("kravy_hidden_sidebar_items", JSON.stringify(authUser.hiddenSidebarItems));
+        } else {
+            try {
+                const local = localStorage.getItem("kravy_hidden_sidebar_items");
+                if (local) setHiddenHrefs(JSON.parse(local));
+            } catch (e) {}
+        }
+        setLoading(false);
+    }, [authUser, authLoading]);
+
+    const hasRole = (roles?: string[]) => {
+        if (!roles) return true;
+        return roles.includes(userRole);
+    };
+
+    const hasPermission = (href: string) => {
+        if (userRole === "OWNER" || userRole === "ADMIN" || userRole === "SELLER") return true;
+        if (href === "/dashboard") return true; // Always allow dashboard home
+        return allowedPaths.some(p => href.startsWith(p));
+    };
+
+    const filteredGroups = allSidebarGroups.map(group => {
+        // Filter items within the group
+        const items = group.items.filter(item => {
+            if (!hasRole(item.roles)) return false;
+            if (!hasPermission(item.href)) return false;
+            return true;
+        });
+        return { ...group, items };
+    }).filter(group => group.items.length > 0); // Remove empty groups
+
 
     const toggleItem = (href: string) => {
         if (href === "/dashboard/settings" || href === "/dashboard/profile") {
@@ -149,8 +178,8 @@ export default function SidebarSettingsPage() {
                 newValue: JSON.stringify(hiddenHrefs)
             }));
 
-            // Save to Database
-            const res = await fetch(`/api/profile`, {
+            // Save to Database (User Preferences)
+            const res = await fetch(`/api/user/preferences`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ hiddenSidebarItems: hiddenHrefs }),
@@ -158,6 +187,7 @@ export default function SidebarSettingsPage() {
 
             if (res.ok) {
                 kravy.success();
+                refreshUser(); // Update AuthContext in memory
                 toast.success("Sidebar configuration updated!");
             } else {
                 toast.error("Failed to sync configuration with server");
@@ -171,8 +201,11 @@ export default function SidebarSettingsPage() {
 
     if (loading) return <div className="p-10 text-center opacity-50">Loading Navigation Controls...</div>;
 
-    const totalItems = allSidebarGroups.reduce((acc, g) => acc + g.items.length, 0);
-    const hiddenCount = hiddenHrefs.length;
+    // Calculate based on visible filtered groups instead of all
+    const totalItems = filteredGroups.reduce((acc, g) => acc + g.items.length, 0);
+    const hiddenCount = filteredGroups.reduce((acc, g) => {
+        return acc + g.items.filter(i => hiddenHrefs.includes(i.href)).length;
+    }, 0);
     const visibleCount = totalItems - hiddenCount;
 
     return (
@@ -235,7 +268,7 @@ export default function SidebarSettingsPage() {
 
             {/* Groups Grid */}
             <div className="space-y-10">
-                {allSidebarGroups.map((group) => (
+                {filteredGroups.map((group) => (
                     <div key={group.group} className="space-y-4">
                         <div className="flex items-center gap-3 px-2">
                             <div className="w-2.5 h-2.5 rounded-full bg-violet-500 shadow-sm shadow-violet-500/50" />

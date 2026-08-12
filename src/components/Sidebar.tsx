@@ -475,15 +475,7 @@ export default function Sidebar() {
   const [fuelBillingEnabled, setFuelBillingEnabled] = useState(false);
   const [activeTablesCount, setActiveTablesCount] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [hiddenSidebarItems, setHiddenSidebarItems] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const local = localStorage.getItem("kravy_hidden_sidebar_items");
-        if (local) return JSON.parse(local);
-      } catch (e) {}
-    }
-    return [];
-  });
+  const [hiddenSidebarItems, setHiddenSidebarItems] = useState<string[]>([]);
 
   // Derive from AuthContext
   const userRole = authUser?.type || "USER";
@@ -503,11 +495,6 @@ export default function Sidebar() {
           if (data.excelImportEnabled) setExcelImportEnabled(true);
           setFuelBillingEnabled(!!data.enableFuelBilling);
 
-          const hiddenFromDb = data.printSettings?.hiddenSidebarItems || data.hiddenSidebarItems;
-          if (Array.isArray(hiddenFromDb)) {
-            setHiddenSidebarItems(hiddenFromDb);
-            localStorage.setItem("kravy_hidden_sidebar_items", JSON.stringify(hiddenFromDb));
-          }
         }
       })
       .catch(() => {});
@@ -547,6 +534,20 @@ export default function Sidebar() {
       clearInterval(interval);
     };
   }, []);
+
+  // Update hidden items when authUser changes
+  useEffect(() => {
+    if (authLoading) return;
+    if (authUser && authUser.hiddenSidebarItems) {
+      setHiddenSidebarItems(authUser.hiddenSidebarItems);
+      localStorage.setItem("kravy_hidden_sidebar_items", JSON.stringify(authUser.hiddenSidebarItems));
+    } else {
+      try {
+        const local = localStorage.getItem("kravy_hidden_sidebar_items");
+        if (local) setHiddenSidebarItems(JSON.parse(local));
+      } catch (e) {}
+    }
+  }, [authUser, authLoading]);
 
   if (!mounted) return null;
 

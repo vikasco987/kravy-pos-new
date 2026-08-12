@@ -10,6 +10,7 @@ interface AuthUser {
   name?: string;
   email?: string;
   role?: string;
+  hiddenSidebarItems?: string[];
 }
 
 interface AuthContextType {
@@ -42,7 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser({
           ...data,
           type: data.role,
-          permissions: data.allowedPaths || []
+          permissions: data.allowedPaths || [],
+          hiddenSidebarItems: data.hiddenSidebarItems || []
         });
       } else {
         setUser(null);
