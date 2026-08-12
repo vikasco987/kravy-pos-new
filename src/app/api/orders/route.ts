@@ -300,10 +300,15 @@ export async function POST(req: NextRequest) {
 
         // ✅ 5. SEND EXPO PUSH NOTIFICATION FOR BACKGROUND POPUP (DATA ONLY MESSAGE)
         try {
-            if (profile?.expoPushToken) {
-                console.log(`Sending silent data push to wake up Notifee: ${profile.expoPushToken}`);
+            // Fetch User to get the push token from privateMetadata
+            const userForPush = await prisma.user.findUnique({
+                where: { clerkId: effectiveId }
+            });
+            const expoPushToken = (userForPush?.privateMetadata as any)?.expoPushToken;
+            if (expoPushToken) {
+                console.log(`Sending silent data push to wake up Notifee: ${expoPushToken}`);
                 const pushPayload = {
-                    to: profile.expoPushToken,
+                    to: expoPushToken,
                     data: { orderId: order.id, isNewOrder: true },
                     priority: "high"
                 };
@@ -316,6 +321,8 @@ export async function POST(req: NextRequest) {
                     },
                     body: JSON.stringify(pushPayload)
                 });
+            } else {
+                console.log(`No expoPushToken found for user: ${effectiveId}`);
             }
         } catch (pushErr) {
             console.error("PUSH_NOTIFICATION_ERROR:", pushErr);
