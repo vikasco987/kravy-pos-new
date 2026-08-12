@@ -49,60 +49,93 @@ import { useAuthContext } from "@/components/AuthContext";
 import { useConfirm } from "@/components/ConfirmContext";
 
 
-const ALL_PATHS = [
-  { path: "/dashboard", label: "Store Dashboard", icon: <LayoutGrid size={16} /> },
-  { path: "/dashboard/billing/checkout", label: "Quick POS Billing", icon: <ShoppingCart size={16} /> },
-  { path: "edit", label: "Edit POS (Add Products/Categories)", icon: <Settings size={16} /> },
-  { path: "/dashboard/workflow", label: "Kitchen Workflow", icon: <Activity size={16} /> },
-  { path: "/dashboard/kitchen", label: "Kravy Kitchen Terminal", icon: <Activity size={16} /> },
-  { path: "/dashboard/terminal", label: "Kravy Billing Terminal (Floor Management)", icon: <LayoutGrid size={16} /> },
-  { path: "/dashboard/tables", label: "Tables & Zone Settings", icon: <LayoutGrid size={16} /> },
-  { path: "/dashboard/billing", label: "Past Bills / History", icon: <Receipt size={16} /> },
-  
-  // Detailed Action Permissions
-  { path: "header-pos-actions", label: "--- POS Billing Actions ---", icon: <ShoppingCart size={16} />, isHeader: true },
-  { path: "pos-discount", label: "Allow: Apply Discounts", icon: <Percent size={16} /> },
-  { path: "pos-edit-price", label: "Allow: Edit Item Prices", icon: <IndianRupee size={16} /> },
-  { path: "pos-delete-item", label: "Allow: Delete Items from Cart", icon: <Trash2 size={16} /> },
-
-  { path: "header-bill-actions", label: "--- Bill History Actions ---", icon: <Receipt size={16} />, isHeader: true },
-  { path: "edit-bill", label: "Allow: Edit Past Bills", icon: <Edit3 size={16} /> },
-  { path: "delete-bill", label: "Allow: Delete Past Bills", icon: <Trash2 size={16} /> },
-  { path: "mark-as-paid", label: "Allow: Change Payment Status", icon: <CheckCircle2 size={16} /> },
-  { path: "whatsapp-bill", label: "Allow: WhatsApp Billing", icon: <MessageCircle size={16} /> },
-
-  { path: "header-kit-actions", label: "--- Kitchen Actions ---", icon: <Activity size={16} />, isHeader: true },
-  { path: "kit-complete-order", label: "Allow: Mark Order as Ready", icon: <CheckCircle2 size={16} /> },
-  { path: "kit-cancel-order", label: "Allow: Cancel/Remove KOT", icon: <X size={16} /> },
-
-  { path: "header-inv-actions", label: "--- Inventory & Menu Actions ---", icon: <Package size={16} />, isHeader: true },
-  { path: "inv-edit-stock", label: "Allow: Update Stock Levels", icon: <Layers size={16} /> },
-  { path: "menu-delete-item", label: "Allow: Delete Menu Items", icon: <Trash2 size={16} /> },
-
-  { path: "/dashboard/menu/view", label: "Browse Products", icon: <UtensilsCrossed size={16} /> },
-  { path: "/dashboard/menu-editor", label: "Interactive Editor", icon: <Sparkles size={16} /> },
-  { path: "/dashboard/menu/addons", label: "Add-on clusters", icon: <Layers size={16} /> },
-  { path: "/dashboard/ai-scraper", label: "AI Menu Scraper", icon: <Zap size={16} /> },
-  { path: "/dashboard/menu/upload", label: "Add Single Item", icon: <PlusCircle size={16} /> },
-  { path: "/dashboard/store-item-upload", label: "Excel Bulk Import", icon: <Upload size={16} /> },
-  { path: "/dashboard/menu/edit", label: "Category & Editor", icon: <Settings size={16} /> },
-  { path: "/dashboard/parties", label: "Customer Parties", icon: <Users size={16} /> },
-  { path: "/dashboard/staff", label: "Staff Management", icon: <UserPlus size={16} /> },
-  { path: "/dashboard/inventory", label: "Inventory Stock", icon: <Package size={16} /> },
-  { path: "/dashboard/qr-orders", label: "QR Order Terminal", icon: <QrCode size={16} /> },
-  { path: "/dashboard/combos", label: "Marketing Hub", icon: <Sparkles size={16} /> },
-  { path: "/dashboard/gallery", label: "Gallery Manager", icon: <Camera size={16} /> },
-  { path: "/dashboard/reports/sales/daily", label: "Daily Sales Report", icon: <TrendingUp size={16} /> },
-  { path: "/dashboard/reports/sales/revenue", label: "Revenue Analysis", icon: <BarChart3 size={16} /> },
-  { path: "/dashboard/reports/payments", label: "Mode of Payment", icon: <PieChart size={16} /> },
-  { path: "/dashboard/reports/performance", label: "Business Growth", icon: <TrendingUp size={16} /> },
-  { path: "/dashboard/reports/gst", label: "GST Reports", icon: <PieChart size={16} /> },
-  { path: "/dashboard/profile", label: "Business Profile", icon: <UserCircle size={16} /> },
-  { path: "/dashboard/settings", label: "POS Settings", icon: <Settings size={16} /> },
-  { path: "/dashboard/settings/tax", label: "Tax Management", icon: <Percent size={16} /> },
-  { path: "/dashboard/backup", label: "Security & Backup", icon: <Shield size={16} /> },
-  { path: "/dashboard/billing/deleted", label: "Archive & Trash", icon: <Archive size={16} /> },
-  { path: "/dashboard/help", label: "Help & Support", icon: <HelpCircle size={16} /> },
+const PERMISSION_GROUPS = [
+  {
+    title: "Store Operations",
+    icon: <LayoutGrid className="text-blue-500" size={18} />,
+    paths: [
+      { path: "/dashboard", label: "Store Dashboard" },
+      { path: "/dashboard/billing/checkout", label: "Quick POS Billing" },
+      { path: "/dashboard/terminal", label: "Floor Management" },
+      { path: "/dashboard/kitchen", label: "Kitchen Terminal" },
+      { path: "/dashboard/tables", label: "Table Settings" },
+      { path: "/dashboard/qr-orders", label: "QR Order Terminal" },
+      { path: "/dashboard/rooms", label: "Hotel Room Stay" },
+      { path: "/dashboard/workflow", label: "Legacy Kitchen Workflow" },
+    ]
+  },
+  {
+    title: "Billing & History",
+    icon: <Receipt className="text-orange-500" size={18} />,
+    paths: [
+      { path: "/dashboard/billing", label: "Past Bills / History" },
+      { path: "edit-bill", label: "Allow: Edit Past Bills" },
+      { path: "delete-bill", label: "Allow: Delete Past Bills" },
+      { path: "mark-as-paid", label: "Allow: Change Payment Status" },
+      { path: "whatsapp-bill", label: "Allow: WhatsApp Billing" },
+    ]
+  },
+  {
+    title: "POS Actions",
+    icon: <ShoppingCart className="text-emerald-500" size={18} />,
+    paths: [
+      { path: "pos-discount", label: "Allow: Apply Discounts" },
+      { path: "pos-edit-price", label: "Allow: Edit Item Prices" },
+      { path: "pos-delete-item", label: "Allow: Delete Items from Cart" },
+    ]
+  },
+  {
+    title: "Kitchen Actions",
+    icon: <Activity className="text-red-500" size={18} />,
+    paths: [
+      { path: "kit-complete-order", label: "Allow: Mark Order as Ready" },
+      { path: "kit-cancel-order", label: "Allow: Cancel/Remove KOT" },
+    ]
+  },
+  {
+    title: "Menu & Inventory",
+    icon: <UtensilsCrossed className="text-purple-500" size={18} />,
+    paths: [
+      { path: "/dashboard/menu/view", label: "Browse Products" },
+      { path: "/dashboard/menu-editor", label: "Interactive Editor" },
+      { path: "/dashboard/menu/addons", label: "Add-on clusters" },
+      { path: "/dashboard/ai-scraper", label: "AI Menu Scraper" },
+      { path: "/dashboard/menu/upload", label: "Add Single Item" },
+      { path: "/dashboard/store-item-upload", label: "Excel Bulk Import" },
+      { path: "/dashboard/menu/edit", label: "Category & Editor" },
+      { path: "edit", label: "Legacy Edit POS" },
+      { path: "/dashboard/inventory", label: "Inventory Stock" },
+      { path: "inv-edit-stock", label: "Allow: Update Stock Levels" },
+      { path: "menu-delete-item", label: "Allow: Delete Menu Items" },
+    ]
+  },
+  {
+    title: "Reports & Analytics",
+    icon: <TrendingUp className="text-cyan-500" size={18} />,
+    paths: [
+      { path: "/dashboard/reports/sales/daily", label: "Daily Sales Report" },
+      { path: "/dashboard/reports/sales/revenue", label: "Revenue Analysis" },
+      { path: "/dashboard/reports/payments", label: "Mode of Payment" },
+      { path: "/dashboard/reports/performance", label: "Business Growth" },
+      { path: "/dashboard/reports/gst", label: "GST Reports" },
+    ]
+  },
+  {
+    title: "Administration",
+    icon: <Settings className="text-slate-400" size={18} />,
+    paths: [
+      { path: "/dashboard/parties", label: "Customer Parties" },
+      { path: "/dashboard/staff", label: "Staff Management" },
+      { path: "/dashboard/combos", label: "Marketing Hub" },
+      { path: "/dashboard/gallery", label: "Gallery Manager" },
+      { path: "/dashboard/profile", label: "Business Profile" },
+      { path: "/dashboard/settings", label: "POS Settings" },
+      { path: "/dashboard/settings/tax", label: "Tax Management" },
+      { path: "/dashboard/backup", label: "Security & Backup" },
+      { path: "/dashboard/billing/deleted", label: "Archive & Trash" },
+      { path: "/dashboard/help", label: "Help & Support" },
+    ]
+  }
 ];
 
 type StaffMember = {
@@ -194,6 +227,22 @@ export default function StaffManagementPage() {
       ? currentPaths.filter(p => p !== path)
       : [...currentPaths, path];
     
+    setSelectedStaff({ ...selectedStaff, allowedPaths: newPaths });
+  };
+
+  const handleToggleGroup = (paths: string[]) => {
+    if (!selectedStaff) return;
+    const currentPaths = selectedStaff.allowedPaths || [];
+    const allSelected = paths.every(p => currentPaths.includes(p));
+    
+    let newPaths = [...currentPaths];
+    if (allSelected) {
+      newPaths = newPaths.filter(p => !paths.includes(p));
+    } else {
+      paths.forEach(p => {
+        if (!newPaths.includes(p)) newPaths.push(p);
+      });
+    }
     setSelectedStaff({ ...selectedStaff, allowedPaths: newPaths });
   };
 
@@ -568,33 +617,47 @@ export default function StaffManagementPage() {
                         )}
                       </div>
 
-                      <div className="space-y-2 mb-8 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                          {ALL_PATHS.map(item => {
-                             if ((item as any).isHeader) {
-                               return (
-                                 <div key={item.path} className="pt-4 pb-1">
-                                   <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest text-center">
-                                     {item.label}
-                                   </p>
-                                 </div>
-                               );
-                             }
-                             const isActive = selectedStaff.allowedPaths?.includes(item.path);
-                             return (
-                               <button
-                                 key={item.path}
-                                 onClick={async () => handleTogglePath(item.path)}
-                                 className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isActive ? 'bg-indigo-600/20 border-indigo-500/50 text-white' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
-                               >
-                                 <div className="flex items-center gap-3">
-                                   {item.icon}
-                                   <span className="text-xs font-bold">{item.label}</span>
-                                 </div>
-                                 <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${isActive ? 'bg-indigo-500 text-white' : 'border border-slate-700'}`}>
-                                    {isActive && <Check size={12} />}
-                                 </div>
-                               </button>
-                             );
+                      <div className="space-y-4 mb-8 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                          {PERMISSION_GROUPS.map((group, idx) => {
+                            const groupPaths = group.paths.map(p => p.path);
+                            const allSelected = groupPaths.every(p => selectedStaff.allowedPaths?.includes(p));
+                            const someSelected = groupPaths.some(p => selectedStaff.allowedPaths?.includes(p));
+                            
+                            return (
+                              <div key={idx} className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden">
+                                <div className="flex items-center justify-between p-4 bg-slate-800/80 border-b border-slate-700/50">
+                                  <div className="flex items-center gap-3">
+                                    {group.icon}
+                                    <h4 className="text-sm font-black text-white">{group.title}</h4>
+                                  </div>
+                                  <button
+                                    onClick={() => handleToggleGroup(groupPaths)}
+                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${allSelected ? 'bg-indigo-500 text-white' : someSelected ? 'bg-indigo-500/30 text-indigo-300' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                                  >
+                                    {allSelected ? 'Deselect All' : 'Select All'}
+                                  </button>
+                                </div>
+                                <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {group.paths.map(item => {
+                                    const isActive = selectedStaff.allowedPaths?.includes(item.path);
+                                    return (
+                                      <button
+                                        key={item.path}
+                                        onClick={async () => handleTogglePath(item.path)}
+                                        className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isActive ? 'bg-indigo-600/20 border-indigo-500/50 text-white' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}`}
+                                      >
+                                        <div className="flex items-center gap-3">
+                                          <span className="text-xs font-bold text-left leading-tight">{item.label}</span>
+                                        </div>
+                                        <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all ${isActive ? 'bg-indigo-500 text-white' : 'border border-slate-700'}`}>
+                                           {isActive && <Check size={12} />}
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
                           })}
                        </div>
 
