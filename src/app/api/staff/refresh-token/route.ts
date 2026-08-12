@@ -42,8 +42,8 @@ export async function POST(req: Request) {
         const existingTokens = currentMeta.refreshTokens || [];
 
         // Find the token in DB
-        const tokenExists = existingTokens.some((t: any) => t.jtiHash === hashedJti);
-        if (!tokenExists) {
+        const activeToken = existingTokens.find((t: any) => t.jtiHash === hashedJti);
+        if (!activeToken || activeToken.status === "revoked") {
             return NextResponse.json({ success: false, message: "Refresh token revoked or already used" }, { status: 401 });
         }
 
