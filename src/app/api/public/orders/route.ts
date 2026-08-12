@@ -100,6 +100,40 @@ export async function POST(req: NextRequest) {
                 },
                 include: { table: true },
             });
+            
+            // ==========================================
+            // PUSH NOTIFICATION LOGIC FOR MERGED ORDER
+            // ==========================================
+            try {
+                const owner = await prisma.user.findUnique({
+                    where: { clerkId: clerkUserId }
+                });
+                if (owner?.privateMetadata) {
+                    const metadata = owner.privateMetadata as any;
+                    const expoToken = metadata.expoPushToken;
+                    
+                    if (expoToken) {
+                        const pushPayload = {
+                            to: expoToken,
+                            data: {
+                                orderId: String(updatedOrder.id),
+                                title: '🚨 TABLE ADDED ITEMS!',
+                                body: `Table has added new items of ₹${total} to their bill!`
+                            },
+                            priority: "high"
+                        };
+                        await fetch("https://exp.host/--/api/v2/push/send", {
+                            method: "POST",
+                            headers: { "Accept": "application/json", "Accept-encoding": "gzip, deflate", "Content-Type": "application/json" },
+                            body: JSON.stringify(pushPayload)
+                        });
+                    }
+                }
+            } catch (pushErr) {
+                console.error("PUSH_NOTIFICATION_ERROR:", pushErr);
+            }
+            // ==========================================
+
             return NextResponse.json(updatedOrder);
         }
         // Resolve table name to real table ID
@@ -176,7 +210,7 @@ export async function POST(req: NextRequest) {
             }
         }
         // ==========================================
-        // PUSH NOTIFICATION LOGIC (FIREBASE)
+        // PUSH NOTIFICATION LOGIC (FIREBASE & EXPO FALLBACK)
         // ==========================================
         try {
             const owner = await prisma.user.findUnique({
@@ -185,23 +219,44 @@ export async function POST(req: NextRequest) {
             if (owner?.privateMetadata) {
                 const metadata = owner.privateMetadata as any;
                 const pushToken = metadata.fcmToken;
+                const expoToken = metadata.expoPushToken;
+                // 1. Try FCM first if available
                 if (pushToken) {
-                    // ✅ FIX: Properly load Firebase and Get Messaging Service
-                    await import('@/lib/firebase-admin');
-                    const { getMessaging } = await import('firebase-admin/messaging');
-                    const message = {
-                        token: pushToken,
+                    try {
+                        await import('@/lib/firebase-admin');
+                        const { getMessaging } = await import('firebase-admin/messaging');
+                        const message = {
+                            token: pushToken,
+                            data: {
+                                orderId: String(order.id),
+                                title: '🚨 NEW URGENT ORDER!',
+                                body: `Table ${tableRecord?.name || 'Online'} placed a new order of ₹${total}!`
+                            },
+                            android: { priority: 'high' as const }
+                        };
+                        await getMessaging().send(message);
+                        console.log("Firebase Data Message Sent Successfully!");
+                    } catch (fcmErr) {
+                        console.error("FCM_PUSH_FAILED:", fcmErr);
+                    }
+                }
+                // 2. Also send via Expo Push as a solid fallback
+                if (expoToken) {
+                    const pushPayload = {
+                        to: expoToken,
                         data: {
                             orderId: String(order.id),
                             title: '🚨 NEW URGENT ORDER!',
                             body: `Table ${tableRecord?.name || 'Online'} placed a new order of ₹${total}!`
                         },
-                        android: {
-                            priority: 'high' as const
-                        }
+                        priority: "high"
                     };
-                    await getMessaging().send(message);
-                    console.log("Firebase Data Message Sent Successfully!");
+                    await fetch("https://exp.host/--/api/v2/push/send", {
+                        method: "POST",
+                        headers: { "Accept": "application/json", "Accept-encoding": "gzip, deflate", "Content-Type": "application/json" },
+                        body: JSON.stringify(pushPayload)
+                    });
+                    console.log("Expo Push Message Sent Successfully!");
                 }
             }
         } catch (pushErr) {
