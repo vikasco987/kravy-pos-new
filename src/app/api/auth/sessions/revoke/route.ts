@@ -22,7 +22,12 @@ export async function POST(req: Request) {
       if (userModel) {
         const currentMeta = (userModel.privateMetadata as any) || {};
         const existingTokens = currentMeta.refreshTokens || [];
-        const updatedTokens = existingTokens.filter((t: any) => t.jtiHash !== jtiHash);
+        const updatedTokens = existingTokens.map((t: any) => {
+          if (t.jtiHash === jtiHash) {
+            return { ...t, status: "revoked", updatedAt: Date.now() };
+          }
+          return t;
+        });
         
         await prisma.staff.update({
           where: { id: authUser.id },
@@ -39,7 +44,12 @@ export async function POST(req: Request) {
       if (userModel) {
         const currentMeta = (userModel.privateMetadata as any) || {};
         const existingTokens = currentMeta.refreshTokens || [];
-        const updatedTokens = existingTokens.filter((t: any) => t.jtiHash !== jtiHash);
+        const updatedTokens = existingTokens.map((t: any) => {
+          if (t.jtiHash === jtiHash) {
+            return { ...t, status: "revoked", updatedAt: Date.now() };
+          }
+          return t;
+        });
         
         await prisma.user.update({
           where: { id: authUser.id },

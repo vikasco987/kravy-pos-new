@@ -82,19 +82,30 @@ export async function POST(req: NextRequest) {
     const browser = /chrome/i.test(userAgent) ? "Chrome" : /safari/i.test(userAgent) ? "Safari" : /firefox/i.test(userAgent) ? "Firefox" : /edg/i.test(userAgent) ? "Edge" : "Other";
     const os = /windows/i.test(userAgent) ? "Windows" : /mac/i.test(userAgent) ? "macOS" : /linux/i.test(userAgent) ? "Linux" : /android/i.test(userAgent) ? "Android" : /iphone|ipad/i.test(userAgent) ? "iOS" : "Other";
 
+    let location = "Unknown Location";
+    try {
+        if (ip !== "unknown" && ip !== "127.0.0.1" && ip !== "::1") {
+            const locRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country`, { signal: AbortSignal.timeout(1500) });
+            const locData = await locRes.json();
+            if (locData && locData.city) {
+                location = `${locData.city}, ${locData.country}`;
+            }
+        }
+    } catch(e) {}
+
     // Update user privateMetadata to store valid refresh tokens
     const currentMeta = (user.privateMetadata as any) || {};
     const existingTokens = currentMeta.refreshTokens || [];
     const maxSessions = currentMeta.maxSessions || 15;
     
-    const updatedTokens = [...existingTokens, { 
       jtiHash: hashedJti, 
       createdAt: Date.now(),
       ipAddress: ip,
       userAgent: userAgent,
       deviceType: deviceType,
       browser: browser,
-      os: os
+      os: os,
+      location: location
     }].slice(-maxSessions);
     
     await prisma.user.update({

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { 
   Laptop, Smartphone, Monitor, ShieldAlert,
   Settings2, Save, Trash2, ArrowLeft,
-  Loader2, Globe
+  Loader2, Globe, CheckCircle2, MinusCircle
 } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
@@ -68,7 +68,12 @@ export default function SessionsClient() {
       });
       if (res.ok) {
         toast.success("Device logged out");
-        setSessions(prev => prev.filter(s => s.jtiHash !== jtiHash));
+        setSessions(prev => prev.map(s => {
+          if (s.jtiHash === jtiHash) {
+            return { ...s, status: "revoked", updatedAt: Date.now() };
+          }
+          return s;
+        }));
       } else {
         const data = await res.json();
         toast.error(data.error || "Failed to log out device");
@@ -168,45 +173,61 @@ export default function SessionsClient() {
               </div>
             ) : (
               <div className="space-y-4">
-                {sessions.map((session, idx) => (
-                  <div key={session.jtiHash || idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-200 transition-all group">
+                {sessions.map((session, idx) => {
+                  const isRevoked = session.status === "revoked";
+                  return (
+                  <div key={session.jtiHash || idx} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border ${isRevoked ? 'border-slate-100 bg-slate-50 opacity-60' : 'border-slate-200 bg-white shadow-sm'} hover:border-slate-300 transition-all group`}>
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center">
+                      <div className={`w-12 h-12 rounded-2xl ${isRevoked ? 'bg-slate-100 text-slate-400' : 'bg-slate-50 text-indigo-500'} shadow-sm border border-slate-200 flex items-center justify-center`}>
                         {getDeviceIcon(session.deviceType, session.os)}
                       </div>
                       <div>
                         <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                          {session.browser || "Unknown Browser"} on {session.os || "Unknown OS"}
-                          {idx === 0 && (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-wider">Current</span>
+                          {session.os || "Unknown OS"}
+                          {idx === 0 && !isRevoked && (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                              <CheckCircle2 size={10} /> CURRENT
+                            </span>
                           )}
                         </h3>
-                        <div className="flex items-center gap-3 mt-1.5 text-xs font-medium text-slate-500">
-                          <span className="flex items-center gap-1">
-                            <Globe size={12} /> {session.ipAddress || "Unknown IP"}
-                          </span>
+                        <div className="text-xs font-medium text-slate-600 mt-0.5 flex items-center gap-1.5">
+                           <Globe size={12} className="text-slate-400" />
+                           {session.location || session.ipAddress || "Unknown Location"}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1.5 text-[11px] font-semibold text-slate-500">
+                          <span>{session.browser || "Unknown Browser"}</span>
                           <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                          <span>Logged in {session.createdAt ? formatDistanceToNow(session.createdAt, { addSuffix: true }) : "Unknown"}</span>
+                          <span>
+                            {isRevoked ? 
+                              `Last activity: ${session.updatedAt ? formatDistanceToNow(session.updatedAt, { addSuffix: true }) : formatDistanceToNow(session.createdAt, { addSuffix: true })}` : 
+                              `Started ${formatDistanceToNow(session.createdAt, { addSuffix: true })}`}
+                          </span>
                         </div>
                       </div>
                     </div>
                     
-                    <button
-                      onClick={() => revokeSession(session.jtiHash)}
-                      disabled={revokingId === session.jtiHash}
-                      className="shrink-0 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 hover:border-red-200 transition-all active:scale-95 disabled:opacity-50"
-                    >
-                      {revokingId === session.jtiHash ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <>
-                          <Trash2 size={14} />
-                          Log out
-                        </>
-                      )}
-                    </button>
+                    {isRevoked ? (
+                      <div className="shrink-0 flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-400 bg-slate-100">
+                        <MinusCircle size={14} /> Signed out
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => revokeSession(session.jtiHash)}
+                        disabled={revokingId === session.jtiHash}
+                        className="shrink-0 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 hover:border-red-200 transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        {revokingId === session.jtiHash ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <>
+                            <Trash2 size={14} />
+                            Log out
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
-                ))}
+                )})}
               </div>
             )}
           </div>
