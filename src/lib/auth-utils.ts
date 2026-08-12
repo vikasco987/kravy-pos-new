@@ -88,10 +88,12 @@ export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
             
             if (user) {
                 // 🛑 Enforce session revocation via jtiHash for immediate logout
-                const refreshTokens = (user.privateMetadata as any)?.refreshTokens || [];
-                const activeToken = refreshTokens.find((t: any) => t.jtiHash === decoded.jtiHash);
-                if (!activeToken || activeToken.status === "revoked") {
-                    return null; // Session revoked
+                if (decoded.jtiHash) {
+                    const refreshTokens = (user.privateMetadata as any)?.refreshTokens || [];
+                    const activeToken = refreshTokens.find((t: any) => t.jtiHash === decoded.jtiHash);
+                    if (!activeToken || activeToken.status === "revoked") {
+                        return null; // Session revoked
+                    }
                 }
 
                 // Fallback global revocation check
@@ -118,10 +120,12 @@ export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
             });
             if (staff) {
                 // 🛑 Enforce session revocation via jtiHash for immediate logout
-                const refreshTokens = (staff.privateMetadata as any)?.refreshTokens || [];
-                const activeToken = refreshTokens.find((t: any) => t.jtiHash === decoded.jtiHash);
-                if (!activeToken || activeToken.status === "revoked") {
-                    return null; // Session revoked
+                if (decoded.jtiHash) {
+                    const refreshTokens = (staff.privateMetadata as any)?.refreshTokens || [];
+                    const activeToken = refreshTokens.find((t: any) => t.jtiHash === decoded.jtiHash);
+                    if (!activeToken || activeToken.status === "revoked") {
+                        return null; // Session revoked
+                    }
                 }
 
                 // Fallback global revocation check
