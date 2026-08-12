@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
     const existingTokens = currentMeta.refreshTokens || [];
     const maxSessions = currentMeta.maxSessions || 15;
     
+    const updatedTokens = [...existingTokens, { 
       jtiHash: hashedJti, 
       createdAt: Date.now(),
       ipAddress: ip,
