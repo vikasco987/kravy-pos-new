@@ -196,7 +196,16 @@ export async function GET(req: NextRequest) {
     // Date range
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(endDate.getDate() - range);
+
+    if (range === 0) {
+        // Today: From IST 00:00:00 to now
+        // Assuming server is UTC, we offset to get IST start of day
+        const nowIST = new Date(endDate.getTime() + (330 * 60000));
+        nowIST.setUTCHours(0, 0, 0, 0);
+        startDate.setTime(nowIST.getTime() - (330 * 60000));
+    } else {
+        startDate.setDate(endDate.getDate() - range);
+    }
 
     const bills = await prisma.billManager.findMany({
       where: {
