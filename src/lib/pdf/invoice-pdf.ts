@@ -118,6 +118,11 @@ export async function generateManualInvoicePDF(data: any) {
     page.drawText(`Email: ${String(data.customerEmail)}`, { x: leftX, y: billY, size: 10, font });
   }
 
+  if (data.customerGst) {
+    billY -= 14;
+    page.drawText(`GSTIN: ${String(data.customerGst).toUpperCase()}`, { x: leftX, y: billY, size: 10, font: bold });
+  }
+
   // Invoice Meta
   let metaY = topY;
   page.drawText("Invoice #", { x: rightX, y: metaY, size: 10, font });

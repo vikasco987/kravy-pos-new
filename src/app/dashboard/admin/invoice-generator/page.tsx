@@ -137,6 +137,7 @@ export default function InvoiceGenerator() {
                     customerDistrict: invoiceData.customer.city,
                     customerState: invoiceData.customer.state,
                     customerPincode: invoiceData.customer.pincode,
+                    customerGst: invoiceData.customer.gst,
                     paymentMode: invoiceData.paymentMode,
                     subtotal: calculateSubtotal(),
                     discount: calculateDiscount(),
@@ -230,7 +231,8 @@ export default function InvoiceGenerator() {
                     total: invoice.total,
                     subtotal: invoice.subtotal,
                     discount: invoice.discount,
-                    taxType: "inclusive"
+                    taxType: "inclusive",
+                    customerGst: invoice.customerGst
                 })
             });
             if (!response.ok) throw new Error("Failed");
@@ -246,6 +248,33 @@ export default function InvoiceGenerator() {
         } catch (e) {
             toast.error("Download failed", { id: "redownload" });
         }
+    };
+
+    const loadInvoiceForEditing = (inv: any) => {
+        setInvoiceData({
+            invoiceNumber: inv.invoiceNumber,
+            date: new Date(inv.date).toISOString().split('T')[0],
+            dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : "",
+            documentType: inv.documentType,
+            paymentMode: inv.paymentMode || "Online / Bank Transfer",
+            customer: {
+                name: inv.customerName || "",
+                phone: inv.customerPhone || "",
+                email: inv.customerEmail || "",
+                address: inv.customerAddress || "",
+                gst: inv.customerGst || "",
+                pincode: inv.customerPincode || "",
+                city: inv.customerCity || "",
+                state: inv.customerState || ""
+            },
+            items: inv.items || [],
+            notes: inv.notes || "",
+            bankDetails: inv.bankDetails || "",
+            termsConditions: inv.termsConditions || "",
+            bankImage: inv.bankImage || ""
+        });
+        setShowHistoryModal(false);
+        toast.success("Invoice loaded for editing!");
     };
 
     const handleBankImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -752,8 +781,16 @@ export default function InvoiceGenerator() {
                                         </div>
                                         <div>
                                             <button 
+                                                onClick={() => loadInvoiceForEditing(inv)}
+                                                className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-500 rounded-xl hover:bg-blue-500/20 transition-colors mr-2 inline-flex"
+                                                title="Edit Invoice"
+                                            >
+                                                <FileText size={16} />
+                                            </button>
+                                            <button 
                                                 onClick={() => redownloadPdf(inv)}
-                                                className="w-10 h-10 flex items-center justify-center bg-indigo-500/10 text-indigo-500 rounded-xl hover:bg-indigo-500/20 transition-colors"
+                                                className="w-10 h-10 flex items-center justify-center bg-indigo-500/10 text-indigo-500 rounded-xl hover:bg-indigo-500/20 transition-colors inline-flex"
+                                                title="Download PDF"
                                             >
                                                 <Download size={16} />
                                             </button>
