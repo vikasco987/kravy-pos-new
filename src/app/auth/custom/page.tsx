@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Mail, Phone, Lock, User, ArrowRight, ShieldCheck, RefreshCw, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { Mail, Phone, Lock, User, ArrowRight, ShieldCheck, RefreshCw, KeyRound, Eye, EyeOff, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -387,6 +387,19 @@ export default function CustomAuthPage() {
             ) : (
               <button onClick={() => { setMode('login'); setShowPassword(false); }} className="text-white/20 text-xs mt-4 hover:text-white/40 transition-colors uppercase tracking-widest font-bold">Back to Login</button>
             )}
+          </div>
+          
+          {/* Support Info */}
+          <div className="mt-6 pt-6 border-t border-white/10 text-center">
+            <p className="text-white/30 text-[10px] font-black uppercase tracking-widest mb-4">Need Help?</p>
+            <div className="flex flex-col gap-3">
+              <a href="tel:+919403893991" className="flex items-center justify-center gap-2 text-white/50 hover:text-emerald-500 transition-colors text-xs font-bold bg-white/5 py-2 rounded-xl border border-white/5">
+                <Phone size={14} /> Call Support: +91 9403893991
+              </a>
+              <a href="https://wa.me/919289507882" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 text-white/50 hover:text-emerald-500 transition-colors text-xs font-bold bg-white/5 py-2 rounded-xl border border-white/5">
+                <MessageSquare size={14} /> WhatsApp: +91 9289507882
+              </a>
+            </div>
           </div>
         </form>
       </div>

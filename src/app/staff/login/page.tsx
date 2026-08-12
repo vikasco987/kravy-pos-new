@@ -9,7 +9,9 @@ import {
   ChevronRight, 
   ArrowLeft,
   ShieldCheck,
-  Smartphone
+  Smartphone,
+  MessageSquare,
+  Phone
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -154,7 +156,7 @@ export default function StaffLoginPage() {
           </form>
 
           <div className="mt-10 pt-6 border-t border-slate-100">
-            <div className="flex items-center gap-4 text-[11px] font-bold text-slate-400">
+            <div className="flex items-center justify-center gap-4 text-[11px] font-bold text-slate-400 mb-6">
                <div className="flex items-center gap-1">
                   <ShieldCheck size={14} className="text-green-500" />
                   <span>Secure Session</span>
@@ -163,6 +165,19 @@ export default function StaffLoginPage() {
                   <Smartphone size={14} className="text-blue-500" />
                   <span>Mobile Compatible</span>
                </div>
+            </div>
+            
+            {/* Support Info */}
+            <div className="text-center bg-slate-50 rounded-2xl p-4 border border-slate-100">
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Need Help?</p>
+              <div className="flex flex-col gap-2">
+                <a href="tel:+919403893991" className="flex items-center justify-center gap-2 text-slate-600 hover:text-indigo-600 transition-colors text-xs font-bold">
+                  <Phone size={14} /> Call Support: +91 9403893991
+                </a>
+                <a href="https://wa.me/919289507882" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 text-slate-600 hover:text-indigo-600 transition-colors text-xs font-bold">
+                  <MessageSquare size={14} /> WhatsApp: +91 9289507882
+                </a>
+              </div>
             </div>
           </div>
         </div>

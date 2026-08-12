@@ -113,7 +113,7 @@ export default function HelpPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: "12px" }}>
-          <button style={{
+          <a href="tel:+919403893991" style={{
             background: "var(--kravy-bg-2)",
             color: "var(--kravy-text-primary)",
             border: "1px solid var(--kravy-border)",
@@ -124,11 +124,12 @@ export default function HelpPage() {
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            gap: "8px"
+            gap: "8px",
+            textDecoration: "none"
           }}>
             <Phone size={18} /> Contact Support
-          </button>
-          <button style={{
+          </a>
+          <a href="https://wa.me/919289507882" target="_blank" rel="noopener noreferrer" style={{
             background: "var(--kravy-brand)",
             color: "white",
             border: "none",
@@ -140,10 +141,11 @@ export default function HelpPage() {
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            boxShadow: "0 4px 16px rgba(139,92,246,0.3)"
+            boxShadow: "0 4px 16px rgba(139,92,246,0.3)",
+            textDecoration: "none"
           }}>
-            <MessageSquare size={18} /> Live Chat
-          </button>
+            <MessageSquare size={18} /> WhatsApp
+          </a>
         </div>
       </div>
 
@@ -317,7 +319,7 @@ export default function HelpPage() {
           Our support team is available 24/7 to help you with any questions or issues you might have.
         </p>
         <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
-          <button style={{
+          <button onClick={() => window.open('https://wa.me/919289507882', '_blank')} style={{
             background: "var(--kravy-brand)",
             color: "white",
             border: "none",
@@ -331,9 +333,9 @@ export default function HelpPage() {
             gap: "8px",
             boxShadow: "0 8px 20px rgba(139,92,246,0.3)"
           }}>
-            <Send size={18} /> Start Live Chat
+            <MessageSquare size={18} /> WhatsApp Support
           </button>
-          <button style={{
+          <a href="tel:+919403893991" style={{
             background: "var(--kravy-bg-2)",
             color: "var(--kravy-text-primary)",
             border: "1px solid var(--kravy-border)",
@@ -344,10 +346,11 @@ export default function HelpPage() {
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            gap: "8px"
+            gap: "8px",
+            textDecoration: "none"
           }}>
-            <Mail size={18} /> Email Support
-          </button>
+            <Phone size={18} /> +91 9403893991
+          </a>
         </div>
       </div>
     </div>

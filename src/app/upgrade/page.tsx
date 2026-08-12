@@ -103,7 +103,7 @@ const addons = [
 
 export default function UpgradePage() {
     const router = useRouter();
-    const supportPhone = "+91 9289507882";
+    const supportPhone = "+91 9403893991";
     const [profile, setProfile] = (require("react").useState)(null);
 
     (require("react").useEffect)(() => {
