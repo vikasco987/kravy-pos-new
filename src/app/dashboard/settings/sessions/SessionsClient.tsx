@@ -16,6 +16,7 @@ export default function SessionsClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSessions();
@@ -82,6 +83,28 @@ export default function SessionsClient() {
       toast.error("An error occurred");
     } finally {
       setRevokingId(null);
+    }
+  };
+
+  const removeSession = async (jtiHash: string) => {
+    try {
+      setRemovingId(jtiHash);
+      const res = await fetch("/api/auth/sessions/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jtiHash })
+      });
+      if (res.ok) {
+        toast.success("Device permanently removed");
+        setSessions(prev => prev.filter(s => s.jtiHash !== jtiHash));
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to remove device");
+      }
+    } catch (err) {
+      toast.error("An error occurred");
+    } finally {
+      setRemovingId(null);
     }
   };
 
@@ -207,8 +230,22 @@ export default function SessionsClient() {
                     </div>
                     
                     {isRevoked ? (
-                      <div className="shrink-0 flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-400 bg-slate-100">
-                        <MinusCircle size={14} /> Signed out
+                      <div className="flex items-center gap-2">
+                        <div className="shrink-0 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-400 bg-slate-100">
+                          <MinusCircle size={14} /> Signed out
+                        </div>
+                        <button
+                          onClick={() => removeSession(session.jtiHash)}
+                          disabled={removingId === session.jtiHash}
+                          title="Remove device"
+                          className="shrink-0 flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all active:scale-95 disabled:opacity-50"
+                        >
+                          {removingId === session.jtiHash ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
+                        </button>
                       </div>
                     ) : (
                       <button
