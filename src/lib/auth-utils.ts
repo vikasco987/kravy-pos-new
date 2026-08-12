@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server';
 import prisma from './prisma';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 
 const JWT_SECRET = process.env.JWT_SECRET || "kravy_pos_secret_key_123";
 
@@ -46,12 +47,16 @@ export type AuthUser = {
 
 /**
  * High-level auth check to determine who is making the request.
+ * Cached to prevent redundant DB queries and JWT verification during a single render cycle.
  */
-export async function getAuthUser(): Promise<AuthUser | null> {
+export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
     // 1. Check Clerk (Owner or Clerk-linked Staff)
     const { userId: clerkUserId } = await auth();
     if (clerkUserId) {
-        const user = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+        const user = await prisma.user.findUnique({ 
+            where: { clerkId: clerkUserId },
+            select: { id: true, ownerId: true, clerkId: true, role: true, allowedPaths: true, name: true, email: true }
+        });
         if (user) {
             return {
                 id: user.id,
@@ -75,8 +80,11 @@ export async function getAuthUser(): Promise<AuthUser | null> {
             const userId = decoded.userId || decoded.staffId;
 
             // 🔍 ALWAYS FETCH LATEST DATA FROM DB (Sync Fix)
-            // This ensures role changes are reflected immediately without logout
-            const user = await prisma.user.findUnique({ where: { id: userId } });
+            // Optimized with `select` to minimize payload size
+            const user = await prisma.user.findUnique({ 
+                where: { id: userId },
+                select: { id: true, role: true, ownerId: true, clerkId: true, allowedPaths: true, name: true, email: true, privateMetadata: true }
+            });
             
             if (user) {
                 // 🛑 Enforce session revocation via jtiHash for immediate logout
@@ -103,7 +111,10 @@ export async function getAuthUser(): Promise<AuthUser | null> {
             }
 
             // Fallback for legacy staff model if not in User table
-            const staff = await prisma.staff.findUnique({ where: { id: userId } });
+            const staff = await prisma.staff.findUnique({ 
+                where: { id: userId },
+                select: { id: true, accessType: true, businessId: true, permissions: true, name: true, email: true, privateMetadata: true }
+            });
             if (staff) {
                 // 🛑 Enforce session revocation via jtiHash for immediate logout
                 const refreshTokens = (staff.privateMetadata as any)?.refreshTokens || [];
@@ -133,4 +144,4 @@ export async function getAuthUser(): Promise<AuthUser | null> {
     }
 
     return null;
-}
+});
