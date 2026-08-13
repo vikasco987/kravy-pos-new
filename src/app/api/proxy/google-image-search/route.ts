@@ -29,7 +29,18 @@ export async function GET(req: NextRequest) {
         let photos: any[] = [];
 
         // 1. Bing Images Scraper (Strict SafeSearch + Food Recipe filter)
-        const searchQ = `"${cleanName}" food recipe -dj -mixer -music`;
+        const beverageKeywords = ['tea', 'coffee', 'chai', 'pepsi', 'coke', 'coca-cola', 'cola', 'drink', 'juice', 'shake', 'lassi', 'mocktail', 'cocktail', 'cold drink', 'soda', 'water', 'limca', 'sprite', 'fanta', 'dew', 'thumbs up'];
+        const isBeverage = beverageKeywords.some(k => cleanName.toLowerCase().includes(k));
+        const isPizza = cleanName.toLowerCase().includes('pizza');
+        
+        let searchTerms = isBeverage
+            ? `"${cleanName}" drink glass`
+            : `"${cleanName}" dish food`;
+        if (isPizza) {
+            searchTerms = `"${cleanName}" italian pizza food`;
+        }
+        
+        const searchQ = `${searchTerms} -dj -mixer -music`;
         
         try {
             const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(searchQ)}&adlt=strict&first=${offset}`;
