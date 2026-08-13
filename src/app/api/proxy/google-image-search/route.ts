@@ -29,8 +29,10 @@ export async function GET(req: NextRequest) {
         let photos: any[] = [];
 
         // 1. Bing Images Scraper (Strict SafeSearch + Food Recipe filter)
+        const searchQ = `"${cleanName}" food recipe -dj -mixer -music`;
+        
         try {
-            const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(cleanName + " food dish")}&adlt=strict&first=${offset}`;
+            const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(searchQ)}&adlt=strict&first=${offset}`;
             const res = await fetch(bingUrl, {
                 headers: {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
@@ -58,7 +60,7 @@ export async function GET(req: NextRequest) {
         // 2. Google Images Desktop Scraper (Strict SafeSearch)
         if (photos.length === 0) {
             try {
-                const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(cleanName + " food dish")}&safe=active&tbm=isch`;
+                const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQ)}&safe=active&tbm=isch`;
                 const res = await fetch(googleUrl, {
                     headers: {
                         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
@@ -86,7 +88,6 @@ export async function GET(req: NextRequest) {
         // 3. DuckDuckGo Scraper (Strict SafeSearch kp=1)
         if (photos.length === 0) {
             try {
-                const searchQ = `${cleanName} food dish`;
                 const res1 = await fetch(`https://duckduckgo.com/?q=${encodeURIComponent(searchQ)}&kp=1`, {
                     headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
                 });
