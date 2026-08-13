@@ -66,7 +66,7 @@ const Th = ({ label, isRight }: any) => (
 
 export default async function MonthlySalesReportPage() {
   const effectiveId = await getEffectiveClerkId();
-  if (!effectiveId) redirect("/sign-in");
+  if (!effectiveId) redirect("/auth/custom");
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);

@@ -14,7 +14,7 @@ export default async function PaymentSplitReportPage({
 }) {
   const effectiveId = await getEffectiveClerkId();
 
-  if (!effectiveId) redirect("/sign-in");
+  if (!effectiveId) redirect("/auth/custom");
 
   const { range: rangeParam, mode: selectedMode = "All", status: selectedStatus = "Active" } = await searchParams;
   const range = Number(rangeParam || 30);

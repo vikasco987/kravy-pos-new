@@ -25,7 +25,7 @@ export default async function DashboardPage({
 }) {
   const effectiveId = await getEffectiveClerkId();
 
-  if (!effectiveId) redirect("/sign-in");
+  if (!effectiveId) redirect("/auth/custom");
 
   const { range: rangeParam, from, to, type } = await searchParams;
   let range = Number(rangeParam || 30);

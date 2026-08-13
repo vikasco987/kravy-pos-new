@@ -957,7 +957,7 @@ function KravyPOS() {
 
         // Re-calculate with current settlement modifiers
         let orderSubtotal = 0;
-        order.items.forEach(it => orderSubtotal += (it.price * it.quantity));
+        order.items.forEach(it => orderSubtotal += ((it.price || it.rate || 0) * (it.quantity || it.qty || 0)));
         let dVal = Number(discountValue) || 0;
         let discountAmt = discountType === "PERCENT" ? (orderSubtotal * dVal) / 100 : dVal;
         let loyaltyRedeemed = settlementBill?.loyaltyRedeemed || 0;
@@ -1012,9 +1012,9 @@ function KravyPOS() {
                     id: it.itemId || it.id,
                     itemId: it.itemId || it.id,
                     name: it.name,
-                    price: it.price,
-                    quantity: it.quantity,
-                    total: it.price * it.quantity,
+                    price: it.price || it.rate || 0,
+                    quantity: it.quantity || it.qty || 0,
+                    total: (it.price || it.rate || 0) * (it.quantity || it.qty || 0),
                     taxStatus: it.taxStatus || "Without Tax",
                     gst: (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (isTaxEnabled ? globalRate : 0)
                 })),

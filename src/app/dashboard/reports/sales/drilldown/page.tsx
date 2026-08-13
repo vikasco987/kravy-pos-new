@@ -7,7 +7,7 @@ export const revalidate = 0; // Fetch fresh data on every request
 
 export default async function SalesDrilldownReportPage() {
   const effectiveId = await getEffectiveClerkId();
-  if (!effectiveId) redirect("/sign-in");
+  if (!effectiveId) redirect("/auth/custom");
 
   // Fetch business profile settings
   const profile = await prisma.businessProfile.findFirst({

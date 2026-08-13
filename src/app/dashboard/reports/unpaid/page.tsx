@@ -11,7 +11,7 @@ export default async function UnpaidDuesReportPage({
   searchParams: Promise<{ startDate?: string; endDate?: string }>;
 }) {
   const effectiveId = await getEffectiveClerkId();
-  if (!effectiveId) redirect("/sign-in");
+  if (!effectiveId) redirect("/auth/custom");
 
   const params = await searchParams;
   const { startDate, endDate } = params;

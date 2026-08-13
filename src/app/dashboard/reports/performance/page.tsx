@@ -12,7 +12,7 @@ export default async function PerformanceHistoryPage({
   searchParams: Promise<{ view?: string }>;
 }) {
   const effectiveId = await getEffectiveClerkId();
-  if (!effectiveId) redirect("/sign-in");
+  if (!effectiveId) redirect("/auth/custom");
 
   const { view = "daily" } = await searchParams;
 

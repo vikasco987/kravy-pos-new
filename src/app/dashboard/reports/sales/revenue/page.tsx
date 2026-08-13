@@ -13,7 +13,7 @@ export default async function RevenueReportPage({
   searchParams: Promise<{ range?: string }>;
 }) {
   const effectiveId = await getEffectiveClerkId();
-  if (!effectiveId) redirect("/sign-in");
+  if (!effectiveId) redirect("/auth/custom");
 
   const { range: rangeParam } = await searchParams;
   const range = Number(rangeParam || 30);

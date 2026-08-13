@@ -15,7 +15,7 @@ export default async function ItemWiseSalesReportPage({
 }) {
   const effectiveId = await getEffectiveClerkId();
 
-  if (!effectiveId) redirect("/sign-in");
+  if (!effectiveId) redirect("/auth/custom");
 
   const { range: rangeParam, category: selectedCategory = "All" } = await searchParams;
   const range = Number(rangeParam || 30);

@@ -12,7 +12,7 @@ export default async function CustomerReportPage({
   searchParams: Promise<{ filter?: string }>;
 }) {
   const effectiveId = await getEffectiveClerkId();
-  if (!effectiveId) redirect("/sign-in");
+  if (!effectiveId) redirect("/auth/custom");
 
   const { filter = "All" } = await searchParams;
 

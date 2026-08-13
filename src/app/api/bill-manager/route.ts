@@ -229,24 +229,14 @@ export async function POST(req: NextRequest) {
 
     let finalPaymentStatus: string;
     
-    // ✅ Partial Payment Logic
-    const finalAmountPaid = amountPaid !== undefined ? Number(amountPaid) : finalTotal;
-    const finalBalanceDue = Math.max(0, finalTotal - finalAmountPaid);
+    // ✅ PARTIAL PAYMENT & WALLET AUTO-PAY LOGIC
+    let finalAmountPaid = amountPaid !== undefined ? Number(amountPaid) : finalTotal;
+    let finalBalanceDue = Math.max(0, finalTotal - finalAmountPaid);
+    let walletUsed = 0;
 
-    if (isHeld === true) {
-      finalPaymentStatus = "HELD";
-    } else if (finalBalanceDue > 0 && finalBalanceDue < finalTotal) {
-      finalPaymentStatus = "PARTIAL";
-    } else if (finalBalanceDue === finalTotal && finalTotal > 0) {
-      finalPaymentStatus = "PENDING";
-    } else if (finalPaymentMode === "Cash" || finalPaymentMode === "Card" || finalPaymentMode === "Wallet" || finalPaymentMode.startsWith("Split")) {
-      finalPaymentStatus = "PAID";
-    } else {
-      finalPaymentStatus = paymentStatus === "Paid" ? "PAID" : "PENDING";
-    }
-
-    // ✅ AUTO-SAVE CUSTOMER IN CRM (Party) & LOYALTY POINTS
     let partyId = null;
+    let partyWalletBalance = 0;
+    
     if (customerPhone && customerName && customerName !== "Walk-in Customer") {
       try {
         const cleanPhone = customerPhone.replace(/[\s\-\(\)\+]/g, "").slice(-10);
@@ -257,6 +247,18 @@ export async function POST(req: NextRequest) {
         const redeemedPoints = Number(loyaltyPointsRedeemed) || 0;
         
         const netPointsChange = earnedPoints - redeemedPoints;
+
+        // FETCH EXISING WALLET BALANCE BEFORE UPSERTING
+        const existingParty = await prisma.party.findUnique({
+          where: {
+            phone_createdBy: {
+              phone: cleanPhone,
+              createdBy: effectiveId,
+            }
+          }
+        });
+        
+        partyWalletBalance = existingParty?.walletBalance || 0;
 
         const party = await prisma.party.upsert({
           where: {
@@ -279,9 +281,35 @@ export async function POST(req: NextRequest) {
           },
         });
         partyId = party.id;
+        
+        // If there's an unpaid amount, check if wallet can cover it
+        if (!isHeld && finalBalanceDue > 0 && partyWalletBalance > 0) {
+            walletUsed = Math.min(partyWalletBalance, finalBalanceDue);
+            finalAmountPaid += walletUsed;
+            finalBalanceDue -= walletUsed;
+            
+            // Adjust payment mode to reflect wallet usage
+            if (finalPaymentMode === "Cash" || finalPaymentMode === "Pay on Counter") {
+               finalPaymentMode = "Wallet (Auto)";
+            } else {
+               finalPaymentMode = `${finalPaymentMode} + Wallet (Auto)`;
+            }
+        }
       } catch (err) {
         console.error("Party upsert error in billing:", err);
       }
+    }
+
+    if (isHeld === true) {
+      finalPaymentStatus = "HELD";
+    } else if (finalBalanceDue > 0 && finalBalanceDue < finalTotal) {
+      finalPaymentStatus = "PARTIAL";
+    } else if (finalBalanceDue === finalTotal && finalTotal > 0) {
+      finalPaymentStatus = "PENDING";
+    } else if (finalPaymentMode === "Cash" || finalPaymentMode === "Card" || finalPaymentMode === "Wallet" || finalPaymentMode.includes("Wallet") || finalPaymentMode.startsWith("Split")) {
+      finalPaymentStatus = "PAID";
+    } else {
+      finalPaymentStatus = paymentStatus === "Paid" ? "PAID" : "PENDING";
     }
 
     // REMOVED: Customer requirement for unpaid balances (User requested to allow saving bill without customer details)
@@ -370,21 +398,39 @@ export async function POST(req: NextRequest) {
     }
 
     // ✅ LEDGER (KHATA) TRACKING
-    if (!bill.isHeld && finalBalanceDue > 0 && partyId) {
+    if (!bill.isHeld && partyId) {
       try {
-        await prisma.party.update({
-          where: { id: partyId },
-          data: { walletBalance: { decrement: finalBalanceDue } }
-        });
-        await prisma.walletTransaction.create({
-          data: {
-            partyId: partyId,
-            clerkId: effectiveId || "Unknown",
-            type: "DEBIT",
-            amount: finalBalanceDue,
-            description: `Unpaid Balance for Bill ${bill.billNumber}`
-          }
-        });
+        if (walletUsed > 0) {
+           await prisma.party.update({
+             where: { id: partyId },
+             data: { walletBalance: { decrement: walletUsed } }
+           });
+           await prisma.walletTransaction.create({
+             data: {
+               partyId: partyId,
+               clerkId: effectiveId || "Unknown",
+               type: "DEBIT",
+               amount: walletUsed,
+               description: `Auto-Paid for Bill ${bill.billNumber} from Wallet`
+             }
+           });
+        }
+        
+        if (finalBalanceDue > 0) {
+          await prisma.party.update({
+            where: { id: partyId },
+            data: { walletBalance: { decrement: finalBalanceDue } }
+          });
+          await prisma.walletTransaction.create({
+            data: {
+              partyId: partyId,
+              clerkId: effectiveId || "Unknown",
+              type: "DEBIT",
+              amount: finalBalanceDue,
+              description: `Unpaid Balance (Udhar) for Bill ${bill.billNumber}`
+            }
+          });
+        }
       } catch (ledgerErr) {
         console.error("Ledger Update Error:", ledgerErr);
       }

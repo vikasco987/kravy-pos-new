@@ -66,7 +66,7 @@ const Th = ({ label, isRight }: any) => (
 
 export default async function WeeklySalesReportPage() {
   const effectiveId = await getEffectiveClerkId();
-  if (!effectiveId) redirect("/sign-in");
+  if (!effectiveId) redirect("/auth/custom");
 
   const now = new Date();
   const startOfWeek = new Date(now);

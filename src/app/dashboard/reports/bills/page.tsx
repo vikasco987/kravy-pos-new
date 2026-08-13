@@ -13,7 +13,7 @@ export default async function BillsReportPage({
   searchParams: Promise<{ range?: string; status?: string }>;
 }) {
   const effectiveId = await getEffectiveClerkId();
-  if (!effectiveId) redirect("/sign-in");
+  if (!effectiveId) redirect("/auth/custom");
 
   const { range: rangeParam, status = "Active" } = await searchParams;
   const range = Number(rangeParam || 30);

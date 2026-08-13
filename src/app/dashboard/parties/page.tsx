@@ -364,6 +364,23 @@ export default function PartiesPage() {
     pushToast("error", "Deletion is disabled to maintain data integrity. Please contact administrator.");
   };
 
+  const handlePayBill = async (bill: any) => {
+    if (!confirm(`Mark bill ${bill.billNumber} as Paid? This will clear the due amount.`)) return;
+    try {
+      const res = await fetch(`/api/bill-manager/${bill.id}/pay`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        pushToast("success", "Bill marked as paid successfully.");
+        if (selectedParty) fetchBillHistory(selectedParty);
+      } else {
+        pushToast("error", "Failed to update bill.");
+      }
+    } catch (e) {
+      pushToast("error", "Error marking bill as paid.");
+    }
+  };
+
   const exportCSV = () => {
     const header = ["Name", "Phone", "Address", "DOB", "Loyalty Points"];
     const rows = visible.map(p => [p.name, p.phone, p.address || "", p.dob || "", p.loyaltyPoints || 0]);
@@ -863,11 +880,16 @@ export default function PartiesPage() {
                                </div>
                                <div className="text-right">
                                  <div className="text-sm font-black text-indigo-500">₹{bill.total.toFixed(2)}</div>
-                                 <div className={`text-[10px] font-black uppercase ${bill.paymentStatus === 'Paid' ? 'text-emerald-500' : 'text-amber-500'}`}>{bill.paymentStatus}</div>
+                                 <div className={`text-[10px] font-black uppercase ${bill.paymentStatus === 'Paid' || bill.paymentStatus === 'PAID' ? 'text-emerald-500' : 'text-amber-500'}`}>{bill.paymentStatus}</div>
+                                 {bill.paymentStatus === 'PARTIAL' && (
+                                   <div className="text-[9px] text-amber-500/80 font-bold mt-0.5">
+                                      Paid: ₹{(bill.amountPaid || 0).toFixed(2)}<br/>Due: ₹{(bill.balanceDue || 0).toFixed(2)}
+                                   </div>
+                                 )}
                                </div>
                             </div>
                             <div className="flex justify-between items-center pt-2 border-t border-[var(--kravy-border)]">
-                               <div className="flex items-center gap-2">
+                               <div className="flex items-center gap-2 flex-wrap">
                                  <span className="text-[10px] font-black text-[var(--kravy-text-muted)] bg-[var(--kravy-bg-2)] px-2 py-0.5 rounded-lg">{bill.paymentMode}</span>
                                  <button 
                                   onClick={(e) => { e.stopPropagation(); handlePrint("BILL", bill); }}
@@ -876,6 +898,14 @@ export default function PartiesPage() {
                                  >
                                    <Printer size={12} />
                                  </button>
+                                 {(bill.paymentStatus === 'PARTIAL' || bill.paymentStatus === 'PENDING') && (
+                                   <button 
+                                     onClick={(e) => { e.stopPropagation(); handlePayBill(bill); }}
+                                     className="px-2 py-1 bg-emerald-500/10 text-emerald-600 rounded-lg text-[9px] font-black uppercase hover:bg-emerald-500 hover:text-white transition-colors"
+                                   >
+                                     Mark as Paid
+                                   </button>
+                                 )}
                                </div>
                                <Link 
                                 href={`/dashboard/reports/sales?search=${bill.billNumber}`}

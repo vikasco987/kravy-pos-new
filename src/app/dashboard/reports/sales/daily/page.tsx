@@ -118,7 +118,7 @@ export default async function DailySalesReportPage({
   }>;
 }) {
   const effectiveId = await getEffectiveClerkId();
-  if (!effectiveId) redirect("/sign-in");
+  if (!effectiveId) redirect("/auth/custom");
 
   const params = await searchParams;
   const fromDateStr = params.from || new Date().toISOString().split('T')[0];
