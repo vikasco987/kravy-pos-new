@@ -124,6 +124,16 @@ export async function PUT(req: NextRequest) {
 
         if (password) {
             dataToUpdate.password = await bcrypt.hash(password, 10);
+            
+            // Instantly invalidate existing sessions for this staff
+            const existingStaff = await prisma.staff.findUnique({ where: { id: id } });
+            const currentMeta = (existingStaff?.privateMetadata as any) || {};
+            
+            dataToUpdate.privateMetadata = {
+                ...currentMeta,
+                sessionsRevokedAt: Date.now(),
+                refreshTokens: [] // Clear all active refresh tokens
+            };
         }
 
         const updatedStaff = await prisma.staff.update({

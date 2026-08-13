@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+import bcrypt from "bcryptjs";
+
 // PUT: Update a staff member
 // Route: /api/staff/[id]
 export async function PUT(
@@ -10,12 +12,25 @@ export async function PUT(
     try {
         const body = await req.json();
         
+        let dataToUpdate: any = { ...body, updatedAt: new Date() };
+
+        if (body.password) {
+            dataToUpdate.password = await bcrypt.hash(body.password, 10);
+            
+            // Instantly invalidate existing sessions for this staff
+            const existingStaff = await prisma.staff.findUnique({ where: { id: params.id } });
+            const currentMeta = (existingStaff?.privateMetadata as any) || {};
+            
+            dataToUpdate.privateMetadata = {
+                ...currentMeta,
+                sessionsRevokedAt: Date.now(),
+                refreshTokens: [] // Clear all active refresh tokens
+            };
+        }
+
         const updated = await prisma.staff.update({
             where: { id: params.id },
-            data: {
-                ...body,
-                updatedAt: new Date()
-            }
+            data: dataToUpdate
         });
 
         if (!updated) {
