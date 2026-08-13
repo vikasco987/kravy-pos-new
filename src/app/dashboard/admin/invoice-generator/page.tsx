@@ -31,6 +31,7 @@ export default function InvoiceGenerator() {
     const [fetchingHistory, setFetchingHistory] = useState(false);
     
     const [invoiceData, setInvoiceData] = useState({
+        id: "",
         invoiceNumber: `INV-${Math.floor(100000 + Math.random() * 900000)}`,
         date: new Date().toISOString().split('T')[0],
         dueDate: "",
@@ -45,6 +46,14 @@ export default function InvoiceGenerator() {
             pincode: "",
             city: "",
             state: ""
+        },
+        companyInfo: {
+            name: "Kravy Software",
+            address1: "House No. 599, 3rd Floor",
+            address2: "Rajokri, New Delhi, India, 110038",
+            gst: "GSTIN: 07CFNPV4928Q1Z9",
+            phone: "+91 9289507882",
+            email: "info@kravy.in"
         },
         items: [
             { name: "Kravy POS Premium - 1 Year", price: 3999, quantity: 1, discountType: "PERCENTAGE", discountValue: 0 }
@@ -138,6 +147,7 @@ export default function InvoiceGenerator() {
                     customerState: invoiceData.customer.state,
                     customerPincode: invoiceData.customer.pincode,
                     customerGst: invoiceData.customer.gst,
+                    companyInfo: invoiceData.companyInfo,
                     paymentMode: invoiceData.paymentMode,
                     subtotal: calculateSubtotal(),
                     discount: calculateDiscount(),
@@ -147,8 +157,10 @@ export default function InvoiceGenerator() {
             });
 
             // Save to History First
-            fetch("/api/admin/manual-invoices", {
-                method: "POST",
+            const saveUrl = invoiceData.id ? `/api/admin/manual-invoices/${invoiceData.id}` : "/api/admin/manual-invoices";
+            const saveMethod = invoiceData.id ? "PATCH" : "POST";
+            fetch(saveUrl, {
+                method: saveMethod,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...invoiceData,
@@ -160,11 +172,19 @@ export default function InvoiceGenerator() {
                     customerState: invoiceData.customer.state,
                     customerPincode: invoiceData.customer.pincode,
                     customerGst: invoiceData.customer.gst,
+                    companyInfo: invoiceData.companyInfo,
                     subtotal: calculateSubtotal(),
                     discount: calculateDiscount(),
                     total: calculateTotal()
                 })
-            }).catch(console.error);
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.id && !invoiceData.id) {
+                    setInvoiceData(prev => ({ ...prev, id: data.id }));
+                }
+            })
+            .catch(console.error);
 
             if (!response.ok) throw new Error("Failed to generate PDF");
 
@@ -298,6 +318,41 @@ export default function InvoiceGenerator() {
         }
     };
 
+    const loadInvoiceForEditing = (inv: any) => {
+        setInvoiceData({
+            id: inv.id,
+            invoiceNumber: inv.invoiceNumber,
+            date: new Date(inv.date).toISOString().split('T')[0],
+            dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : "",
+            documentType: inv.documentType,
+            paymentMode: inv.paymentMode || "",
+            customer: {
+                name: inv.customerName || "",
+                phone: inv.customerPhone || "",
+                email: inv.customerEmail || "",
+                address: inv.customerAddress || "",
+                gst: inv.customerGst || "",
+                pincode: inv.customerPincode || "",
+                city: inv.customerCity || "",
+                state: inv.customerState || ""
+            },
+            companyInfo: inv.companyInfo || {
+                name: "Kravy Software",
+                address1: "House No. 599, 3rd Floor",
+                address2: "Rajokri, New Delhi, India, 110038",
+                gst: "GSTIN: 07CFNPV4928Q1Z9",
+                phone: "+91 9289507882",
+                email: "info@kravy.in"
+            },
+            items: typeof inv.items === "string" ? JSON.parse(inv.items) : (inv.items || []),
+            notes: inv.notes || "",
+            bankDetails: inv.bankDetails || "",
+            termsConditions: inv.termsConditions || "",
+            bankImage: inv.bankImage || ""
+        });
+        setShowHistoryModal(false);
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-[#09090b] p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
@@ -335,6 +390,67 @@ export default function InvoiceGenerator() {
                     
                     {/* Input Side */}
                     <div className="lg:col-span-5 space-y-6">
+                        {/* Company Details */}
+                        <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 shadow-sm border border-slate-200 dark:border-white/5">
+                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+                                <Building2 size={14} /> My Company Info
+                            </h3>
+                            <div className="grid gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Company Name</label>
+                                    <input 
+                                        type="text"
+                                        placeholder="Kravy Software"
+                                        value={invoiceData.companyInfo.name}
+                                        onChange={e => setInvoiceData(prev => ({ ...prev, companyInfo: { ...prev.companyInfo, name: e.target.value } }))}
+                                        className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Address Line 1</label>
+                                    <input 
+                                        type="text"
+                                        placeholder="House No. 599, 3rd Floor"
+                                        value={invoiceData.companyInfo.address1}
+                                        onChange={e => setInvoiceData(prev => ({ ...prev, companyInfo: { ...prev.companyInfo, address1: e.target.value } }))}
+                                        className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Address Line 2 (City, State, PIN)</label>
+                                    <input 
+                                        type="text"
+                                        placeholder="Rajokri, New Delhi, India, 110038"
+                                        value={invoiceData.companyInfo.address2}
+                                        onChange={e => setInvoiceData(prev => ({ ...prev, companyInfo: { ...prev.companyInfo, address2: e.target.value } }))}
+                                        className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">GSTIN</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="GSTIN: 07..."
+                                            value={invoiceData.companyInfo.gst}
+                                            onChange={e => setInvoiceData(prev => ({ ...prev, companyInfo: { ...prev.companyInfo, gst: e.target.value } }))}
+                                            className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Phone</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="+91..."
+                                            value={invoiceData.companyInfo.phone}
+                                            onChange={e => setInvoiceData(prev => ({ ...prev, companyInfo: { ...prev.companyInfo, phone: e.target.value } }))}
+                                            className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all dark:text-white"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Customer Details */}
                         <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 shadow-sm border border-slate-200 dark:border-white/5">
                             <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
@@ -610,10 +726,12 @@ export default function InvoiceGenerator() {
                                             <span className="text-2xl font-black tracking-tighter">KRAVY POS</span>
                                         </div>
                                         <p className="text-xs font-bold text-slate-500 leading-relaxed uppercase tracking-wider">
-                                            Netizen Business Solutions <br />
-                                            Narela, Delhi - 110040 <br />
-                                            Phone: +91 9289507882 <br />
-                                            Email: info@kravy.in
+                                            {invoiceData.companyInfo.name || "Company Name"} <br />
+                                            {invoiceData.companyInfo.address1} <br />
+                                            {invoiceData.companyInfo.address2} <br />
+                                            {invoiceData.companyInfo.phone && <>Phone: {invoiceData.companyInfo.phone} <br /></>}
+                                            {invoiceData.companyInfo.email && <>Email: {invoiceData.companyInfo.email} <br /></>}
+                                            {invoiceData.companyInfo.gst && <>GSTIN: {invoiceData.companyInfo.gst}</>}
                                         </p>
                                     </div>
                                     <div className="text-right">
@@ -778,6 +896,7 @@ export default function InvoiceGenerator() {
                                                 </button>
                                             </div>
                                             <p className="text-xs font-bold text-slate-500">{inv.customerName} • ₹{inv.total.toLocaleString()}</p>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Generated by: {inv.user?.firstName || 'Admin'}</p>
                                         </div>
                                         <div>
                                             <button 

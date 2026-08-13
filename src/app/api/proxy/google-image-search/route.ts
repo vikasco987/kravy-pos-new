@@ -28,21 +28,47 @@ export async function GET(req: NextRequest) {
         const cleanName = query.replace(/\(.*\)|\{.*\}|\[.*\]|\d+\s*ml|\d+\s*lit/gi, "").trim();
         let photos: any[] = [];
 
-        // 1. Bing Images Scraper (Strict SafeSearch + Food Recipe filter)
+        // Define Search Queries
         const beverageKeywords = ['tea', 'coffee', 'chai', 'pepsi', 'coke', 'coca-cola', 'cola', 'drink', 'juice', 'shake', 'lassi', 'mocktail', 'cocktail', 'cold drink', 'soda', 'water', 'limca', 'sprite', 'fanta', 'dew', 'thumbs up'];
         const isBeverage = beverageKeywords.some(k => cleanName.toLowerCase().includes(k));
         const isPizza = cleanName.toLowerCase().includes('pizza');
         
         let searchTerms = isBeverage
-            ? `"${cleanName}" drink glass`
-            : `"${cleanName}" dish food`;
+            ? `${cleanName} drink beverage glass`
+            : `${cleanName} dish food recipe`;
         if (isPizza) {
-            searchTerms = `"${cleanName}" italian pizza food`;
+            searchTerms = `${cleanName} italian pizza food`;
         }
         
-        const searchQ = `${searchTerms} -dj -mixer -music`;
+        const searchQ = `${searchTerms}`;
         
+        // 1. DuckDuckGo Scraper (Strict SafeSearch kp=1) - Primary Engine
         try {
+            const res1 = await fetch(`https://duckduckgo.com/?q=${encodeURIComponent(searchQ)}&kp=1`, {
+                headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36" }
+            });
+            const html = await res1.text();
+            const vqdMatch = html.match(/vqd=([\d-]+)/);
+            if (vqdMatch) {
+                const url = `https://duckduckgo.com/i.js?q=${encodeURIComponent(searchQ)}&o=json&vqd=${vqdMatch[1]}&s=${offset}&f=,,,`;
+                const res2 = await fetch(url, {
+                    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36" }
+                });
+                if (res2.ok) {
+                    const json = await res2.json();
+                    if (json.results && json.results.length > 0) {
+                        photos = json.results
+                            .map((r: any) => ({ image_url: r.image, title: r.title || cleanName }))
+                            .filter((r: any) => isSafeFoodUrl(r.image_url));
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn("DuckDuckGo image search failed:", err);
+        }
+
+        // 2. Bing Images Scraper (Strict SafeSearch + Food Recipe filter) - Fallback 1
+        if (photos.length === 0) {
             const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(searchQ)}&adlt=strict&first=${offset}`;
             const res = await fetch(bingUrl, {
                 headers: {
@@ -96,31 +122,6 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // 3. DuckDuckGo Scraper (Strict SafeSearch kp=1)
-        if (photos.length === 0) {
-            try {
-                const res1 = await fetch(`https://duckduckgo.com/?q=${encodeURIComponent(searchQ)}&kp=1`, {
-                    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
-                });
-                const html = await res1.text();
-                const vqdMatch = html.match(/vqd=([\d-]+)/);
-                if (vqdMatch) {
-                    const url = `https://duckduckgo.com/i.js?q=${encodeURIComponent(searchQ)}&o=json&vqd=${vqdMatch[1]}&s=${offset}&f=,,,`;
-                    const res2 = await fetch(url, {
-                        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
-                    });
-                    if (res2.ok) {
-                        const json = await res2.json();
-                        if (json.results && json.results.length > 0) {
-                            photos = json.results
-                                .map((r: any) => ({ image_url: r.image, title: r.title || cleanName }))
-                                .filter((r: any) => isSafeFoodUrl(r.image_url));
-                        }
-                    }
-                }
-            } catch (err) {
-                console.warn("DuckDuckGo image search failed:", err);
-            }
         }
 
         return NextResponse.json({ success: true, data: photos });

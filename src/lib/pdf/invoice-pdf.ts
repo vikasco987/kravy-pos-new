@@ -5,7 +5,7 @@ import path from "path";
 
 export async function generateManualInvoicePDF(data: any) {
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595, 842]);
+  let page = pdfDoc.addPage([595, 842]);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const { height } = page.getSize();
@@ -69,10 +69,11 @@ export async function generateManualInvoicePDF(data: any) {
   }
 
   /* ---------- COMPANY INFO (TOP RIGHT) ---------- */
-  const companyName = "Kravy Software";
-  const address1 = "House No. 599, 3rd Floor";
-  const address2 = "Rajokri, New Delhi, India, 110038";
-  const companyGst = "GSTIN: 07CFNPV4928Q1Z9";
+  const companyInfo = data.companyInfo || {};
+  const companyName = companyInfo.name || "Kravy Software";
+  const address1 = companyInfo.address1 || "House No. 599, 3rd Floor";
+  const address2 = companyInfo.address2 || "Rajokri, New Delhi, India, 110038";
+  const companyGst = companyInfo.gst || "GSTIN: 07CFNPV4928Q1Z9";
 
   const infoX = 400;
   let infoY = height - 30;
@@ -165,6 +166,21 @@ export async function generateManualInvoicePDF(data: any) {
   const items = data.items || [{ name: "SaaS Subscription / Service", quantity: 1, price: taxableAmount }];
   
   items.forEach((item: any, index: number) => {
+    if (itemY < 80) {
+        page = pdfDoc.addPage([595, 842]);
+        let newTableY = height - 50;
+        page.drawRectangle({
+          x: 45, y: newTableY, width: 505, height: 25, color: brandColor,
+        });
+        const rowY = newTableY + 8;
+        page.drawText("#", { x: 55, y: rowY, size: 10, font: bold, color: textColor });
+        page.drawText("Item & Description", { x: 90, y: rowY, size: 10, font: bold, color: textColor });
+        page.drawText("Qty", { x: 340, y: rowY, size: 10, font: bold, color: textColor });
+        page.drawText("Rate", { x: 400, y: rowY, size: 10, font: bold, color: textColor });
+        page.drawText("Amount", { x: 490, y: rowY, size: 10, font: bold, color: textColor });
+        itemY = newTableY - 30;
+    }
+
     const rate = Number(item.price) || 0;
     const qty = Number(item.quantity) || 1;
     const itemTotal = rate * qty;
@@ -183,6 +199,12 @@ export async function generateManualInvoicePDF(data: any) {
     page.drawText(formatRS(itemTotal), { x: 490, y: itemY, size: 10, font: bold });
     itemY -= 30;
   });
+
+  /* ---------- PAGE BREAK FOR SUMMARY ---------- */
+  if (itemY < 250) {
+      page = pdfDoc.addPage([595, 842]);
+      itemY = height - 50;
+  }
 
   /* ---------- TAX SUMMARY ---------- */
   itemY -= 20;

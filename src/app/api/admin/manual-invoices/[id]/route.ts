@@ -21,7 +21,30 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const invoice = await prisma.manualInvoice.update({
       where: { id: params.id, clerkUserId: effectiveId },
       data: {
+        invoiceNumber: body.invoiceNumber,
+        date: body.date ? new Date(body.date) : undefined,
+        dueDate: body.dueDate !== undefined ? (body.dueDate ? new Date(body.dueDate) : null) : undefined,
+        documentType: body.documentType,
+        customerName: body.customerName,
+        customerPhone: body.customerPhone,
+        customerEmail: body.customerEmail,
+        customerAddress: body.customerAddress,
+        customerCity: body.customerCity,
+        customerState: body.customerState,
+        customerPincode: body.customerPincode,
+        customerGst: body.customerGst,
+        companyInfo: body.companyInfo,
+        items: body.items,
+        subtotal: body.subtotal !== undefined ? Number(body.subtotal) : undefined,
+        discount: body.discount !== undefined ? Number(body.discount) : undefined,
+        tax: body.tax !== undefined ? Number(body.tax) : undefined,
+        total: body.total !== undefined ? Number(body.total) : undefined,
+        paymentMode: body.paymentMode,
         status: body.status,
+        notes: body.notes,
+        bankDetails: body.bankDetails,
+        termsConditions: body.termsConditions,
+        bankImage: body.bankImage
       }
     });
 

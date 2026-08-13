@@ -574,6 +574,8 @@ model ManualInvoice {
   customerState   String?
   customerPincode String?
   customerGst     String?
+  
+  companyInfo     Json? // { name, address, phone, email, gst, etc }
 
   items Json // Array of { name, price, quantity, discountType, discountValue }
 

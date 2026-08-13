@@ -19,6 +19,11 @@ export async function GET(req: NextRequest) {
     const invoices = await prisma.manualInvoice.findMany({
       where: { clerkUserId: effectiveId },
       orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: { firstName: true, email: true }
+        }
+      }
     });
 
     return NextResponse.json(invoices);
@@ -59,6 +64,7 @@ export async function POST(req: NextRequest) {
         customerState: body.customerState,
         customerPincode: body.customerPincode,
         customerGst: body.customerGst,
+        companyInfo: body.companyInfo,
         items: body.items,
         subtotal: Number(body.subtotal) || 0,
         discount: Number(body.discount) || 0,
