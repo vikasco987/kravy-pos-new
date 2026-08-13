@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { kravy } from "@/lib/sounds";
 import QRMenuTemplate from "@/components/printing/QRMenuTemplate";
+import { useConfirm } from "@/components/ConfirmContext";
 
 interface TableRecord {
   id: string;
@@ -21,6 +22,7 @@ interface TableRecord {
 }
 
 export default function TablesPage() {
+    const { confirm } = useConfirm();
   const { user, loading: authLoading } = useAuthContext();
   const [tables, setTables] = useState<TableRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -898,7 +900,7 @@ export default function TablesPage() {
                             </button>
                             <button 
                               onClick={async () => {
-                                if (!window.confirm(`Delete zone "${zone}"? Items will be kept but un-zoned.`)) return;
+                                if (!await confirm(`Delete zone "${zone}"? Items will be kept but un-zoned.`)) return;
                                 setIsZoneLoading(true);
                                 try {
                                   const res = await fetch("/api/profile/zones", {

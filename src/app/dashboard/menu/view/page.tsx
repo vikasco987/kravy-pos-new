@@ -343,6 +343,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles, Image as ImageIcon, Loader2, Globe, Zap, Printer, File } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ItemModal from "@/components/MenuEditor/ItemModal";
+import { useConfirm } from "@/components/ConfirmContext";
+
 /* types */
 type MenuItem = {
   id: string;
@@ -384,6 +386,7 @@ function formatPrice(v?: number | null) {
   return `₹${((v ?? 0)).toFixed(2)}`;
 }
 export default function ViewMenuPage() {
+    const { confirm } = useConfirm();
 
 
   const [menus, setMenus] = useState<MenuCategory[]>([]);
@@ -504,7 +507,7 @@ export default function ViewMenuPage() {
   };
 
   const handleWipeMenu = async () => {
-    if (!confirm("Are you sure you want to WIPE this customer's entire menu? This is permanent and deletes all products and categories.")) return;
+    if (!await confirm("Are you sure you want to WIPE this customer's entire menu? This is permanent and deletes all products and categories.")) return;
     try {
       const deleteUrl = asUserId ? `/api/items?all=true&asUserId=${asUserId}` : `/api/items?all=true`;
       const res = await fetch(deleteUrl, { method: "DELETE" });
@@ -916,7 +919,7 @@ export default function ViewMenuPage() {
   };
 
   const handleClearAllImages = async () => {
-    if (!confirm("Are you sure you want to remove ALL menu images? This action cannot be undone.")) return;
+    if (!await confirm("Are you sure you want to remove ALL menu images? This action cannot be undone.")) return;
     try {
       const res = await fetch("/api/items/clear-images", {
         method: "POST",
@@ -1093,7 +1096,7 @@ export default function ViewMenuPage() {
       return;
     }
 
-    if (!confirm(`Sync images for ${blankItems.length} items without images?`)) return;
+    if (!await confirm(`Sync images for ${blankItems.length} items without images?`)) return;
 
     setSyncProgress({ completed: 0, total: blankItems.length });
 

@@ -35,6 +35,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { kravy } from "@/lib/sounds";
 import { useTheme } from "next-themes";
+import { useConfirm } from "@/components/ConfirmContext";
 
 interface Room {
   id: string;
@@ -72,6 +73,7 @@ interface Booking {
 }
 
 export default function RoomManagementPage() {
+    const { confirm } = useConfirm();
   const { resolvedTheme, theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<string>("dark");
@@ -263,7 +265,7 @@ export default function RoomManagementPage() {
 
   // Check-Out Booking
   const handleCheckoutSubmit = async (booking: Booking) => {
-    if (!confirm(`Are you sure you want to Check-Out Room ${booking.roomNumber} for ${booking.customerName}?`)) return;
+    if (!await confirm(`Are you sure you want to Check-Out Room ${booking.roomNumber} for ${booking.customerName}?`)) return;
 
     try {
       const res = await fetch("/api/rooms/bookings", {

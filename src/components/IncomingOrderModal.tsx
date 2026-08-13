@@ -5,8 +5,10 @@ import { useTerminalContext } from "@/components/TerminalContext";
 import { kravy } from "@/lib/sounds";
 import { ShoppingBag, Check, X, Clock, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
+import { useConfirm } from "@/components/ConfirmContext";
 
 export default function IncomingOrderModal() {
+    const { confirm } = useConfirm();
     const { orders, setOrders } = useTerminalContext();
     const [isAccepting, setIsAccepting] = useState(false);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -73,7 +75,7 @@ export default function IncomingOrderModal() {
     };
 
     const handleReject = async () => {
-        if (!confirm("Are you sure you want to reject this order? It will be deleted.")) return;
+        if (!await confirm("Are you sure you want to reject this order? It will be deleted.")) return;
         setIsAccepting(true);
         kravy.click();
         

@@ -32,6 +32,7 @@ import {
   Image as ImageIcon
 } from "lucide-react";
 import { kravy } from "@/lib/sounds";
+import { useConfirm } from "@/components/ConfirmContext";
 
 type Party = {
   id: string;
@@ -70,6 +71,7 @@ function formatDate(d?: string | null) {
 }
 
 export default function PartiesPage() {
+    const { confirm } = useConfirm();
   const receiptRef = React.useRef<HTMLDivElement>(null);
   const [business, setBusiness] = useState<any>(null);
   const [parties, setParties] = useState<Party[]>([]);
@@ -365,7 +367,7 @@ export default function PartiesPage() {
   };
 
   const handlePayBill = async (bill: any) => {
-    if (!confirm(`Mark bill ${bill.billNumber} as Paid? This will clear the due amount.`)) return;
+    if (!await confirm(`Mark bill ${bill.billNumber} as Paid? This will clear the due amount.`)) return;
     try {
       const res = await fetch(`/api/bill-manager/${bill.id}/pay`, {
         method: "POST"
@@ -487,7 +489,7 @@ export default function PartiesPage() {
   };
 
   const handleDeleteTx = async (tx: any) => {
-    if (!confirm(`Are you sure you want to delete this ${tx.type === 'CREDIT' ? 'Deposit' : 'Withdrawal'} transaction of ₹${tx.amount}? Customer wallet balance will be reverted.`)) return;
+    if (!await confirm(`Are you sure you want to delete this ${tx.type === 'CREDIT' ? 'Deposit' : 'Withdrawal'} transaction of ₹${tx.amount}? Customer wallet balance will be reverted.`)) return;
     try {
       const res = await fetch("/api/wallet", {
         method: "POST",

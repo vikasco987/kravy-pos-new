@@ -4,8 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Image as ImageIcon, RotateCcw, Check } from "lucide-react";
 import Image from "next/image";
 import AddonGroupsModal from "./AddonGroupsModal";
+import { useConfirm } from "@/components/ConfirmContext";
 
 export default function ItemModal({ item, addonGroups = [], onSave, onClose, categories = [] }: any) {
+    const { confirm } = useConfirm();
     const defaultItem = {
         name: "",
         price: null,
@@ -92,7 +94,7 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
     }
 
     async function handleQuickAddonDelete(id: string) {
-        if (!confirm("Are you sure?")) return;
+        if (!await confirm("Are you sure?")) return;
         const res = await fetch(`/api/menu-editor/addon-groups?id=${id}`, { method: 'DELETE' });
         if (res.ok) {
             setLocalGroups((prev: any[]) => prev.filter((g: any) => g.id !== id));

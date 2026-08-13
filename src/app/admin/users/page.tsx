@@ -32,8 +32,10 @@ const roleStyles: Record<Role, { bg: string; text: string; icon: any }> = {
 };
 
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/components/ConfirmContext";
 
 export default function AdminUsersPage() {
+    const { confirm } = useConfirm();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -213,7 +215,7 @@ export default function AdminUsersPage() {
   };
 
   const deleteUser = async (user: User) => {
-    if (!confirm(`Are you sure you want to permanently delete user "${user.name || user.email}"? This action cannot be undone.`)) {
+    if (!await confirm(`Are you sure you want to permanently delete user "${user.name || user.email}"? This action cannot be undone.`)) {
       return;
     }
     setDeletingId(user.id);

@@ -5,6 +5,7 @@ import { ChevronLeft, AlertCircle, Search, Check, Clock, User, Phone, Calendar, 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { kravy } from "@/lib/sounds";
+import { useConfirm } from "@/components/ConfirmContext";
 
 interface Bill {
   id: string;
@@ -50,6 +51,7 @@ export default function UnpaidDuesClient({
   initStartDate,
   initEndDate,
 }: Props) {
+    const { confirm } = useConfirm();
   const router = useRouter();
   const [duesList, setDuesList] = useState<CustomerDue[]>(initialDuesList);
   const [searchQuery, setSearchQuery] = useState("");
@@ -161,7 +163,7 @@ export default function UnpaidDuesClient({
   };
 
   const handleSettleAllForCustomer = async (customer: CustomerDue, customerKey: string) => {
-    if (!confirm(`Mark all ${customer.billsCount} pending bills as Paid for ${customer.customerName}?`)) return;
+    if (!await confirm(`Mark all ${customer.billsCount} pending bills as Paid for ${customer.customerName}?`)) return;
     
     kravy.click();
     for (const b of customer.bills) {

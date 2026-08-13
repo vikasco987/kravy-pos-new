@@ -8,8 +8,10 @@ import { saveAs } from "file-saver";
 import QRCode from "react-qr-code";
 import { domToPng } from "modern-screenshot";
 import * as XLSX from "xlsx";
+import { useConfirm } from "@/components/ConfirmContext";
 
 export default function QRManagerPage() {
+    const { confirm } = useConfirm();
     const [qrs, setQrs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
@@ -91,7 +93,7 @@ export default function QRManagerPage() {
     };
 
     const handleDelete = async (qrId: string) => {
-        if (!confirm("Are you sure you want to delete this QR code? It will break if printed.")) return;
+        if (!await confirm("Are you sure you want to delete this QR code? It will break if printed.")) return;
         try {
             const res = await fetch(`/api/dashboard/google-review-qr?id=${qrId}`, { method: "DELETE" });
             const data = await res.json();
