@@ -285,14 +285,18 @@ export async function POST(req: NextRequest) {
         // If there's an unpaid amount, check if wallet can cover it
         if (!isHeld && finalBalanceDue > 0 && partyWalletBalance > 0) {
             walletUsed = Math.min(partyWalletBalance, finalBalanceDue);
+            const originalAmountPaid = finalAmountPaid;
+            
             finalAmountPaid += walletUsed;
             finalBalanceDue -= walletUsed;
             
             // Adjust payment mode to reflect wallet usage
-            if (finalPaymentMode === "Cash" || finalPaymentMode === "Pay on Counter") {
-               finalPaymentMode = "Wallet (Auto)";
+            if (originalAmountPaid > 0) {
+               // They paid some via original method, rest via wallet
+               finalPaymentMode = `${finalPaymentMode} (₹${originalAmountPaid}) + Wallet (₹${walletUsed})`;
             } else {
-               finalPaymentMode = `${finalPaymentMode} + Wallet (Auto)`;
+               // They paid 0 originally, so it's only wallet
+               finalPaymentMode = `Wallet (₹${walletUsed})`;
             }
         }
       } catch (err) {
