@@ -1699,7 +1699,7 @@ export default function CheckoutClient() {
   /* ================= SAVE BILL ================= */
   async function saveBill(isHeld: boolean = false) {
     if (isSaving) return null;
-    if (items.length === 0) { alert("No items to save"); return null; }
+    if (items.length === 0) { toast.error("No items to save"); return null; }
     
     setIsSaving(true);
     try {
@@ -1712,7 +1712,7 @@ export default function CheckoutClient() {
       if (buyerGSTIN) {
         const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
         if (!gstinRegex.test(buyerGSTIN)) {
-          alert("Invalid Buyer GSTIN Format (Expected 15 chars, e.g. 07AAAAA0000A1Z5)");
+          toast.error("Invalid Buyer GSTIN Format", { description: "Expected 15 chars, e.g. 07AAAAA0000A1Z5" });
           setIsSaving(false);
           return null;
         }
@@ -1744,7 +1744,7 @@ export default function CheckoutClient() {
       reCalcGst += (deliveryGst + packagingGst);
 
       if ((taxActive || perProductEnabled) && Math.abs(reCalcGst - gstAmount) > 1) { // Increased tolerance to 1 for rounding
-        alert(`Safety Check: GST Calculation Mismatch! System: ₹${gstAmount.toFixed(2)}, Calculated: ₹${reCalcGst.toFixed(2)}`);
+        toast.error("Safety Check: GST Calculation Mismatch!", { description: `System: ₹${gstAmount.toFixed(2)}, Calculated: ₹${reCalcGst.toFixed(2)}` });
         setIsSaving(false);
         return null;
       }
@@ -1768,12 +1768,12 @@ export default function CheckoutClient() {
 
         if (w > 0) {
           if (!selectedParty) {
-            alert("Please select a registered customer to use Wallet split payment.");
+            toast.error("Please select a registered customer to use Wallet split payment.");
             setIsSaving(false);
             return null;
           }
           if ((selectedParty.walletBalance || 0) < w) {
-            alert(`Insufficient Wallet Balance for split!\nRequired: ₹${w.toFixed(2)}\nAvailable: ₹${(selectedParty.walletBalance || 0).toFixed(2)}`);
+            toast.error("Insufficient Wallet Balance for split!", { description: `Required: ₹${w.toFixed(2)} | Available: ₹${(selectedParty.walletBalance || 0).toFixed(2)}`, duration: 5000 });
             setIsSaving(false);
             return null;
           }
@@ -1791,7 +1791,7 @@ export default function CheckoutClient() {
             });
             const wData = await walletRes.json();
             if (!walletRes.ok) {
-              alert(wData.error || "Wallet split deduction failed");
+              toast.error(wData.error || "Wallet split deduction failed");
               setIsSaving(false);
               return null;
             }
@@ -1799,19 +1799,19 @@ export default function CheckoutClient() {
               setSelectedParty({ ...selectedParty, walletBalance: wData.balance });
             }
           } catch (err) {
-            alert("Wallet system connection error");
+            toast.error("Wallet system connection error");
             setIsSaving(false);
             return null;
           }
         }
       } else if (paymentMode === "Wallet") {
         if (!selectedParty) {
-          alert("Please select a registered customer to use Wallet payment.");
+          toast.error("Please select a registered customer to use Wallet payment.");
           setIsSaving(false);
           return null;
         }
         if ((selectedParty.walletBalance || 0) < finalAmountPaid) {
-          alert(`Insufficient Wallet Balance!\nRequired: ₹${finalAmountPaid.toFixed(2)}\nAvailable: ₹${(selectedParty.walletBalance || 0).toFixed(2)}`);
+          toast.error("Insufficient Wallet Balance!", { description: `Required: ₹${finalAmountPaid.toFixed(2)} | Available: ₹${(selectedParty.walletBalance || 0).toFixed(2)}`, duration: 5000, style: { border: '1px solid #ef4444', backgroundColor: '#fef2f2' } });
           setIsSaving(false);
           return null;
         }
@@ -1833,7 +1833,7 @@ export default function CheckoutClient() {
             const wData = await walletRes.json();
 
             if (!walletRes.ok) {
-              alert(wData.error || "Wallet deduction failed");
+              toast.error(wData.error || "Wallet deduction failed");
               setIsSaving(false);
               return null;
             }
@@ -1844,7 +1844,7 @@ export default function CheckoutClient() {
             }
           }
         } catch (err) {
-          alert("Wallet system connection error");
+          toast.error("Wallet system connection error");
           setIsSaving(false);
           return null;
         }
@@ -1897,7 +1897,7 @@ export default function CheckoutClient() {
       });
       if (!res.ok) { 
         const err = await res.json(); 
-        alert(err.error || "Failed to save bill"); 
+        toast.error(err.error || "Failed to save bill"); 
         setIsSaving(false);
         return null; 
       }
@@ -1952,7 +1952,7 @@ export default function CheckoutClient() {
       return savedBill;
     } catch (err) {
       console.error("Save bill error", err);
-      alert("Something went wrong");
+      toast.error("Something went wrong");
       setIsSaving(false);
       return null;
     }
@@ -1968,7 +1968,7 @@ export default function CheckoutClient() {
           resetForm();
         }
         return true;
-      } else { alert("Failed to delete bill"); return false; }
+      } else { toast.error("Failed to delete bill"); return false; }
     } catch (err) {
       console.error("Delete bill error", err);
       return false;
@@ -1977,7 +1977,7 @@ export default function CheckoutClient() {
 
   function printReceipt(forceBoth = false, customBill?: any, onComplete?: () => void) {
     console.log("[CHECKOUT_PRINT_DEBUG] printReceipt called. forceBoth:", forceBoth, "customBill:", !!customBill);
-    if (!receiptRef.current) { alert("Nothing to print"); if (onComplete) onComplete(); return; }
+    if (!receiptRef.current) { toast.error("Nothing to print"); if (onComplete) onComplete(); return; }
     
     // Capture content. If customBill is provided, we might want to wait for DOM, 
     // but the BillPreview modal is currently showing the correct data usually.
