@@ -2682,7 +2682,7 @@ export default function ViewMenuPage() {
                   <p className="text-xs text-[var(--kravy-text-muted)] font-medium mt-1 truncate max-w-[200px]">For: <span className="font-bold text-indigo-500">{imageSearchItem.name}</span></p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
+                  {/* <button
                     onClick={toggleSearchProvider}
                     className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all flex items-center gap-1.5 ${
                       searchProvider === "global"
@@ -2700,7 +2700,7 @@ export default function ViewMenuPage() {
                         <Globe size={12} /> Global Search
                       </>
                     )}
-                  </button>
+                  </button> */}
                   <button onClick={() => setImageSearchItem(null)} className="p-2 hover:bg-[var(--kravy-surface-hover)] rounded-xl text-[var(--kravy-text-secondary)] transition-all">
                     <X size={20} />
                   </button>
