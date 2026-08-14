@@ -155,10 +155,8 @@ export default function BillingPage() {
   const asUserId = searchParams.get("asUserId");
 
   const [dateRange, setDateRange] = useState(() => {
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const today = now.toISOString().split('T')[0];
-    return { start: firstDay, end: today };
+    const today = new Date().toISOString().split('T')[0];
+    return { start: today, end: today };
   });
 
   useEffect(() => {

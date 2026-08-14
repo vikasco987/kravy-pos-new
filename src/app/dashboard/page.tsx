@@ -28,7 +28,7 @@ export default async function DashboardPage({
   if (!effectiveId) redirect("/auth/custom");
 
   const { range: rangeParam, from, to, type } = await searchParams;
-  let range = Number(rangeParam || 30);
+  let range = Number(rangeParam || 1);
 
   const endDate = new Date();
   const startDate = new Date();
