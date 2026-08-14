@@ -50,29 +50,8 @@ export default clerkMiddleware(async (auth, request) => {
       const path = request.nextUrl.pathname;
       
       if (path.startsWith('/dashboard')) {
-        const PERMISSION_MAPPING: Record<string, string[]> = {
-          "Dashboard Permissions": ["/dashboard"],
-          "Order & Billing Permissions": ["/dashboard/billing/checkout", "/dashboard/terminal", "/dashboard/kitchen", "/dashboard/tables"],
-          "Invoices & Receipts": ["/dashboard/billing", "/dashboard/billing/deleted"],
-          "Customer Permissions": ["/dashboard/parties"],
-          "Menu & Items Permissions": ["/dashboard/menu/view", "/dashboard/menu-editor", "/dashboard/menu/addons", "/dashboard/menu/upload", "/dashboard/store-item-upload", "/dashboard/menu/edit", "/dashboard/inventory"],
-          "AI Intelligence Tools": ["/dashboard/ai-scraper"],
-          "Report Permissions": ["/dashboard/reports/sales/daily", "/dashboard/reports/gst"],
-          "Settings Permissions": ["/dashboard/profile", "/dashboard/settings", "/dashboard/settings/tax", "/dashboard/staff", "/dashboard/settings/advanced"]
-        };
-        
-        let expandedPermissions: string[] = [...rawPermissions];
-        rawPermissions.forEach((p: string) => {
-          if (PERMISSION_MAPPING[p]) {
-            expandedPermissions = [...expandedPermissions, ...PERMISSION_MAPPING[p]];
-          }
-        });
-
-        const isAllowed = expandedPermissions.includes("*") || expandedPermissions.some((p: string) => path === p || path.startsWith(p + '/'));
-        
-        if (!isAllowed) {
-           return NextResponse.redirect(new URL('/staff/login?error=denied', request.url));
-        }
+        // We defer fine-grained permission checks to ClientLayout and API routes
+        // which fetch fresh permissions directly from the database instead of relying on stale JWT payloads.
       }
       return NextResponse.next();
     } catch (e) {

@@ -69,7 +69,8 @@ export async function GET(req: NextRequest) {
 
         // 2. Bing Images Scraper (Strict SafeSearch + Food Recipe filter) - Fallback 1
         if (photos.length === 0) {
-            const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(searchQ)}&adlt=strict&first=${offset}`;
+            try {
+                const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(searchQ)}&adlt=strict&first=${offset}`;
             const res = await fetch(bingUrl, {
                 headers: {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
@@ -92,6 +93,7 @@ export async function GET(req: NextRequest) {
             }
         } catch (err) {
             console.warn("Bing image search failed:", err);
+        }
         }
 
         // 2. Google Images Desktop Scraper (Strict SafeSearch)
@@ -120,8 +122,6 @@ export async function GET(req: NextRequest) {
             } catch (err) {
                 console.warn("Google desktop image search failed:", err);
             }
-        }
-
         }
 
         return NextResponse.json({ success: true, data: photos });

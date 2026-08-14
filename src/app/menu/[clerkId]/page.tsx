@@ -2313,7 +2313,7 @@ function PublicMenu() {
                                 </div>
 
                                  {/* Loyalty Redeem */}
-                                 {customerPhone && (
+                                 {profile?.enableLoyaltyProgram !== false && customerPhone && (
                                      <div className="bg-[#D4A353]/10 border border-[#D4A353]/25 rounded-xl m-4 p-3">
                                          <div className="flex items-center justify-between mb-2">
                                              <div className="text-[0.78rem] font-[900] text-[#7A5A00] flex items-center gap-1.5">

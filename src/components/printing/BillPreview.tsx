@@ -396,7 +396,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
 
               {s('sepPayment') && <div className="border-t border-dashed border-gray-400 my-1" />}
 
-              {s('showPaymentStatus') && (
+              {s('showPaymentStatus') && paymentStatus !== "Pending" && (
                 <div className="mt-1 flex justify-between text-[8px]">
                   <span>Payment: {paymentMode === "None" ? "Pending" : paymentMode}</span>
                   <span>Status: {paymentStatus}</span>

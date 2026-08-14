@@ -179,6 +179,11 @@ export async function PUT(req: Request) {
 
             if (newPassword) {
                 updateData.password = await bcrypt.hash(newPassword, 10);
+                const currentMeta: any = staffPrisma.privateMetadata || {};
+                updateData.privateMetadata = {
+                    ...currentMeta,
+                    sessionsRevokedAt: Date.now()
+                };
             }
 
             const updated = await prisma.staff.update({

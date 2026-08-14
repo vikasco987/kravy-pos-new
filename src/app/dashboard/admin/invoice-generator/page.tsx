@@ -270,32 +270,6 @@ export default function InvoiceGenerator() {
         }
     };
 
-    const loadInvoiceForEditing = (inv: any) => {
-        setInvoiceData({
-            invoiceNumber: inv.invoiceNumber,
-            date: new Date(inv.date).toISOString().split('T')[0],
-            dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : "",
-            documentType: inv.documentType,
-            paymentMode: inv.paymentMode || "Online / Bank Transfer",
-            customer: {
-                name: inv.customerName || "",
-                phone: inv.customerPhone || "",
-                email: inv.customerEmail || "",
-                address: inv.customerAddress || "",
-                gst: inv.customerGst || "",
-                pincode: inv.customerPincode || "",
-                city: inv.customerCity || "",
-                state: inv.customerState || ""
-            },
-            items: inv.items || [],
-            notes: inv.notes || "",
-            bankDetails: inv.bankDetails || "",
-            termsConditions: inv.termsConditions || "",
-            bankImage: inv.bankImage || ""
-        });
-        setShowHistoryModal(false);
-        toast.success("Invoice loaded for editing!");
-    };
 
     const handleBankImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.[0]) return;

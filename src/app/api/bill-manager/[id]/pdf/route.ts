@@ -50,6 +50,17 @@ export async function GET(
     const business = await prisma.businessProfile.findFirst({
       where: { userId: bill.clerkUserId },
     });
+    
+    let printSettings: any = {};
+    if (business?.printSettings) {
+      try {
+        printSettings = typeof business.printSettings === 'string' 
+          ? JSON.parse(business.printSettings) 
+          : business.printSettings;
+      } catch (e) {
+        console.warn("Could not parse printSettings", e);
+      }
+    }
 
     /* ================= PDF SETUP ================= */
     console.log("[PDF API] STEP 5: Starting PDF generation...");
@@ -127,12 +138,6 @@ export async function GET(
             logoImage = await pdfDoc.embedJpg(logoBytes);
         }
         
-        let printSettings: any = {};
-        try {
-           printSettings = business.printSettings ? (typeof business.printSettings === 'string' ? JSON.parse(business.printSettings) : business.printSettings) : {};
-        } catch (e) {
-           console.warn("Could not parse printSettings", e);
-        }
         const logoHeightSetting = Number(printSettings?.logoHeight || 50);
         const logoWidth = 80 * (logoHeightSetting / 50); // Increased from 40 to 80 for better visibility
         
@@ -381,7 +386,9 @@ export async function GET(
       y -= 15;
     }
 
-    line(`Payment: ${bill.paymentMode || "Cash"} | Status: ${bill.paymentStatus || "Paid"}`, 8, 'center');
+    if (printSettings.showPaymentStatus !== false && bill.paymentStatus !== "Pending") {
+      line(`Payment: ${bill.paymentMode || "Cash"} | Status: ${bill.paymentStatus || "Paid"}`, 8, 'center');
+    }
     hr();
 
     /* ================= UPI QR CODE ================= */

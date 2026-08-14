@@ -184,7 +184,7 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
       `Hello *${bill.customerName || "Customer"}*,\n\n` +
       `Here is your invoice from *${restaurantName}*:\n\n` +
       "🧾 *Bill No:* " + bill.billNumber + "\n" +
-      "💰 *Amount Paid:* Rs. " + bill.total + "\n\n" +
+      "💰 *Bill Amount:* Rs. " + bill.total + "\n\n" +
       "📄 *Download Invoice:*\n" + pdfUrl + "\n\n" +
       "We look forward to serving you again! 😊"
     );
@@ -619,7 +619,7 @@ const BillPreviewModal = ({ bill, business, onClose }: { bill: any, business: an
       `Hello *${bill.customerName || "Customer"}*,\n\n` +
       `Here is your invoice from *${restaurantName}*:\n\n` +
       "🧾 *Bill No:* " + bill.billNumber + "\n" +
-      "💰 *Amount Paid:* Rs. " + bill.total + "\n\n" +
+      "💰 *Bill Amount:* Rs. " + bill.total + "\n\n" +
       "📄 *Download Invoice:*\n" + pdfUrl + "\n\n" +
       "We look forward to serving you again! 😊"
     );
