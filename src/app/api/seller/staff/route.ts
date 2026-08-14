@@ -182,7 +182,8 @@ export async function PUT(req: Request) {
                 const currentMeta: any = staffPrisma.privateMetadata || {};
                 updateData.privateMetadata = {
                     ...currentMeta,
-                    sessionsRevokedAt: Date.now()
+                    sessionsRevokedAt: Date.now(),
+                    refreshTokens: []
                 };
             }
 

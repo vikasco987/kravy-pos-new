@@ -228,7 +228,8 @@ export async function PUT(req: Request) {
             updateData.privateMetadata = { 
               ...currentMeta, 
               ...(updateData.privateMetadata || {}), 
-              sessionsRevokedAt: Date.now() 
+              sessionsRevokedAt: Date.now(),
+              refreshTokens: []
             };
           }
         } catch (e) { console.error("Error revoking staff sessions:", e); }
@@ -300,7 +301,8 @@ export async function PUT(req: Request) {
         privateMetadata = { 
           ...currentMeta, 
           ...(privateMetadata || {}), 
-          sessionsRevokedAt: Date.now() 
+          sessionsRevokedAt: Date.now(),
+          refreshTokens: []
         };
       } catch (error) {
         console.error("Error revoking local sessions:", error);
