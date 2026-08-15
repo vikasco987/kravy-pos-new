@@ -10,6 +10,7 @@ import {
   Clock
 } from "lucide-react";
 import Link from "next/link";
+import ReportExportDropdown from "@/components/ReportExportDropdown";
 
 export default function TokenHistoryPage() {
   const [stats, setStats] = useState<any[]>([]);
@@ -49,8 +50,20 @@ export default function TokenHistoryPage() {
               <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] uppercase tracking-widest">Daily Token Consumption Report</p>
             </div>
           </div>
-          <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-            <Ticket size={20} />
+          <div className="flex items-center gap-3">
+            <ReportExportDropdown
+              data={stats}
+              columns={[
+                { key: "date", label: "Date" },
+                { key: "orders", label: "Total Orders" },
+                { key: "totalTokens", label: "Max Token No" },
+              ]}
+              filename={`Token_History_${new Date().toISOString().split("T")[0]}`}
+              title="Token Printing History"
+            />
+            <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <Ticket size={20} />
+            </div>
           </div>
         </div>
       </div>

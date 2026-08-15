@@ -5,6 +5,7 @@ import { ChevronLeft, Search, Calendar, User, Phone, ArrowUpRight, ArrowDownLeft
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { kravy } from "@/lib/sounds";
+import ReportExportDropdown from "@/components/ReportExportDropdown";
 
 interface Transaction {
   id: string;
@@ -221,17 +222,18 @@ export default function WalletDepositsClient({
           </div>
         </div>
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          <button
-            onClick={handleExportCSV}
-            style={{
-              padding: "12px 20px", background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)",
-              borderRadius: "16px", fontSize: "0.85rem", fontWeight: 800, color: "var(--kravy-text-primary)",
-              cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", transition: "all 0.2s"
-            }}
-            className="hover-card"
-          >
-            <Download size={16} /> Export CSV
-          </button>
+          <ReportExportDropdown
+            data={filteredLedger}
+            columns={[
+              { key: "name", label: "Customer Name" },
+              { key: "phone", label: "Phone Number" },
+              { key: "walletBalance", label: "Wallet Balance (₹)", format: (v) => v ? Number(v).toFixed(2) : "0.00" },
+              { key: "totalDeposited", label: "Total Loaded (₹)", format: (v) => v ? Number(v).toFixed(2) : "0.00" },
+              { key: "totalUtilized", label: "Total Utilized (₹)", format: (v) => v ? Number(v).toFixed(2) : "0.00" },
+            ]}
+            filename={`Wallet_Advances_${new Date().toISOString().split("T")[0]}`}
+            title="Wallet Deposits & Advances"
+          />
         </div>
       </div>
 

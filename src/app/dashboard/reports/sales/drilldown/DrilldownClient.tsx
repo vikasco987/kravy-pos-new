@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { kravy } from "@/lib/sounds";
 import { BillActionsReport } from "@/app/dashboard/reports/sales/daily/BillActionsReport";
+import ReportExportDropdown from "@/components/ReportExportDropdown";
 
 interface DrilldownClientProps {
   businessName: string;
@@ -222,13 +223,6 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
     return `${hr % 12 || 12} ${hr >= 12 ? 'PM' : 'AM'}`;
   };
 
-  // Export spreadsheet logic
-  const handleExportData = () => {
-    kravy.success();
-    // Simulate generation and download of data
-    alert("Exporting current dashboard state to CSV/XLSX... Completed!");
-  };
-
   const isBillsView = items.length > 0 && "billNumber" in items[0];
 
   const periodStr = useMemo(() => {
@@ -340,25 +334,29 @@ export default function DrilldownClient({ businessName }: DrilldownClientProps) 
             <RefreshCw size={12} /> Reset
           </button>
           
-          <button
-            onClick={handleExportData}
-            style={{
-              padding: "10px 18px",
-              background: "var(--kravy-brand)",
-              border: "none",
-              borderRadius: "14px",
-              color: "white",
-              fontWeight: 850,
-              fontSize: "0.75rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              cursor: "pointer",
-              boxShadow: "0 8px 16px rgba(99, 102, 241, 0.2)"
-            }}
-          >
-            <Download size={12} /> Export Data
-          </button>
+          {items && items.length > 0 && (
+            <ReportExportDropdown
+              data={items}
+              columns={isBillsView 
+                ? [
+                    { key: "billNumber", label: "Invoice ID" },
+                    { key: "createdAt", label: "Date & Time", format: (v: any) => new Date(v).toLocaleString() },
+                    { key: "customerName", label: "Customer Name" },
+                    { key: "customerPhone", label: "Phone" },
+                    { key: "paymentStatus", label: "Status" },
+                    { key: "paymentMode", label: "Mode" },
+                    { key: "tableName", label: "Source" },
+                    { key: "total", label: "Value (₹)", format: (v: any) => v.toString() }
+                  ]
+                : [
+                    { key: "label", label: "Period / Entity" },
+                    { key: "sales", label: "Sales Volume (₹)", format: (v: any) => v.toString() },
+                    { key: "count", label: "Bill Count", format: (v: any) => v.toString() }
+                  ]}
+              filename={`Sales_Drilldown_${periodStr.replace(/[^a-zA-Z0-9]/g, "_")}`}
+              title={`Sales Drilldown - ${periodStr}`}
+            />
+          )}
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { kravy } from "@/lib/sounds";
 import { useConfirm } from "@/components/ConfirmContext";
+import ReportExportDropdown from "@/components/ReportExportDropdown";
 
 interface Bill {
   id: string;
@@ -225,6 +226,18 @@ export default function UnpaidDuesClient({
           </div>
         </div>
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <ReportExportDropdown
+            data={filteredDues}
+            columns={[
+              { key: "customerName", label: "Customer Name" },
+              { key: "customerPhone", label: "Phone" },
+              { key: "totalUnpaid", label: "Total Unpaid (₹)", format: (val) => val ? val.toString() : "0" },
+              { key: "billsCount", label: "Pending Bills" },
+              { key: "lastBillDate", label: "Last Bill Date", format: (val) => new Date(val).toLocaleDateString() },
+            ]}
+            filename={`Unpaid_Dues_${new Date().toISOString().split("T")[0]}`}
+            title="Unpaid Dues Report"
+          />
           <div style={{ padding: "10px 20px", background: "var(--kravy-surface)", border: "1px solid var(--kravy-border)", borderRadius: "16px", fontSize: "0.85rem", fontWeight: 800 }}>
             {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
           </div>

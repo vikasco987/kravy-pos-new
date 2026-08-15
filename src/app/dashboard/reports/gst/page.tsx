@@ -24,6 +24,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
+import ReportExportDropdown from "@/components/ReportExportDropdown";
 
 type GSTReportData = {
   gstr1: any[];
@@ -105,16 +106,6 @@ export default function GSTReportPage() {
     }
   }, [startDate, endDate]);
 
-  const exportToExcel = async (reportData: any[], filename: string) => {
-    if (!reportData || reportData.length === 0) return;
-    
-    const XLSX = await import("xlsx");
-    const worksheet = XLSX.utils.json_to_sheet(reportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
-    XLSX.writeFile(workbook, `${filename}_${startDate}_to_${endDate}.xlsx`);
-  };
-
   if (!mounted) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -183,17 +174,42 @@ export default function GSTReportPage() {
               />
             </div>
           </div>
-          <button 
-            onClick={() => {
-              if (activeTab === "GSTR-1") exportToExcel(data?.gstr1 || [], "GSTR-1");
-              if (activeTab === "HSN") exportToExcel(data?.hsnSummary || [], "HSN_Summary");
-              if (activeTab === "Daily") exportToExcel(data?.dailyTax || [], "Daily_GST_Report");
-              if (activeTab === "GSTR-3B") exportToExcel([data?.gstr3b], "GSTR-3B_Summary");
-            }}
-            className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white dark:bg-white dark:text-black rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-slate-200 dark:shadow-none"
-          >
-            <Download size={16} /> Export
-          </button>
+          {data && (
+            <ReportExportDropdown
+              data={
+                activeTab === "GSTR-1" ? (data?.gstr1 || []) :
+                activeTab === "HSN" ? (data?.hsnSummary || []) :
+                activeTab === "Daily" ? (data?.dailyTax || []) :
+                (data ? [data.gstr3b] : [])
+              }
+              columns={
+                activeTab === "GSTR-1" ? allColumns.filter(c => visibleColumns.includes(c.key)).map(c => ({ key: c.key, label: c.label })) :
+                activeTab === "HSN" ? [
+                  { key: "hsn", label: "HSN / SAC Code" },
+                  { key: "qty", label: "Total Qty sold" },
+                  { key: "taxable", label: "Taxable Value" },
+                  { key: "cgst", label: "CGST" },
+                  { key: "sgst", label: "SGST" },
+                  { key: "totalGst", label: "Total GST" }
+                ] :
+                activeTab === "Daily" ? [
+                  { key: "date", label: "Accounting Date" },
+                  { key: "bills", label: "Bills Generated" },
+                  { key: "gross", label: "Daily Sales (Gross)" },
+                  { key: "taxable", label: "Taxable Amount" },
+                  { key: "totalGst", label: "Daily GST" }
+                ] :
+                [
+                  { key: "taxable", label: "Total Taxable" },
+                  { key: "cgst", label: "CGST" },
+                  { key: "sgst", label: "SGST" },
+                  { key: "totalGst", label: "Total GST" }
+                ]
+              }
+              filename={`${activeTab.replace("-", "_")}_Report_${startDate}_to_${endDate}`}
+              title={`${activeTab} Report (${startDate} to ${endDate})`}
+            />
+          )}
 
           {activeTab === "GSTR-1" && (
             <div className="relative">

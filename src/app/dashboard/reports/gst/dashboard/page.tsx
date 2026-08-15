@@ -36,6 +36,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import Link from "next/link";
+import ReportExportDropdown from "@/components/ReportExportDropdown";
 
 const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
@@ -155,6 +156,21 @@ export default function GSTDashboardPage() {
           <button onClick={fetchReport} className="p-3 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">
             <TrendingUp size={20} />
           </button>
+          {data && (
+            <ReportExportDropdown
+              data={data.gstr1 || []}
+              columns={[
+                { key: "billNumber", label: "Invoice No" },
+                { key: "date", label: "Date" },
+                { key: "customerName", label: "Buyer Name" },
+                { key: "taxable", label: "Taxable (₹)", format: (v) => v ? Number(v).toFixed(2) : "0.00" },
+                { key: "totalGst", label: "Total GST (₹)", format: (v) => v ? Number(v).toFixed(2) : "0.00" },
+                { key: "grandTotal", label: "Total (₹)", format: (v) => v ? Number(v).toFixed(2) : "0.00" },
+              ]}
+              filename={`GST_Dashboard_Summary_${startDate}_to_${endDate}`}
+              title={`GST Dashboard Summary (${startDate} to ${endDate})`}
+            />
+          )}
         </div>
       </div>
 
