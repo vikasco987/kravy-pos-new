@@ -520,6 +520,31 @@ export default function ViewMenuPage() {
     }
   };
 
+  const handleDeleteAllBills = async () => {
+    if (!selectedMerchantClerkId) {
+      setToast("Please select a merchant first.");
+      return;
+    }
+    const foundMerchant = merchants.find((m) => m.clerkId === selectedMerchantClerkId);
+    if (!foundMerchant) return;
+    
+    if (!await confirm(`Are you sure you want to PERMANENTLY delete ALL BILLS for ${foundMerchant.email}? This action cannot be undone.`)) return;
+    
+    try {
+      const res = await fetch("/api/admin/bills/delete-all", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: foundMerchant.email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete bills");
+      setToast(data.message || `Deleted ${data.count} bills.`);
+    } catch (e: any) {
+      console.error(e);
+      setToast("Error: " + e.message);
+    }
+  };
+
   const handleSearchImages = async (forcedQuery?: string, provider?: "foodsnap" | "global") => {
     const q = forcedQuery || searchImageQuery.trim();
     if (!q) return;
@@ -1857,12 +1882,20 @@ export default function ViewMenuPage() {
                 </button>
 
                 {asUserId && (
-                  <button
-                    onClick={handleWipeMenu}
-                    className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-md transition-all"
-                  >
-                    <Trash2 size={12} /> Wipe Customer Menu
-                  </button>
+                  <>
+                    <button
+                      onClick={handleWipeMenu}
+                      className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-md transition-all"
+                    >
+                      <Trash2 size={12} /> Wipe Customer Menu
+                    </button>
+                    <button
+                      onClick={handleDeleteAllBills}
+                      className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-md transition-all"
+                    >
+                      <Trash2 size={12} /> Delete All Bills
+                    </button>
+                  </>
                 )}
               </div>
             </div>
