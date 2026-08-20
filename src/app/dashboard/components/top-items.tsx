@@ -217,39 +217,37 @@ export default function TopItems({
       </div>
       
       {/* View Full Report Button */}
-      {items.length > 0 && (
-        <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px dashed var(--kravy-border)" }}>
-          <button 
-            onClick={() => router.push(`/dashboard/reports/items?range=${range}`)}
-            style={{
-              width: "100%",
-              padding: "12px",
-              background: "var(--kravy-bg-2)",
-              border: "1px solid var(--kravy-border)",
-              borderRadius: "14px",
-              color: "var(--kravy-text-primary)",
-              fontSize: "0.85rem",
-              fontWeight: 700,
-              cursor: "pointer",
-              transition: "all 0.2s",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px"
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--kravy-surface-hover)";
-              e.currentTarget.style.borderColor = "var(--kravy-brand)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "var(--kravy-bg-2)";
-              e.currentTarget.style.borderColor = "var(--kravy-border)";
-            }}
-          >
-            View Full Report
-          </button>
-        </div>
-      )}
+      <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px dashed var(--kravy-border)" }}>
+        <button 
+          onClick={() => router.push(`/dashboard/reports/items?range=${range}`)}
+          style={{
+            width: "100%",
+            padding: "12px",
+            background: "var(--kravy-bg-2)",
+            border: "1px solid var(--kravy-border)",
+            borderRadius: "14px",
+            color: "var(--kravy-text-primary)",
+            fontSize: "0.85rem",
+            fontWeight: 700,
+            cursor: "pointer",
+            transition: "all 0.2s",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--kravy-surface-hover)";
+            e.currentTarget.style.borderColor = "var(--kravy-brand)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--kravy-bg-2)";
+            e.currentTarget.style.borderColor = "var(--kravy-border)";
+          }}
+        >
+          View Full Report
+        </button>
+      </div>
     </div>
   );
 }
