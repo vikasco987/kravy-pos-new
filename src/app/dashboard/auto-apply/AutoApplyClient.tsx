@@ -22,6 +22,7 @@ export default function AutoApplyClient() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const businessFileInputRef = useRef<HTMLInputElement>(null);
     const [isExtractingBusiness, setIsExtractingBusiness] = useState(false);
+    const [globalZone, setGlobalZone] = useState("");
 
     const [ocrStatus, setOcrStatus] = useState({ text: "Pending", colorClass: "text-gray-500", isLoading: false });
     const [imgStatus, setImgStatus] = useState({ text: "Pending", colorClass: "text-gray-500", isLoading: false });
@@ -466,7 +467,8 @@ export default function AutoApplyClient() {
             address: restAddress,
             timings: restTimings,
             contactPhone: restPhone,
-            menu: onboardMenuItems
+            menu: onboardMenuItems,
+            globalZone: globalZone.trim() || undefined
         };
 
         try {
@@ -689,6 +691,17 @@ export default function AutoApplyClient() {
                                     <option value="dual">English + Regional (Hindi, etc.)</option>
                                     <option value="arabic">English + Arabian (Arabic)</option>
                                 </select>
+                            </div>
+
+                            <div className="pt-2">
+                                <label className="text-[10px] font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block mb-1">Assign Menu Zone (Optional)</label>
+                                <input
+                                    type="text"
+                                    value={globalZone}
+                                    onChange={(e) => setGlobalZone(e.target.value.toUpperCase())}
+                                    placeholder="e.g. MAIN KITCHEN"
+                                    className="w-full bg-gray-50 dark:bg-[#0F0F23] border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-xs font-bold outline-none focus:border-blue-500 transition-all mb-2 uppercase"
+                                />
                             </div>
 
                             <button onClick={startProcessingQueue} className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition-all">

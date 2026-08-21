@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { email, phone, password, restaurantName, address, timings, contactPhone, menu } = body;
+        const { email, phone, password, restaurantName, address, timings, contactPhone, menu, globalZone } = body;
 
         const cleanEmail = email?.trim().toLowerCase();
 
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
                 contactPersonPhone: contactPhone || phone,
                 businessEmail: email,
                 enableCustomAuth: true,
+                zones: globalZone ? [globalZone] : [],
             }
         });
 
@@ -88,7 +89,8 @@ export async function POST(req: NextRequest) {
                     categoryId: categoryId,
                     clerkId: newClerkId,
                     userId: newUser.id,
-                    isActive: true
+                    isActive: true,
+                    zones: globalZone ? [globalZone] : []
                 };
             });
 
