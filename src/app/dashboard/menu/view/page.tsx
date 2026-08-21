@@ -478,7 +478,7 @@ export default function ViewMenuPage() {
   const [showAddCategory, setShowAddCategory] = useState(false);
 
   // Inline editing state
-  const [editingField, setEditingField] = useState<{ id: string, field: "name" | "price" | "expiryDate", value: string } | null>(null);
+  const [editingField, setEditingField] = useState<{ id: string, field: "name" | "price" | "expiryDate" | "zone", value: string } | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<MenuCategory | null>(null);
   const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -1522,11 +1522,16 @@ export default function ViewMenuPage() {
     if (field === "name" && targetItem.name === value) { setEditingField(null); return; }
     if (field === "price" && targetItem.price === Number(value)) { setEditingField(null); return; }
     if (field === "expiryDate" && targetItem.expiryDate && new Date(targetItem.expiryDate).toISOString().split('T')[0] === value) { setEditingField(null); return; }
+    if (field === "zone" && (targetItem as any).zones?.[0] === value) { setEditingField(null); return; }
+    if (field === "zone" && !(targetItem as any).zones?.length && !value) { setEditingField(null); return; }
 
     const updated = { ...targetItem };
     if (field === "name") updated.name = value;
     if (field === "price") updated.price = Number(value) || 0;
     if (field === "expiryDate") updated.expiryDate = value ? new Date(value).toISOString() : null;
+    if (field === "zone") {
+        (updated as any).zones = value ? [value] : [];
+    }
 
     setEditingField(null); // Optimistic close
     await saveEdit(updated);
@@ -2212,14 +2217,35 @@ export default function ViewMenuPage() {
                               >
                                 {item.isActive ? "● Online" : "○ Offline"}
                               </button>
-                              {(item as any).zones && (item as any).zones.length > 0 ? (
-                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-900/85 backdrop-blur-md text-amber-300 border border-amber-500/40 shadow-md">
-                                  📍 {(item as any).zones.join(", ")}
-                                </span>
+                              {editingField?.id === item.id && editingField.field === "zone" ? (
+                                <select
+                                  autoFocus
+                                  className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-800 text-amber-300 border border-amber-500 focus:outline-none shadow-md"
+                                  value={editingField.value}
+                                  onChange={async (e) => {
+                                    const val = e.target.value;
+                                    setEditingField(null);
+                                    if ((item as any).zones?.[0] === val || (!(item as any).zones?.length && !val)) return;
+                                    const updated = { ...item, zones: val ? [val] : [] };
+                                    await saveEdit(updated);
+                                  }}
+                                  onBlur={() => setEditingField(null)}
+                                >
+                                  <option value="">🌐 All Zones</option>
+                                  {business?.zones?.map((z: string) => <option key={z} value={z}>📍 {z}</option>)}
+                                </select>
                               ) : (
-                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-slate-900/70 backdrop-blur-md text-slate-300 border border-slate-700 shadow-md">
-                                  🌐 All Zones
-                                </span>
+                                <div onClick={(e) => { e.stopPropagation(); setEditingField({ id: item.id, field: "zone", value: (item as any).zones?.[0] || "" }); }} className="cursor-pointer hover:ring-2 hover:ring-amber-500 rounded-full transition-all shrink-0 inline-flex">
+                                  {(item as any).zones && (item as any).zones.length > 0 ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-900/85 backdrop-blur-md text-amber-300 border border-amber-500/40 shadow-md">
+                                      📍 {(item as any).zones.join(", ")}
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-slate-900/70 backdrop-blur-md text-slate-300 border border-slate-700 shadow-md">
+                                      🌐 All Zones
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
