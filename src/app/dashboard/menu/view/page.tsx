@@ -488,6 +488,7 @@ export default function ViewMenuPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [bulkDiet, setBulkDiet] = useState<"veg" | "egg" | "nv" | null>(null);
+  const [bulkZone, setBulkZone] = useState<string | null>(null);
   const [isBulkMode, setIsBulkMode] = useState(false);
   
   const [addonGroups, setAddonGroups] = useState<any[]>([]);
@@ -2365,51 +2366,80 @@ export default function ViewMenuPage() {
             <div className="flex flex-col md:flex-row items-center gap-4 flex-1 justify-center">
               <div className="flex p-1.5 bg-white/5 rounded-[1.5rem] gap-2 border border-white/5 scale-90 md:scale-100">
                 <button 
-                  onClick={() => setBulkDiet("veg")}
+                  onClick={() => setBulkDiet(bulkDiet === "veg" ? null : "veg")}
                   className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border ${bulkDiet === "veg" ? "bg-green-500 text-white border-green-400 shadow-lg shadow-green-500/20 px-7" : "bg-white/5 text-green-400 border-white/5 hover:bg-white/10"}`}
                 >
                   Veg <div className={`w-1.5 h-1.5 rounded-full ${bulkDiet === "veg" ? "bg-white" : "bg-green-500"}`} />
                 </button>
                 <button 
-                  onClick={() => setBulkDiet("egg")}
+                  onClick={() => setBulkDiet(bulkDiet === "egg" ? null : "egg")}
                   className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border ${bulkDiet === "egg" ? "bg-amber-500 text-white border-amber-400 shadow-lg shadow-amber-500/20 px-7" : "bg-white/5 text-amber-400 border-white/5 hover:bg-white/10"}`}
                 >
                   Egg <div className={`w-1.5 h-1.5 rounded-full ${bulkDiet === "egg" ? "bg-white" : "bg-amber-500"}`} />
                 </button>
                 <button 
-                  onClick={() => setBulkDiet("nv")}
+                  onClick={() => setBulkDiet(bulkDiet === "nv" ? null : "nv")}
                   className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border ${bulkDiet === "nv" ? "bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/20 px-7" : "bg-white/5 text-rose-300 border-white/5 hover:bg-white/10"}`}
                 >
                   NV <div className={`w-1.5 h-1.5 rounded-full ${bulkDiet === "nv" ? "bg-white" : "bg-rose-500"}`} />
                 </button>
               </div>
 
+              <select
+                value={bulkZone || ""}
+                onChange={(e) => setBulkZone(e.target.value || null)}
+                className="px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-[10px] text-white focus:outline-none font-black uppercase tracking-widest cursor-pointer"
+              >
+                <option value="" className="bg-indigo-950">Assign Zone</option>
+                {business?.zones?.map((z: string) => <option key={z} value={z} className="bg-indigo-950">{z}</option>)}
+              </select>
+
               <button 
-                disabled={isBulkUpdating || !bulkDiet}
+                disabled={isBulkUpdating || (!bulkDiet && !bulkZone)}
                 onClick={async () => {
-                  if (!bulkDiet) return;
+                  if (!bulkDiet && !bulkZone) return;
                   setIsBulkUpdating(true);
                   try {
-                    const isVeg = bulkDiet === "veg";
-                    const isEgg = bulkDiet === "egg";
+                    const payload: any = { ids: Array.from(selectedIds) };
+                    if (bulkDiet) {
+                      payload.isVeg = bulkDiet === "veg";
+                      payload.isEgg = bulkDiet === "egg";
+                    }
+                    if (bulkZone) {
+                      payload.zones = [bulkZone];
+                    }
                     
                     const res = await fetch("/api/items", {
                       method: "PUT",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ ids: Array.from(selectedIds), isVeg, isEgg })
+                      body: JSON.stringify(payload)
                     });
                     
                     if (res.ok) {
                       setIsBulkMode(false);
                       setMenus(prev => prev.map(cat => ({
                         ...cat,
-                        items: cat.items.map(it => selectedIds.has(it.id) ? { ...it, isVeg, isEgg } : it)
+                        items: cat.items.map(it => {
+                          if (!selectedIds.has(it.id)) return it;
+                          const updated = { ...it };
+                          if (bulkDiet) {
+                            updated.isVeg = bulkDiet === "veg";
+                            updated.isEgg = bulkDiet === "egg";
+                          }
+                          if (bulkZone) {
+                            updated.zones = [bulkZone];
+                          }
+                          return updated;
+                        })
                       })));
                       const cnt = selectedIds.size;
-                      const label = bulkDiet === "veg" ? "Veg 🥗" : bulkDiet === "egg" ? "Egg 🥚" : "Non-Veg 🍗";
+                      const dietLabel = bulkDiet === "veg" ? "Veg 🥗" : bulkDiet === "egg" ? "Egg 🥚" : bulkDiet === "nv" ? "Non-Veg 🍗" : "";
+                      const zoneLabel = bulkZone ? `Zone: ${bulkZone}` : "";
+                      const label = [dietLabel, zoneLabel].filter(Boolean).join(" & ");
                       setSelectedIds(new Set());
                       setBulkDiet(null);
-                      setToast(`Set ${cnt} items as ${label}`);
+                      setBulkZone(null);
+                      setToast(`Updated ${cnt} items with ${label}`);
                     }
                   } catch (err) {
                     setToast("Bulk update failed");
@@ -2417,7 +2447,7 @@ export default function ViewMenuPage() {
                     setIsBulkUpdating(false); 
                   }
                 }}
-                className={`px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-2xl active:scale-95 ${!bulkDiet ? "bg-white/5 text-white/20 cursor-not-allowed border border-white/5" : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/40"}`}
+                className={`px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-2xl active:scale-95 ${(!bulkDiet && !bulkZone) ? "bg-white/5 text-white/20 cursor-not-allowed border border-white/5" : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/40"}`}
               >
                 Apply Changes
               </button>
@@ -2855,10 +2885,12 @@ export default function ViewMenuPage() {
                       onChange={(e) => setNewAiZone(e.target.value)}
                       onKeyDown={async (e) => {
                         if (e.key === "Enter" && newAiZone.trim()) {
-                          const res = await fetch("/api/profile/zones", { method: "POST", body: JSON.stringify({ action: "add", zoneName: newAiZone }) });
+                          const newZ = newAiZone.trim().toUpperCase();
+                          const res = await fetch("/api/profile/zones", { method: "POST", body: JSON.stringify({ action: "add", zoneName: newZ }) });
                           if (res.ok) {
+                              setBusiness((prev: any) => prev ? { ...prev, zones: Array.from(new Set([...(prev.zones || []), newZ])) } : prev);
                               fetch("/api/profile").then(r => r.json()).then(d => setBusiness(d.profile));
-                              setSelectedAiZone(newAiZone.trim().toUpperCase());
+                              setSelectedAiZone(newZ);
                               setIsCreatingAiZone(false);
                               setNewAiZone("");
                               setToast("Zone created and selected!");
@@ -2869,10 +2901,12 @@ export default function ViewMenuPage() {
                     <button 
                       onClick={async () => {
                           if(!newAiZone.trim()) return;
-                          const res = await fetch("/api/profile/zones", { method: "POST", body: JSON.stringify({ action: "add", zoneName: newAiZone }) });
+                          const newZ = newAiZone.trim().toUpperCase();
+                          const res = await fetch("/api/profile/zones", { method: "POST", body: JSON.stringify({ action: "add", zoneName: newZ }) });
                           if (res.ok) {
+                              setBusiness((prev: any) => prev ? { ...prev, zones: Array.from(new Set([...(prev.zones || []), newZ])) } : prev);
                               fetch("/api/profile").then(r => r.json()).then(d => setBusiness(d.profile));
-                              setSelectedAiZone(newAiZone.trim().toUpperCase());
+                              setSelectedAiZone(newZ);
                               setIsCreatingAiZone(false);
                               setNewAiZone("");
                               setToast("Zone created and selected!");
