@@ -1995,27 +1995,34 @@ export default function ViewMenuPage() {
                 >
                   <Plus size={16} strokeWidth={3} /> New Category
                 </button>
-                <button
-                  onClick={() => {
-                    const unassignedIds = new Set<string>();
+                <select
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (!val) return;
+                    const ids = new Set<string>();
                     menus.forEach(cat => {
                       cat.items.forEach(item => {
-                        if (!(item as any).zones || (item as any).zones.length === 0) {
-                          unassignedIds.add(item.id);
+                        if (val === "unassigned") {
+                          if (!(item as any).zones || (item as any).zones.length === 0) ids.add(item.id);
+                        } else {
+                          if ((item as any).zones?.includes(val)) ids.add(item.id);
                         }
                       });
                     });
-                    if (unassignedIds.size === 0) {
-                        setToast("All items have zones assigned!");
-                        return;
+                    if (ids.size === 0) {
+                        setToast(val === "unassigned" ? "All items have zones!" : `No items in ${val}`);
+                    } else {
+                        setIsBulkMode(true);
+                        setSelectedIds(ids);
                     }
-                    setIsBulkMode(true);
-                    setSelectedIds(unassignedIds);
+                    e.target.value = "";
                   }}
-                  className="px-6 py-2.5 rounded-2xl bg-slate-800 text-amber-400 font-black text-xs uppercase tracking-widest flex-shrink-0 hover:bg-slate-700 transition-all flex items-center gap-2.5 shadow-lg shadow-amber-500/10 active:scale-95"
+                  className="px-4 py-2.5 rounded-2xl bg-slate-800 text-amber-400 font-black text-xs uppercase tracking-widest flex-shrink-0 hover:bg-slate-700 transition-all shadow-lg shadow-amber-500/10 cursor-pointer focus:outline-none border-none"
                 >
-                  📍 Select Unassigned
-                </button>
+                  <option value="">📍 QUICK SELECT...</option>
+                  <option value="unassigned">Unassigned Items</option>
+                  {business?.zones?.map((z: string) => <option key={z} value={z}>Zone: {z}</option>)}
+                </select>
                 <button
                   onClick={() => {
                     setIsBulkMode(!isBulkMode);
