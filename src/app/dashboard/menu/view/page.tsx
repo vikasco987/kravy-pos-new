@@ -2441,11 +2441,28 @@ export default function ViewMenuPage() {
 
               <select
                 value={bulkZone || ""}
-                onChange={(e) => setBulkZone(e.target.value || null)}
+                onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "CREATE_NEW_ZONE") {
+                        const newZ = prompt("Enter New Zone Name:");
+                        if (newZ && newZ.trim()) {
+                            const upperZ = newZ.trim().toUpperCase();
+                            fetch("/api/profile/zones", { method: "POST", body: JSON.stringify({ action: "add", zoneName: upperZ }) }).then(res => {
+                                if(res.ok) {
+                                    setBusiness((prev: any) => prev ? { ...prev, zones: Array.from(new Set([...(prev.zones || []), upperZ])) } : prev);
+                                    setBulkZone(upperZ);
+                                }
+                            });
+                        }
+                    } else {
+                        setBulkZone(val || null);
+                    }
+                }}
                 className="px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-[10px] text-white focus:outline-none font-black uppercase tracking-widest cursor-pointer"
               >
                 <option value="" className="bg-indigo-950">Assign Zone</option>
                 {business?.zones?.map((z: string) => <option key={z} value={z} className="bg-indigo-950">{z}</option>)}
+                <option value="CREATE_NEW_ZONE" className="bg-indigo-600 text-white font-black">+ Create New Zone</option>
               </select>
 
               <button 
@@ -2578,6 +2595,10 @@ export default function ViewMenuPage() {
           allCategories={allCategories}
           taxEnabled={taxEnabled}
           setToast={setToast}
+          availableZones={business?.zones || []}
+          onAddZone={(z) => {
+             setBusiness((prev: any) => prev ? { ...prev, zones: Array.from(new Set([...(prev.zones || []), z])) } : prev);
+          }}
         />
       )}
       {deletingItem && (
@@ -2943,7 +2964,6 @@ export default function ViewMenuPage() {
                           const res = await fetch("/api/profile/zones", { method: "POST", body: JSON.stringify({ action: "add", zoneName: newZ }) });
                           if (res.ok) {
                               setBusiness((prev: any) => prev ? { ...prev, zones: Array.from(new Set([...(prev.zones || []), newZ])) } : prev);
-                              fetch("/api/profile").then(r => r.json()).then(d => setBusiness(d.profile));
                               setSelectedAiZone(newZ);
                               setIsCreatingAiZone(false);
                               setNewAiZone("");
@@ -2959,7 +2979,6 @@ export default function ViewMenuPage() {
                           const res = await fetch("/api/profile/zones", { method: "POST", body: JSON.stringify({ action: "add", zoneName: newZ }) });
                           if (res.ok) {
                               setBusiness((prev: any) => prev ? { ...prev, zones: Array.from(new Set([...(prev.zones || []), newZ])) } : prev);
-                              fetch("/api/profile").then(r => r.json()).then(d => setBusiness(d.profile));
                               setSelectedAiZone(newZ);
                               setIsCreatingAiZone(false);
                               setNewAiZone("");
@@ -3209,7 +3228,9 @@ function EditModal({
   onSave, 
   allCategories, 
   taxEnabled, 
-  setToast 
+  setToast,
+  availableZones,
+  onAddZone
 }: { 
   item: MenuItem; 
   onClose: () => void; 
@@ -3217,24 +3238,19 @@ function EditModal({
   allCategories: { id: string, name: string }[];
   taxEnabled: boolean;
   setToast: (msg: string) => void;
+  availableZones: string[];
+  onAddZone: (z: string) => void;
 }) {
     const [local, setLocal] = useState<MenuItem>(item);
     const [tab, setTab] = useState<"basic" | "variants" | "qr" | "lang" | "image">("basic");
     const [uploading, setUploading] = useState(false);
     const [mounted, setMounted] = useState(false);
 
-    const [modalAvailableZones, setModalAvailableZones] = useState<string[]>(["MAIN KITCHEN", "BAR", "GRILL", "BAKERY", "COUNTER"]);
     const [showQuickAddZone, setShowQuickAddZone] = useState(false);
     const [quickZoneInput, setQuickZoneInput] = useState("");
 
     useEffect(() => {
       setMounted(true);
-      fetch("/api/profile/zones")
-        .then(res => res.json())
-        .then(data => {
-          if (data.zones && Array.isArray(data.zones)) setModalAvailableZones(data.zones);
-        })
-        .catch(() => {});
     }, []);
 
     const handleSaveQuickZone = async () => {
@@ -3247,7 +3263,7 @@ function EditModal({
           body: JSON.stringify({ action: "add", zoneName: name })
         });
         if (res.ok) {
-          setModalAvailableZones(prev => Array.from(new Set([...prev, name])));
+          onAddZone(name);
           setLocal(prev => ({ ...prev, zones: [name] } as any));
           setQuickZoneInput("");
           setShowQuickAddZone(false);
@@ -3575,7 +3591,7 @@ function EditModal({
                     className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-[var(--kravy-text-primary)] rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-xs transition-all"
                   >
                     <option value="">-- All Zones (Global Menu) --</option>
-                    {modalAvailableZones.map((z: string) => (
+                    {availableZones.map((z: string) => (
                       <option key={z} value={z.toUpperCase()} className="bg-[var(--kravy-bg)]">
                         📍 {z.toUpperCase()}
                       </option>
