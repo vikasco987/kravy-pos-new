@@ -2834,6 +2834,82 @@ export default function ViewMenuPage() {
 
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
+
+              {/* Zone Selector */}
+              <div className="space-y-4 bg-[var(--kravy-surface-hover)] p-6 rounded-[1.5rem] border border-[var(--kravy-border)] shadow-inner">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-[var(--kravy-text-primary)]">Assign to Zone</h4>
+                    <p className="text-[10px] text-[var(--kravy-text-muted)] font-bold mt-1">Select a zone where these items will be automatically added.</p>
+                  </div>
+                </div>
+                
+                {isCreatingAiZone ? (
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="text"
+                      autoFocus
+                      placeholder="Enter New Zone Name (e.g. Ground Floor)"
+                      className="flex-1 px-4 py-3 bg-[var(--kravy-surface)] border border-indigo-500 rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30 shadow-sm"
+                      value={newAiZone}
+                      onChange={(e) => setNewAiZone(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key === "Enter" && newAiZone.trim()) {
+                          const res = await fetch("/api/profile/zones", { method: "POST", body: JSON.stringify({ action: "add", zoneName: newAiZone }) });
+                          if (res.ok) {
+                              fetch("/api/profile").then(r => r.json()).then(d => setBusiness(d.profile));
+                              setSelectedAiZone(newAiZone.trim().toUpperCase());
+                              setIsCreatingAiZone(false);
+                              setNewAiZone("");
+                              setToast("Zone created and selected!");
+                          }
+                        }
+                      }}
+                    />
+                    <button 
+                      onClick={async () => {
+                          if(!newAiZone.trim()) return;
+                          const res = await fetch("/api/profile/zones", { method: "POST", body: JSON.stringify({ action: "add", zoneName: newAiZone }) });
+                          if (res.ok) {
+                              fetch("/api/profile").then(r => r.json()).then(d => setBusiness(d.profile));
+                              setSelectedAiZone(newAiZone.trim().toUpperCase());
+                              setIsCreatingAiZone(false);
+                              setNewAiZone("");
+                              setToast("Zone created and selected!");
+                          }
+                      }}
+                      className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-md shadow-indigo-600/20 transition-all active:scale-95"
+                    >
+                      Save
+                    </button>
+                    <button 
+                      onClick={() => setIsCreatingAiZone(false)}
+                      className="px-6 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-xl transition-all active:scale-95"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    className="w-full px-5 py-3.5 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 appearance-none cursor-pointer shadow-sm transition-all hover:border-[var(--kravy-text-muted)]"
+                    value={selectedAiZone}
+                    onChange={(e) => {
+                        if (e.target.value === "CREATE_NEW_ZONE") {
+                            setIsCreatingAiZone(true);
+                        } else {
+                            setSelectedAiZone(e.target.value);
+                        }
+                    }}
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2em 1.2em', paddingRight: '3rem' }}
+                  >
+                    <option value="">-- Global (Available in all zones) --</option>
+                    {business?.zones?.map((z: string) => (
+                      <option key={z} value={z}>{z}</option>
+                    ))}
+                    <option value="CREATE_NEW_ZONE" className="font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30">+ Create New Zone</option>
+                  </select>
+                )}
+              </div>
               
               {/* Drag and Drop Zone */}
               {extractedMenuItems.length === 0 && (
@@ -2959,83 +3035,7 @@ export default function ViewMenuPage() {
                 </div>
               )}
 
-              {/* Zone Selector */}
-              {extractedMenuItems.length > 0 && (
-                <div className="space-y-4 bg-[var(--kravy-surface-hover)] p-6 rounded-[1.5rem] border border-[var(--kravy-border)] shadow-inner">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-black uppercase tracking-widest text-[var(--kravy-text-primary)]">Assign to Zone</h4>
-                      <p className="text-[10px] text-[var(--kravy-text-muted)] font-bold mt-1">Select a zone where these items will be automatically added.</p>
-                    </div>
-                  </div>
-                  
-                  {isCreatingAiZone ? (
-                    <div className="flex items-center gap-3">
-                      <input 
-                        type="text"
-                        autoFocus
-                        placeholder="Enter New Zone Name (e.g. Ground Floor)"
-                        className="flex-1 px-4 py-3 bg-[var(--kravy-surface)] border border-indigo-500 rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30 shadow-sm"
-                        value={newAiZone}
-                        onChange={(e) => setNewAiZone(e.target.value)}
-                        onKeyDown={async (e) => {
-                          if (e.key === "Enter" && newAiZone.trim()) {
-                            const res = await fetch("/api/profile/zones", { method: "POST", body: JSON.stringify({ action: "add", zoneName: newAiZone }) });
-                            if (res.ok) {
-                                fetch("/api/profile").then(r => r.json()).then(d => setBusiness(d.profile));
-                                setSelectedAiZone(newAiZone.trim().toUpperCase());
-                                setIsCreatingAiZone(false);
-                                setNewAiZone("");
-                                setToast("Zone created and selected!");
-                            }
-                          }
-                        }}
-                      />
-                      <button 
-                        onClick={async () => {
-                            if(!newAiZone.trim()) return;
-                            const res = await fetch("/api/profile/zones", { method: "POST", body: JSON.stringify({ action: "add", zoneName: newAiZone }) });
-                            if (res.ok) {
-                                fetch("/api/profile").then(r => r.json()).then(d => setBusiness(d.profile));
-                                setSelectedAiZone(newAiZone.trim().toUpperCase());
-                                setIsCreatingAiZone(false);
-                                setNewAiZone("");
-                                setToast("Zone created and selected!");
-                            }
-                        }}
-                        className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-md shadow-indigo-600/20 transition-all active:scale-95"
-                      >
-                        Save
-                      </button>
-                      <button 
-                        onClick={() => setIsCreatingAiZone(false)}
-                        className="px-6 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-xl transition-all active:scale-95"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <select
-                      className="w-full px-5 py-3.5 bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-xl text-sm font-bold text-[var(--kravy-text-primary)] focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 appearance-none cursor-pointer shadow-sm transition-all hover:border-[var(--kravy-text-muted)]"
-                      value={selectedAiZone}
-                      onChange={(e) => {
-                          if (e.target.value === "CREATE_NEW_ZONE") {
-                              setIsCreatingAiZone(true);
-                          } else {
-                              setSelectedAiZone(e.target.value);
-                          }
-                      }}
-                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2em 1.2em', paddingRight: '3rem' }}
-                    >
-                      <option value="">-- Global (Available in all zones) --</option>
-                      {business?.zones?.map((z: string) => (
-                        <option key={z} value={z}>{z}</option>
-                      ))}
-                      <option value="CREATE_NEW_ZONE" className="font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30">+ Create New Zone</option>
-                    </select>
-                  )}
-                </div>
-              )}
+
 
               {/* Extracted Items List */}
               {extractedMenuItems.length > 0 && (
