@@ -906,7 +906,8 @@ export default function Sidebar() {
               allowedPaths.includes(item.href) || 
               allowedPaths.includes(baseHref) || 
               (hasLegacyWorkflow && isNewPath) ||
-              (isExpensePath && (userRole === "ADMIN" || userRole === "SELLER"))
+              (isExpensePath && (userRole === "ADMIN" || userRole === "SELLER")) ||
+              isRoomPath
             ) return true;
 
             
