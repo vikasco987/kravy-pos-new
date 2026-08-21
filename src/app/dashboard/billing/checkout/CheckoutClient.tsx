@@ -1097,11 +1097,8 @@ export default function CheckoutClient() {
       .filter((i) => activeCategory === "All" ? true : i.category?.name === activeCategory)
       .filter((i) => i.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) || (i.shortCode && String(i.shortCode).toLowerCase().includes(searchQuery.trim().toLowerCase())))
       .filter((i) => {
-        // 1. Manual Zone Filter (Highest Priority)
         if (activeZone !== "All") {
-          const hasSelectedZone = i.zones?.includes(activeZone);
-          const isGlobal = !i.zones || i.zones.length === 0;
-          return hasSelectedZone || isGlobal;
+          return i.zones?.includes(activeZone);
         }
 
         // 2. Auto-filter if a table is selected (Only if manual filter is "All")

@@ -1365,7 +1365,6 @@ export default function ViewMenuPage() {
     const targetZone = filterZone.toUpperCase();
     return filteredByCategory.filter((it: any) => {
       const zones: string[] = Array.isArray(it.zones) ? it.zones : [];
-      if (zones.length === 0) return true; // Show all or match
       return zones.some((z: string) => z.toUpperCase() === targetZone);
     });
   }, [filteredByCategory, filterZone]);
