@@ -671,7 +671,7 @@ function PublicMenu() {
     }, [combosCart, taxEnabled, isInclusive, globalRate]);
 
     const tax = itemTax + comboTax;
-    const loyaltyDisc = loyaltyOn ? 32 : 0;
+    const loyaltyDisc = loyaltyOn ? Math.min(loyaltyPoints * (profile?.loyaltyValueInRupees || 1), subtotal) : 0;
     
     // Auto-apply QR specific extra charges
     const qrDeliveryFee = profile?.qrDeliveryChargeEnabled ? (profile.qrDeliveryChargeAmount || 0) : 0;
@@ -2319,7 +2319,17 @@ function PublicMenu() {
                                              <div className="text-[0.78rem] font-[900] text-[#7A5A00] flex items-center gap-1.5">
                                                  <Award size={14} /> {loyaltyPoints} Points Available
                                              </div>
-                                             <div className={`w-[38px] h-[21px] rounded-full relative cursor-pointer transition-all ${loyaltyOn ? "bg-[#D4A353]" : "bg-gray-200"}`} onClick={() => { kravy.toggle(); setLoyaltyOn(!loyaltyOn); }}>
+                                             <div 
+                                                className={`w-[38px] h-[21px] rounded-full relative transition-all ${loyaltyPoints > 0 ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'} ${loyaltyOn ? "bg-[#D4A353]" : "bg-gray-200"}`} 
+                                                onClick={() => { 
+                                                    if (loyaltyPoints > 0) {
+                                                        kravy.toggle(); 
+                                                        setLoyaltyOn(!loyaltyOn); 
+                                                    } else {
+                                                        toast.error("Not enough points to redeem");
+                                                    }
+                                                }}
+                                             >
                                                  <div className={`absolute top-[3px] w-[15px] h-[15px] bg-white rounded-full shadow-md transition-all ${loyaltyOn ? "left-[20px]" : "left-[3px]"}`} />
                                              </div>
                                          </div>

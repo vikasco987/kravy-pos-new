@@ -1523,8 +1523,40 @@ export default function ViewMenuPage() {
   }
 
   async function handleToggleFavorite(item: MenuItem) {
+    const newStatus = !item.isFavorite;
+    
+    // Optimistic Update
+    setMenus(prevMenus => {
+      const newMenus = JSON.parse(JSON.stringify(prevMenus));
+      for (const cat of newMenus) {
+        const found = cat.items.find((i: any) => i.id === item.id);
+        if (found) found.isFavorite = newStatus;
+      }
+      
+      const favCatIndex = newMenus.findIndex((c: any) => c.id === 'favorites_virtual');
+      const allItems = newMenus.filter((c: any) => c.id !== 'favorites_virtual').flatMap((c: any) => c.items);
+      
+      // Deduplicate items
+      const uniqueFavItemsMap = new Map();
+      allItems.filter((i: any) => i.isFavorite).forEach((i: any) => {
+         if(!uniqueFavItemsMap.has(i.id)) uniqueFavItemsMap.set(i.id, i);
+      });
+      const favItems = Array.from(uniqueFavItemsMap.values());
+      
+      if (favItems.length > 0) {
+        if (favCatIndex !== -1) {
+          newMenus[favCatIndex].items = favItems;
+        } else {
+          newMenus.unshift({ id: 'favorites_virtual', name: '♥ Favorites', items: favItems, sortOrder: -1 });
+        }
+      } else if (favCatIndex !== -1) {
+        newMenus.splice(favCatIndex, 1);
+      }
+      
+      return newMenus;
+    });
+
     try {
-      const newStatus = !item.isFavorite;
       const res = await fetch("/api/items", {
         method: "PUT",
         headers: { 
@@ -1534,11 +1566,14 @@ export default function ViewMenuPage() {
         body: JSON.stringify({ id: item.id, isFavorite: newStatus }),
       });
       if (res.ok) {
+        setToast(`Item ${item.name} is now ${newStatus ? "in Favorites" : "removed"}`);
+      } else {
         fetchMenus();
-        setToast(`Item ${item.name} is now ${newStatus ? "in Favorites" : "removed from Favorites"}`);
+        setToast("Failed to toggle favorite status");
       }
     } catch (err: any) {
       console.error(err);
+      fetchMenus();
       setToast("Failed to toggle favorite status");
     }
   }

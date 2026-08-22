@@ -451,7 +451,7 @@ export async function PUT(req: Request) {
 
     const body = await req.json();
     console.log("🚀 [API_ITEMS_PUT] Incoming Body:", JSON.stringify(body, null, 2));
-    const { id, name, sellingPrice, unit, categoryId, imageUrl, description } = body;
+    const { id, name, sellingPrice, unit, categoryId, imageUrl, description, price } = body;
 
     // 🟢 BULK UPDATE SUPPORT
     if (body.ids && Array.isArray(body.ids)) {
@@ -498,6 +498,7 @@ export async function PUT(req: Request) {
       where: { id },
       data: {
         name: name ?? undefined,
+        price: price !== undefined ? Number(price) : undefined,
         sellingPrice:
           sellingPrice !== undefined ? Number(sellingPrice) : undefined,
         unit: unit ?? undefined,
