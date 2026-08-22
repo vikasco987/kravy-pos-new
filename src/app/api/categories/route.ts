@@ -17,13 +17,17 @@ export async function GET() {
           { clerkId: null }
         ],
       },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
+      select: { id: true, name: true, sortOrder: true },
+      orderBy: [
+        { sortOrder: { sort: 'asc', nulls: 'last' } },
+        { name: "asc" }
+      ],
     });
 
     const safeCategories = categories.map((cat) => ({
       id: String(cat.id),
       name: cat.name,
+      sortOrder: cat.sortOrder,
     }));
 
     return NextResponse.json(safeCategories, { status: 200 });

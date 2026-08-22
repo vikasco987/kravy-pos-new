@@ -2904,13 +2904,14 @@ export default function ViewMenuPage() {
            onClose={() => setShowReorderModal(false)}
            onSave={async (orderedIds: string[]) => {
               try {
+                setShowReorderModal(false);
+                setToast("Saving order...");
                 const res = await fetch("/api/categories/order", {
                   method: "PUT",
                   headers: { "Content-Type": "application/json", ...(asUserId ? { "x-impersonate-id": asUserId } : {}) },
                   body: JSON.stringify({ categoryIds: orderedIds })
                 });
                 if(res.ok) {
-                   setShowReorderModal(false);
                    fetchMenus();
                    setToast("Category order saved!");
                 }
@@ -2918,12 +2919,13 @@ export default function ViewMenuPage() {
            }}
            onReset={async () => {
               try {
+                setShowReorderModal(false);
+                setToast("Resetting order...");
                 const res = await fetch("/api/categories/order", { 
                   method: "DELETE",
                   headers: { ...(asUserId ? { "x-impersonate-id": asUserId } : {}) }
                 });
                 if(res.ok) {
-                   setShowReorderModal(false);
                    fetchMenus();
                    setToast("Category order reset to alphabetical!");
                 }

@@ -430,7 +430,7 @@ export default function CheckoutClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryLayout, setCategoryLayout] = useState<'horizontal' | 'vertical'>('horizontal');
 
-  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
+  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string; sortOrder?: number | null }[]>([]);
   const [availableZones, setAvailableZones] = useState<string[]>([]);
   const [addonGroups, setAddonGroups] = useState<any[]>([]);
 
@@ -873,7 +873,7 @@ export default function CheckoutClient() {
              const newList = [...prev];
              mapped.forEach((it: any) => {
                if (it.category && !newList.find(c => c.id === it.category.id)) {
-                 newList.push({ id: it.category.id, name: it.category.name });
+                 newList.push({ id: it.category.id, name: it.category.name, sortOrder: it.category.sortOrder || null });
                }
              });
              return newList;
@@ -886,9 +886,19 @@ export default function CheckoutClient() {
           setCategoriesList(prev => {
             const merged = [...prev];
             data.forEach((c: any) => {
-              if (!merged.find(m => m.id === c.id)) merged.push(c);
+              const existing = merged.find(m => m.id === c.id);
+              if (existing) {
+                existing.sortOrder = c.sortOrder;
+              } else {
+                merged.push(c);
+              }
             });
-            return merged;
+            return merged.sort((a, b) => {
+              if (a.sortOrder != null && b.sortOrder != null) return a.sortOrder - b.sortOrder;
+              if (a.sortOrder != null) return -1;
+              if (b.sortOrder != null) return 1;
+              return a.name.localeCompare(b.name);
+            });
           });
         }
 
@@ -1085,11 +1095,28 @@ export default function CheckoutClient() {
     }
   }, [selectedTable, tables, business?.multiZoneMenuEnabled]);
 
-  // Show all created categories in categoriesList regardless of whether they have items in them
+  // Show categories that have items in the current zone
   const categories = useMemo(() => {
-    const catNames = categoriesList.map(c => c.name);
-    return Array.from(new Set(catNames)).filter(Boolean).sort();
-  }, [categoriesList]);
+    const validCats = categoriesList.filter(c => {
+      if (activeZone === "All") return true;
+      // Does this category have items in this zone?
+      const hasItemsInZone = menuItems.some(i => 
+        i.category?.id === c.id && 
+        (i.zones?.includes(activeZone) || !i.zones?.length)
+      );
+      return hasItemsInZone;
+    });
+    
+    // Sort logic
+    validCats.sort((a, b) => {
+      if (a.sortOrder != null && b.sortOrder != null) return (a.sortOrder as number) - (b.sortOrder as number);
+      if (a.sortOrder != null) return -1;
+      if (b.sortOrder != null) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    return Array.from(new Set(validCats.map(c => c.name))).filter(Boolean);
+  }, [categoriesList, activeZone, menuItems]);
 
   const filteredMenuItems = useMemo(() => {
     const rawFiltered = menuItems
