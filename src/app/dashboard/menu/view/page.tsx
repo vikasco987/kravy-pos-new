@@ -1446,6 +1446,39 @@ export default function ViewMenuPage() {
     return list;
   }, [sortedItems, menus, filterCategory]);
 
+  const sidebarCategories = useMemo(() => {
+    return menus.map(m => {
+      const filteredItems = m.items.filter((it: any) => {
+        let match = true;
+        
+        // Zone filter
+        if (filterZone !== "all") {
+          const targetZone = filterZone.toUpperCase();
+          const zones: string[] = Array.isArray(it.zones) ? it.zones : [];
+          match = match && zones.some((z: string) => z.toUpperCase() === targetZone);
+        }
+        
+        // Search filter
+        if (query.trim()) {
+           const q = query.trim().toLowerCase();
+           match = match && ((it.name?.toLowerCase() ?? "").includes(q) || m.name.toLowerCase().includes(q));
+        }
+        
+        // Image filter
+        if (filterHasImage === "only") match = match && !!it.imageUrl;
+        if (filterHasImage === "none") match = match && !it.imageUrl;
+        
+        // Price filter
+        if (priceMin !== "") match = match && (it.price ?? 0) >= Number(priceMin);
+        if (priceMax !== "") match = match && (it.price ?? 0) <= Number(priceMax);
+
+        return match;
+      });
+      
+      return { ...m, items: filteredItems };
+    }).filter(m => m.items.length > 0);
+  }, [menus, filterZone, query, filterHasImage, priceMin, priceMax]);
+
   const addToCart = (item: MenuItem) => {
     setCart((prev) => { const existing = prev[item.id]; return { ...prev, [item.id]: { ...item, quantity: existing ? existing.quantity + 1 : 1 } }; });
   };
@@ -2091,7 +2124,7 @@ export default function ViewMenuPage() {
               >
                 All
               </button>
-              {menus.map((m) => (
+              {sidebarCategories.map((m) => (
                 <button 
                   key={m.id} 
                   onClick={() => { setFilterCategory(m.id); setActiveCategory(m.id); const el = document.getElementById(`cat-${m.id}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }} 
@@ -2139,7 +2172,7 @@ export default function ViewMenuPage() {
               All Items
             </button>
 
-            {menus.map((m) => (
+            {sidebarCategories.map((m) => (
               <div key={m.id} className="group relative">
                 <button 
                   onClick={() => { 
@@ -2298,7 +2331,7 @@ export default function ViewMenuPage() {
                                 <span>No Image</span>
                                 <span className="text-[9px] text-indigo-500 font-black lowercase normal-case tracking-normal">(click to add)</span>
                               </div>
-                            </div>
+                            )}
                             
                             {/* Status Badge & Zone Badge */}
                             <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 flex-wrap">
