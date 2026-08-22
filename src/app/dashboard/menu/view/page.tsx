@@ -2330,6 +2330,7 @@ export default function ViewMenuPage() {
                                 <div className="text-[var(--kravy-text-faint)] font-bold text-xs uppercase tracking-widest flex flex-col items-center gap-1">
                                 <span>No Image</span>
                                 <span className="text-[9px] text-indigo-500 font-black lowercase normal-case tracking-normal">(click to add)</span>
+                                </div>
                               </div>
                             )}
                             
