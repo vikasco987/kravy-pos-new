@@ -340,7 +340,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles, Image as ImageIcon, Loader2, Globe, Zap, Printer, File } from "lucide-react";
+import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles, Image as ImageIcon, Loader2, Globe, Zap, Printer, File, Heart } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ItemModal from "@/components/MenuEditor/ItemModal";
 import { useConfirm } from "@/components/ConfirmContext";
@@ -372,11 +372,13 @@ type MenuItem = {
   shortCode?: string | null;
   isActive: boolean;
   expiryDate?: string | null;
+  isFavorite: boolean;
 };
 
 type MenuCategory = {
   id: string;
   name: string;
+  sortOrder?: number | null;
   items: MenuItem[];
 };
 
@@ -449,6 +451,7 @@ export default function ViewMenuPage() {
 
   // Sync All state
   const [syncProgress, setSyncProgress] = useState<{ completed: number; total: number } | null>(null);
+  const [showReorderModal, setShowReorderModal] = useState(false);
 
   // filters & UI
   const [query, setQuery] = useState("");
@@ -1284,6 +1287,7 @@ export default function ViewMenuPage() {
           categoryMap.set(catId, {
             id: catId,
             name: catName,
+            sortOrder: it.category?.sortOrder ?? null,
             items: [],
           });
         }
@@ -1302,16 +1306,37 @@ export default function ViewMenuPage() {
           isVeg: it.isVeg ?? true,
           isEgg: !!it.isEgg,
           isBestseller: !!it.isBestseller,
-          isRecommended: !!it.isRecommended,
           isNew: !!it.isNew,
+          isFavorite: !!it.isFavorite,
           shortCode: it.shortCode ?? null,
           expiryDate: it.expiryDate ? new Date(it.expiryDate).toISOString().split('T')[0] : null,
         });
       });
 
-      const finalCategories = Array.from(categoryMap.values()).filter(
+      let finalCategories = Array.from(categoryMap.values()).filter(
         (c) => c.items.length > 0
       );
+
+      finalCategories.sort((a, b) => {
+        const aVal = a.sortOrder;
+        const bVal = b.sortOrder;
+        if (aVal !== null && aVal !== undefined && (bVal === null || bVal === undefined)) return -1;
+        if (bVal !== null && bVal !== undefined && (aVal === null || aVal === undefined)) return 1;
+        if (aVal !== null && aVal !== undefined && bVal !== null && bVal !== undefined) {
+           if (aVal !== bVal) return aVal - bVal;
+        }
+        return a.name.localeCompare(b.name);
+      });
+
+      const favoriteItems = finalCategories.flatMap(c => c.items.filter(it => it.isFavorite));
+      if (favoriteItems.length > 0) {
+        finalCategories.unshift({
+          id: "favorites_virtual",
+          name: "♥ Favorites",
+          sortOrder: -9999,
+          items: favoriteItems,
+        });
+      }
 
       setMenus(finalCategories);
       setActiveCategory(finalCategories[0]?.id ?? null);
@@ -1456,10 +1481,32 @@ export default function ViewMenuPage() {
         ...cat,
         items: cat.items.map(it => it.id === item.id ? { ...it, isActive: newStatus } : it)
       })));
+      fetchMenus();
       setToast(`Item ${item.name} is now ${newStatus ? "Online" : "Offline"}`);
     } catch (err: any) {
       console.error(err);
       setToast(err?.message ?? "Toggle failed");
+    }
+  }
+
+  async function handleToggleFavorite(item: MenuItem) {
+    try {
+      const newStatus = !item.isFavorite;
+      const res = await fetch("/api/items", {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          ...(asUserId ? { "x-impersonate-id": asUserId } : {})
+        },
+        body: JSON.stringify({ id: item.id, isFavorite: newStatus }),
+      });
+      if (res.ok) {
+        fetchMenus();
+        setToast(`Item ${item.name} is now ${newStatus ? "in Favorites" : "removed from Favorites"}`);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setToast("Failed to toggle favorite status");
     }
   }
 
@@ -2069,12 +2116,18 @@ export default function ViewMenuPage() {
         {/* Sidebar: Navigation Rail (The "Slider" requested by user) */}
         <aside className="hidden md:flex flex-col w-[260px] flex-shrink-0 bg-[var(--kravy-surface)] border-r border-[var(--kravy-border)] shadow-xl z-30">
           <div className="p-6 pb-2">
-            <h3 className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em] mb-6 flex items-center justify-between">
-              MENU CATEGORIES
-              <span className="bg-indigo-500/10 text-indigo-600 p-1.5 rounded-lg">
-                <ChevronDown size={14} />
-              </span>
-            </h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">
+                MENU CATEGORIES
+              </h3>
+              <button 
+                onClick={() => setShowReorderModal(true)}
+                className="bg-indigo-500/10 text-indigo-600 hover:bg-indigo-600 hover:text-white p-1.5 rounded-lg transition-all"
+                title="Customize Category Order"
+              >
+                <Sparkles size={14} />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto no-scrollbar px-3 pb-8 space-y-1">
@@ -2224,13 +2277,28 @@ export default function ViewMenuPage() {
                                 >
                                   <X size={12} strokeWidth={3} />
                                 </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleToggleFavorite(item); }}
+                                  className={`absolute top-2 left-2 rounded-full p-1.5 shadow-md z-20 transition-all ${item.isFavorite ? "bg-white opacity-100" : "bg-white/50 opacity-0 group-hover/img:opacity-100 hover:bg-white"}`}
+                                  title={item.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                                >
+                                  <Heart size={16} className={item.isFavorite ? "fill-rose-500 text-rose-500" : "text-slate-500"} />
+                                </button>
                               </div>
                             ) : (
-                              <div className="text-[var(--kravy-text-faint)] font-bold text-xs uppercase tracking-widest flex flex-col items-center gap-1">
+                              <div className="flex flex-col items-center justify-center text-[var(--kravy-text-secondary)] opacity-50 relative w-full h-full">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleToggleFavorite(item); }}
+                                  className={`absolute top-2 left-2 rounded-full p-1.5 shadow-md z-20 transition-all ${item.isFavorite ? "bg-white opacity-100" : "bg-[var(--kravy-bg)] opacity-0 group-hover:opacity-100 hover:bg-white"}`}
+                                  title={item.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                                >
+                                  <Heart size={16} className={item.isFavorite ? "fill-rose-500 text-rose-500" : "text-slate-500"} />
+                                </button>
+                                <div className="text-[var(--kravy-text-faint)] font-bold text-xs uppercase tracking-widest flex flex-col items-center gap-1">
                                 <span>No Image</span>
                                 <span className="text-[9px] text-indigo-500 font-black lowercase normal-case tracking-normal">(click to add)</span>
                               </div>
-                            )}
+                            </div>
                             
                             {/* Status Badge & Zone Badge */}
                             <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 flex-wrap">
@@ -2795,6 +2863,41 @@ export default function ViewMenuPage() {
           </div>
         </div>
       )}
+      {/* 🚀 CATEGORY REORDER MODAL */}
+      {showReorderModal && (
+        <CategoryReorderModal
+           menus={menus}
+           onClose={() => setShowReorderModal(false)}
+           onSave={async (orderedIds: string[]) => {
+              try {
+                const res = await fetch("/api/categories/order", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json", ...(asUserId ? { "x-impersonate-id": asUserId } : {}) },
+                  body: JSON.stringify({ categoryIds: orderedIds })
+                });
+                if(res.ok) {
+                   setShowReorderModal(false);
+                   fetchMenus();
+                   setToast("Category order saved!");
+                }
+              } catch (e) { console.error(e); setToast("Failed to reorder categories"); }
+           }}
+           onReset={async () => {
+              try {
+                const res = await fetch("/api/categories/order", { 
+                  method: "DELETE",
+                  headers: { ...(asUserId ? { "x-impersonate-id": asUserId } : {}) }
+                });
+                if(res.ok) {
+                   setShowReorderModal(false);
+                   fetchMenus();
+                   setToast("Category order reset to alphabetical!");
+                }
+              } catch (e) { console.error(e); setToast("Failed to reset category order"); }
+           }}
+        />
+      )}
+
       {/* 🚀 ADMIN IMAGE SEARCH SIDE PANEL */}
       <AnimatePresence>
         {imageSearchItem && (
@@ -3893,4 +3996,66 @@ function ConfirmDelete({ item, onClose, onConfirm }: { item: MenuItem; onClose: 
         </motion.div>
       </div>, document.body
     );
+}
+
+function CategoryReorderModal({ menus, onClose, onSave, onReset }: any) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const validCategories = menus.filter((m: any) => m.id !== 'favorites_virtual' && m.id !== '__uncategorised__');
+  const [reorderList, setReorderList] = useState(validCategories);
+
+  if (!mounted) return null;
+
+  const moveUp = (idx: number) => {
+    if (idx === 0) return;
+    const newList = [...reorderList];
+    const temp = newList[idx - 1];
+    newList[idx - 1] = newList[idx];
+    newList[idx] = temp;
+    setReorderList(newList);
+  };
+
+  const moveDown = (idx: number) => {
+    if (idx === reorderList.length - 1) return;
+    const newList = [...reorderList];
+    const temp = newList[idx + 1];
+    newList[idx + 1] = newList[idx];
+    newList[idx] = temp;
+    setReorderList(newList);
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+       <div className="relative bg-[var(--kravy-surface)] w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[80vh] border border-[var(--kravy-border)] animate-in fade-in zoom-in-95 duration-200">
+          <div className="p-6 border-b border-[var(--kravy-border)]/50 flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-black text-[var(--kravy-text-primary)]">Customize Order</h3>
+              <p className="text-[10px] text-[var(--kravy-text-muted)] font-black uppercase tracking-widest mt-1">Reorder Categories on POS</p>
+            </div>
+            <button onClick={onClose} className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"><X size={20} className="text-[var(--kravy-text-primary)]" /></button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar">
+            {reorderList.map((m: any, idx: number) => (
+              <div key={m.id} className="flex items-center gap-4 bg-[var(--kravy-bg)] p-3 px-4 rounded-2xl border border-[var(--kravy-border)] group hover:border-indigo-500/50 transition-colors shadow-sm">
+                <span className="font-black text-sm text-[var(--kravy-text-primary)] flex-1">{m.name}</span>
+                <div className="flex items-center gap-1.5">
+                  <button disabled={idx === 0} onClick={() => moveUp(idx)} className="p-2 bg-[var(--kravy-surface)] rounded-xl border border-[var(--kravy-border)] disabled:opacity-20 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 transition-all text-[var(--kravy-text-secondary)] shadow-sm">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                  </button>
+                  <button disabled={idx === reorderList.length - 1} onClick={() => moveDown(idx)} className="p-2 bg-[var(--kravy-surface)] rounded-xl border border-[var(--kravy-border)] disabled:opacity-20 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 transition-all text-[var(--kravy-text-secondary)] shadow-sm">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="p-5 border-t border-[var(--kravy-border)]/50 flex gap-3">
+             <button onClick={onReset} className="px-6 py-4 text-xs uppercase tracking-widest font-black text-rose-500 bg-rose-50 dark:bg-rose-500/10 rounded-2xl hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-all shadow-sm">Reset</button>
+             <button onClick={() => onSave(reorderList.map((m: any) => m.id))} className="flex-1 py-4 text-xs uppercase tracking-widest font-black bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:bg-indigo-700 transition-all active:scale-95">Save Order</button>
+          </div>
+       </div>
+    </div>, document.body
+  );
 }

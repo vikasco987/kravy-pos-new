@@ -46,6 +46,7 @@ model Category {
   id      String  @id @default(auto()) @map("_id") @db.ObjectId
   name    String
   clerkId String?
+  sortOrder Int?
 
   parentId String?    @db.ObjectId
   parent   Category?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -94,6 +95,7 @@ model Item {
   isBestseller  Boolean @default(false)
   isRecommended Boolean @default(false)
   isNew         Boolean @default(false)
+  isFavorite    Boolean @default(false)
   spiciness     String? // mild, medium, hot
   rating        Float?  @default(4.5)
   hiName        String?
