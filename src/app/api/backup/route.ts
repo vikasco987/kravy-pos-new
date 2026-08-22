@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 import prisma from "@/lib/prisma";
 import { runMongoBackup } from "@/lib/backup/mongodb-backup";
 
 export async function GET(req: Request) {
   try {
-    const { userId } = auth();
+    const userId = await getEffectiveClerkId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -24,7 +24,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { userId } = auth();
+    const userId = await getEffectiveClerkId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
