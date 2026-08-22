@@ -66,7 +66,7 @@ export async function POST(req: Request) {
                 jtiHash: newHashedJti
             },
             JWT_SECRET,
-            { expiresIn: "15m" }
+            { expiresIn: "90d" }
         );
 
         // Find the specific old token to inherit its device metadata
@@ -104,10 +104,10 @@ export async function POST(req: Request) {
 
         // 4. Set Cookies on the response object
         response.cookies.set("kravy_auth_token", newAccessToken, {
-            httpOnly: true, 
+            httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
-            maxAge: 60 * 15, // 15 minutes
+            maxAge: 90 * 24 * 60 * 60, // 90 days
             path: "/",
         });
         

@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
         jtiHash: hashedJti
       },
       JWT_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "90d" }
     );
 
     // 🎟️ 5. Generate Refresh JWT (90d)
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 15 * 60 // 15 minutes
+      maxAge: 90 * 24 * 60 * 60 // 90 days
     });
 
     response.cookies.set("kravy_refresh_token", refreshToken, {
