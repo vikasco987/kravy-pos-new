@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { 
   ChevronLeft, Database, Download, CloudUpload, AlertCircle, CheckCircle2, Clock, 
-  RotateCcw, Sparkles
+  RotateCcw, Sparkles, Trash2, CheckSquare
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -24,6 +24,10 @@ export default function BackupSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [backups, setBackups] = useState<BackupRecord[]>([]);
   const [isTriggering, setIsTriggering] = useState(false);
+  
+  // Bulk Selection State
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchBackups = async () => {
     try {
@@ -67,6 +71,51 @@ export default function BackupSettingsPage() {
     }
   };
 
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(backups.map(b => b.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    const newSet = new Set(selectedIds);
+    if (checked) {
+      newSet.add(id);
+    } else {
+      newSet.delete(id);
+    }
+    setSelectedIds(newSet);
+  };
+
+  const deleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedIds.size} backup(s)?`)) return;
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch("/api/backup", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ backupIds: Array.from(selectedIds) })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        toast.success(data.message || "Backups deleted successfully!");
+        setSelectedIds(new Set());
+        fetchBackups();
+      } else {
+        toast.error(data.error || "Failed to delete backups");
+      }
+    } catch (error) {
+      toast.error("An error occurred while deleting backups");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const formatSize = (bytes: number) => {
     if (bytes === 0) return "---";
     const mb = bytes / (1024 * 1024);
@@ -81,6 +130,8 @@ export default function BackupSettingsPage() {
   };
 
   const isBackupPending = backups.some(b => b.status === 'PENDING');
+  const allSelected = backups.length > 0 && selectedIds.size === backups.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < backups.length;
 
   return (
     <div className="max-w-4xl space-y-8 pb-20 kravy-page-fade">
@@ -150,18 +201,44 @@ export default function BackupSettingsPage() {
 
       {/* History Section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between px-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-2 gap-4">
           <h3 className="text-lg font-black text-[var(--kravy-text-primary)]">Recent Backups</h3>
-          <button 
-            onClick={fetchBackups}
-            className="flex items-center gap-2 text-sm font-bold text-[var(--kravy-brand)] hover:opacity-80 transition-opacity"
-          >
-            <RotateCcw size={16} className={loading ? "animate-spin" : ""} />
-            Refresh
-          </button>
+          <div className="flex items-center gap-4">
+            {selectedIds.size > 0 && (
+              <button 
+                onClick={deleteSelected}
+                disabled={isDeleting}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? <Clock size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                Delete Selected ({selectedIds.size})
+              </button>
+            )}
+            <button 
+              onClick={fetchBackups}
+              className="flex items-center gap-2 text-sm font-bold text-[var(--kravy-brand)] hover:opacity-80 transition-opacity"
+            >
+              <RotateCcw size={16} className={loading ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          </div>
         </div>
 
         <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[24px] overflow-hidden">
+          {/* Header row for bulk actions */}
+          {backups.length > 0 && (
+            <div className="flex items-center gap-4 p-4 border-b border-[var(--kravy-border)] bg-[var(--kravy-surface-hover)]">
+              <input 
+                type="checkbox" 
+                className="w-5 h-5 rounded cursor-pointer accent-[var(--kravy-brand)]"
+                checked={allSelected}
+                ref={(input) => { if (input) input.indeterminate = someSelected }}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+              />
+              <span className="text-sm font-bold text-[var(--kravy-text-muted)]">Select All</span>
+            </div>
+          )}
+
           {loading && backups.length === 0 ? (
             <div className="p-12 flex justify-center">
               <div className="w-8 h-8 border-4 border-[var(--kravy-brand)] border-t-transparent rounded-full animate-spin"></div>
@@ -174,8 +251,18 @@ export default function BackupSettingsPage() {
           ) : (
             <div className="divide-y divide-[var(--kravy-border)]">
               {backups.map((backup) => (
-                <div key={backup.id} className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[var(--kravy-surface-hover)] transition-colors">
+                <div key={backup.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[var(--kravy-surface-hover)] transition-colors">
                   <div className="flex items-start sm:items-center gap-4">
+                    
+                    <div className="flex items-center justify-center h-12 w-6">
+                      <input 
+                        type="checkbox" 
+                        className="w-5 h-5 rounded cursor-pointer accent-[var(--kravy-brand)]"
+                        checked={selectedIds.has(backup.id)}
+                        onChange={(e) => handleSelectOne(backup.id, e.target.checked)}
+                      />
+                    </div>
+
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
                       backup.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' :
                       backup.status === 'FAILED' ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400' :
@@ -187,13 +274,13 @@ export default function BackupSettingsPage() {
                     </div>
                     
                     <div>
-                      <h4 className="font-bold text-[var(--kravy-text-primary)] break-all max-w-sm sm:max-w-md truncate" title={backup.filename}>
+                      <h4 className="font-bold text-[var(--kravy-text-primary)] break-all max-w-[200px] sm:max-w-xs md:max-w-md truncate" title={backup.filename}>
                         {backup.filename}
                       </h4>
                       <div className="flex items-center gap-3 mt-1.5 text-sm font-medium text-[var(--kravy-text-muted)]">
                         <span>{formatDate(backup.createdAt)}</span>
-                        <span className="w-1 h-1 rounded-full bg-[var(--kravy-border)]"></span>
-                        <span>{formatSize(backup.fileSize)}</span>
+                        <span className="hidden sm:inline w-1 h-1 rounded-full bg-[var(--kravy-border)]"></span>
+                        <span className="hidden sm:inline">{formatSize(backup.fileSize)}</span>
                         <span className="w-1 h-1 rounded-full bg-[var(--kravy-border)]"></span>
                         <span className={`font-bold ${
                           backup.status === 'SUCCESS' ? 'text-emerald-500' :

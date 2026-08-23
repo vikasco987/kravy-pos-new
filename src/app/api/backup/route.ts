@@ -38,3 +38,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const userId = await getEffectiveClerkId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    
+    const { backupIds } = await req.json();
+    if (!Array.isArray(backupIds) || backupIds.length === 0) {
+      return NextResponse.json({ error: "Invalid backupIds" }, { status: 400 });
+    }
+    
+    await prisma.backup.deleteMany({
+      where: {
+        id: { in: backupIds }
+      }
+    });
+    
+    return NextResponse.json({ success: true, message: "Backups deleted successfully" });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
