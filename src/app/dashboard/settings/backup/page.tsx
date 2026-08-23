@@ -169,6 +169,12 @@ export default function BackupSettingsPage() {
             <p className="text-base text-[var(--kravy-text-muted)] font-medium leading-relaxed">
               Generate a full snapshot of your store's database and securely upload it to your AWS S3 bucket. Depending on your data size, this might take a few minutes.
             </p>
+            <button 
+              onClick={() => router.push("/dashboard/docs/auto-backup")}
+              className="mt-6 text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1.5 transition-colors"
+            >
+              Learn how to automate this daily with Cron Jobs →
+            </button>
           </div>
           
           <div className="shrink-0">
