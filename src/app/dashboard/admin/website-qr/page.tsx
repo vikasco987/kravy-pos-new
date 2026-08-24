@@ -159,7 +159,7 @@ export default function WebsiteQRManagerPage() {
                         />
                         {/* Centered Logo over QR Code */}
                         <div className="absolute flex items-center justify-center bg-white rounded-xl shadow p-2 overflow-hidden z-10" style={{ width: '60px', height: '60px' }}>
-                            <img src="/chicken-logo.png" alt="Logo" className="w-full h-full object-contain" />
+                            <img src="/chicken-logo.png?v=2" alt="Logo" className="w-full h-full object-contain" />
                         </div>
                     </div>
 
@@ -189,7 +189,7 @@ export default function WebsiteQRManagerPage() {
                         style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
                     >
                         <div className="flex justify-center mb-8">
-                            <img src="/chicken-logo.png" alt="Chicken Extension" className="h-20 object-contain drop-shadow-md" />
+                            <img src="/chicken-logo.png?v=2" alt="Chicken Extension" className="h-20 object-contain drop-shadow-md" />
                         </div>
                         
                         <div style={{ minHeight: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -210,7 +210,7 @@ export default function WebsiteQRManagerPage() {
                                 />
                                 {/* Centered Logo over QR Code */}
                                 <div className="absolute flex items-center justify-center bg-white rounded-2xl shadow-xl p-2.5 overflow-hidden z-10" style={{ width: '75px', height: '75px' }}>
-                                    <img src="/chicken-logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-sm" />
+                                    <img src="/chicken-logo.png?v=2" alt="Logo" className="w-full h-full object-contain drop-shadow-sm" />
                                 </div>
                             </div>
                         </div>
