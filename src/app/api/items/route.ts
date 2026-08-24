@@ -365,14 +365,15 @@ export async function POST(req: Request) {
 
     console.log("🚀 [API_ITEMS_POST] Incoming Body:", JSON.stringify(body, null, 2));
 
-    if (!body?.name || body.price == null) {
+    if (!body?.name || (body.price == null && body.sellingPrice == null)) {
       console.log("ITEM CREATE VALIDATION FAILED:", {
         name: !!body?.name,
         price: body?.price != null,
+        sellingPrice: body?.sellingPrice != null,
         body: body
       });
       return NextResponse.json(
-        { error: "Missing required fields", missing: { name: !body?.name, price: body?.price == null } },
+        { error: "Missing required fields", missing: { name: !body?.name, priceOrSellingPrice: body?.price == null && body?.sellingPrice == null } },
         { status: 400 }
       );
     }
@@ -383,7 +384,7 @@ export async function POST(req: Request) {
     });
 
     let inventoryCode = null;
-    let sellingPrice = body.sellingPrice != null ? Number(body.sellingPrice) : Number(body.price);
+    let sellingPrice = body.sellingPrice != null ? Number(body.sellingPrice) : (body.price != null ? Number(body.price) : 0);
 
     if (businessProfile?.enableSerialNumber) {
       // 1. Determine the base number (from recycled pool or counter)
@@ -430,7 +431,7 @@ export async function POST(req: Request) {
     const item = await prisma.item.create({
       data: {
         name: body.name,
-        price: Number(body.price),
+        price: body.price != null ? Number(body.price) : null,
         sellingPrice: sellingPrice,
         unit: body.unit || null,
         imageUrl: body.imageUrl || null,

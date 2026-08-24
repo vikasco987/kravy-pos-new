@@ -124,12 +124,6 @@ export default function Page() {
 
     if (!formRef.current) return;
 
-    if (!image) {
-      alert("Please upload an image before saving.");
-      setIsSaving(false);
-      return;
-    }
-
     const parseFloatOrNull = (v: string) => {
       const n = parseFloat(v);
       return isNaN(n) ? null : n;
@@ -141,11 +135,11 @@ export default function Page() {
 
     const itemData = {
       name: formData.productName || undefined,
-      price: parseFloatOrNull(formData.sellPrice),
+      sellingPrice: parseFloatOrNull(formData.sellPrice),
+      price: parseFloatOrNull(formData.purchasePrice),
       unit: formData.itemUnit || null,
       categoryId: selectedCategory,
       mrp: parseFloatOrNull(formData.mrp),
-      purchasePrice: parseFloatOrNull(formData.purchasePrice),
       gst: parseFloatOrNull(formData.gst),
       otherTax: parseFloatOrNull(formData.otherTax),
       brand: formData.brand || null,
@@ -159,7 +153,7 @@ export default function Page() {
       displayCategory: formData.displayCategory || null,
       displayColor: formData.displayColor || null,
       shortCode: formData.shortCode || null,
-      imageUrl: image,
+      imageUrl: image || null,
       hsnCode: formData.hsnCode || null,
       zones: formData.zones ? formData.zones.split(',').map((z: string) => z.trim()).filter(Boolean) : [],
       expiryDate: formData.expiryDate || null,
