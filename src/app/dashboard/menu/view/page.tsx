@@ -883,8 +883,10 @@ export default function ViewMenuPage() {
           });
           if (catRes.ok) {
             const newCat = await catRes.json();
-            categoryId = newCat.id;
-            categoriesMap.set(catKey, categoryId);
+            categoryId = newCat.id || newCat.category?.id;
+            if (categoryId) {
+              categoriesMap.set(catKey, categoryId);
+            }
           }
         }
 
