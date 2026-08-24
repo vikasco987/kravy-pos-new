@@ -2438,7 +2438,7 @@ export default function ViewMenuPage() {
                                   ) : (
                                     <h4 
                                       onClick={(e) => { e.stopPropagation(); setEditingField({ id: item.id, field: "name", value: item.name }); }} 
-                                      className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base group-hover:text-indigo-500 transition-colors cursor-pointer break-words leading-tight"
+                                      className="font-bold text-[var(--kravy-text-primary)] text-sm md:text-base group-hover:text-indigo-500 transition-colors cursor-pointer break-normal whitespace-normal line-clamp-3 leading-tight pr-2"
                                       title="Click to edit name"
                                     >
                                       {item.name}
