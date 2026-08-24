@@ -308,7 +308,7 @@ export default function Page() {
               placeholder="MRP"
               value={formData.mrp}
               onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-3"
+              className="w-full border rounded-lg px-4 py-3 text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-400 outline-none bg-gray-50"
             />
             <input
               type="number"
@@ -316,7 +316,7 @@ export default function Page() {
               placeholder="Purchase Price"
               value={formData.purchasePrice}
               onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-3"
+              className="w-full border rounded-lg px-4 py-3 text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-400 outline-none bg-gray-50"
             />
           </div>
 
