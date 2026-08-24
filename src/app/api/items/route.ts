@@ -532,7 +532,7 @@ export async function PUT(req: Request) {
 
     const existing = await prisma.item.findFirst({
       where: { id, clerkId: effectiveId },
-      select: { id: true },
+      select: { id: true, inventoryCode: true, sellingPrice: true, currentStock: true },
     });
 
     if (!existing) {
@@ -540,6 +540,47 @@ export async function PUT(req: Request) {
         { error: "Item not found" },
         { status: 404 }
       );
+    }
+
+    let inventoryCodeToSet: string | null | undefined = undefined;
+
+    // ✅ Recycle inventory code if stock becomes 0
+    if (body.currentStock !== undefined && Number(body.currentStock) === 0 && existing.inventoryCode) {
+      const code = existing.inventoryCode;
+      const sp = existing.sellingPrice?.toString() || "";
+      
+      const prefix = code.substring(0, 2);
+      const remaining = code.substring(2);
+      
+      let baseCounter: number | null = null;
+      
+      if (remaining.startsWith(sp)) {
+        const suffix = remaining.substring(sp.length);
+        const reconstructedBase = parseInt(prefix + suffix, 10);
+        if (!isNaN(reconstructedBase)) {
+          baseCounter = reconstructedBase;
+        }
+      }
+
+      if (baseCounter !== null) {
+        const dbUser = await findOrCreateDBUser(effectiveId);
+        const bp = await prisma.businessProfile.findFirst({
+          where: { userId: dbUser.clerkId || dbUser.id }
+        });
+        
+        if (bp && bp.enableSerialNumber) {
+          await prisma.businessProfile.update({
+            where: { id: bp.id },
+            data: {
+              recycledCounters: {
+                push: baseCounter
+              }
+            }
+          });
+          // Free the inventory code on the item
+          inventoryCodeToSet = null;
+        }
+      }
     }
 
     const updated = await prisma.item.update({
@@ -577,6 +618,7 @@ export async function PUT(req: Request) {
         reorderLevel: body.reorderLevel !== undefined ? Number(body.reorderLevel) : undefined,
         variants: body.variants !== undefined ? body.variants : undefined,
         addonGroupIds: body.addonGroupIds !== undefined ? body.addonGroupIds : undefined,
+        inventoryCode: inventoryCodeToSet !== undefined ? inventoryCodeToSet : undefined,
         isActive: body.isActive !== undefined ? Boolean(body.isActive) : undefined,
         zones: body.zones !== undefined ? body.zones : undefined,
         expiryDate: body.expiryDate !== undefined ? (body.expiryDate ? new Date(body.expiryDate) : null) : undefined,
