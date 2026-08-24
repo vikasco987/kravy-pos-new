@@ -49,6 +49,8 @@ export default function Page() {
     expiryDate: "",
   });
 
+  const [isStockCompulsory, setIsStockCompulsory] = useState(false);
+
   // Load categories from API
   useEffect(() => {
     const loadCategories = async () => {
@@ -65,7 +67,10 @@ export default function Page() {
       try {
         const res = await fetch("/api/profile");
         const data = await res.json();
-        if (res.ok) setExpiryTrackingEnabled(data.expiryTrackingEnabled || false);
+        if (res.ok) {
+          setExpiryTrackingEnabled(data.expiryTrackingEnabled || false);
+          setIsStockCompulsory(data.isStockCompulsory || false);
+        }
       } catch (err) {
         console.error("Failed to load profile", err);
       }
@@ -339,6 +344,7 @@ export default function Page() {
               formData={formData}
               handleChange={handleChange}
               showExpiry={expiryTrackingEnabled}
+              isStockCompulsory={isStockCompulsory}
             />
             <DisplaySection
               openSection={openSection}

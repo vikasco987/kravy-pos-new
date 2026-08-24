@@ -377,14 +377,61 @@ export async function POST(req: Request) {
       );
     }
 
+    // ✅ Handle Inventory / Serial Number Logic
+    const businessProfile = await prisma.businessProfile.findFirst({
+      where: { userId: dbUser.clerkId || dbUser.id },
+    });
+
+    let inventoryCode = null;
+    let sellingPrice = body.sellingPrice != null ? Number(body.sellingPrice) : Number(body.price);
+
+    if (businessProfile?.enableSerialNumber) {
+      // 1. Determine the base number (from recycled pool or counter)
+      let baseNumber = 100;
+      let isRecycled = false;
+
+      if (businessProfile.recycledCounters && businessProfile.recycledCounters.length > 0) {
+        // Take the first available recycled number
+        baseNumber = businessProfile.recycledCounters[0];
+        isRecycled = true;
+      } else {
+        baseNumber = businessProfile.serialCounter || 100;
+      }
+
+      // 2. Format the code: [Prefix] + [SellingPrice] + [Suffix]
+      const strBase = baseNumber.toString();
+      const prefix = strBase.substring(0, 2); // e.g. "10"
+      const suffix = strBase.substring(2);    // e.g. "" (if 100) or "5" (if 105)
+      
+      inventoryCode = `${prefix}${sellingPrice}${suffix}`;
+
+      // 3. Update the business profile (increment counter or remove from recycled)
+      if (isRecycled) {
+        await prisma.businessProfile.update({
+          where: { id: businessProfile.id },
+          data: {
+            recycledCounters: {
+              set: businessProfile.recycledCounters.slice(1) // Remove the first one
+            }
+          }
+        });
+      } else {
+        await prisma.businessProfile.update({
+          where: { id: businessProfile.id },
+          data: {
+            serialCounter: {
+              increment: 1
+            }
+          }
+        });
+      }
+    }
+
     const item = await prisma.item.create({
       data: {
         name: body.name,
         price: Number(body.price),
-        sellingPrice:
-          body.sellingPrice != null
-            ? Number(body.sellingPrice)
-            : Number(body.price),
+        sellingPrice: sellingPrice,
         unit: body.unit || null,
         imageUrl: body.imageUrl || null,
         image: body.imageUrl || null,
@@ -394,6 +441,7 @@ export async function POST(req: Request) {
           ? String(body.categoryId)
           : undefined,
         userId: dbUser.id,
+        inventoryCode: inventoryCode, // ✅ Added Inventory Code
         // Enhanced Fields
         isVeg: body.isVeg !== undefined ? Boolean(body.isVeg) : true,
         isEgg: body.isEgg !== undefined ? Boolean(body.isEgg) : false,
@@ -589,7 +637,7 @@ export async function DELETE(req: Request) {
 
     const existing = await prisma.item.findFirst({
       where: { id, clerkId: effectiveId },
-      select: { id: true },
+      select: { id: true, inventoryCode: true, sellingPrice: true },
     });
 
     if (!existing) {
@@ -597,6 +645,45 @@ export async function DELETE(req: Request) {
         { error: "Item not found" },
         { status: 404 }
       );
+    }
+
+    // ✅ Recycle the base counter if inventoryCode exists
+    if (existing.inventoryCode) {
+      const code = existing.inventoryCode;
+      const sp = existing.sellingPrice?.toString() || "";
+      
+      // Code format: [Prefix: 2 chars] + [SellingPrice] + [Suffix]
+      const prefix = code.substring(0, 2);
+      const remaining = code.substring(2);
+      
+      let baseCounter: number | null = null;
+      
+      if (remaining.startsWith(sp)) {
+        const suffix = remaining.substring(sp.length);
+        const reconstructedBase = parseInt(prefix + suffix, 10);
+        if (!isNaN(reconstructedBase)) {
+          baseCounter = reconstructedBase;
+        }
+      }
+
+      if (baseCounter !== null) {
+        // Push to recycledCounters in BusinessProfile
+        const dbUser = await findOrCreateDBUser(effectiveId);
+        const bp = await prisma.businessProfile.findFirst({
+          where: { userId: dbUser.clerkId || dbUser.id }
+        });
+        
+        if (bp) {
+          await prisma.businessProfile.update({
+            where: { id: bp.id },
+            data: {
+              recycledCounters: {
+                push: baseCounter
+              }
+            }
+          });
+        }
+      }
     }
 
     await prisma.item.delete({ where: { id } });

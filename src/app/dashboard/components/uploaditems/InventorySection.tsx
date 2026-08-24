@@ -17,6 +17,7 @@ interface InventorySectionProps {
   };
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   showExpiry?: boolean;
+  isStockCompulsory?: boolean;
 }
 
 export default function InventorySection({
@@ -25,10 +26,11 @@ export default function InventorySection({
   formData,
   handleChange,
   showExpiry,
+  isStockCompulsory,
 }: InventorySectionProps) {
   return (
     <ExpandableSection
-      title="Inventory Details (Optional)"
+      title={`Inventory Details ${isStockCompulsory ? "(Required)" : "(Optional)"}`}
       section="inventory"
       openSection={openSection}
       toggleSection={toggleSection}
@@ -44,7 +46,8 @@ export default function InventorySection({
       <input
         type="number"
         name="currentStock"
-        placeholder="Current Stock"
+        placeholder={isStockCompulsory ? "Current Stock *" : "Current Stock"}
+        required={isStockCompulsory}
         value={formData.currentStock}
         onChange={handleChange}
         className="w-full border rounded-lg px-4 py-2 text-gray-800 placeholder-gray-500"

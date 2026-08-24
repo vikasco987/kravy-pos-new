@@ -248,6 +248,10 @@ export async function POST(request: Request) {
     if (body.enableMenuQRInBill !== undefined) updateData.enableMenuQRInBill = b(body.enableMenuQRInBill);
     if (body.enableClerkAuth !== undefined) updateData.enableClerkAuth = b(body.enableClerkAuth);
     if (body.enableCustomAuth !== undefined) updateData.enableCustomAuth = b(body.enableCustomAuth);
+    
+    // Inventory Settings
+    if (body.enableSerialNumber !== undefined) updateData.enableSerialNumber = b(body.enableSerialNumber);
+    if (body.isStockCompulsory !== undefined) updateData.isStockCompulsory = b(body.isStockCompulsory);
     if (body.tokenNumberSize !== undefined) updateData.tokenNumberSize = n(body.tokenNumberSize);
     if (body.businessAddressSize !== undefined) updateData.businessAddressSize = n(body.businessAddressSize);
 

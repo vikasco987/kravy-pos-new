@@ -88,6 +88,7 @@ model Item {
   openingStock Float? @default(0)
   currentStock Float? @default(0)
   reorderLevel Float? @default(0)
+  inventoryCode String? // ✅ Generated serial number / inventory code
 
   // QR Menu Enhancements
   isVeg         Boolean @default(true)
@@ -550,6 +551,12 @@ model BusinessProfile {
   isFrozen          Boolean?  @default(false)
   
   expiryTrackingEnabled Boolean @default(false) // ✅ Added to toggle expiry feature
+
+  // ✅ Inventory & Serial Number Tracking
+  enableSerialNumber Boolean @default(false)
+  isStockCompulsory  Boolean @default(false)
+  serialCounter      Int     @default(100)
+  recycledCounters   Int[]   @default([])
 
   updatedAt DateTime @updatedAt
 }
