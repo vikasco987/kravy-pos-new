@@ -451,8 +451,8 @@ export default function WebsiteQRManagerPage() {
                                     level="H"
                                 />
                                 {/* Centered Logo over QR Code */}
-                                <div className="absolute flex items-center justify-center bg-white rounded-xl shadow-lg p-2 overflow-hidden" style={{ width: '64px', height: '64px' }}>
-                                    <img src="/chicken-logo.png" alt="Logo" className="w-full h-full object-contain" />
+                                <div className="absolute flex items-center justify-center bg-white rounded-2xl shadow-xl p-2.5 overflow-hidden z-10" style={{ width: '75px', height: '75px' }}>
+                                    <img src="/chicken-logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-sm" crossOrigin="anonymous" />
                                 </div>
                             </div>
                         </div>
