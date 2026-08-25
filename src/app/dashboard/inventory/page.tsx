@@ -21,6 +21,7 @@ type InventoryItem = {
   price: number;
   sellingPrice: number;
   barcode?: string;
+  inventoryCode?: string | null;
   taxStatus?: string;
   gst?: number;
   hsnCode?: string;
@@ -505,7 +506,7 @@ export default function InventoryPage() {
                           <div>
                             <div className="text-sm font-bold text-[var(--kravy-text-primary)] leading-tight">{item.name}</div>
                             <div className="flex flex-wrap gap-1 mt-1">
-                               <div className="text-[10px] font-bold text-[var(--kravy-text-faint)]">ID: {item.id.slice(-8).toUpperCase()} · {item.unit}</div>
+                               <div className="text-[10px] font-bold text-[var(--kravy-text-faint)]">ID: {item.inventoryCode ? item.inventoryCode : item.id.slice(-8).toUpperCase()} · {item.unit}</div>
                             </div>
                           </div>
                         </div>
