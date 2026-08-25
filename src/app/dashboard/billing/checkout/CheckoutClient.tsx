@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useMemo } from "react";
 import { useConfirm } from "@/components/ConfirmContext";
 import ItemModal from "@/components/MenuEditor/ItemModal";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 
 /* ================= TYPES ================= */
 
@@ -1261,6 +1262,25 @@ export default function CheckoutClient() {
       }];
     });
   }
+
+  const handleBarcodeScan = (code: string) => {
+      const item = menuItems.find(m => 
+          (m.inventoryCode && m.inventoryCode.toUpperCase() === code.toUpperCase()) || 
+          m.id.toUpperCase().endsWith(code.toUpperCase()) || 
+          (m as any).barcode?.toUpperCase() === code.toUpperCase()
+      );
+
+      if (!item) {
+          toast.error(`Item not found for barcode: ${code}`);
+          kravy.error();
+          return;
+        }
+
+      addItem(item);
+      toast.success(`Added ${item.name} via barcode scanner`);
+  };
+
+  useBarcodeScanner({ onScan: handleBarcodeScan });
 
   function confirmVariantAddToCart() {
     if (!variantModalItem) return;
