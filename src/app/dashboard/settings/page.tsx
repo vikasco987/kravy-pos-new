@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   UserCircle, Activity, Users, BarChart3,
-  ChevronRight, Shield, Bell, Palette, HelpCircle, Database, Percent, Book, Award, Zap, LayoutDashboard, Printer, Sliders
+  ChevronRight, Shield, Bell, Palette, HelpCircle, Database, Percent, Book, Award, Zap, LayoutDashboard, Printer, Sliders, Package
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -59,6 +59,13 @@ export default function SettingsPage() {
           color: "#D4A353",
           label: "Loyalty Program",
           desc: "Set point ratios and redemption rules for customers"
+        },
+        {
+          href: "/dashboard/settings/inventory",
+          icon: <Package size={20} />,
+          color: "#3B82F6",
+          label: "Inventory & Stock",
+          desc: "Manage serial numbers and stock entry rules"
         },
         {
           href: "/dashboard/settings/pos",

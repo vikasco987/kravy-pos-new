@@ -575,32 +575,6 @@ export default function BusinessProfileForm({
         </div>
       </Section>
 
-      {/* INVENTORY SETTINGS */}
-      <Section title="Inventory & Serial Number Settings">
-        <label className="flex items-center gap-3 cursor-pointer bg-[var(--kravy-bg-2)] p-4 rounded-xl border border-[var(--kravy-border)] hover:border-indigo-500/50 transition-colors">
-          <input 
-            type="checkbox" 
-            {...register("enableSerialNumber")} 
-            className="w-5 h-5 rounded min-w-[20px] accent-[var(--kravy-brand)]"
-          />
-          <div>
-            <p className="text-sm font-bold text-[var(--kravy-text-primary)]">Enable Serial Number (Inventory Code)</p>
-            <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Automatically assign unique serial numbers to new items</p>
-          </div>
-        </label>
-
-        <label className="flex items-center gap-3 cursor-pointer bg-[var(--kravy-bg-2)] p-4 rounded-xl border border-[var(--kravy-border)] hover:border-indigo-500/50 transition-colors">
-          <input 
-            type="checkbox" 
-            {...register("isStockCompulsory")} 
-            className="w-5 h-5 rounded min-w-[20px] accent-[var(--kravy-brand)]"
-          />
-          <div>
-            <p className="text-sm font-bold text-[var(--kravy-text-primary)]">Make Stock Entry Compulsory</p>
-            <p className="text-xs text-[var(--kravy-text-muted)] mt-0.5">Require stock quantity when uploading a new item</p>
-          </div>
-        </label>
-      </Section>
 
       {/* AUTHENTICATION SETTINGS */}
       <Section title="Authentication Settings">
