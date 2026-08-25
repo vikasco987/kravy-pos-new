@@ -467,6 +467,7 @@ export default function InventoryPage() {
             <thead className="sticky top-0 z-10 bg-[var(--kravy-navbar-bg)] backdrop-blur-xl border-b border-[var(--kravy-border)]">
               <tr className="bg-gradient-to-r from-[var(--kravy-brand)]/[0.03] to-transparent">
                 <th className="px-5 py-4 text-left text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">{activeTab === 'finished' ? 'Inventory Item' : 'Raw Material'}</th>
+                {activeTab === 'finished' && <th className="px-5 py-4 text-left text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">Inventory ID</th>}
                 <th className="px-5 py-4 text-left text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">{activeTab === 'finished' ? 'Category' : 'Stock Unit'}</th>
                 <th className="px-5 py-4 text-left text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">Stock Status</th>
                 <th className="px-5 py-4 text-left text-[10px] font-black text-[var(--kravy-text-muted)] uppercase tracking-[0.2em]">Critical Floor</th>
@@ -478,12 +479,12 @@ export default function InventoryPage() {
               {loading ? (
                 Array(6).fill(0).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={6} className="h-14 px-5 bg-[var(--kravy-bg)]/30"></td>
+                    <td colSpan={activeTab === 'finished' ? 7 : 6} className="h-14 px-5 bg-[var(--kravy-bg)]/30"></td>
                   </tr>
                 ))
               ) : filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-20 text-center">
+                  <td colSpan={activeTab === 'finished' ? 7 : 6} className="py-20 text-center">
                     <Package className="mx-auto text-[var(--kravy-text-faint)] mb-4 opacity-20" size={48} />
                     <div className="text-sm font-bold text-[var(--kravy-text-muted)]">No inventory records found</div>
                     <div className="text-[10px] uppercase tracking-widest text-[var(--kravy-text-faint)] mt-1">Try adjusting your filters</div>
@@ -506,10 +507,17 @@ export default function InventoryPage() {
                           <div>
                             <div className="text-sm font-bold text-[var(--kravy-text-primary)] leading-tight">{item.name}</div>
                             <div className="flex flex-wrap gap-1 mt-1">
-                               <div className="text-[10px] font-bold text-[var(--kravy-text-faint)]">ID: {item.inventoryCode ? item.inventoryCode : item.id.slice(-8).toUpperCase()} · {item.unit}</div>
+                               <div className="text-[10px] font-bold text-[var(--kravy-text-faint)]">Unit: {item.unit}</div>
                             </div>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        {item.inventoryCode ? (
+                          <span className="px-3 py-1 bg-indigo-500/10 text-indigo-600 rounded-md font-black text-xs font-mono border border-indigo-500/20">{item.inventoryCode}</span>
+                        ) : (
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--kravy-text-faint)] italic">N/A</span>
+                        )}
                       </td>
                       <td className="px-5 py-4">
                         <span className="px-3 py-1.5 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-lg text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-secondary)]">
