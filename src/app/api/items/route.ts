@@ -426,6 +426,11 @@ export async function POST(req: Request) {
           }
         });
       }
+    } else {
+      // Fallback: Generate a system unique ID if setting is OFF
+      const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const timePart = Date.now().toString().slice(-4);
+      inventoryCode = `ITM-${timePart}-${randomStr}`;
     }
 
     const item = await prisma.item.create({
