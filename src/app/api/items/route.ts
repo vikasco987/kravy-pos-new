@@ -263,7 +263,7 @@ console.log("🛠️ [ITEMS_API_DB] URL Prefix:", process.env.DATABASE_URL?.spli
 async function findOrCreateDBUser(clerkId: string) {
   let user = await prisma.user.findUnique({
     where: { clerkId },
-    select: { id: true },
+    select: { id: true, clerkId: true },
   });
 
   if (!user) {
@@ -285,7 +285,7 @@ async function findOrCreateDBUser(clerkId: string) {
             clerkUser.emailAddresses[0]?.emailAddress ??
             `no-email-${clerkId}@example.com`,
         },
-        select: { id: true },
+        select: { id: true, clerkId: true },
       });
     } catch (err: any) {
       console.error("Clerk user sync failed:", err);
