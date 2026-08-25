@@ -28,6 +28,7 @@ import PrintTemplates from "@/components/printing/PrintTemplates";
 import BillPreview from "@/components/printing/BillPreview";
 import { useAuthContext } from "@/components/AuthContext";
 import { useConfirm } from "@/components/ConfirmContext";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 
 
 const SatoshiFont = async () => (
@@ -353,6 +354,77 @@ function KravyPOS() {
         };
         fetchItems();
     }, []);
+
+    const handleBarcodeScan = async (code: string) => {
+        const item = menuItems.find(m => 
+            (m.inventoryCode && m.inventoryCode.toUpperCase() === code.toUpperCase()) || 
+            m.id.toUpperCase().endsWith(code.toUpperCase())
+        );
+
+        if (!item) {
+            toast.error(`Item not found for barcode: ${code}`);
+            kravy.error();
+            return;
+        }
+
+        if (!activeOrderForSelected) {
+            toast.error("Please select an active order or table first");
+            kravy.error();
+            return;
+        }
+
+        kravy.click();
+
+        try {
+            // Check for duplicates
+            const existingItemIndex = activeOrderForSelected.items.findIndex((it: any) => it.itemId === item.id);
+            let updatedItems = [...activeOrderForSelected.items];
+
+            if (existingItemIndex >= 0) {
+                // Increment qty
+                updatedItems[existingItemIndex] = {
+                    ...updatedItems[existingItemIndex],
+                    quantity: updatedItems[existingItemIndex].quantity + 1
+                };
+                toast.success(`Increased ${item.name} quantity to ${updatedItems[existingItemIndex].quantity}`);
+            } else {
+                const newItem: OrderItem = {
+                    itemId: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: 1,
+                    isVeg: item.isVeg,
+                    isNew: true,
+                    taxStatus: item.taxStatus || "Without Tax",
+                    gst: item.gst ?? 0
+                };
+                updatedItems.push(newItem);
+                toast.success(`Added ${item.name} to order via Scanner`);
+            }
+
+            const { total: newTotal } = calculateOrderTotals(updatedItems, isTaxEnabled, globalRate, perProductEnabled);
+
+            const res = await fetch("/api/orders", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    orderId: activeOrderForSelected.id,
+                    items: updatedItems,
+                    total: newTotal
+                })
+            });
+
+            if (res.ok) {
+                fetchData(false, true); 
+            } else {
+                toast.error("Failed to sync scanned item");
+            }
+        } catch (err) {
+            console.error("Scanner Error", err);
+        }
+    };
+
+    useBarcodeScanner({ onScan: handleBarcodeScan });
 
     // Manual Combination States
     const [showCombineModal, setShowCombineModal] = useState(false);
