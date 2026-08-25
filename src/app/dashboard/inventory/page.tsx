@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Search, Plus, Filter, Download, Eye, Edit, Trash2, FileText, X, AlertTriangle, Save, Sparkles, TrendingUp, Layers, ArrowUpDown, CheckCircle2, XCircle, BadgePercent, BarChart3 } from "lucide-react";
+import { Package, Search, Plus, Filter, Download, Eye, Edit, Trash2, FileText, X, AlertTriangle, Save, Sparkles, TrendingUp, Layers, ArrowUpDown, CheckCircle2, XCircle, BadgePercent, BarChart3, Printer } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSearch } from "@/components/SearchContext";
 import Link from "next/link";
 import { useConfirm } from "@/components/ConfirmContext";
-
+import { printBarcodeLabel } from "@/components/printing/BarcodeLabelPrint";
 
 type InventoryItem = {
   id: string;
@@ -86,6 +86,7 @@ export default function InventoryPage() {
 
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [businessProfile, setBusinessProfile] = useState<any>(null);
 
   useEffect(() => {
     fetchInventory();
@@ -118,6 +119,7 @@ export default function InventoryPage() {
       if (res.ok) {
         const data = await res.json();
         setTaxEnabled(data?.taxEnabled ?? true);
+        setBusinessProfile(data);
       }
     } catch (err) {
       console.error("Profile fetch error", err);
@@ -593,6 +595,13 @@ export default function InventoryPage() {
                             className="w-8 h-8 rounded-lg bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:text-[var(--kravy-brand)] hover:border-[var(--kravy-brand)]/50 transition-all flex items-center justify-center"
                           >
                             <Edit size={14} />
+                          </button>
+                          <button 
+                            onClick={() => printBarcodeLabel(item, businessProfile)}
+                            className="w-8 h-8 rounded-lg bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-muted)] hover:text-blue-500 hover:border-blue-500/50 transition-all flex items-center justify-center"
+                            title="Print Barcode Label"
+                          >
+                            <Printer size={14} />
                           </button>
                           <button 
                             onClick={async () => handleDelete(item.id)}
