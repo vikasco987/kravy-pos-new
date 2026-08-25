@@ -108,10 +108,32 @@ export async function generateManualInvoicePDF(data: any) {
   page.drawText(String(data.customerName || "Customer"), { x: leftX, y: billY, size: 10, font });
   
   billY -= 14;
-  const customerAddr = `${data.customerAddress || ""}, ${data.customerDistrict || ""}, ${data.customerState || ""} - ${data.customerPincode || ""}`;
-  page.drawText(customerAddr.slice(0, 60), { x: leftX, y: billY, size: 9, font, color: greyTextColor });
+  let rawAddr = `${data.customerAddress || ""}, ${data.customerDistrict || ""}, ${data.customerState || ""} - ${data.customerPincode || ""}`;
+  rawAddr = rawAddr.replace(/,\s*,/g, ',').replace(/^,\s*/, '').replace(/,\s*-/, ' -').trim();
   
-  billY -= 12;
+  const addrWords = rawAddr.split(' ');
+  let addrLines = [];
+  let currLine = "";
+  for (const w of addrWords) {
+    if (!w) continue;
+    const testLine = currLine ? currLine + " " + w : w;
+    if (font.widthOfTextAtSize(testLine, 9) > 300) {
+      if (currLine) addrLines.push(currLine);
+      currLine = w;
+    } else {
+      currLine = testLine;
+    }
+  }
+  if (currLine) addrLines.push(currLine);
+
+  for (let i = 0; i < addrLines.length; i++) {
+    page.drawText(addrLines[i], { x: leftX, y: billY, size: 9, font, color: greyTextColor });
+    if (i < addrLines.length - 1) {
+      billY -= 12;
+    }
+  }
+  
+  billY -= 14;
   page.drawText(`Phone: ${String(data.customerPhone || "N/A")}`, { x: leftX, y: billY, size: 10, font });
   
   if (data.customerEmail) {
