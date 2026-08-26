@@ -372,7 +372,7 @@ export async function POST(req: NextRequest) {
 
     let bill;
     let retries = 0;
-    while (retries < 5) {
+    while (retries < 10) {
       try {
         bill = await prisma.billManager.create({
           data: {
@@ -412,19 +412,38 @@ export async function POST(req: NextRequest) {
         if (e.code === 'P2002' && !body.orderId) {
           // Unique constraint failed, increment serial and retry
           retries++;
-          if (profile?.id) {
-              try {
-                  const updatedProfile = await prisma.businessProfile.update({
-                      where: { id: profile.id },
-                      data: { billCounter: { increment: 1 } },
-                      select: { billCounter: true }
-                  });
-                  nextSerial = updatedProfile.billCounter;
-              } catch(atomicErr) {
-                  nextSerial++;
-              }
+          
+          if (retries > 5) {
+             // Safe fallback if gap is too large
+             nextSerial = Math.floor(Date.now() % 1000000) + Math.floor(Math.random() * 1000);
           } else {
-              nextSerial++;
+             try {
+                // Find highest serial from recent bills to jump the gap
+                const recentBills = await prisma.billManager.findMany({
+                  where: { clerkUserId: effectiveId, billNumber: { startsWith: `INV/${yy}${mm}/` } },
+                  orderBy: { createdAt: 'desc' },
+                  take: 10,
+                  select: { billNumber: true }
+                });
+                let localMax = nextSerial;
+                for (const b of recentBills) {
+                    if (b.billNumber) {
+                        const parts = b.billNumber.split('/');
+                        const s = parseInt(parts[parts.length - 1], 10);
+                        if (!isNaN(s) && s > localMax) localMax = s;
+                    }
+                }
+                nextSerial = localMax + 1;
+                
+                if (profile?.id) {
+                    await prisma.businessProfile.update({
+                        where: { id: profile.id },
+                        data: { billCounter: nextSerial }
+                    });
+                }
+             } catch(atomicErr) {
+                nextSerial++;
+             }
           }
           const newSerialLabel = String(nextSerial).padStart(4, '0');
           billNumber = `INV/${yy}${mm}/${newSerialLabel}`;
