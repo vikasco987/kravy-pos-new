@@ -155,7 +155,8 @@ export default function BillingPage() {
   const asUserId = searchParams.get("asUserId");
 
   const [dateRange, setDateRange] = useState(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const today = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     return { start: today, end: today };
   });
 
@@ -286,7 +287,8 @@ export default function BillingPage() {
       (colFilters.statusFilter === "Pending" && b.isHeld);
 
     // Date range filter
-    const bDate = new Date(b.createdAt).toISOString().split('T')[0];
+    const bDt = new Date(b.createdAt);
+    const bDate = new Date(bDt.getTime() - bDt.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     const matchesDate = (!dateRange.start || bDate >= dateRange.start) && (!dateRange.end || bDate <= dateRange.end);
 
     return mGlobal && matchesType && matchesPayment && matchesStatus && matchesDate;
@@ -357,7 +359,8 @@ export default function BillingPage() {
                 const ws = XLSX.utils.json_to_sheet(exportData);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Bills");
-                XLSX.writeFile(wb, `Kravy_Bills_${new Date().toISOString().split('T')[0]}.xlsx`);
+                const exportDate = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+                XLSX.writeFile(wb, `Kravy_Bills_${exportDate}.xlsx`);
                 toast.success("Excel Exported!");
              } catch (e) {
                 toast.error("Export failed");

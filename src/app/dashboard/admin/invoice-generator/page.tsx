@@ -33,7 +33,7 @@ export default function InvoiceGenerator() {
     const [invoiceData, setInvoiceData] = useState({
         id: "",
         invoiceNumber: `INV-${Math.floor(100000 + Math.random() * 900000)}`,
-        date: new Date().toISOString().split('T')[0],
+        date: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
         dueDate: "",
         documentType: "invoice",
         paymentMode: "Online / Bank Transfer",

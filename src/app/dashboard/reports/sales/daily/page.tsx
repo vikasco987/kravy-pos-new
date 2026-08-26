@@ -121,7 +121,7 @@ export default async function DailySalesReportPage({
   if (!effectiveId) redirect("/auth/custom");
 
   const params = await searchParams;
-  const fromDateStr = params.from || new Date().toISOString().split('T')[0];
+  const fromDateStr = params.from || new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
   const toDateStr = params.to || fromDateStr;
   const typeFilter = params.type || "ALL";
   const paymentFilter = params.payment || "ALL";

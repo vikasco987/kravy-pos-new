@@ -138,7 +138,8 @@ export default function BackupPage() {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = `Kravy_Full_Data_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+                const exportDate = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+                a.download = `Kravy_Full_Data_Export_${exportDate}.xlsx`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
