@@ -200,10 +200,26 @@ export async function POST(req: NextRequest) {
     const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt - loyaltyPointsRedeemedAmt + finalDeliveryCharge + serverDeliveryGst + finalPackagingCharge + serverPackagingGst + finalServiceCharge).toFixed(2));
 
     let nextSerial = 1;
-    if (lastBill && lastBill.billNumber) {
-      const parts = lastBill.billNumber.split('/');
-      const lastSerial = parseInt(parts[parts.length - 1], 10);
-      if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
+    if (profile?.id) {
+        try {
+            const updatedProfile = await prisma.businessProfile.update({
+                where: { id: profile.id },
+                data: { billCounter: { increment: 1 } },
+                select: { billCounter: true }
+            });
+            nextSerial = updatedProfile.billCounter;
+        } catch(e) {
+            console.error("Atomic billCounter increment failed, falling back to manual calculation:", e);
+            if (lastBill && lastBill.billNumber) {
+                const parts = lastBill.billNumber.split('/');
+                const lastSerial = parseInt(parts[parts.length - 1], 10);
+                if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
+            }
+        }
+    } else if (lastBill && lastBill.billNumber) {
+        const parts = lastBill.billNumber.split('/');
+        const lastSerial = parseInt(parts[parts.length - 1], 10);
+        if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
     }
     const serialLabel = String(nextSerial).padStart(4, '0');
     let billNumber = `INV/${yy}${mm}/${serialLabel}`;
@@ -396,7 +412,20 @@ export async function POST(req: NextRequest) {
         if (e.code === 'P2002' && !body.orderId) {
           // Unique constraint failed, increment serial and retry
           retries++;
-          nextSerial++;
+          if (profile?.id) {
+              try {
+                  const updatedProfile = await prisma.businessProfile.update({
+                      where: { id: profile.id },
+                      data: { billCounter: { increment: 1 } },
+                      select: { billCounter: true }
+                  });
+                  nextSerial = updatedProfile.billCounter;
+              } catch(atomicErr) {
+                  nextSerial++;
+              }
+          } else {
+              nextSerial++;
+          }
           const newSerialLabel = String(nextSerial).padStart(4, '0');
           billNumber = `INV/${yy}${mm}/${newSerialLabel}`;
           console.warn(`[BILL_MANAGER] Duplicate bill number detected. Retrying with ${billNumber}...`);

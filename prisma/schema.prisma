@@ -517,6 +517,9 @@ model BusinessProfile {
   // ✅ Authentication Settings
   enableClerkAuth  Boolean @default(true)
   enableCustomAuth Boolean @default(false)
+  
+  // ✅ Atomic Bill Counter
+  billCounter      Int     @default(1)
 
   createdAt DateTime @default(now())
   syncQuickPosWithKitchen Boolean @default(false)
