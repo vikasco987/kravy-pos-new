@@ -354,39 +354,61 @@ export async function POST(req: NextRequest) {
       addedAt: it.addedAt || nowLocal.toISOString()
     }));
 
-    const bill = await prisma.billManager.create({
-      data: {
-        clerkUserId: effectiveId || "Unknown",
-        billNumber: billNumber,
-        items: processedItems,
-        subtotal: finalSubtotal,
-        tax: calculatedTax,
-        total: finalTotal,
-        paymentMode: finalPaymentMode,
-        paymentStatus: finalPaymentStatus,
-        amountPaid: finalAmountPaid,
-        balanceDue: finalBalanceDue,
-        isHeld: isHeld === true,
-        upiTxnRef: upiTxnRef || null,
-        customerName: customerName || null,
-        customerPhone: customerPhone || null,
-        customerAddress: customerAddress || null,
-        partyId: partyId,
-        tableName: tableName || "POS",
-        zoneName: zoneName || null,
-        discountAmount: serverDiscountAmt,
-        discountCode: validatedDiscountCode,
-        deliveryCharges: finalDeliveryCharge,
-        deliveryGst: serverDeliveryGst,
-        packagingCharges: finalPackagingCharge,
-        packagingGst: serverPackagingGst,
-        serviceCharge: finalServiceCharge,
-        auditNote: body.auditNote || null,
-        isKotPrinted: isKotPrinted === true,
-        tokenNumber: nextToken,
-        kotNumbers: kotNumbers || [],
-      },
-    });
+    let bill;
+    let retries = 0;
+    while (retries < 5) {
+      try {
+        bill = await prisma.billManager.create({
+          data: {
+            clerkUserId: effectiveId || "Unknown",
+            billNumber: billNumber,
+            items: processedItems,
+            subtotal: finalSubtotal,
+            tax: calculatedTax,
+            total: finalTotal,
+            paymentMode: finalPaymentMode,
+            paymentStatus: finalPaymentStatus,
+            amountPaid: finalAmountPaid,
+            balanceDue: finalBalanceDue,
+            isHeld: isHeld === true,
+            upiTxnRef: upiTxnRef || null,
+            customerName: customerName || null,
+            customerPhone: customerPhone || null,
+            customerAddress: customerAddress || null,
+            partyId: partyId,
+            tableName: tableName || "POS",
+            zoneName: zoneName || null,
+            discountAmount: serverDiscountAmt,
+            discountCode: validatedDiscountCode,
+            deliveryCharges: finalDeliveryCharge,
+            deliveryGst: serverDeliveryGst,
+            packagingCharges: finalPackagingCharge,
+            packagingGst: serverPackagingGst,
+            serviceCharge: finalServiceCharge,
+            auditNote: body.auditNote || null,
+            isKotPrinted: isKotPrinted === true,
+            tokenNumber: nextToken,
+            kotNumbers: kotNumbers || [],
+          },
+        });
+        break; // Success
+      } catch (e: any) {
+        if (e.code === 'P2002' && !body.orderId) {
+          // Unique constraint failed, increment serial and retry
+          retries++;
+          nextSerial++;
+          const newSerialLabel = String(nextSerial).padStart(4, '0');
+          billNumber = `INV/${yy}${mm}/${newSerialLabel}`;
+          console.warn(`[BILL_MANAGER] Duplicate bill number detected. Retrying with ${billNumber}...`);
+        } else {
+          throw e; // Throw any other error
+        }
+      }
+    }
+
+    if (!bill) {
+      throw new Error("Failed to generate a unique bill number after multiple attempts.");
+    }
 
     // ✅ AUTO-DEDUCT INVENTORY ON FINAL BILL (IF NOT HELD)
     if (!bill.isHeld && skipInventoryDeduction !== true) {

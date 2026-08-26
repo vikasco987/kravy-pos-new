@@ -1038,6 +1038,13 @@ function KravyPOS() {
             const res = await fetch("/api/bill-manager", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(billData) });
             const data = await res.json();
             console.log("[CHECKOUT_DEBUG] Bill-Manager Response:", data);
+            
+            if (!res.ok) {
+                toast.error(data.error || "Failed to save bill. Order was not closed.");
+                setIsSettling(false);
+                return;
+            }
+            
             const savedBill = data.bill || data;
             
             // Only update status if not already COMPLETED (to avoid loop)
