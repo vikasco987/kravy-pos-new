@@ -26,10 +26,11 @@ const plans = [
     {
       key: "year1",
       name: "1 Year Plan",
-      price: "3,999",
-      originalPrice: "7,000",
+      price: "6,000",
+      originalPrice: "12,000",
       description: "Perfect for restaurants and small businesses.",
       features: [
+        "Free Thermal Printer + 5 Rolls",
         "Unlimited invoices",
         "Analytics dashboard",
         "Inventory management",
@@ -41,10 +42,11 @@ const plans = [
     {
       key: "year2",
       name: "2 Year Plan",
-      price: "5,999",
-      originalPrice: "14,000",
+      price: "8,000",
+      originalPrice: "16,000",
       description: "Best choice for growing businesses.",
       features: [
+        "Free Thermal Printer + 5 Rolls",
         "Everything in 1 Year plan",
         "Advanced Kitchen workflow",
         "Coupons & Loyalty system",
@@ -57,10 +59,11 @@ const plans = [
     {
       key: "year3",
       name: "3 Year Plan",
-      price: "7,499",
-      originalPrice: "21,000",
+      price: "9,500",
+      originalPrice: "20,000",
       description: "Maximum savings for long-term businesses.",
       features: [
+        "Free Thermal Printer + 5 Rolls",
         "Everything in 2 Year plan",
         "Kitchen automation",
         "Smart inventory tracking",
