@@ -455,6 +455,7 @@ model BusinessProfile {
   taxInclusive         Boolean @default(false)
   servedStatusLabel    String  @default("SERVED")
   enableFuelBilling    Boolean @default(false)
+  enableHotelManagement Boolean @default(false)
 
   // ✅ Customer Data Requirement Settings
   collectCustomerName    Boolean @default(true)
@@ -952,7 +953,8 @@ model HotelRoom {
   roomType      String   @default("Standard") // Single, Double, Deluxe, Suite, Executive
   floor         String?  @default("Floor 1")
   pricePerNight Float    @default(1500)
-  status        String   @default("AVAILABLE") // AVAILABLE | OCCUPIED | RESERVED | CLEANING
+  status        String   @default("AVAILABLE") // AVAILABLE | OCCUPIED | RESERVED | CLEANING | MAINTENANCE | OUT_OF_SERVICE
+  isActive      Boolean  @default(true) // For soft-deleting rooms instead of hard delete
   amenities     String[] @default([]) // AC, TV, WiFi, Geyser, King Bed
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -964,6 +966,7 @@ model HotelRoom {
 model HotelBooking {
   id                 String    @id @default(auto()) @map("_id") @db.ObjectId
   clerkUserId        String
+  stayId             String?   // Unique reference ID e.g., STAY-2026-000125
   roomNumber         String
   roomId             String?   @db.ObjectId
   customerName       String
@@ -980,9 +983,13 @@ model HotelBooking {
   adults             Int       @default(1)
   children           Int       @default(0)
   pricePerNight      Float     @default(0)
-  totalAmount        Float     @default(0)
-  advancePaid        Float     @default(0)
-  balanceDue         Float     @default(0)
+  roomCharges        Float     @default(0) // Base room charges (pricePerNight * nights)
+  extraCharges       Float     @default(0) // Additional services (food, extra bed)
+  discount           Float     @default(0)
+  taxAmount          Float     @default(0)
+  totalAmount        Float     @default(0) // (roomCharges + extraCharges + taxAmount) - discount
+  advancePaid        Float     @default(0) // Total of all advance payments
+  balanceDue         Float     @default(0) // totalAmount - advancePaid - checkoutPayments
   paymentMode        String    @default("Cash") // Cash, UPI, Card, Wallet
   status             String    @default("CHECKED_IN") // CHECKED_IN | CHECKED_OUT | CANCELLED
   remarks            String?
@@ -991,6 +998,23 @@ model HotelBooking {
 
   @@index([clerkUserId])
   @@index([clerkUserId, status])
+}
+
+model HotelPayment {
+  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
+  clerkUserId        String
+  bookingId          String    @db.ObjectId
+  stayId             String?
+  amount             Float
+  paymentMode        String    @default("Cash") // Cash, UPI, Card, Other
+  paymentType        String    @default("ADVANCE") // ADVANCE, CHECKOUT, PARTIAL, REFUND
+  transactionId      String?
+  remarks            String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([clerkUserId])
+  @@index([bookingId])
 }
 
 model GoogleReviewQR {

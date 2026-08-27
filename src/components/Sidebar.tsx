@@ -473,6 +473,7 @@ export default function Sidebar() {
   const [aiScraperEnabled, setAiScraperEnabled] = useState(false);
   const [excelImportEnabled, setExcelImportEnabled] = useState(false);
   const [fuelBillingEnabled, setFuelBillingEnabled] = useState(false);
+  const [hotelManagementEnabled, setHotelManagementEnabled] = useState(false);
   const [activeTablesCount, setActiveTablesCount] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [hiddenSidebarItems, setHiddenSidebarItems] = useState<string[]>([]);
@@ -494,6 +495,7 @@ export default function Sidebar() {
           if (data.aiScraperEnabled) setAiScraperEnabled(true);
           if (data.excelImportEnabled) setExcelImportEnabled(true);
           setFuelBillingEnabled(!!data.enableFuelBilling);
+          setHotelManagementEnabled(!!data.enableHotelManagement);
 
         }
       })
@@ -889,6 +891,7 @@ export default function Sidebar() {
             if (item.label === "AI Menu Scraper" && !aiScraperEnabled) return false;
             if (item.label === "Excel Bulk Import" && !excelImportEnabled) return false;
             if (item.label === "Fuel Billing" && !fuelBillingEnabled) return false;
+            if (item.label === "Hotel Room Stay" && !hotelManagementEnabled) return false;
 
             // 2. Global Admin Bypass - Show everything else to administrators
             if (userRole === "ADMIN") return true;
