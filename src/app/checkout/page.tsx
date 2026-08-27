@@ -18,9 +18,9 @@ import Link from "next/link";
 import axios from "axios";
 
 const plansData = {
-  year1: { id: "year1", name: "1 Year Plan", price: 3999 },
-  year2: { id: "year2", name: "2 Year Plan", price: 5999 },
-  year3: { id: "year3", name: "3 Year Plan", price: 7499 },
+  year1: { id: "year1", name: "1 Year Plan", price: 6000 },
+  year2: { id: "year2", name: "2 Year Plan", price: 8000 },
+  year3: { id: "year3", name: "3 Year Plan", price: 9500 },
 };
 
 const addonsData = {
