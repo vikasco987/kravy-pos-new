@@ -827,10 +827,10 @@ export default function ViewBillPage() {
             </div>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <Calendar size={14} />
-              {new Date(bill.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+              {new Date(bill.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'long', year: 'numeric' })}
               <span className="opacity-30 mx-1">|</span>
               <Clock size={14} />
-              {new Date(bill.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+              {new Date(bill.createdAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>
         </div>

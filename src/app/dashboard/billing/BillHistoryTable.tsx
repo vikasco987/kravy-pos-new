@@ -336,8 +336,8 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
                   {visibleCols.timeline && (
                     <td style={{ padding: "16px 20px" }}>
                       <div style={{ display: "flex", flexDirection: "column" }}>
-                        <span style={{ fontSize: "0.8rem", fontWeight: 800 }}>{dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
-                        <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#9CA3AF" }}>{dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                        <span style={{ fontSize: "0.8rem", fontWeight: 800 }}>{dt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' })}</span>
+                        <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#9CA3AF" }}>{dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                       </div>
                     </td>
                   )}
@@ -539,8 +539,8 @@ const BillPreviewModal = ({ bill, business, onClose }: { bill: any, business: an
   if (!bill) return null;
 
   const dt = new Date(bill.createdAt);
-  const dateStr = dt.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  const timeStr = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const dateStr = dt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const timeStr = dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
   const format = (num: number) => new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
 
   const ps = typeof business?.printSettings === "string" ? JSON.parse(business.printSettings) : (business?.printSettings || {});
@@ -936,8 +936,8 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
   if (!mounted) return null;
 
   const dt = new Date(bill.createdAt);
-  const dateStr = dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-  const timeStr = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const dateStr = dt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' });
+  const timeStr = dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
 
   const getOrderTitle = () => {
     const t = bill.tableName || "POS";
@@ -1374,8 +1374,8 @@ const OrderDetailsPanel = ({ bill, business, onClose, onUpdate }: { bill: any, b
               
               {kGroups.map((group: any, idx: number) => {
                 const grTime = new Date(group.timestamp);
-                const showTime = grTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-                const showDate = grTime.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+                const showTime = grTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+                const showDate = grTime.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
 
                 return (
                   <div key={idx} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

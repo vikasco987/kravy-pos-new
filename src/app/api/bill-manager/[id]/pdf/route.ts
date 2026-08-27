@@ -191,7 +191,8 @@ export async function GET(
 
     /* ================= BILL META ================= */
     line(`Bill No: ${bill.billNumber}`, 9, 'left', true);
-    line(`Date: ${new Date(bill.createdAt).toLocaleDateString('en-IN')}`, 8, 'left');
+    const printDate = new Date(bill.createdAt);
+    line(`Date: ${printDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })} ${printDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}`, 8, 'left');
     
     if (bill.customerName) line(`Customer: ${bill.customerName}`, 8, 'left');
     if (bill.customerPhone) line(`Phone: ${bill.customerPhone}`, 8, 'left');
