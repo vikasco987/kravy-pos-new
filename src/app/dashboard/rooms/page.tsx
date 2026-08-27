@@ -30,8 +30,10 @@ import {
   IndianRupee,
   Layers,
   Sun,
-  Moon
+  Moon,
+  BarChart
 } from "lucide-react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { kravy } from "@/lib/sounds";
 import { useTheme } from "next-themes";
@@ -394,6 +396,19 @@ export default function RoomManagementPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Reports & PMS Navigation */}
+            <Link 
+              href="/dashboard/rooms/reports"
+              onClick={() => kravy.click()}
+              className={`px-4 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all ${
+                isDark 
+                  ? "bg-violet-600 text-white shadow-lg shadow-violet-900/50 hover:bg-violet-500" 
+                  : "bg-violet-600 text-white shadow-lg shadow-violet-500/30 hover:bg-violet-700"
+              }`}
+            >
+              <BarChart size={16} /> Reports & Management
+            </Link>
+
             {/* Quick Theme Switcher Button */}
             <button
               onClick={toggleTheme}
