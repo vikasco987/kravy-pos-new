@@ -268,8 +268,7 @@ export default function AdvancedSettingsPage() {
           </button>
         </div>
 
-        </div>
-        
+
         {/* Hotel Management Control */}
         <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] p-8 shadow-xl flex flex-col md:flex-row items-center gap-8 group">
           <div className="w-20 h-20 rounded-3xl bg-violet-100 dark:bg-violet-900/20 flex items-center justify-center text-violet-600 group-hover:scale-110 transition-transform">
