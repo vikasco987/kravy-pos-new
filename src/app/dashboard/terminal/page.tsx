@@ -1731,11 +1731,15 @@ function KravyPOS() {
                                                             return acc;
                                                         }, {});
 
-                                                        const kotList = Array.isArray(activeOrderForSelected.kotNumbers) ? activeOrderForSelected.kotNumbers : [];
+                                                        // Get all KOT numbers present in items
+                                                        const itemKotNumbers = Object.keys(rounds)
+                                                            .filter(k => k !== "New Items")
+                                                            .map(Number)
+                                                            .sort((a, b) => a - b);
                                                         
                                                         // Sort rounds: first all KOTs in sequence, then New Items
                                                         const sortedRounds = [
-                                                            ...kotList.map((kn: number, i: number) => ({ id: kn, label: `Round ${i + 1} - KOT #${kn}`, items: rounds[kn] })),
+                                                            ...itemKotNumbers.map((kn: number, i: number) => ({ id: kn, label: `Round ${i + 1} - KOT #${kn}`, items: rounds[kn] })),
                                                             ...(rounds["New Items"] ? [{ id: "New Items", label: "🛒 Current Cart (Not Printed)", items: rounds["New Items"] }] : [])
                                                         ].filter(r => r.items && r.items.length > 0);
 
@@ -2088,7 +2092,11 @@ function KravyPOS() {
                                             ) : settleTab === "KOT" ? (
                                                 <div className="h-full flex flex-col p-4">
                                                     {(() => {
-                                                        const kotList = Array.isArray(activeOrderForSelected?.kotNumbers) ? activeOrderForSelected.kotNumbers : [];
+                                                        const kotList = Array.from(new Set(
+                                                            (activeOrderForSelected?.items || [])
+                                                            .map((item: any) => Number(item.kotNumber))
+                                                            .filter(kn => !isNaN(kn) && kn > 0)
+                                                        )).sort((a: any, b: any) => a - b);
                                                         if (kotList.length === 0) {
                                                             return (
                                                                 <div className="h-full flex flex-col items-center justify-center opacity-40">
