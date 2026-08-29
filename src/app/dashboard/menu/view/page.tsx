@@ -474,6 +474,7 @@ export default function ViewMenuPage() {
   const [toast, setToast] = useState<string | null>(null);
   
   const [wipeZone, setWipeZone] = useState<string>("All");
+  const [catSearch, setCatSearch] = useState("");
 
   // Quick Add states
   const [quickAddCat, setQuickAddCat] = useState<{ id: string; name: string } | null>(null);
@@ -1473,14 +1474,20 @@ export default function ViewMenuPage() {
     }
 
     const list: MenuCategory[] = [];
+    const hasActiveFilter = filterZone !== "all" || query.trim() !== "" || filterHasImage !== "all" || priceMin !== "" || priceMax !== "";
+    
     for (const m of menus) {
-      const got = map.get(m.id);
-      if (got && got.items.length > 0) list.push(got);
+      if (m.id === "favorites_virtual") continue;
+      const got = map.get(m.id) || { id: m.id, name: m.name, items: [] };
+      
+      if (!hasActiveFilter || got.items.length > 0 || (query.trim() && m.name.toLowerCase().includes(query.trim().toLowerCase()))) {
+        list.push(got);
+      }
     }
     const unc = map.get("uncategorised");
     if (unc && unc.items.length > 0) list.push(unc);
     return list;
-  }, [sortedItems, menus, filterCategory]);
+  }, [sortedItems, menus, filterCategory, filterZone, query, filterHasImage, priceMin, priceMax]);
 
   const sidebarCategories = useMemo(() => {
     return menus.map(m => {
@@ -1512,7 +1519,12 @@ export default function ViewMenuPage() {
       });
       
       return { ...m, items: filteredItems };
-    }).filter(m => m.items.length > 0);
+    }).filter(m => {
+      const hasActiveFilter = filterZone !== "all" || query.trim() !== "" || filterHasImage !== "all" || priceMin !== "" || priceMax !== "";
+      if (!hasActiveFilter) return true;
+      if (query.trim() && m.name.toLowerCase().includes(query.trim().toLowerCase())) return true;
+      return m.items.length > 0;
+    });
   }, [menus, filterZone, query, filterHasImage, priceMin, priceMax]);
 
   const addToCart = (item: MenuItem) => {
@@ -2243,6 +2255,16 @@ export default function ViewMenuPage() {
                 <Sparkles size={14} />
               </button>
             </div>
+            {/* Category Search Box */}
+            <div className="mb-4">
+              <input 
+                type="text" 
+                placeholder="🔍 Search Category..." 
+                value={catSearch}
+                onChange={(e) => setCatSearch(e.target.value)}
+                className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl px-4 py-2 text-xs font-bold text-[var(--kravy-text-primary)] placeholder-[var(--kravy-text-muted)] focus:outline-none focus:border-indigo-500 transition-all"
+              />
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto no-scrollbar px-3 pb-8 space-y-1">
@@ -2254,7 +2276,7 @@ export default function ViewMenuPage() {
               All Items
             </button>
 
-            {sidebarCategories.map((m) => (
+            {sidebarCategories.filter(m => m.name.toLowerCase().includes(catSearch.toLowerCase())).map((m) => (
               <div key={m.id} className="group relative">
                 <button 
                   onClick={() => { 

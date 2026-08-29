@@ -430,6 +430,7 @@ export default function CheckoutClient() {
   const [activeZone, setActiveZone] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryLayout, setCategoryLayout] = useState<'horizontal' | 'vertical'>('horizontal');
+  const [catSearch, setCatSearch] = useState("");
 
   const [categoriesList, setCategoriesList] = useState<{ id: string; name: string; sortOrder?: number | null }[]>([]);
   const [availableZones, setAvailableZones] = useState<string[]>([]);
@@ -1115,7 +1116,7 @@ export default function CheckoutClient() {
   const filteredMenuItems = useMemo(() => {
     const rawFiltered = menuItems
       .filter((i) => i.isActive !== false) // 🛡️ Filter Offline Items
-      .filter((i) => activeCategory === "All" ? true : i.category?.name === activeCategory)
+      .filter((i) => (activeCategory === "All" || searchQuery.trim() !== "") ? true : i.category?.name === activeCategory)
       .filter((i) => i.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) || (i.shortCode && String(i.shortCode).toLowerCase().includes(searchQuery.trim().toLowerCase())))
       .filter((i) => {
         if (activeZone !== "All") {
@@ -2808,6 +2809,17 @@ export default function CheckoutClient() {
             {/* 🚀 CATEGORY SLIDER (Vertical Rail) — Fixed on Side — ONLY IF layout is vertical */}
             {categoryLayout === 'vertical' && (
               <div className="w-[120px] md:w-[150px] flex-shrink-0 bg-[var(--kravy-bg-2)] border-r border-[var(--kravy-border)] overflow-y-auto no-scrollbar py-3 px-2 space-y-2">
+                {/* Category Search Box */}
+                <div className="mb-2">
+                  <input 
+                    type="text" 
+                    placeholder="🔍 Search..." 
+                    value={catSearch}
+                    onChange={(e) => setCatSearch(e.target.value)}
+                    className="w-full bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[var(--kravy-text-primary)] placeholder-[var(--kravy-text-muted)] focus:outline-none focus:border-indigo-500 transition-all"
+                  />
+                </div>
+
                 <button
                   onClick={async () => { kravy.click(); setActiveCategory("All"); }}
                   className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all text-center flex flex-col items-center gap-1 ${activeCategory === "All"
@@ -2819,7 +2831,7 @@ export default function CheckoutClient() {
                   All
                 </button>
                 
-                {categories.map((cat) => (
+                {categories.filter(cat => cat.toLowerCase().includes(catSearch.toLowerCase())).map((cat) => (
                   <button
                     key={cat}
                     onClick={async () => { kravy.click(); setActiveCategory(cat); }}
