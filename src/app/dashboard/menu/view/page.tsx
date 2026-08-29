@@ -1812,8 +1812,7 @@ export default function ViewMenuPage() {
       setToast("Failed to delete category");
     }
   }
-    }
-  }
+
 
   /* ================= QUICK ADD HANDLERS ================= */
   const handleQuickAdd = async (e: React.FormEvent<HTMLFormElement>) => {
