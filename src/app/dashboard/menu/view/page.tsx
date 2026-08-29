@@ -471,6 +471,7 @@ export default function ViewMenuPage() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [menuLayout, setMenuLayout] = useState<'grid' | 'list'>('grid');
+  const [toast, setToast] = useState<string | null>(null);
   
   const [wipeZone, setWipeZone] = useState<string>("All");
 
