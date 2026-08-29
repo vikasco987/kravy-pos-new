@@ -851,10 +851,11 @@ export default function CheckoutClient() {
 
       try {
         // 2. Parallel fetch for latest data
+        const fetchOpts = { cache: "no-store" as const, credentials: "include" as const };
         const [itemsRes, catsRes, addonsRes] = await Promise.all([
-          fetch(`/api/menu/items?t=${Date.now()}`, { cache: "no-store" }),
-          fetch(`/api/categories?t=${Date.now()}`, { cache: "no-store" }),
-          fetch(`/api/menu-editor/addon-groups?t=${Date.now()}`, { cache: "no-store" })
+          fetch(`/api/menu/items?t=${Date.now()}`, fetchOpts),
+          fetch(`/api/categories?t=${Date.now()}`, fetchOpts),
+          fetch(`/api/menu-editor/addon-groups?t=${Date.now()}`, fetchOpts)
         ]);
 
         let finalItems: MenuItem[] = [];
@@ -898,7 +899,7 @@ export default function CheckoutClient() {
               if (a.sortOrder != null && b.sortOrder != null) return a.sortOrder - b.sortOrder;
               if (a.sortOrder != null) return -1;
               if (b.sortOrder != null) return 1;
-              return a.name.localeCompare(b.name);
+              return (a.name || "").localeCompare(b.name || "");
             });
           });
         }
@@ -1105,7 +1106,7 @@ export default function CheckoutClient() {
       if (a.sortOrder != null && b.sortOrder != null) return (a.sortOrder as number) - (b.sortOrder as number);
       if (a.sortOrder != null) return -1;
       if (b.sortOrder != null) return 1;
-      return a.name.localeCompare(b.name);
+      return (a.name || "").localeCompare(b.name || "");
     });
 
     return Array.from(new Set(validCats.map(c => c.name))).filter(Boolean);

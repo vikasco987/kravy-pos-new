@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 
+export const dynamic = "force-dynamic";
+
 // ✅ GET all categories
 export async function GET() {
   try {

@@ -1275,8 +1275,17 @@ export default function ViewMenuPage() {
         throw new Error(text || `Failed (${res.status})`);
       }
 
-      const items = await res.json();
-      const allCategories = catRes.ok ? await catRes.json() : [];
+      let allCategories: any[] = [];
+      if (catRes.ok) {
+        try {
+          const catData = await catRes.json();
+          if (Array.isArray(catData)) {
+            allCategories = catData;
+          }
+        } catch (e) {
+          console.error("Error parsing categories json:", e);
+        }
+      }
 
       if (!Array.isArray(items)) {
         throw new Error("Menu API did not return array");
@@ -1287,12 +1296,14 @@ export default function ViewMenuPage() {
       const categoryMap = new Map<string, MenuCategory>();
       
       allCategories.forEach((c: any) => {
-        categoryMap.set(c.id, {
-          id: c.id,
-          name: c.name,
-          sortOrder: c.sortOrder ?? null,
-          items: [],
-        });
+        if (c && c.id) {
+          categoryMap.set(c.id, {
+            id: c.id,
+            name: c.name || "Unnamed Category",
+            sortOrder: c.sortOrder ?? null,
+            items: [],
+          });
+        }
       });
 
       categoryMap.set(UNCATEGORISED_ID, {
@@ -1347,7 +1358,7 @@ export default function ViewMenuPage() {
         if (aVal !== null && aVal !== undefined && bVal !== null && bVal !== undefined) {
            if (aVal !== bVal) return aVal - bVal;
         }
-        return a.name.localeCompare(b.name);
+        return (a.name || "").localeCompare(b.name || "");
       });
 
       const favoriteItems = finalCategories.flatMap(c => c.items.filter(it => it.isFavorite));
