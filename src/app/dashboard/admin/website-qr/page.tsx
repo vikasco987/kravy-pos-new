@@ -93,91 +93,125 @@ export default function WebsiteQRManagerPage() {
     };
 
     return (
-        <div className="p-6 max-w-4xl mx-auto space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold">Website QR Generator</h1>
-                <p className="text-slate-500 mt-1">Generate a high-quality QR code that redirects to your website.</p>
+        <div className="p-6 max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="text-center space-y-2 mb-8">
+                <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600 drop-shadow-sm">Website QR Generator</h1>
+                <p className="text-slate-500 font-medium text-lg">Generate a high-quality QR code that redirects to your website.</p>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm space-y-6">
+            <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 rounded-3xl p-8 shadow-[0_8px_40px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.2)] space-y-8 relative overflow-hidden">
+                {/* Decorative background glows */}
+                <div className="absolute -top-32 -right-32 w-64 h-64 bg-indigo-500/20 rounded-full blur-[80px] pointer-events-none"></div>
+                <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-purple-500/20 rounded-full blur-[80px] pointer-events-none"></div>
+
                 
                 {/* Options */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
                     <button 
                         onClick={() => setQrType("STATIC")}
-                        className={`p-4 border rounded-xl flex flex-col items-start gap-2 transition-all ${qrType === "STATIC" ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-slate-200 hover:border-slate-300"}`}
+                        className={`group relative p-6 rounded-2xl flex flex-col items-start gap-4 transition-all duration-300 overflow-hidden text-left ${qrType === "STATIC" ? "bg-indigo-50/50 dark:bg-indigo-900/20 border-2 border-indigo-500 shadow-[0_0_25px_rgba(99,102,241,0.2)] scale-[1.02]" : "bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg hover:-translate-y-1"}`}
                     >
-                        <div className="flex items-center gap-2">
-                            <QrCode className={`w-5 h-5 ${qrType === "STATIC" ? "text-primary" : "text-slate-400"}`} />
-                            <span className="font-semibold">Static QR Code</span>
+                        <div className={`absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 transition-opacity duration-300 ${qrType === "STATIC" ? "opacity-100" : "group-hover:opacity-100"}`}></div>
+                        <div className="flex items-center gap-4 relative z-10">
+                            <div className={`p-3 rounded-xl transition-colors duration-300 ${qrType === "STATIC" ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/40" : "bg-slate-100 dark:bg-slate-700 text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 dark:group-hover:bg-indigo-900/50"}`}>
+                                <QrCode className="w-6 h-6" />
+                            </div>
+                            <span className={`font-bold text-xl transition-colors ${qrType === "STATIC" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-200"}`}>Static QR Code</span>
                         </div>
-                        <p className="text-sm text-slate-500 text-left">Directly links to your URL. Cannot be changed after printing.</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 relative z-10 leading-relaxed font-medium">Directly links to your URL. Simple and reliable, but cannot be changed after printing.</p>
                     </button>
                     
                     <button 
                         onClick={() => setQrType("DYNAMIC")}
-                        className={`p-4 border rounded-xl flex flex-col items-start gap-2 transition-all ${qrType === "DYNAMIC" ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-slate-200 hover:border-slate-300"}`}
+                        className={`group relative p-6 rounded-2xl flex flex-col items-start gap-4 transition-all duration-300 overflow-hidden text-left ${qrType === "DYNAMIC" ? "bg-purple-50/50 dark:bg-purple-900/20 border-2 border-purple-500 shadow-[0_0_25px_rgba(168,85,247,0.2)] scale-[1.02]" : "bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-lg hover:-translate-y-1"}`}
                     >
-                        <div className="flex items-center gap-2">
-                            <LinkIcon className={`w-5 h-5 ${qrType === "DYNAMIC" ? "text-primary" : "text-slate-400"}`} />
-                            <span className="font-semibold">Dynamic QR Code</span>
+                        <div className={`absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 transition-opacity duration-300 ${qrType === "DYNAMIC" ? "opacity-100" : "group-hover:opacity-100"}`}></div>
+                        <div className="flex items-center gap-4 relative z-10">
+                            <div className={`p-3 rounded-xl transition-colors duration-300 ${qrType === "DYNAMIC" ? "bg-purple-500 text-white shadow-lg shadow-purple-500/40" : "bg-slate-100 dark:bg-slate-700 text-slate-500 group-hover:bg-purple-100 group-hover:text-purple-600 dark:group-hover:bg-purple-900/50"}`}>
+                                <LinkIcon className="w-6 h-6" />
+                            </div>
+                            <span className={`font-bold text-xl transition-colors ${qrType === "DYNAMIC" ? "text-purple-600 dark:text-purple-400" : "text-slate-700 dark:text-slate-200"}`}>Dynamic QR Code</span>
                         </div>
-                        <p className="text-sm text-slate-500 text-left">Links to a short URL that redirects to your website. Can be updated anytime.</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 relative z-10 leading-relaxed font-medium">Links to a smart short-URL. Update the destination anytime without changing the printed QR!</p>
                     </button>
                 </div>
 
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Target Website URL</label>
-                    <input 
-                        type="url"
-                        placeholder="https://www.chickenextension.com"
-                        value={destinationUrl}
-                        onChange={(e) => setDestinationUrl(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-primary transition-colors"
-                    />
+                <div className="space-y-3 relative z-10">
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1 flex items-center gap-2">
+                        Target Website URL <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <LinkIcon className="w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                        </div>
+                        <input 
+                            type="url"
+                            placeholder="https://www.yourwebsite.com"
+                            value={destinationUrl}
+                            onChange={(e) => setDestinationUrl(e.target.value)}
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 transition-all shadow-sm focus:shadow-[0_0_20px_rgba(99,102,241,0.15)] text-lg"
+                        />
+                    </div>
                 </div>
 
                 <button 
                     onClick={handleGenerate}
                     disabled={generating || !destinationUrl}
-                    className="w-full bg-indigo-500 text-white px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-indigo-600 transition-colors disabled:opacity-50"
+                    className="relative w-full overflow-hidden rounded-2xl font-bold text-white group disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_15px_35px_rgba(99,102,241,0.4)] z-10 bg-gradient-to-r from-indigo-500 to-purple-600"
                 >
-                    {generating ? <Loader2 className="w-5 h-5 animate-spin" /> : <QrCode className="w-5 h-5" />} 
-                    Generate QR Code
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                    <div className="relative px-6 py-4 flex items-center justify-center gap-3">
+                        {generating ? <Loader2 className="w-6 h-6 animate-spin" /> : <QrCode className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />} 
+                        <span className="text-lg tracking-wide">{generating ? "Generating..." : "Generate Magic QR"}</span>
+                    </div>
                 </button>
             </div>
 
             {generatedQr && (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 shadow-sm flex flex-col items-center gap-6">
-                    <h2 className="text-lg font-semibold">Your QR Code is Ready</h2>
+                <div className="animate-in slide-in-from-bottom-8 fade-in duration-700 relative">
+                    {/* Floating glow behind result card */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-emerald-400/10 rounded-[3rem] blur-[80px] pointer-events-none"></div>
                     
-                    <div className="relative bg-white p-4 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-slate-100 flex items-center justify-center">
-                        <QRCode 
-                            value={generatedQr.url} 
-                            size={200}
-                            level="H"
-                        />
-                        {/* Centered Logo over QR Code */}
-                        <div className="absolute flex items-center justify-center bg-white rounded-xl shadow p-2 overflow-hidden z-10" style={{ width: '60px', height: '60px' }}>
-                            <img src="/chicken-logo.png?v=2" alt="Logo" className="w-full h-full object-contain" />
+                    <div className="relative bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 rounded-[2.5rem] p-10 sm:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.08)] flex flex-col items-center gap-8 overflow-hidden z-10">
+                        
+                        <div className="text-center space-y-3 relative z-10">
+                            <div className="inline-flex items-center justify-center p-3 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-2xl mb-2 shadow-inner animate-bounce">
+                                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                            <h2 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-slate-300">Your QR Code is Ready!</h2>
                         </div>
-                    </div>
+                        
+                        <div className="relative bg-white p-6 rounded-[2rem] shadow-[0_15px_40px_rgb(0,0,0,0.12)] border border-slate-100 flex items-center justify-center transform transition-all duration-500 hover:scale-[1.03] hover:rotate-1 hover:shadow-[0_25px_50px_rgb(16,185,129,0.2)] z-10 group">
+                            <div className="absolute inset-0 rounded-[2rem] ring-4 ring-emerald-500/20 scale-[1.08] opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-500 pointer-events-none"></div>
+                            <QRCode 
+                                value={generatedQr.url} 
+                                size={220}
+                                level="H"
+                            />
+                            {/* Centered Logo over QR Code */}
+                            <div className="absolute flex items-center justify-center bg-white rounded-[1rem] shadow-xl p-2.5 overflow-hidden z-10 transform group-hover:scale-110 transition-transform duration-500" style={{ width: '65px', height: '65px' }}>
+                                <img src="/chicken-logo.png?v=2" alt="Logo" className="w-full h-full object-contain" />
+                            </div>
+                        </div>
 
-                    <div className="text-center space-y-1">
-                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            {generatedQr.type === "STATIC" ? "Direct URL:" : "Dynamic Short URL:"}
-                        </p>
-                        <a href={generatedQr.url} target="_blank" rel="noreferrer" className="text-primary hover:underline font-mono text-sm break-all">
-                            {generatedQr.url}
-                        </a>
-                    </div>
+                        <div className="text-center space-y-2 relative z-10 bg-slate-50 dark:bg-slate-800/80 px-8 py-5 rounded-2xl border border-slate-100 dark:border-slate-700 w-full max-w-md shadow-inner">
+                            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                                {generatedQr.type === "STATIC" ? "Direct URL Destination" : "Dynamic Short URL"}
+                            </p>
+                            <a href={generatedQr.url} target="_blank" rel="noreferrer" className="block text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 hover:underline font-mono text-base break-all font-semibold transition-colors">
+                                {generatedQr.url}
+                            </a>
+                        </div>
 
-                    <button 
-                        onClick={handleDownload}
-                        className="bg-emerald-500 text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 hover:bg-emerald-600 transition-colors"
-                    >
-                        <FileDown className="w-5 h-5" /> Download High-Res Print
-                    </button>
+                        <button 
+                            onClick={handleDownload}
+                            className="relative overflow-hidden bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-10 py-4 rounded-2xl font-bold flex items-center gap-3 transition-all duration-300 hover:scale-105 hover:shadow-[0_15px_30px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_15px_30px_rgba(255,255,255,0.15)] group z-10 w-full sm:w-auto justify-center"
+                        >
+                            <div className="absolute inset-0 bg-white/20 dark:bg-slate-900/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                            <FileDown className="w-6 h-6 group-hover:-translate-y-1 transition-transform duration-300" /> 
+                            <span className="relative z-10 text-lg">Download High-Res</span>
+                        </button>
+                    </div>
                 </div>
             )}
 

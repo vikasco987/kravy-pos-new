@@ -215,9 +215,9 @@ export default async function HomePage() {
               {/* Custom Login (Email/Phone) */}
               <Link href="/auth/custom?mode=login" className="w-full">
                 <button className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-700 text-[14.5px] font-semibold transition-all duration-200 hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-700 hover:shadow-[0_6px_18px_-8px_rgba(79,70,229,0.3)] hover:-translate-y-px active:translate-y-0 focus:outline-none group">
-                   <svg style={{ width: 17, height: 17 }} className="text-slate-400 group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
+                  <svg style={{ width: 17, height: 17 }} className="text-slate-400 group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
                   Login with Phone / Email
                 </button>
               </Link>

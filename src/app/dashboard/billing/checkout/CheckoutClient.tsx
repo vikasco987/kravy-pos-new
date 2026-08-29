@@ -1096,17 +1096,9 @@ export default function CheckoutClient() {
     }
   }, [selectedTable, tables, business?.multiZoneMenuEnabled]);
 
-  // Show categories that have items in the current zone
+  // Show all categories in the current zone
   const categories = useMemo(() => {
-    const validCats = categoriesList.filter(c => {
-      if (activeZone === "All") return true;
-      // Does this category have items in this zone?
-      const hasItemsInZone = menuItems.some(i => 
-        i.category?.id === c.id && 
-        (i.zones?.includes(activeZone) || !i.zones?.length)
-      );
-      return hasItemsInZone;
-    });
+    const validCats = [...categoriesList];
     
     // Sort logic
     validCats.sort((a, b) => {
@@ -2861,7 +2853,7 @@ export default function CheckoutClient() {
                   <p className="text-sm font-bold text-[var(--kravy-text-muted)] animate-pulse">Loading menu…</p>
                 </div>
               </div>
-            ) : filteredMenuItems.length === 0 ? (
+            ) : filteredMenuItems.length === 0 && searchQuery ? (
               <div className="flex-1 flex items-center justify-center p-8 text-center">
                 <div className="opacity-40">
                   <Search size={40} className="mx-auto mb-3 text-[var(--kravy-text-muted)]" />
@@ -2874,7 +2866,6 @@ export default function CheckoutClient() {
                 {activeCategory === "All" && !searchQuery ? (
                   categories.map(catName => {
                     const catItems = filteredMenuItems.filter(i => (i.category?.name || "Others") === catName);
-                    if (catItems.length === 0) return null;
                     const catObj = categoriesList.find(c => c.name === catName) || { id: "others", name: catName };
 
                     return (

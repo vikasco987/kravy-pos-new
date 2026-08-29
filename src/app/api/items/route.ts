@@ -662,11 +662,35 @@ export async function DELETE(req: Request) {
     const deleteAll = url.searchParams.get("all") === "true";
     let id = url.searchParams.get("id");
 
+    const zone = url.searchParams.get("zone");
+
     if (deleteAll) {
-      const result = await prisma.item.deleteMany({
-        where: { clerkId: effectiveId }
-      });
-      return NextResponse.json({ success: true, count: result.count });
+      if (zone) {
+        // Find items that have this zone
+        const items = await prisma.item.findMany({
+          where: { clerkId: effectiveId, zones: { has: zone } }
+        });
+        
+        let deletedCount = 0;
+        let updatedCount = 0;
+        
+        for (const item of items) {
+          const newZones = (item.zones || []).filter(z => z !== zone);
+          if (newZones.length === 0) {
+            await prisma.item.delete({ where: { id: item.id } });
+            deletedCount++;
+          } else {
+            await prisma.item.update({ where: { id: item.id }, data: { zones: newZones } });
+            updatedCount++;
+          }
+        }
+        return NextResponse.json({ success: true, deleted: deletedCount, updated: updatedCount });
+      } else {
+        const result = await prisma.item.deleteMany({
+          where: { clerkId: effectiveId }
+        });
+        return NextResponse.json({ success: true, count: result.count });
+      }
     }
 
     if (!id) {

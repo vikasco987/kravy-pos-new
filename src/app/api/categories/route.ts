@@ -141,17 +141,23 @@ export async function DELETE(req: Request) {
     const effectiveId = await getEffectiveClerkId();
     if (!effectiveId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-    const { id } = await req.json();
+    const { id, deleteItems } = await req.json();
 
     if (!id) {
       return NextResponse.json({ message: "ID is required" }, { status: 400 });
     }
 
-    // Ownership check for products
-    await prisma.item.updateMany({
-      where: { categoryId: id, clerkId: effectiveId },
-      data: { categoryId: null },
-    });
+    if (deleteItems) {
+      await prisma.item.deleteMany({
+        where: { categoryId: id, clerkId: effectiveId },
+      });
+    } else {
+      // Ownership check for products
+      await prisma.item.updateMany({
+        where: { categoryId: id, clerkId: effectiveId },
+        data: { categoryId: null },
+      });
+    }
 
     // Delete category
     try {

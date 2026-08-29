@@ -7,7 +7,7 @@ import prisma from '../prisma';
 /**
  * MongoDB Multi-Collection Backup Engine (SDK v3)
  */
-export async function runMongoBackup() {
+export async function runMongoBackup() { console.log("1. Inside runMongoBackup");
   const MONGO_URI = process.env.DATABASE_URL;
   const BUCKET_NAME = process.env.AWS_S3_BACKUP_BUCKET;
   
@@ -34,7 +34,7 @@ export async function runMongoBackup() {
     throw new Error("Database model 'backup' not found. Please try restarting the server if you just ran prisma generate.");
   }
 
-  const backupDoc = await backupModel.create({
+  console.log("2. About to call backupModel.create"); const backupDoc = await backupModel.create({
     data: {
       filename,
       fileSize: 0,
@@ -44,7 +44,7 @@ export async function runMongoBackup() {
   const backupId = backupDoc.id;
 
   try {
-    await client.connect();
+    console.log("3. About to connect MongoClient"); await client.connect(); console.log("4. MongoClient connected");
     const db = client.db();
     const collections = await db.listCollections().toArray();
     

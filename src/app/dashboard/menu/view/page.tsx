@@ -470,7 +470,9 @@ export default function ViewMenuPage() {
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const [menuLayout, setMenuLayout] = useState<'grid' | 'list'>('grid');
+  
+  const [wipeZone, setWipeZone] = useState<string>("All");
 
   // Quick Add states
   const [quickAddCat, setQuickAddCat] = useState<{ id: string; name: string } | null>(null);
@@ -1253,11 +1255,20 @@ export default function ViewMenuPage() {
 
     try {
       const fetchUrl = asUserId ? `/api/menu/view?asUserId=${asUserId}` : "/api/menu/view";
-      const res = await fetch(fetchUrl, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      const catUrl = asUserId ? `/api/categories?asUserId=${asUserId}` : "/api/categories";
+
+      const [res, catRes] = await Promise.all([
+        fetch(fetchUrl, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }),
+        fetch(catUrl, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        })
+      ]);
 
       if (!res.ok) {
         const text = await res.text();
@@ -1265,7 +1276,7 @@ export default function ViewMenuPage() {
       }
 
       const items = await res.json();
-      console.log("🚀 [FRONTEND_FETCH] Raw Items from API:", items);
+      const allCategories = catRes.ok ? await catRes.json() : [];
 
       if (!Array.isArray(items)) {
         throw new Error("Menu API did not return array");
@@ -1274,6 +1285,15 @@ export default function ViewMenuPage() {
       const UNCATEGORISED_ID = "__uncategorised__";
 
       const categoryMap = new Map<string, MenuCategory>();
+      
+      allCategories.forEach((c: any) => {
+        categoryMap.set(c.id, {
+          id: c.id,
+          name: c.name,
+          sortOrder: c.sortOrder ?? null,
+          items: [],
+        });
+      });
 
       categoryMap.set(UNCATEGORISED_ID, {
         id: UNCATEGORISED_ID,
@@ -1315,8 +1335,8 @@ export default function ViewMenuPage() {
         });
       });
 
-      let finalCategories = Array.from(categoryMap.values()).filter(
-        (c) => c.items.length > 0
+      let finalCategories = Array.from(categoryMap.values()).filter(c => 
+        c.id !== UNCATEGORISED_ID || c.items.length > 0
       );
 
       finalCategories.sort((a, b) => {
@@ -1677,7 +1697,11 @@ export default function ViewMenuPage() {
 
   async function deleteAllMenu() {
     try {
-      const res = await fetch("/api/items?all=true", {
+      const url = new URL("/api/items", window.location.origin);
+      url.searchParams.set("all", "true");
+      if (wipeZone !== "All") url.searchParams.set("zone", wipeZone);
+
+      const res = await fetch(url.toString(), {
         method: "DELETE",
         headers: asUserId ? { "x-impersonate-id": asUserId } : undefined
       });
@@ -1746,7 +1770,7 @@ export default function ViewMenuPage() {
     }
   }
 
-  async function handleDeleteCategory() {
+  async function handleDeleteCategory(deleteItems: boolean = false) {
     if (!deletingCategory) return;
     try {
       const res = await fetch("/api/categories", {
@@ -1755,31 +1779,39 @@ export default function ViewMenuPage() {
           "Content-Type": "application/json",
           ...(asUserId ? { "x-impersonate-id": asUserId } : {})
         },
-        body: JSON.stringify({ id: deletingCategory.id }),
+        body: JSON.stringify({ id: deletingCategory.id, deleteItems }),
       });
       if (res.ok) {
-        // Items will automatically be moved to null/uncategorised on backend.
-        // On frontend, let's refresh or move them manually.
-        const uncategorisedId = "__uncategorised__";
-        setMenus(prev => {
-          const removed = prev.find(c => c.id === deletingCategory.id);
-          const filtered = prev.filter(c => c.id !== deletingCategory.id);
-          if (removed && removed.items.length > 0) {
-            // Check if uncategorised exists
-            const uncIdx = filtered.findIndex(c => c.id === uncategorisedId);
-            if (uncIdx >= 0) {
-              filtered[uncIdx].items = [...filtered[uncIdx].items, ...removed.items.map(it => ({ ...it, categoryId: null }))];
-            } else {
-              filtered.push({ id: uncategorisedId, name: "Uncategorised", items: removed.items.map(it => ({ ...it, categoryId: null })) });
+        if (deleteItems) {
+          setMenus(prev => prev.filter(c => c.id !== deletingCategory.id));
+          setToast(`Category and its ${deletingCategory.items.length} items deleted.`);
+        } else {
+          // Items will automatically be moved to null/uncategorised on backend.
+          // On frontend, let's refresh or move them manually.
+          const uncategorisedId = "__uncategorised__";
+          setMenus(prev => {
+            const removed = prev.find(c => c.id === deletingCategory.id);
+            const filtered = prev.filter(c => c.id !== deletingCategory.id);
+            if (removed && removed.items.length > 0) {
+              // Check if uncategorised exists
+              const uncIdx = filtered.findIndex(c => c.id === uncategorisedId);
+              if (uncIdx >= 0) {
+                filtered[uncIdx].items = [...filtered[uncIdx].items, ...removed.items.map(it => ({ ...it, categoryId: null }))];
+              } else {
+                filtered.push({ id: uncategorisedId, name: "Uncategorised", items: removed.items.map(it => ({ ...it, categoryId: null })) });
+              }
             }
-          }
-          return filtered;
-        });
+            return filtered;
+          });
+          setToast("Category deleted, items moved to Uncategorised.");
+        }
         setDeletingCategory(null);
-        setToast("Category deleted, items moved to Uncategorised.");
       }
     } catch (err) {
       console.error(err);
+      setToast("Failed to delete category");
+    }
+  }
     }
   }
 
@@ -2755,16 +2787,33 @@ export default function ViewMenuPage() {
                <Trash2 size={32} />
             </div>
             <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] mb-3 tracking-tight">Delete Entire Menu?</h3>
-            <p className="text-[var(--kravy-text-muted)] font-medium mb-8 leading-relaxed">
-              This will <span className="text-rose-600 font-black underline">permanently delete all categories and items</span> from your menu. This action cannot be undone.
+            <p className="text-[var(--kravy-text-muted)] font-medium mb-6 leading-relaxed">
+              This will <span className="text-rose-600 font-black underline">permanently delete items</span>. This action cannot be undone.
             </p>
+            
+            {business?.zones && business.zones.length > 0 && (
+              <div className="mb-8 text-left">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--kravy-text-muted)] mb-2 block">Select Zone to Clear</label>
+                <select 
+                  value={wipeZone} 
+                  onChange={(e) => setWipeZone(e.target.value)}
+                  className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] rounded-xl px-4 py-3 text-sm font-bold text-[var(--kravy-text-primary)]"
+                >
+                  <option value="All">⚠️ All Zones (Entire Menu)</option>
+                  {business.zones.map((z: string) => (
+                    <option key={z} value={z}>Only Zone: {z}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-3">
               <button onClick={() => setShowDeleteAllConfirm(false)} className="px-6 py-4 font-black text-[var(--kravy-text-muted)] rounded-2xl hover:bg-[var(--kravy-surface-hover)] transition-all">Cancel</button>
               <button 
                 onClick={deleteAllMenu} 
                 className="px-6 py-4 font-black rounded-2xl bg-rose-600 hover:bg-rose-700 transition-all shadow-xl shadow-rose-500/20 text-white active:scale-95"
               >
-                Yes, Delete All
+                {wipeZone === "All" ? "Yes, Delete All" : "Clear Zone"}
               </button>
             </div>
           </motion.div>
@@ -2927,7 +2976,8 @@ export default function ViewMenuPage() {
                 All {deletingCategory.items.length} products will be moved to <span className="text-indigo-600 font-black">"Uncategorised"</span> section.
               </p>
               <div className="flex flex-col gap-2">
-                <button onClick={handleDeleteCategory} className="w-full py-4 rounded-2xl bg-rose-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 transition-all active:scale-95">Yes, Delete Section</button>
+                <button onClick={() => handleDeleteCategory(false)} className="w-full py-4 rounded-2xl bg-indigo-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all active:scale-95">Delete Section Only</button>
+                <button onClick={() => handleDeleteCategory(true)} className="w-full py-4 rounded-2xl bg-rose-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 transition-all active:scale-95">Delete Section & {deletingCategory.items.length} Items</button>
                 <button onClick={() => setDeletingCategory(null)} className="w-full py-4 rounded-2xl bg-[var(--kravy-bg)] text-[var(--kravy-text-secondary)] font-black text-xs uppercase tracking-widest hover:bg-[var(--kravy-border)] transition-all">Cancel</button>
               </div>
             </div>

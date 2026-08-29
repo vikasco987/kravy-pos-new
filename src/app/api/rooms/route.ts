@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
         if (!effectiveId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         let rooms = await (prisma as any).hotelRoom.findMany({
-            where: { clerkUserId: effectiveId },
+            where: { clerkUserId: effectiveId, isActive: true },
             orderBy: { roomNumber: "asc" }
         });
 
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
             }
 
             rooms = await (prisma as any).hotelRoom.findMany({
-                where: { clerkUserId: effectiveId },
+                where: { clerkUserId: effectiveId, isActive: true },
                 orderBy: { roomNumber: "asc" }
             });
         }
@@ -110,7 +110,8 @@ export async function PUT(req: NextRequest) {
                 ...(floor ? { floor } : {}),
                 ...(pricePerNight !== undefined ? { pricePerNight: parseFloat(pricePerNight) } : {}),
                 ...(status ? { status } : {}),
-                ...(amenities ? { amenities } : {})
+                ...(amenities ? { amenities } : {}),
+                ...(body.isActive !== undefined ? { isActive: body.isActive } : {})
             }
         });
 
@@ -134,7 +135,10 @@ export async function DELETE(req: NextRequest) {
 
         if (!id) return NextResponse.json({ error: "Room ID required" }, { status: 400 });
 
-        await (prisma as any).hotelRoom.delete({ where: { id } });
+        await (prisma as any).hotelRoom.update({
+            where: { id },
+            data: { isActive: false }
+        });
         return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error("DELETE_ROOM_ERROR:", error);
