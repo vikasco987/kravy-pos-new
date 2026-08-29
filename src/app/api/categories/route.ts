@@ -21,7 +21,7 @@ export async function GET() {
       },
       select: { id: true, name: true, sortOrder: true },
       orderBy: [
-        { sortOrder: { sort: 'asc', nulls: 'last' } },
+        { sortOrder: "asc" },
         { name: "asc" }
       ],
     });

@@ -1276,6 +1276,8 @@ export default function ViewMenuPage() {
         throw new Error(text || `Failed (${res.status})`);
       }
 
+      const items = await res.json();
+
       let allCategories: any[] = [];
       if (catRes.ok) {
         try {
