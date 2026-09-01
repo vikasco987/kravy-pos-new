@@ -374,7 +374,9 @@ export async function GET(
 
     // ✅ ADD AMOUNT PAID & BALANCE DUE
     const balanceDue = Number((bill as any).balanceDue || 0);
-    const amountPaid = Number((bill as any).amountPaid || finalTotal);
+    const amountPaid = (bill as any).amountPaid !== undefined && (bill as any).amountPaid !== null 
+        ? Number((bill as any).amountPaid) 
+        : finalTotal;
 
     if (balanceDue > 0) {
       page.drawText("AMOUNT PAID:", { x: 25, y: y, size: 9, font: fontBold });

@@ -3958,6 +3958,48 @@ export default function CheckoutClient() {
                         <span className={`${isCompact ? "text-[7px]" : "text-[9px]"} uppercase tracking-wider`}>KOT</span>
                       </button>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        kravy.click();
+                        const bill = await saveBill();
+                        if (!bill) return;
+                        kravy.success();
+                        toast.success("Bill Saved! Sending WhatsApp...");
+                        
+                        try {
+                           const res = await fetch("/api/whatsapp/send-bill", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ billId: bill.id, phone: customerPhone }),
+                           });
+                           const data = await res.json();
+                           if (!res.ok) throw new Error(data.error || "Failed to send WhatsApp");
+                           toast.success("Bill Sent on WhatsApp! ✅");
+                        } catch (e: any) {
+                           toast.error(e.message || "WhatsApp Send Failed!");
+                        }
+                        
+                        const returnTo = searchParams.get("returnTo");
+                        if (returnTo) {
+                          const tableId = searchParams.get("tableId");
+                          const orderId = searchParams.get("orderId") || syncedOrderId || bill.id;
+                          const query = new URLSearchParams();
+                          if (tableId) query.set("tableId", tableId);
+                          if (orderId) query.set("orderId", orderId);
+                          router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
+                          return;
+                        }
+                        resetForm();
+                        if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                      }}
+                      disabled={items.length === 0 || isSaving}
+                      className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-2.5"} items-center justify-center gap-1 rounded-lg border-2 border-green-300 text-green-800 bg-green-50 hover:bg-green-100 transition-all font-black active:scale-95`}
+                    >
+                      <span className={isCompact ? "text-[14px]" : "text-[16px]"}>💬</span>
+                      <span className={`${isCompact ? "text-[7px]" : "text-[9px]"} uppercase tracking-wider`}>WhatsApp</span>
+                    </button>
                   </div>
                 );
               })()}

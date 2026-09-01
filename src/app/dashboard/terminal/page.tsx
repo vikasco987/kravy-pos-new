@@ -2450,7 +2450,7 @@ function KravyPOS() {
 
 
                                             {/* Action Buttons */}
-                                            <div className="px-4 pb-4 grid grid-cols-2 gap-2">
+                                            <div className="px-4 pb-4 grid grid-cols-3 gap-2">
                                                 <button onClick={async () => setActiveTab("dashboard")} className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
                                                     <Save size={18} />
                                                     <span className="text-[9px] font-black uppercase mt-1">Save</span>
@@ -2458,6 +2458,29 @@ function KravyPOS() {
                                                 <button onClick={async () => { if (activeOrderForSelected) setPrintOrder(activeOrderForSelected); setShowPreview(true); }} className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-blue-200 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-500 hover:bg-blue-100">
                                                     <Eye size={18} />
                                                     <span className="text-[9px] font-black uppercase mt-1">Preview</span>
+                                                </button>
+                                                <button 
+                                                    onClick={async () => { 
+                                                        const finalOrder = await handleCheckout(activeOrderForSelected.id);
+                                                        const billId = finalOrder?.id || activeOrderForSelected.id;
+                                                        toast.success("Bill Saved! Sending WhatsApp...");
+                                                        try {
+                                                           const res = await fetch("/api/whatsapp/send-bill", {
+                                                              method: "POST",
+                                                              headers: { "Content-Type": "application/json" },
+                                                              body: JSON.stringify({ billId, phone: activeOrderForSelected.customerPhone }),
+                                                           });
+                                                           const data = await res.json();
+                                                           if (!res.ok) throw new Error(data.error || "Failed to send WhatsApp");
+                                                           toast.success("Bill Sent on WhatsApp! ✅");
+                                                        } catch (e: any) {
+                                                           toast.error(e.message || "WhatsApp Send Failed!");
+                                                        }
+                                                    }} 
+                                                    className="flex flex-col items-center justify-center py-2 rounded-xl border-2 border-green-200 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-500 hover:bg-green-100"
+                                                >
+                                                    <MessageCircle size={18} />
+                                                    <span className="text-[9px] font-black uppercase mt-1">WhatsApp</span>
                                                 </button>
                                             </div>
                                         </div>
