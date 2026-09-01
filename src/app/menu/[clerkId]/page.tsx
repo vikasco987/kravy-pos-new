@@ -1572,7 +1572,7 @@ function PublicMenu() {
                                           <div className="relative flex-shrink-0" onClick={e => e.stopPropagation()}>
                                                <div className={`${!(item.imageUrl || item.image) ? "hidden" : "w-[156px] h-[156px] rounded-2xl overflow-hidden relative shadow-md"} border border-gray-50`}>
                                                   {(item.imageUrl || item.image) && typeof (item.imageUrl || item.image) === 'string' && ((item.imageUrl || item.image) as string).trim() !== '' ? (
-                                                      <Image src={(item.imageUrl || item.image) as string} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                                                      <Image unoptimized src={(item.imageUrl || item.image) as string} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                                                   ) : null}
                                               </div>
                                               
@@ -2920,7 +2920,7 @@ function PublicMenu() {
                                                                     </div>
                                                                     {opt.imageUrl && typeof opt.imageUrl === 'string' && opt.imageUrl.trim() !== '' && (
                                                                         <div className="w-10 h-10 rounded-lg overflow-hidden relative shadow-sm border border-gray-100 shrink-0">
-                                                                            <Image src={opt.imageUrl} alt={opt.name} fill className="object-cover" />
+                                                                            <Image unoptimized src={opt.imageUrl} alt={opt.name} fill className="object-cover" />
                                                                         </div>
                                                                     )}
                                                                     <span className={`text-[0.88rem] font-[800] ${isSelected ? "text-red-700" : "text-gray-700"}`}>{opt.name}</span>
