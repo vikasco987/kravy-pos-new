@@ -390,7 +390,7 @@ export async function GET(
       y -= 15;
     }
 
-    if (bill.paymentMode === "Wallet" && (bill as any).party) {
+    if (bill.paymentMode && bill.paymentMode.includes("Wallet") && (bill as any).party) {
       const walletBalance = Number((bill as any).party.walletBalance || 0);
       page.drawText("WALLET BALANCE:", { x: 25, y: y, size: 9, font: fontBold });
       page.drawText(`Rs. ${walletBalance.toFixed(2)}`, { x: 160, y: y, size: 9, font: fontBold });
