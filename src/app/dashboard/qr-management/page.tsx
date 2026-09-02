@@ -20,7 +20,8 @@ import {
     AlertCircle,
     RefreshCw,
     Settings,
-    Bell
+    Bell,
+    Printer
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -517,13 +518,24 @@ export default function QRManagementPage() {
                                                 <TableCell>
                                                     <div className="flex space-x-2">
                                                         {table.qrUrl && (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={async () => downloadQR(table)}
-                                                            >
-                                                                <Download className="h-3 w-3" />
-                                                            </Button>
+                                                            <>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={async () => downloadQR(table)}
+                                                                    title="Download QR Image"
+                                                                >
+                                                                    <Download className="h-3 w-3" />
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => window.open(`/dashboard/qr-management/print/${table.id}`, '_blank')}
+                                                                    title="Print QR Design"
+                                                                >
+                                                                    <Printer className="h-3 w-3" />
+                                                                </Button>
+                                                            </>
                                                         )}
                                                         <Button
                                                             size="sm"
