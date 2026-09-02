@@ -1974,7 +1974,7 @@ export default function CheckoutClient() {
       }
 
       // ✅ COMPETE LINKED ORDER (Prevent Duplicates in History)
-      if (syncedOrderId && !isHeld) {
+      if (syncedOrderId) {
         try {
           await fetch("/api/orders", {
             method: "PATCH",
