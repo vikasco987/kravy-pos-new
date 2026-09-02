@@ -1,0 +1,172 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import Barcode from 'react-barcode';
+import { X, Printer } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+export type BarcodeSize = '1x1' | '2x1' | '2.5x1.5';
+
+interface Item {
+  name: string;
+  inventoryCode?: string | null;
+  barcode?: string | null;
+}
+
+interface BarcodePrintModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  items: Item[];
+}
+
+export default function BarcodePrintModal({ isOpen, onClose, items }: BarcodePrintModalProps) {
+  const [size, setSize] = useState<BarcodeSize>('2x1');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isOpen) return null;
+
+  // Filter items that have a barcode to print
+  const printableItems = items.filter(item => item.inventoryCode || item.barcode);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Size configurations
+  const sizeConfig = {
+    '1x1': { gridClass: 'grid-cols-6 gap-2', labelClass: 'aspect-square p-1', barcodeWidth: 1, barcodeHeight: 30, fontSize: 10 },
+    '2x1': { gridClass: 'grid-cols-4 gap-4', labelClass: 'aspect-[2/1] p-2', barcodeWidth: 1.5, barcodeHeight: 40, fontSize: 12 },
+    '2.5x1.5': { gridClass: 'grid-cols-3 gap-6', labelClass: 'aspect-[2.5/1.5] p-3', barcodeWidth: 2, barcodeHeight: 50, fontSize: 14 },
+  };
+
+  const config = sizeConfig[size];
+
+  return (
+    <>
+      {/* UI Modal (hidden during print) */}
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print:hidden">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={onClose}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-[var(--kravy-surface)] rounded-2xl shadow-2xl border border-[var(--kravy-border)] overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-5 border-b border-[var(--kravy-border)]">
+                <div>
+                  <h3 className="text-lg font-black text-[var(--kravy-text-primary)]">Print Barcodes</h3>
+                  <p className="text-sm font-bold text-[var(--kravy-text-secondary)] mt-1">
+                    {printableItems.length} items ready to print
+                  </p>
+                </div>
+                <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--kravy-bg)] text-[var(--kravy-text-muted)] hover:text-[var(--kravy-text-primary)] transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-6">
+                <div>
+                  <label className="block text-xs font-black text-[var(--kravy-text-muted)] uppercase tracking-widest mb-3">
+                    Label Size
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {(['1x1', '2x1', '2.5x1.5'] as BarcodeSize[]).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setSize(s)}
+                        className={`py-3 px-4 rounded-xl text-sm font-bold border transition-all ${
+                          size === s 
+                            ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-500' 
+                            : 'bg-[var(--kravy-bg)] border-[var(--kravy-border)] text-[var(--kravy-text-secondary)] hover:border-gray-300'
+                        }`}
+                      >
+                        {s}&quot;
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4">
+                  <p className="text-sm font-bold text-orange-600">
+                    A4 sheet layout will be generated based on your selected size. Ensure your printer settings are set to A4 with default margins.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-5 border-t border-[var(--kravy-border)] bg-[var(--kravy-bg)]/50 flex justify-end gap-3">
+                <button 
+                  onClick={onClose}
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-[var(--kravy-text-secondary)] hover:bg-[var(--kravy-border)] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handlePrint}
+                  disabled={printableItems.length === 0}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black bg-indigo-500 text-white hover:bg-indigo-600 transition-colors disabled:opacity-50"
+                >
+                  <Printer size={16} />
+                  Print Now
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Print Layout (only visible during print) */}
+      {isClient && (
+        <style dangerouslySetInnerHTML={{__html: `
+          @media print {
+            body > *:not(#barcode-print-root) {
+              display: none !important;
+            }
+            body {
+              background: white !important;
+            }
+          }
+        `}} />
+      )}
+      <div id="barcode-print-root" className="hidden print:block absolute top-0 left-0 w-full bg-white text-black p-4">
+        <div className={`grid ${config.gridClass}`}>
+          {printableItems.map((item, index) => {
+            const codeToPrint = item.inventoryCode || item.barcode || '';
+            return (
+              <div 
+                key={index} 
+                className={`${config.labelClass} flex flex-col items-center justify-center border border-dashed border-gray-400 text-center break-inside-avoid`}
+              >
+                <div className="font-bold mb-1 truncate w-full px-1" style={{ fontSize: `${config.fontSize}px` }}>
+                  {item.name}
+                </div>
+                {isClient && (
+                  <Barcode 
+                    value={codeToPrint} 
+                    width={config.barcodeWidth} 
+                    height={config.barcodeHeight} 
+                    fontSize={config.fontSize - 2}
+                    displayValue={true}
+                    margin={0}
+                    background="transparent"
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}

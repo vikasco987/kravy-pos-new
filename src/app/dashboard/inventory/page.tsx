@@ -8,6 +8,7 @@ import { useSearch } from "@/components/SearchContext";
 import Link from "next/link";
 import { useConfirm } from "@/components/ConfirmContext";
 import { printBarcodeLabel } from "@/components/printing/BarcodeLabelPrint";
+import BarcodePrintModal from "./BarcodePrintModal";
 
 type InventoryItem = {
   id: string;
@@ -56,6 +57,7 @@ export default function InventoryPage() {
   // Raw Materials State
   const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);
   const [isRawModalOpen, setIsRawModalOpen] = useState(false);
+  const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
   const [editingRaw, setEditingRaw] = useState<RawMaterial | null>(null);
   const [rawFormData, setRawFormData] = useState({
     name: "", unit: "kg", stock: 0, minStock: 0, price: 0
@@ -335,6 +337,12 @@ export default function InventoryPage() {
             className={`h-10 px-6 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 shadow-md ${isStockEditMode ? 'bg-orange-500 text-white shadow-orange-500/20 border border-orange-500' : 'bg-[var(--kravy-surface)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] hover:border-orange-500 hover:text-orange-500'}`}
           >
             <Edit size={16} strokeWidth={isStockEditMode ? 3 : 2} /> {isStockEditMode ? 'Finish Editing' : 'Edit Stock'}
+          </button>
+          <button 
+            onClick={() => setIsBarcodeModalOpen(true)}
+            className="h-10 px-4 bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:border-[var(--kravy-brand)] transition-all"
+          >
+            <Printer size={16} /> PRINT BARCODES
           </button>
           <button 
             onClick={async () => {
@@ -1118,6 +1126,13 @@ export default function InventoryPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Barcode Print Modal */}
+      <BarcodePrintModal 
+        isOpen={isBarcodeModalOpen} 
+        onClose={() => setIsBarcodeModalOpen(false)} 
+        items={filteredItems} 
+      />
     </div>
   );
 }
