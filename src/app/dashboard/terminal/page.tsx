@@ -2463,16 +2463,12 @@ function KravyPOS() {
                                                     onClick={async () => { 
                                                         const finalOrder = await handleCheckout(activeOrderForSelected.id);
                                                         const billId = finalOrder?.id || activeOrderForSelected.id;
-                                                        toast.success("Bill Saved! Sending WhatsApp...");
                                                         try {
-                                                           const res = await fetch("/api/whatsapp/send-bill", {
-                                                              method: "POST",
-                                                              headers: { "Content-Type": "application/json" },
-                                                              body: JSON.stringify({ billId, phone: activeOrderForSelected.customerPhone }),
-                                                           });
-                                                           const data = await res.json();
-                                                           if (!res.ok) throw new Error(data.error || "Failed to send WhatsApp");
-                                                           toast.success("Bill Sent on WhatsApp! ✅");
+                                                           const billUrl = `${window.location.origin}/api/bill-manager/${billId}/pdf`;
+                                                           const text = `Hello! Here is your bill: ${billUrl}`;
+                                                           const waUrl = `https://wa.me/91${activeOrderForSelected.customerPhone || ""}?text=${encodeURIComponent(text)}`;
+                                                           window.open(waUrl, "_blank");
+                                                           toast.success("Opening WhatsApp...");
                                                         } catch (e: any) {
                                                            toast.error(e.message || "WhatsApp Send Failed!");
                                                         }

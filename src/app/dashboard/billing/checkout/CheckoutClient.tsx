@@ -749,7 +749,7 @@ export default function CheckoutClient() {
       const isOutsideCustomerSection = customerSectionRef.current && !customerSectionRef.current.contains(event.target as Node);
       const isOutsideSidebar = checkoutSidebarRef.current && !checkoutSidebarRef.current.contains(event.target as Node);
       
-      if (isOutsideSuggestions && isOutsideCustomerSection && isOutsideSidebar) {
+      if (isOutsideSuggestions) {
         setCustomerSuggestions([]);
       }
     }
@@ -3260,8 +3260,11 @@ export default function CheckoutClient() {
                     className="absolute left-4 right-4 bg-[var(--kravy-surface)] border border-[var(--kravy-border-strong)] rounded-2xl shadow-2xl z-[60] mt-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
                     style={{ top: '115px' }} // Positioned below Name/Phone fields
                   >
-                    <div className="p-2 border-b border-[var(--kravy-border)] bg-indigo-50/30">
+                    <div className="p-2 border-b border-[var(--kravy-border)] bg-indigo-50/30 flex items-center justify-between">
                       <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Matching Customers</p>
+                      <button onClick={() => setCustomerSuggestions([])} className="text-slate-400 hover:text-rose-500 mr-1 shrink-0" type="button">
+                         <X size={14} />
+                      </button>
                     </div>
                     {customerSuggestions.map((p, idx) => (
                       <button
@@ -3966,17 +3969,13 @@ export default function CheckoutClient() {
                         const bill = await saveBill();
                         if (!bill) return;
                         kravy.success();
-                        toast.success("Bill Saved! Sending WhatsApp...");
                         
                         try {
-                           const res = await fetch("/api/whatsapp/send-bill", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ billId: bill.id, phone: customerPhone }),
-                           });
-                           const data = await res.json();
-                           if (!res.ok) throw new Error(data.error || "Failed to send WhatsApp");
-                           toast.success("Bill Sent on WhatsApp! ✅");
+                           const billUrl = `${window.location.origin}/api/bill-manager/${bill.id}/pdf`;
+                           const text = `Hello! Here is your bill from ${business?.businessName || "us"}: ${billUrl}`;
+                           const waUrl = `https://wa.me/91${customerPhone || ""}?text=${encodeURIComponent(text)}`;
+                           window.open(waUrl, "_blank");
+                           toast.success("Opening WhatsApp...");
                         } catch (e: any) {
                            toast.error(e.message || "WhatsApp Send Failed!");
                         }
