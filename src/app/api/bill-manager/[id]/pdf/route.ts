@@ -28,6 +28,7 @@ export async function GET(
     console.log("[PDF API] STEP 2: Fetching bill from database...");
     const bill = await prisma.billManager.findUnique({
       where: { id },
+      include: { party: true }
     });
 
     if (!bill) {
@@ -386,6 +387,13 @@ export async function GET(
       page.drawText(`Rs. ${balanceDue.toFixed(2)}`, { x: 160, y: y, size: 9, font: fontBold });
       y -= 15;
     } else {
+      y -= 15;
+    }
+
+    if (bill.paymentMode === "Wallet" && (bill as any).party) {
+      const walletBalance = Number((bill as any).party.walletBalance || 0);
+      page.drawText("WALLET BALANCE:", { x: 25, y: y, size: 9, font: fontBold });
+      page.drawText(`Rs. ${walletBalance.toFixed(2)}`, { x: 160, y: y, size: 9, font: fontBold });
       y -= 15;
     }
 
