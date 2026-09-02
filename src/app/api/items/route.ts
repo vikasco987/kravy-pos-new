@@ -399,12 +399,8 @@ export async function POST(req: Request) {
         baseNumber = businessProfile.serialCounter || 100;
       }
 
-      // 2. Format the code: [Prefix] + [SellingPrice] + [Suffix]
-      const strBase = baseNumber.toString();
-      const prefix = strBase.substring(0, 2); // e.g. "10"
-      const suffix = strBase.substring(2);    // e.g. "" (if 100) or "5" (if 105)
-      
-      inventoryCode = `${prefix}${sellingPrice}${suffix}`;
+      // 2. Format the code: Purely sequential base number
+      inventoryCode = baseNumber.toString();
 
       // 3. Update the business profile (increment counter or remove from recycled)
       if (isRecycled) {
