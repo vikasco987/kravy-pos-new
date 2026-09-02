@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Barcode from 'react-barcode';
 import { X, Printer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 
 export type BarcodeSize = '1x1' | '2x1' | '2.5x1.5';
 
@@ -127,46 +128,47 @@ export default function BarcodePrintModal({ isOpen, onClose, items }: BarcodePri
       </AnimatePresence>
 
       {/* Print Layout (only visible during print) */}
-      {isClient && (
-        <style dangerouslySetInnerHTML={{__html: `
-          @media print {
-            body > *:not(#barcode-print-root) {
-              display: none !important;
+      {isClient && document.body && createPortal(
+        <>
+          <style dangerouslySetInnerHTML={{__html: `
+            @media print {
+              body > *:not(#barcode-print-root) {
+                display: none !important;
+              }
+              body {
+                background: white !important;
+              }
             }
-            body {
-              background: white !important;
-            }
-          }
-        `}} />
+          `}} />
+          <div id="barcode-print-root" className="hidden print:block absolute top-0 left-0 w-full bg-white text-black p-4 z-[9999]">
+            <div className={`grid ${config.gridClass}`}>
+              {printableItems.map((item, index) => {
+                const codeToPrint = item.inventoryCode || item.barcode || '';
+                return (
+                  <div 
+                    key={index} 
+                    className={`${config.labelClass} flex flex-col items-center justify-center border border-dashed border-gray-400 text-center break-inside-avoid`}
+                  >
+                    <div className="font-bold mb-1 truncate w-full px-1" style={{ fontSize: `${config.fontSize}px` }}>
+                      {item.name}
+                    </div>
+                    <Barcode 
+                      value={codeToPrint} 
+                      width={config.barcodeWidth} 
+                      height={config.barcodeHeight} 
+                      fontSize={config.fontSize - 2}
+                      displayValue={true}
+                      margin={0}
+                      background="transparent"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>,
+        document.body
       )}
-      <div id="barcode-print-root" className="hidden print:block absolute top-0 left-0 w-full bg-white text-black p-4">
-        <div className={`grid ${config.gridClass}`}>
-          {printableItems.map((item, index) => {
-            const codeToPrint = item.inventoryCode || item.barcode || '';
-            return (
-              <div 
-                key={index} 
-                className={`${config.labelClass} flex flex-col items-center justify-center border border-dashed border-gray-400 text-center break-inside-avoid`}
-              >
-                <div className="font-bold mb-1 truncate w-full px-1" style={{ fontSize: `${config.fontSize}px` }}>
-                  {item.name}
-                </div>
-                {isClient && (
-                  <Barcode 
-                    value={codeToPrint} 
-                    width={config.barcodeWidth} 
-                    height={config.barcodeHeight} 
-                    fontSize={config.fontSize - 2}
-                    displayValue={true}
-                    margin={0}
-                    background="transparent"
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </>
   );
 }
