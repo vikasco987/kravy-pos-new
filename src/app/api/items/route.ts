@@ -386,23 +386,23 @@ export async function POST(req: Request) {
     let inventoryCode = null;
     let sellingPrice = body.sellingPrice != null ? Number(body.sellingPrice) : (body.price != null ? Number(body.price) : 0);
 
-    // 1. Determine the base number (from recycled pool or counter)
-    let baseNumber = 100;
-    let isRecycled = false;
+    if (businessProfile?.enableSerialNumber) {
+      // 1. Determine the base number (from recycled pool or counter)
+      let baseNumber = 100;
+      let isRecycled = false;
 
-    if (businessProfile?.recycledCounters && businessProfile.recycledCounters.length > 0) {
-      // Take the first available recycled number
-      baseNumber = businessProfile.recycledCounters[0];
-      isRecycled = true;
-    } else {
-      baseNumber = businessProfile?.serialCounter || 100;
-    }
+      if (businessProfile.recycledCounters && businessProfile.recycledCounters.length > 0) {
+        // Take the first available recycled number
+        baseNumber = businessProfile.recycledCounters[0];
+        isRecycled = true;
+      } else {
+        baseNumber = businessProfile.serialCounter || 100;
+      }
 
-    // 2. Format the code: Purely sequential base number
-    inventoryCode = baseNumber.toString();
+      // 2. Format the code: Purely sequential base number
+      inventoryCode = baseNumber.toString();
 
-    // 3. Update the business profile (increment counter or remove from recycled)
-    if (businessProfile) {
+      // 3. Update the business profile (increment counter or remove from recycled)
       if (isRecycled) {
         await prisma.businessProfile.update({
           where: { id: businessProfile.id },
@@ -416,12 +416,15 @@ export async function POST(req: Request) {
         await prisma.businessProfile.update({
           where: { id: businessProfile.id },
           data: {
-            serialCounter: {
-              increment: 1
-            }
+            serialCounter: baseNumber + 1
           }
         });
       }
+    } else {
+      // Fallback: Generate a system unique ID if setting is OFF
+      const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const timePart = Date.now().toString().slice(-4);
+      inventoryCode = `ITM-${timePart}-${randomStr}`;
     }
 
     const item = await prisma.item.create({
