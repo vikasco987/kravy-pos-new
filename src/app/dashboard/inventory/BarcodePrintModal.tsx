@@ -30,8 +30,8 @@ export default function BarcodePrintModal({ isOpen, onClose, items }: BarcodePri
 
   if (!isOpen) return null;
 
-  // Filter items that have a barcode to print
-  const printableItems = items.filter(item => item.inventoryCode || item.barcode);
+  // Print all items, use a fallback code if barcode/inventoryCode is missing
+  const printableItems = items;
 
   const handlePrint = () => {
     window.print();
@@ -143,7 +143,10 @@ export default function BarcodePrintModal({ isOpen, onClose, items }: BarcodePri
           <div id="barcode-print-root" className="hidden print:block absolute top-0 left-0 w-full bg-white text-black p-4 z-[9999]">
             <div className={`grid ${config.gridClass}`}>
               {printableItems.map((item, index) => {
-                const codeToPrint = item.inventoryCode || item.barcode || '';
+                // Generate a fallback code using the item's ID or name hash if no barcode exists
+                const fallbackCode = item.name.substring(0, 4).toUpperCase() + '-' + index;
+                const codeToPrint = item.inventoryCode || item.barcode || fallbackCode;
+                
                 return (
                   <div 
                     key={index} 
@@ -153,6 +156,7 @@ export default function BarcodePrintModal({ isOpen, onClose, items }: BarcodePri
                       {item.name}
                     </div>
                     <Barcode 
+                      key={`${index}-${size}`} // Force re-render when size changes
                       value={codeToPrint} 
                       width={config.barcodeWidth} 
                       height={config.barcodeHeight} 
