@@ -3643,19 +3643,8 @@ export default function CheckoutClient() {
             {!(selectedTable !== "POS" && selectedTable !== "TAKEAWAY" && selectedTable !== "DELIVERY" && searchParams.get("returnTo")) ? (
               <>
               <div 
-                className="grid gap-1 mb-1"
-                style={{ 
-                  gridTemplateColumns: `repeat(${
-                    (["Cash", "UPI", "Card", "Pay on Counter", "Wallet"] as const).filter(mode => {
-                      if (mode === "Cash") return business?.posCashEnabled !== false;
-                      if (mode === "UPI") return business?.posUpiEnabled !== false;
-                      if (mode === "Card") return business?.posCardEnabled !== false;
-                      if (mode === "Pay on Counter") return business?.posCounterEnabled !== false;
-                      if (mode === "Wallet") return business?.posWalletEnabled !== false;
-                      return true;
-                    }).length
-                  }, 1fr)` 
-                }}
+                className="grid gap-[6px] mb-[6px] w-full"
+                style={{ gridTemplateColumns: "repeat(auto-fit, minmax(72px, 1fr))" }}
               >
                 {(["Cash", "UPI", "Card", "Pay on Counter", "Wallet", "Split"] as const)
                   .filter(mode => {
@@ -3670,13 +3659,14 @@ export default function CheckoutClient() {
                   <button
                     key={mode}
                     onClick={async () => { kravy.toggle(); setPaymentMode(mode); }}
-                    className={`py-1 px-0.5 rounded-lg border-2 font-black text-[7px] transition-all flex flex-col items-center justify-center gap-0.5 ${paymentMode === mode
+                    className={`h-[54px] min-w-0 flex flex-col items-center justify-center gap-[4px] p-1 rounded-[12px] border transition-all ${
+                      paymentMode === mode
                       ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-                      : "bg-white border-slate-200 text-slate-900 hover:border-indigo-400 hover:bg-indigo-50/30"
+                      : "bg-white border-[#e1e5ef] text-slate-900 hover:border-indigo-400 hover:bg-indigo-50/30"
                       }`}
                   >
-                    <span className="text-[12px] leading-none">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : mode === "Split" ? "🔀" : "🏪"}</span>
-                    <span className="truncate w-full text-center uppercase tracking-tighter">{mode === "Pay on Counter" ? "Counter" : mode}</span>
+                    <span className="text-[16px] leading-[18px]">{mode === "Cash" ? "💵" : mode === "UPI" ? "📱" : mode === "Card" ? "💳" : mode === "Wallet" ? "👛" : mode === "Split" ? "🔀" : "🏪"}</span>
+                    <span className="text-[9px] font-[800] leading-[11px] whitespace-nowrap truncate w-full text-center uppercase tracking-tighter">{mode === "Pay on Counter" ? "Counter" : mode}</span>
                   </button>
                 ))}
               </div>
@@ -3886,10 +3876,8 @@ export default function CheckoutClient() {
 
                 return (
                   <div 
-                    className={`grid gap-1 mb-2 ${isCompact ? "" : "grid-cols-2"}`}
-                    style={isCompact ? { 
-                      gridTemplateColumns: `repeat(${enabledActions.length}, 1fr)`
-                    } : {}}
+                    className="grid gap-[6px] mb-[8px] w-full"
+                    style={{ gridTemplateColumns: "repeat(auto-fit, minmax(64px, 1fr))" }}
                   >
                     {(business.posHoldEnabled !== false) && (
                       <button
@@ -3902,10 +3890,10 @@ export default function CheckoutClient() {
                           if (resumeBillId) router.replace("/dashboard/billing/checkout");
                         }}
                         disabled={items.length === 0 || isSaving}
-                        className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-2.5"} items-center justify-center gap-1 rounded-lg border-2 border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all font-black active:scale-95`}
+                        className="flex h-[56px] min-w-0 flex-col items-center justify-center gap-[4px] rounded-[12px] p-1 border border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all font-black active:scale-95"
                       >
-                        <span className={isCompact ? "text-[14px]" : "text-[16px]"}>⏸️</span>
-                        <span className={`${isCompact ? "text-[7px]" : "text-[9px]"} uppercase tracking-wider`}>Hold</span>
+                        <span className="text-[17px] leading-[18px]">⏸️</span>
+                        <span className="text-[9px] font-[800] leading-[11px] uppercase tracking-wider">Hold</span>
                       </button>
                     )}
 
@@ -3933,10 +3921,10 @@ export default function CheckoutClient() {
                           if (resumeBillId) router.replace("/dashboard/billing/checkout");
                         }}
                         disabled={items.length === 0 || isSaving}
-                        className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-2.5"} items-center justify-center gap-1 rounded-lg border-2 border-slate-300 text-slate-900 bg-slate-50 hover:bg-slate-200 transition-all font-black active:scale-95`}
+                        className="flex h-[56px] min-w-0 flex-col items-center justify-center gap-[4px] rounded-[12px] p-1 border border-slate-300 text-slate-900 bg-slate-50 hover:bg-slate-200 transition-all font-black active:scale-95"
                       >
-                        <span className={isCompact ? "text-[14px]" : "text-[16px]"}>💾</span>
-                        <span className={`${isCompact ? "text-[7px]" : "text-[9px]"} uppercase tracking-wider`}>Save</span>
+                        <span className="text-[17px] leading-[18px]">💾</span>
+                        <span className="text-[9px] font-[800] leading-[11px] uppercase tracking-wider">Save</span>
                       </button>
                     )}
 
@@ -3944,10 +3932,10 @@ export default function CheckoutClient() {
                       <button
                         onClick={async () => { kravy.open(); setPreviewZoom(1); setShowPreview(true); }}
                         disabled={items.length === 0 || isSaving}
-                        className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-2.5"} items-center justify-center gap-1 rounded-lg border-2 border-indigo-200 text-indigo-800 bg-indigo-50 hover:bg-indigo-100 transition-all font-black active:scale-95`}
+                        className="flex h-[56px] min-w-0 flex-col items-center justify-center gap-[4px] rounded-[12px] p-1 border border-indigo-200 text-indigo-800 bg-indigo-50 hover:bg-indigo-100 transition-all font-black active:scale-95"
                       >
-                        <span className={isCompact ? "text-[14px]" : "text-[16px]"}>👁️</span>
-                        <span className={`${isCompact ? "text-[7px]" : "text-[9px]"} uppercase tracking-wider`}>Preview</span>
+                        <span className="text-[17px] leading-[18px]">👁️</span>
+                        <span className="text-[9px] font-[800] leading-[11px] uppercase tracking-wider">Preview</span>
                       </button>
                     )}
 
@@ -3955,10 +3943,10 @@ export default function CheckoutClient() {
                       <button
                         onClick={handlePrintKOT}
                         disabled={items.length === 0 || isSaving}
-                        className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-2.5"} items-center justify-center gap-1 rounded-lg border-2 border-orange-300 text-orange-800 bg-orange-50 hover:bg-orange-100 transition-all font-black active:scale-95`}
+                        className="flex h-[56px] min-w-0 flex-col items-center justify-center gap-[4px] rounded-[12px] p-1 border border-orange-300 text-orange-800 bg-orange-50 hover:bg-orange-100 transition-all font-black active:scale-95"
                       >
-                        <span className={isCompact ? "text-[14px]" : "text-[16px]"}>🧾</span>
-                        <span className={`${isCompact ? "text-[7px]" : "text-[9px]"} uppercase tracking-wider`}>KOT</span>
+                        <span className="text-[17px] leading-[18px]">🧾</span>
+                        <span className="text-[9px] font-[800] leading-[11px] uppercase tracking-wider">KOT</span>
                       </button>
                     )}
 
@@ -3994,10 +3982,10 @@ export default function CheckoutClient() {
                         if (resumeBillId) router.replace("/dashboard/billing/checkout");
                       }}
                       disabled={items.length === 0 || isSaving}
-                      className={`flex ${isCompact ? "flex-col py-1.5" : "flex-row py-2.5"} items-center justify-center gap-1 rounded-lg border-2 border-green-300 text-green-800 bg-green-50 hover:bg-green-100 transition-all font-black active:scale-95`}
+                      className="flex h-[56px] min-w-0 flex-col items-center justify-center gap-[4px] rounded-[12px] p-1 border border-green-300 text-green-800 bg-green-50 hover:bg-green-100 transition-all font-black active:scale-95"
                     >
-                      <span className={isCompact ? "text-[14px]" : "text-[16px]"}>💬</span>
-                      <span className={`${isCompact ? "text-[7px]" : "text-[9px]"} uppercase tracking-wider`}>WhatsApp</span>
+                      <span className="text-[17px] leading-[18px]">💬</span>
+                      <span className="text-[9px] font-[800] leading-[11px] uppercase tracking-wider">WhatsApp</span>
                     </button>
                   </div>
                 );
