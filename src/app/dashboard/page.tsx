@@ -243,8 +243,21 @@ export default async function DashboardPage({
   revenueBills.forEach((bill: any) => {
     const amountToAdd = bill.paymentStatus?.toLowerCase() === "paid" ? bill.total : (bill.amountPaid || 0);
     const mode = (bill.paymentMode || "").toLowerCase();
-    if (mode.includes("cash")) cash += amountToAdd;
-    if (mode.includes("upi")) upi += amountToAdd;
+    
+    if (mode.startsWith("split (")) {
+      const cashMatch = mode.match(/cash:\s*([\d.]+)/);
+      if (cashMatch && cashMatch[1]) {
+        cash += parseFloat(cashMatch[1]);
+      }
+      
+      const upiMatch = mode.match(/upi:\s*([\d.]+)/);
+      if (upiMatch && upiMatch[1]) {
+        upi += parseFloat(upiMatch[1]);
+      }
+    } else {
+      if (mode.includes("cash")) cash += amountToAdd;
+      if (mode.includes("upi")) upi += amountToAdd;
+    }
   });
 
   // Compute Store Unpaid Udhaar Dues

@@ -241,12 +241,24 @@ export async function GET(req: NextRequest) {
     bills.forEach((bill) => {
       const mode = (bill.paymentMode || "").toLowerCase();
 
-      if (mode.includes("cash")) {
-        cash += bill.total || 0;
-      }
+      if (mode.startsWith("split (")) {
+        const cashMatch = mode.match(/cash:\s*([\d.]+)/);
+        if (cashMatch && cashMatch[1]) {
+          cash += parseFloat(cashMatch[1]);
+        }
 
-      if (mode.includes("upi")) {
-        upi += bill.total || 0;
+        const upiMatch = mode.match(/upi:\s*([\d.]+)/);
+        if (upiMatch && upiMatch[1]) {
+          upi += parseFloat(upiMatch[1]);
+        }
+      } else {
+        if (mode.includes("cash")) {
+          cash += bill.total || 0;
+        }
+
+        if (mode.includes("upi")) {
+          upi += bill.total || 0;
+        }
       }
     });
 
