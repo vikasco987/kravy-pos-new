@@ -1,9 +1,9 @@
 
 
 
-// import { NextResponse } from "next/server";
-// import prisma from "@/lib/prisma";
-// // import { uploadExternalImageToCloudinary } from "@/lib/cloudinaryUploadFromUrl";
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 
 // /* --------------------------------
