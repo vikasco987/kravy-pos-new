@@ -150,7 +150,6 @@ const InlineRateEdit = ({ item, updateRate, taxActive, perProductEnabled, global
   );
 };
 
-import React from 'react';
 
 const MenuItemCard = React.memo(({ m, items, addToCart, reduceFromCart, expiryTrackingEnabled }: { 
   m: MenuItem, 
