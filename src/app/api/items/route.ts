@@ -239,11 +239,15 @@ import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 /* --------------------------------- */
 async function findOrCreateDBUser(clerkId: string) {
+  const isMongoId = isValidObjectId(clerkId);
+  
   let user = await prisma.user.findFirst({
     where: { 
-      OR: [
+      OR: isMongoId ? [
         { clerkId: clerkId },
         { id: clerkId }
+      ] : [
+        { clerkId: clerkId }
       ]
     },
     select: { id: true, clerkId: true },

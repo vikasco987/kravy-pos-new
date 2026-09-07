@@ -66,7 +66,7 @@ export async function POST(req: Request) {
                 jtiHash: newHashedJti
             },
             JWT_SECRET,
-            { expiresIn: "90d" }
+            { expiresIn: "15m" }
         );
 
         // Find the specific old token to inherit its device metadata
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
-            maxAge: 90 * 24 * 60 * 60, // 90 days
+            maxAge: 15 * 60, // 15 minutes
             path: "/",
         });
         

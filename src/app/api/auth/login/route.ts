@@ -58,7 +58,6 @@ export async function POST(req: NextRequest) {
     const token = jwt.sign(
       { 
         userId: user.id, 
-        // Use ownerId as clerkId so the system recognizes the business context
         clerkId: user.ownerId || user.clerkId, 
         role: user.role,
         email: user.email,
@@ -66,7 +65,7 @@ export async function POST(req: NextRequest) {
         jtiHash: hashedJti
       },
       JWT_SECRET,
-      { expiresIn: "90d" }
+      { expiresIn: "15m" }
     );
 
     // 🎟️ 5. Generate Refresh JWT (90d)
@@ -137,7 +136,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 90 * 24 * 60 * 60, // 90 days
+      maxAge: 15 * 60, // 15 minutes
       path: "/"
     });
 
