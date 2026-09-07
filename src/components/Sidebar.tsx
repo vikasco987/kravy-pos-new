@@ -868,9 +868,9 @@ export default function Sidebar({ profile }: { profile?: any }) {
         </div>
       )}
 
-      {/* Main Navigation (Scrollable) */}
       <div style={{
         flex: 1, overflowY: "auto", overflowX: "hidden", padding: "16px 12px",
+      }} className="hide-scrollbar">
         {navGroups.map((group, groupIndex) => {
           // Filter items based on access rules
           const visibleItems = group.items.filter((item: any) => {
