@@ -105,7 +105,9 @@ Please return a structured JSON response matching the following structure:
       "type": "Pure Veg", // FOR FOOD ONLY: Veg items MUST be 'Pure Veg'. Meat MUST be 'Non-Veg'. Egg items MUST be 'Non-Veg (Egg)'. FOR RETAIL/HARDWARE/NON-FOOD: ALWAYS use 'General'.
       "description": "", // Leave empty to save tokens, unless a description is explicitly printed on the menu document.
       "variants": [
-        // CRUCIAL RULE: If the item has different sizes (like Regular, Medium, Large, Half, Full), you MUST extract them into this variants array under a 'Size' group. DO NOT create separate rows for sizes! If there are no sizes, leave this array empty or omit it.
+        // CRUCIAL RULE: If the item has different sizes (like Regular, Medium, Large, Half, Full), you MUST extract them into this variants array under a 'Size' group with type 'radio' and required true. DO NOT create separate rows for sizes! 
+        // ALSO, if the item has Add-ons (e.g. Extra Toppings, Flavours, Extra Cheese), you MUST extract them into this variants array as well, but with type 'checkbox' and required false. 
+        // If there are no sizes or add-ons, leave this array empty or omit it.
         {
           "groupName": "Size",
           "type": "radio",
@@ -113,6 +115,15 @@ Please return a structured JSON response matching the following structure:
           "options": [
             { "name": "Medium", "price": 199 },
             { "name": "Large", "price": 299 }
+          ]
+        },
+        {
+          "groupName": "Add-On Flavours",
+          "type": "checkbox",
+          "required": false,
+          "options": [
+            { "name": "Vanilla", "price": 40 },
+            { "name": "Hazelnut", "price": 40 }
           ]
         }
       ]
