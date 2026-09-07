@@ -3281,14 +3281,14 @@ export default function CheckoutClient() {
                   />
                 </div>
 
-                {/* Suggestions Dropdown - MOVED HIGHER */}
+                {/* Suggestions Dropdown */}
                 {customerSuggestions.length > 0 && (
                   <div 
                     ref={suggestionsRef}
-                    className="absolute left-4 right-4 bg-[var(--kravy-surface)] border border-[var(--kravy-border-strong)] rounded-2xl shadow-2xl z-[60] mt-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
-                    style={{ top: '115px' }} // Positioned below Name/Phone fields
+                    className="absolute left-0 right-0 bg-white dark:bg-[#0f172a] border border-[var(--kravy-border-strong)] rounded-xl shadow-2xl z-[60] mt-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
+                    style={{ top: '100%' }} // Positioned directly below the customer section container
                   >
-                    <div className="p-2 border-b border-[var(--kravy-border)] bg-indigo-50/30 flex items-center justify-between">
+                    <div className="p-2 border-b border-[var(--kravy-border)] bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-between">
                       <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Matching Customers</p>
                       <button onClick={() => setCustomerSuggestions([])} className="text-slate-400 hover:text-rose-500 mr-1 shrink-0" type="button">
                          <X size={14} />
@@ -3299,7 +3299,7 @@ export default function CheckoutClient() {
                         key={p.id || idx}
                         type="button"
                         onClick={async () => selectCustomer(p)}
-                        className="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-[var(--kravy-border)] last:border-0 transition-colors flex items-center justify-between"
+                        className="w-full text-left px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border-b border-[var(--kravy-border)] last:border-0 transition-colors flex items-center justify-between"
                       >
                         <div className="flex-1 min-w-0 pr-2">
                           <p className="font-black text-sm text-[var(--kravy-text-primary)] truncate">{p.name}</p>
