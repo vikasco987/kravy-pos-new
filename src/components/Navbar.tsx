@@ -17,9 +17,12 @@ interface NavbarProps {
   isMobile?: boolean;
   onMenuToggle?: () => void;
   sidebarOpen?: boolean;
+  profile?: any;
 }
 
-export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = false }: NavbarProps) {
+import SubscriptionIndicator from "./SubscriptionIndicator";
+
+export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = false, profile }: NavbarProps) {
   const { user, loading: authLoading } = useAuthContext();
   
   const { query, setQuery } = useSearch();
@@ -492,6 +495,11 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
               border: "2px solid var(--kravy-bg)"
             }} />
           </div>
+
+          {/* Subscription Indicator (Top Bar) */}
+          {!isMobile && profile && profile.premiumEndDate && (
+            <SubscriptionIndicator profile={profile} />
+          )}
 
           {/* 🔊 Sound Test Button — Click to test audio */}
           <button

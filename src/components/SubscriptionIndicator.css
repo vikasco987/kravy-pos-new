@@ -1,0 +1,268 @@
+.subscription-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* =========================
+   COMPACT TOP BAR
+========================= */
+
+.subscription-pill {
+  height: 44px;
+  min-width: 220px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  border: 1px solid #ddd6fe;
+  border-radius: 12px;
+
+  background: #ffffff;
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.subscription-pill:hover {
+  border-color: #7c3aed;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.12);
+}
+
+/* Crown */
+
+.plan-icon {
+  width: 30px;
+  height: 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  background: #f0eaff;
+  color: #6d3df5;
+}
+
+/* Text */
+
+.plan-info {
+  min-width: 76px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  line-height: 1.1;
+}
+
+.plan-info strong {
+  font-size: 12px;
+  color: #17213c;
+}
+
+.plan-info span {
+  margin-top: 3px;
+  font-size: 10px;
+  color: #8a96ad;
+}
+
+/* Small progress */
+
+.mini-progress {
+  width: 48px;
+  height: 5px;
+
+  overflow: hidden;
+
+  border-radius: 10px;
+  background: #e9eaf1;
+}
+
+.mini-progress span {
+  display: block;
+  height: 100%;
+
+  border-radius: inherit;
+
+  background: #6d3df5;
+  transition: width 0.3s ease;
+}
+
+/* Arrow */
+
+.subscription-pill svg:last-child {
+  color: #68738b;
+  transition: 0.2s;
+}
+
+.subscription-pill .rotate {
+  transform: rotate(180deg);
+}
+
+/* =========================
+   DROPDOWN
+========================= */
+
+.subscription-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+
+  width: 320px;
+  padding: 18px;
+
+  background: #ffffff;
+
+  border: 1px solid #e6e7ef;
+  border-radius: 18px;
+
+  box-shadow: 0 18px 50px rgba(20, 25, 50, 0.16);
+
+  z-index: 1000;
+}
+
+/* Header */
+
+.dropdown-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.dropdown-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #8b95aa;
+}
+
+.dropdown-header h3 {
+  margin: 5px 0 0;
+
+  font-size: 18px;
+  color: #18213a;
+}
+
+.dropdown-header button {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #f5f6fa;
+  cursor: pointer;
+  color: #18213a;
+}
+
+/* Days */
+
+.days-section {
+  margin-top: 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.days-section strong {
+  font-size: 28px;
+  color: #18213a;
+}
+
+.days-section span {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9099ad;
+}
+
+.active-icon {
+  color: #18b878;
+}
+
+/* Progress */
+
+.progress-bar {
+  height: 8px;
+
+  margin-top: 10px;
+
+  overflow: hidden;
+
+  border-radius: 10px;
+
+  background: #e9eaf1;
+}
+
+.progress-bar span {
+  display: block;
+  height: 100%;
+
+  border-radius: inherit;
+
+  background: linear-gradient(
+    90deg,
+    #5535ee,
+    #8b5cf6
+  );
+}
+
+/* Expiry */
+
+.expiry {
+  margin-top: 17px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-size: 13px;
+  color: #778198;
+}
+
+.expiry svg {
+  color: #687893;
+}
+
+.expiry strong {
+  color: #27324c;
+}
+
+/* Button */
+
+.view-plan {
+  width: 100%;
+  height: 42px;
+
+  margin-top: 18px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: #5b35ef;
+  color: white;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.view-plan:hover {
+  background: #4925d5;
+}
+
+/* Overlay */
+
+.subscription-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 999;
+}

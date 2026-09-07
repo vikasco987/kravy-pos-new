@@ -47,6 +47,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         trialStartedAt: profile?.trialStartedAt,
         premiumEndDate: profile?.premiumEndDate,
         isFrozen: profile?.isFrozen,
+        subscriptionAmountPaid: (seller.privateMetadata as any)?.subscriptionAmountPaid,
         secondaryEmails: seller.secondaryEmails || [],
         secondaryPhones: seller.secondaryPhones || [],
       },
@@ -115,6 +116,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           ...updateData
         }
       });
+    }
+    
+    if (body.subscriptionAmountPaid !== undefined) {
+      const existingUser = await prisma.user.findUnique({ where: { clerkId: id }});
+      if (existingUser) {
+        const currentMeta = (existingUser.privateMetadata as any) || {};
+        await prisma.user.update({
+           where: { clerkId: id },
+           data: {
+              privateMetadata: {
+                 ...currentMeta,
+                 subscriptionAmountPaid: Number(body.subscriptionAmountPaid)
+              }
+           }
+        });
+      }
     }
 
     return NextResponse.json({ success: true });

@@ -72,6 +72,7 @@ export async function GET(request: Request) {
       });
       if (profile && user) {
         (profile as any).enableMultipleProfiles = user.enableMultipleProfiles;
+        (profile as any).subscriptionAmountPaid = (user.privateMetadata as any)?.subscriptionAmountPaid || 4000;
       }
     } catch (e: any) {
       if (e.code === 'P2032' || e.message?.includes('createdAt') || e.message?.includes('updatedAt')) {
@@ -91,6 +92,7 @@ export async function GET(request: Request) {
         });
         if (profile && user) {
           (profile as any).enableMultipleProfiles = user.enableMultipleProfiles;
+          (profile as any).subscriptionAmountPaid = (user.privateMetadata as any)?.subscriptionAmountPaid || 4000;
         }
       } else {
         throw e;

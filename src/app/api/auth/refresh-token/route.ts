@@ -47,15 +47,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: "Refresh token revoked or already used" }, { status: 401 });
         }
 
-        // 3. Token Rotation
-        const newJti = crypto.randomUUID();
-        const newHashedJti = crypto.createHash('sha256').update(newJti).digest('hex');
-        const newRefreshToken = jwt.sign(
-            { userId: user.id, jti: newJti },
-            JWT_SECRET,
-            { expiresIn: "90d" }
-        );
-
+        // 3. NO Token Rotation (Fixes race conditions on concurrent requests)
         const newAccessToken = jwt.sign(
             { 
                 userId: user.id, 
@@ -63,39 +55,11 @@ export async function POST(req: Request) {
                 role: user.role,
                 email: user.email,
                 name: user.name,
-                jtiHash: newHashedJti
+                jtiHash: hashedJti // Keep the same hashedJti
             },
             JWT_SECRET,
             { expiresIn: "15m" }
         );
-
-        // Find the specific old token to inherit its device metadata
-        const oldTokenData = existingTokens.find((t: any) => t.jtiHash === hashedJti) || {};
-        const maxSessions = currentMeta.maxSessions || 15;
-
-        // Remove old hash, add new hash with inherited info, and cleanup old tokens
-        const updatedTokens = existingTokens
-            .filter((t: any) => t.jtiHash !== hashedJti)
-            .concat({ 
-                jtiHash: newHashedJti, 
-                createdAt: Date.now(),
-                ipAddress: oldTokenData.ipAddress,
-                userAgent: oldTokenData.userAgent,
-                deviceType: oldTokenData.deviceType,
-                browser: oldTokenData.browser,
-                os: oldTokenData.os
-            })
-            .slice(-maxSessions);
-
-        await prisma.user.update({
-            where: { id: user.id },
-            data: {
-                privateMetadata: {
-                    ...currentMeta,
-                    refreshTokens: updatedTokens
-                }
-            }
-        });
 
         const response = NextResponse.json({
             success: true,
@@ -111,7 +75,7 @@ export async function POST(req: Request) {
             path: "/",
         });
         
-        response.cookies.set("kravy_refresh_token", newRefreshToken, {
+        response.cookies.set("kravy_refresh_token", refreshTokenStr, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",

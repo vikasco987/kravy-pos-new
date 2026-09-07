@@ -240,6 +240,7 @@ export default function ClientLayout({
                   isMobile={isMobile}
                   onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
                   sidebarOpen={sidebarOpen}
+                  profile={profile}
                 />
               </div>
             )}
