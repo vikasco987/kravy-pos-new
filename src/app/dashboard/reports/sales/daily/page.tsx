@@ -185,7 +185,8 @@ export default async function DailySalesReportPage({
   const prevEnd = new Date(startRange.getTime() - 1);
   
   const prevBills = await prisma.billManager.findMany({
-    where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: prevStart, lte: prevEnd } }
+    where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: prevStart, lte: prevEnd } },
+    select: { total: true }
   });
 
   const prevExternalSales = await prisma.externalSales.findMany({

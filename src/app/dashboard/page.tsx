@@ -125,19 +125,9 @@ export default async function DashboardPage({
         items: true,
         tokenNumber: true,
         tableName: true,
+        isOrder: true,
+        orderStatus: true,
       },
-    }),
-    prisma.billManager.findMany({
-      where: {
-        clerkUserId: effectiveId,
-        isDeleted: false,
-        paymentStatus: { in: ["PAID", "Paid", "PENDING", "Pending", "PARTIAL", "Partial"] },
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      select: { total: true, amountPaid: true, paymentStatus: true },
     }),
     prisma.billManager.findMany({
       where: {
@@ -190,6 +180,7 @@ export default async function DashboardPage({
         createdAt: { lt: startDate },
         customerPhone: { not: null },
       },
+      distinct: ['customerPhone'],
       select: { customerPhone: true },
     }),
     prisma.order.count({
@@ -231,7 +222,9 @@ export default async function DashboardPage({
     return sum;
   }, 0);
 
-  const totalRevenue = calculateSale(bills);
+  // Use the same fetched bills for current stats to save a duplicate query
+  const currentStats = bills.filter(b => ["PAID", "PENDING", "PARTIAL"].includes(b.paymentStatus?.toUpperCase() || ""));
+  const totalRevenue = calculateSale(currentStats);
   const totalBills = bills.length;
 
   // Filter bills to only include paid and partially paid bills for revenue/breakdown computations
