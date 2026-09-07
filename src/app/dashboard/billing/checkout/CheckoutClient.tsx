@@ -150,7 +150,9 @@ const InlineRateEdit = ({ item, updateRate, taxActive, perProductEnabled, global
   );
 };
 
-const MenuItemCard = ({ m, items, addToCart, reduceFromCart, expiryTrackingEnabled }: { 
+import React from 'react';
+
+const MenuItemCard = React.memo(({ m, items, addToCart, reduceFromCart, expiryTrackingEnabled }: { 
   m: MenuItem, 
   items: BillItem[], 
   addToCart: (item: MenuItem) => void, 
@@ -242,7 +244,22 @@ const MenuItemCard = ({ m, items, addToCart, reduceFromCart, expiryTrackingEnabl
       </div>
     </div>
   );
-};
+}, (prev, next) => {
+  const isVirtual = (prev.m as any).isVirtualGroup;
+  const groupedIds = isVirtual ? ((prev.m as any).groupedItems || []).map((g: any) => g.id) : [prev.m.id];
+  
+  const getQty = (items: BillItem[], id: string) => {
+    const inCartItems = items.filter((i) => groupedIds.includes(i.id) || (!isVirtual && i.id.startsWith(`${id}-`)));
+    return inCartItems.reduce((acc, i) => acc + i.qty, 0);
+  };
+  
+  const prevQty = getQty(prev.items, prev.m.id);
+  const nextQty = getQty(next.items, next.m.id);
+  
+  return prev.m === next.m && 
+         prevQty === nextQty && 
+         prev.expiryTrackingEnabled === next.expiryTrackingEnabled;
+});
 
 const QuickAddCard = ({ cat, onClick }: { cat: { id: string, name: string }, onClick: () => void }) => {
   return (
@@ -3232,8 +3249,12 @@ export default function CheckoutClient() {
                       autoComplete="off"
                       onChange={(e) => handleCustomerNameChange(e.target.value)}
                       onFocus={() => {
-                        handleCustomerNameChange(customerName);
-                        setCustomerSuggestions([]);
+                        if (customerName.length >= 2) {
+                          setCustomerSuggestions(parties.filter(p => 
+                            p.name.toLowerCase().includes(customerName.toLowerCase()) || 
+                            p.phone.includes(customerName)
+                          ).slice(0, 5));
+                        }
                       }}
                       className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
                         p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
@@ -3247,7 +3268,14 @@ export default function CheckoutClient() {
                     value={customerPhone}
                     autoComplete="off"
                     onChange={(e) => handleCustomerPhoneChange(e.target.value)}
-                    onFocus={() => handleCustomerPhoneChange(customerPhone)}
+                    onFocus={() => {
+                        if (customerPhone.length >= 3) {
+                          setCustomerSuggestions(parties.filter(p => 
+                            p.phone.includes(customerPhone) || 
+                            p.name.toLowerCase().includes(customerPhone.toLowerCase())
+                          ).slice(0, 5));
+                        }
+                    }}
                     className="bg-[var(--kravy-input-bg)] border border-[var(--kravy-input-border)] text-[var(--kravy-text-primary)]
                       p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
                       focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-mono"
