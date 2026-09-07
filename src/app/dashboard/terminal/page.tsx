@@ -557,7 +557,7 @@ function KravyPOS() {
 
             document.body.appendChild(printContainer);
 
-            // Dynamic Image Preloader: Ensure all images are 100% loaded before showing the print dialog
+            // Dynamic Image Preloader: Ensure all images are loaded, but NEVER block for more than 200ms
             const images = printContainer.querySelectorAll("img");
             const imagePromises = Array.from(images).map((img) => {
               if (img.complete) return Promise.resolve();
@@ -567,7 +567,10 @@ function KravyPOS() {
               });
             });
 
-            Promise.all(imagePromises).then(() => {
+            Promise.race([
+                Promise.all(imagePromises),
+                new Promise((resolve) => setTimeout(resolve, 200)) // Force continue after 200ms to prevent hanging!
+            ]).then(() => {
                 setTimeout(() => {
                     window.print();
                     
@@ -576,7 +579,7 @@ function KravyPOS() {
                         if (document.head.contains(styleSheet)) document.head.removeChild(styleSheet);
                         if (document.body.contains(printContainer)) document.body.removeChild(printContainer);
                     }, 2500);
-                }, 300);
+                }, 50); // slight UI buffer
             });
 
             // 🔥 Post-Print Updates
