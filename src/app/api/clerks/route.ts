@@ -10,8 +10,13 @@ export async function GET(req: Request) {
     }
 
     // Verify admin role
-    const me = await prisma.user.findUnique({
-      where: { clerkId: effectiveId },
+    const me = await prisma.user.findFirst({
+      where: { 
+        OR: [
+          { clerkId: effectiveId },
+          { id: effectiveId }
+        ]
+      },
       select: { role: true },
     });
 

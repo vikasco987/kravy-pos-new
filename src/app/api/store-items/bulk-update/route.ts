@@ -165,8 +165,13 @@ export async function PUT(req: Request) {
     /* =====================
        FETCH USER + ROLE
     ===================== */
-    const user = await prisma.user.findUnique({
-      where: { clerkId: effectiveId },
+    const user = await prisma.user.findFirst({
+      where: { 
+        OR: [
+          { clerkId: effectiveId },
+          { id: effectiveId }
+        ]
+      },
       select: { role: true },
     });
 

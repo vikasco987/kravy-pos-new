@@ -10,14 +10,21 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
         
-        const user = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+        const user = await prisma.user.findFirst({ 
+            where: { 
+                OR: [
+                    { clerkId: clerkUserId },
+                    { id: clerkUserId }
+                ]
+            } 
+        });
         if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
         
         const currentMetadata = (user.privateMetadata as any) || {};
         
         // Update metadata with the new push tokens
         await prisma.user.update({
-            where: { clerkId: clerkUserId },
+            where: { id: user.id },
             data: {
                 privateMetadata: {
                     ...currentMetadata,

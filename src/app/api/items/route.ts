@@ -239,8 +239,13 @@
 
 /* --------------------------------- */
 async function findOrCreateDBUser(clerkId: string) {
-  let user = await prisma.user.findUnique({
-    where: { clerkId },
+  let user = await prisma.user.findFirst({
+    where: { 
+      OR: [
+        { clerkId: clerkId },
+        { id: clerkId }
+      ]
+    },
     select: { id: true, clerkId: true },
   });
 

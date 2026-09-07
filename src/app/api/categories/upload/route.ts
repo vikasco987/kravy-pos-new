@@ -102,11 +102,23 @@ export async function POST(req: NextRequest) {
         .end(buffer);
     });
 
+    const dbUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { clerkId: effectiveId },
+          { id: effectiveId }
+        ]
+      },
+      select: { id: true }
+    });
+    
+    if (!dbUser) throw new Error("User not found in DB");
+
     // ✅ Save to DB with user relation
     const saved = await prisma.upload.create({
       data: {
         imageUrl: uploadResponse.secure_url,
-        user: { connect: { clerkId: effectiveId } },
+        user: { connect: { id: dbUser.id } },
       },
     });
 

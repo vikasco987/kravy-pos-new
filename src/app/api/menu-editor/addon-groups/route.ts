@@ -30,7 +30,14 @@ export async function POST(req: Request) {
     if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()
-    const user = await prisma.user.findUnique({ where: { clerkId: clerkId } })
+    const user = await prisma.user.findFirst({ 
+      where: { 
+        OR: [
+          { clerkId: clerkId },
+          { id: clerkId }
+        ]
+      } 
+    })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
     const { items: groupItems, itemIds, categoryIds, itemsOnMenu, createdAt, updatedAt, clerkId: bodyClerkId, userId, ...rest } = body
