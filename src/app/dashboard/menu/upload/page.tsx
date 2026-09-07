@@ -167,7 +167,9 @@ export default function Page() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to save item");
+      if (!res.ok) {
+        throw new Error(data.details || data.error || "Failed to save item");
+      }
 
       alert("✅ Item saved successfully!");
       formRef.current.reset();
@@ -197,9 +199,9 @@ export default function Page() {
       setImage(null);
       setOpenSection(null);
       setSelectedCategory("");
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Failed to save item:", error);
-      alert("Failed to save item. Please check the form data.");
+      alert(`Failed to save item: ${error.message || "Please check the form data."}`);
     } finally {
       setIsSaving(false);
     }

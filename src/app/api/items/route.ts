@@ -423,10 +423,10 @@ export async function POST(req: Request) {
         openingStock: body.openingStock != null ? Number(body.openingStock) : 0,
         currentStock: body.currentStock != null ? Number(body.currentStock) : 0,
         reorderLevel: body.reorderLevel != null ? Number(body.reorderLevel) : 0,
-        variants: body.variants || null,
+        variants: body.variants ? body.variants : undefined,
         addonGroupIds: body.addonGroupIds || [],
         zones: body.zones || [],
-        expiryDate: body.expiryDate ? new Date(body.expiryDate) : null,
+        expiryDate: body.expiryDate ? new Date(body.expiryDate) : undefined,
       },
       include: {
         category: true,
