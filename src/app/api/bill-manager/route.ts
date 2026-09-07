@@ -116,17 +116,12 @@ export async function POST(req: NextRequest) {
     const itemIds = items
       .map((it: any) => it.id)
       .filter((id: any) => id && /^[0-9a-fA-F]{24}$/.test(id));
-    const [profile, dbItems, offer, lastBill] = await Promise.all([
+    const [profile, dbItems, offer] = await Promise.all([
       body.profileId 
         ? prisma.businessProfile.findUnique({ where: { id: body.profileId } }) 
         : prisma.businessProfile.findFirst({ where: { userId: effectiveId }, orderBy: { createdAt: 'asc' } }),
       prisma.item.findMany({ where: { id: { in: itemIds }, clerkId: effectiveId } }),
-      discountCode ? prisma.offer.findFirst({ where: { code: discountCode.toUpperCase(), isActive: true, clerkUserId: effectiveId } }) : Promise.resolve(null),
-      prisma.billManager.findFirst({
-        where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
-        orderBy: { createdAt: 'desc' },
-        select: { billNumber: true }
-      })
+      discountCode ? prisma.offer.findFirst({ where: { code: discountCode.toUpperCase(), isActive: true, clerkUserId: effectiveId } }) : Promise.resolve(null)
     ]);
     
     const isTaxEnabled = profile?.taxEnabled ?? true;
@@ -199,6 +194,8 @@ export async function POST(req: NextRequest) {
     const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt - loyaltyPointsRedeemedAmt + finalDeliveryCharge + serverDeliveryGst + finalPackagingCharge + serverPackagingGst + finalServiceCharge).toFixed(2));
 
     let nextSerial = 1;
+    let lastBill = null;
+    
     if (profile?.id) {
         try {
             const updatedProfile = await prisma.businessProfile.update({
@@ -209,16 +206,28 @@ export async function POST(req: NextRequest) {
             nextSerial = updatedProfile.billCounter;
         } catch(e) {
             console.error("Atomic billCounter increment failed, falling back to manual calculation:", e);
+            lastBill = await prisma.billManager.findFirst({
+              where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
+              orderBy: { createdAt: 'desc' },
+              select: { billNumber: true }
+            });
             if (lastBill && lastBill.billNumber) {
                 const parts = lastBill.billNumber.split('/');
                 const lastSerial = parseInt(parts[parts.length - 1], 10);
                 if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
             }
         }
-    } else if (lastBill && lastBill.billNumber) {
-        const parts = lastBill.billNumber.split('/');
-        const lastSerial = parseInt(parts[parts.length - 1], 10);
-        if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
+    } else {
+        lastBill = await prisma.billManager.findFirst({
+          where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
+          orderBy: { createdAt: 'desc' },
+          select: { billNumber: true }
+        });
+        if (lastBill && lastBill.billNumber) {
+            const parts = lastBill.billNumber.split('/');
+            const lastSerial = parseInt(parts[parts.length - 1], 10);
+            if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
+        }
     }
     const serialLabel = String(nextSerial).padStart(4, '0');
     let billNumber = `INV/${yy}${mm}/${serialLabel}`;

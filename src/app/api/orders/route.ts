@@ -242,29 +242,43 @@ export async function POST(req: NextRequest) {
         startOfMonth.setHours(0, 0, 0, 0);
         
         let maxSerial = 0;
-        const lastBill = await prisma.billManager.findFirst({
-            where: { clerkUserId: effectiveId, createdAt: { gte: startOfMonth }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
-            orderBy: { createdAt: 'desc' },
-            select: { billNumber: true }
-        });
-        if (lastBill?.billNumber) {
-            const parts = lastBill.billNumber.split(/[\/-]/);
-            const serial = parseInt(parts[parts.length - 1], 10);
-            if (!isNaN(serial) && serial > maxSerial) maxSerial = serial;
-        }
-        
-        const lastOrder = await prisma.order.findFirst({
-            where: { clerkUserId: effectiveId, createdAt: { gte: startOfMonth }, orderNumber: { not: null } },
-            orderBy: { createdAt: 'desc' },
-            select: { orderNumber: true }
-        });
-        if (lastOrder?.orderNumber) {
-            const parts = lastOrder.orderNumber.split(/[\/-]/);
-            const serial = parseInt(parts[parts.length - 1], 10);
-            if (!isNaN(serial) && serial > maxSerial) maxSerial = serial;
+        let nextSerial = 1;
+        try {
+            // Use atomic billCounter increment to avoid slow regex queries over entire collections
+            if (latestProfile?.id) {
+                const updatedProfile = await prisma.businessProfile.update({
+                    where: { id: latestProfile.id },
+                    data: { billCounter: { increment: 1 } },
+                    select: { billCounter: true }
+                });
+                nextSerial = updatedProfile.billCounter;
+            }
+        } catch (e) {
+            console.error("Atomic billCounter increment failed for order, falling back to manual calculation:", e);
+            const lastBill = await prisma.billManager.findFirst({
+                where: { clerkUserId: effectiveId, createdAt: { gte: startOfMonth }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
+                orderBy: { createdAt: 'desc' },
+                select: { billNumber: true }
+            });
+            if (lastBill?.billNumber) {
+                const parts = lastBill.billNumber.split(/[\/-]/);
+                const serial = parseInt(parts[parts.length - 1], 10);
+                if (!isNaN(serial) && serial > maxSerial) maxSerial = serial;
+            }
+            
+            const lastOrder = await prisma.order.findFirst({
+                where: { clerkUserId: effectiveId, createdAt: { gte: startOfMonth }, orderNumber: { not: null } },
+                orderBy: { createdAt: 'desc' },
+                select: { orderNumber: true }
+            });
+            if (lastOrder?.orderNumber) {
+                const parts = lastOrder.orderNumber.split(/[\/-]/);
+                const serial = parseInt(parts[parts.length - 1], 10);
+                if (!isNaN(serial) && serial > maxSerial) maxSerial = serial;
+            }
+            nextSerial = maxSerial + 1;
         }
 
-        const nextSerial = maxSerial + 1;
         const yy = String(startOfMonth.getFullYear()).slice(-2);
         const mm = String(startOfMonth.getMonth() + 1).padStart(2, '0');
         const orderNumber = `INV/${yy}${mm}/${nextSerial.toString().padStart(4, '0')}`;
@@ -312,7 +326,7 @@ export async function POST(req: NextRequest) {
                     data: { orderId: order.id, isNewOrder: true },
                     priority: "high"
                 };
-                await fetch("https://exp.host/--/api/v2/push/send", {
+                fetch("https://exp.host/--/api/v2/push/send", {
                     method: "POST",
                     headers: {
                         "Accept": "application/json",
@@ -320,7 +334,7 @@ export async function POST(req: NextRequest) {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify(pushPayload)
-                });
+                }).catch(err => console.error("Silent push fetch error:", err));
             } else {
                 console.log(`No expoPushToken found for user: ${effectiveId}`);
             }
