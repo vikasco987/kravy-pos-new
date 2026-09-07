@@ -124,8 +124,6 @@ export default async function DashboardPage({
         items: true,
         tokenNumber: true,
         tableName: true,
-        isOrder: true,
-        orderStatus: true,
       },
     }),
     prisma.billManager.findMany({
