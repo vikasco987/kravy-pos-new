@@ -913,7 +913,8 @@ export default function ViewMenuPage() {
             isVeg: isVegVal,
             isEgg: isEggVal,
             zones: selectedAiZone ? [selectedAiZone] : [],
-            description: item.description || ""
+            description: item.description || "",
+            variants: item.variants || undefined
           })
         });
       }

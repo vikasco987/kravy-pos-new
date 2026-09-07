@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
                     clerkId: newClerkId,
                     userId: newUser.id,
                     isActive: true,
+                    variants: item.variants ? JSON.parse(JSON.stringify(item.variants)) : undefined,
                     zones: globalZone ? [globalZone] : []
                 };
             });

@@ -456,7 +456,8 @@ export default function AutoApplyClient() {
             name: item.item_name || item.name || 'Unnamed Item',
             category: item.category_name || item.category || 'Uncategorized',
             price: item.price || item.price_default || '0',
-            imageUrl: item.assigned_image || null
+            imageUrl: item.assigned_image || null,
+            variants: item.variants || undefined
         }));
 
         const payload = {

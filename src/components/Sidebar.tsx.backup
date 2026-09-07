@@ -1,0 +1,1474 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSidebar } from "./SidebarContext";
+import { useTheme } from "./ThemeProvider";
+
+import {
+  LayoutGrid,
+  PlusCircle,
+  ClipboardList,
+  QrCode,
+  UtensilsCrossed,
+  Package,
+  Users,
+  BarChart3,
+  FileText,
+  TrendingUp,
+  ShieldCheck,
+  Building,
+  Settings,
+  Bell,
+  LogOut,
+  ChevronLeft,
+  Upload,
+  History,
+  UserCircle,
+  Receipt,
+  ShoppingCart,
+  Home,
+  PieChart,
+  Database,
+  Shield,
+  HelpCircle,
+  Archive,
+  Trash2,
+  Edit3,
+  Download,
+  RefreshCw,
+  Filter,
+  Search,
+  Menu,
+  Percent,
+  Rocket,
+  X,
+  Check,
+  AlertCircle,
+  Target,
+  Award,
+  Star,
+  Heart,
+  MessageSquare,
+  Mail,
+  Phone,
+  Calendar,
+  Clock,
+  MapPin,
+  Tag,
+  DollarSign,
+  TrendingDown,
+  IndianRupee,
+  Activity,
+  Globe,
+  Lock,
+  Key,
+  Eye,
+  EyeOff,
+  Copy,
+  Share2,
+  Printer,
+  Save,
+  FolderOpen,
+  Folder,
+  File,
+  FilePlus,
+  Edit,
+  Trash,
+  MoreVertical,
+  ChevronDown,
+  ChevronUp,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  Move,
+  Maximize2,
+  Minimize2,
+  Fullscreen,
+  LogIn,
+  UserPlus,
+  UserMinus,
+  Crown,
+  Gem,
+  Gift,
+  Flame,
+  Sun,
+  Moon,
+  Cloud,
+  CloudRain,
+  Server,
+  HardDrive,
+  Wifi,
+  Battery,
+  BatteryCharging,
+  Power,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
+  Square,
+  Circle,
+  Triangle,
+  Hexagon,
+  Camera,
+  Layers,
+  Zap,
+  LayoutDashboard,
+  Fuel,
+  Smartphone,
+  CalendarDays,
+  CheckCircle2,
+  ChevronRight,
+  CreditCard,
+  Sparkles,
+  X
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { kravy } from "@/lib/sounds";
+import { useAuthContext } from "./AuthContext";
+
+const navGroups = [
+  {
+    group: "OPERATIONS",
+    items: [
+      { icon: <Home size={18} />, label: "Store Dashboard", href: "/dashboard" },
+      { icon: <ShoppingCart size={18} />, label: "Quick POS Billing", href: "/dashboard/billing/checkout" },
+      { icon: <LayoutDashboard size={18} />, label: "Floor Management", href: "/dashboard/terminal" },
+      { icon: <Activity size={18} />, label: "Kitchen Workflow", href: "/dashboard/kitchen" },
+      { icon: <LayoutGrid size={18} />, label: "Table Status", href: "/dashboard/tables" },
+      { icon: <Building size={18} />, label: "Hotel Room Stay", href: "/dashboard/rooms", badge: "Hotel", badgeColor: "#8B5CF6" },
+      { icon: <Fuel size={18} />, label: "Fuel Billing", href: "/dashboard/fuel", badge: "Fuel", badgeColor: "#FF6B35" },
+      { icon: <Receipt size={18} />, label: "Past Bills / History", href: "/dashboard/billing" },
+      { icon: <Zap size={18} />, label: "Go to Billing Panel", href: "https://billing.kravy.in", external: true },
+    ]
+  },
+  {
+    group: "STORE CATALOG",
+    items: [
+      { icon: <UtensilsCrossed size={18} />, label: "Browse Products", href: "/dashboard/menu/view" },
+      { icon: <Printer size={18} />, label: "PDF Menu Studio", href: "/dashboard/menu/pdf", badge: "PDF", badgeColor: "#EC4899" },
+      { icon: <Sparkles size={18} />, label: "Quotation AI", href: "/dashboard/quotation", badge: "AI", badgeColor: "#F59E0B" },
+      { icon: <Sparkles size={18} />, label: "Interactive Editor", href: "/dashboard/menu-editor", badge: "New", badgeColor: "#8B5CF6" },
+      { icon: <Layers size={18} />, label: "Add-on clusters", href: "/dashboard/menu/addons", badge: "Setup", badgeColor: "#10B981" },
+      { icon: <Zap size={18} />, label: "AI Menu Scraper", href: "/dashboard/ai-scraper", badge: "AI", badgeColor: "#F59E0B", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Sparkles size={18} />, label: "Auto Apply Images", href: "/dashboard/auto-apply", badge: "AI OCR", badgeColor: "#8B5CF6", roles: ["ADMIN"] },
+      { icon: <PlusCircle size={18} />, label: "Add Single Item", href: "/dashboard/menu/upload" },
+      { icon: <Upload size={18} />, label: "Excel Bulk Import", href: "/dashboard/store-item-upload", badge: "Import", badgeColor: "#FF6B35", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Settings size={18} />, label: "Category & Editor", href: "/dashboard/menu/edit" },
+    ]
+  },
+  {
+    group: "RESOURCES",
+    items: [
+      { icon: <Users size={18} />, label: "Customer Parties", href: "/dashboard/parties" },
+      { icon: <UserPlus size={18} />, label: "Staff Management", href: "/dashboard/staff", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Package size={18} />, label: "Inventory Stock", href: "/dashboard/inventory", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <IndianRupee size={18} />, label: "Restaurant Expenses", href: "/dashboard/expenses", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <QrCode size={18} />, label: "QR Order Terminal", href: "/dashboard/qr-orders", badge: "Scan", badgeColor: "#8B5CF6" },
+    ]
+  },
+  {
+    group: "MARKETING",
+    items: [
+      { icon: <Sparkles size={18} />, label: "Marketing Hub", href: "/dashboard/combos", badge: "Live", badgeColor: "#8B5CF6", showHorizontalGroup: true },
+      { icon: <Camera size={18} />, label: "Gallery Manager", href: "/dashboard/gallery", badge: "Photos", badgeColor: "#7C3AED" },
+    ]
+  },
+  {
+    group: "REPORTS & ANALYTICS",
+    items: [
+      { icon: <TrendingUp size={18} />, label: "Daily Sales Report", href: "/dashboard/reports/sales/daily", badge: "Live", badgeColor: "#10B981" },
+      { icon: <BarChart3 size={18} />, label: "Sales Analytics", href: "/dashboard/reports/sales/drilldown", badge: "BI", badgeColor: "#6366F1" },
+      { icon: <AlertCircle size={18} />, label: "Customer Dues / Udhaar", href: "/dashboard/reports/unpaid", badge: "Dues", badgeColor: "#EF4444" },
+      { icon: <CreditCard size={18} />, label: "Wallet Deposits", href: "/dashboard/reports/wallet-deposits", badge: "New", badgeColor: "#8B5CF6" },
+      { icon: <PieChart size={18} />, label: "GST Reports", href: "/dashboard/reports/gst", badge: "GST", badgeColor: "#F59E0B" },
+      { icon: <FileText size={18} />, label: "Manual Invoice", href: "/dashboard/admin/invoice-generator", badge: "PDF", badgeColor: "#8B5CF6", roles: ["ADMIN"] },
+    ]
+  },
+  {
+    group: "INSIGHTS",
+    items: [
+      { icon: <BarChart3 size={18} />, label: "Revenue Analysis", href: "/dashboard/reports/sales/revenue" },
+      { icon: <PieChart size={18} />, label: "Mode of Payment", href: "/dashboard/reports/payments" },
+      { icon: <TrendingUp size={18} />, label: "Business Growth", href: "/dashboard/reports/performance" },
+    ]
+  },
+  {
+
+    group: "ADMINISTRATION",
+    items: [
+      { icon: <UserCircle size={18} />, label: "Business Profile", href: "/dashboard/profile", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Mail size={18} />, label: "Gmail Integration", href: "/dashboard/integration/gmail", roles: ["ADMIN", "SELLER"] },
+      { icon: <Settings size={18} />, label: "POS Settings", href: "/dashboard/settings", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Printer size={18} />, label: "Printing Setup", href: "/dashboard/settings/printing", roles: ["ADMIN", "SELLER", "STAFF"], badge: "New", badgeColor: "#8B5CF6" },
+      { icon: <Smartphone size={18} />, label: "App Settings", href: "/dashboard/admin/app-settings", roles: ["ADMIN"] },
+      { icon: <Database size={18} />, label: "Backups", href: "/dashboard/admin/backup", roles: ["ADMIN"] },
+      { icon: <QrCode size={18} />, label: "Google Review QR", href: "/dashboard/admin/qr-manager", badge: "New", badgeColor: "#8B5CF6", roles: ["ADMIN"] },
+      { icon: <Zap size={18} />, label: "Advanced Controls", href: "/dashboard/settings/advanced", roles: ["ADMIN", "SELLER", "STAFF"], badge: "Setup", badgeColor: "#8B5CF6" },
+      { icon: <Percent size={18} />, label: "Tax Management", href: "/dashboard/settings/tax", badge: "GST", badgeColor: "#F59E0B", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Lock size={18} />, label: "Access Control", href: "/admin/users", badge: "Roles", badgeColor: "#EF4444", roles: ["ADMIN"] },
+      { 
+        icon: <Shield size={18} />, 
+        label: "Manage Platform", 
+        href: "/admin/dashboard", 
+        roles: ["ADMIN"],
+        subItems: [
+          { label: "System Funnel", href: "/admin/dashboard", badge: "Live" },
+          { label: "Merchant Data", href: "/admin/merchants", badge: "Report" },
+          { label: "Onboard Dealer", href: "/admin/onboarding" },
+          { label: "Custom Auth", href: "/admin/onboarding-custom" },
+        ]
+      },
+      { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Archive size={18} />, label: "Archive & Trash", href: "/dashboard/billing/deleted", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <HelpCircle size={18} />, label: "Help & Support", href: "/dashboard/help" },
+    ]
+  }
+];
+function SidebarItem({ item, index, isActive, collapsed, isDark, pathname }: any) {
+  const [isOpen, setIsOpen] = useState(isActive);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className="w-full"
+    >
+      <div
+        onClick={() => {
+          if (item.subItems) {
+            setIsOpen(!isOpen);
+            kravy.click();
+          }
+        }}
+      >
+        <Link 
+          href={item.subItems ? "#" : item.href} 
+          style={{ textDecoration: 'none' }} 
+          prefetch={false} 
+          onClick={(e) => { 
+            if(item.subItems) e.preventDefault();
+            if(item.href !== '#' && !item.subItems) kravy.click(); 
+          }}
+        >
+          <motion.div
+            whileHover={{ scale: 1.02, x: 5 }}
+            whileTap={{ scale: 0.98 }}
+            style={{
+              width: "100%", display: "flex", alignItems: "center",
+              gap: "12px", padding: collapsed ? "13px 0" : "11px 12px",
+              justifyContent: collapsed ? "center" : "flex-start",
+              borderRadius: "14px",
+              cursor: item.href === "#" && !item.subItems ? "not-allowed" : "pointer",
+              pointerEvents: item.href === "#" && !item.subItems ? "none" : "auto",
+              opacity: item.href === "#" && !item.subItems ? 0.6 : 1,
+              marginBottom: "3px", transition: "all 0.25s cubic-bezier(.4,0,.2,1)",
+              background: isActive
+                ? "linear-gradient(135deg, rgba(255,107,53,0.22) 0%, rgba(245,158,11,0.08) 100%)"
+                : "transparent",
+              border: isActive
+                ? "1px solid rgba(255,107,53,0.2)"
+                : "1px solid transparent",
+              position: "relative",
+              boxShadow: isActive ? "0 2px 12px rgba(255,107,53,0.12), inset 0 1px 0 rgba(255,255,255,0.06)" : "none",
+            }}
+          >
+            <motion.span
+              animate={{
+                color: isActive ? "#FF6B35" : (isDark ? "rgba(255,255,255,0.38)" : "var(--kravy-text-muted)"),
+                scale: isActive ? 1.1 : 1,
+              }}
+              transition={{ duration: 0.2 }}
+              style={{
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                filter: isActive ? (isDark ? "drop-shadow(0 0 8px rgba(255,107,53,0.6))" : "none") : "none",
+              }}
+            >
+              {item.icon}
+            </motion.span>
+            {!collapsed && (
+              <motion.div
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                transition={{ delay: 0.1 }}
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}
+              >
+                <motion.span
+                  animate={{
+                    fontWeight: isActive ? 700 : 500,
+                    color: isActive
+                      ? (isDark ? "#FFFFFF" : "var(--kravy-orange)")
+                      : (isDark ? "rgba(255,255,255,0.5)" : "var(--kravy-text-secondary)"),
+                  }}
+                  transition={{ duration: 0.2 }}
+                  style={{ flex: 1, textAlign: "left", fontSize: "0.85rem", letterSpacing: "-0.01em" }}
+                >
+                  {item.label}
+                </motion.span>
+                
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  {item.badge && (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.2 }}
+                      style={{
+                        fontSize: "0.55rem", fontWeight: 900, padding: "2px 8px",
+                        borderRadius: "10px", 
+                        background: item.badgeColor || (isActive ? "var(--kravy-orange)" : "var(--kravy-bg-active)"),
+                        color: "#FFFFFF", textTransform: "uppercase",
+                        letterSpacing: "0.5px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                        opacity: 0.9
+                      }}
+                    >
+                      {item.badge}
+                    </motion.span>
+                  )}
+                  {item.subItems && (
+                    <motion.div
+                      animate={{ rotate: isOpen ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <ChevronDown size={14} style={{ opacity: 0.4 }} />
+                    </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+            {isActive && !(item as any).showHorizontalGroup && (
+              <motion.div
+                initial={{ opacity: 0, scaleY: 0 }}
+                animate={{ opacity: 1, scaleY: 1 }}
+                transition={{ delay: 0.3 }}
+                style={{
+                  position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
+                  width: "4px", height: "70%", borderRadius: "2px 0 0 2px",
+                  background: "linear-gradient(#FF6B35, #F59E0B)",
+                  boxShadow: "0 0 12px rgba(255,107,53,0.5)",
+                }}
+              />
+            )}
+          </motion.div>
+        </Link>
+      </div>
+
+      {/* SUB-ITEMS RENDERING */}
+      {!collapsed && item.subItems && (
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              style={{ overflow: "hidden", marginLeft: "28px", borderLeft: "1px solid rgba(255,255,255,0.05)" }}
+            >
+              {item.subItems.map((sub: any) => {
+                const isSubActive = pathname === sub.href;
+                return (
+                  <Link key={sub.label} href={sub.href} style={{ textDecoration: 'none' }} onClick={() => kravy.click()}>
+                    <motion.div
+                      whileHover={{ x: 5 }}
+                      style={{
+                        padding: "8px 12px",
+                        fontSize: "0.78rem",
+                        fontWeight: isSubActive ? 800 : 500,
+                        color: isSubActive ? "#FF6B35" : (isDark ? "rgba(255,255,255,0.4)" : "var(--kravy-text-muted)"),
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        borderRadius: "8px",
+                        margin: "2px 0",
+                        background: isSubActive ? "rgba(255,107,53,0.05)" : "transparent"
+                      }}
+                    >
+                      {sub.label}
+                      {sub.badge && (
+                        <span style={{ fontSize: '0.5rem', opacity: 0.5, border: '1px solid currentColor', padding: '1px 4px', borderRadius: '4px' }}>{sub.badge}</span>
+                      )}
+                    </motion.div>
+                  </Link>
+                )
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
+
+      {(item as any).showHorizontalGroup && !collapsed && (
+        <div style={{ display: 'flex', gap: '8px', padding: '0 12px 12px', marginTop: '-4px' }}>
+          <Link href="/dashboard/combos" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => { kravy.click(); }}>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                padding: '10px',
+                background: pathname === '/dashboard/combos' ? 'rgba(255,107,53,0.15)' : 'rgba(255,255,255,0.03)',
+                borderRadius: '12px',
+                border: `1px solid ${pathname === '/dashboard/combos' ? 'rgba(255,107,53,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <Sparkles size={16} color={pathname === '/dashboard/combos' ? '#FF6B35' : '#64748B'} />
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pathname === '/dashboard/combos' ? '#FF6B35' : '#64748B' }}>COMBOS</span>
+            </motion.div>
+          </Link>
+          <Link href="/dashboard/offers" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => { kravy.click(); }}>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                padding: '10px',
+                background: pathname.startsWith('/dashboard/offers') ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)',
+                borderRadius: '12px',
+                border: `1px solid ${pathname.startsWith('/dashboard/offers') ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <Percent size={16} color={pathname.startsWith('/dashboard/offers') ? '#10B981' : '#64748B'} />
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pathname.startsWith('/dashboard/offers') ? '#10B981' : '#64748B' }}>OFFERS</span>
+            </motion.div>
+          </Link>
+          <Link href="/dashboard/gallery" style={{ textDecoration: 'none', flex: 1 }} prefetch={false} onClick={() => { kravy.click(); }}>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                padding: '10px',
+                background: pathname === '/dashboard/gallery' ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.03)',
+                borderRadius: '12px',
+                border: `1px solid ${pathname === '/dashboard/gallery' ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <Camera size={16} color={pathname === '/dashboard/gallery' ? '#7C3AED' : '#64748B'} />
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pathname === '/dashboard/gallery' ? '#7C3AED' : '#64748B' }}>GALLERY</span>
+            </motion.div>
+          </Link>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+export default function Sidebar({ profile }: { profile?: any }) {
+  const { collapsed, setCollapsed } = useSidebar();
+  const { resolvedTheme } = useTheme();
+  const pathname = usePathname();
+  const isDark = resolvedTheme === "dark";
+  const [mounted, setMounted] = useState(false);
+  const { user: authUser, loading: authLoading } = useAuthContext();
+  const [taxEnabled, setTaxEnabled] = useState(false);
+  const [aiScraperEnabled, setAiScraperEnabled] = useState(false);
+  const [excelImportEnabled, setExcelImportEnabled] = useState(false);
+  const [fuelBillingEnabled, setFuelBillingEnabled] = useState(false);
+  const [hotelManagementEnabled, setHotelManagementEnabled] = useState(false);
+  const [activeTablesCount, setActiveTablesCount] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [hiddenSidebarItems, setHiddenSidebarItems] = useState<string[]>([]);
+
+  // Derive from AuthContext
+  const userRole = authUser?.type || "USER";
+  const allowedPaths = authUser?.permissions || [];
+  const loadingRole = authLoading;
+
+  useEffect(() => {
+    setMounted(true);
+
+    // Fetch profile to check tax status & hidden sidebar items
+    fetch("/api/profile")
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          if (data.taxEnabled || data.perProductTaxEnabled) setTaxEnabled(true);
+          if (data.aiScraperEnabled) setAiScraperEnabled(true);
+          if (data.excelImportEnabled) setExcelImportEnabled(true);
+          setFuelBillingEnabled(!!data.enableFuelBilling);
+          setHotelManagementEnabled(!!data.enableHotelManagement);
+
+        }
+      })
+      .catch(() => {});
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "kravy_hidden_sidebar_items") {
+        try {
+          const newVal = e.newValue ? JSON.parse(e.newValue) : [];
+          setHiddenSidebarItems(newVal);
+        } catch (err) {}
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    // Fetch active tables count
+    const fetchActiveCount = async () => {
+      try {
+        const res = await fetch("/api/orders?limit=50");
+        if (res.ok) {
+          const orders = await res.json();
+          if (Array.isArray(orders)) {
+            const activeTables = new Set(
+              orders
+                .filter((o: any) => o.status !== "COMPLETED" && !o.isDeleted && o.table?.id)
+                .map((o: any) => o.table.id)
+            );
+            setActiveTablesCount(activeTables.size);
+          }
+        }
+      } catch (err) {}
+    };
+
+    fetchActiveCount();
+    const interval = setInterval(fetchActiveCount, 15000); // 15 seconds
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Update hidden items when authUser changes
+  useEffect(() => {
+    if (authLoading) return;
+    if (authUser && authUser.hiddenSidebarItems) {
+      setHiddenSidebarItems(authUser.hiddenSidebarItems);
+      localStorage.setItem("kravy_hidden_sidebar_items", JSON.stringify(authUser.hiddenSidebarItems));
+    } else {
+      try {
+        const local = localStorage.getItem("kravy_hidden_sidebar_items");
+        if (local) setHiddenSidebarItems(JSON.parse(local));
+      } catch (e) {}
+    }
+  }, [authUser, authLoading]);
+
+  if (!mounted) return null;
+
+  return (
+    <aside style={{
+      width: collapsed ? "72px" : "260px",
+      minWidth: collapsed ? "72px" : "260px",
+      height: "100vh",
+      background: isDark
+        ? "linear-gradient(145deg, #0F0F23 0%, #1A1A2E 50%, #16213E 100%)"
+        : "linear-gradient(145deg, #F8FAFC 0%, #F1F5F9 50%, #E2E8F0 100%)",
+      borderRight: isDark
+        ? "1px solid rgba(139,92,246,0.15)"
+        : "1px solid rgba(139,92,246,0.1)",
+      display: "flex",
+      flexDirection: "column",
+      transition: "all 0.4s cubic-bezier(.4,0,.2,1)",
+      boxShadow: isDark
+        ? "4px 0 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.08)"
+        : "4px 0 24px rgba(0,0,0,0.04), 0 0 0 1px rgba(139,92,246,0.05)",
+      overflow: "hidden",
+    }}>
+
+      {/* Animated Gradient Background */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+        background: `
+          radial-gradient(circle at 20% 50%, rgba(139,92,246,0.15) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(59,130,246,0.12) 0%, transparent 50%),
+          radial-gradient(circle at 40% 80%, rgba(236,72,153,0.1) 0%, transparent 50%),
+          linear-gradient(180deg, rgba(139,92,246,0.03) 0%, transparent 100%)
+        `,
+        pointerEvents: "none",
+      }} />
+
+      {/* Floating Particles Effect */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+        backgroundImage: `
+          radial-gradient(circle at 25% 25%, rgba(139,92,246,0.3) 0%, transparent 2px),
+          radial-gradient(circle at 75% 75%, rgba(59,130,246,0.3) 0%, transparent 2px),
+          radial-gradient(circle at 50% 10%, rgba(236,72,153,0.3) 0%, transparent 2px),
+          radial-gradient(circle at 10% 90%, rgba(34,197,94,0.3) 0%, transparent 2px)
+        `,
+        backgroundSize: "60px 60px, 80px 80px, 100px 100px, 40px 40px",
+        backgroundPosition: "0 0, 30px 30px, 60px 10px, 10px 70px",
+        pointerEvents: "none",
+        opacity: 0.6,
+      }} />
+
+      {/* LOGO */}
+      <div style={{
+        padding: collapsed ? "24px 0" : "24px 24px",
+        display: "flex", alignItems: "center",
+        justifyContent: collapsed ? "center" : "space-between",
+        borderBottom: isDark
+          ? "1px solid rgba(139,92,246,0.15)"
+          : "1px solid rgba(0,0,0,0.05)",
+        minHeight: "80px",
+        background: isDark
+          ? "linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.04))"
+          : "linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4))",
+        backdropFilter: "blur(20px)",
+        position: "relative",
+        zIndex: 10,
+      }}>
+        {/* Glow Effect Behind Logo */}
+        <div style={{
+          position: "absolute", top: "50%", left: collapsed ? "50%" : "36px",
+          transform: "translate(-50%, -50%)",
+          width: collapsed ? "60px" : "80px", height: collapsed ? "60px" : "80px",
+          background: "radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(59,130,246,0.2) 50%, transparent 70%)",
+          filter: "blur(20px)",
+          pointerEvents: "none",
+        }} />
+
+        {!collapsed && (
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileHover={{ scale: 1.02, x: 2 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            style={{ display: "flex", alignItems: "center", gap: "12px", position: "relative", zIndex: 5, cursor: "pointer" }}
+            onClick={() => window.location.href = '/dashboard'}
+          >
+            <div style={{ position: "relative" }}>
+              <div style={{ 
+                position: "absolute", inset: -4, borderRadius: "16px",
+                background: "linear-gradient(135deg, rgba(59,130,246,0.5), rgba(37,99,235,0.1))",
+                filter: "blur(8px)", zIndex: 0
+              }} />
+              <div style={{
+                  height: "46px", 
+                  width: "46px",
+                  borderRadius: "14px",
+                  boxShadow: isDark ? "0 4px 15px rgba(37,99,235,0.3)" : "0 4px 15px rgba(37,99,235,0.2)",
+                  position: "relative", zIndex: 1,
+                  overflow: "hidden",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "center"
+              }}>
+                <img 
+                  src="/kravylogo.png" 
+                  alt="Kravy Logo" 
+                  style={{ 
+                    width: "100%", 
+                    height: "auto",
+                    display: "block"
+                  }} 
+                />
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, ease: "easeOut" }}
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: 900,
+                  letterSpacing: "-0.8px",
+                  lineHeight: 1,
+                  background: isDark ? "linear-gradient(135deg, #FFFFFF, #93C5FD)" : "linear-gradient(135deg, #1E3A8A, #2563EB)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  filter: isDark ? "drop-shadow(0 2px 12px rgba(147,197,253,0.3))" : "drop-shadow(0 2px 10px rgba(37,99,235,0.2))"
+                }}
+              >
+                Kravy
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, ease: "easeOut" }}
+                style={{ 
+                  fontSize: "0.55rem", 
+                  color: isDark ? "rgba(147, 197, 253, 0.9)" : "rgba(37, 99, 235, 0.85)", 
+                  letterSpacing: "3.5px", 
+                  fontWeight: 800, 
+                  marginTop: "4px",
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap"
+                }}
+              >
+                Billing Software
+              </motion.div>
+              </div>
+          </motion.div>
+        )}
+        {collapsed && (
+          <motion.div
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            style={{
+              position: "relative",
+              zIndex: 5,
+              display: "flex", alignItems: "center", justifyContent: "center"
+            }}
+          >
+            <div style={{
+                height: "40px", 
+                width: "40px",
+                borderRadius: "10px",
+                overflow: "hidden",
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "center"
+            }}>
+              <img 
+                src="/kravylogo.png" 
+                alt="Kravy POS" 
+                style={{ 
+                  width: "100%",
+                  height: "auto",
+                  display: "block"
+                }} 
+              />
+            </div>
+          </motion.div>
+        )}
+        <motion.button
+          whileHover={{ scale: 1.1, backgroundColor: "rgba(139,92,246,0.15)", borderColor: "rgba(139,92,246,0.3)" }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => { kravy.toggle(); setCollapsed(!collapsed); }}
+          style={{
+            background: "rgba(139,92,246,0.08)",
+            border: "1px solid rgba(139,92,246,0.2)",
+            borderRadius: "12px", width: "36px", height: "36px",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", color: "#8B5CF6", fontSize: "0.75rem",
+            flexShrink: 0, transition: "all 0.3s",
+            position: "relative", zIndex: 5
+          }}
+        >
+          <AnimatePresence mode="wait">
+            {collapsed ? (
+              <motion.div
+                key="expand"
+                initial={{ rotate: -180, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 180, opacity: 0 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+              >
+                <ChevronRight size={18} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="collapse"
+                initial={{ rotate: 180, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: -180, opacity: 0 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+              >
+                <ChevronLeft size={18} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      </div>
+
+      {/* OUTLET STATUS */}
+      {!collapsed && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3, ease: "easeOut" }}
+          style={{
+            margin: "16px 20px",
+            background: "linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,185,129,0.08))",
+            border: "1px solid rgba(34,197,94,0.3)",
+            borderRadius: "16px", padding: "16px 18px",
+            display: "flex", alignItems: "center", gap: "14px",
+            backdropFilter: "blur(20px)",
+            boxShadow: "0 8px 32px rgba(34,197,94,0.15), inset 0 1px 0 rgba(255,255,255,0.1)",
+            position: "relative",
+            overflow: "hidden"
+          }}
+        >
+          {/* Animated Glow Background */}
+          <div style={{
+            position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+            background: "radial-gradient(circle at 20% 50%, rgba(34,197,94,0.2) 0%, transparent 70%)",
+            pointerEvents: "none"
+          }} />
+
+          <motion.div
+            animate={{ scale: [1, 1.3, 1], opacity: [0.8, 1, 0.8] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              width: "12px", height: "12px", borderRadius: "50%",
+              background: "linear-gradient(135deg, #22C55E, #10B981)",
+              boxShadow: "0 0 20px #22C55E, 0 0 40px rgba(34,197,94,0.5)",
+              position: "relative",
+              zIndex: 2
+            }}
+          >
+            {/* Inner Pulse */}
+            <div style={{
+              position: "absolute", top: "50%", left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "6px", height: "6px", borderRadius: "50%",
+              background: "rgba(255,255,255,0.8)",
+            }} />
+          </motion.div>
+
+          <div style={{ position: "relative", zIndex: 2 }}>
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, ease: "easeOut" }}
+              style={{ fontSize: "0.8rem", fontWeight: 800, color: "#22C55E", textShadow: "0 0 10px rgba(34,197,94,0.5)" }}
+            >
+              SYSTEM ACTIVE
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* SEARCH INPUT */}
+      {!collapsed && (
+        <div style={{ padding: "0 20px", marginBottom: "16px" }}>
+          <div style={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center"
+          }}>
+            <Search size={14} style={{ position: "absolute", left: "12px", color: "var(--kravy-text-muted)" }} />
+            <input
+              type="text"
+              placeholder="Search menus..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "8px 12px 8px 32px",
+                borderRadius: "10px",
+                border: "1px solid var(--kravy-border)",
+                background: isDark ? "rgba(255,255,255,0.05)" : "var(--kravy-surface)",
+                color: "var(--kravy-text-primary)",
+                fontSize: "0.75rem",
+                outline: "none",
+                fontWeight: 600
+              }}
+            />
+            {searchQuery && (
+              <X 
+                size={14} 
+                onClick={() => setSearchQuery("")} 
+                style={{ position: "absolute", right: "12px", color: "var(--kravy-text-muted)", cursor: "pointer" }} 
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Main Navigation (Scrollable) */}
+      <div style={{
+        flex: 1, overflowY: "auto", overflowX: "hidden", padding: "16px 12px",
+      }} className="hide-scrollbar">
+        {!collapsed && profile?.isPremium && profile?.premiumEndDate && (
+          <div style={{ marginBottom: "16px" }}>
+            <SubscriptionCard profile={profile} />
+          </div>
+        )}
+        {navGroups.map((group, groupIndex) => {
+          // Filter items based on access rules
+          const visibleItems = group.items.filter((item: any) => {
+            // 6. Search query filtering (Applied universally before role checks)
+            const matchesSearch = searchQuery 
+              ? item.label.toLowerCase().includes(searchQuery.toLowerCase()) 
+                || (item.subItems && item.subItems.some((sub: any) => sub.label.toLowerCase().includes(searchQuery.toLowerCase())))
+              : true;
+
+            if (!matchesSearch) return false;
+
+            // 0. User custom hidden items check (except critical settings link)
+            if (item.href !== "/dashboard/settings" && item.href !== "/dashboard/profile") {
+              if (hiddenSidebarItems.includes(item.href) || hiddenSidebarItems.includes(item.label)) {
+                return false;
+              }
+            }
+
+            // 1. Application-wide Feature Flags (Controlled by profile settings)
+            if (item.label === "GST Reports" && !taxEnabled) return false;
+            if (item.label === "AI Menu Scraper" && !aiScraperEnabled) return false;
+            if (item.label === "Excel Bulk Import" && !excelImportEnabled) return false;
+            if (item.label === "Fuel Billing" && !fuelBillingEnabled) return false;
+            if (item.label === "Hotel Room Stay" && !hotelManagementEnabled) return false;
+
+            // 2. Global Admin Bypass - Show everything else to administrators
+            if (userRole === "ADMIN") return true;
+
+            // 3. Explicit Path-based Access (from DB allowedPaths)
+            // If the current user has this specific path in their allowed list, grant access
+            const baseHref = item.href.split("?")[0];
+            const hasLegacyWorkflow = allowedPaths.includes("/dashboard/workflow");
+            const isNewPath = baseHref === "/dashboard/terminal" || baseHref === "/dashboard/kitchen";
+            const isExpensePath = baseHref === "/dashboard/expenses";
+            const isRoomPath = baseHref === "/dashboard/rooms";
+            
+            if (
+              allowedPaths.includes("*") || 
+              allowedPaths.includes(item.href) || 
+              allowedPaths.includes(baseHref) || 
+              (hasLegacyWorkflow && isNewPath) ||
+              (isExpensePath && (userRole === "ADMIN" || userRole === "SELLER")) ||
+              isRoomPath
+            ) return true;
+
+            
+            // 4. Permission List Constraint
+            // If the user has a populated list of allowedPaths, but this item isn't in it,
+            // we must deny access (even if legacy role checks below might pass).
+            if (allowedPaths.length > 0) return false;
+
+            // 5. Legacy Role-based Fallback (used when allowedPaths is empty)
+            const hasRoleAccess = allowedPaths.length === 0 && item.roles ? item.roles.includes(userRole) : (allowedPaths.length === 0);
+              
+            return hasRoleAccess;
+          });
+
+          // 2. If no items are allowed in this group, don't show the group at all
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={group.group || `group-${groupIndex}`} style={{ marginBottom: "20px" }}>
+              {!collapsed && (
+                <div style={{
+                  fontSize: "0.58rem", fontWeight: 800,
+                  color: isDark ? "rgba(255,255,255,0.25)" : "var(--kravy-text-muted)",
+                  letterSpacing: "2px", padding: "12px 10px 6px",
+                  textTransform: "uppercase",
+                  opacity: isDark ? 1 : 0.7,
+                }}>{group.group}</div>
+              )}
+              {visibleItems.map((item: any, index) => (
+                <SidebarItem 
+                  key={item.label} 
+                  item={item} 
+                  index={index} 
+                  isActive={pathname === item.href || item.subItems?.some((sub: any) => pathname === sub.href)} 
+                  collapsed={collapsed} 
+                  isDark={isDark} 
+                  pathname={pathname}
+                />
+              ))}
+          </div>
+        );
+      })}
+    </nav>
+
+      {/* USER SECTION AT BOTTOM */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8 }}
+        style={{
+          padding: collapsed ? "12px 0" : "16px 14px",
+          borderTop: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)",
+          display: "flex", alignItems: "center",
+          justifyContent: collapsed ? "center" : "flex-start",
+          gap: "12px",
+          marginTop: "auto",
+          background: "linear-gradient(135deg, rgba(255,107,53,0.02), transparent)",
+          backdropFilter: "blur(10px)",
+        }}
+      >
+        <motion.div
+          whileHover={{ scale: 1.05, rotate: 5 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          {authUser?.imageUrl ? (
+            <motion.img
+              src={authUser.imageUrl}
+              style={{
+                width: "38px", height: "38px", borderRadius: "50%",
+                border: "2px solid #FF6B35", flexShrink: 0,
+                boxShadow: "0 4px 16px rgba(255,107,53,0.3)",
+                objectFit: "cover"
+              }}
+              alt="User Avatar"
+              whileHover={{ boxShadow: "0 6px 24px rgba(255,107,53,0.5)" }}
+            />
+          ) : (
+            <motion.div
+              whileHover={{ boxShadow: "0 6px 24px rgba(255,107,53,0.5)" }}
+              style={{
+                width: "38px", height: "38px", borderRadius: "50%",
+                background: "linear-gradient(135deg, #FF6B35, #F59E0B)",
+                display: "flex", alignItems: "center", justifyCenter: "center",
+                fontSize: "0.9rem", fontWeight: 800, color: "#fff",
+                flexShrink: 0, boxShadow: "0 4px 16px rgba(255,107,53,0.3)",
+              }}
+            >
+              {(authUser?.name?.[0] || 'U').toUpperCase()}
+            </motion.div>
+          )}
+        </motion.div>
+        {!collapsed && (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.9 }}
+            style={{ flex: 1, minWidth: 0 }}
+          >
+            <motion.div
+              style={{
+                fontSize: "0.82rem", fontWeight: 700,
+                color: isDark ? "#E2E8F0" : "#1E293B",
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
+              }}
+              whileHover={{ color: "#FF6B35" }}
+            >
+              {authUser?.name || "Admin User"}
+            </motion.div>
+            <motion.div
+              style={{
+                fontSize: "0.62rem", color: isDark ? "#A0AEC0" : "#4A5568", fontFamily: "monospace",
+                display: "flex", alignItems: "center", gap: "6px"
+              }}
+            >
+              <div style={{
+                width: "6px", height: "6px", borderRadius: "50%",
+                background: userRole === "ADMIN" ? "#10B981" : "#F59E0B", 
+                boxShadow: `0 0 8px ${userRole === "ADMIN" ? "#10B981" : "#F59E0B"}`,
+              }} />
+              <span style={{ 
+                fontWeight: 800, 
+                color: userRole === "ADMIN" ? "#10B981" : "#F59E0B",
+                letterSpacing: "0.5px"
+              }}>
+                {userRole}
+              </span>
+              <span style={{ opacity: 0.5 }}>• Authorized</span>
+            </motion.div>
+          </motion.div>
+        )}
+        {!collapsed && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1.0 }}
+          >
+            <motion.button
+                whileHover={{ scale: 1.1, backgroundColor: "rgba(255,107,53,0.1)", color: "#FF6B35" }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                   kravy.close();
+                   // Clear all possible auth cookies
+                   document.cookie = "staff_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                   document.cookie = "kravy_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                   // Hard refresh to clear state and go home
+                   window.location.href = "/";
+                }}
+                style={{
+                  background: "none", border: "none",
+                  color: isDark ? "#6B7280" : "var(--kravy-text-muted)",
+                  cursor: "pointer", display: "flex", alignItems: "center",
+                  padding: "6px", borderRadius: "8px", transition: "all 0.3s",
+                }}
+              >
+                <LogOut size={18} />
+              </motion.button>
+          </motion.div>
+        )}
+      </motion.div>
+    </aside>
+  );
+}
+
+/* =========================================
+   SUBSCRIPTION UI COMPONENTS
+========================================= */
+
+export function SubscriptionCard({ profile }: { profile: any }) {
+  const [showDetails, setShowDetails] = useState(false);
+
+  // Parse dates
+  const start = profile.trialStartedAt ? new Date(profile.trialStartedAt) : new Date();
+  const end = new Date(profile.premiumEndDate);
+  const today = new Date();
+
+  // Calculate days
+  const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
+  const remainingDays = Math.ceil((end.getTime() - today.getTime()) / (1000 * 3600 * 24));
+  const daysLeft = Math.max(0, remainingDays);
+  const daysUsed = Math.max(0, totalDays - daysLeft);
+
+  const remainingPercent = totalDays > 0 ? Math.max(0, Math.min(100, Math.round((daysLeft / totalDays) * 100))) : 0;
+  const usedPercent = 100 - remainingPercent;
+
+  // Formatting dates
+  const formatDate = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const startDate = formatDate(start);
+  const expiryDate = formatDate(end);
+
+  // Determine plan name based on total days (roughly)
+  let planName = "PREMIUM PLAN";
+  if (totalDays >= 1050) planName = "3 YEAR PLAN";
+  else if (totalDays >= 690) planName = "2 YEAR PLAN";
+  else if (totalDays >= 330) planName = "1 YEAR PLAN";
+  else if (totalDays >= 170) planName = "6 MONTH PLAN";
+  else if (totalDays >= 80) planName = "3 MONTH PLAN";
+  else if (totalDays >= 25) planName = "1 MONTH PLAN";
+
+  return (
+    <>
+      {/* COMPACT SIDEBAR CARD */}
+      <div className="relative overflow-hidden rounded-2xl border border-blue-100 bg-white/80 p-3 shadow-sm backdrop-blur-xl">
+        
+        {/* Subtle Glow */}
+        <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-blue-400/10 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-8 -left-8 h-20 w-20 rounded-full bg-violet-400/10 blur-2xl" />
+
+        {/* Header */}
+        <div className="relative mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 text-white shadow-sm">
+              <Sparkles size={13} />
+            </div>
+
+            <span className="text-[11px] font-bold tracking-wide text-slate-600">
+              SUBSCRIPTION
+            </span>
+          </div>
+
+          <button
+            onClick={() => setShowDetails(true)}
+            className="group flex items-center gap-0.5 text-[11px] font-bold text-blue-600 transition hover:text-blue-800"
+          >
+            View
+            <ChevronRight
+              size={13}
+              className="transition-transform group-hover:translate-x-0.5"
+            />
+          </button>
+        </div>
+
+        {/* Plan + Status */}
+        <div className="relative flex items-center justify-between">
+          <div>
+            <div className="text-sm font-extrabold text-slate-800">
+              {planName}
+            </div>
+
+            <div className="mt-0.5 flex items-center gap-1.5">
+              {daysLeft > 0 ? (
+                <>
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                  <span className="text-[10px] font-semibold text-emerald-600">
+                    ACTIVE
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                  <span className="text-[10px] font-semibold text-red-600">
+                    EXPIRED
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="text-right">
+            <div className="text-lg font-black leading-none text-slate-800">
+              {daysLeft}
+            </div>
+            <div className="mt-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+              Days Left
+            </div>
+          </div>
+        </div>
+
+        {/* Progress */}
+        <div className="relative mt-3">
+          <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-violet-500 transition-all duration-700"
+              style={{ width: `${remainingPercent}%` }}
+            />
+          </div>
+
+          <div className="mt-1 flex justify-between text-[9px] font-medium text-slate-400">
+            <span>{daysUsed} days used</span>
+            <span>{remainingPercent}% remaining</span>
+          </div>
+        </div>
+
+        {/* Expiry */}
+        <div className="relative mt-2 flex items-center gap-1.5 text-[10px] text-slate-500">
+          <CalendarDays size={12} />
+          <span>
+            Expires <strong className="text-slate-700">{expiryDate}</strong>
+          </span>
+        </div>
+      </div>
+
+      {/* DETAILS MODAL */}
+      {showDetails && (
+        <SubscriptionDetails
+          planName={planName}
+          planDays={totalDays}
+          daysUsed={daysUsed}
+          daysLeft={daysLeft}
+          remainingPercent={remainingPercent}
+          usedPercent={usedPercent}
+          price={totalDays > 300 ? 4000 : (totalDays > 150 ? 2500 : 1000)} // Mock pricing
+          startDate={startDate}
+          expiryDate={expiryDate}
+          onClose={() => setShowDetails(false)}
+        />
+      )}
+    </>
+  );
+}
+
+function SubscriptionDetails({
+  planName,
+  planDays,
+  daysUsed,
+  daysLeft,
+  remainingPercent,
+  usedPercent,
+  price,
+  startDate,
+  expiryDate,
+  onClose,
+}: {
+  planName: string;
+  planDays: number;
+  daysUsed: number;
+  daysLeft: number;
+  remainingPercent: number;
+  usedPercent: number;
+  price: number;
+  startDate: string;
+  expiryDate: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
+      
+      <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/50 bg-white shadow-2xl">
+        
+        {/* TOP GRADIENT */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-violet-600 px-6 py-7 text-white">
+          
+          <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+
+          {/* Close */}
+          <button
+            onClick={onClose}
+            className="absolute right-5 top-5 rounded-full bg-white/15 p-2 transition hover:bg-white/25"
+          >
+            <X size={18} />
+          </button>
+
+          <div className="relative">
+            <div className="mb-3 flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
+                <Sparkles size={18} />
+              </div>
+
+              <span className="text-xs font-bold tracking-[0.18em] text-white/80">
+                KRAVY SUBSCRIPTION
+              </span>
+            </div>
+
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black">
+                  {planName}
+                </h2>
+
+                <div className="mt-2 flex items-center gap-2">
+                  {daysLeft > 0 ? (
+                    <span className="flex items-center gap-1 rounded-full bg-emerald-400/20 px-2.5 py-1 text-xs font-bold text-white">
+                      <CheckCircle2 size={13} />
+                      ACTIVE
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 rounded-full bg-red-400/20 px-2.5 py-1 text-xs font-bold text-white">
+                      EXPIRED
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="text-3xl font-black">
+                  {daysLeft}
+                </div>
+                <div className="text-xs font-medium text-white/70">
+                  DAYS LEFT
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CONTENT */}
+        <div className="space-y-5 p-6">
+
+          {/* Usage Card */}
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+            
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-800">
+                  Plan Usage
+                </h3>
+
+                <p className="text-xs text-slate-400">
+                  Your subscription journey
+                </p>
+              </div>
+
+              <span className="text-sm font-black text-blue-600">
+                {remainingPercent}% Remaining
+              </span>
+            </div>
+
+            {/* Progress */}
+            <div className="h-3 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-blue-500 to-violet-500"
+                style={{ width: `${remainingPercent}%` }}
+              />
+            </div>
+
+            <div className="mt-3 flex justify-between">
+              <div>
+                <p className="text-xs text-slate-400">
+                  Used
+                </p>
+                <p className="font-bold text-slate-700">
+                  {daysUsed} Days
+                </p>
+              </div>
+
+              <div className="text-center">
+                <p className="text-xs text-slate-400">
+                  Total Plan
+                </p>
+                <p className="font-bold text-slate-700">
+                  {planDays} Days
+                </p>
+              </div>
+
+              <div className="text-right">
+                <p className="text-xs text-slate-400">
+                  Remaining
+                </p>
+                <p className="font-bold text-blue-600">
+                  {daysLeft} Days
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Dates */}
+          <div>
+            <h3 className="mb-3 font-bold text-slate-800">
+              Subscription Period
+            </h3>
+
+            <div className="grid grid-cols-2 gap-3">
+              
+              <div className="rounded-2xl border border-slate-100 p-4">
+                <div className="mb-2 flex items-center gap-2 text-slate-400">
+                  <CalendarDays size={15} />
+                  <span className="text-xs font-medium">
+                    Started
+                  </span>
+                </div>
+
+                <p className="font-bold text-slate-800">
+                  {startDate}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 p-4">
+                <div className="mb-2 flex items-center gap-2 text-slate-400">
+                  <CalendarDays size={15} />
+                  <span className="text-xs font-medium">
+                    Expires
+                  </span>
+                </div>
+
+                <p className="font-bold text-slate-800">
+                  {expiryDate}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment */}
+          <div>
+            <h3 className="mb-3 font-bold text-slate-800">
+              Plan & Payment
+            </h3>
+
+            <div className="rounded-2xl border border-slate-100">
+              
+              <div className="flex items-center justify-between border-b border-slate-100 p-4">
+                <span className="text-sm text-slate-500">
+                  Plan
+                </span>
+                <span className="font-bold text-slate-800">
+                  {planName}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-slate-100 p-4">
+                <span className="text-sm text-slate-500">
+                  Estimated Pricing
+                </span>
+                <span className="font-bold text-slate-800">
+                  ₹{price.toLocaleString("en-IN")}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-4">
+                <span className="flex items-center gap-2 text-sm text-slate-500">
+                  <CreditCard size={15} />
+                  Payment Status
+                </span>
+
+                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600">
+                  ✓ PAID
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Renewal */}
+          <div className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-blue-50 to-violet-50 p-4 mt-5">
+            <div>
+              <p className="font-bold text-slate-800">
+                Want to continue with Kravy?
+              </p>
+
+              <p className="mt-1 text-xs text-slate-500">
+                Renew your subscription before it expires.
+              </p>
+            </div>
+
+            <button className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800">
+              Renew Plan
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}

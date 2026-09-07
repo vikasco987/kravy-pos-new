@@ -100,10 +100,22 @@ Please return a structured JSON response matching the following structure:
   "menu": [
     {
       "category": "Logical Category Name (For Food: Dal, Breads, etc. For Retail: Hardware, Construction, Electronics, etc.)",
-      "name": "Formatted Item Name. FOR FOOD ONLY: ALWAYS add the (V) or (NV) badge. DO NOT add (V) or (NV) badges for Retail/Hardware/Non-Food items! CRUCIAL RULE: If the item has different sizes (like Regular, Medium, Large, Half, Full), you MUST append the size suffix inside brackets AT THE END OF THE NAME for EVERY size variant! Each size MUST have its own row with its specific price.",
-      "price": 250, // Extract the price as a number. Crucial: If one item has multiple sizes/prices, create a SEPARATE row for each size in this list.
+      "name": "Formatted Item Name. FOR FOOD ONLY: ALWAYS add the (V) or (NV) badge. DO NOT add (V) or (NV) badges for Retail/Hardware/Non-Food items!",
+      "price": 250, // Extract the base price as a number.
       "type": "Pure Veg", // FOR FOOD ONLY: Veg items MUST be 'Pure Veg'. Meat MUST be 'Non-Veg'. Egg items MUST be 'Non-Veg (Egg)'. FOR RETAIL/HARDWARE/NON-FOOD: ALWAYS use 'General'.
-      "description": "" // Leave empty to save tokens, unless a description is explicitly printed on the menu document.
+      "description": "", // Leave empty to save tokens, unless a description is explicitly printed on the menu document.
+      "variants": [
+        // CRUCIAL RULE: If the item has different sizes (like Regular, Medium, Large, Half, Full), you MUST extract them into this variants array under a 'Size' group. DO NOT create separate rows for sizes! If there are no sizes, leave this array empty or omit it.
+        {
+          "groupName": "Size",
+          "type": "radio",
+          "required": true,
+          "options": [
+            { "name": "Medium", "price": 199 },
+            { "name": "Large", "price": 299 }
+          ]
+        }
+      ]
     }
   ]
 }
@@ -183,82 +195,7 @@ ${languageRule}
         const parsedMenu = JSON.parse(textResponse);
         let menuItems: any[] = parsedMenu.menu || [];
 
-        // --- Post-Processing: Smart Merge Sizes & Portions ---
-        let lastNormalItem: any = null;
-        let cleanedMenu: any[] = [];
-        const modifierRegex = /^(\d+\/-\s*[a-zA-Z]*|\d+\s*(Pc|pcs|gm|kg).*)$/i;
-
-        for (let i = 0; i < menuItems.length; i++) {
-            let item = menuItems[i];
-            let name = (item.name || "").trim();
-
-            if (modifierRegex.test(name) && lastNormalItem) {
-                let baseName = lastNormalItem.name.replace(/\s*\(Half\)$/, '');
-
-                if (name.toLowerCase().includes('f') || name.includes('/-')) {
-                    item.name = `${baseName} (Full)`;
-                    if (!lastNormalItem.name.includes('(Half)')) {
-                        lastNormalItem.name = `${baseName} (Half)`;
-                    }
-                } else {
-                    item.name = `${baseName} (${name})`;
-                }
-
-                if (item.price === lastNormalItem.price && (name.toLowerCase().includes('1 pc') || name.toLowerCase().includes('1pc'))) {
-                    continue;
-                }
-            } else {
-                lastNormalItem = item;
-            }
-            cleanedMenu.push(item);
-        }
-
-        // --- Post-Processing: Group & Enforce Portions ---
-        const groups: { [key: string]: any[] } = {};
-        for (let item of cleanedMenu) {
-            let baseName = item.name.split('(')[0].trim();
-            if (!groups[baseName]) groups[baseName] = [];
-            groups[baseName].push(item);
-        }
-
-        let finalMenu: any[] = [];
-        for (let baseName in groups) {
-            let groupItems = groups[baseName];
-
-            let toRemove = new Set();
-            for (let i = 0; i < groupItems.length; i++) {
-                for (let j = i + 1; j < groupItems.length; j++) {
-                    let item1 = groupItems[i];
-                    let item2 = groupItems[j];
-                    if (item1.price === item2.price) {
-                        if (item1.name.includes('(') && !item2.name.includes('(')) toRemove.add(item2);
-                        else if (!item1.name.includes('(') && item2.name.includes('(')) toRemove.add(item1);
-                    }
-                }
-            }
-
-            let activeItems = groupItems.filter((i: any) => !toRemove.has(i));
-
-            if (activeItems.length > 1) {
-                let itemsWithoutBrackets = activeItems.filter((i: any) => !i.name.includes('('));
-
-                if (itemsWithoutBrackets.length === 2) {
-                    itemsWithoutBrackets.sort((a: any, b: any) => a.price - b.price);
-                    itemsWithoutBrackets[0].name = `${itemsWithoutBrackets[0].name} (Half)`;
-                    itemsWithoutBrackets[1].name = `${itemsWithoutBrackets[1].name} (Full)`;
-                } else if (itemsWithoutBrackets.length === 3) {
-                    itemsWithoutBrackets.sort((a: any, b: any) => a.price - b.price);
-                    itemsWithoutBrackets[0].name = `${itemsWithoutBrackets[0].name} (Small)`;
-                    itemsWithoutBrackets[1].name = `${itemsWithoutBrackets[1].name} (Medium)`;
-                    itemsWithoutBrackets[2].name = `${itemsWithoutBrackets[2].name} (Large)`;
-                } else {
-                    for (let item of itemsWithoutBrackets) {
-                        item.name = `${item.name} (Regular)`;
-                    }
-                }
-            }
-            finalMenu.push(...activeItems);
-        }
+        let finalMenu = menuItems;
 
         console.log(`✅ [Menu AI OCR Engine] Extracted ${finalMenu.length} items successfully for ${parsedMenu.restaurantName} using model ${selectedModel}!`);
         return NextResponse.json({
