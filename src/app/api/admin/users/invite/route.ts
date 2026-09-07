@@ -3,7 +3,6 @@ import { getEffectiveClerkId } from "@/lib/auth-utils";
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {

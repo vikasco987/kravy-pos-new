@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuthContext } from "@/components/AuthContext";
 import { toast } from "sonner";
 import {
     QrCode,
@@ -105,7 +105,8 @@ const statusConfig = {
 
 export default function QRManagementPage() {
   const { confirm } = useConfirm();
-    const { userId } = useAuth();
+    const { user } = useAuthContext();
+    const userId = user?.businessId || user?.id;
     const { isConnected } = useRealTimeNotifications();
 
     // State management

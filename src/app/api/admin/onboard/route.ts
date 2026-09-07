@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClerkClient } from '@clerk/backend';
 import prisma from '@/lib/prisma';
 import * as xlsx from 'xlsx';
 import { getAuthUser } from "@/lib/auth-utils";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
   try {
@@ -19,43 +20,35 @@ export async function POST(req: Request) {
 
     const profileData = JSON.parse(formData.get("profileData") as string || "{}");
 
-    const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-
-    // 1. Clerk User
-    console.log("ONBOARDING: Checking if user already exists in Clerk:", email);
-    let clerkUser;
+    // 1. Create Custom User
+    console.log("ONBOARDING: Checking if user already exists:", email);
     
-    try {
-      // Check if user already exists in Clerk
-      const existingClerkUsers = await clerk.users.getUserList({ emailAddress: [email] });
-      if (existingClerkUsers.data.length > 0) {
-        console.log("ONBOARDING: User already exists in Clerk. Linking...");
-        clerkUser = existingClerkUsers.data[0];
-      } else {
-        console.log("ONBOARDING: Creating fresh Clerk user for", email);
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    let clerkId;
+    
+    if (existingUser) {
+        console.log("ONBOARDING: User already exists. Linking...");
+        clerkId = existingUser.clerkId;
+    } else {
+        console.log("ONBOARDING: Creating fresh user for", email);
         const nameParts = (businessName || "Merchant Owner").split(" ");
         const fName = nameParts[0];
         const lName = nameParts.slice(1).join(" ") || "Owner";
 
-        clerkUser = await clerk.users.createUser({
-          emailAddress: [email],
-          password: password,
-          firstName: fName,
-          lastName: lName,
-          publicMetadata: { role: "SELLER" }
+        clerkId = `user_${crypto.randomUUID()}`;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        await prisma.user.create({
+            data: {
+                clerkId,
+                email,
+                password: hashedPassword,
+                name: businessName,
+                role: "SELLER",
+                isVerified: true
+            }
         });
-      }
-    } catch (err: any) {
-      console.error("CLERK API ERROR:", err);
-      if (err.errors) {
-        console.error("CLERK ERROR DETAILS:", JSON.stringify(err.errors, null, 2));
-        const messages = err.errors.map((e: any) => e.longMessage || e.message || "Unknown Clerk error").join(", ");
-        return NextResponse.json({ error: `Clerk Error: ${messages}` }, { status: 422 });
-      }
-      return NextResponse.json({ error: err.message || "Clerk authentication service failure" }, { status: 500 });
     }
-
-    const clerkId = clerkUser.id;
 
     // 2. Prisma User & Profile
     const user = await prisma.$transaction(async (tx) => {

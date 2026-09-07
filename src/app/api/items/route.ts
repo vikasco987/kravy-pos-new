@@ -237,27 +237,7 @@
 
 
 
-
-
-
-
-
-
-
-
-// src/app/api/items/route.ts
-
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { clerkClient } from "@clerk/nextjs/server";
-import { getEffectiveClerkId } from "@/lib/auth-utils";
-
-console.log("🚀 [ITEMS_API_INIT] Loaded at:", new Date().toISOString());
-console.log("🛠️ [ITEMS_API_DB] URL Prefix:", process.env.DATABASE_URL?.split('@')[1]?.substring(0, 30));
-
-/* --------------------------------
-   Helper: find or create DB user
---------------------------------- */
+9--------------------------------- */
 async function findOrCreateDBUser(clerkId: string) {
   let user = await prisma.user.findUnique({
     where: { clerkId },

@@ -456,7 +456,6 @@ function SidebarItem({ item, index, isActive, collapsed, isDark, pathname }: any
             </motion.div>
           </Link>
         </div>
-{{ ... }}
       )}
     </motion.div>
   );

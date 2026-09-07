@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuthContext } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Copy, Trash2, RefreshCw, ArrowRight, FileSpreadsheet, Settings2, X, Check } from "lucide-react";
@@ -36,7 +36,8 @@ type StoreItem = {
    COMPONENT
 ============================= */
 export default function StoreItemPage() {
-  const { userId } = useAuth();
+  const { user } = useAuthContext();
+  const userId = user?.businessId || user?.id;
   const router = useRouter();
 
   const [mode, setMode] = useState<"create" | "update">("create");

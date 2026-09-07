@@ -2,7 +2,6 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth-utils";
 

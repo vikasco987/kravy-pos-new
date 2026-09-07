@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuthContext } from "@/components/AuthContext";
 import { toast } from "sonner";
 import QRCode from "react-qr-code";
 import {
@@ -33,7 +33,8 @@ type BusinessProfile = {
 };
 
 export default function QROrdersPage() {
-    const { userId } = useAuth();
+    const { user } = useAuthContext();
+    const userId = user?.businessId || user?.id;
 
     // Data states
     const [items, setItems] = useState<MenuItem[]>([]);
