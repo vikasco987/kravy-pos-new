@@ -43,6 +43,7 @@ export default function Page() {
     openingStock: "",
     currentStock: "",
     reorderLevel: "",
+    displayCategory: "",
     displayColor: "",
     hsnCode: "",
     zones: "",
