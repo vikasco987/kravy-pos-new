@@ -122,11 +122,7 @@ import {
   Fuel,
   Smartphone,
   CalendarDays,
-  CheckCircle2,
-  ChevronRight,
-  CreditCard,
-  Sparkles,
-  X
+  CheckCircle2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { kravy } from "@/lib/sounds";
