@@ -237,7 +237,7 @@
 
 
 
-9--------------------------------- */
+/* --------------------------------- */
 async function findOrCreateDBUser(clerkId: string) {
   let user = await prisma.user.findUnique({
     where: { clerkId },
