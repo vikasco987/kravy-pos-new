@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 export async function PUT(req: NextRequest, context: any) {

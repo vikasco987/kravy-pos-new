@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./SidebarContext";
 import { useTheme } from "./ThemeProvider";
-import { useUser, SignOutButton } from "@clerk/nextjs";
+
 import {
   LayoutGrid,
   PlusCircle,
@@ -456,16 +456,16 @@ function SidebarItem({ item, index, isActive, collapsed, isDark, pathname }: any
             </motion.div>
           </Link>
         </div>
+{{ ... }}
       )}
     </motion.div>
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ profile }: { profile?: any }) {
   const { collapsed, setCollapsed } = useSidebar();
   const { resolvedTheme } = useTheme();
   const pathname = usePathname();
-  const { user } = useUser();
   const isDark = resolvedTheme === "dark";
   const [mounted, setMounted] = useState(false);
   const { user: authUser, loading: authLoading } = useAuthContext();
@@ -697,6 +697,36 @@ export default function Sidebar() {
               >
                 Billing Software
               </motion.div>
+              {profile?.isPremium && profile?.premiumEndDate && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  style={{
+                    fontSize: "0.55rem",
+                    color: "#F59E0B",
+                    fontWeight: 800,
+                    marginTop: "6px",
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    background: "rgba(245, 158, 11, 0.1)",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    alignSelf: "flex-start",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  {(() => {
+                    const start = profile.trialStartedAt ? new Date(profile.trialStartedAt) : new Date();
+                    const end = new Date(profile.premiumEndDate);
+                    const today = new Date();
+                    const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
+                    const remainingDays = Math.ceil((end.getTime() - today.getTime()) / (1000 * 3600 * 24));
+                    if (remainingDays < 0) return "Expired";
+                    return `${remainingDays} of ${totalDays > 0 ? totalDays : '?'} Days Left`;
+                  })()}
+                </motion.div>
+              )}
             </div>
           </motion.div>
         )}
@@ -975,9 +1005,9 @@ export default function Sidebar() {
           whileHover={{ scale: 1.05, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
         >
-          {(authUser?.imageUrl || user?.imageUrl) ? (
+          {authUser?.imageUrl ? (
             <motion.img
-              src={authUser?.imageUrl || user?.imageUrl}
+              src={authUser.imageUrl}
               style={{
                 width: "38px", height: "38px", borderRadius: "50%",
                 border: "2px solid #FF6B35", flexShrink: 0,
@@ -998,7 +1028,7 @@ export default function Sidebar() {
                 flexShrink: 0, boxShadow: "0 4px 16px rgba(255,107,53,0.3)",
               }}
             >
-              {(authUser?.name?.[0] || user?.firstName?.[0] || 'U').toUpperCase()}
+              {(authUser?.name?.[0] || 'U').toUpperCase()}
             </motion.div>
           )}
         </motion.div>
@@ -1017,7 +1047,7 @@ export default function Sidebar() {
               }}
               whileHover={{ color: "#FF6B35" }}
             >
-              {authUser?.name || user?.fullName || "Admin User"}
+              {authUser?.name || "Admin User"}
             </motion.div>
             <motion.div
               style={{

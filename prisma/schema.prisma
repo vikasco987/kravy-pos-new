@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native"]
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -55,6 +55,8 @@ model Category {
   items     Item[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  zones     String[] @default([]) // ✅ Multi-zone menu support for categories
 
   @@index([clerkId])
 }
@@ -551,6 +553,7 @@ model BusinessProfile {
   // SaaS Subscription & Premium Popups
   trialStartedAt    DateTime? @default(now())
   isPremium         Boolean?  @default(false)
+  premiumEndDate    DateTime? // ✅ Track when premium expires
   showPremiumPopup  Boolean?  @default(false)
   isFrozen          Boolean?  @default(false)
   

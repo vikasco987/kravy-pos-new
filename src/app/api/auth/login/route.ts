@@ -137,14 +137,16 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 90 * 24 * 60 * 60 // 90 days
+      maxAge: 90 * 24 * 60 * 60, // 90 days
+      path: "/"
     });
 
     response.cookies.set("kravy_refresh_token", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 90 * 24 * 60 * 60 // 90 days
+      maxAge: 90 * 24 * 60 * 60, // 90 days
+      path: "/"
     });
 
     // 🔐 6. Track Session

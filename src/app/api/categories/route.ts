@@ -30,6 +30,7 @@ export async function GET() {
       id: String(cat.id),
       name: cat.name,
       sortOrder: cat.sortOrder,
+      zones: cat.zones || [],
     }));
 
     return NextResponse.json(safeCategories, { status: 200 });
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
     const effectiveId = await getEffectiveClerkId();
     if (!effectiveId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-    const { name } = await req.json();
+    const { name, zones } = await req.json();
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -71,6 +72,7 @@ export async function POST(req: Request) {
           category: {
             id: String(existing.id),
             name: existing.name,
+            zones: existing.zones,
           },
         },
         { status: 200 }
@@ -80,6 +82,7 @@ export async function POST(req: Request) {
     const category = await prisma.category.create({
       data: { 
         name: name.trim(),
+        zones: Array.isArray(zones) ? zones : [],
         clerkId: effectiveId
       },
     });
@@ -103,7 +106,7 @@ export async function PUT(req: Request) {
     const effectiveId = await getEffectiveClerkId();
     if (!effectiveId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-    const { id, name } = await req.json();
+    const { id, name, zones } = await req.json();
 
     if (!id || !name || !name.trim()) {
       return NextResponse.json(
@@ -112,11 +115,16 @@ export async function PUT(req: Request) {
       );
     }
 
+    const updateData: any = { name: name.trim() };
+    if (zones !== undefined) {
+      updateData.zones = Array.isArray(zones) ? zones : [];
+    }
+
     // Attempt to update with ownership check
     try {
       const updated = await prisma.category.update({
         where: { id, clerkId: effectiveId },
-        data: { name: name.trim() },
+        data: updateData,
       });
       return NextResponse.json(updated, { status: 200 });
     } catch (err) {
@@ -125,7 +133,7 @@ export async function PUT(req: Request) {
       if (legacy && !legacy.clerkId) {
         const updated = await prisma.category.update({
           where: { id },
-          data: { name: name.trim(), clerkId: effectiveId },
+          data: { ...updateData, clerkId: effectiveId },
         });
         return NextResponse.json(updated, { status: 200 });
       }

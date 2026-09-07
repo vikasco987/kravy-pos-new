@@ -3,9 +3,7 @@
 
 // import { NextResponse } from "next/server";
 // import prisma from "@/lib/prisma";
-// import { auth } from "@clerk/nextjs/server";
-// import { uploadExternalImageToCloudinary } from "@/lib/cloudinaryUploadFromUrl";
-// import { clerkClient } from "@clerk/nextjs/server";
+// // import { uploadExternalImageToCloudinary } from "@/lib/cloudinaryUploadFromUrl";
 
 
 // /* --------------------------------
@@ -251,7 +249,7 @@
 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/nextjs/server";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 
 console.log("🚀 [ITEMS_API_INIT] Loaded at:", new Date().toISOString());
@@ -269,28 +267,7 @@ async function findOrCreateDBUser(clerkId: string) {
   if (!user) {
     // If it's a custom user, they MUST exist in DB. 
     // If not found, it's a real error, don't try to sync from Clerk.
-    if (clerkId.startsWith("custom_")) {
-       throw new Error(`Custom User ${clerkId} not found in database.`);
-    }
-
-    try {
-      const client = await clerkClient();
-      const clerkUser = await client.users.getUser(clerkId);
-
-      user = await prisma.user.create({
-        data: {
-          clerkId,
-          name: clerkUser.fullName ?? "",
-          email:
-            clerkUser.emailAddresses[0]?.emailAddress ??
-            `no-email-${clerkId}@example.com`,
-        },
-        select: { id: true, clerkId: true },
-      });
-    } catch (err: any) {
-      console.error("Clerk user sync failed:", err);
-      throw new Error(`Failed to sync user from Clerk: ${err.message}`);
-    }
+    throw new Error(`User ${clerkId} not found in database.`);
   }
 
   return user;

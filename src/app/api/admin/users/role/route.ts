@@ -40,15 +40,7 @@ export async function PUT(req: Request) {
       data: { role },
     });
 
-    // ✅ ALSO UPDATE CLERK (ONLY IF IT'S A CLERK USER)
-    if (updated.clerkId && !updated.clerkId.startsWith("custom_")) {
-      const client = await clerkClient();
-      await client.users.updateUser(updated.clerkId, {
-        publicMetadata: {
-          role,
-        },
-      });
-    }
+
 
     return NextResponse.json(updated);
   } catch (err) {

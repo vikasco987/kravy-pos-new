@@ -1,6 +1,6 @@
 "use client";
 
-import { ClerkProvider } from "@clerk/nextjs";
+
 import { SidebarProvider } from "@/components/SidebarContext";
 import { SearchProvider } from "@/components/SearchContext";
 import ThemeProvider from "@/components/ThemeProvider";
@@ -14,18 +14,16 @@ export default function Providers({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <ThemeProvider>
-        <ConfirmProvider>
-          <FetchInterceptor />
-          <SidebarProvider>
-            <SearchProvider>
-              <Toaster position="top-right" />
-              {children}
-            </SearchProvider>
-          </SidebarProvider>
-        </ConfirmProvider>
-      </ThemeProvider>
-    </ClerkProvider>
+    <ThemeProvider>
+      <ConfirmProvider>
+        <FetchInterceptor />
+        <SidebarProvider>
+          <SearchProvider>
+            <Toaster position="top-right" />
+            {children}
+          </SearchProvider>
+        </SidebarProvider>
+      </ConfirmProvider>
+    </ThemeProvider>
   );
 }

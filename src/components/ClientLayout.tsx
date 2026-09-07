@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { useSidebar } from "@/components/SidebarContext";
-import { useUser, RedirectToSignIn } from "@clerk/nextjs";
+
 import { OrderNotificationProvider } from "@/components/OrderNotificationProvider";
 import { useAuthContext } from "@/components/AuthContext";
 import { Lock, Loader2 } from "lucide-react";
@@ -34,7 +34,7 @@ export default function ClientLayout({
   children: ReactNode;
 }) {
   const { collapsed } = useSidebar();
-  const { isLoaded: clerkLoaded, isSignedIn } = useUser();
+
   const { user: authUser, loading: authLoading } = useAuthContext();
   const pathname = usePathname();
   const router = useRouter();
@@ -61,10 +61,10 @@ export default function ClientLayout({
       }
     };
 
-    if (isSignedIn || authUser) {
+    if (authUser) {
       fetchProfile();
     }
-  }, [isSignedIn, authUser]);
+  }, [authUser]);
 
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
@@ -104,7 +104,7 @@ export default function ClientLayout({
   }, [profile]); */
 
   // 1. Show loader while anything is still loading
-  if (!mounted || !clerkLoaded || authLoading) {
+  if (!mounted || authLoading) {
     return (
         <div className="h-screen flex items-center justify-center bg-slate-50">
             <Loader2 className="animate-spin text-indigo-600" size={32} />
@@ -113,7 +113,7 @@ export default function ClientLayout({
   }
 
   // 2. If NOT Clerk User AND NOT Staff User -> Clear cookies and redirect to Home/Login
-  if (!isSignedIn && !authUser) {
+  if (!authUser) {
     return <SessionExpiredRedirect />;
   }
 
@@ -165,7 +165,7 @@ export default function ClientLayout({
   }
 
   // 5. Staff Authorization Check
-  if (!isSignedIn && authUser) {
+  if (authUser && authUser.type === 'STAFF') {
     const permissions = authUser.permissions || [];
     
     if (pathname.startsWith('/dashboard')) {
@@ -228,7 +228,7 @@ export default function ClientLayout({
               transition-transform duration-300 ease-in-out
               z-50 print:hidden
             `}>
-              <Sidebar />
+              <Sidebar profile={profile} />
             </div>
           )}
 

@@ -2515,13 +2515,14 @@ export default function CheckoutClient() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
+    const zone = formData.get("zone") as string;
     if (!name) return;
 
     try {
       const res = await fetch("/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, zones: zone ? [zone] : [] }),
       });
       if (res.ok) {
         const newCat = await res.json();
@@ -4665,6 +4666,19 @@ export default function CheckoutClient() {
                     required
                     className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-bold"
                   />
+                </div>
+                
+                <div className="space-y-1 mt-3">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Assigned Zone</label>
+                  <select
+                    name="zone"
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-bold appearance-none"
+                  >
+                    <option value="">-- Global (Available in all zones) --</option>
+                    {availableZones?.map((z: string) => (
+                      <option key={z} value={z}>{z}</option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div className="flex gap-2 pt-2">

@@ -1,6 +1,5 @@
 import MenuEditor from '@/components/MenuEditor'
 import { getEffectiveClerkId } from '@/lib/auth-utils' // Need to check if this exists or use a similar helper
-import { auth } from '@clerk/nextjs/server'
 import { Toaster } from 'react-hot-toast'
 
 export default async function MenuEditorPage() {

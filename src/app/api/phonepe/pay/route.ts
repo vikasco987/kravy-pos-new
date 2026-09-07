@@ -1,8 +1,8 @@
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
 import { getAccessToken } from "@/lib/phonepe";
-import { auth } from "@clerk/nextjs/server";
 
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";

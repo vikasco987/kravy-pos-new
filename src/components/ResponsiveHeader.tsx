@@ -6,7 +6,6 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import ReactDOM from "react-dom";
 import { usePathname } from "next/navigation";
-import { useUser, SignOutButton } from "@clerk/nextjs";
 import { FiSearch } from "react-icons/fi";
 import { HiOutlineMoon, HiOutlineSun } from "react-icons/hi";
 
@@ -14,7 +13,6 @@ import { useAuthContext } from "./AuthContext";
 import { kravy } from "@/lib/sounds";
 
 export default function ResponsiveHeader() {
-  const { isLoaded: clerkLoaded, isSignedIn: clerkSignedIn, user: clerkUser } = useUser();
   const { user: authUser, loading: authLoading } = useAuthContext();
   const pathname = usePathname();
 
@@ -67,19 +65,13 @@ export default function ResponsiveHeader() {
   };
 
   // compute display name and email
-  const isSignedIn = clerkSignedIn || !!authUser;
-  const isLoaded = clerkLoaded && !authLoading;
+  const isSignedIn = !!authUser;
+  const isLoaded = !authLoading;
 
   const displayName = authUser?.name 
-    || clerkUser?.fullName 
-    || `${clerkUser?.firstName ?? ""} ${clerkUser?.lastName ?? ""}`.trim() 
-    || clerkUser?.primaryEmailAddress?.emailAddress 
     || (isSignedIn ? "User" : "Guest");
 
-  const profileEmail = authUser?.email 
-    || clerkUser?.primaryEmailAddress?.emailAddress 
-    || clerkUser?.emailAddresses?.[0]?.emailAddress 
-    || "";
+  const profileEmail = authUser?.email || "";
 
   const handleLogout = async () => {
     kravy.close();
@@ -115,18 +107,12 @@ export default function ResponsiveHeader() {
         <Link href="/dashboard/profile" className="px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700">My Profile</Link>
         <Link href="/dashboard/settings" className="px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700">Settings</Link>
         <div className="px-4 py-2">
-          {clerkSignedIn ? (
-            <SignOutButton>
-              <button className="w-full text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 px-0 py-2">Sign out</button>
-            </SignOutButton>
-          ) : (
             <button 
               onClick={handleLogout}
               className="w-full text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 px-0 py-2 text-rose-500 font-semibold"
             >
               Sign out
             </button>
-          )}
         </div>
       </div>
     </div>
@@ -202,11 +188,7 @@ export default function ResponsiveHeader() {
                   className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border border-slate-300 dark:border-slate-600">
-                    {clerkUser?.imageUrl ? (
-                      <img src={clerkUser.imageUrl} alt={displayName} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-sm font-semibold dark:text-white uppercase">{displayName.charAt(0)}</span>
-                    )}
+                    <span className="text-sm font-semibold dark:text-white uppercase">{displayName.charAt(0)}</span>
                   </div>
                   <span className="hidden lg:block text-sm">{isLoaded && isSignedIn ? displayName : "Guest"}</span>
                 </button>

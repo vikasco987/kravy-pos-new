@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
     try {
-        const { userId } = getAuth(req);
+        const userId = await getEffectiveClerkId();
         const staffToken = req.cookies.get("staff_token")?.value;
         const customToken = req.cookies.get("kravy_auth_token")?.value;
 

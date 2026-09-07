@@ -1,14 +1,15 @@
+import { getEffectiveClerkId } from "@/lib/auth-utils";
 // src/app/api/admin/users/invite/route.ts
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
     // 🔐 Auth (App Router safe)
-    const { userId } = await auth();
+    const userId = await getEffectiveClerkId();
 
     if (!userId) {
       return NextResponse.json(
@@ -43,17 +44,8 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-// Get Clerk client
-const client = await clerkClient();
-
-// 📧 Create Clerk invitation
-const invite = await client.invitations.createInvitation({
-  emailAddress: email,
-  publicMetadata: { role },
-  redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/sign-up`,
-});
-
-
+// Invitations are disabled in custom auth for now
+return NextResponse.json({ error: "Invitations are not supported in Custom Auth mode yet." }, { status: 400 });
     // 🧾 Audit log
     await prisma.activityLog.create({
       data: {

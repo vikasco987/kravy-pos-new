@@ -1,4 +1,3 @@
-import { auth } from '@clerk/nextjs/server';
 import prisma from './prisma';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
@@ -8,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "kravy_pos_secret_key_123";
 
 /**
  * Returns the effective Clerk ID (the Owner's ID) for the current user.
- * Works for both Owners (direct Clerk user) and Staff.
+ * Works for both Owners and Staff.
  * Supports Admin Impersonation (View-As) via 'x-impersonate-id' header or search params.
  */
 export async function getEffectiveClerkId(): Promise<string | null> {
@@ -50,27 +49,6 @@ export type AuthUser = {
  * Cached to prevent redundant DB queries and JWT verification during a single render cycle.
  */
 export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
-    // 1. Check Clerk (Owner or Clerk-linked Staff)
-    const { userId: clerkUserId } = await auth();
-    if (clerkUserId) {
-        const user = await prisma.user.findUnique({ 
-            where: { clerkId: clerkUserId },
-            select: { id: true, ownerId: true, clerkId: true, role: true, allowedPaths: true, name: true, email: true }
-        });
-        if (user) {
-            return {
-                id: user.id,
-                type: (user.ownerId ? 'STAFF' : (user.role as any)) || 'OWNER',
-                businessId: user.ownerId || user.clerkId || "",
-                permissions: user.allowedPaths, 
-                name: user.name,
-                email: user.email,
-                role: user.role
-            };
-        }
-    }
-
-    // 2. Check Custom JWT (New Auth OR Legacy Staff)
     const cookieStore = await cookies();
     const token = cookieStore.get('kravy_auth_token')?.value || cookieStore.get('staff_token')?.value;
 
@@ -80,7 +58,6 @@ export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
             const userId = decoded.userId || decoded.staffId;
 
             // 🔍 ALWAYS FETCH LATEST DATA FROM DB (Sync Fix)
-            // Optimized with `select` to minimize payload size
             const user = await prisma.user.findUnique({ 
                 where: { id: userId },
                 select: { id: true, role: true, ownerId: true, clerkId: true, allowedPaths: true, name: true, email: true, privateMetadata: true }
@@ -104,7 +81,7 @@ export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
 
                 return {
                     id: user.id,
-                    type: user.role, // Latest role from DB
+                    type: user.role as 'ADMIN' | 'SELLER' | 'STAFF' | 'OWNER' | 'USER',
                     businessId: user.ownerId || user.clerkId || "",
                     permissions: user.allowedPaths,
                     name: user.name,
@@ -119,7 +96,6 @@ export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
                 select: { id: true, accessType: true, businessId: true, permissions: true, name: true, email: true, privateMetadata: true }
             });
             if (staff) {
-                // 🛑 Enforce session revocation via jtiHash for immediate logout
                 if (decoded.jtiHash) {
                     const refreshTokens = (staff.privateMetadata as any)?.refreshTokens || [];
                     const activeToken = refreshTokens.find((t: any) => t.jtiHash === decoded.jtiHash);
@@ -128,7 +104,6 @@ export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
                     }
                 }
 
-                // Fallback global revocation check
                 const revokedAt = (staff.privateMetadata as any)?.sessionsRevokedAt;
                 if (revokedAt && decoded.iat && (decoded.iat * 1000) < revokedAt) {
                     return null; 

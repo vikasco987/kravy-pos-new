@@ -63,37 +63,7 @@ export async function GET(
     if (user) {
       let sessions: any[] = [];
       
-      // Fetch sessions and metadata from Clerk if it's a Clerk user
-      if (user.clerkId && !user.clerkId.startsWith("custom_")) {
-        try {
-          const { clerkClient } = await import('@clerk/nextjs/server');
-          const client = await clerkClient();
-          const clerkUser = await client.users.getUser(user.clerkId);
-          
-          // Merge metadata from Clerk
-          user.publicMetadata = clerkUser.publicMetadata;
-          user.privateMetadata = clerkUser.privateMetadata;
-          user.unsafeMetadata = clerkUser.unsafeMetadata;
 
-          const sessionList = await client.sessions.getSessionList({
-            userId: user.clerkId
-          });
-          sessions = sessionList.data.map(s => ({
-            id: s.id,
-            status: s.status,
-            lastActiveAt: s.lastActiveAt,
-            expireAt: s.expireAt,
-            browserName: s.browserName,
-            browserVersion: s.browserVersion,
-            deviceType: s.deviceType,
-            osName: s.osName,
-            osVersion: s.osVersion,
-            ipAddress: s.ipAddress,
-          }));
-        } catch (sessionErr) {
-          console.error("Failed to fetch Clerk data:", sessionErr);
-        }
-      }
 
       try {
         // Fetch local sessions from Prisma

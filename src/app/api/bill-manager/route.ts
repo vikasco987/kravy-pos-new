@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 import { calculateDiscount } from "@/lib/discount-utils";
-import { clerkClient } from "@clerk/nextjs/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

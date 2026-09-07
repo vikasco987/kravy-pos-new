@@ -43,12 +43,12 @@
 
 // import { NextResponse } from "next/server";
 // import { prisma } from "@/lib/prisma";
-// import { getAuth } from "@clerk/nextjs/server"; // Clerk server auth
+//  // Clerk server auth
 
 // // CREATE a new party
 // export async function POST(req: Request) {
 //   try {
-//     const { userId } = getAuth(req); // ✅ Clerk user ID of the logged-in user
+//     const userId = await getEffectiveClerkId(); // ✅ Clerk user ID of the logged-in user
 //     const body = await req.json();
 //     const { name, phone, address, dob } = body;
 
@@ -116,12 +116,12 @@
 
 // import { NextResponse } from "next/server";
 // import { prisma } from "@/lib/prisma";
-// import { getAuth } from "@clerk/nextjs/server"; // Clerk server auth
+//  // Clerk server auth
 
 // // CREATE a new party
 // export async function POST(req: Request) {
 //   try {
-//     const { userId } = getAuth(req); // ✅ Clerk user ID of the logged-in user
+//     const userId = await getEffectiveClerkId(); // ✅ Clerk user ID of the logged-in user
 //     const body = await req.json();
 //     const { name, phone, address, dob } = body;
 
@@ -163,7 +163,7 @@
 // // GET all parties created by the logged-in user
 // export async function GET(req: Request) {
 //   try {
-//     const { userId } = getAuth(req);
+//     const userId = await getEffectiveClerkId();
 
 //     if (!userId) {
 //       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -195,7 +195,6 @@
 // src/app/api/parties/route.ts
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 import { Prisma } from "@prisma/client";
 

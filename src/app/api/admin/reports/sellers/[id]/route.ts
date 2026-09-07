@@ -45,6 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         isPremium: profile?.isPremium,
         showPremiumPopup: profile?.showPremiumPopup,
         trialStartedAt: profile?.trialStartedAt,
+        premiumEndDate: profile?.premiumEndDate,
         isFrozen: profile?.isFrozen,
         secondaryEmails: seller.secondaryEmails || [],
         secondaryPhones: seller.secondaryPhones || [],
@@ -83,6 +84,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const date = new Date(body.trialStartedAt);
       if (!isNaN(date.getTime())) {
         updateData.trialStartedAt = date;
+      }
+    }
+    
+    if (body.premiumEndDate !== undefined) {
+      if (body.premiumEndDate === "") {
+        updateData.premiumEndDate = null;
+      } else {
+        const date = new Date(body.premiumEndDate);
+        if (!isNaN(date.getTime())) {
+          updateData.premiumEndDate = date;
+        }
       }
     }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuthContext } from "@/components/AuthContext";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, Bell, ExternalLink } from "lucide-react";
@@ -106,7 +106,8 @@ function OrderPopup({ order, onClose }: { order: OrderNotification; onClose: () 
 
 // ─── Main Hook + Provider ─────────────────────────────────────────────────────
 export function OrderNotificationProvider() {
-    const { userId } = useAuth();
+    const { user } = useAuthContext();
+    const userId = user?.id;
     const { fetchData } = useTerminalContext();
     const [popups, setPopups] = useState<OrderNotification[]>([]);
     const seenOrderIds = useRef<Set<string>>(new Set());

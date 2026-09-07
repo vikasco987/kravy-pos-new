@@ -30,21 +30,7 @@ async function findOrCreateDBUser(clerkId: string) {
   });
 
   if (!user) {
-    if (clerkId.startsWith("custom_")) {
-       throw new Error(`Custom User ${clerkId} not found in database.`);
-    }
-    const { clerkClient } = await import("@clerk/nextjs/server");
-    const client = await clerkClient();
-    const clerkUser = await client.users.getUser(clerkId);
-
-    user = await prisma.user.create({
-      data: {
-        clerkId,
-        name: clerkUser.fullName ?? "",
-        email: clerkUser.emailAddresses[0]?.emailAddress ?? `no-email-${clerkId}@example.com`,
-      },
-      select: { id: true },
-    });
+    throw new Error(`User ${clerkId} not found in database.`);
   }
   return user;
 }

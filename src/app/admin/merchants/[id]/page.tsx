@@ -43,11 +43,11 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
   const [updating, setUpdating] = useState(false);
   const [showJson, setShowJson] = useState(false);
 
-  // SaaS Controls State
   const [controls, setControls] = useState({
     isPremium: false,
     showPremiumPopup: true,
     trialStartedAt: "",
+    premiumEndDate: "",
     isFrozen: false
   });
 
@@ -61,6 +61,7 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
                 isPremium: d.seller.isPremium ?? false,
                 showPremiumPopup: d.seller.showPremiumPopup ?? true,
                 trialStartedAt: d.seller.trialStartedAt ? new Date(d.seller.trialStartedAt).toISOString().split('T')[0] : "",
+                premiumEndDate: d.seller.premiumEndDate ? new Date(d.seller.premiumEndDate).toISOString().split('T')[0] : "",
                 isFrozen: d.seller.isFrozen ?? false
             });
         }
@@ -243,6 +244,16 @@ export default function MerchantDetailPage({ params }: { params: Promise<{ id: s
                             type="date"
                             value={controls.trialStartedAt}
                             onChange={(e) => setControls(prev => ({ ...prev, trialStartedAt: e.target.value }))}
+                            className="bg-transparent text-white font-bold text-sm outline-none border-none p-0 [color-scheme:dark]"
+                        />
+                    </div>
+                    {/* Premium End Date */}
+                    <div className="p-4 rounded-2xl border border-white/10 bg-white/5 flex flex-col gap-1 min-w-[150px]">
+                        <span className="text-[8px] font-black uppercase tracking-[2px] text-white/40">Premium End Date</span>
+                        <input 
+                            type="date"
+                            value={controls.premiumEndDate}
+                            onChange={(e) => setControls(prev => ({ ...prev, premiumEndDate: e.target.value }))}
                             className="bg-transparent text-white font-bold text-sm outline-none border-none p-0 [color-scheme:dark]"
                         />
                     </div>

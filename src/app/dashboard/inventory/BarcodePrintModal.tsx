@@ -23,15 +23,31 @@ interface BarcodePrintModalProps {
 export default function BarcodePrintModal({ isOpen, onClose, items }: BarcodePrintModalProps) {
   const [size, setSize] = useState<BarcodeSize>('2x1');
   const [isClient, setIsClient] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedItems(new Set(items.map((_, i) => i)));
+    }
+  }, [isOpen, items]);
+
   if (!isOpen) return null;
 
-  // Print all items, use a fallback code if barcode/inventoryCode is missing
-  const printableItems = items;
+  const printableItems = items.filter((_, i) => selectedItems.has(i));
+
+  const toggleItem = (index: number) => {
+    const newSet = new Set(selectedItems);
+    if (newSet.has(index)) {
+      newSet.delete(index);
+    } else {
+      newSet.add(index);
+    }
+    setSelectedItems(newSet);
+  };
 
   const handlePrint = () => {
     window.print();
@@ -39,9 +55,9 @@ export default function BarcodePrintModal({ isOpen, onClose, items }: BarcodePri
 
   // Size configurations
   const sizeConfig = {
-    '1x1': { gridClass: 'grid-cols-6 gap-2', labelClass: 'aspect-square p-1', barcodeWidth: 1, barcodeHeight: 30, fontSize: 10 },
-    '2x1': { gridClass: 'grid-cols-4 gap-4', labelClass: 'aspect-[2/1] p-2', barcodeWidth: 1.5, barcodeHeight: 40, fontSize: 12 },
-    '2.5x1.5': { gridClass: 'grid-cols-3 gap-6', labelClass: 'aspect-[2.5/1.5] p-3', barcodeWidth: 2, barcodeHeight: 50, fontSize: 14 },
+    '1x1': { gridClass: 'grid-cols-6 gap-2', labelClass: 'aspect-square p-1', barcodeWidth: 1.5, barcodeHeight: 30, fontSize: 10 },
+    '2x1': { gridClass: 'grid-cols-4 gap-4', labelClass: 'aspect-[2/1] p-2', barcodeWidth: 2, barcodeHeight: 40, fontSize: 12 },
+    '2.5x1.5': { gridClass: 'grid-cols-3 gap-6', labelClass: 'aspect-[2.5/1.5] p-3', barcodeWidth: 2.5, barcodeHeight: 50, fontSize: 14 },
   };
 
   const config = sizeConfig[size];
@@ -103,6 +119,53 @@ export default function BarcodePrintModal({ isOpen, onClose, items }: BarcodePri
                   <p className="text-sm font-bold text-orange-600">
                     A4 sheet layout will be generated based on your selected size. Ensure your printer settings are set to A4 with default margins.
                   </p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-xs font-black text-[var(--kravy-text-muted)] uppercase tracking-widest">
+                      Select Items to Print
+                    </label>
+                    <div className="space-x-2">
+                      <button 
+                        onClick={() => setSelectedItems(new Set(items.map((_, i) => i)))}
+                        className="text-xs font-bold text-indigo-500 hover:text-indigo-600"
+                      >
+                        Select All
+                      </button>
+                      <span className="text-[var(--kravy-text-muted)]">|</span>
+                      <button 
+                        onClick={() => setSelectedItems(new Set())}
+                        className="text-xs font-bold text-red-500 hover:text-red-600"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="max-h-[200px] overflow-y-auto border border-[var(--kravy-border)] rounded-xl divide-y divide-[var(--kravy-border)] custom-scrollbar">
+                    {items.map((item, index) => (
+                      <label key={index} className="flex items-center gap-3 p-3 hover:bg-[var(--kravy-bg)] cursor-pointer transition-colors">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedItems.has(index)}
+                          onChange={() => toggleItem(index)}
+                          className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 bg-white"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-[var(--kravy-text-primary)] truncate">{item.name}</p>
+                          <p className="text-xs text-[var(--kravy-text-secondary)] truncate">
+                            {item.inventoryCode || item.barcode || 'Auto-generated barcode'}
+                          </p>
+                        </div>
+                      </label>
+                    ))}
+                    {items.length === 0 && (
+                      <div className="p-4 text-center text-sm font-bold text-[var(--kravy-text-muted)]">
+                        No items found
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSidebar } from "./SidebarContext";
-import {
-  UserButton,
-  useUser
-} from "@clerk/nextjs";
+
 import { useAuthContext } from "@/components/AuthContext";
 import CustomUserButton from "@/components/CustomUserButton";
 import { useSearch } from "@/components/SearchContext";
@@ -23,11 +20,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = false }: NavbarProps) {
-  const { user: clerkUser } = useUser();
-  const { user: customUser, loading: authLoading } = useAuthContext();
-  
-  // Effective user for display
-  const user = customUser || clerkUser;
+  const { user, loading: authLoading } = useAuthContext();
   
   const { query, setQuery } = useSearch();
   const { collapsed } = useSidebar();
@@ -529,10 +522,8 @@ export default function Navbar({ isMobile = false, onMenuToggle, sidebarOpen = f
               borderLeft: "1px solid var(--kravy-border)",
               marginLeft: "4px"
             }}>
-              {clerkUser ? (
-                <UserButton afterSignOutUrl="/" />
-              ) : customUser ? (
-                <CustomUserButton user={customUser} />
+              {user ? (
+                <CustomUserButton user={user} />
               ) : (
                 <Link href="/">
                   <button style={{

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuthContext } from "@/components/AuthContext";
 import { toast } from "sonner";
 
 interface NotificationData {
@@ -9,7 +9,8 @@ interface NotificationData {
 }
 
 export function useRealTimeNotifications() {
-    const { userId } = useAuth();
+    const { user } = useAuthContext();
+    const userId = user?.id;
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {

@@ -1,19 +1,15 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import {
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-} from "@clerk/nextjs";
+
 import Image from "next/image";
 import { cookies } from "next/headers";
 import Link from "next/link";
 
-export default async function HomePage() {
-  const { userId } = await auth();
-  const staffToken = (await cookies()).get("staff_token");
+import { redirect } from "next/navigation";
 
-  if (userId || staffToken) {
+export default async function HomePage() {
+  const staffToken = (await cookies()).get("staff_token");
+  const customToken = (await cookies()).get("kravy_auth_token");
+
+  if (customToken || staffToken) {
     redirect("/dashboard");
   }
 
@@ -209,7 +205,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <SignedOut>
+
             <div className="flex flex-col gap-2.5">
 
               {/* Custom Login (Email/Phone) */}
@@ -251,20 +247,7 @@ export default async function HomePage() {
                   Create Free Account
                 </button>
               </Link>
-
-              {/* Clerk Sign Up - Only show if enabled */}
-              {process.env.NEXT_PUBLIC_ENABLE_CLERK !== "false" && (
-                <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
-                  <button className="w-full mt-1 text-[12px] text-slate-400 font-medium hover:text-indigo-600 transition-colors">
-                    Or sign up with Google / Socials
-                  </button>
-                </SignUpButton>
-              )}
-
-            </div>
-          </SignedOut>
-
-          {/* Terms */}
+            </div>          {/* Terms */}
           <p className="mt-6 text-center text-[11.5px] text-slate-400 leading-relaxed">
             By continuing, you agree to our{" "}
             <a href="#" className="text-slate-500 hover:text-slate-800 underline underline-offset-2 transition-colors">Terms</a>

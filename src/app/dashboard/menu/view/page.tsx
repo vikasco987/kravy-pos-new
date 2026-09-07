@@ -380,6 +380,7 @@ type MenuCategory = {
   name: string;
   sortOrder?: number | null;
   items: MenuItem[];
+  zones?: string[];
 };
 
 type CartItem = MenuItem & { quantity: number };
@@ -1325,6 +1326,7 @@ export default function ViewMenuPage() {
             id: catId,
             name: catName,
             sortOrder: it.category?.sortOrder ?? null,
+            zones: it.category?.zones ?? [],
             items: [],
           });
         }
@@ -1478,9 +1480,15 @@ export default function ViewMenuPage() {
     
     for (const m of menus) {
       if (m.id === "favorites_virtual") continue;
-      const got = map.get(m.id) || { id: m.id, name: m.name, items: [] };
+      const got = map.get(m.id) || { id: m.id, name: m.name, items: [], zones: m.zones };
       
-      if (!hasActiveFilter || got.items.length > 0 || (query.trim() && m.name.toLowerCase().includes(query.trim().toLowerCase()))) {
+      let isCatInZone = false;
+      if (filterZone !== "all") {
+        const targetZone = filterZone.toUpperCase();
+        isCatInZone = (m.zones || []).some((z: string) => z.toUpperCase() === targetZone);
+      }
+
+      if (!hasActiveFilter || got.items.length > 0 || (query.trim() && m.name.toLowerCase().includes(query.trim().toLowerCase())) || isCatInZone) {
         list.push(got);
       }
     }
@@ -1522,6 +1530,13 @@ export default function ViewMenuPage() {
     }).filter(m => {
       const hasActiveFilter = filterZone !== "all" || query.trim() !== "" || filterHasImage !== "all" || priceMin !== "" || priceMax !== "";
       if (!hasActiveFilter) return true;
+      
+      if (filterZone !== "all") {
+        const targetZone = filterZone.toUpperCase();
+        const isCatInZone = (m.zones || []).some((z: string) => z.toUpperCase() === targetZone);
+        if (isCatInZone) return true; // Explicitly in zone, show regardless of items
+      }
+
       if (query.trim() && m.name.toLowerCase().includes(query.trim().toLowerCase())) return true;
       return m.items.length > 0;
     });
@@ -1950,12 +1965,14 @@ export default function ViewMenuPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
+    const zone = formData.get("zone") as string;
     if (!name) return;
 
     const tempId = `temp-cat-${Date.now()}`;
     const optimisticCat: MenuCategory = {
       id: tempId,
       name,
+      zones: zone ? [zone] : [],
       items: []
     };
 
@@ -1967,7 +1984,7 @@ export default function ViewMenuPage() {
       const res = await fetch("/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, zones: zone ? [zone] : [] }),
       });
 
       if (res.ok) {
@@ -2930,6 +2947,19 @@ export default function ViewMenuPage() {
                     required
                     className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-bold"
                   />
+                </div>
+                
+                <div className="space-y-1 mt-3">
+                  <label className="text-[9px] font-black text-[var(--kravy-text-muted)] uppercase tracking-wider ml-1">Assigned Zone</label>
+                  <select
+                    name="zone"
+                    className="w-full bg-[var(--kravy-bg)] border border-[var(--kravy-border)] text-[var(--kravy-text-primary)] p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-bold appearance-none"
+                  >
+                    <option value="">-- Global (Available in all zones) --</option>
+                    {business?.zones?.map((z: string) => (
+                      <option key={z} value={z}>{z}</option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div className="flex gap-2 pt-2">

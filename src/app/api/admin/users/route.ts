@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { clerkClient } from "@clerk/nextjs/server";
+
 import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth-utils";
 
@@ -136,31 +136,12 @@ export async function POST(req: Request) {
       );
     }
 
-   // Get Clerk client (do this once at top of handler)
-    const client = await clerkClient();
-
-// ✅ Create user in Clerk
-    const clerkUserDetails = {
-      emailAddress: email,
-      password: password,
-      firstName: firstName,
-      lastName: lastName,
-      publicMetadata: {
-        role: role,
-      },
-    };
-
-    console.log("Attempting to create Clerk user:", clerkUserDetails);
-
-    const clerkUser = await client.users.createUser(clerkUserDetails);
-
-
     // ✅ Store in DB
     const user = await prisma.user.create({
       data: {
         name,
         email,
-        clerkId: clerkUser.id,
+        clerkId: "custom_" + Date.now() + "_" + Math.random().toString(36).substring(7),
         role,
         isDisabled: Boolean(isDisabled),
       },
@@ -248,45 +229,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const { publicMetadata, privateMetadata, unsafeMetadata } = body;
-
-    const client = await clerkClient();
-    let clerkUpdate: any = {};
-    if (name) {
-      const parts = name.trim().split(" ");
-      clerkUpdate.firstName = parts[0];
-      clerkUpdate.lastName = parts.slice(1).join(" ") || "User";
-    }
-
-    // Update Clerk metadata if applicable
-    if (publicMetadata) clerkUpdate.publicMetadata = publicMetadata;
-    if (privateMetadata) clerkUpdate.privateMetadata = privateMetadata;
-    if (unsafeMetadata) clerkUpdate.unsafeMetadata = unsafeMetadata;
-
-    if (user.clerkId && !user.clerkId.startsWith("custom_")) {
-      try {
-        await client.users.updateUser(user.clerkId, clerkUpdate);
-        
-        // Handle Clerk Session Revocation
-        if (body.revokeSessions) {
-          try {
-            const sessions = await client.sessions.getSessionList({ userId: user.clerkId });
-            for (const session of sessions.data) {
-              await client.sessions.revokeSession(session.id);
-            }
-          } catch (error) {
-            console.error("Error revoking clerk sessions:", error);
-          }
-        }
-      } catch (clerkError: any) {
-        if (clerkError.status === 404) {
-           console.warn(`Clerk user ${user.clerkId} not found. Proceeding with local DB update only.`);
-        } else {
-           console.error("Clerk updateUser error:", clerkError);
-        }
-      }
-    }
-
+    let { publicMetadata, privateMetadata, unsafeMetadata } = body;
     // Handle Local Session Revocation
     if (body.revokeSessions) {
       try {
@@ -319,7 +262,7 @@ export async function PUT(req: Request) {
       role: body.role !== undefined ? body.role : undefined,
       isDisabled: body.isDisabled !== undefined ? body.isDisabled : undefined,
     };
-    if (password && user.clerkId?.startsWith("custom_")) {
+    if (password) {
       const bcrypt = await import("bcryptjs");
       dbUpdate.password = await bcrypt.hash(password, 10);
     }
@@ -367,15 +310,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Delete from Clerk if applicable
-    if (user.clerkId && !user.clerkId.startsWith("custom_")) {
-      try {
-        const client = await clerkClient();
-        await client.users.deleteUser(user.clerkId);
-      } catch (clerkErr: any) {
-        console.warn("Clerk deleteUser error (proceeding with local DB deletion):", clerkErr?.message);
-      }
-    }
+
 
     // Delete user sessions & User record from DB
     await prisma.userSession.deleteMany({ where: { userId: user.id } }).catch(() => {});
