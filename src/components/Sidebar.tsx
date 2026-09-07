@@ -559,7 +559,7 @@ export default function Sidebar({ profile }: { profile?: any }) {
   if (!mounted) return null;
 
   return (
-    <aside style={{
+    <div style={{
       width: collapsed ? "72px" : "260px",
       minWidth: collapsed ? "72px" : "260px",
       height: "100vh",
@@ -965,7 +965,7 @@ export default function Sidebar({ profile }: { profile?: any }) {
           </div>
         );
       })}
-    </nav>
+    </div>
 
       {/* USER SECTION AT BOTTOM */}
       <motion.div
@@ -1082,7 +1082,7 @@ export default function Sidebar({ profile }: { profile?: any }) {
           </motion.div>
         )}
       </motion.div>
-    </aside>
+    </div>
   );
 }
 
