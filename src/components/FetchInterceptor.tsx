@@ -44,10 +44,13 @@ export default function FetchInterceptor() {
           // Retry the original request with the new access token (implicitly sent via cookie)
           response = await originalFetch(...args);
         } else {
-          // If refresh fails, redirect to login screen
+          // If refresh fails, call logout to clear stale cookies then redirect to login screen
           if (window.location.pathname.startsWith('/dashboard') || window.location.pathname.startsWith('/staff')) {
-             // We don't know exactly which type of user failed, but usually auth/custom is for admins and staff/login for staff.
-             // We can just redirect to the root auth or staff auth. We will use /auth/custom as a safe default or window.location.reload()
+             try {
+               await originalFetch('/api/auth/logout', { method: 'POST' });
+             } catch (e) {
+               console.error("Failed to clear session cookies", e);
+             }
              window.location.href = window.location.pathname.startsWith('/staff') ? '/staff/login?error=session_expired' : '/auth/custom?error=session_expired';
           }
         }
