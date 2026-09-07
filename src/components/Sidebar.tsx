@@ -1195,7 +1195,7 @@ export function SubscriptionCard({ profile }: { profile: any }) {
           <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
             <div
               className="h-full rounded-full bg-gradient-to-r from-blue-500 to-violet-500 transition-all duration-700"
-              style={{ width: \`\${remainingPercent}%\` }}
+              style={{ width: `${remainingPercent}%` }}
             />
           </div>
 
@@ -1344,7 +1344,7 @@ function SubscriptionDetails({
             <div className="h-3 overflow-hidden rounded-full bg-slate-200">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-blue-500 to-violet-500"
-                style={{ width: \`\${remainingPercent}%\` }}
+                style={{ width: `${remainingPercent}%` }}
               />
             </div>
 
