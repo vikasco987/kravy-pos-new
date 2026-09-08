@@ -299,7 +299,7 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
     <div className="kravy-card hidden md:block" style={{ overflowX: "auto", padding: 0, marginBottom: "100px" }}>
       <table className="kravy-table" style={{ minWidth: "1400px", borderCollapse: "separate", borderSpacing: 0 }}>
         <thead>
-          <tr style={{ background: "#F9FAFB", borderBottom: "1px solid #F3F4F6" }}>
+          <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
             <th style={{ width: "40px" }}></th>
             {visibleCols.sno && <Th label="#S.No" width="50px" />}
             {visibleCols.timeline && <Th label="Date & Time" width="160px" />}
@@ -326,7 +326,7 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
 
             return (
               <React.Fragment key={bill.id}>
-                <tr style={{ borderBottom: isExpanded ? "none" : "1px solid #F9FAFB", transition: "background 0.2s" }} className="hover:bg-slate-50">
+                <tr style={{ borderBottom: isExpanded ? "none" : "" }} className="border-b border-slate-50 dark:border-slate-800/50 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40">
                   <td style={{ padding: "16px 10px", width: "40px", textAlign: "center" }}>
                     <button onClick={async () => toggleRow(bill.id)} style={{ background: "none", border: "none", color: "#9CA3AF", cursor: "pointer" }}>
                       {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
@@ -380,12 +380,12 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
                       </button>
                     </td>
                   )}
-                  {visibleCols.customer && <td style={{ fontSize: "0.85rem", fontWeight: 800 }}>{bill.customerName || "Walk-in"}</td>}
-                  {visibleCols.customerPhone && <td style={{ fontSize: "0.75rem", fontFamily: "monospace", color: "#9CA3AF" }}>{bill.customerPhone || "—"}</td>}
-                  {visibleCols.subtotal && <td style={{ textAlign: "right", fontWeight: 600 }}>₹{format(bill.subtotal || bill.total)}</td>}
-                  {visibleCols.discount && <td style={{ textAlign: "right", fontWeight: 700, color: "#EF4444" }}>₹{format(bill.discountAmount || 0)}</td>}
-                  {visibleCols.gst && <td style={{ textAlign: "right", fontWeight: 700, color: "#F59E0B" }}>₹{format(bill.tax || 0)}</td>}
-                  {visibleCols.total && <td style={{ textAlign: "right", fontSize: "1rem", fontWeight: 950, color: "#1E293B" }}>₹{format(bill.total)}</td>}
+                  {visibleCols.customer && <td className="text-slate-800 dark:text-slate-200" style={{ fontSize: "0.85rem", fontWeight: 800 }}>{bill.customerName || "Walk-in"}</td>}
+                  {visibleCols.customerPhone && <td style={{ fontSize: "0.75rem", fontFamily: "monospace" }} className="text-slate-400 dark:text-slate-500">{bill.customerPhone || "—"}</td>}
+                  {visibleCols.subtotal && <td className="text-slate-800 dark:text-slate-200" style={{ textAlign: "right", fontWeight: 600 }}>₹{format(bill.subtotal || bill.total)}</td>}
+                  {visibleCols.discount && <td style={{ textAlign: "right", fontWeight: 700 }} className="text-red-500 dark:text-red-400">₹{format(bill.discountAmount || 0)}</td>}
+                  {visibleCols.gst && <td style={{ textAlign: "right", fontWeight: 700 }} className="text-amber-500 dark:text-amber-400">₹{format(bill.tax || 0)}</td>}
+                  {visibleCols.total && <td className="text-slate-900 dark:text-white" style={{ textAlign: "right", fontSize: "1rem", fontWeight: 950 }}>₹{format(bill.total)}</td>}
                   {visibleCols.payment && <td><PaymentBadge mode={bill.paymentMode} status={bill.paymentStatus} amountPaid={bill.amountPaid} balanceDue={bill.balanceDue} total={bill.total} /></td>}
                   {visibleCols.token && (
                     <td>

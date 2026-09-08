@@ -431,23 +431,23 @@ export default function BillingPage() {
       </motion.div>
 
       {/* --- Filter Section --- */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px", background: "#F8FAFC", padding: "20px", borderRadius: "24px", border: "1px solid #E2E8F0" }}>
+      <div className="flex flex-col gap-4 bg-slate-50 dark:bg-slate-900/50 p-5 rounded-3xl border border-slate-200 dark:border-slate-800">
         <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center" }}>
           <div style={{ flex: 1, minWidth: "300px", position: "relative" }}>
-             <Search size={18} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94A3B8" }} />
+             <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
              <input 
                type="text" 
                placeholder="Search Bill No, Phone or Name..." 
                value={colFilters.billNumber}
                onChange={(e) => setColFilters({...colFilters, billNumber: e.target.value})}
-               style={{ width: "100%", padding: "12px 12px 12px 42px", borderRadius: "14px", border: "1px solid #E2E8F0", background: "white", fontSize: "0.85rem", fontWeight: 700 }}
+               className="w-full pl-10 pr-3 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
              />
           </div>
           
           <select 
             value={colFilters.orderType} 
             onChange={(e) => setColFilters({...colFilters, orderType: e.target.value})}
-            style={{ padding: "12px 16px", borderRadius: "14px", border: "1px solid #E2E8F0", background: "white", fontSize: "0.85rem", fontWeight: 700, minWidth: "140px" }}
+            className="px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold min-w-[140px] focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
           >
             <option>All Types</option>
             <option>Counter</option>
@@ -456,9 +456,9 @@ export default function BillingPage() {
           </select>
 
           <select 
-            value={colFilters.paymentModeFilter} 
-            onChange={(e) => setColFilters({...colFilters, paymentModeFilter: e.target.value})}
-            style={{ padding: "12px 16px", borderRadius: "14px", border: "1px solid #E2E8F0", background: "white", fontSize: "0.85rem", fontWeight: 700, minWidth: "140px" }}
+            value={colFilters.paymentMode} 
+            onChange={(e) => setColFilters({...colFilters, paymentMode: e.target.value})}
+            className="px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold min-w-[140px] focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
           >
             <option>All Payments</option>
             <option>Cash</option>
@@ -470,16 +470,16 @@ export default function BillingPage() {
           <div style={{ position: "relative" }}>
             <button 
               onClick={() => setShowColPicker(!showColPicker)}
-              style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 16px", borderRadius: "14px", border: "1px solid #E2E8F0", background: "white", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer" }}
+              className="flex items-center gap-2 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
             >
               <Settings2 size={16} /> Columns
             </button>
             {showColPicker && (
               <>
                 <div style={{ position: "fixed", inset: 0, zIndex: 1000 }} onClick={() => setShowColPicker(false)} />
-                <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", width: "240px", background: "white", borderRadius: "20px", padding: "16px", border: "1px solid #E2E8F0", boxShadow: "0 20px 50px rgba(0,0,0,0.1)", zIndex: 1001, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <div className="absolute right-0 top-[calc(100%+8px)] w-60 bg-white dark:bg-slate-800 rounded-[20px] p-4 border border-slate-200 dark:border-slate-700 shadow-xl z-[1001] grid grid-cols-2 gap-2.5">
                   {Object.keys(visibleCols).map((key) => (
-                    <label key={key} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", padding: "6px", borderRadius: "8px", background: visibleCols[key as keyof typeof visibleCols] ? "#F0F9FF" : "transparent" }}>
+                    <label key={key} className={`flex items-center gap-2 text-xs font-bold cursor-pointer p-1.5 rounded-lg ${visibleCols[key as keyof typeof visibleCols] ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300" : "bg-transparent text-slate-700 dark:text-slate-300"}`}>
                       <input 
                         type="checkbox" 
                         checked={visibleCols[key as keyof typeof visibleCols]} 
@@ -494,25 +494,25 @@ export default function BillingPage() {
             )}
           </div>
 
-          <button style={{ padding: "12px 24px", borderRadius: "14px", border: "none", background: "#0F172A", color: "white", fontSize: "0.85rem", fontWeight: 800, cursor: "pointer" }}>
+          <button className="px-6 py-3 rounded-2xl border-none bg-slate-900 dark:bg-indigo-600 text-white text-sm font-bold cursor-pointer hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors">
             Filter Results
           </button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", background: "#EEF2FF", padding: "10px 20px", borderRadius: "16px", width: "fit-content", border: "1px solid #E0E7FF" }}>
-           <Calendar size={18} color="#6366F1" />
+        <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-900/20 px-5 py-2.5 rounded-2xl w-fit border border-indigo-100 dark:border-indigo-800/30">
+           <Calendar size={18} className="text-indigo-500" />
            <input 
              type="date" 
              value={dateRange.start} 
              onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
-             style={{ border: "none", background: "transparent", fontWeight: 800, color: "#1E293B", fontSize: "0.85rem" }} 
+             className="border-none bg-transparent font-bold text-slate-900 dark:text-slate-100 text-sm focus:outline-none" 
            />
-           <span style={{ fontWeight: 800, color: "#6366F1" }}>to</span>
+           <span className="font-bold text-indigo-500">to</span>
            <input 
              type="date" 
              value={dateRange.end} 
              onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
-             style={{ border: "none", background: "transparent", fontWeight: 800, color: "#1E293B", fontSize: "0.85rem" }} 
+             className="border-none bg-transparent font-bold text-slate-900 dark:text-slate-100 text-sm focus:outline-none" 
            />
            <button 
              onClick={fetchBills}
