@@ -30,6 +30,9 @@ export async function GET(req: NextRequest) {
       where: {
         clerkId: effectiveId,
       },
+      include: {
+        category: true,
+      },
       orderBy: {
         updatedAt: "desc",
       },

@@ -1670,7 +1670,30 @@ export default function ViewMenuPage() {
       });
 
       if (!res.ok) throw new Error(await res.text().catch(() => `Failed (${res.status})`));
-      setMenus((prev) => prev.map((cat) => ({ ...cat, items: cat.items.map((it) => it.id === updated.id ? { ...it, ...updated } : it) })));
+      
+      const savedItem = await res.json();
+      
+      setMenus((prev) => {
+        // Remove item from wherever it currently is
+        const newMenus = prev.map(cat => ({
+          ...cat,
+          items: cat.items.filter(it => it.id !== updated.id)
+        }));
+        
+        // Find the target category (or fallback to uncategorised)
+        const targetCatId = savedItem.categoryId || "__uncategorised__";
+        const catIndex = newMenus.findIndex(cat => cat.id === targetCatId);
+        
+        if (catIndex !== -1) {
+          // Push item into the new category
+          newMenus[catIndex].items.push({
+            ...savedItem,
+            id: String(savedItem.id)
+          });
+        }
+        return newMenus;
+      });
+
       setEditingItem(null);
       setToast("Item updated");
     } catch (err: any) {
