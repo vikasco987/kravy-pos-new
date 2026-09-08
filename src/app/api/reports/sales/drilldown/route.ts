@@ -136,10 +136,32 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // 3. Fetch bills matching criteria (all for metrics aggregation, paginated for listing if groupBy === "bill")
+    const selectFields: any = {
+      id: true,
+      billNumber: true,
+      createdAt: true,
+      customerName: true,
+      customerPhone: true,
+      paymentMode: true,
+      paymentStatus: true,
+      total: true,
+      subtotal: true,
+      discountAmount: true,
+      tax: true,
+      amountPaid: true,
+      balanceDue: true,
+      tableName: true,
+      auditNote: true,
+    };
+    if (groupBy === "bill") {
+      selectFields.items = true;
+    }
+
+    // 3. Fetch bills matching criteria
     const allBills = await prisma.billManager.findMany({
       where: whereClause,
       orderBy: { createdAt: "desc" },
+      select: selectFields,
     });
 
     // 4. Compute Metrics Summary

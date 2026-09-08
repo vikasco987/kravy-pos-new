@@ -24,7 +24,18 @@ export default async function RevenueReportPage({
 
   const bills = await prisma.billManager.findMany({
     where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startDate, lte: endDate } },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      billNumber: true,
+      createdAt: true,
+      customerName: true,
+      paymentMode: true,
+      total: true,
+      subtotal: true,
+      tax: true,
+      items: true
+    }
   });
 
   const totalRevenue = bills.reduce((s, b) => s + b.total, 0);
@@ -191,7 +202,7 @@ export default async function RevenueReportPage({
                   </tr>
                </thead>
                <tbody>
-                  {bills.map(b => (
+                  {bills.slice(0, 100).map(b => (
                     <tr key={b.id} style={{ borderTop: "1px solid var(--kravy-border)", transition: "all 0.2s" }}>
                        <td style={{ padding: "32px 56px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>

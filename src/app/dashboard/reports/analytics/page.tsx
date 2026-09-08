@@ -25,7 +25,14 @@ export default async function AdvancedAnalyticsPage({
 
   const allBills = await prisma.billManager.findMany({
     where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startDate, lte: endDate } },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      billNumber: true,
+      createdAt: true,
+      total: true,
+      items: true
+    }
   });
 
   const totalRevenue = allBills.reduce((s, b) => s + b.total, 0);
