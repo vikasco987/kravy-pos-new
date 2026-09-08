@@ -861,6 +861,16 @@ export default function CheckoutClient() {
           const parsed = JSON.parse(cachedMenu);
           if (Array.isArray(parsed) && parsed.length > 0) {
             setMenuItems(parsed);
+            
+            // Auto-derive categories from cache so they show immediately
+            const initialCats: any[] = [];
+            parsed.forEach((it: any) => {
+              if (it.category && !initialCats.find((c: any) => c.id === it.category.id)) {
+                initialCats.push({ id: it.category.id, name: it.category.name, sortOrder: it.category.sortOrder || null });
+              }
+            });
+            setCategoriesList(initialCats);
+            
             setMenuLoading(false); // Hide spinner immediately
           }
         } catch (e) { console.error("Cache parse error", e); }
@@ -1116,7 +1126,18 @@ export default function CheckoutClient() {
 
   // Show all categories in the current zone
   const categories = useMemo(() => {
-    const validCats = [...categoriesList];
+    let validCats = [...categoriesList];
+    
+    // Fallback: if categoriesList is empty but we have items, derive from items
+    if (validCats.length === 0 && menuItems.length > 0) {
+      const dynamicCats = new Map();
+      menuItems.forEach(i => {
+        if (i.category?.name && !dynamicCats.has(i.category.name)) {
+          dynamicCats.set(i.category.name, { name: i.category.name, sortOrder: i.category.sortOrder || null });
+        }
+      });
+      validCats = Array.from(dynamicCats.values());
+    }
     
     // Sort logic
     validCats.sort((a, b) => {
