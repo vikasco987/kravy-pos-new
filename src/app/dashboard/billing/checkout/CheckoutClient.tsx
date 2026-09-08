@@ -1126,7 +1126,12 @@ export default function CheckoutClient() {
       return (a.name || "").localeCompare(b.name || "");
     });
 
-    return Array.from(new Set(validCats.map(c => c.name))).filter(Boolean);
+    const cats = Array.from(new Set(validCats.map(c => c.name))).filter(Boolean);
+    const hasUncategorised = menuItems.some(i => !i.category?.name);
+    if (hasUncategorised && !cats.includes("Uncategorised")) {
+      cats.push("Uncategorised");
+    }
+    return cats;
   }, [categoriesList, activeZone, menuItems]);
 
   const filteredMenuItems = useMemo(() => {
@@ -2895,8 +2900,8 @@ export default function CheckoutClient() {
               <div className="min-h-0 flex-1 overflow-y-auto px-4 md:px-5 py-4 scrollbar-hide">
                 {activeCategory === "All" && !searchQuery ? (
                   categories.map(catName => {
-                    const catItems = filteredMenuItems.filter(i => (i.category?.name || "Others") === catName);
-                    const catObj = categoriesList.find(c => c.name === catName) || { id: "others", name: catName };
+                    const catItems = filteredMenuItems.filter(i => (i.category?.name || "Uncategorised") === catName);
+                    const catObj = categoriesList.find(c => c.name === catName) || { id: "uncategorised", name: catName };
 
                     return (
                       <div key={catName} className="mb-8">
