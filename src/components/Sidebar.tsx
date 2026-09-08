@@ -227,8 +227,15 @@ const navGroups = [
     ]
   }
 ];
+import { Loader2 } from "lucide-react";
+
 function SidebarItem({ item, index, isActive, collapsed, isDark, pathname }: any) {
   const [isOpen, setIsOpen] = useState(isActive);
+  const [isPending, setIsPending] = useState(false);
+
+  useEffect(() => {
+    setIsPending(false);
+  }, [pathname]);
 
   return (
     <motion.div
@@ -251,7 +258,10 @@ function SidebarItem({ item, index, isActive, collapsed, isDark, pathname }: any
           prefetch={false} 
           onClick={(e) => { 
             if(item.subItems) e.preventDefault();
-            if(item.href !== '#' && !item.subItems) kravy.click(); 
+            if(item.href !== '#' && !item.subItems) {
+              kravy.click();
+              if (item.href !== pathname) setIsPending(true);
+            }
           }}
         >
           <motion.div
@@ -262,9 +272,9 @@ function SidebarItem({ item, index, isActive, collapsed, isDark, pathname }: any
               gap: "12px", padding: collapsed ? "13px 0" : "11px 12px",
               justifyContent: collapsed ? "center" : "flex-start",
               borderRadius: "14px",
-              cursor: item.href === "#" && !item.subItems ? "not-allowed" : "pointer",
-              pointerEvents: item.href === "#" && !item.subItems ? "none" : "auto",
-              opacity: item.href === "#" && !item.subItems ? 0.6 : 1,
+              cursor: item.href === "#" && !item.subItems ? "not-allowed" : (isPending ? "wait" : "pointer"),
+              pointerEvents: (item.href === "#" && !item.subItems) || isPending ? "none" : "auto",
+              opacity: (item.href === "#" && !item.subItems) ? 0.6 : (isPending ? 0.7 : 1),
               marginBottom: "3px", transition: "all 0.25s cubic-bezier(.4,0,.2,1)",
               background: isActive
                 ? "linear-gradient(135deg, rgba(255,107,53,0.22) 0%, rgba(245,158,11,0.08) 100%)"
@@ -289,7 +299,7 @@ function SidebarItem({ item, index, isActive, collapsed, isDark, pathname }: any
                 filter: isActive ? (isDark ? "drop-shadow(0 0 8px rgba(255,107,53,0.6))" : "none") : "none",
               }}
             >
-              {item.icon}
+              {isPending ? <Loader2 size={18} className="animate-spin" /> : item.icon}
             </motion.span>
             {!collapsed && (
               <motion.div
