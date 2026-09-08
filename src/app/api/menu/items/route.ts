@@ -24,8 +24,30 @@ export async function GET(req: NextRequest) {
       orderBy: {
         updatedAt: "desc",
       },
-      include: {
-        category: true,
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        sellingPrice: true,
+        gst: true,
+        taxStatus: true,
+        imageUrl: true,
+        isActive: true,
+        isVeg: true,
+        isEgg: true,
+        hsnCode: true,
+        shortCode: true,
+        zones: true,
+        variants: true,
+        addonGroupIds: true,
+        packagingCharges: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            sortOrder: true
+          }
+        }
       },
     });
 

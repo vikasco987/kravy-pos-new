@@ -20,11 +20,16 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+    const isHeld = searchParams.get("isHeld");
 
     const whereClause: any = {
       clerkUserId: effectiveId,
       isDeleted: false,
     };
+
+    if (isHeld === "true") {
+      whereClause.isHeld = true;
+    }
 
     if (startDate || endDate) {
       whereClause.createdAt = {};

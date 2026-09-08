@@ -793,7 +793,7 @@ export default function CheckoutClient() {
   async function fetchHeldBills() {
     try {
       setHeldBillsLoading(true);
-      const res = await fetch("/api/bill-manager", { cache: "no-store" });
+      const res = await fetch("/api/bill-manager?isHeld=true", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         const onlyHeld = (data.bills || []).filter((b: any) => b.isHeld);
@@ -1430,6 +1430,7 @@ export default function CheckoutClient() {
   const [buyerGSTIN, setBuyerGSTIN] = useState("");
   const [placeOfSupply, setPlaceOfSupply] = useState("");
   const [selectedParty, setSelectedParty] = useState<any | null>(null);
+  const searchTimeoutRef = useRef<any>(null);
 
   const handleCustomerPhoneChange = (val: string) => {
     setCustomerPhone(val);
@@ -1441,6 +1442,23 @@ export default function CheckoutClient() {
         p.address?.toLowerCase().includes(val.toLowerCase())
       );
       setCustomerSuggestions(filtered.slice(0, 5));
+      
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = setTimeout(async () => {
+         try {
+           const res = await fetch(`/api/parties?search=${encodeURIComponent(val)}`);
+           if (res.ok) {
+              const data = await res.json();
+              setCustomerSuggestions(prev => {
+                 const merged = [...prev];
+                 data.forEach((p: any) => {
+                    if (!merged.find(m => m.id === p.id)) merged.push(p);
+                 });
+                 return merged.slice(0, 5);
+              });
+           }
+         } catch(e) {}
+      }, 500);
     } else {
       setCustomerSuggestions([]);
     }
@@ -1456,6 +1474,23 @@ export default function CheckoutClient() {
         p.address?.toLowerCase().includes(val.toLowerCase())
       );
       setCustomerSuggestions(filtered.slice(0, 5));
+      
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = setTimeout(async () => {
+         try {
+           const res = await fetch(`/api/parties?search=${encodeURIComponent(val)}`);
+           if (res.ok) {
+              const data = await res.json();
+              setCustomerSuggestions(prev => {
+                 const merged = [...prev];
+                 data.forEach((p: any) => {
+                    if (!merged.find(m => m.id === p.id)) merged.push(p);
+                 });
+                 return merged.slice(0, 5);
+              });
+           }
+         } catch(e) {}
+      }, 500);
     } else {
       setCustomerSuggestions([]);
     }

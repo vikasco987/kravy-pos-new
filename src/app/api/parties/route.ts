@@ -286,13 +286,23 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const phone = searchParams.get("phone");
+    const search = searchParams.get("search");
+
+    const whereClause: any = { createdBy: effectiveId };
+    
+    if (phone) {
+      whereClause.phone = phone.replace(/[\s\-\(\)\+]/g, "").slice(-10);
+    } else if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search } }
+      ];
+    }
 
     const parties = await prisma.party.findMany({
-      where: { 
-        createdBy: effectiveId,
-        ...(phone ? { phone: phone.replace(/[\s\-\(\)\+]/g, "").slice(-10) } : {})
-      },
-      orderBy: { name: "asc" },
+      where: whereClause,
+      orderBy: { updatedAt: "desc" },
+      take: search || phone ? 50 : 100
     });
     return NextResponse.json(parties, { status: 200 });
   } catch (err) {
