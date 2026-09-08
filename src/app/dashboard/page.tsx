@@ -14,7 +14,7 @@ import WeeklyRevenueChart from "./components/weekly-revenue-chart";
 import DashboardSoundAlerts from "./components/dashboard-sound-alerts";
 import { Sparkles, Tag, Fingerprint, Copy, ShieldCheck, Zap, Smartphone, Ticket, ArrowRight, FileText, Grid, BarChart3 } from "lucide-react";
 import CopyButton from "./components/copy-button";
-import AutoRefresh from "./components/auto-refresh";
+import ManualRefresh from "./components/manual-refresh";
 
 export const revalidate = 0;
 
@@ -519,7 +519,6 @@ export default async function DashboardPage({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-      <AutoRefresh interval={15000} />
       <DashboardSoundAlerts activeOrders={activeOrderCount} />
 
       {/* ── Header Row ── */}
@@ -605,7 +604,10 @@ export default async function DashboardPage({
             </div>
           </div>
         </div>
-        <DateFilter />
+        <div className="flex items-center gap-2">
+          <ManualRefresh />
+          <DateFilter />
+        </div>
       </div>
 
       {/* ── Stats Grid ── */}

@@ -1,7 +1,9 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useSidebar } from "@/components/SidebarContext";
 import { toast } from "sonner";
 import { kravy } from "@/lib/sounds";
+import { useSmartPolling } from "@/hooks/useSmartPolling";
 import {
     LayoutDashboard, ChefHat, MapPin, CreditCard,
     Clock, Bell, TrendingUp, ArrowRight, Check,
@@ -593,12 +595,10 @@ export default function KravyPOS() {
     }, [activeTab, activeOrderForSelected?.customerPhone]);
 
     useEffect(() => {
-        fetchData();
         fetchBusiness();
-        // Set up auto-refresh every 5 seconds
-        const interval = setInterval(fetchData, 5000);
-        return () => clearInterval(interval);
     }, []);
+
+    const { manualSync, isSyncing } = useSmartPolling(fetchData, 15000, true);
     useEffect(() => {
         const tick = async () => setClock(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
         tick(); const i = setInterval(tick, 1000); return () => clearInterval(i);
@@ -949,10 +949,13 @@ export default function KravyPOS() {
                 {/* Right Controls (Hidden on mobile stats, shown buttons on desktop) */}
                 <div className="hidden lg:flex items-center gap-6">
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full text-[10px] font-bold text-emerald-600">
-                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                            <span>Live Sync</span>
-                        </div>
+                        <button 
+                            onClick={manualSync}
+                            className={`flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full text-[10px] font-bold text-emerald-600 transition-all ${isSyncing ? "opacity-70" : "hover:bg-emerald-100 hover:scale-105"}`}
+                        >
+                            <div className={`w-1.5 h-1.5 bg-emerald-500 rounded-full ${isSyncing ? "animate-pulse" : ""}`} />
+                            <span>{isSyncing ? "Syncing..." : "Sync Now"}</span>
+                        </button>
                         <div className="text-right">
                             <div className="flex items-center">
                                 <span className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mr-2">Pulse:</span>

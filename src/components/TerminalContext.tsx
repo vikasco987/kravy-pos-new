@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { useSmartPolling } from "@/hooks/useSmartPolling";
 
 export type OrderStatus = "PENDING" | "ACCEPTED" | "PREPARING" | "READY" | "COMPLETED";
 
@@ -46,6 +47,8 @@ interface TerminalContextType {
     fetchData: (showLoading?: boolean) => any;
     updateTableStatus: (tableId: string, status: string) => void;
     setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
+    isSyncing: boolean;
+    manualSync: () => void;
 }
 
 const TerminalContext = createContext<TerminalContextType | undefined>(undefined);
@@ -173,20 +176,11 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
         setRawTables(prev => prev.map(t => t.id === tableId ? { ...t, status } : t));
     }, []);
 
-    // Initial fetch
-    useEffect(() => {
-        fetchData();
-        // Background polling every 10 seconds (increased frequency for better POS sync)
-        const interval = setInterval(() => fetchData(false), 10000);
-        
-        const handleFocus = () => fetchData(false, true);
-        window.addEventListener("focus", handleFocus);
-        
-        return () => {
-            clearInterval(interval);
-            window.removeEventListener("focus", handleFocus);
-        };
+    const pollCallback = useCallback(() => {
+        return fetchData(false);
     }, [fetchData]);
+
+    const { isSyncing, manualSync } = useSmartPolling(pollCallback, 30000, true);
 
     return (
         <TerminalContext.Provider value={{
@@ -201,7 +195,9 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
             lastUpdated,
             fetchData,
             updateTableStatus,
-            setOrders
+            setOrders,
+            isSyncing,
+            manualSync
         }}>
             {children}
         </TerminalContext.Provider>

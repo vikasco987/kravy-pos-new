@@ -171,7 +171,9 @@ function KravyPOS() {
         isLoading, 
         fetchData, 
         updateTableStatus,
-        setOrders
+        setOrders,
+        isSyncing,
+        manualSync
     } = useTerminalContext();
 
     const switchTab = (tab: TabKey) => {
@@ -1313,10 +1315,15 @@ function KravyPOS() {
                     <div className="flex items-center gap-6 pr-4 border-r border-slate-200/50 dark:border-slate-700/50">
                         <div className="flex flex-col items-end">
                             <div className="font-mono text-base font-black text-[#0B1B48] dark:text-slate-200 leading-none tracking-tight">{clock}</div>
-                            <div className="flex items-center gap-1.5 mt-1">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                                <div className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em]">Live Sync</div>
-                            </div>
+                            <button 
+                                onClick={manualSync}
+                                className={`flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-full transition-all ${isSyncing ? "opacity-70 bg-emerald-50/50" : "hover:bg-emerald-50 active:scale-95 cursor-pointer"}`}
+                            >
+                                <div className={`w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] ${isSyncing ? "animate-pulse" : ""}`} />
+                                <div className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em]">
+                                    {isSyncing ? "Syncing..." : "Sync Now"}
+                                </div>
+                            </button>
                         </div>
                         <div className="flex flex-col items-end">
                             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Weather</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useAuthContext } from "@/components/AuthContext";
 import { toast } from "sonner";
 import {
@@ -26,6 +26,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { QRCodeSVG } from 'qrcode.react';
+import { useSmartPolling } from '@/hooks/useSmartPolling';
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -123,14 +125,16 @@ export default function QRManagementPage() {
     useEffect(() => {
         if (userId) {
             fetchAllData();
-            // Auto-refresh every 30 seconds
-            const interval = setInterval(fetchAllData, 30000);
-            return () => clearInterval(interval);
         }
     }, [userId]);
 
+    const pollCallback = useCallback(() => {
+        if (userId) return fetchAllData();
+    }, [userId]);
+
+    useSmartPolling(pollCallback, 30000, !!userId);
+
     const fetchAllData = async () => {
-        setLoading(true);
         try {
             const [tablesRes, ordersRes, reviewsRes] = await Promise.all([
                 fetch("/api/tables"),
