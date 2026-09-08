@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       where: { 
         OR: [
           { clerkId: clerkId },
-          { id: clerkId }
+          ...(clerkId.length === 24 ? [{ id: clerkId }] : [])
         ]
       } 
     })
@@ -84,15 +84,16 @@ export async function PUT(req: Request) {
     const { items: groupItems, itemIds, categoryIds, itemsOnMenu, createdAt, updatedAt, clerkId: bodyClerkId, userId, ...rest } = data
 
     // 1. Get previous state to handle unlinking
-    const prevGroup = await prisma.addonGroup.findUnique({
+    const prevGroup = await prisma.addonGroup.findFirst({
       where: { id, clerkId },
       select: { itemIds: true }
     })
+    if (!prevGroup) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     const prevItemIds = prevGroup?.itemIds || []
 
     // 2. Update the group itself
     const updated = await prisma.addonGroup.update({
-      where: { id, clerkId },
+      where: { id },
       data: {
         ...rest,
         items: groupItems,
@@ -146,7 +147,7 @@ export async function DELETE(req: Request) {
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-    await prisma.addonGroup.delete({
+    await prisma.addonGroup.deleteMany({
       where: { id, clerkId }
     })
 
