@@ -188,7 +188,7 @@ export default function PartiesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/parties`, { credentials: "include" });
+      const res = await fetch(`/api/parties?limit=none`, { credentials: "include" });
       if (!res.ok) throw new Error(`Failed to fetch parties`);
       const data = await res.json();
       

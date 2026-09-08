@@ -299,10 +299,18 @@ export async function GET(req: NextRequest) {
       ];
     }
 
+    const limitStr = searchParams.get("limit");
+    let takeVal: number | undefined = search || phone ? 50 : 100;
+    if (limitStr === "none") {
+      takeVal = undefined;
+    } else if (limitStr && !isNaN(Number(limitStr))) {
+      takeVal = Number(limitStr);
+    }
+
     const parties = await prisma.party.findMany({
       where: whereClause,
-      orderBy: { updatedAt: "desc" },
-      take: search || phone ? 50 : 100
+      orderBy: { createdAt: "desc" },
+      ...(takeVal !== undefined && { take: takeVal })
     });
     return NextResponse.json(parties, { status: 200 });
   } catch (err) {
