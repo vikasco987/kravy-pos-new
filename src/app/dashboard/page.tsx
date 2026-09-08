@@ -98,7 +98,8 @@ export default async function DashboardPage({
     activeOrderCount,
     completedTodayCount,
     allUnpaidBills,
-    allActiveParties
+    walletStats,
+    walletUsersCount
   ] = await Promise.all([
     prisma.billManager.findMany({
       where: {
@@ -207,9 +208,12 @@ export default async function DashboardPage({
       },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.party.findMany({
+    prisma.party.aggregate({
       where: { createdBy: effectiveId, status: "ACTIVE" },
-      select: { id: true, name: true, phone: true, walletBalance: true },
+      _sum: { walletBalance: true },
+    }),
+    prisma.party.count({
+      where: { createdBy: effectiveId, status: "ACTIVE", walletBalance: { gt: 0 } },
     }),
   ]);
 
@@ -314,9 +318,9 @@ export default async function DashboardPage({
   const customerUnpaidList = Array.from(customerUnpaidMap.values())
     .sort((a, b) => b.totalUnpaid - a.totalUnpaid);
 
-  // Compute Wallet Deposits & Balances
-  const totalWalletAdvance = allActiveParties.reduce((sum: number, p: any) => sum + (p.walletBalance || 0), 0);
-  const walletCustomersCount = allActiveParties.filter((p: any) => (p.walletBalance || 0) > 0).length;
+  // Compute Store Wallet Advance
+  const totalWalletAdvance = walletStats._sum.walletBalance || 0;
+  const walletCustomersCount = walletUsersCount || 0;
 
   const previousRevenue = calculateSale(previousStats);
   const growth = previousRevenue === 0 ? 100 : ((totalRevenue - previousRevenue) / previousRevenue) * 100;

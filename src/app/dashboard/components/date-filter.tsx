@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DayPicker, DateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronDown, Loader2 } from "lucide-react";
 
 export default function DateFilter() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -55,7 +56,9 @@ export default function DateFilter() {
       if (val) params.set(key, val);
       else params.delete(key);
     });
-    router.push(`${pathname}?${params.toString()}`);
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
   };
 
   const applyQuick = (text: string, days: number, type?: string) => {
@@ -98,6 +101,7 @@ export default function DateFilter() {
     <div className="relative">
       <button
         onClick={() => setOpen(true)}
+        disabled={isPending}
         style={{
           padding: "10px 18px",
           background: "rgba(255,255,255,0.04)",
@@ -109,13 +113,18 @@ export default function DateFilter() {
           display: "flex",
           alignItems: "center",
           gap: "10px",
-          cursor: "pointer",
-          transition: "all 0.2s"
+          cursor: isPending ? "not-allowed" : "pointer",
+          transition: "all 0.2s",
+          opacity: isPending ? 0.7 : 1
         }}
       >
-        <CalendarIcon size={16} color="#FF6B35" />
+        {isPending ? (
+          <Loader2 size={16} className="animate-spin text-[#FF6B35]" />
+        ) : (
+          <CalendarIcon size={16} color="#FF6B35" />
+        )}
         {label}
-        <ChevronDown size={14} color="#4A5568" />
+        {!isPending && <ChevronDown size={14} color="#4A5568" />}
       </button>
 
       <AnimatePresence>
