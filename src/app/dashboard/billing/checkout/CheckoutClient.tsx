@@ -1322,9 +1322,12 @@ export default function CheckoutClient() {
     if (!variantModalItem) return;
     
     // validate required variants
-    for (const vg of (variantModalItem.variants || [])) {
+    const variantsList = variantModalItem.variants || [];
+    for (let vgIndex = 0; vgIndex < variantsList.length; vgIndex++) {
+        const vg = variantsList[vgIndex];
         if (vg.required) {
-            const sel = selectedVariants[vg.id];
+            const vgId = vg.id || vg.groupName || `group_${vgIndex}`;
+            const sel = selectedVariants[vgId];
             if (!sel || sel.length === 0) {
                 toast.error(`Please select an option for ${vg.groupName || vg.name || "this group"}`);
                 return;
