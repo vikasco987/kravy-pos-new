@@ -134,7 +134,7 @@ const MenuOption = ({ icon, label, onClick, isDestructive }: any) => (
   <button 
     type="button"
     onClick={async (e) => { e.stopPropagation(); onClick(e); }} 
-    style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", fontWeight: 700, color: isDestructive ? "#EF4444" : "#374151" }}
+    className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-[0.85rem] font-bold transition-colors ${isDestructive ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
   >
     {icon} {label}
   </button>
@@ -219,17 +219,17 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
         <button 
           ref={buttonRef}
           onClick={toggleMenu} 
-          style={{ width: "30px", height: "30px", borderRadius: "8px", border: "1px solid #E5E7EB", background: isOpen ? "#F3F4F6" : "white", color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s" }}
+          className={`w-[30px] h-[30px] rounded-lg border flex items-center justify-center cursor-pointer transition-colors ${isOpen ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500'}`}
         >
           <MoreVertical size={14} />
         </button>
         {isOpen && mounted && typeof document !== "undefined" && createPortal(
           <div style={{ position: "absolute", zIndex: 99999 }}>
             <div style={{ position: "fixed", inset: 0, zIndex: 99998 }} onClick={async (e) => { e.stopPropagation(); setOpenMenuId(null); }} />
-            <div style={{
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-[0_10px_40px_rgba(0,0,0,0.15)] overflow-y-auto no-scrollbar" style={{
               position: "fixed", left: menuPos.left, top: menuPos.top, bottom: menuPos.bottom, width: "200px",
-              background: "white", borderRadius: "18px", border: "1px solid #F3F4F6",
-              boxShadow: "0 10px 40px rgba(0,0,0,0.15)", padding: "8px", zIndex: 99999, display: "flex", flexDirection: "column", gap: "2px"
+              borderRadius: "18px", padding: "8px", zIndex: 99999, display: "flex", flexDirection: "column", gap: "2px",
+              maxHeight: "300px"
             }}>
               <MenuOption icon={<Eye size={14} color="#3B82F6" />} label="View Details" onClick={async () => { setOpenMenuId(null); setViewBillDetails(bill); }} />
               <MenuOption icon={<Eye size={14} color="#8B5CF6" />} label="Preview" onClick={async () => { setOpenMenuId(null); setPreviewBill(bill); }} />
