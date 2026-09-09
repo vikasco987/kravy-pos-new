@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
                             where: {
                                 clerkUserId: clerkId,
                                 createdAt: { gte: sessionStart },
+                                status: "PENDING", // Only QR orders start as PENDING; POS orders are PREPARING
                             },
                             select: {
                                 id: true,
