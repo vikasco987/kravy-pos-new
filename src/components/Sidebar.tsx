@@ -227,6 +227,24 @@ const navGroups = [
     ]
   }
 ];
+
+const hiddenNavGroups = [
+  {
+    group: "SEARCH RESULTS (HIDDEN PAGES)",
+    items: [
+      { icon: <Settings size={18} />, label: "Account Setup", href: "/dashboard/settings/account", roles: ["ADMIN"] },
+      { icon: <Activity size={18} />, label: "Activity Logs", href: "/dashboard/settings/activity", roles: ["ADMIN"] },
+      { icon: <Users size={18} />, label: "Customer Preferences", href: "/dashboard/settings/customer", roles: ["ADMIN", "SELLER"] },
+      { icon: <Package size={18} />, label: "Inventory Configuration", href: "/dashboard/settings/inventory", roles: ["ADMIN", "SELLER"] },
+      { icon: <Award size={18} />, label: "Loyalty Program Settings", href: "/dashboard/settings/loyalty", roles: ["ADMIN", "SELLER"] },
+      { icon: <Flame size={18} />, label: "Notification Preferences", href: "/dashboard/settings/notifications", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <LayoutDashboard size={18} />, label: "POS Terminal Layout", href: "/dashboard/settings/pos", roles: ["ADMIN", "SELLER"] },
+      { icon: <Shield size={18} />, label: "Active Login Sessions", href: "/dashboard/settings/sessions", roles: ["ADMIN"] },
+      { icon: <Menu size={18} />, label: "Sidebar Navigation Customization", href: "/dashboard/settings/sidebar", roles: ["ADMIN", "SELLER", "STAFF"] }
+    ]
+  }
+];
+
 import { Loader2 } from "lucide-react";
 
 function SidebarItem({ item, index, isActive, collapsed, isDark, pathname }: any) {
@@ -881,7 +899,9 @@ export default function Sidebar({ profile }: { profile?: any }) {
       <div style={{
         flex: 1, overflowY: "auto", overflowX: "hidden", padding: "16px 12px",
       }} className="hide-scrollbar">
-        {navGroups.map((group, groupIndex) => {
+                {(() => {
+          const allGroups = searchQuery ? [...navGroups, ...hiddenNavGroups] : navGroups;
+          return allGroups.map((group, groupIndex) => {
           // Filter items based on access rules
           const visibleItems = group.items.filter((item: any) => {
             // 6. Search query filtering (Applied universally before role checks)
