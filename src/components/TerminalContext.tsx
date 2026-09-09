@@ -45,7 +45,7 @@ interface TerminalContextType {
     isLoading: boolean;
     lastUpdated: number | null;
     fetchData: (showLoading?: boolean) => any;
-    updateTableStatus: (tableId: string, status: string) => void;
+    updateTableStatus: (tableId: string, updates: Partial<Table>) => void;
     setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
     isSyncing: boolean;
     manualSync: () => void;
@@ -171,9 +171,9 @@ export const TerminalProvider = ({ children }: { children: React.ReactNode }) =>
         }
     }, []);
 
-    const updateTableStatus = useCallback((tableId: string, status: Table["status"]) => {
+    const updateTableStatus = useCallback((tableId: string, updates: Partial<Table>) => {
         // Optional: Manual override if needed
-        setRawTables(prev => prev.map(t => t.id === tableId ? { ...t, status } : t));
+        setRawTables(prev => prev.map(t => t.id === tableId ? { ...t, ...updates } : t));
     }, []);
 
     const pollCallback = useCallback(() => {

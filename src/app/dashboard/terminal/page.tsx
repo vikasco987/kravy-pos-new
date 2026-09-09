@@ -1083,18 +1083,35 @@ function KravyPOS() {
 
             if (promises.length > 0) {
                 // ⚡ FIRE AND FORGET: Don't await these non-critical background tasks
-                Promise.all(promises).catch(e => console.error("[CHECKOUT_DEBUG] Background updates failed:", e));
+                Promise.all(promises)
+                    .then(() => {
+                        // Refresh data only AFTER background tasks finish so we don't fetch stale data
+                        fetchData(false, true); 
+                    })
+                    .catch(e => console.error("[CHECKOUT_DEBUG] Background updates failed:", e));
+            } else {
+                fetchData(false, true);
             }
 
             if (!silent) {
                 kravy.payment();
                 toast.success("Transaction Finalized! 💰");
+                
+                // 🔥 Optimistic Updates for Instant UI Reaction
+                setOrders(prev => prev.filter(o => o.id !== targetOrderId));
+                if (order.table && order.table.id) {
+                    updateTableStatus(order.table.id, { isOccupied: false, activeOrderId: undefined, status: "FREE" });
+                }
+                
                 // ✅ IMPORTANT: Switch tab BEFORE clearing selection to avoid render crash
                 setActiveTab("dashboard"); 
                 setSelectedTableId(null);
-                fetchData(false, true); 
             } else {
-                fetchData(false, true); 
+                // Optimistic updates for silent
+                setOrders(prev => prev.filter(o => o.id !== targetOrderId));
+                if (order.table && order.table.id) {
+                    updateTableStatus(order.table.id, { isOccupied: false, activeOrderId: undefined, status: "FREE" });
+                }
             }
             
             // Important: return the bill so the caller (like BillPreview) can use the real billNumber
