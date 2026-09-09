@@ -2148,7 +2148,13 @@ export default function CheckoutClient() {
     const spoolerDelay = ps.spoolerDelay !== undefined && ps.spoolerDelay !== null ? Number(ps.spoolerDelay) : 2500;
 
     if (isKOTEnabled && kotHtml) {
-      runPrintJob("kot", kotHtml, () => {
+      let finalKotHtml = kotHtml;
+      const tNum = customBill?.tokenNumber || tokenNumber;
+      if (tNum) {
+        finalKotHtml = finalKotHtml.replace(/#KOT_PLACEHOLDER/g, `#${tNum}`);
+        finalKotHtml = finalKotHtml.replace(/#---/g, `#${tNum}`);
+      }
+      runPrintJob("kot", finalKotHtml, () => {
         setTimeout(() => {
           runPrintJob("bill", billHtml, onComplete);
         }, spoolerDelay); 

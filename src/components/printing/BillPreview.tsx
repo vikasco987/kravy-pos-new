@@ -497,9 +497,12 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
 
               kravy.payment(); 
               console.log("[BILL_PREVIEW_DEBUG] Calling printReceipt with bill token:", bill.tokenNumber);
-              printReceipt(business?.enableKOTWithBill, bill);
               
-              if (resumeBillId) router.replace("/dashboard/billing/checkout");
+              // Wait for React to flush state updates (tokenNumber) to the DOM
+              setTimeout(() => {
+                printReceipt(business?.enableKOTWithBill, bill);
+                if (resumeBillId) router.replace("/dashboard/billing/checkout");
+              }, 100);
             }}
             disabled={items.length === 0 || !business || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
             className="flex-[2] py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
