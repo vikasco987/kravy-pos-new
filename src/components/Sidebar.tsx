@@ -94,7 +94,7 @@ import {
   UserMinus,
   Crown,
   Gem,
-  Gift,
+  Gift, Banknote,
   Flame,
   Sun,
   Moon,
