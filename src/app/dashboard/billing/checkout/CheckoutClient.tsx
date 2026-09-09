@@ -741,7 +741,9 @@ export default function CheckoutClient() {
     setDiscountAmt(0);
     setIsKotPrinted(false);
     setTokenNumber(null);
+    tokenNumberRef.current = null;
     setKotNumbers([]);
+    kotNumbersRef.current = [];
     setServiceCharge(0);
     setServiceChargeType('FLAT');
     setManualDeliveryCharge(0);
@@ -828,7 +830,9 @@ export default function CheckoutClient() {
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState("");
   const [tokenNumber, setTokenNumber] = useState<number | null>(null);
+  const tokenNumberRef = useRef<number | null>(null);
   const [kotNumbers, setKotNumbers] = useState<number[]>([]);
+  const kotNumbersRef = useRef<number[]>([]);
   const { setOrders } = useTerminalContext();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -1060,8 +1064,11 @@ export default function CheckoutClient() {
               setCustomerName(cachedOrder.customerName || "");
               setCustomerPhone(cachedOrder.customerPhone || "");
               setOrderNotes(cachedOrder.notes || "");
-              setKotNumbers(cachedOrder.kotNumbers || (cachedOrder.tokenNumber ? [cachedOrder.tokenNumber] : []));
               setTokenNumber(cachedOrder.tokenNumber || null);
+              tokenNumberRef.current = cachedOrder.tokenNumber || null;
+              const tkList1 = cachedOrder.kotNumbers || (cachedOrder.tokenNumber ? [cachedOrder.tokenNumber] : []);
+              setKotNumbers(tkList1);
+              kotNumbersRef.current = tkList1;
               
               // Clean up to avoid stale data on next visit
               sessionStorage.removeItem("quick_pos_handoff_order");
@@ -1095,8 +1102,11 @@ export default function CheckoutClient() {
           setCustomerName(order.customerName || "");
           setCustomerPhone(order.customerPhone || "");
           setOrderNotes(order.notes || "");
-          setKotNumbers(order.kotNumbers || (order.tokenNumber ? [order.tokenNumber] : []));
           setTokenNumber(order.tokenNumber || null);
+          tokenNumberRef.current = order.tokenNumber || null;
+          const tkList2 = order.kotNumbers || (order.tokenNumber ? [order.tokenNumber] : []);
+          setKotNumbers(tkList2);
+          kotNumbersRef.current = tkList2;
         } catch (err) {
           console.error("LOAD ORDER ERROR:", err);
         }
@@ -2040,8 +2050,8 @@ export default function CheckoutClient() {
         deliveryCharges: deliveryCharge,
         packagingCharges: packagingCharge,
         serviceCharge: finalServiceCharge,
-        kotNumbers,
-        tokenNumber,
+        kotNumbers: kotNumbersRef.current,
+        tokenNumber: tokenNumberRef.current,
         profileId: business?.id,
         amountPaid: finalAmountPaid,
       };
@@ -2091,6 +2101,7 @@ export default function CheckoutClient() {
       if (savedBill?.billNumber) setBillNumber(savedBill.billNumber);
       if (savedBill?.tokenNumber) {
         setTokenNumber(savedBill.tokenNumber);
+        tokenNumberRef.current = savedBill.tokenNumber;
         setBusiness(prev => prev ? { ...prev, lastTokenNumber: savedBill.tokenNumber } : prev);
       }
 
@@ -2247,8 +2258,14 @@ export default function CheckoutClient() {
               tokenNumberToUse = resData.tokenNumber;
               orderNumberToUse = resData.orderNumber;
               setTokenNumber(tokenNumberToUse);
-              if (tokenNumberToUse) {
-                  setKotNumbers(prev => [...prev, tokenNumberToUse as number]);
+              tokenNumberRef.current = tokenNumberToUse;
+              
+              if (tokenNumberToUse !== null) {
+                  setKotNumbers(prev => {
+                      const updated = [...prev, tokenNumberToUse as number];
+                      kotNumbersRef.current = updated;
+                      return updated;
+                  });
               }
               setBusiness(prev => prev ? { ...prev, lastTokenNumber: tokenNumberToUse } : prev);
           }
