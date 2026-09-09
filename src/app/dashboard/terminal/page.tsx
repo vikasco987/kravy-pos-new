@@ -2509,12 +2509,16 @@ function KravyPOS() {
                                         {/* Sticky Footer */}
                                         <div className="p-5 border-t border-white/40 bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl mt-auto rounded-b-3xl">
                                             <button 
-                                                onClick={async () => {
+                                                onClick={() => {
                                                     const tableToPrint = selectedTable;
-                                                    const finalOrder = await handleCheckout(activeOrderForSelected.id);
-                                                    setTimeout(() => {
-                                                        handlePrint("BILL", finalOrder || activeOrderForSelected, tableToPrint as any);
-                                                    }, 500);
+                                                    const currentOrder = activeOrderForSelected;
+                                                    
+                                                    // ⚡ INSTANT PRINT OPTIMIZATION
+                                                    // Open print window immediately with current order data
+                                                    handlePrint("BILL", currentOrder, tableToPrint as any);
+                                                    
+                                                    // 🚀 Run the heavy checkout API calls in the background
+                                                    handleCheckout(currentOrder.id);
                                                 }}
                                                 disabled={isSettling}
                                                 className="relative w-full overflow-hidden flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:via-teal-400 hover:to-emerald-500 text-white font-black text-[13px] uppercase tracking-[0.2em] transition-all shadow-[0_10px_40px_rgba(16,185,129,0.4)] hover:shadow-[0_15px_50px_rgba(16,185,129,0.6)] disabled:opacity-50 disabled:cursor-not-allowed group transform hover:-translate-y-0.5 active:translate-y-1"
