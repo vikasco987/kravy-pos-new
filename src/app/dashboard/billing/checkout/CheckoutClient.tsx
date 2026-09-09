@@ -3364,40 +3364,40 @@ export default function CheckoutClient() {
                       p-2.5 w-full rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--kravy-brand)]/20
                       focus:border-[var(--kravy-brand)] transition-all placeholder:text-[var(--kravy-text-muted)] font-mono"
                   />
-                </div>
-
-                {/* Suggestions Dropdown */}
-                {customerSuggestions.length > 0 && (
-                  <div 
-                    ref={suggestionsRef}
-                    className="absolute left-0 right-0 bg-white dark:bg-[#0f172a] border border-[var(--kravy-border-strong)] rounded-xl shadow-2xl z-[60] mt-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
-                    style={{ top: '100%' }} // Positioned directly below the customer section container
-                  >
-                    <div className="p-2 border-b border-[var(--kravy-border)] bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-between">
-                      <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Matching Customers</p>
-                      <button onClick={() => setCustomerSuggestions([])} className="text-slate-400 hover:text-rose-500 mr-1 shrink-0" type="button">
-                         <X size={14} />
-                      </button>
+                  
+                  {/* Suggestions Dropdown */}
+                  {customerSuggestions.length > 0 && (
+                    <div 
+                      ref={suggestionsRef}
+                      className="absolute left-0 right-0 bg-white dark:bg-[#0f172a] border border-[var(--kravy-border-strong)] rounded-xl shadow-2xl z-[60] mt-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
+                      style={{ top: '100%' }} // Positioned directly below the phone input container
+                    >
+                      <div className="p-2 border-b border-[var(--kravy-border)] bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-between">
+                        <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Matching Customers</p>
+                        <button onClick={() => setCustomerSuggestions([])} className="text-slate-400 hover:text-rose-500 mr-1 shrink-0" type="button">
+                           <X size={14} />
+                        </button>
+                      </div>
+                      {customerSuggestions.map((p, idx) => (
+                        <button
+                          key={p.id || idx}
+                          type="button"
+                          onClick={async () => selectCustomer(p)}
+                          className="w-full text-left px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border-b border-[var(--kravy-border)] last:border-0 transition-colors flex items-center justify-between"
+                        >
+                          <div className="flex-1 min-w-0 pr-2">
+                            <p className="font-black text-sm text-[var(--kravy-text-primary)] truncate">{p.name}</p>
+                            <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-0.5">{p.phone}</p>
+                            {p.address && <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate italic">{p.address}</p>}
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                            <User size={14} />
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                    {customerSuggestions.map((p, idx) => (
-                      <button
-                        key={p.id || idx}
-                        type="button"
-                        onClick={async () => selectCustomer(p)}
-                        className="w-full text-left px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border-b border-[var(--kravy-border)] last:border-0 transition-colors flex items-center justify-between"
-                      >
-                        <div className="flex-1 min-w-0 pr-2">
-                          <p className="font-black text-sm text-[var(--kravy-text-primary)] truncate">{p.name}</p>
-                          <p className="text-[10px] font-bold text-[var(--kravy-text-muted)] mt-0.5">{p.phone}</p>
-                          {p.address && <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate italic">{p.address}</p>}
-                        </div>
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-                          <User size={14} />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                  )}
+                </div>
     
                  {selectedParty && (
                    <div className="space-y-2">
