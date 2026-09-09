@@ -27,6 +27,7 @@ export default function FuelBillingPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [fuelLogoSize, setFuelLogoSize] = useState<number>(60);
   const [fuelAddressSize, setFuelAddressSize] = useState<number>(24);
+  const [fuelTextSize, setFuelTextSize] = useState<number>(20);
   const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
@@ -37,6 +38,7 @@ export default function FuelBillingPage() {
         if (data?.printSettings) {
           if (data.printSettings.fuelLogoSize) setFuelLogoSize(data.printSettings.fuelLogoSize);
           if (data.printSettings.fuelAddressSize) setFuelAddressSize(data.printSettings.fuelAddressSize);
+          if (data.printSettings.fuelTextSize) setFuelTextSize(data.printSettings.fuelTextSize);
         }
       })
       .catch(() => {});
@@ -98,7 +100,8 @@ export default function FuelBillingPage() {
       const updatedPrintSettings = {
         ...(profile?.printSettings || {}),
         fuelLogoSize,
-        fuelAddressSize
+        fuelAddressSize,
+        fuelTextSize
       };
       
       const res = await fetch("/api/profile", {
@@ -155,13 +158,14 @@ export default function FuelBillingPage() {
               max-width: 58mm;
               margin: 0 auto;
               padding: 0px 2px;
-              font-size: 20px;
+              font-size: ${fuelTextSize}px;
               font-weight: bold;
               line-height: 1.2;
               color: black;
               box-sizing: border-box;
             }
             .center { text-align: center; }
+            .nowrap { white-space: nowrap; }
             .logo-container {
               display: flex;
               flex-direction: column;
@@ -262,12 +266,12 @@ export default function FuelBillingPage() {
           <div style="margin-bottom: 2px;">PRESET: ${parseFloat(bill.saleAmount).toFixed(2)} INR</div>
           <div class="center" style="letter-spacing: 2px; margin-top: 5px; margin-bottom: 5px;">******************</div>
           
-          <div style="margin-bottom: 2px;">NOZZLE NO : ${nozzleNo}</div>
-          <div style="margin-bottom: 2px;">PRODUCT: ${bill.fuelType.toUpperCase()}</div>
-          <div style="margin-bottom: 2px;">DENSITY: ${bill.fuelType.toLowerCase().includes('petrol') ? '745.0' : '829.5'} kg/m3</div>
-          <div style="margin-bottom: 2px;">RATE&nbsp;&nbsp;&nbsp;&nbsp;: ${parseFloat(bill.rate).toFixed(2)} INR/L</div>
-          <div style="margin-bottom: 2px;">VOLUME: ${parseFloat(bill.volume).toFixed(2)} L</div>
-          <div style="margin-bottom: 2px;">AMOUNT: ${parseFloat(bill.saleAmount).toFixed(2)} INR</div>
+          <div class="nowrap" style="margin-bottom: 2px;">NOZZLE NO : ${nozzleNo}</div>
+          <div class="nowrap" style="margin-bottom: 2px;">PRODUCT: ${bill.fuelType.toUpperCase()}</div>
+          <div class="nowrap" style="margin-bottom: 2px;">DENSITY: ${bill.fuelType.toLowerCase().includes('petrol') ? '745.0' : '829.5'} kg/m3</div>
+          <div class="nowrap" style="margin-bottom: 2px;">RATE&nbsp;&nbsp;&nbsp;&nbsp;: ${parseFloat(bill.rate).toFixed(2)} INR/L</div>
+          <div class="nowrap" style="margin-bottom: 2px;">VOLUME: ${parseFloat(bill.volume).toFixed(2)} L</div>
+          <div class="nowrap" style="margin-bottom: 2px;">AMOUNT: ${parseFloat(bill.saleAmount).toFixed(2)} INR</div>
           <div class="center" style="letter-spacing: 2px; margin-top: 5px; margin-bottom: 5px;">******************</div>
           <div class="center" style="margin-top: 10px; font-size: 22px;">Thank You! Visit Again</div>
         </body>
@@ -542,7 +546,7 @@ export default function FuelBillingPage() {
                 <input 
                   type="range" 
                   min="20" 
-                  max="120" 
+                  max="200" 
                   value={fuelLogoSize} 
                   onChange={(e) => setFuelLogoSize(Number(e.target.value))}
                   className="w-full accent-indigo-500"
@@ -560,6 +564,21 @@ export default function FuelBillingPage() {
                   max="48" 
                   value={fuelAddressSize} 
                   onChange={(e) => setFuelAddressSize(Number(e.target.value))}
+                  className="w-full accent-indigo-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Base Text Size</label>
+                  <span className="text-xs font-black text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-lg">{fuelTextSize}px</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="12" 
+                  max="40" 
+                  value={fuelTextSize} 
+                  onChange={(e) => setFuelTextSize(Number(e.target.value))}
                   className="w-full accent-indigo-500"
                 />
               </div>
