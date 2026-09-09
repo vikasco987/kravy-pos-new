@@ -247,53 +247,29 @@ export default function FuelBillingPage() {
             ${profile.contactPersonPhone || "7894364780"}
           </div>
           
-          <table>
-            <tr>
-              <td colspan="3">Bill No:${bill.billNumber}-ORGNL</td>
-            </tr>
-            <tr>
-              <td colspan="3">Trns.ID:</td>
-            </tr>
-            <tr>
-              <td colspan="3">Atnd.ID:</td>
-            </tr>
-            <tr>
-              <td colspan="3">Receipt:Physical Receipt</td>
-            </tr>
-            <tr>
-              <td class="col1">Vehi.No</td><td class="col2">:</td><td class="col3">${bill.vehicleNo || ""}</td>
-            </tr>
-            <tr>
-              <td class="col1">Mob.No</td><td class="col2">:</td><td class="col3">NotEntered</td>
-            </tr>
-            <tr>
-              <td class="col1">Date</td><td class="col2">:</td><td class="col3">${format(new Date(bill.createdAt), "dd/MM/yyyy")}</td>
-            </tr>
-            <tr>
-              <td class="col1">Time</td><td class="col2">:</td><td class="col3">${format(new Date(bill.createdAt), "HH:mm:ss")}</td>
-            </tr>
-            <tr>
-              <td class="col1">FP. ID</td><td class="col2">:</td><td class="col3">${fpId}</td>
-            </tr>
-            <tr>
-              <td class="col1">Nozl No</td><td class="col2">:</td><td class="col3">${nozzleNo}</td>
-            </tr>
-            <tr>
-              <td class="col1">Fuel</td><td class="col2">:</td><td class="col3">${bill.fuelType}</td>
-            </tr>
-            <tr>
-              <td class="col1">Preset</td><td class="col2">:</td><td class="col3">Rs.${parseFloat(bill.saleAmount).toFixed(0)}</td>
-            </tr>
-            <tr>
-              <td class="col1">Rate</td><td class="col2">:</td><td class="col3">Rs.${parseFloat(bill.rate).toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td class="col1">Sale</td><td class="col2">:</td><td class="col3">Rs.${parseFloat(bill.saleAmount).toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td class="col1">Volume</td><td class="col2">:</td><td class="col3">${parseFloat(bill.volume).toFixed(2)}L</td>
-            </tr>
-          </table>
+          <div class="center" style="margin-top: 15px; margin-bottom: 5px;">
+            COPY / ORIGINAL
+          </div>
+          <div class="center" style="letter-spacing: 2px;">******************</div>
+          
+          <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+            <span>${format(new Date(bill.createdAt), "dd-MMM-yyyy").toUpperCase()}</span>
+            <span>${format(new Date(bill.createdAt), "HH:mm:ss")}</span>
+          </div>
+          <div style="margin-bottom: 2px;">TXN NO: ${bill.billNumber.replace('FB-', '0001604')}</div>
+          <div style="margin-bottom: 2px;">INVOICE NO: ${bill.billNumber.replace('FB-', '152')}</div>
+          <div style="margin-bottom: 2px;">VEHICLE NO: ${bill.vehicleNo || "NOT ENTERED"}</div>
+          <div style="margin-bottom: 2px;">PRESET: ${parseFloat(bill.saleAmount).toFixed(2)} INR</div>
+          <div class="center" style="letter-spacing: 2px; margin-top: 5px; margin-bottom: 5px;">******************</div>
+          
+          <div style="margin-bottom: 2px;">NOZZLE NO : ${nozzleNo}</div>
+          <div style="margin-bottom: 2px;">PRODUCT: ${bill.fuelType.toUpperCase()}</div>
+          <div style="margin-bottom: 2px;">DENSITY: ${bill.fuelType.toLowerCase().includes('petrol') ? '745.0' : '829.5'} kg/m3</div>
+          <div style="margin-bottom: 2px;">RATE&nbsp;&nbsp;&nbsp;&nbsp;: ${parseFloat(bill.rate).toFixed(2)} INR/L</div>
+          <div style="margin-bottom: 2px;">VOLUME: ${parseFloat(bill.volume).toFixed(2)} L</div>
+          <div style="margin-bottom: 2px;">AMOUNT: ${parseFloat(bill.saleAmount).toFixed(2)} INR</div>
+          <div class="center" style="letter-spacing: 2px; margin-top: 5px; margin-bottom: 5px;">******************</div>
+          <div class="center" style="margin-top: 10px; font-size: 22px;">Thank You! Visit Again</div>
         </body>
       </html>
     `;
