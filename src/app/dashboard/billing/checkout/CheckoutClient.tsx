@@ -2259,7 +2259,22 @@ export default function CheckoutClient() {
         console.timeEnd("2. HTML Capture & Payload Generation");
         
         // Print Instantly!
-        printKOT(finalHtmlToPrint);
+        const returnTo = searchParams.get("returnTo");
+        printKOT(finalHtmlToPrint, () => {
+          if (returnTo) {
+            const currentOrderId = syncedOrderId;
+            const tableId = searchParams.get("tableId");
+            const tableName = searchParams.get("tableName");
+            
+            const query = new URLSearchParams();
+            if (tableId) query.set("tableId", tableId);
+            if (tableName) query.set("tableName", tableName);
+            if (currentOrderId) query.set("orderId", currentOrderId);
+            query.set("refresh", Date.now().toString());
+
+            router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
+          }
+        });
         console.timeEnd("1. Total time to print window");
       }
 
@@ -4586,6 +4601,17 @@ export default function CheckoutClient() {
           printReceipt(enableKOT, customBill, () => {
             resetForm();
             setShowPreview(false);
+            
+            const returnTo = searchParams.get("returnTo");
+            if (returnTo) {
+              const tableId = searchParams.get("tableId");
+              const orderId = searchParams.get("orderId") || syncedOrderId || customBill?.id;
+              const query = new URLSearchParams();
+              if (tableId) query.set("tableId", tableId);
+              if (orderId) query.set("orderId", orderId);
+              query.set("refresh", Date.now().toString());
+              router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
+            }
           });
         }}
         saveBill={saveBill}
