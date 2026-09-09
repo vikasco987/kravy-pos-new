@@ -1052,7 +1052,11 @@ function KravyPOS() {
             
             const savedBill = data.bill || data;
             
-            // 🚀 OPTIMIZATION: Run status updates in parallel
+            // 🔥 CRITICAL OPTIMIZATION: Turn off Processing indicator immediately 
+            // after the critical bill-save transaction completes!
+            setIsSettling(false);
+            
+            // 🚀 RUN SECONDARY UPDATES IN BACKGROUND
             const promises = [];
             
             // Only update status if not already COMPLETED (to avoid loop)
@@ -1078,7 +1082,8 @@ function KravyPOS() {
             }
 
             if (promises.length > 0) {
-                await Promise.all(promises).catch(e => console.error("[CHECKOUT_DEBUG] Background updates failed:", e));
+                // ⚡ FIRE AND FORGET: Don't await these non-critical background tasks
+                Promise.all(promises).catch(e => console.error("[CHECKOUT_DEBUG] Background updates failed:", e));
             }
 
             if (!silent) {
@@ -1098,10 +1103,8 @@ function KravyPOS() {
                 const mergedBill = { ...order, ...savedBill };
                 console.log("[CHECKOUT_DEBUG] Merged Bill with Token:", mergedBill.tokenNumber);
                 setPrintOrder(mergedBill);
-                setIsSettling(false);
                 return mergedBill;
             }
-            setIsSettling(false);
             return null;
         } catch (error) {
             setIsSettling(false);
