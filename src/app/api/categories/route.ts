@@ -19,7 +19,7 @@ export async function GET() {
           { clerkId: null }
         ],
       },
-      select: { id: true, name: true, sortOrder: true },
+      select: { id: true, name: true, sortOrder: true, zones: true },
       orderBy: [
         { sortOrder: "asc" },
         { name: "asc" }

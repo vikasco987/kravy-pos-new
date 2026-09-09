@@ -448,7 +448,7 @@ export default function CheckoutClient() {
   const [categoryLayout, setCategoryLayout] = useState<'horizontal' | 'vertical'>('horizontal');
   const [catSearch, setCatSearch] = useState("");
 
-  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string; sortOrder?: number | null }[]>([]);
+  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string; sortOrder?: number | null; zones?: string[] }[]>([]);
   const [availableZones, setAvailableZones] = useState<string[]>([]);
   const [addonGroups, setAddonGroups] = useState<any[]>([]);
 
@@ -1150,7 +1150,12 @@ export default function CheckoutClient() {
     const cats = Array.from(new Set(validCats.map(c => c.name))).filter(Boolean);
     
     // Only keep categories that have at least one active item in the current zone
+    // OR if the category itself has the current zone explicitly selected
     const activeCats = cats.filter(catName => {
+      const catObj = validCats.find(c => c.name === catName);
+      if (activeZone !== "All" && catObj?.zones?.includes(activeZone)) {
+        return true;
+      }
       return menuItems.some(i => 
         i.isActive !== false && 
         i.category?.name === catName &&
