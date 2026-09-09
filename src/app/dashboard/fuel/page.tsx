@@ -154,8 +154,8 @@ export default function FuelBillingPage() {
               width: 100%;
               max-width: 58mm;
               margin: 0 auto;
-              padding: 10px;
-              font-size: 24px;
+              padding: 0px 2px;
+              font-size: 20px;
               font-weight: bold;
               line-height: 1.2;
               color: black;
