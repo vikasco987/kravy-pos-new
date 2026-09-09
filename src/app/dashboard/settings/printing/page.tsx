@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { kravy } from "@/lib/sounds";
+import { useProfileCache } from "@/hooks/useProfileCache";
 import PrintTemplates from "@/components/printing/PrintTemplates";
 
 // --- Professional Thermal Sizing & Styling Configurations ---
@@ -225,9 +226,10 @@ const fontWeights = [
 ];
 
 export default function PrintingSettings() {
-    const [loading, setLoading] = useState(true);
+    const { profile: cachedProfile, loading: profileLoading, updateProfile } = useProfileCache();
     const [saving, setSaving] = useState(false);
     const [business, setBusiness] = useState<any>(null);
+    const loading = profileLoading && !cachedProfile;
     const [previewGst, setPreviewGst] = useState(true);
     const [showStyling, setShowStyling] = useState(true);
     const [printSettings, setPrintSettings] = useState<any>({ ...defaults });
@@ -239,22 +241,16 @@ export default function PrintingSettings() {
     const kotRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        fetch(`/api/profile`, { cache: 'no-store' })
-            .then(res => res.json())
-            .then(data => {
-                if (data) {
-                    setBusiness(data);
-                    const merged = {
-                        ...defaults,
-                        ...(data.printSettings || {})
-                    };
-                    setPrintSettings(merged);
-                    setOriginalSettings(merged);
-                }
-            })
-            .catch(() => toast.error("Failed to load settings"))
-            .finally(() => setLoading(false));
-    }, []);
+        if (cachedProfile) {
+            setBusiness(cachedProfile);
+            const merged = {
+                ...defaults,
+                ...(cachedProfile.printSettings || {})
+            };
+            setPrintSettings(merged);
+            setOriginalSettings(merged);
+        }
+    }, [cachedProfile]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -271,6 +267,7 @@ export default function PrintingSettings() {
             if (res.ok) {
                 const data = await res.json();
                 if (data) {
+                    updateProfile(data);
                     setBusiness(data);
                     const merged = {
                         ...defaults,
@@ -279,6 +276,7 @@ export default function PrintingSettings() {
                     setPrintSettings(merged);
                     setOriginalSettings(merged);
                 } else {
+                    updateProfile({ printSettings });
                     setOriginalSettings(printSettings);
                 }
                 kravy.success();

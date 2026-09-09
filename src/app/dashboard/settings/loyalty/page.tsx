@@ -24,10 +24,11 @@ import {
   Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
+import { useProfileCache } from "@/hooks/useProfileCache";
 
 export default function LoyaltySettingsPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const { profile: cachedProfile, loading: profileLoading, updateProfile } = useProfileCache();
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<any>({
     enableLoyaltyProgram: true,
@@ -37,6 +38,21 @@ export default function LoyaltySettingsPage() {
     loyaltyMinRedeem: 100,
     maxRedeemPointsPerBill: 500
   });
+
+  const loading = profileLoading && !cachedProfile;
+
+  useEffect(() => {
+    if (cachedProfile) {
+      setProfile({
+        enableLoyaltyProgram: cachedProfile.enableLoyaltyProgram !== false,
+        loyaltyPointRatio: cachedProfile.loyaltyPointRatio ?? 10,
+        loyaltyMinOrderAmount: cachedProfile.loyaltyMinOrderAmount ?? 100,
+        loyaltyValueInRupees: cachedProfile.loyaltyValueInRupees ?? 1,
+        loyaltyMinRedeem: cachedProfile.loyaltyMinRedeem ?? 100,
+        maxRedeemPointsPerBill: cachedProfile.maxRedeemPointsPerBill ?? 500
+      });
+    }
+  }, [cachedProfile]);
 
   // Customer Loyalty Ledger State
   const [parties, setParties] = useState<any[]>([]);
@@ -51,30 +67,8 @@ export default function LoyaltySettingsPage() {
   const [isAdjusting, setIsAdjusting] = useState(false);
 
   useEffect(() => {
-    fetchProfile();
     fetchParties();
   }, []);
-
-  const fetchProfile = async () => {
-    try {
-      const res = await fetch("/api/profile");
-      if (res.ok) {
-        const data = await res.json();
-        setProfile({
-          enableLoyaltyProgram: data.enableLoyaltyProgram !== false,
-          loyaltyPointRatio: data.loyaltyPointRatio ?? 10,
-          loyaltyMinOrderAmount: data.loyaltyMinOrderAmount ?? 100,
-          loyaltyValueInRupees: data.loyaltyValueInRupees ?? 1,
-          loyaltyMinRedeem: data.loyaltyMinRedeem ?? 100,
-          maxRedeemPointsPerBill: data.maxRedeemPointsPerBill ?? 500
-        });
-      }
-    } catch (err) {
-      toast.error("Failed to load profile settings");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchParties = async () => {
     setLoadingParties(true);
@@ -109,6 +103,14 @@ export default function LoyaltySettingsPage() {
       });
 
       if (res.ok) {
+        updateProfile({
+          enableLoyaltyProgram: profile.enableLoyaltyProgram,
+          loyaltyPointRatio: parseFloat(profile.loyaltyPointRatio) || 10,
+          loyaltyMinOrderAmount: parseFloat(profile.loyaltyMinOrderAmount) || 0,
+          loyaltyValueInRupees: parseFloat(profile.loyaltyValueInRupees) || 1,
+          loyaltyMinRedeem: parseInt(profile.loyaltyMinRedeem) || 100,
+          maxRedeemPointsPerBill: parseInt(profile.maxRedeemPointsPerBill) || 500
+        });
         toast.success("Loyalty & Rewards rules updated successfully! 👑");
       } else {
         throw new Error();

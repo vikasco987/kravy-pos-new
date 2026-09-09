@@ -10,9 +10,10 @@ import {
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { kravy } from "@/lib/sounds";
+import { useProfileCache } from "@/hooks/useProfileCache";
 
 export default function PosLayoutSettings() {
-    const [loading, setLoading] = useState(true);
+    const { profile: cachedProfile, loading: profileLoading, updateProfile } = useProfileCache();
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState({
         posCashEnabled: true,
@@ -28,31 +29,26 @@ export default function PosLayoutSettings() {
         allowWalletEditDelete: true,
         enableVirtualGroupVariants: true,
     });
+    const loading = profileLoading && !cachedProfile;
 
     useEffect(() => {
-        fetch(`/api/profile`, { cache: 'no-store' })
-            .then(res => res.json())
-            .then(data => {
-                if (data) {
-                    setSettings({
-                        posCashEnabled: data.posCashEnabled ?? true,
-                        posUpiEnabled: data.posUpiEnabled ?? true,
-                        posCardEnabled: data.posCardEnabled ?? true,
-                        posCounterEnabled: data.posCounterEnabled ?? true,
-                        posWalletEnabled: data.posWalletEnabled ?? true,
-                        posHoldEnabled: data.posHoldEnabled ?? true,
-                        posSaveEnabled: data.posSaveEnabled ?? true,
-                        posPreviewEnabled: data.posPreviewEnabled ?? true,
-                        posKotEnabled: data.posKotEnabled ?? true,
-                        expiryTrackingEnabled: data.expiryTrackingEnabled ?? false,
-                        allowWalletEditDelete: data.printSettings?.allowWalletEditDelete ?? data.allowWalletEditDelete ?? true,
-                        enableVirtualGroupVariants: data.printSettings?.enableVirtualGroupVariants ?? data.enableVirtualGroupVariants ?? true,
-                    });
-                }
-            })
-            .catch(() => toast.error("Failed to load settings"))
-            .finally(() => setLoading(false));
-    }, []);
+        if (cachedProfile) {
+            setSettings({
+                posCashEnabled: cachedProfile.posCashEnabled ?? true,
+                posUpiEnabled: cachedProfile.posUpiEnabled ?? true,
+                posCardEnabled: cachedProfile.posCardEnabled ?? true,
+                posCounterEnabled: cachedProfile.posCounterEnabled ?? true,
+                posWalletEnabled: cachedProfile.posWalletEnabled ?? true,
+                posHoldEnabled: cachedProfile.posHoldEnabled ?? true,
+                posSaveEnabled: cachedProfile.posSaveEnabled ?? true,
+                posPreviewEnabled: cachedProfile.posPreviewEnabled ?? true,
+                posKotEnabled: cachedProfile.posKotEnabled ?? true,
+                expiryTrackingEnabled: cachedProfile.expiryTrackingEnabled ?? false,
+                allowWalletEditDelete: cachedProfile.printSettings?.allowWalletEditDelete ?? cachedProfile.allowWalletEditDelete ?? true,
+                enableVirtualGroupVariants: cachedProfile.printSettings?.enableVirtualGroupVariants ?? cachedProfile.enableVirtualGroupVariants ?? true,
+            });
+        }
+    }, [cachedProfile]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -63,6 +59,7 @@ export default function PosLayoutSettings() {
                 body: JSON.stringify(settings),
             });
             if (res.ok) {
+                updateProfile(settings);
                 kravy.success();
                 toast.success("POS layout updated");
             } else {
