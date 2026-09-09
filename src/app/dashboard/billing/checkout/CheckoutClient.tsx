@@ -2173,6 +2173,9 @@ export default function CheckoutClient() {
   const handlePrintKOT = async () => {
     if (isSaving || items.length === 0) return;
     
+    console.time("1. Total time to print window");
+    console.time("2. HTML Capture & Payload Generation");
+    
     // ✅ CAPTURE KOT HTML BEFORE MODIFYING ANY STATE!
     const htmlToPrint = kotRef.current?.innerHTML;
 
@@ -2209,11 +2212,17 @@ export default function CheckoutClient() {
         isKotPrinted: true,
       };
 
+      console.timeEnd("2. HTML Capture & Payload Generation");
+      console.time("3. API /orders Fetch Time");
+
       const res = await fetch("/api/orders", {
         method: syncedOrderId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData)
       });
+      
+      console.timeEnd("3. API /orders Fetch Time");
+      console.time("4. JSON Parse & State Update");
 
         if (res.ok) {
           const data = await res.json();
