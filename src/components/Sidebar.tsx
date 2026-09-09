@@ -1005,7 +1005,8 @@ export default function Sidebar({ profile }: { profile?: any }) {
               ))}
           </div>
         );
-      })}
+      });
+        })()}
     </div>
 
       {/* USER SECTION AT BOTTOM */}
