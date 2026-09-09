@@ -257,7 +257,7 @@ export default function FuelBillingPage() {
           <div class="center" style="margin-top: 15px; margin-bottom: 5px;">
             COPY / ORIGINAL
           </div>
-          <div class="center" style="letter-spacing: 2px;">******************</div>
+          <div class="center" style="letter-spacing: 2px; margin-top: 5px; margin-bottom: 5px;">жжжжжжжжжжжжжжжжжж</div>
           
           <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
             <span>${format(new Date(bill.createdAt), "dd-MMM-yyyy").toUpperCase()}</span>
@@ -267,7 +267,7 @@ export default function FuelBillingPage() {
           <div style="margin-bottom: 2px;">INVOICE NO: ${bill.billNumber.replace('FB-', '152')}</div>
           <div style="margin-bottom: 2px;">VEHICLE NO: ${bill.vehicleNo || "NOT ENTERED"}</div>
           <div style="margin-bottom: 2px;">PRESET: ${parseFloat(bill.saleAmount).toFixed(2)} INR</div>
-          <div class="center" style="letter-spacing: 2px; margin-top: 5px; margin-bottom: 5px;">******************</div>
+          <div class="center" style="letter-spacing: 2px; margin-top: 5px; margin-bottom: 5px;">жжжжжжжжжжжжжжжжжж</div>
           
           <div class="nowrap" style="margin-bottom: 2px;">NOZZLE NO : ${nozzleNo}</div>
           <div class="nowrap" style="margin-bottom: 2px;">PRODUCT: ${bill.fuelType.toUpperCase()}</div>
@@ -275,8 +275,8 @@ export default function FuelBillingPage() {
           <div class="nowrap" style="margin-bottom: 2px;">RATE&nbsp;&nbsp;&nbsp;&nbsp;: ${parseFloat(bill.rate).toFixed(2)} INR/L</div>
           <div class="nowrap" style="margin-bottom: 2px;">VOLUME: ${parseFloat(bill.volume).toFixed(2)} L</div>
           <div class="nowrap" style="margin-bottom: 2px;">AMOUNT: ${parseFloat(bill.saleAmount).toFixed(2)} INR</div>
-          <div class="center" style="letter-spacing: 2px; margin-top: 5px; margin-bottom: 5px;">******************</div>
-          <div class="center" style="margin-top: 10px; font-size: 22px;">Thank You! Visit Again</div>
+          <div class="center" style="letter-spacing: 2px; margin-top: 5px; margin-bottom: 5px;">жжжжжжжжжжжжжжжжжж</div>
+          <div class="center nowrap" style="margin-top: 10px; font-size: 1.1em;">Thank You! Visit Again</div>
         </body>
       </html>
     `;
