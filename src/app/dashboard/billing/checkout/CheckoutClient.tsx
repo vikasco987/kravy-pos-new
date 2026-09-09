@@ -1165,15 +1165,8 @@ export default function CheckoutClient() {
           return i.zones?.includes(activeZone);
         }
 
-        // 2. Auto-filter if a table is selected (Only if manual filter is "All")
-        if (!business?.multiZoneMenuEnabled || !selectedTable || ["POS", "TAKEAWAY", "DELIVERY"].includes(selectedTable)) return true;
-        if (tables.length === 0) return true;
-
-        const tableObj = tables.find(t => t.name === selectedTable);
-        if (!tableObj || !tableObj.zone || tableObj.zone.toUpperCase() === "DEFAULT") return true;
-
-        const zone = tableObj.zone;
-        return !i.zones || i.zones.length === 0 || i.zones.includes(zone);
+        // If activeZone is "All" (Global), show all items!
+        return true;
       });
 
     // 🚀 Apply Virtual Grouping for items with parenthetical variants (e.g. Small, Medium, Large, Half, Full)
