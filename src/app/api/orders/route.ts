@@ -170,58 +170,114 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { tableId, items, total, customerName, customerPhone, customerAddress, status, notes, preferences, isKotPrinted } = body;
+        const { tableId, items, total, customerName, customerPhone, customerAddress, status, notes, preferences, isKotPrinted, reservedTokenNumber, reservedOrderNumber } = body;
 
         if (!items || total === undefined) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
         // ✅ 1. FETCH PROFILE FOR TOKEN GENERATION
-        const profile = await prisma.businessProfile.findFirst({
-            where: { userId: effectiveId },
-            orderBy: { createdAt: 'asc' }
-        });
+        let nextToken = reservedTokenNumber ? Number(reservedTokenNumber) : 1;
+        let nextSerial = 1;
+        let orderNumber = reservedOrderNumber || "";
 
-        // ✅ 2. TOKEN NUMBER GENERATION (DAILY RESET)
-        let nextToken = 1;
-        try {
-            // Re-fetch profile to get latest lastTokenNumber (prevent race condition)
-            const latestProfile = await prisma.businessProfile.findFirst({
+        if (!reservedTokenNumber || !reservedOrderNumber) {
+            const profile = await prisma.businessProfile.findFirst({
                 where: { userId: effectiveId },
                 orderBy: { createdAt: 'asc' }
             });
-            const today = new Date().toISOString().split('T')[0];
-            const lastTokenDate = latestProfile?.lastTokenDate ? new Date(latestProfile.lastTokenDate).toISOString().split('T')[0] : "";
-            
-            if (lastTokenDate === today) {
-                nextToken = (latestProfile?.lastTokenNumber || 0) + 1;
-            } else {
-                nextToken = 1;
+
+            // ✅ 2. TOKEN NUMBER GENERATION (DAILY RESET)
+            try {
+                // Re-fetch profile to get latest lastTokenNumber (prevent race condition)
+                const latestProfile = await prisma.businessProfile.findFirst({
+                    where: { userId: effectiveId },
+                    orderBy: { createdAt: 'asc' }
+                });
+                const today = new Date().toISOString().split('T')[0];
+                const lastTokenDate = latestProfile?.lastTokenDate ? new Date(latestProfile.lastTokenDate).toISOString().split('T')[0] : "";
+                
+                if (lastTokenDate === today) {
+                    nextToken = (latestProfile?.lastTokenNumber || 0) + 1;
+                } else {
+                    nextToken = 1;
+                }
+
+                // Sync with BusinessProfile (using upsert to prevent errors if profile missing)
+                if (latestProfile?.id) {
+                    await prisma.businessProfile.update({
+                        where: { id: latestProfile.id },
+                        data: {
+                            lastTokenNumber: nextToken,
+                            lastTokenDate: new Date()
+                        }
+                    });
+                } else {
+                    await prisma.businessProfile.create({
+                        data: {
+                            userId: effectiveId,
+                            lastTokenNumber: nextToken,
+                            lastTokenDate: new Date(),
+                            businessName: "My Restaurant",
+                            contactPersonEmail: effectiveId.includes("user_") ? "" : effectiveId // Fallback
+                        }
+                    });
+                }
+            } catch (tokenErr) {
+                console.error("ORDER_TOKEN_GENERATION_ERROR:", tokenErr);
+                // Fallback to 1 if profile update fails
             }
 
-            // Sync with BusinessProfile (using upsert to prevent errors if profile missing)
-            if (latestProfile?.id) {
-                await prisma.businessProfile.update({
-                    where: { id: latestProfile.id },
-                    data: {
-                        lastTokenNumber: nextToken,
-                        lastTokenDate: new Date()
-                    }
+            // ✅ Generate orderNumber (INV/YYMM/XXXX) with max sequence
+            const startOfMonth = new Date();
+            startOfMonth.setDate(1);
+            startOfMonth.setHours(0, 0, 0, 0);
+            
+            let maxSerial = 0;
+            try {
+                const latestProfile = await prisma.businessProfile.findFirst({
+                    where: { userId: effectiveId },
+                    orderBy: { createdAt: 'asc' }
                 });
-            } else {
-                await prisma.businessProfile.create({
-                    data: {
-                        userId: effectiveId,
-                        lastTokenNumber: nextToken,
-                        lastTokenDate: new Date(),
-                        businessName: "My Restaurant",
-                        contactPersonEmail: effectiveId.includes("user_") ? "" : effectiveId // Fallback
-                    }
+
+                // Use atomic billCounter increment to avoid slow regex queries over entire collections
+                if (latestProfile?.id) {
+                    const updatedProfile = await prisma.businessProfile.update({
+                        where: { id: latestProfile.id },
+                        data: { billCounter: { increment: 1 } },
+                        select: { billCounter: true }
+                    });
+                    nextSerial = updatedProfile.billCounter;
+                }
+            } catch (e) {
+                console.error("Atomic billCounter increment failed for order, falling back to manual calculation:", e);
+                const lastBill = await prisma.billManager.findFirst({
+                    where: { clerkUserId: effectiveId, createdAt: { gte: startOfMonth }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
+                    orderBy: { createdAt: 'desc' },
+                    select: { billNumber: true }
                 });
+                if (lastBill?.billNumber) {
+                    const parts = lastBill.billNumber.split(/[\/-]/);
+                    const serial = parseInt(parts[parts.length - 1], 10);
+                    if (!isNaN(serial) && serial > maxSerial) maxSerial = serial;
+                }
+                
+                const lastOrder = await prisma.order.findFirst({
+                    where: { clerkUserId: effectiveId, createdAt: { gte: startOfMonth }, orderNumber: { not: null } },
+                    orderBy: { createdAt: 'desc' },
+                    select: { orderNumber: true }
+                });
+                if (lastOrder?.orderNumber) {
+                    const parts = lastOrder.orderNumber.split(/[\/-]/);
+                    const serial = parseInt(parts[parts.length - 1], 10);
+                    if (!isNaN(serial) && serial > maxSerial) maxSerial = serial;
+                }
+                nextSerial = maxSerial + 1;
             }
-        } catch (tokenErr) {
-            console.error("ORDER_TOKEN_GENERATION_ERROR:", tokenErr);
-            // Fallback to 1 if profile update fails
+
+            const yy = String(startOfMonth.getFullYear()).slice(-2);
+            const mm = String(startOfMonth.getMonth() + 1).padStart(2, '0');
+            orderNumber = `INV/${yy}${mm}/${nextSerial.toString().padStart(4, '0')}`;
         }
 
         const processedItems = (items && Array.isArray(items)) 
@@ -235,53 +291,6 @@ export async function POST(req: NextRequest) {
                 qty: Number(it.qty || it.quantity || 0)
             }))
             : items;
-
-        // ✅ Generate orderNumber (INV/YYMM/XXXX) with max sequence
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
-        
-        let maxSerial = 0;
-        let nextSerial = 1;
-        try {
-            // Use atomic billCounter increment to avoid slow regex queries over entire collections
-            if (latestProfile?.id) {
-                const updatedProfile = await prisma.businessProfile.update({
-                    where: { id: latestProfile.id },
-                    data: { billCounter: { increment: 1 } },
-                    select: { billCounter: true }
-                });
-                nextSerial = updatedProfile.billCounter;
-            }
-        } catch (e) {
-            console.error("Atomic billCounter increment failed for order, falling back to manual calculation:", e);
-            const lastBill = await prisma.billManager.findFirst({
-                where: { clerkUserId: effectiveId, createdAt: { gte: startOfMonth }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
-                orderBy: { createdAt: 'desc' },
-                select: { billNumber: true }
-            });
-            if (lastBill?.billNumber) {
-                const parts = lastBill.billNumber.split(/[\/-]/);
-                const serial = parseInt(parts[parts.length - 1], 10);
-                if (!isNaN(serial) && serial > maxSerial) maxSerial = serial;
-            }
-            
-            const lastOrder = await prisma.order.findFirst({
-                where: { clerkUserId: effectiveId, createdAt: { gte: startOfMonth }, orderNumber: { not: null } },
-                orderBy: { createdAt: 'desc' },
-                select: { orderNumber: true }
-            });
-            if (lastOrder?.orderNumber) {
-                const parts = lastOrder.orderNumber.split(/[\/-]/);
-                const serial = parseInt(parts[parts.length - 1], 10);
-                if (!isNaN(serial) && serial > maxSerial) maxSerial = serial;
-            }
-            nextSerial = maxSerial + 1;
-        }
-
-        const yy = String(startOfMonth.getFullYear()).slice(-2);
-        const mm = String(startOfMonth.getMonth() + 1).padStart(2, '0');
-        const orderNumber = `INV/${yy}${mm}/${nextSerial.toString().padStart(4, '0')}`;
 
         // ✅ 3. CREATE ORDER WITH PERSISTENT TOKEN
         const order = await prisma.order.create({

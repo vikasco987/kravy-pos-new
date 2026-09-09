@@ -2170,6 +2170,47 @@ export default function CheckoutClient() {
     else if (kotRef.current) runPrintJob("kot", kotRef.current.innerHTML, cb);
   };
 
+  // ✅ BACKGROUND SYNC QUEUE
+  const syncOrderToBackend = async (orderData: any, tokenNumber: number, orderNumber: string) => {
+    try {
+      const payload = {
+        ...orderData,
+        reservedTokenNumber: tokenNumber,
+        reservedOrderNumber: orderNumber
+      };
+
+      const res = await fetch("/api/orders", {
+        method: orderData.orderId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error("Sync failed");
+      
+      const data = await res.json();
+      
+      // Update state post-sync if needed
+      if (data.id) {
+        setSyncedOrderId(data.id);
+        if (!orderData.orderId) {
+            router.replace(`/dashboard/billing/checkout?orderId=${data.id}`, { scroll: false });
+        }
+      }
+      return data;
+    } catch (error) {
+      console.error("BACKGROUND SYNC ERROR:", error);
+      // Save to localStorage recovery queue
+      const queue = JSON.parse(localStorage.getItem("kravy_failed_orders") || "[]");
+      queue.push({
+        payload: { ...orderData, reservedTokenNumber: tokenNumber, reservedOrderNumber: orderNumber },
+        timestamp: Date.now()
+      });
+      localStorage.setItem("kravy_failed_orders", JSON.stringify(queue));
+      toast.error("Order saved locally. Will sync when online.", { duration: 4000 });
+      return null;
+    }
+  };
+
   const handlePrintKOT = async () => {
     if (isSaving || items.length === 0) return;
     
@@ -2185,7 +2226,39 @@ export default function CheckoutClient() {
       kravy.ping();
       setIsKotPrinted(true);
 
-      // ✅ ALWAYS SYNC FOR KOT (To get Token Number)
+      // 1. RESERVE TOKEN (Lightning Fast)
+      let tokenNumberToUse: number | null = null;
+      let orderNumberToUse = "";
+      
+      if (!syncedOrderId) { // Only reserve for new orders
+          const reserveRes = await fetch("/api/orders/reserve-token", { method: "POST" });
+          if (reserveRes.ok) {
+              const resData = await reserveRes.json();
+              tokenNumberToUse = resData.tokenNumber;
+              orderNumberToUse = resData.orderNumber;
+              setTokenNumber(tokenNumberToUse);
+              setBusiness(prev => prev ? { ...prev, lastTokenNumber: tokenNumberToUse } : prev);
+          }
+      } else {
+          tokenNumberToUse = tokenNumber;
+      }
+
+      // 2. INJECT HTML & PRINT IMMEDIATELY
+      if (htmlToPrint) {
+        let finalHtmlToPrint = htmlToPrint;
+        if (tokenNumberToUse) {
+          finalHtmlToPrint = finalHtmlToPrint.replace(/#KOT_PLACEHOLDER/g, `#${tokenNumberToUse}`);
+          finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${tokenNumberToUse}`);
+        }
+        
+        console.timeEnd("2. HTML Capture & Payload Generation");
+        
+        // Print Instantly!
+        printKOT(finalHtmlToPrint);
+        console.timeEnd("1. Total time to print window");
+      }
+
+      // 3. GENERATE PAYLOAD FOR BACKGROUND SYNC
       const orderData = {
         orderId: syncedOrderId || undefined,
         tableId: selectedTable !== "POS" ? (tables.find(t => t.name === selectedTable)?.id || searchParams.get("tableId")) : null,
@@ -2201,7 +2274,7 @@ export default function CheckoutClient() {
           gst: it.gst ?? 0,
           isNew: !!it.isNew,
           variants: (it as any).variants || [],
-          kotNumber: (it as any).kotNumber
+          kotNumber: tokenNumberToUse || (it as any).kotNumber
         })),
         total: Number(finalTotal.toFixed(2)),
         status: "PREPARING",
@@ -2212,101 +2285,21 @@ export default function CheckoutClient() {
         isKotPrinted: true,
       };
 
-      console.timeEnd("2. HTML Capture & Payload Generation");
-      console.time("3. API /orders Fetch Time");
-
-      const res = await fetch("/api/orders", {
-        method: syncedOrderId ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData)
-      });
+      // Mark local items as not new so UI updates immediately
+      setItems(prev => prev.map(i => ({ ...i, isNew: false, kotNumber: tokenNumberToUse || i.kotNumber })));
       
-      console.timeEnd("3. API /orders Fetch Time");
-      console.time("4. JSON Parse & State Update");
-
-        if (res.ok) {
-          const data = await res.json();
-          // Support both legacy (data.id) and wrapped (data.order.id) response formats
-          const finalOrderId = data.id || data.order?.id || data._id;
-          
-          if (!syncedOrderId && finalOrderId) {
-            setSyncedOrderId(finalOrderId);
-          }
-          
-          // ✅ Sync tokens from server
-          if (data.kotNumbers && Array.isArray(data.kotNumbers)) {
-            setKotNumbers(data.kotNumbers);
-          }
-          const serverToken = data.tokenNumber ?? data.order?.tokenNumber;
-          if (serverToken != null) {
-            setTokenNumber(serverToken);
-          }
-
-          // ✅ Sync items from server to clear isNew flags
-          const serverItems = data.items || data.order?.items;
-          if (serverItems && Array.isArray(serverItems)) {
-            setItems(serverItems.map((it: any) => ({
-              ...it,
-              id: it.itemId || it.id || it._id || `item-${Math.random().toString(36).substr(2, 9)}`,
-              itemId: it.itemId || it.id,
-              rate: it.price || it.rate,
-              qty: it.quantity || it.qty,
-              printedQty: it.quantity || it.qty,
-              isNew: false // Explicitly clear local isNew flag
-            })));
-          }
-          
-          // Inject token number if it was missing in the pre-captured HTML
-          let finalHtmlToPrint = htmlToPrint;
-          if (finalHtmlToPrint) {
-              const latestKot = data.kotNumbers && data.kotNumbers.length > 0 
-                ? data.kotNumbers[data.kotNumbers.length - 1] 
-                : (serverToken || "---");
-              
-              finalHtmlToPrint = finalHtmlToPrint.replace(/#KOT_PLACEHOLDER/g, `#${latestKot}`);
-              finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${latestKot}`);
-              if (serverToken != null) {
-                finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${serverToken}`);
-              }
-          }
-          
-          const serverOrderNumber = data.orderNumber || data.order?.orderNumber;
-          if (serverOrderNumber && finalHtmlToPrint) {
-              finalHtmlToPrint = finalHtmlToPrint.replace(new RegExp(billNumber, 'g'), serverOrderNumber);
-              setBillNumber(serverOrderNumber);
-          }
-
-          // ✅ Print KOT immediately without 500ms timeout
-          const returnTo = searchParams.get("returnTo");
-          printKOT(finalHtmlToPrint, () => {
-            // This callback runs after the print job finishes
-            if (returnTo) {
-              const currentOrderId = finalOrderId || syncedOrderId;
-              const tableId = searchParams.get("tableId");
-              const tableName = searchParams.get("tableName");
-              
-              const query = new URLSearchParams();
-              if (tableId) query.set("tableId", tableId);
-              if (tableName) query.set("tableName", tableName);
-              if (currentOrderId) query.set("orderId", currentOrderId);
-              query.set("refresh", Date.now().toString());
-
-              // Use replace for faster perceived navigation without adding history
-              router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
-            }
+      // 4. FIRE AND FORGET BACKGROUND SYNC
+      if (tokenNumberToUse !== null || syncedOrderId) {
+          syncOrderToBackend(orderData, tokenNumberToUse || 0, orderNumberToUse).finally(() => {
+              setIsSaving(false);
           });
-          toast.success("KOT Printed & Order Synced! ✅");
-          
-          if (returnTo) return; // Prevent any other actions if returning
-        } else {
-          const errData = await res.json().catch(() => ({}));
-          console.error("SYNC_ERROR:", errData);
-          toast.error(`Sync Failed: ${errData.error || "Unknown Error"}. Please try again.`);
-        }
-    } catch (err: any) {
-      console.error("KOT_PRINT_CRITICAL_ERROR:", err);
-      toast.error(`Critical Error: ${err.message || "Failed to sync with kitchen"}`);
-    } finally {
+      } else {
+          setIsSaving(false);
+      }
+      
+    } catch (error) {
+      console.error("KOT Error", error);
+      toast.error("Failed to process KOT");
       setIsSaving(false);
     }
   };
