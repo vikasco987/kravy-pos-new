@@ -68,10 +68,18 @@ export default async function MonthlySalesReportPage() {
   const effectiveId = await getEffectiveClerkId();
   if (!effectiveId) redirect("/auth/custom");
 
+  // 🇮🇳 IST Timezone calculations
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const currentDay = now.getDate();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const nowIst = new Date(now.getTime() + 330 * 60000);
+  const year = nowIst.getUTCFullYear();
+  const month = nowIst.getUTCMonth();
+  
+  // Start of month in IST, shifted to actual UTC for DB query
+  const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
+  startOfMonth.setMinutes(startOfMonth.getMinutes() - 330);
+
+  const currentDay = nowIst.getUTCDate();
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
 
   const bills = await prisma.billManager.findMany({
     where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startOfMonth } },
@@ -104,7 +112,7 @@ export default async function MonthlySalesReportPage() {
             <h1 style={{ fontSize: "2.4rem", fontWeight: 950, color: "var(--kravy-text-primary)", letterSpacing: "-2px", lineHeight: 1, marginBottom: "8px" }}>Monthly Analytics</h1>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.95rem", color: "var(--kravy-text-muted)" }}>
               <Calendar size={16} /> 
-              <span>Performance for {now.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+              <span>Performance for {now.toLocaleString('en-IN', { month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })}</span>
               <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "var(--kravy-border)" }} />
               <span style={{ fontWeight: 800, color: "#0EA5E9" }}>MONTHLY CYCLE ACTIVE</span>
             </div>
@@ -133,7 +141,7 @@ export default async function MonthlySalesReportPage() {
             <div>
                <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "#0369A1", textTransform: "uppercase", letterSpacing: "1.5px" }}>Performance Forecast</div>
                <div style={{ fontSize: "1.25rem", fontWeight: 900, color: "var(--kravy-text-primary)" }}>
-                  Projected Revenue for {now.toLocaleString('default', { month: 'short' })}: <span style={{ color: "#0EA5E9" }}>₹{format(projectedRevenue)}</span>
+                  Projected Revenue for {now.toLocaleString('en-IN', { month: 'short', timeZone: 'Asia/Kolkata' })}: <span style={{ color: "#0EA5E9" }}>₹{format(projectedRevenue)}</span>
                </div>
             </div>
          </div>
@@ -180,8 +188,8 @@ export default async function MonthlySalesReportPage() {
                   <td style={{ padding: "24px" }}>
                     <div style={{ fontWeight: 950, fontFamily: "monospace", color: "#6366F1", fontSize: "1.1rem" }}>#{b.billNumber}</div>
                     <div style={{ fontSize: "0.72rem", color: "var(--kravy-text-muted)", marginTop: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <Calendar size={12} /> {new Date(b.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                      <Clock size={12} style={{ marginLeft: "6px" }} /> {new Date(b.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <Calendar size={12} /> {new Date(b.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', timeZone: 'Asia/Kolkata' })}
+                      <Clock size={12} style={{ marginLeft: "6px" }} /> {new Date(b.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
                     </div>
                   </td>
                   <td style={{ padding: "24px" }}>
