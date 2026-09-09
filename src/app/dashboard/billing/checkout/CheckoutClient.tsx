@@ -2230,13 +2230,18 @@ export default function CheckoutClient() {
       let tokenNumberToUse: number | null = null;
       let orderNumberToUse = "";
       
-      if (!syncedOrderId) { // Only reserve for new orders
+      const hasNewItems = items.some(it => it.isNew);
+
+      if (!syncedOrderId || hasNewItems) { 
           const reserveRes = await fetch("/api/orders/reserve-token", { method: "POST" });
           if (reserveRes.ok) {
               const resData = await reserveRes.json();
               tokenNumberToUse = resData.tokenNumber;
               orderNumberToUse = resData.orderNumber;
               setTokenNumber(tokenNumberToUse);
+              if (tokenNumberToUse) {
+                  setKotNumbers(prev => [...prev, tokenNumberToUse as number]);
+              }
               setBusiness(prev => prev ? { ...prev, lastTokenNumber: tokenNumberToUse } : prev);
           }
       } else {
@@ -4580,6 +4585,7 @@ export default function CheckoutClient() {
         printReceipt={(enableKOT, customBill) => {
           printReceipt(enableKOT, customBill, () => {
             resetForm();
+            setShowPreview(false);
           });
         }}
         saveBill={saveBill}

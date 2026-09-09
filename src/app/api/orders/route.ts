@@ -65,7 +65,7 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { orderId, status, isKotPrinted, isBillPrinted, items, total, isDeleted, skipInventoryDeduction, customerName, customerPhone } = await req.json();
+        const { orderId, status, isKotPrinted, isBillPrinted, items, total, isDeleted, skipInventoryDeduction, customerName, customerPhone, reservedTokenNumber } = await req.json();
 
         if (!orderId) {
             return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
@@ -90,28 +90,31 @@ export async function PATCH(req: NextRequest) {
                 const isMissingToken = !currentOrder.tokenNumber || currentOrder.tokenNumber === 0;
 
                 if (hasNewItems || isMissingToken) {
-                    let nextToken = 1;
-                    const profile = await prisma.businessProfile.findFirst({
-                        where: { userId: effectiveId },
-                        orderBy: { createdAt: 'asc' }
-                    });
-                    const today = new Date().toISOString().split('T')[0];
-                    const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
+                    let nextToken = reservedTokenNumber ? Number(reservedTokenNumber) : 1;
                     
-                    if (lastTokenDate === today) {
-                        nextToken = (profile?.lastTokenNumber || 0) + 1;
-                    } else {
-                        nextToken = 1;
-                    }
-
-                    if (profile?.id) {
-                        await prisma.businessProfile.update({
-                            where: { id: profile.id },
-                            data: {
-                                lastTokenNumber: nextToken,
-                                lastTokenDate: new Date()
-                            }
+                    if (!reservedTokenNumber) {
+                        const profile = await prisma.businessProfile.findFirst({
+                            where: { userId: effectiveId },
+                            orderBy: { createdAt: 'asc' }
                         });
+                        const today = new Date().toISOString().split('T')[0];
+                        const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
+                        
+                        if (lastTokenDate === today) {
+                            nextToken = (profile?.lastTokenNumber || 0) + 1;
+                        } else {
+                            nextToken = 1;
+                        }
+
+                        if (profile?.id) {
+                            await prisma.businessProfile.update({
+                                where: { id: profile.id },
+                                data: {
+                                    lastTokenNumber: nextToken,
+                                    lastTokenDate: new Date()
+                                }
+                            });
+                        }
                     }
 
                     const existingKotNumbers = Array.isArray(currentOrder.kotNumbers) ? currentOrder.kotNumbers : (currentOrder.tokenNumber ? [currentOrder.tokenNumber] : []);
