@@ -1052,18 +1052,33 @@ function KravyPOS() {
             
             const savedBill = data.bill || data;
             
+            // 🚀 OPTIMIZATION: Run status updates in parallel
+            const promises = [];
+            
             // Only update status if not already COMPLETED (to avoid loop)
             if (order.status !== "COMPLETED") {
-                await fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: targetOrderId, status: "COMPLETED" }) });
+                promises.push(
+                    fetch("/api/orders", { 
+                        method: "PATCH", 
+                        headers: { "Content-Type": "application/json" }, 
+                        body: JSON.stringify({ orderId: targetOrderId, status: "COMPLETED" }) 
+                    })
+                );
             }
 
             // Free the table if it was occupied
             if (order.table && order.table.id && order.table.name !== "POS" && order.table.name !== "TAKEAWAY" && order.table.name !== "DELIVERY") {
-                await fetch(`/api/tables`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: order.table.id, isOccupied: false, currentOrderId: null })
-                });
+                promises.push(
+                    fetch(`/api/tables`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: order.table.id, isOccupied: false, currentOrderId: null })
+                    })
+                );
+            }
+
+            if (promises.length > 0) {
+                await Promise.all(promises).catch(e => console.error("[CHECKOUT_DEBUG] Background updates failed:", e));
             }
 
             if (!silent) {
