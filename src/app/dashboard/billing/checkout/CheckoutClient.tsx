@@ -15,6 +15,7 @@ import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
 import { useAuthContext } from "@/components/AuthContext";
 import PrintTemplates from "@/components/printing/PrintTemplates";
 import BillPreview from "@/components/printing/BillPreview";
+import { useTerminalContext } from "@/components/TerminalContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo } from "react";
 import { useConfirm } from "@/components/ConfirmContext";
@@ -828,6 +829,7 @@ export default function CheckoutClient() {
   const [billDate, setBillDate] = useState("");
   const [tokenNumber, setTokenNumber] = useState<number | null>(null);
   const [kotNumbers, setKotNumbers] = useState<number[]>([]);
+  const { setOrders } = useTerminalContext();
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -2270,7 +2272,7 @@ export default function CheckoutClient() {
           gst: it.gst ?? 0,
           isNew: !!it.isNew,
           variants: (it as any).variants || [],
-          kotNumber: tokenNumberToUse || (it as any).kotNumber
+          kotNumber: it.isNew ? tokenNumberToUse : ((it as any).kotNumber || tokenNumberToUse)
         })),
         total: Number(finalTotal.toFixed(2)),
         status: "PREPARING",
@@ -2282,7 +2284,7 @@ export default function CheckoutClient() {
       };
 
       // Mark local items as not new so UI updates immediately
-      setItems(prev => prev.map(i => ({ ...i, isNew: false, kotNumber: tokenNumberToUse || i.kotNumber })));
+      setItems(prev => prev.map(i => ({ ...i, isNew: false, kotNumber: i.isNew ? tokenNumberToUse : (i.kotNumber || tokenNumberToUse) })));
       
       // 4. FIRE AND FORGET BACKGROUND SYNC (BUT SAVE PROMISE FOR REDIRECT)
       let syncPromise: Promise<any> | null = null;
@@ -2321,6 +2323,18 @@ export default function CheckoutClient() {
             const tableId = searchParams.get("tableId");
             const tableName = searchParams.get("tableName");
             
+            // OPTIMISTIC UPDATE FOR FLOOR MANAGEMENT
+            if (finalOrderId && setOrders) {
+               setOrders(prev => {
+                   const existing = prev.find(o => o.id === finalOrderId);
+                   if (existing) {
+                       return prev.map(o => o.id === finalOrderId ? { ...o, items: orderData.items } : o);
+                   } else {
+                       return [...prev, { id: finalOrderId, ...orderData } as any];
+                   }
+               });
+            }
+
             const query = new URLSearchParams();
             if (tableId) query.set("tableId", tableId);
             if (tableName) query.set("tableName", tableName);
