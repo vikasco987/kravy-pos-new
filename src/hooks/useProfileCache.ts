@@ -1,73 +1,124 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
-let globalProfileCache: any = null;
-let profileFetchPromise: Promise<any> | null = null;
-let lastFetchTime: number = 0;
+// In-memory cache structure
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+
+// Global state
+let globalCache: CacheEntry | null = null;
+let activePromise: Promise<any> | null = null;
+
+// Configuration
 const STALE_TIME = 60 * 1000; // 60 seconds
 
 export function useProfileCache() {
-  const [profile, setProfile] = useState<any>(globalProfileCache);
-  const [loading, setLoading] = useState(!globalProfileCache);
+  // Initialize state from synchronous cache if available
+  const [profile, setProfile] = useState<any>(globalCache?.data || null);
+  const [loading, setLoading] = useState(!globalCache);
+  const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    // 1. If we have cached data, return it instantly
-    if (globalProfileCache) {
-      setProfile(globalProfileCache);
-      setLoading(false);
-
-      // 2. Check if the cache is stale (older than 60 seconds)
-      if (Date.now() - lastFetchTime > STALE_TIME) {
-        fetchProfileSilently();
-      }
-      return;
+  const fetchProfile = useCallback(async (force: boolean = false) => {
+    // Deduplication: Return existing promise if already fetching
+    if (activePromise && !force) {
+      return activePromise;
     }
-
-    // 3. Request Deduplication: If already fetching, attach to the promise
-    if (!profileFetchPromise) {
-      profileFetchPromise = fetch("/api/profile")
-        .then(res => res.json())
-        .then(data => {
-          globalProfileCache = data;
-          lastFetchTime = Date.now();
-          return data;
-        })
-        .finally(() => {
-          profileFetchPromise = null;
-        });
-    }
-
-    profileFetchPromise.then(data => {
-      setProfile(data);
-      setLoading(false);
-    }).catch(err => {
-      console.error(err);
-      setLoading(false);
-    });
-  }, []);
-
-  const fetchProfileSilently = async () => {
-    // Avoid concurrent background fetches
-    if (profileFetchPromise) return;
 
     try {
-      profileFetchPromise = fetch("/api/profile").then(res => res.json());
-      const data = await profileFetchPromise;
-      globalProfileCache = data;
-      lastFetchTime = Date.now();
+      activePromise = fetch("/api/profile").then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP Error: ${res.status}`);
+        }
+        const text = await res.text();
+        if (!text) return null;
+        return JSON.parse(text);
+      });
+
+      const data = await activePromise;
+      
+      // Update global cache
+      globalCache = {
+        data,
+        timestamp: Date.now()
+      };
+      
       setProfile(data);
-    } catch(e) {
-      console.error("Silent background fetch failed:", e);
+      setError(null);
+      return data;
+    } catch (err: any) {
+      console.error("Profile fetch failed:", err);
+      setError(err);
+      
+      // If we don't have ANY cache, clear it so we don't get stuck
+      if (!globalCache) {
+         setProfile(null);
+      }
+      throw err;
     } finally {
-      profileFetchPromise = null;
+      activePromise = null;
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const updateProfile = (newProfile: any) => {
-    // Optimistic update of global cache & local state
-    globalProfileCache = { ...globalProfileCache, ...newProfile };
-    lastFetchTime = Date.now(); // Reset stale timer since we just updated it
-    setProfile(globalProfileCache);
-  };
+  useEffect(() => {
+    // 1. If cache exists, check if stale
+    if (globalCache) {
+      const isStale = Date.now() - globalCache.timestamp > STALE_TIME;
+      
+      if (isStale) {
+        // Silently revalidate in background without setting loading=true
+        fetchProfile(false).catch(() => {});
+      } else {
+        // Cache is fresh, make sure loading is false
+        setLoading(false);
+      }
+    } else {
+      // 2. No cache exists, must fetch and show loading state
+      setLoading(true);
+      fetchProfile(false).catch(() => {});
+    }
+  }, [fetchProfile]);
 
-  return { profile, loading, updateProfile };
+  /**
+   * Optimistically update the UI and optionally trigger a background revalidation
+   * to ensure server state matches client state.
+   */
+  const updateProfile = useCallback((newProfileData: any, shouldRevalidate: boolean = true) => {
+    if (globalCache) {
+      const merged = { ...globalCache.data, ...newProfileData };
+      globalCache = {
+        data: merged,
+        // Mark as fresh
+        timestamp: Date.now() 
+      };
+      setProfile(merged);
+    } else {
+      globalCache = {
+        data: newProfileData,
+        timestamp: Date.now()
+      };
+      setProfile(newProfileData);
+    }
+
+    if (shouldRevalidate) {
+       // Fire and forget revalidation to sync with DB
+       fetchProfile(true).catch(() => {});
+    }
+  }, [fetchProfile]);
+
+  return { 
+    profile, 
+    loading, 
+    error,
+    updateProfile,
+    // Expose explicit invalidate method
+    invalidateCache: () => fetchProfile(true)
+  };
+}
+
+// Global utility for hard-resetting cache (e.g. on logout or business switch)
+export function clearProfileCache() {
+  globalCache = null;
+  activePromise = null;
 }
