@@ -58,7 +58,7 @@ export async function POST(req: Request) {
                 jtiHash: hashedJti // Keep the same hashedJti
             },
             JWT_SECRET,
-            { expiresIn: "15m" }
+            { expiresIn: "90d" }
         );
 
         const response = NextResponse.json({
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
-            maxAge: 15 * 60, // 15 minutes
+            maxAge: 90 * 24 * 60 * 60, // 15 minutes
             path: "/",
         });
         

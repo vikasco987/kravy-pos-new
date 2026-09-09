@@ -480,7 +480,7 @@ export default function KravyPOS() {
                     }
                 });
             }
-        }, 400);
+        }, 50);
     };
 
     const handleSaveAction = async (type: "KOT" | "BILL", order: Order) => {
@@ -726,13 +726,13 @@ export default function KravyPOS() {
                 customerName: order.customerName || "Walk-in",
                 tableName: order.table?.name || "Counter"
             };
-            const res = await fetch("/api/bill-manager", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(billData) });
-            if (!res.ok) throw new Error("fail");
+            const p1 = fetch("/api/bill-manager", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(billData) });
+            const p2 = order.status !== "COMPLETED" 
+                ? fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: targetOrderId, status: "COMPLETED" }) })
+                : Promise.resolve({ ok: true });
 
-            // Only update status if not already COMPLETED (to avoid loop)
-            if (order.status !== "COMPLETED") {
-                await fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: targetOrderId, status: "COMPLETED" }) });
-            }
+            const [res1, res2] = await Promise.all([p1, p2]);
+            if (!res1.ok) throw new Error("fail");
 
             if (!silent) {
                 kravy.payment();
@@ -1771,7 +1771,7 @@ export default function KravyPOS() {
                                                                             const tbl = tablesList.find(t => t.id === o.table?.id);
                                                                             setPrintOrder(o);
                                                                             setPrintTable(tbl || null);
-                                                                            setTimeout(() => handlePrint("BILL", o, tbl || undefined), 100);
+                                                                            setTimeout(() => handlePrint("BILL", o, tbl || undefined), 10);
                                                                         }}
                                                                         className="w-full h-11 rounded-xl border-2 border-emerald-100 dark:border-emerald-900 bg-emerald-50/30 dark:bg-emerald-900/10 text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1.5 hover:bg-emerald-50 transition-all shadow-sm"
                                                                     >

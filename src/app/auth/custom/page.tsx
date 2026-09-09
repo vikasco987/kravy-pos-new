@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Phone, Lock, User, ArrowRight, ShieldCheck, RefreshCw, KeyRound, Eye, EyeOff, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -10,6 +10,21 @@ export default function CustomAuthPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const errorStr = urlParams.get("error");
+      if (errorStr === "session_expired") {
+        toast.error("Your session has expired. Please login again to continue.");
+        // Clean URL without refreshing page
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (errorStr) {
+        toast.error(errorStr);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
 
   // Form States
   const [formData, setFormData] = useState({

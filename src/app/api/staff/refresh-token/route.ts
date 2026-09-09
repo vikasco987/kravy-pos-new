@@ -59,7 +59,7 @@ export async function POST(req: Request) {
                 jtiHash: hashedJti // Keep the same hashedJti
             },
             JWT_SECRET,
-            { expiresIn: "15m" }
+            { expiresIn: "90d" }
         );
 
         const response = NextResponse.json({

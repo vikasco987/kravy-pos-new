@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Users, 
   Lock, 
@@ -19,6 +19,21 @@ import { motion } from "framer-motion";
 
 export default function StaffLoginPage() {
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const errorStr = urlParams.get("error");
+      if (errorStr === "session_expired") {
+        toast.error("Your session has expired. Please login again to continue.");
+        // Clean URL without refreshing page
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (errorStr) {
+        toast.error(errorStr);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);

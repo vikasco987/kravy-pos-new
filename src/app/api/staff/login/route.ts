@@ -72,7 +72,7 @@ export async function POST(req: Request) {
             jtiHash: hashedJti
         },
         JWT_SECRET,
-        { expiresIn: "15m" }
+        { expiresIn: "90d" }
     );
 
     const userAgent = req.headers.get("user-agent") || "";
