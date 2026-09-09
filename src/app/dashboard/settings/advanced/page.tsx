@@ -22,25 +22,12 @@ import {
   Building
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { useProfileCache } from "@/hooks/useProfileCache";
 
 export default function AdvancedSettingsPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
-
-  useEffect(() => {
-    fetch("/api/profile")
-      .then(res => res.json())
-      .then(data => {
-        setProfile(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        toast.error("Failed to load settings");
-        setLoading(false);
-      });
-  }, []);
+  const { profile, loading, updateProfile } = useProfileCache();
 
   const handleSave = async (updatedFields: any) => {
     setSaving(true);
@@ -53,7 +40,7 @@ export default function AdvancedSettingsPage() {
 
       if (res.ok) {
         toast.success("Permissions updated successfully");
-        setProfile({ ...profile, ...updatedFields });
+        updateProfile(updatedFields);
       } else {
         throw new Error();
       }

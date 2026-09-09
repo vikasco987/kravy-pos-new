@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { kravy } from "@/lib/sounds";
+import { useProfileCache } from "@/hooks/useProfileCache";
 
 type Offer = {
     id: string;
@@ -52,8 +53,33 @@ export default function PricingSettingsPage() {
     const [businessProfile, setBusinessProfile] = useState<any>(null);
 
     // Offers
+    const { profile: cachedProfile, loading: profileLoading, updateProfile } = useProfileCache();
     const [offers, setOffers] = useState<Offer[]>([]);
     const [offersLoading, setOffersLoading] = useState(true);
+
+    // Populate data quickly when cache is available
+    useEffect(() => {
+        if (cachedProfile && loading) {
+            setBusinessProfile(cachedProfile);
+            setTaxEnabled(cachedProfile?.taxEnabled ?? true);
+            setPerProductTaxEnabled(cachedProfile?.perProductTaxEnabled ?? false);
+            setTaxInclusive(cachedProfile?.taxInclusive ?? false);
+            setQrMenuPriceInclusive(cachedProfile?.qrMenuPriceInclusive ?? false);
+            setEnableDeliveryCharges(cachedProfile?.enableDeliveryCharges ?? false);
+            setDeliveryChargeAmount(cachedProfile?.deliveryChargeAmount ?? 0);
+            setEnablePackagingCharges(cachedProfile?.enablePackagingCharges ?? false);
+            setPackagingChargeAmount(cachedProfile?.packagingChargeAmount ?? 0);
+            setDeliveryGstEnabled(cachedProfile?.deliveryGstEnabled ?? false);
+            setDeliveryGstRate(cachedProfile?.deliveryGstRate ?? 0);
+            setPackagingGstEnabled(cachedProfile?.packagingGstEnabled ?? false);
+            setPackagingGstRate(cachedProfile?.packagingGstRate ?? 0);
+            setSyncQuickPosWithKitchen(cachedProfile?.syncQuickPosWithKitchen ?? false);
+            setEnableKOTWithBill(cachedProfile?.enableKOTWithBill ?? false);
+            setEnableMenuQRInBill(cachedProfile?.enableMenuQRInBill ?? false);
+            setTaxRate(cachedProfile?.taxRate ?? 5.0);
+            if (!profileLoading) setLoading(false);
+        }
+    }, [cachedProfile, profileLoading]);
 
     // New offer form
     const [showNewOffer, setShowNewOffer] = useState(false);
@@ -69,31 +95,8 @@ export default function PricingSettingsPage() {
     useEffect(() => {
         async function fetchAll() {
             try {
-                const [profileRes, offerRes] = await Promise.all([
-                    fetch(`/api/profile`, { cache: "no-store" }),
-                    fetch(`/api/admin/offers`, { cache: "no-store" }),
-                ]);
-                const profileData = await profileRes.json();
+                const offerRes = await fetch(`/api/admin/offers`, { cache: "no-store" });
                 const offerData = await offerRes.json();
-                setBusinessProfile(profileData);
-                setTaxEnabled(profileData?.taxEnabled ?? true);
-                setPerProductTaxEnabled(profileData?.perProductTaxEnabled ?? false);
-                setTaxInclusive(profileData?.taxInclusive ?? false);
-                setQrMenuPriceInclusive(profileData?.qrMenuPriceInclusive ?? false);
-                setEnableDeliveryCharges(profileData?.enableDeliveryCharges ?? false);
-                setDeliveryChargeAmount(profileData?.deliveryChargeAmount ?? 0);
-                setEnablePackagingCharges(profileData?.enablePackagingCharges ?? false);
-                setPackagingChargeAmount(profileData?.packagingChargeAmount ?? 0);
-
-                setDeliveryGstEnabled(profileData?.deliveryGstEnabled ?? false);
-                setDeliveryGstRate(profileData?.deliveryGstRate ?? 0);
-                setPackagingGstEnabled(profileData?.packagingGstEnabled ?? false);
-                setPackagingGstRate(profileData?.packagingGstRate ?? 0);
-                setSyncQuickPosWithKitchen(profileData?.syncQuickPosWithKitchen ?? false);
-                setEnableKOTWithBill(profileData?.enableKOTWithBill ?? false);
-                setEnableMenuQRInBill(profileData?.enableMenuQRInBill ?? false);
-
-                setTaxRate(profileData?.taxRate ?? 5.0);
                 setOffers(Array.isArray(offerData) ? offerData : []);
             } catch {
                 kravy.error();
@@ -210,6 +213,7 @@ export default function PricingSettingsPage() {
             if (res.ok) {
                 const data = await res.json();
                 setBusinessProfile(data);
+                updateProfile(data);
                 kravy.success();
                 toast.success(`Auto-KOT ${newVal ? 'Enabled' : 'Disabled'} ✅`);
             } else {
@@ -233,6 +237,7 @@ export default function PricingSettingsPage() {
             if (res.ok) {
                 const data = await res.json();
                 setBusinessProfile(data);
+                updateProfile(data);
                 kravy.success();
                 toast.success(`Menu QR ${val ? 'Enabled' : 'Disabled'} on Bills ✅`);
             } else {
