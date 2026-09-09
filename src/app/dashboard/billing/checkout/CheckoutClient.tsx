@@ -1148,11 +1148,27 @@ export default function CheckoutClient() {
     });
 
     const cats = Array.from(new Set(validCats.map(c => c.name))).filter(Boolean);
-    const hasUncategorised = menuItems.some(i => !i.category?.name);
-    if (hasUncategorised && !cats.includes("Uncategorised")) {
-      cats.push("Uncategorised");
+    
+    // Only keep categories that have at least one active item in the current zone
+    const activeCats = cats.filter(catName => {
+      return menuItems.some(i => 
+        i.isActive !== false && 
+        i.category?.name === catName &&
+        (activeZone === "All" || i.zones?.includes(activeZone))
+      );
+    });
+
+    const hasUncategorised = menuItems.some(i => 
+      !i.category?.name &&
+      i.isActive !== false &&
+      (activeZone === "All" || i.zones?.includes(activeZone))
+    );
+    
+    if (hasUncategorised && !activeCats.includes("Uncategorised")) {
+      activeCats.push("Uncategorised");
     }
-    return cats;
+    
+    return activeCats;
   }, [categoriesList, activeZone, menuItems]);
 
   const filteredMenuItems = useMemo(() => {
