@@ -102,19 +102,9 @@ export default function DateFilter() {
       <button
         onClick={() => setOpen(true)}
         disabled={isPending}
+        className="flex items-center gap-2 px-[18px] py-[10px] bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-700 dark:text-[#F1F0EC] text-[0.85rem] font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition-all"
         style={{
-          padding: "10px 18px",
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: "14px",
-          color: "#F1F0EC",
-          fontSize: "0.85rem",
-          fontWeight: 700,
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
           cursor: isPending ? "not-allowed" : "pointer",
-          transition: "all 0.2s",
           opacity: isPending ? 0.7 : 1
         }}
       >
