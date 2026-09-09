@@ -28,6 +28,7 @@ export default function FuelBillingPage() {
   const [fuelLogoSize, setFuelLogoSize] = useState<number>(60);
   const [fuelAddressSize, setFuelAddressSize] = useState<number>(24);
   const [fuelTextSize, setFuelTextSize] = useState<number>(20);
+  const [fuelTextWeight, setFuelTextWeight] = useState<number>(700);
   const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function FuelBillingPage() {
           if (data.printSettings.fuelLogoSize) setFuelLogoSize(data.printSettings.fuelLogoSize);
           if (data.printSettings.fuelAddressSize) setFuelAddressSize(data.printSettings.fuelAddressSize);
           if (data.printSettings.fuelTextSize) setFuelTextSize(data.printSettings.fuelTextSize);
+          if (data.printSettings.fuelTextWeight) setFuelTextWeight(data.printSettings.fuelTextWeight);
         }
       })
       .catch(() => {});
@@ -101,7 +103,8 @@ export default function FuelBillingPage() {
         ...(profile?.printSettings || {}),
         fuelLogoSize,
         fuelAddressSize,
-        fuelTextSize
+        fuelTextSize,
+        fuelTextWeight
       };
       
       const res = await fetch("/api/profile", {
@@ -159,7 +162,7 @@ export default function FuelBillingPage() {
               margin: 0 auto;
               padding: 0px 2px;
               font-size: ${fuelTextSize}px;
-              font-weight: bold;
+              font-weight: ${fuelTextWeight};
               line-height: 1.2;
               color: black;
               box-sizing: border-box;
@@ -579,6 +582,24 @@ export default function FuelBillingPage() {
                   max="40" 
                   value={fuelTextSize} 
                   onChange={(e) => setFuelTextSize(Number(e.target.value))}
+                  className="w-full accent-indigo-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Text Boldness (Weight)</label>
+                  <span className="text-xs font-black text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-lg">
+                    {fuelTextWeight === 400 ? "Normal" : fuelTextWeight >= 700 ? "Bold" : fuelTextWeight <= 300 ? "Light" : "Medium"} ({fuelTextWeight})
+                  </span>
+                </div>
+                <input 
+                  type="range" 
+                  min="100" 
+                  max="900" 
+                  step="100"
+                  value={fuelTextWeight} 
+                  onChange={(e) => setFuelTextWeight(Number(e.target.value))}
                   className="w-full accent-indigo-500"
                 />
               </div>
