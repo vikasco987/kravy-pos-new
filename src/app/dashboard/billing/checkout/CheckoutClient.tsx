@@ -2248,36 +2248,6 @@ export default function CheckoutClient() {
           tokenNumberToUse = tokenNumber;
       }
 
-      // 2. INJECT HTML & PRINT IMMEDIATELY
-      if (htmlToPrint) {
-        let finalHtmlToPrint = htmlToPrint;
-        if (tokenNumberToUse) {
-          finalHtmlToPrint = finalHtmlToPrint.replace(/#KOT_PLACEHOLDER/g, `#${tokenNumberToUse}`);
-          finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${tokenNumberToUse}`);
-        }
-        
-        console.timeEnd("2. HTML Capture & Payload Generation");
-        
-        // Print Instantly!
-        const returnTo = searchParams.get("returnTo");
-        printKOT(finalHtmlToPrint, () => {
-          if (returnTo) {
-            const currentOrderId = syncedOrderId;
-            const tableId = searchParams.get("tableId");
-            const tableName = searchParams.get("tableName");
-            
-            const query = new URLSearchParams();
-            if (tableId) query.set("tableId", tableId);
-            if (tableName) query.set("tableName", tableName);
-            if (currentOrderId) query.set("orderId", currentOrderId);
-            query.set("refresh", Date.now().toString());
-
-            router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
-          }
-        });
-        console.timeEnd("1. Total time to print window");
-      }
-
       // 3. GENERATE PAYLOAD FOR BACKGROUND SYNC
       const orderData = {
         orderId: syncedOrderId || undefined,
@@ -2308,15 +2278,54 @@ export default function CheckoutClient() {
       // Mark local items as not new so UI updates immediately
       setItems(prev => prev.map(i => ({ ...i, isNew: false, kotNumber: tokenNumberToUse || i.kotNumber })));
       
-      // 4. FIRE AND FORGET BACKGROUND SYNC
+      // 4. FIRE AND FORGET BACKGROUND SYNC (BUT SAVE PROMISE FOR REDIRECT)
+      let syncPromise: Promise<any> | null = null;
       if (tokenNumberToUse !== null || syncedOrderId) {
-          syncOrderToBackend(orderData, tokenNumberToUse || 0, orderNumberToUse).finally(() => {
+          syncPromise = syncOrderToBackend(orderData, tokenNumberToUse || 0, orderNumberToUse).finally(() => {
               setIsSaving(false);
           });
       } else {
           setIsSaving(false);
       }
       
+      // 2. INJECT HTML & PRINT IMMEDIATELY
+      if (htmlToPrint) {
+        let finalHtmlToPrint = htmlToPrint;
+        if (tokenNumberToUse) {
+          finalHtmlToPrint = finalHtmlToPrint.replace(/#KOT_PLACEHOLDER/g, `#${tokenNumberToUse}`);
+          finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${tokenNumberToUse}`);
+        }
+        
+        console.timeEnd("2. HTML Capture & Payload Generation");
+        
+        // Print Instantly!
+        const returnTo = searchParams.get("returnTo");
+        printKOT(finalHtmlToPrint, async () => {
+          if (returnTo) {
+            let finalOrderId = syncedOrderId;
+            if (syncPromise) {
+               try {
+                 const data = await syncPromise;
+                 if (data && data.id) finalOrderId = data.id;
+               } catch (e) {
+                 console.error("Sync promise failed in print callback", e);
+               }
+            }
+            
+            const tableId = searchParams.get("tableId");
+            const tableName = searchParams.get("tableName");
+            
+            const query = new URLSearchParams();
+            if (tableId) query.set("tableId", tableId);
+            if (tableName) query.set("tableName", tableName);
+            if (finalOrderId) query.set("orderId", finalOrderId);
+            query.set("refresh", Date.now().toString());
+
+            router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
+          }
+        });
+        console.timeEnd("1. Total time to print window");
+      }
     } catch (error) {
       console.error("KOT Error", error);
       toast.error("Failed to process KOT");
