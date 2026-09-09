@@ -260,11 +260,25 @@ const hiddenNavGroups = [
       { icon: <HelpCircle size={18} />, label: "Documentation - Menu Management", href: "/dashboard/docs/menu-management", roles: ["ADMIN", "SELLER", "STAFF"] },
       { icon: <HelpCircle size={18} />, label: "Documentation - Staff Access", href: "/dashboard/docs/staff-access", roles: ["ADMIN"] },
       { icon: <HelpCircle size={18} />, label: "Documentation - Workflow", href: "/dashboard/docs/workflow", roles: ["ADMIN", "SELLER", "STAFF"] },
-      { icon: <HelpCircle size={18} />, label: "Documentation - Auto Backup", href: "/dashboard/docs/auto-backup", roles: ["ADMIN"] }
+            { icon: <HelpCircle size={18} />, label: "Documentation - Auto Backup", href: "/dashboard/docs/auto-backup", roles: ["ADMIN"] },
+      
+      { icon: <TrendingUp size={18} />, label: "Profit & Loss (P&L)", href: "/dashboard/expenses/pnl", roles: ["ADMIN", "SELLER"] },
+      { icon: <FileText size={18} />, label: "Expense Reports", href: "/dashboard/expenses/reports", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Users size={18} />, label: "Customer Analytics", href: "/dashboard/reports/customers", roles: ["ADMIN", "SELLER"] },
+      { icon: <Activity size={18} />, label: "Performance Analytics", href: "/dashboard/reports/performance", roles: ["ADMIN", "SELLER"] },
+      { icon: <CalendarDays size={18} />, label: "Monthly Sales Report", href: "/dashboard/reports/sales/monthly", roles: ["ADMIN", "SELLER"] },
+      { icon: <CalendarDays size={18} />, label: "Weekly Sales Report", href: "/dashboard/reports/sales/weekly", roles: ["ADMIN", "SELLER"] },
+      { icon: <Hash size={18} />, label: "Token Reports", href: "/dashboard/reports/tokens", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <HelpCircle size={18} />, label: "Documentation - GST Pro", href: "/dashboard/docs/gst-category-pro", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <QrCode size={18} />, label: "Website QR Generator", href: "/dashboard/admin/website-qr", roles: ["ADMIN"] },
+      { icon: <CreditCard size={18} />, label: "Payment Wallet Deposits", href: "/dashboard/reports/wallet-deposits", roles: ["ADMIN", "SELLER"] },
+      { icon: <Gift size={18} />, label: "Rewards Program", href: "/dashboard/rewards", roles: ["ADMIN", "SELLER"] },
+
     ]
   }
 ];
 
+import { Hash } from "lucide-react";
 import { Loader2 } from "lucide-react";
 
 function SidebarItem({ item, index, isActive, collapsed, isDark, pathname }: any) {
