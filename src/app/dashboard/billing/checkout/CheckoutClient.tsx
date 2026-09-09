@@ -1250,29 +1250,33 @@ export default function CheckoutClient() {
   function addToCart(item: MenuItem) {
     if (searchQuery) setSearchQuery(""); // 🚀 Auto-clear search/shortcode input on item add/select
 
-    if (item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
+    const itemAddons = addonGroups.filter(ag => (ag.itemIds || []).includes(item.id));
+    const hasVariants = item.variants && Array.isArray(item.variants) && item.variants.length > 0;
+    const hasAddons = itemAddons.length > 0;
+
+    if (hasVariants || hasAddons) {
       // Normalize variants if they are in the old/app format
-      const isAppFormat = item.variants.some((v: any) => !v.options);
-      
-      let normalizedVariants = item.variants;
-      
-      if (isAppFormat) {
-        normalizedVariants = [
-          {
-            id: 'legacy_app_group',
-            groupName: 'Options',
-            type: 'radio',
-            required: false,
-            options: item.variants.map((v: any, i: number) => ({
-              id: v.id || `opt_${i}`,
-              name: v.name || v.groupName || `Option ${i+1}`,
-              price: v.price || 0
-            }))
-          }
-        ];
+      let normalizedVariants = item.variants || [];
+      if (hasVariants) {
+        const isAppFormat = normalizedVariants.some((v: any) => !v.options);
+        if (isAppFormat) {
+          normalizedVariants = [
+            {
+              id: 'legacy_app_group',
+              groupName: 'Options',
+              type: 'radio',
+              required: false,
+              options: normalizedVariants.map((v: any, i: number) => ({
+                id: v.id || `opt_${i}`,
+                name: v.name || v.groupName || `Option ${i+1}`,
+                price: v.price || 0
+              }))
+            }
+          ];
+        }
       }
 
-      setVariantModalItem({ ...item, variants: normalizedVariants });
+      setVariantModalItem({ ...item, variants: normalizedVariants, addons: itemAddons } as any);
       setSelectedVariants({});
       return;
     }
@@ -1335,23 +1339,41 @@ export default function CheckoutClient() {
         }
     }
 
+    // validate addons
+    const addonsList = (variantModalItem as any).addons || [];
+    for (const ag of addonsList) {
+        const minSel = ag.minSelections || (ag.isCompulsory ? 1 : 0);
+        if (minSel > 0) {
+            const sel = selectedVariants[`ag_${ag.id}`] || [];
+            if (sel.length < minSel) {
+                toast.error(`Please select at least ${minSel} option(s) for ${ag.name}`);
+                return;
+            }
+        }
+    }
+
     // calculate additional price and form the variant string
     let additionalPrice = 0;
+    let addonsPrice = 0;
     let variantDescParts: string[] = [];
     let selectedOptObj: any = null;
 
-    Object.values(selectedVariants).forEach(opts => {
+    Object.entries(selectedVariants).forEach(([key, opts]) => {
         opts.forEach(opt => {
-            additionalPrice += Number(opt.price || 0);
+            if (key.startsWith('ag_')) {
+                addonsPrice += Number(opt.price || 0);
+            } else {
+                additionalPrice += Number(opt.price || 0);
+                selectedOptObj = opt;
+            }
             variantDescParts.push(opt.name);
-            selectedOptObj = opt;
         });
     });
 
     const isVirtual = (variantModalItem as any).isVirtualGroup;
     let itemToAddId = `${variantModalItem.id}-${variantDescParts.sort().join("-")}`;
     let itemToAddName = variantModalItem.name + (variantDescParts.length > 0 ? ` (${variantDescParts.join(", ")})` : "");
-    let itemRate = additionalPrice > 0 ? additionalPrice : (variantModalItem.price || 0);
+    let itemRate = (additionalPrice > 0 ? additionalPrice : (variantModalItem.price || 0)) + addonsPrice;
     let itemGst = variantModalItem.gst ?? null;
     let itemHsn = variantModalItem.hsnCode || "";
     let itemTaxStatus = variantModalItem.taxStatus || "Without Tax";
@@ -2431,7 +2453,6 @@ export default function CheckoutClient() {
     });
 
     Promise.all(imagePromises).then(() => {
-      // Give more time (300ms) for items to render and images to prepare
       setTimeout(() => {
         window.print();
         
@@ -2443,7 +2464,7 @@ export default function CheckoutClient() {
           if (document.body.contains(container)) container.remove();
           if (document.head.contains(style)) style.remove();
         }, 2500); 
-      }, 300);
+      }, images.length > 0 ? 150 : 10);
     });
   };
 
@@ -4086,36 +4107,51 @@ export default function CheckoutClient() {
               <motion.button
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={async () => {
+                onClick={() => {
+                  if (items.length === 0) { toast.error("No items to save"); return; }
+                  
+                  if (buyerGSTIN) {
+                    const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+                    if (!gstinRegex.test(buyerGSTIN)) {
+                      toast.error("Invalid Buyer GSTIN Format", { description: "Expected 15 chars, e.g. 07AAAAA0000A1Z5" });
+                      return;
+                    }
+                  }
+
                   if (paymentMode === "Wallet" && selectedParty) {
                     setPrevWalletBalance(selectedParty.walletBalance);
                   } else {
                     setPrevWalletBalance(null);
                   }
-                  const bill = await saveBill();
-                  if (!bill) return;
                   
                   kravy.payment(); 
                   toast.success("Settlement Finalized! 💰");
                   
-                  // Print immediately after a short delay to let state render to DOM
+                  // Print immediately for zero-latency feel
                   setTimeout(() => {
                     printReceipt(business?.enableKOTWithBill || false, null, () => {
-                      const returnTo = searchParams.get("returnTo");
-                      if (returnTo) {
-                        const tableId = searchParams.get("tableId");
-                        const query = new URLSearchParams();
-                        if (tableId) query.set("tableId", tableId);
-                        
-                        // Use replace for faster navigation and to clean history
-                        router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
-                        return;
-                      }
-                      
-                      resetForm();
-                      if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                      // Note: We don't navigate immediately here. Navigation is handled after saveBill finishes.
                     });
-                  }, 350);
+                  }, 50);
+
+                  // Process save in the background
+                  saveBill().then((bill) => {
+                    if (!bill) return;
+                    
+                    const returnTo = searchParams.get("returnTo");
+                    if (returnTo) {
+                      const tableId = searchParams.get("tableId");
+                      const query = new URLSearchParams();
+                      if (tableId) query.set("tableId", tableId);
+                      
+                      // Use replace for faster navigation and to clean history
+                      router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
+                      return;
+                    }
+                    
+                    resetForm();
+                    if (resumeBillId) router.replace("/dashboard/billing/checkout");
+                  });
                 }}
                 disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
                 className="w-full flex items-center justify-center gap-2 py-2 rounded-xl
@@ -4675,6 +4711,74 @@ export default function CheckoutClient() {
                     </div>
                   </div>
                 )})}
+
+                {/* Addons List */}
+                {((variantModalItem as any).addons || []).map((ag: any, agIndex: number) => {
+                  const vgId = `ag_${ag.id}`;
+                  const isCompulsory = ag.minSelections > 0 || ag.isCompulsory;
+                  return (
+                  <div key={vgId} className="bg-slate-50 dark:bg-slate-800/50 rounded-[24px] p-5 border border-slate-100 dark:border-slate-700/50">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="text-[12px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-[0.15em]">{ag.name || "Addons"}</h4>
+                      {isCompulsory && <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-100 dark:bg-rose-500/20 px-2.5 py-1 rounded-full">Required (Min {ag.minSelections || 1})</span>}
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {ag.items?.map((opt: any, optIndex: number) => {
+                        const optId = opt.id || opt.name || `opt_${optIndex}`;
+                        const isSelected = selectedVariants[vgId]?.some(s => (s.id || s.name) === optId);
+                        const optPrice = Number(opt.price || 0);
+                        
+                        return (
+                          <label key={optId} className="flex items-center gap-4 cursor-pointer group select-none">
+                            <div className={`flex items-center justify-center transition-all w-[22px] h-[22px] rounded-lg border-[2.5px] ${
+                              isSelected 
+                                ? 'bg-white dark:bg-indigo-600 border-indigo-600 shadow-[0_0_0_4px_rgba(79,70,229,0.15)]' 
+                                : 'bg-transparent border-slate-300 dark:border-slate-600 group-hover:border-indigo-400'
+                            }`}>
+                              {isSelected && (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600 dark:text-white"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                              )}
+                            </div>
+                            
+                            <input 
+                              type="checkbox"
+                              name={`addon_${vgId}`}
+                              className="hidden"
+                              checked={isSelected || false}
+                              onChange={() => {
+                                kravy.toggle();
+                                setSelectedVariants(prev => {
+                                  const currentSel = prev[vgId] || [];
+                                  if (isSelected) {
+                                    return { ...prev, [vgId]: currentSel.filter(s => (s.id || s.name) !== optId) };
+                                  } else {
+                                    if (ag.maxSelections && currentSel.length >= ag.maxSelections) {
+                                      toast.error(`Max ${ag.maxSelections} selections allowed`);
+                                      return prev;
+                                    }
+                                    return { ...prev, [vgId]: [...currentSel, { ...opt, id: optId }] };
+                                  }
+                                });
+                              }}
+                            />
+                            
+                            <div className="flex-1 flex justify-between items-center pt-0.5">
+                              <span className={`text-[15px] font-[700] transition-all capitalize tracking-tight ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                                {opt.name}
+                              </span>
+                              {optPrice > 0 && (
+                                <span className={`text-[13px] font-black tracking-wide ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-500'}`}>
+                                  +₹{optPrice}
+                                </span>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )})}
               </div>
 
               <div className="mt-6">
@@ -4684,7 +4788,20 @@ export default function CheckoutClient() {
                 >
                   <span>Add to Order</span>
                   <span className="text-lg">₹{
-                    Object.values(selectedVariants).reduce((acc: number, opts: any[]) => acc + opts.reduce((a, b) => a + Number(b.price || 0), 0), 0) > 0 ? Object.values(selectedVariants).reduce((acc: number, opts: any[]) => acc + opts.reduce((a, b) => a + Number(b.price || 0), 0), 0) : (variantModalItem.price || 0)
+                    (() => {
+                      let basePrice = variantModalItem.price || 0;
+                      let varPrice = 0;
+                      let addPrice = 0;
+                      Object.entries(selectedVariants).forEach(([k, opts]) => {
+                        opts.forEach((o: any) => {
+                          if (k.startsWith('ag_')) addPrice += Number(o.price || 0);
+                          else varPrice += Number(o.price || 0);
+                        });
+                      });
+                      let finalBase = varPrice > 0 ? varPrice : basePrice;
+                      if ((variantModalItem as any).isVirtualGroup && varPrice > 0) finalBase = varPrice;
+                      return finalBase + addPrice;
+                    })()
                   }</span>
                 </button>
               </div>

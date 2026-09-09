@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import QRCode from "qrcode";
 
 interface MenuItem {
     id: string;
@@ -54,6 +55,10 @@ interface BusinessProfile {
     openingTime?: string;
     closingTime?: string;
     offlineMessage?: string;
+    qrPayCashEnabled?: boolean;
+    qrPayUpiEnabled?: boolean;
+    qrPayCardEnabled?: boolean;
+    upi?: string;
 }
 
 function QRMenuContent() {
@@ -74,6 +79,17 @@ function QRMenuContent() {
     const [customerAddress, setCustomerAddress] = useState("");
     const [isLocating, setIsLocating] = useState(false);
     const [dismissOfflineAlert, setDismissOfflineAlert] = useState(false);
+    
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
+    const [qrUrl, setQrUrl] = useState<string>("");
+
+    useEffect(() => {
+        if (selectedPaymentMethod === "UPI" && profile?.upi) {
+            QRCode.toDataURL(`upi://pay?pa=${profile.upi}&pn=${encodeURIComponent(profile.businessName || 'Restaurant')}&cu=INR`)
+                .then(url => setQrUrl(url))
+                .catch(err => console.error(err));
+        }
+    }, [selectedPaymentMethod, profile]);
 
     useEffect(() => {
         if (clerkId) {
@@ -168,6 +184,12 @@ function QRMenuContent() {
             return;
         }
 
+        const hasPaymentOptionsEnabled = profile?.qrPayCashEnabled || profile?.qrPayUpiEnabled || profile?.qrPayCardEnabled;
+        if (hasPaymentOptionsEnabled && !selectedPaymentMethod) {
+            toast.error("Please select a payment method");
+            return;
+        }
+
         setPlacingOrder(true);
         try {
             const orderData = {
@@ -185,7 +207,8 @@ function QRMenuContent() {
                 total: getTotalPrice(),
                 customerName: customerName.trim(),
                 customerPhone: customerPhone.trim() || undefined,
-                customerAddress: customerAddress.trim() || undefined
+                customerAddress: customerAddress.trim() || undefined,
+                paymentMethod: selectedPaymentMethod || "Pending"
             };
 
             const response = await fetch('/api/public/orders', {
@@ -663,6 +686,78 @@ function QRMenuContent() {
                                                 {getTotalPrice()}
                                             </span>
                                         </div>
+
+                                        {/* PAYMENT MODE SELECTION */}
+                                        {(profile?.qrPayCashEnabled || profile?.qrPayUpiEnabled || profile?.qrPayCardEnabled) && (
+                                            <div className="mb-6 space-y-3">
+                                                <label className="text-xs font-black uppercase text-gray-500 tracking-wider">Select Payment Method</label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {profile?.qrPayUpiEnabled && (
+                                                        <Button
+                                                            variant="outline"
+                                                            className={`h-12 border-2 ${selectedPaymentMethod === 'UPI' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-600'}`}
+                                                            onClick={() => setSelectedPaymentMethod('UPI')}
+                                                        >
+                                                            UPI
+                                                        </Button>
+                                                    )}
+                                                    {profile?.qrPayCashEnabled && (
+                                                        <Button
+                                                            variant="outline"
+                                                            className={`h-12 border-2 ${selectedPaymentMethod === 'Cash' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-600'}`}
+                                                            onClick={() => setSelectedPaymentMethod('Cash')}
+                                                        >
+                                                            Pay at Counter
+                                                        </Button>
+                                                    )}
+                                                    {profile?.qrPayCardEnabled && (
+                                                        <Button
+                                                            variant="outline"
+                                                            className={`h-12 border-2 ${selectedPaymentMethod === 'Card' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-600'}`}
+                                                            onClick={() => setSelectedPaymentMethod('Card')}
+                                                        >
+                                                            Card
+                                                        </Button>
+                                                    )}
+                                                </div>
+
+                                                {/* UPI QR CODE DISPLAY */}
+                                                <AnimatePresence>
+                                                    {selectedPaymentMethod === 'UPI' && profile?.upi && qrUrl && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, height: 0 }}
+                                                            animate={{ opacity: 1, height: 'auto' }}
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            className="mt-4 bg-white border-2 border-orange-100 rounded-xl p-4 flex flex-col items-center shadow-sm overflow-hidden"
+                                                        >
+                                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Scan to Pay Online</p>
+                                                            <div className="bg-white p-2 border border-gray-100 rounded-xl shadow-sm mb-4">
+                                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                <img src={qrUrl} alt="UPI QR Code" className="w-48 h-48" />
+                                                            </div>
+                                                            <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100 w-full justify-between">
+                                                                <div className="truncate">
+                                                                    <p className="text-[10px] text-gray-400 font-bold uppercase">UPI ID</p>
+                                                                    <p className="text-sm font-semibold text-gray-800 truncate">{profile.upi}</p>
+                                                                </div>
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    variant="ghost" 
+                                                                    className="h-8 shrink-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                                                    onClick={() => {
+                                                                        navigator.clipboard.writeText(profile.upi || "");
+                                                                        toast.success("UPI ID Copied!");
+                                                                    }}
+                                                                >
+                                                                    Copy
+                                                                </Button>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                        )}
+
                                         <Button
                                             onClick={placeOrder}
                                             disabled={placingOrder || !customerName.trim() || !isOnline}

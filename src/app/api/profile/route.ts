@@ -246,8 +246,12 @@ export async function POST(request: Request) {
     if (body.fssaiNumber !== undefined) updateData.fssaiNumber = s(body.fssaiNumber);
     if (body.fssaiEnabled !== undefined) updateData.fssaiEnabled = b(body.fssaiEnabled);
     if (body.hsnEnabled !== undefined) updateData.hsnEnabled = b(body.hsnEnabled);
-    
     if (body.enableMenuQRInBill !== undefined) updateData.enableMenuQRInBill = b(body.enableMenuQRInBill);
+
+    // ✅ QR Menu Checkout Payment Visibility Settings
+    if (body.qrPayCashEnabled !== undefined) updateData.qrPayCashEnabled = b(body.qrPayCashEnabled);
+    if (body.qrPayUpiEnabled !== undefined) updateData.qrPayUpiEnabled = b(body.qrPayUpiEnabled);
+    if (body.qrPayCardEnabled !== undefined) updateData.qrPayCardEnabled = b(body.qrPayCardEnabled);
     if (body.enableClerkAuth !== undefined) updateData.enableClerkAuth = b(body.enableClerkAuth);
     if (body.enableCustomAuth !== undefined) updateData.enableCustomAuth = b(body.enableCustomAuth);
     

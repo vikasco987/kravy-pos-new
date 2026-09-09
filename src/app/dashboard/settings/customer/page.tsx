@@ -30,6 +30,9 @@ export default function CustomerDataSettings() {
         qrPackagingChargeEnabled: false,
         qrPackagingChargeAmount: 0,
         allowWalletEditDelete: true,
+        qrPayCashEnabled: false,
+        qrPayUpiEnabled: true,
+        qrPayCardEnabled: false,
     });
 
     useEffect(() => {
@@ -54,6 +57,9 @@ export default function CustomerDataSettings() {
                         qrPackagingChargeEnabled: data.qrPackagingChargeEnabled ?? false,
                         qrPackagingChargeAmount: data.qrPackagingChargeAmount ?? 0,
                         allowWalletEditDelete: data.printSettings?.allowWalletEditDelete ?? data.allowWalletEditDelete ?? true,
+                        qrPayCashEnabled: data.qrPayCashEnabled ?? false,
+                        qrPayUpiEnabled: data.qrPayUpiEnabled ?? true,
+                        qrPayCardEnabled: data.qrPayCardEnabled ?? false,
                     });
                 }
             })
@@ -255,7 +261,43 @@ export default function CustomerDataSettings() {
                 </div>
             </div>
 
-            {/* ✅ ORDER TRACKING LABELS */}
+                {/* ── QR MENU PAYMENT OPTIONS ── */}
+                <div className="bg-[var(--kravy-surface)] border border-[var(--kravy-border)] rounded-[32px] overflow-hidden shadow-2xl relative mb-8">
+                    <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-6 border-b border-[var(--kravy-border)] flex justify-between items-center">
+                        <div className="flex gap-4 items-center">
+                            <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                                <Zap className="text-white w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-black text-[var(--kravy-text-primary)]">QR Menu Payments</h2>
+                                <p className="text-xs text-[var(--kravy-text-muted)] mt-1 font-medium">Select which payment methods customers can use on QR Menu</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-6 space-y-4">
+                        {[
+                            { id: 'qrPayUpiEnabled', label: 'Pay via UPI', desc: 'Allow customers to pay via UPI QR code before placing order' },
+                            { id: 'qrPayCashEnabled', label: 'Pay via Cash', desc: 'Allow customers to select cash (Pay at Counter)' },
+                            { id: 'qrPayCardEnabled', label: 'Pay via Card', desc: 'Allow customers to select card payment' },
+                        ].map(opt => (
+                            <div key={opt.id} className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-[var(--kravy-border)]">
+                                <div>
+                                    <div className="text-sm font-bold text-[var(--kravy-text-primary)]">{opt.label}</div>
+                                    <div className="text-xs text-[var(--kravy-text-muted)] mt-1">{opt.desc}</div>
+                                </div>
+                                <button
+                                    onClick={() => toggle(opt.id as keyof typeof settings)}
+                                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ${settings[opt.id as keyof typeof settings] ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-700"}`}
+                                >
+                                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${settings[opt.id as keyof typeof settings] ? "translate-x-6" : "translate-x-1"}`} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* ── CUSTOMER REQUIREMENT TOGGLES ── */}
             <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 space-y-6 shadow-sm">
                 <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
                     <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600">

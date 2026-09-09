@@ -322,14 +322,15 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 
     const { id } = await context.params;
 
+    const deleteReason = req.headers.get("x-delete-reason") || "Deleted manually";
     const bill = await prisma.billManager.findFirst({ where: { id, clerkUserId: effectiveId } });
     if (bill) {
       await prisma.billManager.update({ 
         where: { id }, 
         data: { 
-          isDeleted: true, 
-          deletedAt: new Date(),
-          deletedSnapshot: bill as any // ✅ Save full snapshot for history
+          paymentStatus: "DELETED",
+          auditNote: `Reason: ${deleteReason}`,
+          deletedSnapshot: bill as any 
         } 
       });
       return NextResponse.json({ success: true, type: "bill" });
@@ -343,8 +344,8 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
       await prisma.order.update({ 
         where: { id }, 
         data: { 
-          isDeleted: true,
-          deletedAt: new Date(),
+          status: "DELETED",
+          notes: `Reason: ${deleteReason}`,
           deletedSnapshot: order as any
         } 
       });
@@ -367,7 +368,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     const { id } = await context.params;
     const body = await req.json();
 
-    const allowedUpdates = ["paymentStatus", "paymentMode", "upiTxnRef", "isHeld", "customerName", "customerPhone", "customerAddress"];
+    const allowedUpdates = ["paymentStatus", "paymentMode", "upiTxnRef", "isHeld", "customerName", "customerPhone", "customerAddress", "auditNote"];
     const data: any = {};
     allowedUpdates.forEach(key => {
       if (body[key] !== undefined) data[key] = body[key];

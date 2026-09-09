@@ -540,6 +540,11 @@ model BusinessProfile {
   posPreviewEnabled  Boolean @default(true)
   posKotEnabled      Boolean @default(true)
 
+  // ✅ QR Menu Checkout Payment Visibility Settings
+  qrPayCashEnabled   Boolean @default(false)
+  qrPayUpiEnabled    Boolean @default(true)
+  qrPayCardEnabled   Boolean @default(false)
+
   phonePrefixType         String? @default("TEXT") // "TEXT" (Mob:) or "SYMBOL"
   printSettings           Json?   @default("{}")
   reviewUrl               String?

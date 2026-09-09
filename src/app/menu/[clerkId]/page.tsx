@@ -761,10 +761,12 @@ function PublicMenu() {
         // Validation check for mandatory addon groups
         const missingMandatoryGroups: string[] = [];
         ((item as any).addonGroups as any[] || []).forEach((ag: any) => {
-            if (ag.isCompulsory) {
-                const selected = selectedVariants[`ag_${ag.id}`];
-                if (!selected || (Array.isArray(selected) && selected.length === 0)) {
-                    missingMandatoryGroups.push(ag.name);
+            const minSel = ag.minSelections || (ag.isCompulsory ? 1 : 0);
+            if (minSel > 0) {
+                const selected = selectedVariants[`ag_${ag.id}`] || [];
+                const count = Array.isArray(selected) ? selected.length : (selected ? 1 : 0);
+                if (count < minSel) {
+                    missingMandatoryGroups.push(`${ag.name} (Min: ${minSel})`);
                 }
             }
         });

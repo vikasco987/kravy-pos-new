@@ -1258,20 +1258,20 @@ export default function ViewMenuPage() {
     setError(null);
 
     try {
-      const fetchUrl = asUserId ? `/api/menu/view?asUserId=${asUserId}` : "/api/menu/view";
-      const catUrl = asUserId ? `/api/categories?asUserId=${asUserId}` : "/api/categories";
+      const t = Date.now();
+      const fetchUrl = asUserId ? `/api/menu/view?asUserId=${asUserId}&t=${t}` : `/api/menu/view?t=${t}`;
+      const catUrl = asUserId ? `/api/categories?asUserId=${asUserId}&t=${t}` : `/api/categories?t=${t}`;
+
+      const fetchOpts: RequestInit = {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          cache: "no-store",
+      };
 
       const [res, catRes] = await Promise.all([
-        fetch(fetchUrl, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        }),
-        fetch(catUrl, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        })
+        fetch(fetchUrl, fetchOpts),
+        fetch(catUrl, fetchOpts)
       ]);
 
       if (!res.ok) {
@@ -1319,7 +1319,8 @@ export default function ViewMenuPage() {
       });
 
       items.forEach((it: any) => {
-        const catId = it.category?.id ?? UNCATEGORISED_ID;
+        const rawCatId = it.category?.id;
+        const catId = rawCatId ? String(rawCatId) : UNCATEGORISED_ID;
         const catName = it.category?.name ?? "Uncategorised";
 
         if (!categoryMap.has(catId)) {
@@ -1489,8 +1490,21 @@ export default function ViewMenuPage() {
         isCatInZone = (m.zones || []).some((z: string) => z.toUpperCase() === targetZone);
       }
 
-      if (!hasActiveFilter || got.items.length > 0 || (query.trim() && m.name.toLowerCase().includes(query.trim().toLowerCase())) || isCatInZone) {
-        list.push(got);
+      if (query.trim() !== "") {
+        if (got.items.length > 0 || m.name.toLowerCase().includes(query.trim().toLowerCase())) {
+          list.push(got);
+        }
+      } else if (filterZone !== "all") {
+         if (got.items.length > 0 || isCatInZone) {
+            list.push(got);
+         }
+      } else {
+        // Just push it if no text/zone filter completely excludes it
+        if (!hasActiveFilter || got.items.length > 0 || isCatInZone) {
+          list.push(got);
+        } else {
+          list.push(got); // Actually, just always push it so empty categories always show!
+        }
       }
     }
     const unc = map.get("uncategorised");
@@ -1539,7 +1553,8 @@ export default function ViewMenuPage() {
       }
 
       if (query.trim() && m.name.toLowerCase().includes(query.trim().toLowerCase())) return true;
-      return m.items.length > 0;
+      if (query.trim() !== "" && m.items.length === 0) return false;
+      return true; // Always return true for empty categories unless explicitly filtered out by search text
     });
   }, [menus, filterZone, query, filterHasImage, priceMin, priceMax]);
 

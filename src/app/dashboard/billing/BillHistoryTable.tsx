@@ -104,6 +104,43 @@ const PaymentBadge = ({ mode, status, amountPaid, balanceDue, total }: { mode: s
         )}
         {renderStatus()}
       </div>
+
+      {reasonModal?.isOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 999999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)" }}>
+          <div style={{ background: "white", padding: "24px", borderRadius: "20px", width: "90%", maxWidth: "400px" }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 900, marginBottom: "16px", color: "#1E293B" }}>
+              {reasonModal.type === "CANCELLED" ? "Cancel Bill" : "Delete Bill"}
+            </h3>
+            <p style={{ fontSize: "0.8rem", color: "#64748B", marginBottom: "12px" }}>Select a reason:</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+              {["Guest refused to pay", "Wrong Item Billed", "Test Order", "Duplicate Bill"].map(rs => (
+                <button key={rs} onClick={() => {
+                  setReasonModal(null);
+                  if (reasonModal.type === "CANCELLED") handleStatusUpdate("CANCELLED", rs);
+                  else handleDelete(rs);
+                }} style={{ padding: "10px", background: "#F1F5F9", borderRadius: "10px", textAlign: "left", fontSize: "0.85rem", fontWeight: 700, color: "#334155" }}>
+                  {rs}
+                </button>
+              ))}
+            </div>
+            <p style={{ fontSize: "0.8rem", color: "#64748B", marginBottom: "8px" }}>Or enter custom reason:</p>
+            <form onSubmit={(e: any) => {
+              e.preventDefault();
+              const val = e.target.elements.customReason.value;
+              if(!val) return;
+              setReasonModal(null);
+              if (reasonModal.type === "CANCELLED") handleStatusUpdate("CANCELLED", val);
+              else handleDelete(val);
+            }}>
+              <input name="customReason" autoFocus placeholder="Type reason here..." style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #E2E8F0", marginBottom: "12px", fontSize: "0.85rem", outline: "none" }} />
+              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+                <button type="button" onClick={() => setReasonModal(null)} style={{ padding: "10px 16px", borderRadius: "10px", fontSize: "0.85rem", fontWeight: 800, color: "#64748B" }}>Close</button>
+                <button type="submit" style={{ padding: "10px 16px", borderRadius: "10px", fontSize: "0.85rem", fontWeight: 800, background: "#EF4444", color: "white" }}>Submit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     );
   }
 
@@ -152,22 +189,62 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
   const canDelete = userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userRole === "OWNER" || (userPermissions && userPermissions.includes("delete-bill"));
   const canEdit = userRole === "ADMIN" || userRole === "MASTER" || userRole === "SELLER" || userRole === "OWNER" || (userPermissions && (userPermissions.includes("edit-bill") || userPermissions.includes("delete-bill")));
 
-  const handleDelete = async () => {
-    if (!await confirm("Are you sure?")) return;
+  const [reasonModal, setReasonModal] = useState<{type: "CANCELLED" | "DELETED", isOpen: boolean} | null>(null);
+
+  const handleDelete = async (reason: string) => {
     try {
-      const res = await fetch(`/api/bill-manager/${bill.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/bill-manager/${bill.id}`, { 
+        method: "DELETE",
+        headers: { "x-delete-reason": reason } 
+      });
       if (res.ok) { toast.success("Deleted"); refresh(true); }
     } catch (e) { toast.error("Error"); }
   };
 
-  const handleStatusUpdate = async (status: string) => {
+  const handleStatusUpdate = async (status: string, reason?: string) => {
     const label = status === "Paid" ? "PAID" : status === "CANCELLED" ? "CANCELLED" : "UNPAID";
-    if (!await confirm(`Mark this order as ${label}?`)) return;
+    if (status === "Paid" && !await confirm(`Mark this order as ${label}?`)) return;
+    if (status === "Pending" && !await confirm(`Mark this order as ${label}?`)) return;
+    
     try {
+      if (bill.isOrder && status === "Paid") {
+        const res1 = await fetch("/api/bill-manager", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: bill.items,
+            subtotal: bill.subtotal,
+            tax: bill.tax,
+            total: bill.total,
+            paymentMode: bill.paymentMode || "Cash",
+            paymentStatus: "Paid",
+            customerName: bill.customerName,
+            customerPhone: bill.customerPhone,
+            tableName: bill.tableName,
+            orderId: bill.id,
+            isKotPrinted: true,
+            amountPaid: bill.total
+          })
+        });
+
+        if (res1.ok) {
+           await fetch("/api/orders", {
+             method: "PATCH",
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify({ orderId: bill.id, status: "COMPLETED", skipInventoryDeduction: true })
+           });
+           toast.success(`Updated to PAID`);
+           refresh(true);
+           return;
+        } else {
+           throw new Error("Failed to create bill");
+        }
+      }
+
       const res = await fetch(`/api/bill-manager/${bill.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentStatus: status }),
+        body: JSON.stringify({ paymentStatus: status, auditNote: reason ? `Reason: ${reason}` : undefined }),
       });
       if (res.ok) { toast.success(`Updated to ${label}`); refresh(true); }
       else { toast.error("Failed to update"); }
@@ -247,15 +324,17 @@ const BillActions = ({ bill, refresh, business, userRole, userPermissions, openM
               {bill.paymentStatus !== "Pending" && bill.paymentStatus !== "Unpaid" && (
                 <MenuOption icon={<Clock size={14} color="#F59E0B" />} label="Mark as Unpaid" onClick={async () => { setOpenMenuId(null); handleStatusUpdate("Pending"); }} />
               )}
-              {bill.paymentStatus !== "CANCELLED" ? (
-                <MenuOption icon={<XCircle size={14} color="#EF4444" />} label="Mark as Cancelled" onClick={async () => { setOpenMenuId(null); handleStatusUpdate("CANCELLED"); }} />
+              {bill.paymentStatus !== "CANCELLED" && bill.paymentStatus !== "DELETED" ? (
+                <MenuOption icon={<XCircle size={14} color="#EF4444" />} label="Mark as Cancelled" onClick={async () => { setOpenMenuId(null); setReasonModal({ type: "CANCELLED", isOpen: true }); }} />
               ) : (
                 <MenuOption icon={<CheckCircle size={14} color="#10B981" />} label="Restore Order" onClick={async () => { setOpenMenuId(null); handleStatusUpdate("Paid"); }} />
               )}
               {canDelete && (
                 <>
                   <div style={{ height: "1px", background: "#F3F4F6", margin: "4px 0" }} />
-                  <MenuOption icon={<Trash2 size={14} color="#EF4444" />} label="Delete Bill" onClick={async () => { setOpenMenuId(null); handleDelete(); }} isDestructive />
+                  {bill.paymentStatus !== "DELETED" && (
+                    <MenuOption icon={<Trash2 size={14} color="#EF4444" />} label="Delete Bill" onClick={async () => { setOpenMenuId(null); setReasonModal({ type: "DELETED", isOpen: true }); }} isDestructive />
+                  )}
                 </>
               )}
             </div>
@@ -380,7 +459,16 @@ export default function BillHistoryTable({ bills, business, userRole, userPermis
                       </button>
                     </td>
                   )}
-                  {visibleCols.customer && <td className="text-slate-800 dark:text-slate-200" style={{ fontSize: "0.85rem", fontWeight: 800 }}>{bill.customerName || "Walk-in"}</td>}
+                  {visibleCols.customer && (
+  <td className="text-slate-800 dark:text-slate-200" style={{ fontSize: "0.85rem", fontWeight: 800 }}>
+    {bill.customerName || "Walk-in"}
+    {(bill.paymentStatus === "CANCELLED" || bill.paymentStatus === "DELETED") && bill.auditNote && (
+      <div style={{ fontSize: "0.65rem", color: "#EF4444", fontWeight: 700, marginTop: "4px", background: "#FEF2F2", padding: "2px 6px", borderRadius: "4px", display: "inline-block" }}>
+        {bill.auditNote}
+      </div>
+    )}
+  </td>
+)}
                   {visibleCols.customerPhone && <td style={{ fontSize: "0.75rem", fontFamily: "monospace" }} className="text-slate-400 dark:text-slate-500">{bill.customerPhone || "—"}</td>}
                   {visibleCols.subtotal && <td className="text-slate-800 dark:text-slate-200" style={{ textAlign: "right", fontWeight: 600 }}>₹{format(bill.subtotal || bill.total)}</td>}
                   {visibleCols.discount && <td style={{ textAlign: "right", fontWeight: 700 }} className="text-red-500 dark:text-red-400">₹{format(bill.discountAmount || 0)}</td>}
