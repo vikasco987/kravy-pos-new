@@ -4234,14 +4234,12 @@ export default function CheckoutClient() {
                   kravy.payment(); 
                   toast.success("Settlement Finalized! 💰");
                   
-                  // Print immediately, which captures HTML synchronously
-                  printReceipt(business?.enableKOTWithBill || false, null, () => {
-                    // Note: We don't navigate immediately here. Navigation is handled after saveBill finishes.
-                  });
+                  // 1. Capture HTML NOW before resetForm clears the cart
+                  const capturedBillHtml = receiptRef.current?.innerHTML || "";
+                  const capturedKotHtml = kotRef.current?.innerHTML || "";
 
-                  // Process save in the background
+                  // 2. Process save in the background
                   // We pass resetForm as onValidationSuccess to instantly clear the UI
-                  // once all synchronous checks (like wallet balance) are cleared.
                   saveBill(false, () => {
                     const returnTo = searchParams.get("returnTo");
                     if (!returnTo) {
@@ -4249,6 +4247,31 @@ export default function CheckoutClient() {
                     }
                   }).then((bill) => {
                     if (!bill) return;
+
+                    // 3. Inject tokens into the captured HTML
+                    let finalBillHtml = capturedBillHtml;
+                    let finalKotHtml = capturedKotHtml;
+                    
+                    if (bill.tokenNumber) {
+                        finalBillHtml = finalBillHtml.replace(/#---/g, `#${bill.tokenNumber}`);
+                        finalKotHtml = finalKotHtml.replace(/#KOT_PLACEHOLDER/g, `#${bill.tokenNumber}`);
+                        finalKotHtml = finalKotHtml.replace(/#---/g, `#${bill.tokenNumber}`);
+                    }
+                    if (bill.billNumber) {
+                        finalBillHtml = finalBillHtml.replace(/No: [a-zA-Z0-9\/\-]+/g, `No: ${bill.billNumber}`);
+                    }
+                    
+                    // 4. Print the captured HTML directly!
+                    const spoolerDelay = Number((business as any)?.printSettings?.spoolerDelay || 2500);
+                    if (business?.enableKOTWithBill && finalKotHtml) {
+                        runPrintJob("kot", finalKotHtml, () => {
+                            setTimeout(() => {
+                                runPrintJob("bill", finalBillHtml);
+                            }, spoolerDelay);
+                        });
+                    } else {
+                        runPrintJob("bill", finalBillHtml);
+                    }
                     
                     const returnTo = searchParams.get("returnTo");
                     if (returnTo) {
