@@ -1866,7 +1866,7 @@ export default function CheckoutClient() {
   const [resumeConfirmId, setResumeConfirmId] = useState<string | null>(null);
 
   /* ================= SAVE BILL ================= */
-  async function saveBill(isHeld: boolean = false) {
+  async function saveBill(isHeld: boolean = false, onValidationSuccess?: () => void) {
     if (isSaving) return null;
     if (items.length === 0) { toast.error("No items to save"); return null; }
     
@@ -2058,6 +2058,10 @@ export default function CheckoutClient() {
 
       const url = resumeBillId ? `/api/bill-manager/${resumeBillId}` : "/api/bill-manager";
       const method = resumeBillId ? "PUT" : "POST";
+      
+      // OPTIMISTIC UI: Clear form only after all validations pass, right before fetch
+      if (onValidationSuccess) onValidationSuccess();
+      
       const res = await fetch(url, { 
         method, 
         headers: { "Content-Type": "application/json" }, 
@@ -4230,15 +4234,20 @@ export default function CheckoutClient() {
                   kravy.payment(); 
                   toast.success("Settlement Finalized! 💰");
                   
-                  // Print immediately for zero-latency feel
-                  setTimeout(() => {
-                    printReceipt(business?.enableKOTWithBill || false, null, () => {
-                      // Note: We don't navigate immediately here. Navigation is handled after saveBill finishes.
-                    });
-                  }, 50);
+                  // Print immediately, which captures HTML synchronously
+                  printReceipt(business?.enableKOTWithBill || false, null, () => {
+                    // Note: We don't navigate immediately here. Navigation is handled after saveBill finishes.
+                  });
 
                   // Process save in the background
-                  saveBill().then((bill) => {
+                  // We pass resetForm as onValidationSuccess to instantly clear the UI
+                  // once all synchronous checks (like wallet balance) are cleared.
+                  saveBill(false, () => {
+                    const returnTo = searchParams.get("returnTo");
+                    if (!returnTo) {
+                       resetForm();
+                    }
+                  }).then((bill) => {
                     if (!bill) return;
                     
                     const returnTo = searchParams.get("returnTo");
@@ -4252,7 +4261,6 @@ export default function CheckoutClient() {
                       return;
                     }
                     
-                    resetForm();
                     if (resumeBillId) router.replace("/dashboard/billing/checkout");
                   });
                 }}
