@@ -4264,6 +4264,7 @@ export default function CheckoutClient() {
                   }
                   if (bill.billNumber) {
                       finalBillHtml = finalBillHtml.replace(/No: [a-zA-Z0-9\/\-]+/g, `No: ${bill.billNumber}`);
+                      finalKotHtml = finalKotHtml.replace(/Bill: [a-zA-Z0-9\/\-]+/g, `Bill: ${bill.billNumber}`);
                   }
                   
                   // 5. Print the exact finalized HTML
