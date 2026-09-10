@@ -2151,11 +2151,13 @@ export default function CheckoutClient() {
     
     // SYNCHRONOUS DOM UPDATE (Bypasses React's delayed re-rendering for huge orders)
     if (customBill) {
+        const tokenContainer = receiptRef.current.querySelector('.bill-token-container') as HTMLElement;
         const tokenDisplay = receiptRef.current.querySelector('.bill-token-display');
         if (tokenDisplay) {
             const kt = customBill.kotNumbers || [];
             const tNum = customBill.tokenNumber;
             tokenDisplay.innerHTML = kt.length > 0 ? kt.join(', ') : `#${tNum || "---"}`;
+            if (tokenContainer) tokenContainer.style.display = 'block';
         }
         const numberDisplay = receiptRef.current.querySelector('.bill-number-display');
         if (numberDisplay && customBill.billNumber) {

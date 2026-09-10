@@ -253,8 +253,8 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
               </div>
 
               {/* Centered Token block matching physical ticket */}
-              {s('showToken') && ((kotNumbers && kotNumbers.length > 0) || (tokenNumber || business?.lastTokenNumber !== undefined)) && (
-                <div style={{ textAlign: 'center', margin: '10px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '6px 0' }}>
+              {s('showToken') && (
+                <div className="bill-token-container" style={{ textAlign: 'center', margin: '10px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '6px 0', display: ((kotNumbers && kotNumbers.length > 0) || (tokenNumber || business?.lastTokenNumber !== undefined)) ? 'block' : 'none' }}>
                   <div style={{ fontSize: 'calc(var(--r-details-size) - 1px)', fontWeight: ps.receiptTokenWeight || '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Token No.</div>
                   <div className="bill-token-display" style={{ fontSize: 'var(--r-token-size)', fontWeight: ps.receiptTokenWeight || '900', lineHeight: '1', marginTop: '4px' }}>
                     {kotNumbers && kotNumbers.length > 0 ? kotNumbers.join(', ') : `#${tokenNumber || "---"}`}
