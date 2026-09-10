@@ -2096,17 +2096,21 @@ export default function CheckoutClient() {
           return localItem && localItem.rate !== serverItem.rate;
         });
 
-        if (pricesChanged) {
+        if (pricesChanged && !onValidationSuccess) {
           setItems(serverItems);
           toast.info("Latest menu price applied before saving");
         }
       }
-      if (savedBill?.id) setLastSavedBillId(savedBill.id);
-      if (savedBill?.billNumber) setBillNumber(savedBill.billNumber);
+      if (savedBill?.id && !onValidationSuccess) setLastSavedBillId(savedBill.id);
+      if (savedBill?.billNumber && !onValidationSuccess) setBillNumber(savedBill.billNumber);
       if (savedBill?.tokenNumber) {
-        setTokenNumber(savedBill.tokenNumber);
-        tokenNumberRef.current = savedBill.tokenNumber;
         setBusiness(prev => prev ? { ...prev, lastTokenNumber: savedBill.tokenNumber } : prev);
+        
+        // Prevent state pollution for the next bill if we optimistically cleared the form
+        if (!onValidationSuccess) {
+            setTokenNumber(savedBill.tokenNumber);
+            tokenNumberRef.current = savedBill.tokenNumber;
+        }
       }
 
       // ✅ COMPETE LINKED ORDER (Prevent Duplicates in History)
