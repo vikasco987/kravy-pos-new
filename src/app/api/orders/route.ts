@@ -107,13 +107,21 @@ export async function PATCH(req: NextRequest) {
                         }
 
                         if (profile?.id) {
-                            await prisma.businessProfile.update({
+                            let updateData: any = {};
+                            if (lastTokenDate === today) {
+                                updateData.lastTokenNumber = { increment: 1 };
+                                updateData.lastTokenDate = new Date();
+                            } else {
+                                updateData.lastTokenNumber = 1;
+                                updateData.lastTokenDate = new Date();
+                            }
+                            
+                            const updatedProfile = await prisma.businessProfile.update({
                                 where: { id: profile.id },
-                                data: {
-                                    lastTokenNumber: nextToken,
-                                    lastTokenDate: new Date()
-                                }
+                                data: updateData,
+                                select: { lastTokenNumber: true }
                             });
+                            nextToken = updatedProfile.lastTokenNumber;
                         }
                     }
 

@@ -23,21 +23,30 @@ export async function POST(req: Request) {
         const today = new Date().toISOString().split('T')[0];
         const lastTokenDate = latestProfile.lastTokenDate ? new Date(latestProfile.lastTokenDate).toISOString().split('T')[0] : "";
         
-        let nextToken = 1;
+        let updateData: any = {
+            billCounter: { increment: 1 }
+        };
+
         if (lastTokenDate === today) {
-            nextToken = (latestProfile.lastTokenNumber || 0) + 1;
+            // Atomic increment prevents race conditions during the same day
+            updateData.lastTokenNumber = { increment: 1 };
+            // Ensure we keep the date updated (though it's already today)
+            updateData.lastTokenDate = new Date();
+        } else {
+            // New day reset. If a race condition happens exactly at midnight for the first order, 
+            // both might get token 1, which is an acceptable edge case compared to mid-day collisions.
+            updateData.lastTokenNumber = 1;
+            updateData.lastTokenDate = new Date();
         }
 
         // 2. Atomically update Profile for Token AND BillCounter
         const updatedProfile = await prisma.businessProfile.update({
             where: { id: latestProfile.id },
-            data: {
-                lastTokenNumber: nextToken,
-                lastTokenDate: new Date(),
-                billCounter: { increment: 1 }
-            },
-            select: { billCounter: true }
+            data: updateData,
+            select: { billCounter: true, lastTokenNumber: true }
         });
+
+        const nextToken = updatedProfile.lastTokenNumber;
 
         // 3. Replicate orderNumber generation
         const startOfMonth = new Date();

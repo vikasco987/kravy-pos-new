@@ -10,11 +10,12 @@ export async function deductInventory(orderItems: any[]) {
   try {
     await prisma.$transaction(async (tx) => {
       for (const item of orderItems) {
-        const itemId = item.itemId || item.id;
+        const rawItemId = item.itemId || item.id;
+        const itemId = rawItemId ? rawItemId.split('-')[0] : null; // Extract real ObjectId
         const quantitySold = Number(item.qty || item.quantity || 1);
         const itemName = item.name || "Unknown Item";
 
-        console.log(`[INVENTORY_DEBUG] Processing: ${itemName} (ID: ${itemId}), Qty: ${quantitySold}`);
+        console.log(`[INVENTORY_DEBUG] Processing: ${itemName} (ID: ${rawItemId} -> ${itemId}), Qty: ${quantitySold}`);
 
         if (!itemId || isNaN(quantitySold) || quantitySold <= 0) {
           console.warn(`[INVENTORY_DEBUG] Skipping ${itemName} - Invalid ID or Quantity.`);
