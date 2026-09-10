@@ -278,10 +278,21 @@ export async function POST(req: NextRequest) {
       }
 
       // WALLET ADJUSTMENT LOGIC
+      let initPaymentMode = paymentMode || "Cash";
+      if (
+        initPaymentMode !== "UPI" && 
+        initPaymentMode !== "Card" && 
+        initPaymentMode !== "Pay on Counter" && 
+        initPaymentMode !== "Wallet" && 
+        !initPaymentMode.startsWith("Split")
+      ) {
+        initPaymentMode = "Cash";
+      }
+
       let finalAmountPaid = amountPaid !== undefined ? Number(amountPaid) : finalTotal;
       let finalBalanceDue = Math.max(0, finalTotal - finalAmountPaid);
       let walletUsed = 0;
-      let calculatedPaymentMode = finalPaymentMode;
+      let calculatedPaymentMode = initPaymentMode;
 
       if (customerPhone && customerName && customerName !== "Walk-in Customer" && !isHeld && finalBalanceDue > 0 && partyWalletBalance > 0) {
         walletUsed = Math.min(partyWalletBalance, finalBalanceDue);
