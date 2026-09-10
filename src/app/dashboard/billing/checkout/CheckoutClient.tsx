@@ -4278,7 +4278,6 @@ export default function CheckoutClient() {
                       runPrintJob("bill", finalBillHtml);
                   }
                     
-                    const returnTo = searchParams.get("returnTo");
                     if (returnTo) {
                       const tableId = searchParams.get("tableId");
                       const query = new URLSearchParams();
