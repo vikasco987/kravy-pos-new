@@ -246,7 +246,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
                 </div>
                 <div className="flex justify-between items-start">
                   <div className="space-y-0.5" style={{ fontSize: 'var(--r-details-size)' }}>
-                    {s('showInvoiceNumber') && <div className="font-black">No: {billNumber}</div>}
+                    {s('showInvoiceNumber') && <div className="font-black bill-number-display">No: {billNumber}</div>}
                     <div className="font-black">{billDate}</div>
                   </div>
                 </div>
@@ -256,7 +256,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
               {s('showToken') && ((kotNumbers && kotNumbers.length > 0) || (tokenNumber || business?.lastTokenNumber !== undefined)) && (
                 <div style={{ textAlign: 'center', margin: '10px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '6px 0' }}>
                   <div style={{ fontSize: 'calc(var(--r-details-size) - 1px)', fontWeight: ps.receiptTokenWeight || '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Token No.</div>
-                  <div style={{ fontSize: 'var(--r-token-size)', fontWeight: ps.receiptTokenWeight || '900', lineHeight: '1', marginTop: '4px' }}>
+                  <div className="bill-token-display" style={{ fontSize: 'var(--r-token-size)', fontWeight: ps.receiptTokenWeight || '900', lineHeight: '1', marginTop: '4px' }}>
                     {kotNumbers && kotNumbers.length > 0 ? kotNumbers.join(', ') : `#${tokenNumber || "---"}`}
                   </div>
                 </div>

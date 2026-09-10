@@ -2149,8 +2149,20 @@ export default function CheckoutClient() {
     console.log("[CHECKOUT_PRINT_DEBUG] printReceipt called. forceBoth:", forceBoth, "customBill:", !!customBill);
     if (!receiptRef.current) { toast.error("Nothing to print"); if (onComplete) onComplete(); return; }
     
-    // Capture content. If customBill is provided, we might want to wait for DOM, 
-    // but the BillPreview modal is currently showing the correct data usually.
+    // SYNCHRONOUS DOM UPDATE (Bypasses React's delayed re-rendering for huge orders)
+    if (customBill) {
+        const tokenDisplay = receiptRef.current.querySelector('.bill-token-display');
+        if (tokenDisplay) {
+            const kt = customBill.kotNumbers || [];
+            const tNum = customBill.tokenNumber;
+            tokenDisplay.innerHTML = kt.length > 0 ? kt.join(', ') : `#${tNum || "---"}`;
+        }
+        const numberDisplay = receiptRef.current.querySelector('.bill-number-display');
+        if (numberDisplay && customBill.billNumber) {
+            numberDisplay.innerHTML = `No: ${customBill.billNumber}`;
+        }
+    }
+
     const billHtml = receiptRef.current.innerHTML;
     const kotHtml = kotRef.current?.innerHTML || "";
 
