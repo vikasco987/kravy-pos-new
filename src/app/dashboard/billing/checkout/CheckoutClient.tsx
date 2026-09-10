@@ -2196,10 +2196,11 @@ export default function CheckoutClient() {
         finalKotHtml = finalKotHtml.replace(/#KOT_PLACEHOLDER/g, `#${tNum}`);
         finalKotHtml = finalKotHtml.replace(/#---/g, `#${tNum}`);
       }
+      // KOT Print
       runPrintJob("kot", finalKotHtml, () => {
         setTimeout(() => {
           runPrintJob("bill", billHtml, onComplete);
-        }, spoolerDelay); 
+        }, Math.min(spoolerDelay, 1000)); // Cap the delay to max 1000ms for speed
       });
     } else {
       runPrintJob("bill", billHtml, onComplete);
