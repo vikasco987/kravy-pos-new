@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
         let nextSerial = 1;
         let orderNumber = reservedOrderNumber || "";
 
-        if (!reservedTokenNumber || !reservedOrderNumber) {
+        if (!reservedTokenNumber) {
             const profile = await prisma.businessProfile.findFirst({
                 where: { userId: effectiveId },
                 orderBy: { createdAt: 'asc' }
@@ -239,6 +239,9 @@ export async function POST(req: NextRequest) {
                 // Fallback to 1 if profile update fails
             }
 
+        }
+
+        if (!reservedOrderNumber) {
             // ✅ Generate orderNumber (ORD/YYMM/Random)
             // Orders no longer consume the GST invoice sequence!
             const startOfMonth = new Date();
