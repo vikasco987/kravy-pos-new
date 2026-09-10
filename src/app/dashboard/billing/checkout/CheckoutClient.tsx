@@ -4221,7 +4221,7 @@ export default function CheckoutClient() {
               <motion.button
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => {
+                onClick={async () => {
                   if (items.length === 0) { toast.error("No items to save"); return; }
                   
                   if (buyerGSTIN) {
