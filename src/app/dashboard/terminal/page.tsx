@@ -2671,6 +2671,26 @@ function KravyPOS() {
                 const resolvedPrintServiceCharge = ((printOrder as any)?.serviceCharge || 0);
                 const resolvedPrintFinalTotal = isPrintOrderActive ? settlementBill.total : (printOrder?.total || 0);
 
+                const resolvedKotNumbers = (() => {
+                    const directKots = printOrder?.kotNumbers || activeOrderForSelected?.kotNumbers;
+                    if (Array.isArray(directKots) && directKots.length > 0) {
+                        return directKots;
+                    }
+                    const itemsList = printOrder?.items || activeOrderForSelected?.items || [];
+                    const itemKots = Array.from(new Set(
+                        itemsList
+                            .map((item: any) => Number(item.kotNumber || item.tokenNumber))
+                            .filter((kn: number) => !isNaN(kn) && kn > 0)
+                    )).sort((a: number, b: number) => a - b);
+
+                    if (itemKots.length > 0) return itemKots;
+
+                    const singleToken = printOrder?.tokenNumber || activeOrderForSelected?.tokenNumber;
+                    if (singleToken && Number(singleToken) > 0) return [Number(singleToken)];
+
+                    return [];
+                })();
+
                 return (
                     <>
                         <PrintTemplates
@@ -2680,7 +2700,7 @@ function KravyPOS() {
                             billNumber={printOrder?.orderNumber || printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
                             billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -') : new Date().toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -')}
                             tokenNumber={(() => {
-                                const tn = printOrder?.tokenNumber;
+                                const tn = printOrder?.tokenNumber || activeOrderForSelected?.tokenNumber || (resolvedKotNumbers.length > 0 ? resolvedKotNumbers[resolvedKotNumbers.length - 1] : null);
                                 if (tn == null || tn === "" || tn === 0) return "---";
                                 if (typeof tn === 'object' && (tn as any).$numberLong) return (tn as any).$numberLong.toString().padStart(3, '0');
                                 return tn.toString().padStart(3, '0');
@@ -2739,7 +2759,7 @@ function KravyPOS() {
                             paymentStatus="Paid"
                             upiTxnRef=""
                             qrUrl={qrUrl}
-                            kotNumbers={printOrder?.kotNumbers || activeOrderForSelected?.kotNumbers || []}
+                            kotNumbers={resolvedKotNumbers}
                             prevWalletBalance={null}
                             selectedParty={null}
                             numberToWords={numberToWords}
@@ -2755,7 +2775,7 @@ function KravyPOS() {
                             billNumber={printOrder?.orderNumber || printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
                             billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}
                             tokenNumber={(() => {
-                                const tn = printOrder?.tokenNumber || activeOrderForSelected?.tokenNumber;
+                                const tn = printOrder?.tokenNumber || activeOrderForSelected?.tokenNumber || (resolvedKotNumbers.length > 0 ? resolvedKotNumbers[resolvedKotNumbers.length - 1] : null);
                                 if (tn == null || tn === "" || tn === 0) return "---";
                                 if (typeof tn === 'object' && (tn as any).$numberLong) return (tn as any).$numberLong.toString().padStart(3, '0');
                                 return tn.toString().padStart(3, '0');
@@ -2812,7 +2832,7 @@ function KravyPOS() {
                             qrUrl={qrUrl}
                             numberToWords={numberToWords}
                             kravy={kravy}
-                            kotNumbers={printOrder?.kotNumbers || activeOrderForSelected?.kotNumbers || []}
+                            kotNumbers={resolvedKotNumbers}
                             // Actions - Adapting for workflow
                             printKOT={() => handlePrint("KOT", printOrder || undefined)}
                             printReceipt={(enableKOT, customBill) => {
