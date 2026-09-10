@@ -2529,16 +2529,17 @@ function KravyPOS() {
                                         {/* Sticky Footer */}
                                         <div className="p-5 border-t border-white/40 bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl mt-auto rounded-b-3xl">
                                             <button 
-                                                onClick={() => {
+                                                onClick={async () => {
                                                     const tableToPrint = selectedTable;
                                                     const currentOrder = activeOrderForSelected;
+                                                    if (!currentOrder) return;
                                                     
-                                                    // ⚡ INSTANT PRINT OPTIMIZATION
-                                                    // Open print window immediately with current order data
-                                                    handlePrint("BILL", currentOrder, tableToPrint as any);
+                                                    // 1. Process settlement & generate authoritative DB invoice number (takes ~150ms)
+                                                    const finalizedBill = await handleCheckout(currentOrder.id, false);
                                                     
-                                                    // 🚀 Run the heavy checkout API calls in the background
-                                                    handleCheckout(currentOrder.id);
+                                                    // 2. Trigger Print with authoritative finalized bill containing official billNumber (INV/YYMM/XXXX)
+                                                    const billToPrint = finalizedBill || currentOrder;
+                                                    handlePrint("BILL", billToPrint as any, tableToPrint as any);
                                                 }}
                                                 disabled={isSettling}
                                                 className="relative w-full overflow-hidden flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:via-teal-400 hover:to-emerald-500 text-white font-black text-[13px] uppercase tracking-[0.2em] transition-all shadow-[0_10px_40px_rgba(16,185,129,0.4)] hover:shadow-[0_15px_50px_rgba(16,185,129,0.6)] disabled:opacity-50 disabled:cursor-not-allowed group transform hover:-translate-y-0.5 active:translate-y-1"
@@ -2697,7 +2698,7 @@ function KravyPOS() {
                             receiptRef={billReceiptRef}
                             kotRef={kotReceiptRef}
                             business={business}
-                            billNumber={printOrder?.orderNumber || printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
+                            billNumber={printOrder?.billNumber || printOrder?.orderNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
                             billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -') : new Date().toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\//g, '|').replace(',', ' -')}
                             tokenNumber={(() => {
                                 const tn = printOrder?.tokenNumber || activeOrderForSelected?.tokenNumber || (resolvedKotNumbers.length > 0 ? resolvedKotNumbers[resolvedKotNumbers.length - 1] : null);
@@ -2772,7 +2773,7 @@ function KravyPOS() {
                             previewZoom={previewZoom}
                             setPreviewZoom={setPreviewZoom}
                             business={business}
-                            billNumber={printOrder?.orderNumber || printOrder?.billNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
+                            billNumber={printOrder?.billNumber || printOrder?.orderNumber || (printOrder?.id ? `ORD-${printOrder.id.slice(-4).toUpperCase()}` : "DRAFT")}
                             billDate={printOrder?.createdAt ? new Date(printOrder.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}
                             tokenNumber={(() => {
                                 const tn = printOrder?.tokenNumber || activeOrderForSelected?.tokenNumber || (resolvedKotNumbers.length > 0 ? resolvedKotNumbers[resolvedKotNumbers.length - 1] : null);
