@@ -2187,7 +2187,7 @@ export default function CheckoutClient() {
     console.log("PRINT TRIGGERED - KOT:", isKOTEnabled);
 
     const ps = (business as any)?.printSettings || {};
-    const spoolerDelay = ps.spoolerDelay !== undefined && ps.spoolerDelay !== null ? Number(ps.spoolerDelay) : 2500;
+    const spoolerDelay = ps.spoolerDelay !== undefined && ps.spoolerDelay !== null ? Number(ps.spoolerDelay) : 0;
 
     if (isKOTEnabled && kotHtml) {
       let finalKotHtml = kotHtml;
@@ -2198,9 +2198,13 @@ export default function CheckoutClient() {
       }
       // KOT Print
       runPrintJob("kot", finalKotHtml, () => {
-        setTimeout(() => {
+        if (spoolerDelay > 0) {
+          setTimeout(() => {
+            runPrintJob("bill", billHtml, onComplete);
+          }, spoolerDelay);
+        } else {
           runPrintJob("bill", billHtml, onComplete);
-        }, Math.min(spoolerDelay, 1000)); // Cap the delay to max 1000ms for speed
+        }
       });
     } else {
       runPrintJob("bill", billHtml, onComplete);
@@ -4269,12 +4273,17 @@ export default function CheckoutClient() {
                   }
                   
                   // 5. Print the exact finalized HTML
-                  const spoolerDelay = Number((business as any)?.printSettings?.spoolerDelay || 2500);
+                  const configuredDelay = (business as any)?.printSettings?.spoolerDelay;
+                  const spoolerDelay = configuredDelay !== undefined && configuredDelay !== null ? Number(configuredDelay) : 0;
                   if (business?.enableKOTWithBill && finalKotHtml) {
                       runPrintJob("kot", finalKotHtml, () => {
-                          setTimeout(() => {
+                          if (spoolerDelay > 0) {
+                              setTimeout(() => {
+                                  runPrintJob("bill", finalBillHtml);
+                              }, spoolerDelay);
+                          } else {
                               runPrintJob("bill", finalBillHtml);
-                          }, spoolerDelay);
+                          }
                       });
                   } else {
                       runPrintJob("bill", finalBillHtml);

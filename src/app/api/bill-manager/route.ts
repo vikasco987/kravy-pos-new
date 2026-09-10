@@ -198,90 +198,52 @@ export async function POST(req: NextRequest) {
 
     const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt - loyaltyPointsRedeemedAmt + finalDeliveryCharge + serverDeliveryGst + finalPackagingCharge + serverPackagingGst + finalServiceCharge).toFixed(2));
 
-    let nextSerial = 1;
-    let lastBill = null;
-    let billNumber = body.billNumber;
+    // ✅ ATOMIC TRANSACTION FOR BILL CREATION, COUNTER ALLOCATION, & LEDGER
+    const startTime = Date.now();
     
-    if (!billNumber) {
-        if (profile?.id) {
-            try {
-                const updatedProfile = await prisma.businessProfile.update({
-                    where: { id: profile.id },
-                    data: { billCounter: { increment: 1 } },
-                    select: { billCounter: true }
-                });
-                nextSerial = updatedProfile.billCounter;
-            } catch(e) {
-                console.error("Atomic billCounter increment failed, falling back to manual calculation:", e);
-                lastBill = await prisma.billManager.findFirst({
-                  where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
-                  orderBy: { createdAt: 'desc' },
-                  select: { billNumber: true }
-                });
-                if (lastBill && lastBill.billNumber) {
-                    const parts = lastBill.billNumber.split('/');
-                    const lastSerial = parseInt(parts[parts.length - 1], 10);
-                    if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
-                }
-            }
-        } else {
-            lastBill = await prisma.billManager.findFirst({
-              where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
-              orderBy: { createdAt: 'desc' },
-              select: { billNumber: true }
-            });
-            if (lastBill && lastBill.billNumber) {
-                const parts = lastBill.billNumber.split('/');
-                const lastSerial = parseInt(parts[parts.length - 1], 10);
-                if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
-            }
+    const bill = await prisma.$transaction(async (tx) => {
+      // 1. ATOMIC BILL COUNTER & BILL NUMBER ALLOCATION
+      let nextSerial = 1;
+      if (profile?.id) {
+        const updatedProfile = await tx.businessProfile.update({
+          where: { id: profile.id },
+          data: { billCounter: { increment: 1 } },
+          select: { billCounter: true }
+        });
+        nextSerial = updatedProfile.billCounter;
+      } else {
+        const lastBill = await tx.billManager.findFirst({
+          where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
+          orderBy: { createdAt: 'desc' },
+          select: { billNumber: true }
+        });
+        if (lastBill && lastBill.billNumber) {
+          const parts = lastBill.billNumber.split('/');
+          const lastSerial = parseInt(parts[parts.length - 1], 10);
+          if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
         }
-        const serialLabel = String(nextSerial).padStart(4, '0');
-        billNumber = `INV/${yy}${mm}/${serialLabel}`;
-    }
+      }
+      const serialLabel = String(nextSerial).padStart(4, '0');
+      let finalBillNumber = body.billNumber || `INV/${yy}${mm}/${serialLabel}`;
 
-    // Try to sync with order's KOT number if available
-    if (body.orderId) {
-        const order = await prisma.order.findUnique({ where: { id: body.orderId } });
+      if (body.orderId) {
+        const order = await tx.order.findUnique({ where: { id: body.orderId } });
         if (order?.orderNumber) {
-            billNumber = order.orderNumber;
+          finalBillNumber = order.orderNumber;
         }
-    }
+      }
 
-    let finalPaymentMode = paymentMode || "Cash";
-    if (
-      finalPaymentMode !== "UPI" && 
-      finalPaymentMode !== "Card" && 
-      finalPaymentMode !== "Pay on Counter" && 
-      finalPaymentMode !== "Wallet" && 
-      !finalPaymentMode.startsWith("Split")
-    ) {
-      finalPaymentMode = "Cash";
-    }
-
-    let finalPaymentStatus: string;
-    
-    // ✅ PARTIAL PAYMENT & WALLET AUTO-PAY LOGIC
-    let finalAmountPaid = amountPaid !== undefined ? Number(amountPaid) : finalTotal;
-    let finalBalanceDue = Math.max(0, finalTotal - finalAmountPaid);
-    let walletUsed = 0;
-
-    let partyId = null;
-    let partyWalletBalance = 0;
-    
-    if (customerPhone && customerName && customerName !== "Walk-in Customer") {
-      try {
+      // 2. ATOMIC PARTY UPSERT & LOYALTY
+      let partyId = null;
+      let partyWalletBalance = 0;
+      if (customerPhone && customerName && customerName !== "Walk-in Customer") {
         const cleanPhone = customerPhone.replace(/[\s\-\(\)\+]/g, "").slice(-10);
-        
-        // Calculate Earned Loyalty Points based on Final Subtotal
         const pointRatio = profile?.loyaltyPointRatio && profile.loyaltyPointRatio > 0 ? profile.loyaltyPointRatio : 0;
         const earnedPoints = pointRatio > 0 ? Math.floor(finalSubtotal / pointRatio) : 0;
         const redeemedPoints = Number(loyaltyPointsRedeemed) || 0;
-        
         const netPointsChange = earnedPoints - redeemedPoints;
 
-        // FETCH EXISING WALLET BALANCE BEFORE UPSERTING
-        const existingParty = await prisma.party.findUnique({
+        const existingParty = await tx.party.findUnique({
           where: {
             phone_createdBy: {
               phone: cleanPhone,
@@ -289,10 +251,10 @@ export async function POST(req: NextRequest) {
             }
           }
         });
-        
+
         partyWalletBalance = existingParty?.walletBalance || 0;
 
-        const party = await prisma.party.upsert({
+        const party = await tx.party.upsert({
           where: {
             phone_createdBy: {
               phone: cleanPhone,
@@ -313,166 +275,144 @@ export async function POST(req: NextRequest) {
           },
         });
         partyId = party.id;
-        
-        // If there's an unpaid amount, check if wallet can cover it
-        if (!isHeld && finalBalanceDue > 0 && partyWalletBalance > 0) {
-            walletUsed = Math.min(partyWalletBalance, finalBalanceDue);
-            const originalAmountPaid = finalAmountPaid;
-            
-            finalAmountPaid += walletUsed;
-            finalBalanceDue -= walletUsed;
-            
-            // Adjust payment mode to reflect wallet usage
-            if (originalAmountPaid > 0) {
-               // They paid some via original method, rest via wallet
-               finalPaymentMode = `${finalPaymentMode} (₹${originalAmountPaid}) + Wallet (₹${walletUsed})`;
-            } else {
-               // They paid 0 originally, so it's only wallet
-               finalPaymentMode = `Wallet (₹${walletUsed})`;
-            }
-        }
-      } catch (err) {
-        console.error("Party upsert error in billing:", err);
       }
-    }
 
-    if (isHeld === true) {
-      finalPaymentStatus = "HELD";
-    } else if (finalBalanceDue > 0 && finalBalanceDue < finalTotal) {
-      finalPaymentStatus = "PARTIAL";
-    } else if (finalBalanceDue === finalTotal && finalTotal > 0) {
-      finalPaymentStatus = "PENDING";
-    } else if (finalPaymentMode === "Cash" || finalPaymentMode === "Card" || finalPaymentMode === "Wallet" || finalPaymentMode.includes("Wallet") || finalPaymentMode.startsWith("Split")) {
-      finalPaymentStatus = "PAID";
-    } else {
-      finalPaymentStatus = paymentStatus === "Paid" ? "PAID" : "PENDING";
-    }
+      // WALLET ADJUSTMENT LOGIC
+      let finalAmountPaid = amountPaid !== undefined ? Number(amountPaid) : finalTotal;
+      let finalBalanceDue = Math.max(0, finalTotal - finalAmountPaid);
+      let walletUsed = 0;
+      let calculatedPaymentMode = finalPaymentMode;
 
-    // REMOVED: Customer requirement for unpaid balances (User requested to allow saving bill without customer details)
-
-    // ✅ TOKEN NUMBER GENERATION (REUSE OR INCREMENT)
-    let nextToken = body.tokenNumber || (kotNumbers && Array.isArray(kotNumbers) && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : null);
-    
-    if (!nextToken) {
-        try {
-            const today = new Date().toISOString().split('T')[0];
-            const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
-            
-            if (lastTokenDate === today) {
-                nextToken = (profile?.lastTokenNumber || 0) + 1;
-            } else {
-                nextToken = 1;
-            }
-
-            // Sync with BusinessProfile
-            if (profile?.id) {
-                await prisma.businessProfile.update({
-                    where: { id: profile.id },
-                data: {
-                    lastTokenNumber: nextToken,
-                    lastTokenDate: new Date()
-                }
-            });
-            }
-        } catch (tokenErr) {
-            console.error("TOKEN GENERATION ERROR:", tokenErr);
-            nextToken = 1; // Fallback
-        }
-    }
-
-    const processedItems = items.map((it: any) => ({
-      ...it,
-      kotNumber: it.kotNumber || nextToken || 1,
-      addedAt: it.addedAt || nowLocal.toISOString()
-    }));
-
-    let bill;
-    let retries = 0;
-    while (retries < 10) {
-      try {
-        bill = await prisma.billManager.create({
-          data: {
-            clerkUserId: effectiveId || "Unknown",
-            billNumber: billNumber,
-            items: processedItems,
-            subtotal: finalSubtotal,
-            tax: calculatedTax,
-            total: finalTotal,
-            paymentMode: finalPaymentMode,
-            paymentStatus: finalPaymentStatus,
-            amountPaid: finalAmountPaid,
-            balanceDue: finalBalanceDue,
-            isHeld: isHeld === true,
-            upiTxnRef: upiTxnRef || null,
-            customerName: customerName || null,
-            customerPhone: customerPhone || null,
-            customerAddress: customerAddress || null,
-            partyId: partyId,
-            tableName: tableName || "POS",
-            zoneName: zoneName || null,
-            discountAmount: serverDiscountAmt,
-            discountCode: validatedDiscountCode,
-            deliveryCharges: finalDeliveryCharge,
-            deliveryGst: serverDeliveryGst,
-            packagingCharges: finalPackagingCharge,
-            packagingGst: serverPackagingGst,
-            serviceCharge: finalServiceCharge,
-            auditNote: body.auditNote || null,
-            isKotPrinted: isKotPrinted === true,
-            tokenNumber: nextToken,
-            kotNumbers: kotNumbers || [],
-          },
-        });
-        break; // Success
-      } catch (e: any) {
-        if (e.code === 'P2002' && !body.orderId) {
-          // Unique constraint failed, increment serial and retry
-          retries++;
-          
-          if (retries > 5) {
-             // Safe fallback if gap is too large
-             nextSerial = Math.floor(Date.now() % 1000000) + Math.floor(Math.random() * 1000);
-          } else {
-             try {
-                // Find highest serial from recent bills to jump the gap
-                const recentBills = await prisma.billManager.findMany({
-                  where: { clerkUserId: effectiveId, billNumber: { startsWith: `INV/${yy}${mm}/` } },
-                  orderBy: { createdAt: 'desc' },
-                  take: 10,
-                  select: { billNumber: true }
-                });
-                let localMax = nextSerial;
-                for (const b of recentBills) {
-                    if (b.billNumber) {
-                        const parts = b.billNumber.split('/');
-                        const s = parseInt(parts[parts.length - 1], 10);
-                        if (!isNaN(s) && s > localMax) localMax = s;
-                    }
-                }
-                nextSerial = localMax + 1;
-                
-                if (profile?.id) {
-                    await prisma.businessProfile.update({
-                        where: { id: profile.id },
-                        data: { billCounter: nextSerial }
-                    });
-                }
-             } catch(atomicErr) {
-                nextSerial++;
-             }
-          }
-          const newSerialLabel = String(nextSerial).padStart(4, '0');
-          billNumber = `INV/${yy}${mm}/${newSerialLabel}`;
-          console.warn(`[BILL_MANAGER] Duplicate bill number detected. Retrying with ${billNumber}...`);
+      if (customerPhone && customerName && customerName !== "Walk-in Customer" && !isHeld && finalBalanceDue > 0 && partyWalletBalance > 0) {
+        walletUsed = Math.min(partyWalletBalance, finalBalanceDue);
+        const originalAmountPaid = finalAmountPaid;
+        finalAmountPaid += walletUsed;
+        finalBalanceDue -= walletUsed;
+        if (originalAmountPaid > 0) {
+          calculatedPaymentMode = `${calculatedPaymentMode} (₹${originalAmountPaid}) + Wallet (₹${walletUsed})`;
         } else {
-          throw e; // Throw any other error
+          calculatedPaymentMode = `Wallet (₹${walletUsed})`;
         }
       }
-    }
 
-    if (!bill) {
-      throw new Error("Failed to generate a unique bill number after multiple attempts.");
-    }
+      let calculatedPaymentStatus: string;
+      if (isHeld === true) {
+        calculatedPaymentStatus = "HELD";
+      } else if (finalBalanceDue > 0 && finalBalanceDue < finalTotal) {
+        calculatedPaymentStatus = "PARTIAL";
+      } else if (finalBalanceDue === finalTotal && finalTotal > 0) {
+        calculatedPaymentStatus = "PENDING";
+      } else if (calculatedPaymentMode === "Cash" || calculatedPaymentMode === "Card" || calculatedPaymentMode === "Wallet" || calculatedPaymentMode.includes("Wallet") || calculatedPaymentMode.startsWith("Split")) {
+        calculatedPaymentStatus = "PAID";
+      } else {
+        calculatedPaymentStatus = paymentStatus === "Paid" ? "PAID" : "PENDING";
+      }
+
+      // 3. ATOMIC TOKEN NUMBER GENERATION
+      let nextToken = body.tokenNumber || (kotNumbers && Array.isArray(kotNumbers) && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : null);
+      if (!nextToken) {
+        const today = new Date().toISOString().split('T')[0];
+        const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
+        
+        if (lastTokenDate === today) {
+          nextToken = (profile?.lastTokenNumber || 0) + 1;
+        } else {
+          nextToken = 1;
+        }
+
+        if (profile?.id) {
+          await tx.businessProfile.update({
+            where: { id: profile.id },
+            data: {
+              lastTokenNumber: nextToken,
+              lastTokenDate: new Date()
+            }
+          });
+        }
+      }
+
+      const processedItems = items.map((it: any) => ({
+        ...it,
+        kotNumber: it.kotNumber || nextToken || 1,
+        addedAt: it.addedAt || nowLocal.toISOString()
+      }));
+
+      // 4. CREATE BILL RECORD
+      const createdBill = await tx.billManager.create({
+        data: {
+          clerkUserId: effectiveId || "Unknown",
+          billNumber: finalBillNumber,
+          items: processedItems,
+          subtotal: finalSubtotal,
+          tax: calculatedTax,
+          total: finalTotal,
+          paymentMode: calculatedPaymentMode,
+          paymentStatus: calculatedPaymentStatus,
+          amountPaid: finalAmountPaid,
+          balanceDue: finalBalanceDue,
+          isHeld: isHeld === true,
+          upiTxnRef: upiTxnRef || null,
+          customerName: customerName || null,
+          customerPhone: customerPhone || null,
+          customerAddress: customerAddress || null,
+          partyId: partyId,
+          tableName: tableName || "POS",
+          zoneName: zoneName || null,
+          discountAmount: serverDiscountAmt,
+          discountCode: validatedDiscountCode,
+          deliveryCharges: finalDeliveryCharge,
+          deliveryGst: serverDeliveryGst,
+          packagingCharges: finalPackagingCharge,
+          packagingGst: serverPackagingGst,
+          serviceCharge: finalServiceCharge,
+          auditNote: body.auditNote || null,
+          isKotPrinted: isKotPrinted === true,
+          tokenNumber: nextToken,
+          kotNumbers: kotNumbers || [],
+        },
+      });
+
+      // 5. ATOMIC WALLET / LEDGER DEDUCTIONS
+      if (!createdBill.isHeld && partyId) {
+        if (walletUsed > 0) {
+          await tx.party.update({
+            where: { id: partyId },
+            data: { walletBalance: { decrement: walletUsed } }
+          });
+          await tx.walletTransaction.create({
+            data: {
+              partyId: partyId,
+              clerkId: effectiveId || "Unknown",
+              type: "DEBIT",
+              amount: walletUsed,
+              description: `Auto-Paid for Bill ${createdBill.billNumber} from Wallet`
+            }
+          });
+        }
+
+        if (finalBalanceDue > 0) {
+          await tx.party.update({
+            where: { id: partyId },
+            data: { walletBalance: { decrement: finalBalanceDue } }
+          });
+          await tx.walletTransaction.create({
+            data: {
+              partyId: partyId,
+              clerkId: effectiveId || "Unknown",
+              type: "DEBIT",
+              amount: finalBalanceDue,
+              description: `Unpaid Balance (Udhar) for Bill ${createdBill.billNumber}`
+            }
+          });
+        }
+      }
+
+      return createdBill;
+    }, {
+      timeout: 10000
+    });
+
+    console.log(`[BILL_MANAGER_PERF] Bill ${bill.billNumber} created in ${Date.now() - startTime}ms`);
 
     // ✅ AUTO-DEDUCT INVENTORY ON FINAL BILL (IF NOT HELD)
     if (!bill.isHeld && skipInventoryDeduction !== true) {
@@ -485,45 +425,6 @@ export async function POST(req: NextRequest) {
       }
     } else if (skipInventoryDeduction === true) {
       console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Inventory deduction skipped by caller.`);
-    }
-
-    // ✅ LEDGER (KHATA) TRACKING
-    if (!bill.isHeld && partyId) {
-      try {
-        if (walletUsed > 0) {
-           await prisma.party.update({
-             where: { id: partyId },
-             data: { walletBalance: { decrement: walletUsed } }
-           });
-           await prisma.walletTransaction.create({
-             data: {
-               partyId: partyId,
-               clerkId: effectiveId || "Unknown",
-               type: "DEBIT",
-               amount: walletUsed,
-               description: `Auto-Paid for Bill ${bill.billNumber} from Wallet`
-             }
-           });
-        }
-        
-        if (finalBalanceDue > 0) {
-          await prisma.party.update({
-            where: { id: partyId },
-            data: { walletBalance: { decrement: finalBalanceDue } }
-          });
-          await prisma.walletTransaction.create({
-            data: {
-              partyId: partyId,
-              clerkId: effectiveId || "Unknown",
-              type: "DEBIT",
-              amount: finalBalanceDue,
-              description: `Unpaid Balance (Udhar) for Bill ${bill.billNumber}`
-            }
-          });
-        }
-      } catch (ledgerErr) {
-        console.error("Ledger Update Error:", ledgerErr);
-      }
     }
 
     return NextResponse.json({ bill });
