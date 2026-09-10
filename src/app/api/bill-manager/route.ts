@@ -200,17 +200,31 @@ export async function POST(req: NextRequest) {
 
     let nextSerial = 1;
     let lastBill = null;
+    let billNumber = body.billNumber;
     
-    if (profile?.id) {
-        try {
-            const updatedProfile = await prisma.businessProfile.update({
-                where: { id: profile.id },
-                data: { billCounter: { increment: 1 } },
-                select: { billCounter: true }
-            });
-            nextSerial = updatedProfile.billCounter;
-        } catch(e) {
-            console.error("Atomic billCounter increment failed, falling back to manual calculation:", e);
+    if (!billNumber) {
+        if (profile?.id) {
+            try {
+                const updatedProfile = await prisma.businessProfile.update({
+                    where: { id: profile.id },
+                    data: { billCounter: { increment: 1 } },
+                    select: { billCounter: true }
+                });
+                nextSerial = updatedProfile.billCounter;
+            } catch(e) {
+                console.error("Atomic billCounter increment failed, falling back to manual calculation:", e);
+                lastBill = await prisma.billManager.findFirst({
+                  where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
+                  orderBy: { createdAt: 'desc' },
+                  select: { billNumber: true }
+                });
+                if (lastBill && lastBill.billNumber) {
+                    const parts = lastBill.billNumber.split('/');
+                    const lastSerial = parseInt(parts[parts.length - 1], 10);
+                    if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
+                }
+            }
+        } else {
             lastBill = await prisma.billManager.findFirst({
               where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
               orderBy: { createdAt: 'desc' },
@@ -222,20 +236,9 @@ export async function POST(req: NextRequest) {
                 if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
             }
         }
-    } else {
-        lastBill = await prisma.billManager.findFirst({
-          where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
-          orderBy: { createdAt: 'desc' },
-          select: { billNumber: true }
-        });
-        if (lastBill && lastBill.billNumber) {
-            const parts = lastBill.billNumber.split('/');
-            const lastSerial = parseInt(parts[parts.length - 1], 10);
-            if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
-        }
+        const serialLabel = String(nextSerial).padStart(4, '0');
+        billNumber = `INV/${yy}${mm}/${serialLabel}`;
     }
-    const serialLabel = String(nextSerial).padStart(4, '0');
-    let billNumber = `INV/${yy}${mm}/${serialLabel}`;
 
     // Try to sync with order's KOT number if available
     if (body.orderId) {

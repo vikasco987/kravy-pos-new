@@ -1866,7 +1866,7 @@ export default function CheckoutClient() {
   const [resumeConfirmId, setResumeConfirmId] = useState<string | null>(null);
 
   /* ================= SAVE BILL ================= */
-  async function saveBill(isHeld: boolean = false, onValidationSuccess?: () => void) {
+  async function saveBill(isHeld: boolean = false, onValidationSuccess?: () => void, preReservedToken?: number, preReservedBill?: string) {
     if (isSaving) return null;
     if (items.length === 0) { toast.error("No items to save"); return null; }
     
@@ -2051,7 +2051,8 @@ export default function CheckoutClient() {
         packagingCharges: packagingCharge,
         serviceCharge: finalServiceCharge,
         kotNumbers: kotNumbersRef.current,
-        tokenNumber: tokenNumberRef.current,
+        tokenNumber: preReservedToken || tokenNumberRef.current,
+        billNumber: preReservedBill,
         profileId: business?.id,
         amountPaid: finalAmountPaid,
       };
@@ -4238,6 +4239,22 @@ export default function CheckoutClient() {
                   kravy.payment(); 
                   toast.success("Settlement Finalized! 💰");
                   
+                  setIsSaving(true);
+                  
+                  let fastToken: number | null = null;
+                  let fastBillNum = "";
+                  try {
+                      // 0. Fast pre-fetch!
+                      const reserveRes = await fetch("/api/orders/reserve-token", { method: "POST" });
+                      if (reserveRes.ok) {
+                          const reserveData = await reserveRes.json();
+                          fastToken = reserveData.tokenNumber;
+                          fastBillNum = reserveData.orderNumber;
+                      }
+                  } catch (e) {
+                      console.error("Failed to fast-reserve token", e);
+                  }
+                  
                   // 1. Capture HTML NOW before resetForm clears the cart
                   const capturedBillHtml = receiptRef.current?.innerHTML || "";
                   const capturedKotHtml = kotRef.current?.innerHTML || "";
@@ -4249,20 +4266,23 @@ export default function CheckoutClient() {
                     if (!returnTo) {
                        resetForm();
                     }
-                  }).then((bill) => {
+                  }, fastToken || undefined, fastBillNum || undefined).then((bill) => {
                     if (!bill) return;
 
                     // 3. Inject tokens into the captured HTML
                     let finalBillHtml = capturedBillHtml;
                     let finalKotHtml = capturedKotHtml;
                     
-                    if (bill.tokenNumber) {
-                        finalBillHtml = finalBillHtml.replace(/#---/g, `#${bill.tokenNumber}`);
-                        finalKotHtml = finalKotHtml.replace(/#KOT_PLACEHOLDER/g, `#${bill.tokenNumber}`);
-                        finalKotHtml = finalKotHtml.replace(/#---/g, `#${bill.tokenNumber}`);
+                    const tokenToInject = bill.tokenNumber || fastToken;
+                    const billNumToInject = bill.billNumber || fastBillNum;
+                    
+                    if (tokenToInject) {
+                        finalBillHtml = finalBillHtml.replace(/#---/g, `#${tokenToInject}`);
+                        finalKotHtml = finalKotHtml.replace(/#KOT_PLACEHOLDER/g, `#${tokenToInject}`);
+                        finalKotHtml = finalKotHtml.replace(/#---/g, `#${tokenToInject}`);
                     }
-                    if (bill.billNumber) {
-                        finalBillHtml = finalBillHtml.replace(/No: [a-zA-Z0-9\/\-]+/g, `No: ${bill.billNumber}`);
+                    if (billNumToInject) {
+                        finalBillHtml = finalBillHtml.replace(/No: [a-zA-Z0-9\/\-]+/g, `No: ${billNumToInject}`);
                     }
                     
                     // 4. Print the captured HTML directly!
