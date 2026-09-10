@@ -128,7 +128,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { kravy } from "@/lib/sounds";
 import { useAuthContext } from "./AuthContext";
 import { createPortal } from "react-dom";
-
+import { useTerminalContext } from "@/components/TerminalContext";
 const navGroups = [
   {
     group: "OPERATIONS",
@@ -538,7 +538,8 @@ export default function Sidebar({ profile }: { profile?: any }) {
   const [excelImportEnabled, setExcelImportEnabled] = useState(false);
   const [fuelBillingEnabled, setFuelBillingEnabled] = useState(false);
   const [hotelManagementEnabled, setHotelManagementEnabled] = useState(false);
-  const [activeTablesCount, setActiveTablesCount] = useState<number | null>(null);
+  const { tablesList } = useTerminalContext();
+  const activeTablesCount = tablesList ? tablesList.filter(t => t.activeCount > 0).length : null;
   const [searchQuery, setSearchQuery] = useState("");
   const [hiddenSidebarItems, setHiddenSidebarItems] = useState<string[]>([]);
 
@@ -575,29 +576,8 @@ export default function Sidebar({ profile }: { profile?: any }) {
     };
     window.addEventListener("storage", handleStorage);
 
-    // Fetch active tables count
-    const fetchActiveCount = async () => {
-      try {
-        const res = await fetch("/api/orders?limit=50");
-        if (res.ok) {
-          const orders = await res.json();
-          if (Array.isArray(orders)) {
-            const activeTables = new Set(
-              orders
-                .filter((o: any) => o.status !== "COMPLETED" && !o.isDeleted && o.table?.id)
-                .map((o: any) => o.table.id)
-            );
-            setActiveTablesCount(activeTables.size);
-          }
-        }
-      } catch (err) {}
-    };
-
-    fetchActiveCount();
-    const interval = setInterval(fetchActiveCount, 15000); // 15 seconds
     return () => {
       window.removeEventListener("storage", handleStorage);
-      clearInterval(interval);
     };
   }, []);
 

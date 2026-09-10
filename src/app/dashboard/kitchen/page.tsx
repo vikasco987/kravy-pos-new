@@ -846,7 +846,7 @@ function KravyPOS() {
 
             // Only update status if not already COMPLETED (to avoid loop)
             if (order.status !== "COMPLETED") {
-                await fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: targetOrderId, status: "COMPLETED" }) });
+                await fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: targetOrderId, status: "COMPLETED", skipInventoryDeduction: true }) });
             }
 
             if (!silent) {

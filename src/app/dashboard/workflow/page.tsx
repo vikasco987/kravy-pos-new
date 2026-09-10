@@ -728,7 +728,7 @@ export default function KravyPOS() {
             };
             const p1 = fetch("/api/bill-manager", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(billData) });
             const p2 = order.status !== "COMPLETED" 
-                ? fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: targetOrderId, status: "COMPLETED" }) })
+                ? fetch("/api/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: targetOrderId, status: "COMPLETED", skipInventoryDeduction: true }) })
                 : Promise.resolve({ ok: true });
 
             const [res1, res2] = await Promise.all([p1, p2]);

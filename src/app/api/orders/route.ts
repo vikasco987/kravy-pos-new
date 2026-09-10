@@ -165,6 +165,16 @@ export async function PATCH(req: NextRequest) {
 
         return NextResponse.json(order);
     } catch (error: any) {
+        if (error?.code === "P2025") {
+            console.warn(`[PATCH_ORDER_WARN] Order ${orderId} update failed with P2025 (Record to update not found). Checking existing status...`);
+            const existingOrder = await prisma.order.findUnique({
+                where: { id: orderId, clerkUserId: effectiveId }
+            });
+            if (existingOrder) {
+                console.log(`[PATCH_ORDER_INFO] Order ${orderId} already exists with status: ${existingOrder.status}. Returning existing record.`);
+                return NextResponse.json(existingOrder);
+            }
+        }
         console.error("PATCH_ORDER_ERROR:", error);
         return NextResponse.json({ 
             error: "Failed to update order",

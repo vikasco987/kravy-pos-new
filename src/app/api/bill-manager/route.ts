@@ -204,31 +204,49 @@ export async function POST(req: NextRequest) {
     // ✅ ATOMIC TRANSACTION FOR BILL CREATION, COUNTER ALLOCATION, & LEDGER
     const startTime = Date.now();
     
-    const bill = await prisma.$transaction(async (tx) => {
-      // 1. ATOMIC BILL COUNTER & BILL NUMBER ALLOCATION
-      const t1Start = Date.now();
-      let nextSerial = 1;
-      if (profile?.id) {
-        const updatedProfile = await tx.businessProfile.update({
-          where: { id: profile.id },
-          data: { billCounter: { increment: 1 } },
-          select: { billCounter: true }
-        });
-        nextSerial = updatedProfile.billCounter;
-      } else {
-        const lastBill = await tx.billManager.findFirst({
-          where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
-          orderBy: { createdAt: 'desc' },
-          select: { billNumber: true }
-        });
-        if (lastBill && lastBill.billNumber) {
-          const parts = lastBill.billNumber.split('/');
-          const lastSerial = parseInt(parts[parts.length - 1], 10);
-          if (!isNaN(lastSerial)) nextSerial = lastSerial + 1;
-        }
-      }
-      const serialLabel = String(nextSerial).padStart(4, '0');
-      let finalBillNumber = body.billNumber || `INV/${yy}${mm}/${serialLabel}`;
+    let bill = null;
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        bill = await prisma.$transaction(async (tx) => {
+          // 1. ATOMIC BILL COUNTER & BILL NUMBER ALLOCATION
+          const t1Start = Date.now();
+          let nextSerial = 1;
+          
+          // Always read the true MAX bill to auto-correct out-of-sync profiles
+          const lastBill = await tx.billManager.findFirst({
+            where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
+            orderBy: { createdAt: 'desc' },
+            select: { billNumber: true }
+          });
+          let trueDbMax = 0;
+          if (lastBill && lastBill.billNumber) {
+            const parts = lastBill.billNumber.split('/');
+            const lastSerial = parseInt(parts[parts.length - 1], 10);
+            if (!isNaN(lastSerial)) trueDbMax = lastSerial;
+          }
+
+          if (profile?.id) {
+            const currentProfile = await tx.businessProfile.findUnique({ 
+                where: { id: profile.id }, 
+                select: { billCounter: true }
+            });
+            let targetCounter = Math.max(currentProfile?.billCounter || 0, trueDbMax);
+            
+            // Advance counter. If retrying, aggressively skip ahead to bypass stale reads/collisions
+            targetCounter += (1 + attempts); 
+
+            await tx.businessProfile.update({
+              where: { id: profile.id },
+              data: { billCounter: targetCounter }
+            });
+            nextSerial = targetCounter;
+          } else {
+            nextSerial = trueDbMax + 1 + attempts;
+          }
+          
+          const serialLabel = String(nextSerial).padStart(4, '0');
+          let finalBillNumber = body.billNumber || `INV/${yy}${mm}/${serialLabel}`;
       console.log(`[BILL_PERF_STEP] 1. Bill Counter Allocation: ${Date.now() - t1Start}ms`);
 
       if (body.orderId) {
@@ -435,7 +453,20 @@ export async function POST(req: NextRequest) {
       timeout: 10000
     });
 
-    console.log(`[BILL_MANAGER_PERF] TOTAL Transaction Time for Bill ${bill.billNumber}: ${Date.now() - startTime}ms`);
+        break; // Success! Break out of the retry loop.
+      } catch (err: any) {
+        if (err.code === 'P2002' && !body.billNumber && attempts < 2) {
+          attempts++;
+          console.log(`[BILL_MANAGER] Retry ${attempts} due to P2002 collision on billNumber...`);
+          // Exponential backoff jitter
+          await new Promise(r => setTimeout(r, Math.random() * 100 * attempts));
+          continue;
+        }
+        throw err; // Re-throw if max attempts reached or unrelated error
+      }
+    }
+
+    console.log(`[BILL_MANAGER_PERF] TOTAL Transaction Time for Bill ${bill?.billNumber}: ${Date.now() - startTime}ms`);
 
     // ✅ AUTO-DEDUCT INVENTORY IN BACKGROUND (NON-BLOCKING)
     if (!bill.isHeld && skipInventoryDeduction !== true) {

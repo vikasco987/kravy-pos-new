@@ -713,7 +713,7 @@ export default function CheckoutClient() {
   const checkoutSidebarRef = useRef<HTMLDivElement>(null);
 
   /* ================= TABLES STATE ================= */
-  const [tables, setTables] = useState<any[]>([]);
+  const { tablesList: tables } = useTerminalContext();
   const [selectedTable, setSelectedTable] = useState<string>("POS");
   const [orderType, setOrderType] = useState<"DINING" | "TAKEAWAY" | "DELIVERY">("DINING");
   const [showTableSelect, setShowTableSelect] = useState(false);
@@ -810,22 +810,9 @@ export default function CheckoutClient() {
     }
   }
 
-  async function fetchTables() {
-    try {
-      const res = await fetch("/api/tables");
-      if (res.ok) {
-        const data = await res.json();
-        setTables(data || []);
-      }
-    } catch (e) {
-      console.error("Failed to fetch tables:", e);
-    }
-  }
-
   useEffect(() => { 
     fetchHeldBills();
     fetchParties();
-    fetchTables();
   }, []);
 
   const [billNumber, setBillNumber] = useState("");
@@ -2218,15 +2205,24 @@ export default function CheckoutClient() {
         finalKotHtml = finalKotHtml.replace(/#---/g, `#${tNum}`);
       }
       // KOT Print
-      runPrintJob("kot", finalKotHtml, () => {
-        if (spoolerDelay > 0) {
+      if (spoolerDelay > 0) {
+        runPrintJob("kot", finalKotHtml, () => {
           setTimeout(() => {
             runPrintJob("bill", billHtml, onComplete);
           }, spoolerDelay);
-        } else {
-          runPrintJob("bill", billHtml, onComplete);
-        }
-      });
+        });
+      } else {
+        const combinedHtml = `
+            <div class="kot-container-dynamic text-black bg-white">
+                ${finalKotHtml}
+            </div>
+            <div style="page-break-after: always; height: 10px;"></div>
+            <div class="receipt-container-dynamic text-black bg-white" style="margin-top: 10px;">
+                ${billHtml}
+            </div>
+        `;
+        runPrintJob("bill", combinedHtml, onComplete);
+      }
     } else {
       runPrintJob("bill", billHtml, onComplete);
     }
@@ -2288,11 +2284,15 @@ export default function CheckoutClient() {
   const handlePrintKOT = async () => {
     if (isSaving || items.length === 0) return;
     
+    console.group("⏱️ [KOT DETAILED BREAKDOWN]");
+    const tKOTStart = performance.now();
     console.time("1. Total time to print window");
     console.time("2. HTML Capture & Payload Generation");
     
-    // ✅ CAPTURE KOT HTML BEFORE MODIFYING ANY STATE!
+    // 1. CAPTURE KOT HTML BEFORE MODIFYING ANY STATE
+    const tCapStart = performance.now();
     const htmlToPrint = kotRef.current?.innerHTML;
+    console.log(`⚡ [KOT_PERF] 1. DOM innerHTML capture: ${(performance.now() - tCapStart).toFixed(2)} ms`);
 
     setIsSaving(true);
 
@@ -2300,14 +2300,15 @@ export default function CheckoutClient() {
       kravy.ping();
       setIsKotPrinted(true);
 
-      // 1. RESERVE TOKEN (Lightning Fast)
+      // 2. RESERVE TOKEN API CALL
+      const tReserveStart = performance.now();
       let tokenNumberToUse: number | null = null;
       let orderNumberToUse = "";
       
       const hasNewItems = items.some(it => it.isNew);
 
       if (!syncedOrderId || hasNewItems) { 
-          const reserveRes = await fetch("/api/orders/reserve-token", { method: "POST" });
+          const reserveRes = await fetch(`/api/orders/reserve-token?profileId=${business?.id || ""}`, { method: "POST" });
           if (reserveRes.ok) {
               const resData = await reserveRes.json();
               tokenNumberToUse = resData.tokenNumber;
@@ -2327,8 +2328,10 @@ export default function CheckoutClient() {
       } else {
           tokenNumberToUse = tokenNumber;
       }
+      console.log(`⚡ [KOT_PERF] 2. Reserve Token API Call: ${(performance.now() - tReserveStart).toFixed(2)} ms`);
 
       // 3. GENERATE PAYLOAD FOR BACKGROUND SYNC
+      const tPayloadStart = performance.now();
       const orderData = {
         orderId: syncedOrderId || undefined,
         tableId: selectedTable !== "POS" ? (tables.find(t => t.name === selectedTable)?.id || searchParams.get("tableId")) : null,
@@ -2357,8 +2360,9 @@ export default function CheckoutClient() {
 
       // Mark local items as not new so UI updates immediately
       setItems(prev => prev.map(i => ({ ...i, isNew: false, kotNumber: i.isNew ? tokenNumberToUse : (i.kotNumber || tokenNumberToUse) })));
-      
-      // 4. FIRE AND FORGET BACKGROUND SYNC (BUT SAVE PROMISE FOR REDIRECT)
+      console.log(`⚡ [KOT_PERF] 3. Payload Construction & State Prep: ${(performance.now() - tPayloadStart).toFixed(2)} ms`);
+
+      // 4. FIRE AND FORGET BACKGROUND SYNC
       let syncPromise: Promise<any> | null = null;
       if (tokenNumberToUse !== null || syncedOrderId) {
           syncPromise = syncOrderToBackend(orderData, tokenNumberToUse || 0, orderNumberToUse).finally(() => {
@@ -2368,15 +2372,19 @@ export default function CheckoutClient() {
           setIsSaving(false);
       }
       
-      // 2. INJECT HTML & PRINT IMMEDIATELY
+      // 5. INJECT HTML & PRINT IMMEDIATELY
       if (htmlToPrint) {
+        const tRegexStart = performance.now();
         let finalHtmlToPrint = htmlToPrint;
         if (tokenNumberToUse) {
           finalHtmlToPrint = finalHtmlToPrint.replace(/#KOT_PLACEHOLDER/g, `#${tokenNumberToUse}`);
           finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${tokenNumberToUse}`);
         }
-        
+        console.log(`⚡ [KOT_PERF] 4. String Regex Replacement: ${(performance.now() - tRegexStart).toFixed(2)} ms`);
+
         console.timeEnd("2. HTML Capture & Payload Generation");
+        console.log(`🎉 [KOT_PERF] TOTAL KOT PREPARATION TIME: ${(performance.now() - tKOTStart).toFixed(2)} ms`);
+        console.groupEnd();
         
         // Print Instantly!
         const returnTo = searchParams.get("returnTo");
@@ -2512,7 +2520,7 @@ export default function CheckoutClient() {
         }
 
         /* Inject CSS custom variables to override custom elements correctly */
-        #${containerId}.receipt-container-dynamic {
+        #${containerId} .receipt-container-dynamic, #${containerId}.receipt-container-dynamic {
           --r-font-family: ${fontFamilyVal};
           --r-business-size: ${finalBusinessNameSize}px;
           --r-address-size: ${finalAddressSize}px;
@@ -2527,11 +2535,11 @@ export default function CheckoutClient() {
           font-size: var(--r-details-size) !important;
         }
 
-        #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
+        #${containerId} .receipt-container-dynamic *, #${containerId}.receipt-container-dynamic * {
           font-family: var(--r-font-family) !important;
         }
 
-        #${containerId}.kot-container-dynamic {
+        #${containerId} .kot-container-dynamic, #${containerId}.kot-container-dynamic {
           --k-font-family: ${kotFontFamilyVal};
           --k-items-size: ${kotItemsFontSize}px;
           --k-qty-size: ${kotQtyFontSize}px;
@@ -2540,18 +2548,18 @@ export default function CheckoutClient() {
           font-size: var(--k-items-size) !important;
         }
 
-        #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
+        #${containerId} .kot-container-dynamic *, #${containerId}.kot-container-dynamic * {
           font-family: var(--k-font-family) !important;
         }
 
         ${fontWeightVal ? `
-        #${containerId}.receipt-container-dynamic, #${containerId}.receipt-container-dynamic * {
+        #${containerId} .receipt-container-dynamic, #${containerId}.receipt-container-dynamic, #${containerId} .receipt-container-dynamic *, #${containerId}.receipt-container-dynamic * {
           font-weight: ${fontWeightVal};
         }
         ` : ''}
 
         ${kotFontWeightVal ? `
-        #${containerId}.kot-container-dynamic, #${containerId}.kot-container-dynamic * {
+        #${containerId} .kot-container-dynamic, #${containerId}.kot-container-dynamic, #${containerId} .kot-container-dynamic *, #${containerId}.kot-container-dynamic * {
           font-weight: ${kotFontWeightVal};
         }
         ` : ''}
@@ -4273,28 +4281,32 @@ export default function CheckoutClient() {
                   toast.success("Settlement Finalized! 💰");
                   
                   const tClickStart = performance.now();
-                  console.group("⏱️ [PERF METRICS] Save & Print Click Flow");
+                  console.group("⏱️ [SAVE & PRINT DETAILED BREAKDOWN]");
                   console.log("👉 0. User Clicked Save & Print at:", new Date().toLocaleTimeString());
 
                   // 1. Capture HTML NOW before any state changes
+                  const tCapStart = performance.now();
                   const capturedBillHtml = receiptRef.current?.innerHTML || "";
                   const capturedKotHtml = kotRef.current?.innerHTML || "";
+                  console.log(`⚡ [SAVE_PRINT_PERF] 1. DOM innerHTML Capture: ${(performance.now() - tCapStart).toFixed(2)} ms`);
 
                   // 2. Process save and WAIT for DB success
+                  const tSaveStart = performance.now();
                   const bill = await saveBill(false);
                   if (!bill) {
                     console.groupEnd();
                     return; // Save failed: Cart remains, user can retry
                   }
-
-                  const tSaveDone = performance.now();
-                  console.log(`⚡ [PERF SUMMARY] Backend Save complete in ${(tSaveDone - tClickStart).toFixed(2)} ms from Click`);
+                  console.log(`⚡ [SAVE_PRINT_PERF] 2. saveBill API & DB Save: ${(performance.now() - tSaveStart).toFixed(2)} ms`);
 
                   // 3. Save Succeeded -> Clear cart
+                  const tResetStart = performance.now();
                   const returnTo = searchParams.get("returnTo");
                   if (!returnTo) resetForm();
+                  console.log(`⚡ [SAVE_PRINT_PERF] 3. Form Reset & State Clear: ${(performance.now() - tResetStart).toFixed(2)} ms`);
 
                   // 4. Inject finalized DB tokens into the captured HTML
+                  const tRegexStart = performance.now();
                   let finalBillHtml = capturedBillHtml;
                   let finalKotHtml = capturedKotHtml;
                   
@@ -4307,24 +4319,36 @@ export default function CheckoutClient() {
                       finalBillHtml = finalBillHtml.replace(/No: [a-zA-Z0-9\/\-]+/g, `No: ${bill.billNumber}`);
                       finalKotHtml = finalKotHtml.replace(/Bill: [a-zA-Z0-9\/\-]+/g, `Bill: ${bill.billNumber}`);
                   }
+                  console.log(`⚡ [SAVE_PRINT_PERF] 4. Token & Bill Regex Injections: ${(performance.now() - tRegexStart).toFixed(2)} ms`);
+                  console.log(`🎉 [SAVE_PRINT_PERF] TOTAL CLICK TO PRINT PREPARATION TIME: ${(performance.now() - tClickStart).toFixed(2)} ms`);
+                  console.groupEnd();
                   
                   // 5. Print the exact finalized HTML
                   const configuredDelay = (business as any)?.printSettings?.spoolerDelay;
                   const spoolerDelay = configuredDelay !== undefined && configuredDelay !== null ? Number(configuredDelay) : 0;
                   if (business?.enableKOTWithBill && finalKotHtml) {
-                      runPrintJob("kot", finalKotHtml, () => {
-                          if (spoolerDelay > 0) {
+                      if (spoolerDelay > 0) {
+                          runPrintJob("kot", finalKotHtml, () => {
                               setTimeout(() => {
                                   runPrintJob("bill", finalBillHtml);
                               }, spoolerDelay);
-                          } else {
-                              runPrintJob("bill", finalBillHtml);
-                          }
-                      });
+                          });
+                      } else {
+                          // Combine them to prevent Chrome from blocking the second print dialog
+                          const combinedHtml = `
+                              <div class="kot-container-dynamic text-black bg-white">
+                                  ${finalKotHtml}
+                              </div>
+                              <div style="page-break-after: always; height: 10px;"></div>
+                              <div class="receipt-container-dynamic text-black bg-white" style="margin-top: 10px;">
+                                  ${finalBillHtml}
+                              </div>
+                          `;
+                          runPrintJob("bill", combinedHtml);
+                      }
                   } else {
                       runPrintJob("bill", finalBillHtml);
                   }
-                  console.groupEnd();
                     
                     if (returnTo) {
                       const tableId = searchParams.get("tableId");

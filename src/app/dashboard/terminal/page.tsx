@@ -1078,7 +1078,7 @@ function KravyPOS() {
                     fetch("/api/orders", { 
                         method: "PATCH", 
                         headers: { "Content-Type": "application/json" }, 
-                        body: JSON.stringify({ orderId: targetOrderId, status: "COMPLETED" }) 
+                        body: JSON.stringify({ orderId: targetOrderId, status: "COMPLETED", skipInventoryDeduction: true }) 
                     })
                 );
             }
