@@ -1,7 +1,7 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ZoomIn, ZoomOut, Printer, RefreshCw } from 'lucide-react';
 import { WhatsAppBillButton } from "@/components/WhatsAppBillButton";
+import { getQRCodeDataUrl } from '@/lib/qrHelper';
 
 interface BillPreviewProps {
   showPreview: boolean;
@@ -31,11 +31,14 @@ interface BillPreviewProps {
   deliveryGst: number;
   packagingCharge: number;
   packagingGst: number;
+  serviceCharge: number;
   finalTotal: number;
   paymentMode: string;
   paymentStatus: string;
   upiTxnRef?: string;
   qrUrl: string;
+  prevWalletBalance: number | null;
+  selectedParty: any;
   numberToWords: (num: number) => string;
   kravy: any;
   // Actions
@@ -58,11 +61,20 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
     billDate, tokenNumber, selectedTable, customerName, customerPhone, customerAddress,
     orderNotes, placeOfSupply, items, subtotal, discountAmt, appliedOffer,
     taxActive, perProductEnabled, totalTaxable, totalGst, taxBreakup,
-    deliveryCharge, deliveryGst, packagingCharge, packagingGst, finalTotal,
-    paymentMode, paymentStatus, upiTxnRef, qrUrl, numberToWords, kravy,
-    printKOT, printReceipt, saveBill, resetForm, isSaving, lastSavedBillId,
-    userRole, userPermissions, resumeBillId, router, kotNumbers
+    deliveryCharge, deliveryGst, packagingCharge, packagingGst, serviceCharge,
+    finalTotal, paymentMode, paymentStatus, upiTxnRef, qrUrl, prevWalletBalance, 
+    selectedParty, numberToWords, kravy, printKOT, printReceipt, saveBill, 
+    resetForm, isSaving, lastSavedBillId, userRole, userPermissions, 
+    resumeBillId, router, kotNumbers
   } = props;
+
+  const [reviewQrBase64, setReviewQrBase64] = useState<string>("");
+
+  useEffect(() => {
+    if (business?.reviewUrl) {
+      getQRCodeDataUrl(business.reviewUrl, { width: 150 }).then(setReviewQrBase64);
+    }
+  }, [business?.reviewUrl]);
 
   const ps = business?.printSettings || {};
   const s = (key: string) => ps[key] !== false; // Default to true if not set
@@ -171,7 +183,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
           >
             {/* Dynamic style representation */}
             <div className="bill-preview-dynamic leading-tight break-words whitespace-normal overflow-hidden">
-              {s('showLogo') && business?.logoUrl && (
+              {Boolean(s('showLogo') && business?.logoUrl) && (
                 <div className="flex justify-center mb-1">
                   <img 
                     src={business?.logoUrl} 
@@ -405,7 +417,7 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
 
               {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
                 <div className="mt-2 text-center text-[9px] font-bold border-t border-dashed border-gray-400 pt-2">
-                  {(business?.upi && business?.upiQrEnabled !== false) && (
+                  {(business?.upi && business?.upiQrEnabled !== false && Boolean(qrUrl)) && (
                     <>
                       <div>Scan & Pay</div>
                       <div className="my-1.5 text-center">
@@ -422,13 +434,13 @@ const BillPreview: React.FC<BillPreviewProps> = (props) => {
                 </div>
               )}
 
-              {s('showReviewQR') && business?.reviewUrl && (
+              {s('showReviewQR') && business?.reviewUrl && reviewQrBase64 && (
                 <div className="mt-2 text-center text-[9px] font-bold border-t border-dashed border-gray-400 pt-2">
                   <div>Rate Your Experience</div>
                   <div className="my-1.5 text-center">
                     <div className="inline-block border border-gray-300 p-1 rounded-md bg-white">
                       <img 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(business.reviewUrl)}`} 
+                        src={reviewQrBase64} 
                         alt="Review QR" 
                         className="w-[30mm] h-[30mm] object-contain block mix-blend-multiply" 
                       />

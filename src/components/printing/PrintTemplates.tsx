@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getQRCodeDataUrl } from '@/lib/qrHelper';
 
 interface PrintTemplatesProps {
   receiptRef: React.RefObject<HTMLDivElement | null>;
@@ -52,6 +53,22 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
     paymentStatus, upiTxnRef, qrUrl, prevWalletBalance, selectedParty, numberToWords, kotNumbers,
     amountPaid, balanceDue
   } = props;
+
+  const [menuQrBase64, setMenuQrBase64] = useState<string>("");
+  const [reviewQrBase64, setReviewQrBase64] = useState<string>("");
+
+  useEffect(() => {
+    if (business?.enableMenuQRInBill && business?.userId) {
+      const menuUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/menu/${business.userId}`;
+      getQRCodeDataUrl(menuUrl, { width: 250 }).then(setMenuQrBase64);
+    }
+  }, [business?.enableMenuQRInBill, business?.userId]);
+
+  useEffect(() => {
+    if (business?.reviewUrl) {
+      getQRCodeDataUrl(business.reviewUrl, { width: 250 }).then(setReviewQrBase64);
+    }
+  }, [business?.reviewUrl]);
 
   const ps = business?.printSettings || {};
   const s = (key: string) => ps[key] !== false; // Default to true if not set
@@ -188,7 +205,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
           wordBreak: 'break-word'
         }}
       >
-        {(business?.logoUrl && s('showLogo')) && (
+        {Boolean(business?.logoUrl && s('showLogo')) && (
           <div className="flex justify-center mb-0 mt-0 pt-0" style={{ marginTop: '-4mm' }}>
             <img 
               src={business.logoUrl} 
@@ -528,7 +545,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
         
         {((business?.upi && business?.upiQrEnabled !== false) || paymentMode === "UPI") && (
           <div className="mt-2 text-center font-bold border-t border-dashed border-black pt-2" style={{ fontSize: 'var(--r-details-size)' }}>
-            {(business?.upi && business?.upiQrEnabled !== false) && (
+            {(business?.upi && business?.upiQrEnabled !== false && Boolean(qrUrl)) && (
               <>
                 <div className="font-bold mb-1" style={{ fontSize: 'var(--r-items-size)' }}>SCAN & PAY</div>
                 <div className="my-2 text-center">
@@ -544,13 +561,13 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             )}
           </div>
         )}
-        {business?.enableMenuQRInBill && (
+        {business?.enableMenuQRInBill && menuQrBase64 && (
           <div className="mt-2 text-center border-t-2 border-black pt-2">
             <div className="font-black mb-1 uppercase tracking-tighter" style={{ fontSize: 'var(--r-items-size)' }}>Scan to View Digital Menu</div>
             <div className="my-2 text-center">
               <div className="inline-block border-2 border-black p-1 bg-white">
                 <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${typeof window !== 'undefined' ? window.location.origin : ''}/menu/${business?.userId}`)}`} 
+                  src={menuQrBase64} 
                   alt="Menu QR" 
                   className="w-[30mm] h-[30mm] object-contain block mx-auto" 
                   style={{ imageRendering: 'pixelated', filter: 'contrast(300%) grayscale(100%)' }}
@@ -559,13 +576,13 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
             </div>
           </div>
         )}
-        {s('showReviewQR') && business?.reviewUrl && (
+        {s('showReviewQR') && business?.reviewUrl && reviewQrBase64 && (
           <div className="mt-2 text-center border-t-2 border-black pt-2">
             <div className="font-black mb-1 uppercase tracking-tighter" style={{ fontSize: 'var(--r-items-size)' }}>Rate Your Experience</div>
             <div className="my-2 text-center">
               <div className="inline-block border-2 border-black p-1 bg-white">
                 <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(business.reviewUrl)}`} 
+                  src={reviewQrBase64} 
                   alt="Review QR" 
                   className="w-[30mm] h-[30mm] object-contain block mx-auto" 
                   style={{ imageRendering: 'pixelated', filter: 'contrast(300%) grayscale(100%)' }}

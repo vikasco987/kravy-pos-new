@@ -28,6 +28,7 @@ import PrintTemplates from "@/components/printing/PrintTemplates";
 import BillPreview from "@/components/printing/BillPreview";
 import { useAuthContext } from "@/components/AuthContext";
 import { useConfirm } from "@/components/ConfirmContext";
+import { getQRCodeDataUrl } from "@/lib/qrHelper";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 
 
@@ -1145,7 +1146,15 @@ function KravyPOS() {
 
 
     const upiLink = business?.upi ? `upi://pay?pa=${business.upi}&pn=${encodeURIComponent(business.businessName || "Store")}&am=${grandTotal.toFixed(2)}&cu=INR` : "";
-    const qrUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}` : "";
+    const [qrUrl, setQrUrl] = useState<string>("");
+
+    useEffect(() => {
+        if (upiLink) {
+            getQRCodeDataUrl(upiLink, { width: 220 }).then(setQrUrl);
+        } else {
+            setQrUrl("");
+        }
+    }, [upiLink]);
     const filteredTables = useMemo(() => {
         return tablesList
             .filter(t => {

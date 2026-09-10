@@ -21,6 +21,7 @@ import { useMemo } from "react";
 import { useConfirm } from "@/components/ConfirmContext";
 import ItemModal from "@/components/MenuEditor/ItemModal";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
+import { getQRCodeDataUrl } from "@/lib/qrHelper";
 
 /* ================= TYPES ================= */
 
@@ -1855,7 +1856,15 @@ export default function CheckoutClient() {
   const UPI_ID = business?.upi || "";
   const UPI_NAME = business?.businessName || "Store";
   const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${finalTotal.toFixed(2)}&cu=INR`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}`;
+  const [qrUrl, setQrUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (UPI_ID) {
+      getQRCodeDataUrl(upiLink, { width: 220 }).then(setQrUrl);
+    } else {
+      setQrUrl("");
+    }
+  }, [UPI_ID, UPI_NAME, finalTotal]);
 
   useEffect(() => {
     if (paymentMode === "Cash" || paymentMode === "Card" || paymentMode === "Pay on Counter") setPaymentStatus("Paid");
@@ -2065,12 +2074,18 @@ export default function CheckoutClient() {
       // OPTIMISTIC UI: Clear form only after all validations pass, right before fetch
       if (onValidationSuccess) onValidationSuccess();
       
+      const tApiStart = performance.now();
+      console.log(`🚀 [PERF] 1. Sending ${method} ${url} request...`);
+
       const res = await fetch(url, { 
         method, 
         headers: { "Content-Type": "application/json" }, 
         body: JSON.stringify(payload),
         keepalive: true // Guaranteed delivery even on print reload
       });
+      const tApiEnd = performance.now();
+      console.log(`⚡ [PERF] 2. Backend DB transaction complete in ${(tApiEnd - tApiStart).toFixed(2)} ms`);
+
       if (!res.ok) { 
         const err = await res.json(); 
         toast.error(err.error || "Failed to save bill"); 
@@ -2577,8 +2592,13 @@ export default function CheckoutClient() {
       });
     });
 
+    const tJobStart = performance.now();
     Promise.all(imagePromises).then(() => {
+      const tDomReady = performance.now();
+      console.log(`⚡ [PERF] 3. Print DOM & Image preloader ready for '${type}' in ${(tDomReady - tJobStart).toFixed(2)} ms`);
       setTimeout(() => {
+        const tPrintTrigger = performance.now();
+        console.log(`🖨️ [PERF] 4. Triggering window.print() for '${type}' at:`, new Date().toLocaleTimeString());
         window.print();
         
         // Call callback immediately after print dialog is closed (or returns)
@@ -4252,13 +4272,23 @@ export default function CheckoutClient() {
                   kravy.payment(); 
                   toast.success("Settlement Finalized! 💰");
                   
+                  const tClickStart = performance.now();
+                  console.group("⏱️ [PERF METRICS] Save & Print Click Flow");
+                  console.log("👉 0. User Clicked Save & Print at:", new Date().toLocaleTimeString());
+
                   // 1. Capture HTML NOW before any state changes
                   const capturedBillHtml = receiptRef.current?.innerHTML || "";
                   const capturedKotHtml = kotRef.current?.innerHTML || "";
 
                   // 2. Process save and WAIT for DB success
                   const bill = await saveBill(false);
-                  if (!bill) return; // Save failed: Cart remains, user can retry
+                  if (!bill) {
+                    console.groupEnd();
+                    return; // Save failed: Cart remains, user can retry
+                  }
+
+                  const tSaveDone = performance.now();
+                  console.log(`⚡ [PERF SUMMARY] Backend Save complete in ${(tSaveDone - tClickStart).toFixed(2)} ms from Click`);
 
                   // 3. Save Succeeded -> Clear cart
                   const returnTo = searchParams.get("returnTo");
@@ -4294,6 +4324,7 @@ export default function CheckoutClient() {
                   } else {
                       runPrintJob("bill", finalBillHtml);
                   }
+                  console.groupEnd();
                     
                     if (returnTo) {
                       const tableId = searchParams.get("tableId");

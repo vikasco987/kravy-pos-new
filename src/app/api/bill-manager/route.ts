@@ -121,6 +121,8 @@ export async function POST(req: NextRequest) {
     const itemIds = items
       .map((it: any) => it.id)
       .filter((id: any) => id && /^[0-9a-fA-F]{24}$/.test(id));
+    
+    const tFetchStart = Date.now();
     const [profile, dbItems, offer] = await Promise.all([
       body.profileId 
         ? prisma.businessProfile.findUnique({ where: { id: body.profileId } }) 
@@ -128,6 +130,7 @@ export async function POST(req: NextRequest) {
       prisma.item.findMany({ where: { id: { in: itemIds }, clerkId: effectiveId } }),
       discountCode ? prisma.offer.findFirst({ where: { code: discountCode.toUpperCase(), isActive: true, clerkUserId: effectiveId } }) : Promise.resolve(null)
     ]);
+    console.log(`[BILL_PERF_STEP] 0. Initial Parallel Fetch: ${Date.now() - tFetchStart}ms`);
     
     const isTaxEnabled = profile?.taxEnabled ?? true;
     const globalGstRate = isTaxEnabled ? (profile?.taxRate ?? 0) : 0;
@@ -203,6 +206,7 @@ export async function POST(req: NextRequest) {
     
     const bill = await prisma.$transaction(async (tx) => {
       // 1. ATOMIC BILL COUNTER & BILL NUMBER ALLOCATION
+      const t1Start = Date.now();
       let nextSerial = 1;
       if (profile?.id) {
         const updatedProfile = await tx.businessProfile.update({
@@ -225,15 +229,16 @@ export async function POST(req: NextRequest) {
       }
       const serialLabel = String(nextSerial).padStart(4, '0');
       let finalBillNumber = body.billNumber || `INV/${yy}${mm}/${serialLabel}`;
+      console.log(`[BILL_PERF_STEP] 1. Bill Counter Allocation: ${Date.now() - t1Start}ms`);
 
       if (body.orderId) {
+        const tOrderStart = Date.now();
         const order = await tx.order.findUnique({ where: { id: body.orderId } });
-        if (order?.orderNumber) {
-          finalBillNumber = order.orderNumber;
-        }
+        console.log(`[BILL_PERF_STEP] 1b. Order Lookup: ${Date.now() - tOrderStart}ms`);
       }
 
       // 2. ATOMIC PARTY UPSERT & LOYALTY
+      const tPartyStart = Date.now();
       let partyId = null;
       let partyWalletBalance = 0;
       if (customerPhone && customerName && customerName !== "Walk-in Customer") {
@@ -276,6 +281,7 @@ export async function POST(req: NextRequest) {
         });
         partyId = party.id;
       }
+      console.log(`[BILL_PERF_STEP] 2. Party Upsert & Loyalty: ${Date.now() - tPartyStart}ms`);
 
       // WALLET ADJUSTMENT LOGIC
       let initPaymentMode = paymentMode || "Cash";
@@ -320,6 +326,7 @@ export async function POST(req: NextRequest) {
       }
 
       // 3. ATOMIC TOKEN NUMBER GENERATION
+      const tTokenStart = Date.now();
       let nextToken = body.tokenNumber || (kotNumbers && Array.isArray(kotNumbers) && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : null);
       if (!nextToken) {
         const today = new Date().toISOString().split('T')[0];
@@ -341,6 +348,7 @@ export async function POST(req: NextRequest) {
           });
         }
       }
+      console.log(`[BILL_PERF_STEP] 3. Token Generation & Profile Update: ${Date.now() - tTokenStart}ms`);
 
       const processedItems = items.map((it: any) => ({
         ...it,
@@ -349,6 +357,7 @@ export async function POST(req: NextRequest) {
       }));
 
       // 4. CREATE BILL RECORD
+      const tCreateStart = Date.now();
       const createdBill = await tx.billManager.create({
         data: {
           clerkUserId: effectiveId || "Unknown",
@@ -382,8 +391,10 @@ export async function POST(req: NextRequest) {
           kotNumbers: kotNumbers || [],
         },
       });
+      console.log(`[BILL_PERF_STEP] 4. BillManager Record Create: ${Date.now() - tCreateStart}ms`);
 
       // 5. ATOMIC WALLET / LEDGER DEDUCTIONS
+      const tWalletStart = Date.now();
       if (!createdBill.isHeld && partyId) {
         if (walletUsed > 0) {
           await tx.party.update({
@@ -417,23 +428,27 @@ export async function POST(req: NextRequest) {
           });
         }
       }
+      console.log(`[BILL_PERF_STEP] 5. Wallet Ledger Updates: ${Date.now() - tWalletStart}ms`);
 
       return createdBill;
     }, {
       timeout: 10000
     });
 
-    console.log(`[BILL_MANAGER_PERF] Bill ${bill.billNumber} created in ${Date.now() - startTime}ms`);
+    console.log(`[BILL_MANAGER_PERF] TOTAL Transaction Time for Bill ${bill.billNumber}: ${Date.now() - startTime}ms`);
 
-    // ✅ AUTO-DEDUCT INVENTORY ON FINAL BILL (IF NOT HELD)
+    // ✅ AUTO-DEDUCT INVENTORY IN BACKGROUND (NON-BLOCKING)
     if (!bill.isHeld && skipInventoryDeduction !== true) {
-      try {
-        console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Triggering inventory deduction.`);
-        const { deductInventory } = await import("@/lib/inventory-utils");
-        await deductInventory(bill.items as any[]);
-      } catch (deductErr) {
-        console.error("Failed to deduct inventory from bill:", deductErr);
-      }
+      console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Triggering background inventory deduction.`);
+      const tInvStart = Date.now();
+      import("@/lib/inventory-utils")
+        .then(({ deductInventory }) => deductInventory(bill.items as any[]))
+        .then(() => {
+          console.log(`[BILL_PERF_STEP] 6. Async Inventory Deduction Complete: ${Date.now() - tInvStart}ms`);
+        })
+        .catch((deductErr) => {
+          console.error("Failed to deduct inventory from bill:", deductErr);
+        });
     } else if (skipInventoryDeduction === true) {
       console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Inventory deduction skipped by caller.`);
     }
