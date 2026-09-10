@@ -4290,7 +4290,6 @@ export default function CheckoutClient() {
                     }
                     
                     if (resumeBillId) router.replace("/dashboard/billing/checkout");
-                  });
                 }}
                 disabled={items.length === 0 || (paymentMode === "UPI" && paymentStatus !== "Paid") || isSaving}
                 className="w-full flex items-center justify-center gap-2 py-2 rounded-xl
