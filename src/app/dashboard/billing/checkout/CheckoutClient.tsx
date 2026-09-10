@@ -2122,15 +2122,13 @@ export default function CheckoutClient() {
 
       // ✅ COMPETE LINKED ORDER (Prevent Duplicates in History)
       if (syncedOrderId) {
-        try {
-          await fetch("/api/orders", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId: syncedOrderId, status: "COMPLETED", skipInventoryDeduction: true })
-          });
-        } catch (compErr) {
-          console.error("Failed to complete linked order:", compErr);
-        }
+        void fetch("/api/orders", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: syncedOrderId, status: "COMPLETED", skipInventoryDeduction: true })
+        }).catch((compErr) => {
+          console.error("[ORDER_PATCH_BACKGROUND_ERROR] Failed to complete linked order:", compErr);
+        });
       }
       
       setIsSaving(false);
