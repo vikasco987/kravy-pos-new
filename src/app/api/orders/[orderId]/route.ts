@@ -56,6 +56,8 @@ export async function GET(
           total: order.total,
           customerName: order.customerName,
           customerPhone: order.customerPhone,
+          tokenNumber: order.tokenNumber,
+          kotNumbers: order.kotNumbers,
           createdAt: order.createdAt,
           updatedAt: order.updatedAt,
           mergedAt: order.mergedAt,
