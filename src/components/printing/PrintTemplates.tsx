@@ -281,24 +281,14 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                 return tn.toString().padStart(3, '0');
               })();
 
-              if (displayToken || (kotNumbers && kotNumbers.length > 0)) {
-                return (
-                  <div className="text-right">
-                    {displayToken && (
-                      <>
-                        <div style={{ fontSize: 'calc(var(--r-details-size) - 2px)', fontWeight: '800', textTransform: 'uppercase' }}>Token</div>
-                        <div style={{ fontSize: 'calc(var(--r-details-size) + 4px)', fontWeight: '900', lineHeight: '1' }}>#{displayToken}</div>
-                      </>
-                    )}
-                    {kotNumbers && kotNumbers.length > 0 && (
-                      <div style={{ fontSize: 'calc(var(--r-details-size) - 2px)', fontWeight: '900', marginTop: '2px', textTransform: 'uppercase' }}>
-                        KOT: {kotNumbers.join(", ")}
-                      </div>
-                    )}
+              return (
+                <div className="text-right bill-token-container" style={{ display: (displayToken || (kotNumbers && kotNumbers.length > 0)) ? 'block' : 'none' }}>
+                  <div style={{ fontSize: 'calc(var(--r-details-size) - 2px)', fontWeight: '800', textTransform: 'uppercase' }}>Token</div>
+                  <div className="bill-token-display" style={{ fontSize: 'calc(var(--r-details-size) + 4px)', fontWeight: '900', lineHeight: '1' }}>
+                    {displayToken ? `#${displayToken}` : (kotNumbers && kotNumbers.length > 0 ? `KOT: ${kotNumbers.join(", ")}` : "#---")}
                   </div>
-                );
-              }
-              return null;
+                </div>
+              );
             })()}
           </div>
         </div>

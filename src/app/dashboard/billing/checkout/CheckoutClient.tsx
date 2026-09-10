@@ -2153,11 +2153,15 @@ export default function CheckoutClient() {
     if (customBill) {
         const tokenContainer = receiptRef.current.querySelector('.bill-token-container') as HTMLElement;
         const tokenDisplay = receiptRef.current.querySelector('.bill-token-display');
+        console.log("[CHECKOUT_PRINT_DEBUG] tokenContainer found:", !!tokenContainer, "tokenDisplay found:", !!tokenDisplay);
         if (tokenDisplay) {
             const kt = customBill.kotNumbers || [];
             const tNum = customBill.tokenNumber;
             tokenDisplay.innerHTML = kt.length > 0 ? kt.join(', ') : `#${tNum || "---"}`;
-            if (tokenContainer) tokenContainer.style.display = 'block';
+            if (tokenContainer) {
+                tokenContainer.style.display = 'block';
+                console.log("[CHECKOUT_PRINT_DEBUG] tokenContainer display set to block");
+            }
         }
         const numberDisplay = receiptRef.current.querySelector('.bill-number-display');
         if (numberDisplay && customBill.billNumber) {
