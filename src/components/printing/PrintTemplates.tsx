@@ -285,7 +285,7 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                 <div className="text-right bill-token-container">
                   <div style={{ fontSize: 'calc(var(--r-details-size) - 2px)', fontWeight: '800', textTransform: 'uppercase' }}>Token</div>
                   <div className="bill-token-display" style={{ fontSize: 'calc(var(--r-details-size) + 4px)', fontWeight: '900', lineHeight: '1' }}>
-                    {displayToken ? `#${displayToken}` : (kotNumbers && kotNumbers.length > 0 ? `KOT: ${kotNumbers.join(", ")}` : "#---")}
+                    {kotNumbers && kotNumbers.length > 0 ? `KOT: ${kotNumbers.join(", ")}` : (displayToken ? `#${displayToken}` : "#---")}
                   </div>
                 </div>
               );

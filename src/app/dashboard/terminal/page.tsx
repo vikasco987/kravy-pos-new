@@ -2739,7 +2739,7 @@ function KravyPOS() {
                             paymentStatus="Paid"
                             upiTxnRef=""
                             qrUrl={qrUrl}
-                            kotNumbers={printOrder?.kotNumbers || []}
+                            kotNumbers={printOrder?.kotNumbers || activeOrderForSelected?.kotNumbers || []}
                             prevWalletBalance={null}
                             selectedParty={null}
                             numberToWords={numberToWords}
@@ -2812,7 +2812,7 @@ function KravyPOS() {
                             qrUrl={qrUrl}
                             numberToWords={numberToWords}
                             kravy={kravy}
-                            kotNumbers={printOrder?.kotNumbers || []}
+                            kotNumbers={printOrder?.kotNumbers || activeOrderForSelected?.kotNumbers || []}
                             // Actions - Adapting for workflow
                             printKOT={() => handlePrint("KOT", printOrder || undefined)}
                             printReceipt={(enableKOT, customBill) => {
