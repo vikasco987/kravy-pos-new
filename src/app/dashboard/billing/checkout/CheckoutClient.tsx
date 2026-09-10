@@ -2070,8 +2070,8 @@ export default function CheckoutClient() {
         body: JSON.stringify(payload),
         keepalive: true // Guaranteed delivery even on print reload
       });
-      const tApiEnd = performance.now();
-      console.log(`⚡ [PERF] 2. Backend DB transaction complete in ${(tApiEnd - tApiStart).toFixed(2)} ms`);
+      const tFetchEnd = performance.now();
+      console.log(`⚡ [PERF] 2a. Fetch response received in ${(tFetchEnd - tApiStart).toFixed(2)} ms`);
 
       if (!res.ok) { 
         const err = await res.json(); 
@@ -2080,6 +2080,8 @@ export default function CheckoutClient() {
         return null; 
       }
       const data = await res.json();
+      const tJsonEnd = performance.now();
+      console.log(`⚡ [PERF] 2b. response.json() parsed in ${(tJsonEnd - tFetchEnd).toFixed(2)} ms`);
       // Refresh parties to include any new customer
       fetchParties();
       const savedBill = data.bill ?? data;
@@ -2109,7 +2111,7 @@ export default function CheckoutClient() {
       if (savedBill?.id && !onValidationSuccess) setLastSavedBillId(savedBill.id);
       if (savedBill?.billNumber && !onValidationSuccess) setBillNumber(savedBill.billNumber);
       if (savedBill?.tokenNumber) {
-        setBusiness(prev => prev ? { ...prev, lastTokenNumber: savedBill.tokenNumber } : prev);
+        setBusiness(prev => prev ? { ...prev, lastTokenNumber: savedBill.tokenNumber, lastBillNumber: savedBill.billNumber } : prev);
         
         // Prevent state pollution for the next bill if we optimistically cleared the form
         if (!onValidationSuccess) {
@@ -2433,7 +2435,8 @@ export default function CheckoutClient() {
     }
   };
 
-  const runPrintJob = (type: "kot" | "bill", html: string, callback?: () => void) => {
+  const runPrintJob = (type: "kot" | "bill", html: string, callback?: () => void, tOriginalClick?: number) => {
+    const tPrintJobFnStart = performance.now();
     const containerId = `print-container-checkout-${type}`;
     const styleId = `print-style-checkout-${type}`;
 
@@ -2587,6 +2590,9 @@ export default function CheckoutClient() {
     container.appendChild(spacer);
 
     document.body.appendChild(container);
+    
+    const tDomPrepEnd = performance.now();
+    console.log(`⚡ [PRINT_WINDOW_PERF] 5. Print DOM window creation & insertion: ${(tDomPrepEnd - tPrintJobFnStart).toFixed(2)} ms`);
 
     if (type === "kot") setIsKotPrinted(true);
 
@@ -2603,10 +2609,16 @@ export default function CheckoutClient() {
     const tJobStart = performance.now();
     Promise.all(imagePromises).then(() => {
       const tDomReady = performance.now();
-      console.log(`⚡ [PERF] 3. Print DOM & Image preloader ready for '${type}' in ${(tDomReady - tJobStart).toFixed(2)} ms`);
+      console.log(`⚡ [PRINT_WINDOW_PERF] 6. Image/font preloader wait: ${(tDomReady - tJobStart).toFixed(2)} ms`);
+      
+      const timeoutDelay = images.length > 0 ? 150 : 10;
       setTimeout(() => {
         const tPrintTrigger = performance.now();
-        console.log(`🖨️ [PERF] 4. Triggering window.print() for '${type}' at:`, new Date().toLocaleTimeString());
+        console.log(`⚡ [PRINT_WINDOW_PERF] 7. Hidden setTimeout delay before print: ${(tPrintTrigger - tDomReady).toFixed(2)} ms (Configured: ${timeoutDelay}ms)`);
+        if (tOriginalClick) {
+           console.log(`🔥 [PRINT_WINDOW_PERF] TOTAL TIME FROM USER CLICK TO WINDOW.PRINT(): ${(tPrintTrigger - tOriginalClick).toFixed(2)} ms`);
+        }
+        console.log(`🖨️ [PERF] 8. Triggering window.print() for '${type}' at:`, new Date().toLocaleTimeString());
         window.print();
         
         // Call callback immediately after print dialog is closed (or returns)
@@ -4326,13 +4338,16 @@ export default function CheckoutClient() {
                   // 5. Print the exact finalized HTML
                   const configuredDelay = (business as any)?.printSettings?.spoolerDelay;
                   const spoolerDelay = configuredDelay !== undefined && configuredDelay !== null ? Number(configuredDelay) : 0;
+                  console.log(`⚡ [SAVE_PRINT_PERF] 5. Spooler Delay Configured: ${spoolerDelay} ms`);
+                  
                   if (business?.enableKOTWithBill && finalKotHtml) {
                       if (spoolerDelay > 0) {
                           runPrintJob("kot", finalKotHtml, () => {
+                              console.log(`⚡ [SAVE_PRINT_PERF] 6. Waiting for Spooler Delay: ${spoolerDelay} ms`);
                               setTimeout(() => {
-                                  runPrintJob("bill", finalBillHtml);
+                                  runPrintJob("bill", finalBillHtml, undefined, tClickStart);
                               }, spoolerDelay);
-                          });
+                          }, tClickStart);
                       } else {
                           // Combine them to prevent Chrome from blocking the second print dialog
                           const combinedHtml = `
@@ -4344,10 +4359,10 @@ export default function CheckoutClient() {
                                   ${finalBillHtml}
                               </div>
                           `;
-                          runPrintJob("bill", combinedHtml);
+                          runPrintJob("bill", combinedHtml, undefined, tClickStart);
                       }
                   } else {
-                      runPrintJob("bill", finalBillHtml);
+                      runPrintJob("bill", finalBillHtml, undefined, tClickStart);
                   }
                     
                     if (returnTo) {
