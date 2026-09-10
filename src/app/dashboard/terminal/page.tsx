@@ -1013,7 +1013,18 @@ function KravyPOS() {
 
             const finalAmountPaid = amountPaid === "" ? orderTotal : Number(amountPaid);
 
+            const derivedKotNumbers = (order.kotNumbers && order.kotNumbers.length > 0)
+                ? order.kotNumbers
+                : Array.from(new Set(
+                    (order.items || [])
+                        .map((it: any) => Number(it.kotNumber || it.tokenNumber))
+                        .filter((kn: number) => !isNaN(kn) && kn > 0)
+                  )).sort((a: number, b: number) => a - b);
+
+            const derivedTokenNumber = order.tokenNumber || (derivedKotNumbers.length > 0 ? derivedKotNumbers[derivedKotNumbers.length - 1] : null);
+
             const billData = {
+                orderId: targetOrderId,
                 items: order.items?.map(it => ({
                     id: it.itemId || it.id,
                     itemId: it.itemId || it.id,
@@ -1022,7 +1033,8 @@ function KravyPOS() {
                     quantity: it.quantity || it.qty || 0,
                     total: (it.price || it.rate || 0) * (it.quantity || it.qty || 0),
                     taxStatus: it.taxStatus || "Without Tax",
-                    gst: (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (isTaxEnabled ? globalRate : 0)
+                    gst: (perProductEnabled && it.gst !== undefined && it.gst !== null) ? it.gst : (isTaxEnabled ? globalRate : 0),
+                    kotNumber: it.kotNumber || derivedTokenNumber || 1,
                 })),
                 subtotal: orderSubtotal,
                 total: orderTotal,
@@ -1035,8 +1047,8 @@ function KravyPOS() {
                 customerPhone: order.customerPhone || null,
                 customerAddress: order.customerAddress || null,
                 tableName: order.table?.name || "Counter",
-                tokenNumber: order.tokenNumber,
-                kotNumbers: order.kotNumbers || [],
+                tokenNumber: derivedTokenNumber,
+                kotNumbers: derivedKotNumbers,
                 loyaltyPointsRedeemed: settlementBill?.loyaltyRedeemed || 0,
                 amountPaid: finalAmountPaid
             };
@@ -1047,7 +1059,7 @@ function KravyPOS() {
             if (!res.ok) {
                 toast.error(data.error || "Failed to save bill. Order was not closed.");
                 setIsSettling(false);
-                return;
+                return null;
             }
             
             const savedBill = data.bill || data;
@@ -1106,20 +1118,19 @@ function KravyPOS() {
                 // ✅ IMPORTANT: Switch tab BEFORE clearing selection to avoid render crash
                 setActiveTab("dashboard"); 
                 setSelectedTableId(null);
-            } else {
-                // Optimistic updates for silent
-                setOrders(prev => prev.filter(o => o.id !== targetOrderId));
-                if (order.table && order.table.id) {
-                    updateTableStatus(order.table.id, { isOccupied: false, activeOrderId: undefined, status: "FREE" });
-                }
             }
             
             // Important: return the bill so the caller (like BillPreview) can use the real billNumber
             if (savedBill) {
-                // Merge savedBill with order to keep tokenNumber if savedBill doesn't have it
-                const mergedBill = { ...order, ...savedBill };
-                console.log("[CHECKOUT_DEBUG] Merged Bill with Token:", mergedBill.tokenNumber);
-                setPrintOrder(mergedBill);
+                // Merge savedBill with order to keep tokenNumber & kotNumbers if savedBill doesn't have it
+                const mergedBill = {
+                    ...order,
+                    ...savedBill,
+                    kotNumbers: (savedBill.kotNumbers && savedBill.kotNumbers.length > 0) ? savedBill.kotNumbers : derivedKotNumbers,
+                    tokenNumber: savedBill.tokenNumber || derivedTokenNumber,
+                };
+                console.log("[CHECKOUT_DEBUG] Merged Bill with Token:", mergedBill.tokenNumber, "BillNumber:", mergedBill.billNumber);
+                setPrintOrder(mergedBill as any);
                 return mergedBill;
             }
             return null;

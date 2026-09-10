@@ -328,6 +328,8 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
       await prisma.billManager.update({ 
         where: { id }, 
         data: { 
+          isDeleted: true,
+          isHeld: false,
           paymentStatus: "DELETED",
           auditNote: `Reason: ${deleteReason}`,
           deletedSnapshot: bill as any 
@@ -344,11 +346,22 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
       await prisma.order.update({ 
         where: { id }, 
         data: { 
+          isDeleted: true,
           status: "DELETED",
           notes: `Reason: ${deleteReason}`,
           deletedSnapshot: order as any
         } 
       });
+      if (order.tableId) {
+        try {
+          await prisma.table.update({
+            where: { id: order.tableId },
+            data: { isOccupied: false, currentOrderId: null }
+          });
+        } catch (tErr) {
+          console.error("Failed to free table on order delete:", tErr);
+        }
+      }
       return NextResponse.json({ success: true, type: "order" });
     }
     return NextResponse.json({ error: "Not found" }, { status: 404 });

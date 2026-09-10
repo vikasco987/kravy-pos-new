@@ -2144,14 +2144,20 @@ export default function CheckoutClient() {
     try {
       const res = await fetch(`/api/bill-manager/${id}`, { method: "DELETE" });
       if (res.ok) {
+        toast.success("Held bill deleted successfully");
         if (resumeBillId === id) {
           router.replace("/dashboard/billing/checkout");
           resetForm();
         }
         return true;
-      } else { toast.error("Failed to delete bill"); return false; }
+      } else { 
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || "Failed to delete bill"); 
+        return false; 
+      }
     } catch (err) {
       console.error("Delete bill error", err);
+      toast.error("Error deleting held bill");
       return false;
     }
   }
