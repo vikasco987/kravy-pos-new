@@ -221,7 +221,7 @@ const navGroups = [
           { label: "Custom Auth", href: "/admin/onboarding-custom" },
         ]
       },
-      { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup", roles: ["ADMIN", "SELLER", "STAFF"] },
+      { icon: <Shield size={18} />, label: "Security & Backup", href: "/dashboard/backup", roles: ["ADMIN"] },
       { icon: <Archive size={18} />, label: "Archive & Trash", href: "/dashboard/billing/deleted", roles: ["ADMIN", "SELLER", "STAFF"] },
       { icon: <HelpCircle size={18} />, label: "Help & Support", href: "/dashboard/help" },
     ]

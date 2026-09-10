@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Database, Download, Upload, RefreshCw, Shield, Clock, CheckCircle, AlertCircle, HardDrive, Cloud, FileText, Calendar, Search, FileCode, ChevronRight, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/ConfirmContext";
-
+import { useAuthContext } from "@/components/AuthContext";
 
 type BackupRecord = {
   id: string;
@@ -16,12 +16,27 @@ type BackupRecord = {
 }
 
 export default function BackupPage() {
+  const { user: authUser, loading: authLoading } = useAuthContext();
+  const userRole = authUser?.type || null;
+
   const { confirm } = useConfirm();
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [backupProgress, setBackupProgress] = useState(0);
   const [backupHistory, setBackupHistory] = useState<BackupRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBackup, setSelectedBackup] = useState<string | null>(null);
+
+  if (!authLoading && userRole && userRole !== "ADMIN" && userRole !== "OWNER") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
+        <Shield size={48} className="text-red-500 mb-4" />
+        <h1 className="text-2xl font-black text-[var(--kravy-text-primary)] mb-2">Access Restricted</h1>
+        <p className="text-sm text-[var(--kravy-text-muted)] max-w-md">
+          Security & Database Backup management is restricted strictly to Administrator users only.
+        </p>
+      </div>
+    );
+  }
 
   const fetchBackups = async () => {
     try {
