@@ -1866,11 +1866,14 @@ export default function CheckoutClient() {
   const [resumeConfirmId, setResumeConfirmId] = useState<string | null>(null);
 
   /* ================= SAVE BILL ================= */
-  async function saveBill(isHeld: boolean = false, onValidationSuccess?: () => void, preReservedToken?: number, preReservedBill?: string) {
+  async function saveBill(isHeld: boolean = false, onValidationSuccess?: () => void) {
     if (isSaving) return null;
     if (items.length === 0) { toast.error("No items to save"); return null; }
     
-    setIsSaving(true);
+    // 🔥 INSTANT OPTIMISTIC UI: Only block if not doing background save
+    if (!onValidationSuccess) {
+        setIsSaving(true);
+    }
     try {
       const finalAmountPaid = amountPaid === "" ? finalTotal : Number(amountPaid);
       const balanceDue = Math.max(0, finalTotal - finalAmountPaid);
@@ -2051,8 +2054,7 @@ export default function CheckoutClient() {
         packagingCharges: packagingCharge,
         serviceCharge: finalServiceCharge,
         kotNumbers: kotNumbersRef.current,
-        tokenNumber: preReservedToken || tokenNumberRef.current,
-        billNumber: preReservedBill,
+        tokenNumber: tokenNumberRef.current,
         profileId: business?.id,
         amountPaid: finalAmountPaid,
       };
@@ -4239,63 +4241,42 @@ export default function CheckoutClient() {
                   kravy.payment(); 
                   toast.success("Settlement Finalized! 💰");
                   
-                  setIsSaving(true);
-                  
-                  let fastToken: number | null = null;
-                  let fastBillNum = "";
-                  try {
-                      // 0. Fast pre-fetch!
-                      const reserveRes = await fetch("/api/orders/reserve-token", { method: "POST" });
-                      if (reserveRes.ok) {
-                          const reserveData = await reserveRes.json();
-                          fastToken = reserveData.tokenNumber;
-                          fastBillNum = reserveData.orderNumber;
-                      }
-                  } catch (e) {
-                      console.error("Failed to fast-reserve token", e);
-                  }
-                  
-                  // 1. Capture HTML NOW before resetForm clears the cart
+                  // 1. Capture HTML NOW before any state changes
                   const capturedBillHtml = receiptRef.current?.innerHTML || "";
                   const capturedKotHtml = kotRef.current?.innerHTML || "";
 
-                  // 2. Process save in the background
-                  // We pass resetForm as onValidationSuccess to instantly clear the UI
-                  saveBill(false, () => {
-                    const returnTo = searchParams.get("returnTo");
-                    if (!returnTo) {
-                       resetForm();
-                    }
-                  }, fastToken || undefined, fastBillNum || undefined).then((bill) => {
-                    if (!bill) return;
+                  // 2. Process save and WAIT for DB success
+                  const bill = await saveBill(false);
+                  if (!bill) return; // Save failed: Cart remains, user can retry
 
-                    // 3. Inject tokens into the captured HTML
-                    let finalBillHtml = capturedBillHtml;
-                    let finalKotHtml = capturedKotHtml;
-                    
-                    const tokenToInject = bill.tokenNumber || fastToken;
-                    const billNumToInject = bill.billNumber || fastBillNum;
-                    
-                    if (tokenToInject) {
-                        finalBillHtml = finalBillHtml.replace(/#---/g, `#${tokenToInject}`);
-                        finalKotHtml = finalKotHtml.replace(/#KOT_PLACEHOLDER/g, `#${tokenToInject}`);
-                        finalKotHtml = finalKotHtml.replace(/#---/g, `#${tokenToInject}`);
-                    }
-                    if (billNumToInject) {
-                        finalBillHtml = finalBillHtml.replace(/No: [a-zA-Z0-9\/\-]+/g, `No: ${billNumToInject}`);
-                    }
-                    
-                    // 4. Print the captured HTML directly!
-                    const spoolerDelay = Number((business as any)?.printSettings?.spoolerDelay || 2500);
-                    if (business?.enableKOTWithBill && finalKotHtml) {
-                        runPrintJob("kot", finalKotHtml, () => {
-                            setTimeout(() => {
-                                runPrintJob("bill", finalBillHtml);
-                            }, spoolerDelay);
-                        });
-                    } else {
-                        runPrintJob("bill", finalBillHtml);
-                    }
+                  // 3. Save Succeeded -> Clear cart
+                  const returnTo = searchParams.get("returnTo");
+                  if (!returnTo) resetForm();
+
+                  // 4. Inject finalized DB tokens into the captured HTML
+                  let finalBillHtml = capturedBillHtml;
+                  let finalKotHtml = capturedKotHtml;
+                  
+                  if (bill.tokenNumber) {
+                      finalBillHtml = finalBillHtml.replace(/#---/g, `#${bill.tokenNumber}`);
+                      finalKotHtml = finalKotHtml.replace(/#KOT_PLACEHOLDER/g, `#${bill.tokenNumber}`);
+                      finalKotHtml = finalKotHtml.replace(/#---/g, `#${bill.tokenNumber}`);
+                  }
+                  if (bill.billNumber) {
+                      finalBillHtml = finalBillHtml.replace(/No: [a-zA-Z0-9\/\-]+/g, `No: ${bill.billNumber}`);
+                  }
+                  
+                  // 5. Print the exact finalized HTML
+                  const spoolerDelay = Number((business as any)?.printSettings?.spoolerDelay || 2500);
+                  if (business?.enableKOTWithBill && finalKotHtml) {
+                      runPrintJob("kot", finalKotHtml, () => {
+                          setTimeout(() => {
+                              runPrintJob("bill", finalBillHtml);
+                          }, spoolerDelay);
+                      });
+                  } else {
+                      runPrintJob("bill", finalBillHtml);
+                  }
                     
                     const returnTo = searchParams.get("returnTo");
                     if (returnTo) {
