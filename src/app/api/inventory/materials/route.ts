@@ -102,6 +102,10 @@ export async function DELETE(req: Request) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
+    await prisma.recipeItem.deleteMany({
+      where: { materialId: id }
+    });
+
     await prisma.rawMaterial.delete({
       where: { id, clerkId: effectiveId }
     });

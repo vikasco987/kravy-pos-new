@@ -54,10 +54,10 @@ export default function InventoryPage() {
   const [activeTab, setActiveTab] = useState<"finished" | "raw">("finished");
   const [isStockEditMode, setIsStockEditMode] = useState(false);
   
-  // Raw Materials State
   const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);
   const [isRawModalOpen, setIsRawModalOpen] = useState(false);
   const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
+  const [isRawSaving, setIsRawSaving] = useState(false);
   const [editingRaw, setEditingRaw] = useState<RawMaterial | null>(null);
   const [rawFormData, setRawFormData] = useState({
     name: "", unit: "kg", stock: 0, minStock: 0, price: 0
@@ -998,18 +998,30 @@ export default function InventoryPage() {
               </div>
               <div className="flex gap-3 mt-8">
                 <button onClick={async () => setIsRawModalOpen(false)} className="flex-1 py-3 bg-slate-100 dark:bg-white/5 rounded-xl text-xs font-black uppercase">Cancel</button>
-                <button onClick={async () => {
-                  const res = await fetch("/api/inventory/materials", {
-                    method: editingRaw ? 'PATCH' : 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(editingRaw ? { ...rawFormData, id: editingRaw.id } : rawFormData)
-                  });
-                  if(res.ok) {
-                    toast.success("Saved");
-                    setIsRawModalOpen(false);
-                    fetchRawMaterials();
+                <button disabled={isRawSaving} onClick={async () => {
+                  setIsRawSaving(true);
+                  try {
+                    const res = await fetch("/api/inventory/materials", {
+                      method: editingRaw ? 'PATCH' : 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(editingRaw ? { ...rawFormData, id: editingRaw.id } : rawFormData)
+                    });
+                    if(res.ok) {
+                      toast.success("Saved");
+                      setIsRawModalOpen(false);
+                      fetchRawMaterials();
+                    } else {
+                      toast.error("Failed to save material");
+                    }
+                  } catch (err) {
+                    toast.error("Something went wrong");
+                  } finally {
+                    setIsRawSaving(false);
                   }
-                }} className="flex-1 py-3 bg-orange-600 text-white rounded-xl text-xs font-black uppercase">Save Material</button>
+                }} className="flex-1 py-3 bg-orange-600 text-white rounded-xl text-xs font-black uppercase disabled:opacity-50 flex items-center justify-center gap-2">
+                  {isRawSaving ? <Package className="animate-spin" size={16} /> : null}
+                  {isRawSaving ? "Saving..." : "Save Material"}
+                </button>
               </div>
             </motion.div>
           </div>

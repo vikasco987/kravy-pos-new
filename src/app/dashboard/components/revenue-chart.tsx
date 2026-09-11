@@ -123,7 +123,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
           <div style={{ fontSize: "0.85rem", fontFamily: "monospace" }}>No revenue data for this period</div>
         </div>
       ) : (
-        <div style={{ flex: 1, width: "100%" }}>
+        <div style={{ flex: 1, width: "100%", minHeight: 0 }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
               <defs>

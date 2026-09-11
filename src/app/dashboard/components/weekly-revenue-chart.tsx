@@ -60,7 +60,7 @@ export default function WeeklyRevenueChart({ data }: Props) {
     }}>
       <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--kravy-text-primary)", marginBottom: "20px" }}>Weekly revenue (last 7 days)</h3>
 
-      <div style={{ flex: 1, width: "100%" }}>
+      <div style={{ flex: 1, width: "100%", minHeight: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--kravy-border)" />

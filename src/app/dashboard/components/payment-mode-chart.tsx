@@ -130,7 +130,7 @@ export default function PaymentModeChart({ paymentSplit, range = 30 }: Props) {
       </div>
 
       {/* Chart */}
-      <div style={{ flex: 1, position: "relative" }}>
+      <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
         {total === 0 ? (
           <div style={{
             height: "100%",
