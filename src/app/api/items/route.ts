@@ -2,6 +2,7 @@
 
 
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 
@@ -440,6 +441,7 @@ export async function POST(req: Request) {
 
     console.log("✅ [API_ITEMS_POST] Saved Item:", JSON.stringify(item, null, 2));
 
+    revalidateTag(`menu-${effectiveId}`);
     return NextResponse.json(item, { status: 201 });
   } catch (err: any) {
     console.error("POST /api/items error:", err);
@@ -486,6 +488,7 @@ export async function PUT(req: Request) {
           zones: body.zones !== undefined ? body.zones : undefined,
         }
       });
+      revalidateTag(`menu-${effectiveId}`);
       return NextResponse.json({ success: true, count: ids.length });
     }
 
@@ -597,6 +600,7 @@ export async function PUT(req: Request) {
 
     console.log("✅ [API_ITEMS_PUT] Updated Item:", JSON.stringify(updated, null, 2));
 
+    revalidateTag(`menu-${effectiveId}`);
     return NextResponse.json(updated);
   } catch (err) {
     console.error("PUT /api/items error:", err);
@@ -644,11 +648,13 @@ export async function DELETE(req: Request) {
             updatedCount++;
           }
         }
+        revalidateTag(`menu-${effectiveId}`);
         return NextResponse.json({ success: true, deleted: deletedCount, updated: updatedCount });
       } else {
         const result = await prisma.item.deleteMany({
           where: { clerkId: effectiveId }
         });
+        revalidateTag(`menu-${effectiveId}`);
         return NextResponse.json({ success: true, count: result.count });
       }
     }
@@ -720,6 +726,7 @@ export async function DELETE(req: Request) {
 
     await prisma.item.delete({ where: { id } });
 
+    revalidateTag(`menu-${effectiveId}`);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("DELETE /api/items error:", err);

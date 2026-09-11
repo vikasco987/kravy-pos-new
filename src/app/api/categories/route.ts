@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 
@@ -87,6 +88,7 @@ export async function POST(req: Request) {
       },
     });
 
+    revalidateTag(`menu-${effectiveId}`);
     return NextResponse.json(
       { id: String(category.id), name: category.name },
       { status: 201 }
@@ -126,6 +128,7 @@ export async function PUT(req: Request) {
         where: { id, clerkId: effectiveId },
         data: updateData,
       });
+      revalidateTag(`menu-${effectiveId}`);
       return NextResponse.json(updated, { status: 200 });
     } catch (err) {
       // Legacy fallback: If it belongs to no one, current user claims it
@@ -135,6 +138,7 @@ export async function PUT(req: Request) {
           where: { id },
           data: { ...updateData, clerkId: effectiveId },
         });
+        revalidateTag(`menu-${effectiveId}`);
         return NextResponse.json(updated, { status: 200 });
       }
       throw err;
@@ -184,6 +188,7 @@ export async function DELETE(req: Request) {
       }
     }
 
+    revalidateTag(`menu-${effectiveId}`);
     return NextResponse.json({ message: "Category deleted and products moved." }, { status: 200 });
   } catch (error) {
     console.error("❌ Failed to delete category:", error);

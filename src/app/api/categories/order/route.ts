@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
 
@@ -27,6 +28,7 @@ export async function PUT(req: Request) {
 
     await prisma.$transaction(updates);
 
+    revalidateTag(`menu-${effectiveId}`);
     return NextResponse.json({ success: true, message: "Categories reordered successfully." });
   } catch (error) {
     console.error("PUT /api/categories/order error:", error);
@@ -48,6 +50,7 @@ export async function DELETE(req: Request) {
       data: { sortOrder: null },
     });
 
+    revalidateTag(`menu-${effectiveId}`);
     return NextResponse.json({ success: true, message: "Category order reset to default." });
   } catch (error) {
     console.error("DELETE /api/categories/order error:", error);

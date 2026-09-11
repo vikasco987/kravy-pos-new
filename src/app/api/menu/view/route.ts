@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getEffectiveClerkId } from "@/lib/auth-utils";
+import { unstable_cache } from "next/cache";
 
 export async function GET(req: NextRequest) {
   try {
@@ -26,17 +27,21 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const items = await prisma.item.findMany({
-      where: {
-        clerkId: effectiveId,
-      },
-      include: {
-        category: true,
-      },
-      orderBy: {
-        updatedAt: "desc",
-      },
-    });
+    const getCachedMenu = async (cId: string) => {
+      return await unstable_cache(
+        async () => {
+          return await prisma.item.findMany({
+            where: { clerkId: cId },
+            include: { category: true },
+            orderBy: { updatedAt: "desc" },
+          });
+        },
+        [`menu-view-${cId}`],
+        { tags: [`menu-${cId}`], revalidate: 3600 }
+      )();
+    };
+
+    const items = await getCachedMenu(effectiveId);
 
     return NextResponse.json(items);
   } catch (error) {
