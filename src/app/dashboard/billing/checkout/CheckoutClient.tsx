@@ -2290,9 +2290,10 @@ export default function CheckoutClient() {
     console.time("2. HTML Capture & Payload Generation");
     
     // 1. CAPTURE KOT HTML BEFORE MODIFYING ANY STATE
+    console.info("[KOT_PERF] DOM_CAPTURE");
     const tCapStart = performance.now();
     const htmlToPrint = kotRef.current?.innerHTML;
-    console.log(`⚡ [KOT_PERF] 1. DOM innerHTML capture: ${(performance.now() - tCapStart).toFixed(2)} ms`);
+    console.info(`⚡ [KOT_PERF] 1. DOM innerHTML capture: ${(performance.now() - tCapStart).toFixed(2)} ms`);
 
     setIsSaving(true);
 
@@ -2301,6 +2302,7 @@ export default function CheckoutClient() {
       setIsKotPrinted(true);
 
       // 2. RESERVE TOKEN API CALL
+      console.info("[KOT_PERF] RESERVE_TOKEN_START");
       const tReserveStart = performance.now();
       let tokenNumberToUse: number | null = null;
       let orderNumberToUse = "";
@@ -2328,9 +2330,11 @@ export default function CheckoutClient() {
       } else {
           tokenNumberToUse = tokenNumber;
       }
-      console.log(`⚡ [KOT_PERF] 2. Reserve Token API Call: ${(performance.now() - tReserveStart).toFixed(2)} ms`);
+      console.info("[KOT_PERF] RESERVE_TOKEN_END");
+      console.info(`[KOT_PERF] RESERVE_TOKEN_DURATION: ${(performance.now() - tReserveStart).toFixed(2)}ms`);
 
       // 3. GENERATE PAYLOAD FOR BACKGROUND SYNC
+      console.info("[KOT_PERF] PAYLOAD_PREP");
       const tPayloadStart = performance.now();
       const orderData = {
         orderId: syncedOrderId || undefined,
@@ -2360,7 +2364,7 @@ export default function CheckoutClient() {
 
       // Mark local items as not new so UI updates immediately
       setItems(prev => prev.map(i => ({ ...i, isNew: false, kotNumber: i.isNew ? tokenNumberToUse : (i.kotNumber || tokenNumberToUse) })));
-      console.log(`⚡ [KOT_PERF] 3. Payload Construction & State Prep: ${(performance.now() - tPayloadStart).toFixed(2)} ms`);
+      console.info(`⚡ [KOT_PERF] 3. Payload Construction & State Prep: ${(performance.now() - tPayloadStart).toFixed(2)} ms`);
 
       // 4. FIRE AND FORGET BACKGROUND SYNC
       let syncPromise: Promise<any> | null = null;
@@ -2374,17 +2378,18 @@ export default function CheckoutClient() {
       
       // 5. INJECT HTML & PRINT IMMEDIATELY
       if (htmlToPrint) {
+        console.info("[KOT_PERF] REGEX_REPLACEMENT");
         const tRegexStart = performance.now();
         let finalHtmlToPrint = htmlToPrint;
         if (tokenNumberToUse) {
           finalHtmlToPrint = finalHtmlToPrint.replace(/#KOT_PLACEHOLDER/g, `#${tokenNumberToUse}`);
           finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${tokenNumberToUse}`);
         }
-        console.log(`⚡ [KOT_PERF] 4. String Regex Replacement: ${(performance.now() - tRegexStart).toFixed(2)} ms`);
+        console.info(`⚡ [KOT_PERF] 4. String Regex Replacement: ${(performance.now() - tRegexStart).toFixed(2)} ms`);
 
         console.timeEnd("2. HTML Capture & Payload Generation");
-        console.log(`🎉 [KOT_PERF] TOTAL KOT PREPARATION TIME: ${(performance.now() - tKOTStart).toFixed(2)} ms`);
-        console.groupEnd();
+        console.info("[KOT_PERF] PRINT_CALL");
+        console.info(`[KOT_PERF] TOTAL: ${(performance.now() - tKOTStart).toFixed(2)}ms`);
         
         // Print Instantly!
         const returnTo = searchParams.get("returnTo");
