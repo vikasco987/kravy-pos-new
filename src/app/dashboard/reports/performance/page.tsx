@@ -17,42 +17,86 @@ export default async function PerformanceHistoryPage({
   const { view = "daily" } = await searchParams;
 
   const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const startOfHistory = new Date(now);
-  startOfHistory.setDate(now.getDate() - 365); // Last 1 year of data
+  let startOfHistory = new Date(now);
+  let pipelineGroup: any;
+  let limitCount: number;
 
-  const allBills = await prisma.billManager.findMany({
-    where: { clerkUserId: effectiveId, isDeleted: false, createdAt: { gte: startOfHistory } },
-    orderBy: { createdAt: "desc" }
+  if (view === "daily") {
+    startOfHistory.setDate(now.getDate() - 35); // Add a small buffer to ensure we get 30 distinct buckets
+    pipelineGroup = {
+      _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
+      revenue: { $sum: "$total" }
+    };
+    limitCount = 30;
+  } else if (view === "weekly") {
+    startOfHistory.setDate(now.getDate() - 90);
+    pipelineGroup = {
+      _id: {
+        year: { $isoWeekYear: { date: "$createdAt", timezone: "Asia/Kolkata" } },
+        week: { $isoWeek: { date: "$createdAt", timezone: "Asia/Kolkata" } }
+      },
+      revenue: { $sum: "$total" }
+    };
+    limitCount = 12;
+  } else {
+    // monthly
+    startOfHistory.setDate(now.getDate() - 365);
+    pipelineGroup = {
+      _id: { $dateToString: { format: "%Y-%m", date: "$createdAt", timezone: "Asia/Kolkata" } },
+      revenue: { $sum: "$total" }
+    };
+    limitCount = 12;
+  }
+
+  const rawAggregation = await prisma.billManager.aggregateRaw({
+    pipeline: [
+      {
+        $match: {
+          clerkUserId: effectiveId,
+          isDeleted: false,
+          createdAt: { $gte: { $date: startOfHistory.toISOString() } }
+        }
+      },
+      { $group: pipelineGroup },
+      { $sort: { "_id": -1 } },
+      { $limit: limitCount }
+    ]
   });
 
-  // ── 1. Daily Performance Map ──
-  const dailyMap: Record<string, number> = {};
-  allBills.forEach(b => {
-    const d = new Date(b.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-    dailyMap[d] = (dailyMap[d] || 0) + b.total;
-  });
-  const dailyHistory = Object.entries(dailyMap).slice(0, 30); // Last 30 days
+  const parseVal = (v: any) => {
+    if (v == null) return 0;
+    if (typeof v === "number") return v;
+    if (typeof v === "object") {
+      if (v.$numberDouble) return Number(v.$numberDouble);
+      if (v.$numberInt) return Number(v.$numberInt);
+      if (v.$numberLong) return Number(v.$numberLong);
+    }
+    return Number(v);
+  };
 
-  // ── 2. Week-wise Performance Map ──
-  const weeklyMap: Record<string, number> = {};
-  allBills.forEach(b => {
-    const d = new Date(b.createdAt);
-    const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
-    const pastDaysOfYear = (d.getTime() - firstDayOfYear.getTime()) / 86400000;
-    const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-    const weekKey = `Week ${weekNum} (${d.getFullYear()})`;
-    weeklyMap[weekKey] = (weeklyMap[weekKey] || 0) + b.total;
-  });
-  const weeklyHistory = Object.entries(weeklyMap).slice(0, 12); // Last 12 weeks
+  const displayHistory: [string, number][] = [];
+  const rawArr = Array.isArray(rawAggregation) ? rawAggregation : [];
+  
+  for (const obj of rawArr) {
+     const revenue = parseVal((obj as any).revenue);
+     const _id = (obj as any)._id;
+     let label = String(_id);
 
-  // ── 3. Month-wise Performance Map ──
-  const monthlyMap: Record<string, number> = {};
-  allBills.forEach(b => {
-    const d = new Date(b.createdAt).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-    monthlyMap[d] = (monthlyMap[d] || 0) + b.total;
-  });
-  const monthlyHistory = Object.entries(monthlyMap).slice(0, 12); // Last 12 months
+     if (view === "daily" && typeof _id === "string" && _id.includes("-")) {
+        const [y, m, d] = _id.split("-");
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        label = `${d} ${months[parseInt(m, 10)-1]} ${y}`;
+     } else if (view === "weekly" && typeof _id === "object" && _id !== null) {
+        const y = parseVal(_id.year);
+        const w = parseVal(_id.week);
+        label = `Week ${w} (${y})`;
+     } else if (view === "monthly" && typeof _id === "string" && _id.includes("-")) {
+        const [y, m] = _id.split("-");
+        const fullMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        label = `${fullMonths[parseInt(m, 10)-1]} ${y}`;
+     }
+     displayHistory.push([label, revenue]);
+  }
 
   const format = (n: number) => new Intl.NumberFormat("en-IN").format(Math.round(n));
 
@@ -130,7 +174,7 @@ export default async function PerformanceHistoryPage({
                   </tr>
                </thead>
                <tbody>
-                  {(view === 'daily' ? dailyHistory : view === 'weekly' ? weeklyHistory : monthlyHistory).map(([label, revenue], i, arr) => {
+                  {displayHistory.map(([label, revenue], i, arr) => {
                      const maxInSet = Math.max(...arr.map(x => Number(x[1])), 1);
                      const percentage = (revenue / maxInSet) * 100;
                      
