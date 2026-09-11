@@ -129,7 +129,9 @@ export default function CustomAuthPage() {
           throw new Error(data.error || "Login failed");
         }
         toast.success("Logged in successfully!");
-        router.push('/dashboard');
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 500);
       }
       else if (mode === 'forgot') {
         const res = await fetch('/api/auth/forgot-password', {

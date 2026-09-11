@@ -1359,7 +1359,7 @@ export default function CheckoutClient() {
     // validate addons
     const addonsList = (variantModalItem as any).addons || [];
     for (const ag of addonsList) {
-        const minSel = ag.minSelections || (ag.isCompulsory ? 1 : 0);
+        const minSel = ag.minSelection || ag.minSelections || (ag.isCompulsory ? 1 : 0);
         if (minSel > 0) {
             const sel = selectedVariants[`ag_${ag.id}`] || [];
             if (sel.length < minSel) {
@@ -4955,12 +4955,13 @@ export default function CheckoutClient() {
                 {/* Addons List */}
                 {((variantModalItem as any).addons || []).map((ag: any, agIndex: number) => {
                   const vgId = `ag_${ag.id}`;
-                  const isCompulsory = ag.minSelections > 0 || ag.isCompulsory;
+                  const minSelForUI = ag.minSelection || ag.minSelections || 0;
+                  const isCompulsory = minSelForUI > 0 || ag.isCompulsory;
                   return (
                   <div key={vgId} className="bg-slate-50 dark:bg-slate-800/50 rounded-[24px] p-5 border border-slate-100 dark:border-slate-700/50">
                     <div className="flex justify-between items-center mb-4">
                       <h4 className="text-[12px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-[0.15em]">{ag.name || "Addons"}</h4>
-                      {isCompulsory && <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-100 dark:bg-rose-500/20 px-2.5 py-1 rounded-full">Required (Min {ag.minSelections || 1})</span>}
+                      {isCompulsory && <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-100 dark:bg-rose-500/20 px-2.5 py-1 rounded-full">Required (Min {minSelForUI || 1})</span>}
                     </div>
                     
                     <div className="space-y-4">
