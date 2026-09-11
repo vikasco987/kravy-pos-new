@@ -2286,14 +2286,13 @@ export default function CheckoutClient() {
     
     console.group("⏱️ [KOT DETAILED BREAKDOWN]");
     const tKOTStart = performance.now();
-    console.time("1. Total time to print window");
-    console.time("2. HTML Capture & Payload Generation");
+    console.info("[KOT_TRACE] START");
     
     // 1. CAPTURE KOT HTML BEFORE MODIFYING ANY STATE
-    console.info("[KOT_PERF] DOM_CAPTURE");
+    console.info("[KOT_TRACE] DOM_CAPTURE_START");
     const tCapStart = performance.now();
     const htmlToPrint = kotRef.current?.innerHTML;
-    console.info(`⚡ [KOT_PERF] 1. DOM innerHTML capture: ${(performance.now() - tCapStart).toFixed(2)} ms`);
+    console.info(`[KOT_TRACE] DOM_CAPTURE_END: ${(performance.now() - tCapStart).toFixed(2)} ms`);
 
     setIsSaving(true);
 
@@ -2302,15 +2301,17 @@ export default function CheckoutClient() {
       setIsKotPrinted(true);
 
       // 2. RESERVE TOKEN API CALL
-      console.info("[KOT_PERF] RESERVE_TOKEN_START");
+      console.info("[KOT_TRACE] RESERVE_TOKEN_START");
       const tReserveStart = performance.now();
       let tokenNumberToUse: number | null = null;
       let orderNumberToUse = "";
+      let reserveTokenStatus = "skipped";
       
       const hasNewItems = items.some(it => it.isNew);
 
       if (!syncedOrderId || hasNewItems) { 
           const reserveRes = await fetch(`/api/orders/reserve-token?profileId=${business?.id || ""}`, { method: "POST" });
+          reserveTokenStatus = `HTTP_${reserveRes.status}`;
           if (reserveRes.ok) {
               const resData = await reserveRes.json();
               tokenNumberToUse = resData.tokenNumber;
@@ -2330,11 +2331,11 @@ export default function CheckoutClient() {
       } else {
           tokenNumberToUse = tokenNumber;
       }
-      console.info("[KOT_PERF] RESERVE_TOKEN_END");
-      console.info(`[KOT_PERF] RESERVE_TOKEN_DURATION: ${(performance.now() - tReserveStart).toFixed(2)}ms`);
+      console.info(`[KOT_TRACE] RESERVE_TOKEN_END: ${(performance.now() - tReserveStart).toFixed(2)} ms`);
+      console.info(`[KOT_TRACE] RESERVE_TOKEN_STATUS: ${reserveTokenStatus}`);
 
       // 3. GENERATE PAYLOAD FOR BACKGROUND SYNC
-      console.info("[KOT_PERF] PAYLOAD_PREP");
+      console.info("[KOT_TRACE] PAYLOAD_START");
       const tPayloadStart = performance.now();
       const orderData = {
         orderId: syncedOrderId || undefined,
@@ -2364,7 +2365,7 @@ export default function CheckoutClient() {
 
       // Mark local items as not new so UI updates immediately
       setItems(prev => prev.map(i => ({ ...i, isNew: false, kotNumber: i.isNew ? tokenNumberToUse : (i.kotNumber || tokenNumberToUse) })));
-      console.info(`⚡ [KOT_PERF] 3. Payload Construction & State Prep: ${(performance.now() - tPayloadStart).toFixed(2)} ms`);
+      console.info(`[KOT_TRACE] PAYLOAD_END: ${(performance.now() - tPayloadStart).toFixed(2)} ms`);
 
       // 4. FIRE AND FORGET BACKGROUND SYNC
       let syncPromise: Promise<any> | null = null;
@@ -2378,18 +2379,17 @@ export default function CheckoutClient() {
       
       // 5. INJECT HTML & PRINT IMMEDIATELY
       if (htmlToPrint) {
-        console.info("[KOT_PERF] REGEX_REPLACEMENT");
+        console.info("[KOT_TRACE] REGEX_START");
         const tRegexStart = performance.now();
         let finalHtmlToPrint = htmlToPrint;
         if (tokenNumberToUse) {
           finalHtmlToPrint = finalHtmlToPrint.replace(/#KOT_PLACEHOLDER/g, `#${tokenNumberToUse}`);
           finalHtmlToPrint = finalHtmlToPrint.replace(/#---/g, `#${tokenNumberToUse}`);
         }
-        console.info(`⚡ [KOT_PERF] 4. String Regex Replacement: ${(performance.now() - tRegexStart).toFixed(2)} ms`);
+        console.info(`[KOT_TRACE] REGEX_END: ${(performance.now() - tRegexStart).toFixed(2)} ms`);
 
-        console.timeEnd("2. HTML Capture & Payload Generation");
-        console.info("[KOT_PERF] PRINT_CALL");
-        console.info(`[KOT_PERF] TOTAL: ${(performance.now() - tKOTStart).toFixed(2)}ms`);
+        console.info("[KOT_TRACE] PRINT_START");
+        const tPrintStart = performance.now();
         
         // Print Instantly!
         const returnTo = searchParams.get("returnTo");
@@ -2429,7 +2429,8 @@ export default function CheckoutClient() {
             router.replace(`${returnTo.split('?')[0]}?${query.toString()}`);
           }
         });
-        console.timeEnd("1. Total time to print window");
+        console.info(`[KOT_TRACE] PRINT_END: ${(performance.now() - tPrintStart).toFixed(2)} ms`);
+        console.info(`[KOT_TRACE] TOTAL: ${(performance.now() - tKOTStart).toFixed(2)} ms`);
       }
     } catch (error) {
       console.error("KOT Error", error);
