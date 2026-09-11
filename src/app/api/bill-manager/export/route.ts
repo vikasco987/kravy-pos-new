@@ -10,11 +10,31 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch all bills for the user
+    const { searchParams } = new URL(req.url);
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+
+    if (!startDate || !endDate) {
+      return NextResponse.json({ error: "startDate and endDate are required for export" }, { status: 400 });
+    }
+
+    const [sy, sm, sd] = startDate.split('-').map(Number);
+    const start = new Date(Date.UTC(sy, sm - 1, sd, 0, 0, 0, 0));
+    start.setMinutes(start.getMinutes() - 330);
+
+    const [ey, em, ed] = endDate.split('-').map(Number);
+    const end = new Date(Date.UTC(ey, em - 1, ed, 23, 59, 59, 999));
+    end.setMinutes(end.getMinutes() - 330);
+
+    // Fetch all bills for the user within the strict date range
     const bills = await prisma.billManager.findMany({
       where: {
         clerkUserId: effectiveId,
         isDeleted: false,
+        createdAt: {
+          gte: start,
+          lte: end,
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -22,7 +42,7 @@ export async function GET(req: Request) {
     });
 
     if (!bills.length) {
-      return NextResponse.json({ error: "No bills found to export" }, { status: 404 });
+      return NextResponse.json({ error: "No bills found to export for selected dates" }, { status: 404 });
     }
 
     // Transform data for Excel

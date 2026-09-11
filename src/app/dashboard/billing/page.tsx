@@ -138,6 +138,7 @@ export default function BillingPage() {
   const userRole = authUser?.type || null;
   const userPermissions = authUser?.permissions || [];
   const [currentPage, setCurrentPage] = useState(1);
+  const [apiPage, setApiPage] = useState(1);
   const itemsPerPage = 10;
   const { query } = useSearch();
   const [showColPicker, setShowColPicker] = useState(false);
@@ -184,7 +185,7 @@ export default function BillingPage() {
     } catch (e) {}
   }
 
-  async function fetchBills(silent = false) {
+  async function fetchBills(silent = false, targetPage = apiPage) {
     try {
       if (!silent) setLoading(true);
       
@@ -192,6 +193,7 @@ export default function BillingPage() {
       if (asUserId) queryParams.append("asUserId", asUserId);
       if (dateRange.start) queryParams.append("startDate", dateRange.start);
       if (dateRange.end) queryParams.append("endDate", dateRange.end);
+      queryParams.append("page", targetPage.toString());
       
       const querySuffix = `?${queryParams.toString()}`;
 
@@ -338,41 +340,16 @@ export default function BillingPage() {
             onClick={toggleStats} 
           />
           <HeaderBtn icon={<Settings2 size={16} />} label="Columns" onClick={() => setShowColPicker(!showColPicker)} />
-          <HeaderBtn icon={<FileText size={16} />} label="Export Excel" color="#10B981" onClick={async () => {
-             try {
-                if (filteredBills.length === 0) {
-                   toast.error("No data to export");
-                   return;
-                }
-                const XLSX = await import("xlsx");
-                const exportData = filteredBills.map((b, idx) => ({
-                   "S.No": idx + 1,
-                   "Date": new Date(b.createdAt).toLocaleDateString('en-IN'),
-                   "Time": new Date(b.createdAt).toLocaleTimeString('en-IN'),
-                   "Bill Number": b.billNumber,
-                   "Type": (b.tableName || "POS") === "POS" ? "Counter" : "Dine-in",
-                   "Table": b.tableName === "POS" ? "Counter" : b.tableName,
-                   "Zone": b.zoneName || "Default",
-                   "Customer": b.customerName || "Walk-in",
-                   "Phone": b.customerPhone || "—",
-                   "Subtotal": b.subtotal || b.total,
-                   "GST": b.tax || 0,
-                   "Total": b.total,
-                   "Payment Mode": b.paymentMode,
-                   "Status": b.paymentStatus
-                }));
-                const ws = XLSX.utils.json_to_sheet(exportData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Bills");
-                const exportDate = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
-                XLSX.writeFile(wb, `Kravy_Bills_${exportDate}.xlsx`);
-                toast.success("Excel Exported!");
-             } catch (e) {
-                toast.error("Export failed");
-                console.error(e);
+          <HeaderBtn icon={<FileText size={16} />} label="Export Excel" color="#10B981" onClick={() => {
+             if (!dateRange.start || !dateRange.end) {
+               toast.error("Please select a date range first");
+               return;
              }
+             const exportUrl = `/api/bill-manager/export?startDate=${dateRange.start}&endDate=${dateRange.end}`;
+             window.location.href = exportUrl;
+             toast.success("Download started!");
           }} />
-          <HeaderBtn icon={<FileText size={16} />} label="Export PDF" color="#EF4444" onClick={async () => {
+          <HeaderBtn icon={<FileText size={16} />} label="Export PDF (100)" color="#EF4444" onClick={async () => {
              if (filteredBills.length === 0) {
                 toast.error("No data to export");
                 return;
@@ -633,11 +610,39 @@ export default function BillingPage() {
       )}
 
       {/* --- Pagination --- */}
-      {!loading && filteredBills.length > itemsPerPage && (
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "16px" }}>
-          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ width: "36px", height: "36px", borderRadius: "12px", border: "1px solid #E5E7EB", background: "white", cursor: "pointer" }}><ChevronLeft size={18} /></button>
-          <div style={{ height: "36px", padding: "0 16px", background: "#F3F4F6", borderRadius: "12px", display: "flex", alignItems: "center", fontSize: "0.75rem", fontWeight: 900 }}>{currentPage} / {totalPages}</div>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ width: "36px", height: "36px", borderRadius: "12px", border: "1px solid #E5E7EB", background: "white", cursor: "pointer" }}><ChevronRight size={18} /></button>
+      {!loading && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px", flexWrap: "wrap", gap: "16px" }}>
+          
+          {/* Server Side Pagination */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#6B7280", marginRight: "4px" }}>Server Pagination:</span>
+            <button 
+              onClick={() => { const next = apiPage - 1; setApiPage(next); setCurrentPage(1); fetchBills(false, next); }} 
+              disabled={apiPage === 1} 
+              style={{ padding: "0 12px", height: "36px", borderRadius: "12px", border: "1px solid #E5E7EB", background: apiPage === 1 ? "#F3F4F6" : "white", cursor: apiPage === 1 ? "not-allowed" : "pointer", fontSize: "0.75rem", fontWeight: 700 }}
+            >
+              Older Bills
+            </button>
+            <div style={{ height: "36px", padding: "0 16px", background: "#F3F4F6", borderRadius: "12px", display: "flex", alignItems: "center", fontSize: "0.75rem", fontWeight: 900 }}>Page {apiPage}</div>
+            <button 
+              onClick={() => { const next = apiPage + 1; setApiPage(next); setCurrentPage(1); fetchBills(false, next); }} 
+              disabled={filteredBills.length < 100} 
+              style={{ padding: "0 12px", height: "36px", borderRadius: "12px", border: "1px solid #E5E7EB", background: filteredBills.length < 100 ? "#F3F4F6" : "white", cursor: filteredBills.length < 100 ? "not-allowed" : "pointer", fontSize: "0.75rem", fontWeight: 700 }}
+            >
+              Newer Bills
+            </button>
+          </div>
+
+          {/* Client Side Pagination */}
+          {filteredBills.length > itemsPerPage && (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#6B7280", marginRight: "4px" }}>Table View:</span>
+              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ width: "36px", height: "36px", borderRadius: "12px", border: "1px solid #E5E7EB", background: "white", cursor: "pointer" }}><ChevronLeft size={18} /></button>
+              <div style={{ height: "36px", padding: "0 16px", background: "#F3F4F6", borderRadius: "12px", display: "flex", alignItems: "center", fontSize: "0.75rem", fontWeight: 900 }}>{currentPage} / {totalPages}</div>
+              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ width: "36px", height: "36px", borderRadius: "12px", border: "1px solid #E5E7EB", background: "white", cursor: "pointer" }}><ChevronRight size={18} /></button>
+            </div>
+          )}
+
         </div>
       )}
 
