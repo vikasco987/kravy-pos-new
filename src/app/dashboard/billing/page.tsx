@@ -340,6 +340,10 @@ export default function BillingPage() {
           <HeaderBtn icon={<Settings2 size={16} />} label="Columns" onClick={() => setShowColPicker(!showColPicker)} />
           <HeaderBtn icon={<FileText size={16} />} label="Export Excel" color="#10B981" onClick={async () => {
              try {
+                if (filteredBills.length === 0) {
+                   toast.error("No data to export");
+                   return;
+                }
                 const XLSX = await import("xlsx");
                 const exportData = filteredBills.map((b, idx) => ({
                    "S.No": idx + 1,
@@ -365,6 +369,96 @@ export default function BillingPage() {
                 toast.success("Excel Exported!");
              } catch (e) {
                 toast.error("Export failed");
+                console.error(e);
+             }
+          }} />
+          <HeaderBtn icon={<FileText size={16} />} label="Export PDF" color="#EF4444" onClick={async () => {
+             if (filteredBills.length === 0) {
+                toast.error("No data to export");
+                return;
+             }
+             const toastId = toast.loading("Generating PDF file...");
+             try {
+                const html2pdf = (await import("html2pdf.js")).default;
+                const exportData = filteredBills.map((b, idx) => ({
+                   "S.No": idx + 1,
+                   "Date": new Date(b.createdAt).toLocaleDateString('en-IN'),
+                   "Time": new Date(b.createdAt).toLocaleTimeString('en-IN'),
+                   "Bill Number": b.billNumber,
+                   "Type": (b.tableName || "POS") === "POS" ? "Counter" : "Dine-in",
+                   "Table": b.tableName === "POS" ? "Counter" : b.tableName,
+                   "Zone": b.zoneName || "Default",
+                   "Customer": b.customerName || "Walk-in",
+                   "Phone": b.customerPhone || "—",
+                   "Subtotal": b.subtotal || b.total,
+                   "GST": b.tax || 0,
+                   "Total": b.total,
+                   "Payment Mode": b.paymentMode,
+                   "Status": b.paymentStatus
+                }));
+                
+                const container = document.createElement("div");
+                container.style.padding = "20px";
+                container.style.fontFamily = "sans-serif";
+                
+                const titleEl = document.createElement("h2");
+                titleEl.innerText = "Bill History Report";
+                titleEl.style.marginBottom = "16px";
+                titleEl.style.textAlign = "center";
+                container.appendChild(titleEl);
+
+                const table = document.createElement("table");
+                table.style.width = "100%";
+                table.style.borderCollapse = "collapse";
+                table.style.fontSize = "10px";
+
+                const thead = document.createElement("thead");
+                const trHead = document.createElement("tr");
+                const columns = Object.keys(exportData[0] || {});
+                columns.forEach((col) => {
+                  const th = document.createElement("th");
+                  th.innerText = col;
+                  th.style.border = "1px solid #ddd";
+                  th.style.padding = "6px";
+                  th.style.backgroundColor = "#f3f4f6";
+                  th.style.textAlign = "left";
+                  trHead.appendChild(th);
+                });
+                thead.appendChild(trHead);
+                table.appendChild(thead);
+
+                const tbody = document.createElement("tbody");
+                exportData.forEach((row, idx) => {
+                  const tr = document.createElement("tr");
+                  if (idx % 2 === 0) tr.style.backgroundColor = "#f9fafb";
+                  columns.forEach((col) => {
+                    const td = document.createElement("td");
+                    td.innerText = (row as any)[col] || "";
+                    td.style.border = "1px solid #ddd";
+                    td.style.padding = "6px";
+                    tr.appendChild(td);
+                  });
+                  tbody.appendChild(tr);
+                });
+                table.appendChild(tbody);
+                container.appendChild(table);
+
+                document.body.appendChild(container);
+
+                const exportDate = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+                const opt = {
+                  margin: [10, 10, 10, 10],
+                  filename: `Kravy_Bills_${exportDate}.pdf`,
+                  image: { type: "jpeg", quality: 0.98 },
+                  html2canvas: { scale: 2, useCORS: true },
+                  jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+                };
+
+                await html2pdf().set(opt).from(container).save();
+                document.body.removeChild(container);
+                toast.success("PDF Exported successfully!", { id: toastId });
+             } catch (e) {
+                toast.error("Export failed", { id: toastId });
                 console.error(e);
              }
           }} />

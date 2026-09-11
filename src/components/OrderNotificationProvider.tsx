@@ -182,103 +182,106 @@ export function OrderNotificationProvider() {
             JSON.parse(storedSeen).forEach((id: string) => seenOrderIds.current.add(id));
         }
 
-        function connect() {
-            const es = new EventSource("/api/notifications");
-            eventSourceRef.current = es;
+        let isMounted = true;
+        let pollInterval: NodeJS.Timeout;
 
-            es.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
+        async function poll() {
+            if (!isMounted) return;
+            try {
+                const response = await fetch("/api/notifications");
+                if (!response.ok) return;
+                const data = await response.json();
+                
+                if (!isMounted) return;
 
-                    if (data.type === "new_orders" && Array.isArray(data.orders)) {
-                        const newOrders = data.orders.filter(
-                            (o: any) => !seenOrderIds.current.has(o.id)
-                        );
+                if (data.orders && Array.isArray(data.orders)) {
+                    const newOrders = data.orders.filter(
+                        (o: any) => !seenOrderIds.current.has(o.id)
+                    );
 
-                        if (newOrders.length > 0) {
-                            // 🔥 Force TerminalContext to fetch data immediately, bypassing the 30s cache!
-                            // This ensures the big IncomingOrderModal appears instantly.
-                            fetchData(false, true);
+                    if (newOrders.length > 0) {
+                        // 🔥 Force TerminalContext to fetch data immediately, bypassing the 30s cache!
+                        // This ensures the big IncomingOrderModal appears instantly.
+                        fetchData(false, true);
 
-                            if (prefsRef.current.newOrderSound) {
-                                kravy.orderBell();
+                        if (prefsRef.current.newOrderSound) {
+                            kravy.orderBell();
+                        }
+
+                        newOrders.forEach((order: any) => {
+                            seenOrderIds.current.add(order.id);
+
+                            // Count items
+                            let itemCount = 0;
+                            try {
+                                const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || "[]");
+                                itemCount = items.reduce((s: number, i: any) => s + (i.quantity || 1), 0);
+                            } catch { }
+
+                            const notification: OrderNotification = {
+                                id: order.id,
+                                customerName: order.customerName || "Guest",
+                                total: order.total,
+                                tableName: order.table?.name || order.tableName,
+                                itemCount,
+                                createdAt: order.createdAt,
+                            };
+
+                            if (prefsRef.current.newOrderPopup) {
+                                setPopups(prev => [notification, ...prev].slice(0, 3)); // max 3 popups
                             }
 
-                            newOrders.forEach((order: any) => {
-                                seenOrderIds.current.add(order.id);
-
-                                // Count items
-                                let itemCount = 0;
-                                try {
-                                    const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || "[]");
-                                    itemCount = items.reduce((s: number, i: any) => s + (i.quantity || 1), 0);
-                                } catch { }
-
-                                const notification: OrderNotification = {
-                                    id: order.id,
-                                    customerName: order.customerName || "Guest",
-                                    total: order.total,
-                                    tableName: order.table?.name || order.tableName,
-                                    itemCount,
-                                    createdAt: order.createdAt,
-                                };
-
-                                if (prefsRef.current.newOrderPopup) {
-                                    setPopups(prev => [notification, ...prev].slice(0, 3)); // max 3 popups
-                                }
-
-                                // Also fire a toast (in case popup is missed)
-                                if (prefsRef.current.newOrderToast) {
-                                    toast.success(`🛎️ New order — ₹${order.total}`, {
-                                        duration: 4000,
-                                        position: "top-center",
-                                    });
-                                }
-                            });
-
-                            // Persist seen IDs
-                            sessionStorage.setItem("kravy_seen_orders",
-                                JSON.stringify(Array.from(seenOrderIds.current).slice(-100))
-                            );
-                        }
-                    }
-
-                    if (data.type === "new_reviews" && Array.isArray(data.reviews)) {
-                        const newReviews = data.reviews.filter(
-                            (r: any) => !seenReviewIds.current.has(r.id)
-                        );
-
-                        if (newReviews.length > 0) {
-                            if (prefsRef.current.newOrderSound) {
-                                kravy.review();
+                            // Also fire a toast (in case popup is missed)
+                            if (prefsRef.current.newOrderToast) {
+                                toast.success(`🛎️ New order — ₹${order.total}`, {
+                                    duration: 4000,
+                                    position: "top-center",
+                                });
                             }
-                            newReviews.forEach((r: any) => {
-                                seenReviewIds.current.add(r.id);
-                                if (prefsRef.current.reviewToast) {
-                                    toast(`⭐ New ${r.rating}-star review from ${r.customerName || "a customer"}`, {
-                                        duration: 5000,
-                                        icon: "🌟",
-                                    });
-                                }
-                            });
-                        }
+                        });
+
+                        // Persist seen IDs
+                        sessionStorage.setItem("kravy_seen_orders",
+                            JSON.stringify(Array.from(seenOrderIds.current).slice(-100))
+                        );
                     }
-                } catch (e) {
-                    console.error("Notification parse error:", e);
                 }
-            };
 
-            es.onerror = () => {
-                es.close();
-                // Auto-reconnect after 10s
-                setTimeout(connect, 10000);
-            };
+                if (data.reviews && Array.isArray(data.reviews)) {
+                    const newReviews = data.reviews.filter(
+                        (r: any) => !seenReviewIds.current.has(r.id)
+                    );
+
+                    if (newReviews.length > 0) {
+                        if (prefsRef.current.newOrderSound) {
+                            kravy.review();
+                        }
+                        newReviews.forEach((r: any) => {
+                            seenReviewIds.current.add(r.id);
+                            if (prefsRef.current.reviewToast) {
+                                toast(`⭐ New ${r.rating}-star review from ${r.customerName || "a customer"}`, {
+                                    duration: 5000,
+                                    icon: "🌟",
+                                });
+                            }
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error("Notification poll error:", e);
+            }
         }
 
-        connect();
+        // Initial fetch
+        poll();
+        
+        // Poll every 10s to minimize server cost
+        pollInterval = setInterval(poll, 10000);
 
         return () => {
-            eventSourceRef.current?.close();
+            isMounted = false;
+            clearInterval(pollInterval);
+            // eventSourceRef is completely removed
         };
     }, [userId]);
 
