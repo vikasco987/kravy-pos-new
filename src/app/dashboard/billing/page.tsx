@@ -507,7 +507,12 @@ export default function BillingPage() {
       </div>
 
       {/* --- Desktop Table --- */}
-      {!loading && (
+      {loading ? (
+        <div style={{ height: "400px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "white", borderRadius: "24px", border: "1px solid #F1F5F9", boxShadow: "0 10px 30px rgba(0,0,0,0.02)" }}>
+           <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-100 dark:border-slate-800 border-t-indigo-600 mb-4"></div>
+           <span className="font-bold text-slate-500 text-sm tracking-wide">Fetching & Applying Filters...</span>
+        </div>
+      ) : (
         <BillHistoryTable 
           bills={paginatedBills} 
           business={business} 
