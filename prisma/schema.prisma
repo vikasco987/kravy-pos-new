@@ -372,6 +372,7 @@ model Order {
   @@index([clerkUserId])
   @@index([status])
   @@index([clerkUserId, createdAt(sort: Desc)])
+  @@index([clerkUserId, status, createdAt(sort: Desc)])
 }
 
 //////////////////////////////////////////////////
