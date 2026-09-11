@@ -21,6 +21,14 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const isHeld = searchParams.get("isHeld");
+    
+    // Implement Option B: Cap the limit at 100 to prevent unbounded queries
+    const limitParam = searchParams.get("limit");
+    const pageParam = searchParams.get("page");
+    
+    const take = Math.min(Number(limitParam) || 100, 100);
+    const page = Math.max(Number(pageParam) || 1, 1);
+    const skip = (page - 1) * take;
 
     const whereClause: any = {
       clerkUserId: effectiveId,
@@ -53,9 +61,11 @@ export async function GET(req: NextRequest) {
         party: true
       },
       orderBy: { createdAt: "desc" },
+      take,
+      skip,
     });
 
-    return NextResponse.json({ bills, clerkUserId: effectiveId });
+    return NextResponse.json({ bills, clerkUserId: effectiveId, pagination: { take, skip, page } });
   } catch (err) {
     console.error("BILL MANAGER LIST ERROR:", err);
     return NextResponse.json(
