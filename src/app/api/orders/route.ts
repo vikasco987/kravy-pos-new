@@ -11,7 +11,16 @@ export async function GET(req: NextRequest) {
 
         const { searchParams } = new URL(req.url);
         const tableId = searchParams.get("tableId");
-        const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined;
+        const rawLimit = searchParams.get("limit");
+        const requestedLimit = Number(rawLimit);
+        const limit = Math.min(
+          Math.max(Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : 100, 1),
+          100
+        );
+
+        const pageParam = searchParams.get("page");
+        const page = Math.max(Number(pageParam) || 1, 1);
+        const skip = (page - 1) * limit;
         const status = searchParams.get("status");
         const includeDeleted = searchParams.get("includeDeleted") === "true";
 
@@ -46,6 +55,7 @@ export async function GET(req: NextRequest) {
         const orders = await prisma.order.findMany({
             where: whereClause,
             take: limit,
+            skip: skip,
             orderBy: { createdAt: "desc" },
             include: { table: true },
         });
