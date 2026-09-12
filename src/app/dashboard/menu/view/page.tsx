@@ -1337,10 +1337,8 @@ export default function ViewMenuPage() {
           ...it,
           id: String(it.id),
           name: it.name ?? "Unnamed",
-          price:
-            typeof it.sellingPrice === "number"
-              ? it.sellingPrice
-              : it.price ?? null,
+          price: it.price ?? null,
+          sellingPrice: it.sellingPrice ?? null,
           imageUrl: it.imageUrl || it.image || null,
           unit: it.unit ?? null,
           categoryId: catId,
