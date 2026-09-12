@@ -1681,10 +1681,10 @@ export default function ViewMenuPage() {
           isEgg: updated.isEgg,
           shortCode: updated.shortCode,
           expiryDate: updated.expiryDate,
-          variants: updated.variants,
-          description: updated.description,
-          addonGroupIds: updated.addonGroupIds,
-          zones: updated.zones,
+          variants: (updated as any).variants,
+          description: (updated as any).description,
+          addonGroupIds: (updated as any).addonGroupIds,
+          zones: (updated as any).zones,
         }),
       });
 
