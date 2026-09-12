@@ -21,11 +21,11 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const isHeld = searchParams.get("isHeld");
-    
+
     // Implement Option B: Cap the limit at 100 to prevent unbounded queries
     const limitParam = searchParams.get("limit");
     const pageParam = searchParams.get("page");
-    
+
     const take = Math.min(Number(limitParam) || 100, 100);
     const page = Math.max(Number(pageParam) || 1, 1);
     const skip = (page - 1) * take;
@@ -79,13 +79,20 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const _tTotalStart = Date.now();
+    let _tAuth=0, _tBody=0, _tIdemp=0, _tPreTx=0, _tTxWait=0, _tProfileReadUpdate=0, _tBillInsert=0, _tCommitStart=0, _tCommit=0, _tResponseStart=0;
+    const _t0 = Date.now();
     const effectiveId = await getEffectiveClerkId();
+    _tAuth = Date.now() - _t0;
+
 
     if (!effectiveId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const _t1 = Date.now();
     const body = await req.json();
+    _tBody = Date.now() - _t1;
 
     const {
       items,
@@ -114,6 +121,7 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // 🚀 0. IDEMPOTENCY FAST-PATH CHECK
+    const _t2 = Date.now();
     if (idempotencyKey) {
       const existingBill = await prisma.billManager.findUnique({
         where: { idempotencyKey },
@@ -124,6 +132,8 @@ export async function POST(req: NextRequest) {
          return NextResponse.json({ bill: existingBill, orderForDeduction: null });
       }
     }
+    _tIdemp = Date.now() - _t2;
+    const _t3 = Date.now();
 
     // 🛑 1. ROBUST VALIDATION (Critical Fix for UI Crashes)
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -144,17 +154,17 @@ export async function POST(req: NextRequest) {
     const itemIds = items
       .map((it: any) => it.id)
       .filter((id: any) => id && /^[0-9a-fA-F]{24}$/.test(id));
-    
+
     const tFetchStart = Date.now();
     const [profile, dbItems, offer] = await Promise.all([
-      body.profileId 
-        ? prisma.businessProfile.findUnique({ where: { id: body.profileId } }) 
+      body.profileId
+        ? prisma.businessProfile.findUnique({ where: { id: body.profileId } })
         : prisma.businessProfile.findFirst({ where: { userId: effectiveId }, orderBy: { createdAt: 'asc' } }),
       prisma.item.findMany({ where: { id: { in: itemIds }, clerkId: effectiveId } }),
       discountCode ? prisma.offer.findFirst({ where: { code: discountCode.toUpperCase(), isActive: true, clerkUserId: effectiveId } }) : Promise.resolve(null)
     ]);
     console.log(`[BILL_PERF_STEP] 0. Initial Parallel Fetch: ${Date.now() - tFetchStart}ms`);
-    
+
     const isTaxEnabled = profile?.taxEnabled ?? true;
     const globalGstRate = isTaxEnabled ? (profile?.taxRate ?? 0) : 0;
     const perProductEnabled = profile?.perProductTaxEnabled ?? false;
@@ -165,12 +175,12 @@ export async function POST(req: NextRequest) {
     items.forEach((item: any) => {
       const dbItem = dbItems.find(it => it.id === item.id);
       const qty = Number(item.qty || item.quantity) || 0;
-      const rate = item.isCustomRate 
-        ? Number(item.rate) 
+      const rate = item.isCustomRate
+        ? Number(item.rate)
         : (dbItem ? Number(dbItem.sellingPrice ?? dbItem.price) : Number(item.rate || item.price || 0));
       const itemGstRate = (perProductEnabled && item.gst !== undefined && item.gst !== null) ? Number(item.gst) : globalGstRate;
       const globalTaxInclusive = profile?.taxInclusive ?? false;
-      
+
       let isInclusive = false;
       if (perProductEnabled && item.gst !== undefined && item.gst !== null) {
         isInclusive = (item.taxStatus || "Without Tax") === "With Tax";
@@ -190,11 +200,11 @@ export async function POST(req: NextRequest) {
         calcSubtotal += gross;
         totalTax += gst;
       }
-      item.rate = rate; 
+      item.rate = rate;
     });
 
     const finalSubtotal = Number(calcSubtotal.toFixed(2));
-    
+
     let serverDiscountAmt = 0;
     let validatedDiscountCode = null;
     let loyaltyPointsRedeemedAmt = Number(loyaltyPointsRedeemed) || 0;
@@ -225,45 +235,72 @@ export async function POST(req: NextRequest) {
     const finalTotal = Number((finalSubtotal + calculatedTax - serverDiscountAmt - loyaltyPointsRedeemedAmt + finalDeliveryCharge + serverDeliveryGst + finalPackagingCharge + serverPackagingGst + finalServiceCharge).toFixed(2));
 
     // ✅ ATOMIC TRANSACTION FOR BILL CREATION, COUNTER ALLOCATION, & LEDGER
+    _tPreTx = Date.now() - _t3;
     const startTime = Date.now();
-    
+
     let result: any = null;
     let attempts = 0;
     while (attempts < 15) {
+      const _tTxAttemptStart = Date.now();
       try {
         result = await prisma.$transaction(async (tx) => {
+          _tTxWait = Date.now() - _tTxAttemptStart;
           // 1 & 3. ATOMIC BILL COUNTER & TOKEN ALLOCATION
           const tProfileStart = Date.now();
+          const _t4 = Date.now();
           let nextSerial = 1;
           let nextToken = body.tokenNumber || (kotNumbers && Array.isArray(kotNumbers) && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : null);
-
           if (profile?.id) {
-            const currentProfile = await tx.businessProfile.findUnique({ where: { id: profile.id } });
-            const today = new Date().toISOString().split('T')[0];
-            const lastTokenDate = currentProfile?.lastTokenDate ? new Date(currentProfile.lastTokenDate).toISOString().split('T')[0] : "";
-            const isNewDay = lastTokenDate !== today;
+            const txStartDate = new Date();
+            const todayStr = txStartDate.toISOString().split('T')[0];
+            const preFetchDateStr = profile.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
+            console.log(`[DEBUG_MIDNIGHT] todayStr: ${todayStr}, preFetchDateStr: ${preFetchDateStr}, profile.lastTokenDate: ${profile.lastTokenDate}`);
 
-            const updatedProfile = await tx.businessProfile.update({
-              where: { id: profile.id },
-              data: {
-                billCounter: { increment: 1 },
-                ...(!nextToken ? {
-                  lastTokenNumber: isNewDay ? 1 : { increment: 1 },
-                  lastTokenDate: new Date()
-                } : {})
-              },
-              select: { billCounter: true, lastTokenNumber: true }
-            });
+            let updatedProfile;
+
+            if (preFetchDateStr === todayStr) {
+              // OPTIMIZED PATH (1 query) - Pre-fetch confirms it's already today
+              updatedProfile = await tx.businessProfile.update({
+                where: { id: profile.id },
+                data: {
+                  billCounter: { increment: 1 },
+                  ...(!nextToken ? {
+                    lastTokenNumber: { increment: 1 },
+                    lastTokenDate: txStartDate
+                  } : {})
+                },
+                select: { billCounter: true, lastTokenNumber: true }
+              });
+            } else {
+              // SAFE PATH (2 queries) - Fallback if pre-fetch says it's a new day
+              const currentProfile = await tx.businessProfile.findUnique({ where: { id: profile.id } });
+              const lastTokenDateStr = currentProfile?.lastTokenDate ? new Date(currentProfile.lastTokenDate).toISOString().split('T')[0] : "";
+              const isNewDayTx = lastTokenDateStr !== todayStr;
+
+              updatedProfile = await tx.businessProfile.update({
+                where: { id: profile.id },
+                data: {
+                  billCounter: { increment: 1 },
+                  ...(!nextToken ? {
+                    lastTokenNumber: isNewDayTx ? 1 : { increment: 1 },
+                    lastTokenDate: txStartDate
+                  } : {})
+                },
+                select: { billCounter: true, lastTokenNumber: true }
+              });
+            }
+
             nextSerial = updatedProfile.billCounter;
             if (!nextToken) nextToken = updatedProfile.lastTokenNumber;
           } else {
             nextSerial = Math.floor(Math.random() * 1000000);
             if (!nextToken) nextToken = 1;
           }
-          
+
           const serialLabel = String(nextSerial).padStart(4, '0');
           let finalBillNumber = body.billNumber || `INV/${yy}${mm}/${serialLabel}`;
           console.log(`[BILL_PERF_STEP] 1/3. Profile Counter & Token Update: ${Date.now() - tProfileStart}ms`);
+          _tProfileReadUpdate = Date.now() - _t4;
 
       let orderForDeduction = null;
       if (body.orderId) {
@@ -301,8 +338,8 @@ export async function POST(req: NextRequest) {
               createdBy: effectiveId,
             },
           },
-          update: { 
-            name: customerName, 
+          update: {
+            name: customerName,
             address: customerAddress || null,
             loyaltyPoints: { increment: netPointsChange }
           },
@@ -321,10 +358,10 @@ export async function POST(req: NextRequest) {
       // WALLET ADJUSTMENT LOGIC
       let initPaymentMode = paymentMode || "Cash";
       if (
-        initPaymentMode !== "UPI" && 
-        initPaymentMode !== "Card" && 
-        initPaymentMode !== "Pay on Counter" && 
-        initPaymentMode !== "Wallet" && 
+        initPaymentMode !== "UPI" &&
+        initPaymentMode !== "Card" &&
+        initPaymentMode !== "Pay on Counter" &&
+        initPaymentMode !== "Wallet" &&
         !initPaymentMode.startsWith("Split")
       ) {
         initPaymentMode = "Cash";
@@ -370,6 +407,7 @@ export async function POST(req: NextRequest) {
 
       // 4. CREATE BILL RECORD
       const tCreateStart = Date.now();
+      const _t5 = Date.now();
       const createdBill = await tx.billManager.create({
         data: {
           idempotencyKey: idempotencyKey || `auto_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
@@ -407,6 +445,8 @@ export async function POST(req: NextRequest) {
         },
       });
       console.log(`[BILL_PERF_STEP] 4. BillManager Record Create: ${Date.now() - tCreateStart}ms`);
+      _tBillInsert = Date.now() - _t5;
+      _tCommitStart = Date.now();
 
       // 5. ATOMIC WALLET / LEDGER DEDUCTIONS
       const tWalletStart = Date.now();
@@ -449,6 +489,7 @@ export async function POST(req: NextRequest) {
     }, {
       timeout: 10000
     });
+    _tCommit = Date.now() - _tCommitStart;
 
         break; // Success! Break out of the retry loop.
       } catch (err: any) {
@@ -464,7 +505,7 @@ export async function POST(req: NextRequest) {
           }
           if (attempts < 15) {
             attempts++;
-            console.log(`[BILL_MANAGER] Retry ${attempts} due to ${err.code} / ${err.message.substring(0, 50)}`);
+            console.log(`[BILL_MANAGER] Retry ${attempts} due to ${err.code} / ${err.message.substring(0, 50)} | Duration: ${Date.now() - _tTxAttemptStart}ms`);
             // Exponential backoff jitter
             await new Promise(r => setTimeout(r, Math.random() * 200 * attempts));
             continue;
@@ -474,28 +515,28 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!result) {
-      throw new Error("Transaction failed after maximum retries.");
-    }
+    _tResponseStart = Date.now();
+    const endTime = Date.now();
+    const responseJson = NextResponse.json(
+      {
+        message: "Bill created successfully",
+        bill: result.bill,
+        orderForDeduction: result.orderForDeduction
+      }
+    );
+    console.log(`BILL_PERF { auth: ${_tAuth}ms, body: ${_tBody}ms, idempotency: ${_tIdemp}ms, preTxCompute: ${_tPreTx}ms, txWait: ${_tTxWait}ms, profileReadUpdate: ${_tProfileReadUpdate}ms, billInsert: ${_tBillInsert}ms, txCommit: ${_tCommit}ms, responseSer: ${Date.now() - _tResponseStart}ms, total: ${Date.now() - _tTotalStart}ms, retries: ${attempts} }`);
 
-    if (!result) {
-      throw new Error("Transaction failed after maximum retries.");
-    }
-
-    if (!result) throw new Error("Transaction failed after maximum retries.");
-
-    console.log(`[BILL_MANAGER_PERF] TOTAL Transaction Time for Bill ${result?.bill?.billNumber}: ${Date.now() - startTime}ms`);
-    
     const bill = result.bill;
     const orderForDeduction = result.orderForDeduction;
+
 
     // ✅ AUTO-DEDUCT INVENTORY IN BACKGROUND (NON-BLOCKING)
     if (!bill.isHeld && skipInventoryDeduction !== true) {
       console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Awaiting background inventory deduction.`);
-      
+
       const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
       const tInvStart = Date.now();
-      
+
       try {
           // ENTIRE OPERATION WRAPPED IN ACID TRANSACTION WITH RETRY
           await withTransactionRetry(async (tx) => {
@@ -511,40 +552,40 @@ export async function POST(req: NextRequest) {
               }
 
               let itemsToDeduct = bill.items as any[];
-              
+
               // 2. Cross-Entity Semantics
               // Read the Order flag to know if we are FIRST or SECOND. We DO NOT claim it.
               if (body.orderId) {
                   const orderLock = await tx.order.findUnique({ where: { id: body.orderId } });
-                  
+
                   if (orderLock?.inventoryDeducted) {
                       // Order was already deducted (e.g. by concurrent Order PATCH).
                       // Only deduct the DIFFERENCE (newly added items).
                       const orderItems = (orderLock.items as any[]) || [];
                       const orderItemQuantities = new Map<string, number>();
-                      
+
                       for (const oi of orderItems) {
                           const id = oi.itemId || oi.id;
                           if (id) {
                               orderItemQuantities.set(id, (orderItemQuantities.get(id) || 0) + Number(oi.qty || oi.quantity || 1));
                           }
                       }
-                      
+
                       const newItemsToDeduct = [];
                       for (const bi of itemsToDeduct) {
                           const id = bi.itemId || bi.id;
                           if (!id) continue;
-                          
+
                           const billQty = Number(bi.qty || bi.quantity || 1);
                           const orderQty = orderItemQuantities.get(id) || 0;
-                          
+
                           if (billQty > orderQty) {
                               const difference = billQty - orderQty;
                               newItemsToDeduct.push({ ...bi, qty: difference, quantity: difference });
                               orderItemQuantities.set(id, orderQty + difference);
                           }
                       }
-                      
+
                       itemsToDeduct = newItemsToDeduct;
                       console.log(`[BILL_MANAGER_DEBUG] Order ${orderLock.id} already deducted. Filtered bill items to ${itemsToDeduct.length} new items.`);
                   }
@@ -560,15 +601,15 @@ export async function POST(req: NextRequest) {
           });
       } catch (deductErr) {
           console.error(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} status=failed error=`, deductErr);
-          // Transaction automatically rolled back! 
-          // `inventoryDeducted` is safely false again. 
+          // Transaction automatically rolled back!
+          // `inventoryDeducted` is safely false again.
           // We DO NOT throw the error to preserve the business contract (bill is still created successfully).
       }
     } else if (skipInventoryDeduction === true) {
       console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Inventory deduction skipped by caller.`);
     }
 
-    return NextResponse.json({ bill });
+    return responseJson;
   } catch (err: any) {
     console.error("BILL MANAGER CREATE ERROR:", err);
     return NextResponse.json(
