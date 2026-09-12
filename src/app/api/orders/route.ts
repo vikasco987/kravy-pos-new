@@ -91,9 +91,14 @@ export async function PATCH(req: NextRequest) {
         if (customerName !== undefined) data.customerName = customerName;
         if (customerPhone !== undefined) data.customerPhone = customerPhone;
 
+        // ✅ 0. FETCH CURRENT ORDER FOR ATOMICITY & TOKEN GENERATION
+        const currentOrder = await prisma.order.findUnique({ where: { id: orderId, clerkUserId: effectiveId } });
+        if (!currentOrder) {
+            return NextResponse.json({ error: "Order not found" }, { status: 404 });
+        }
+
         // ✅ ALWAYS GENERATE TOKEN IF MISSING (Or if new items added)
         try {
-            const currentOrder = await prisma.order.findUnique({ where: { id: orderId } });
             if (currentOrder) {
                 const targetItems = (items && Array.isArray(items)) ? items : (Array.isArray(currentOrder.items) ? currentOrder.items : []);
                 const hasNewItems = (targetItems as any[]).some(it => it.isNew);
@@ -162,15 +167,45 @@ export async function PATCH(req: NextRequest) {
             data,
         });
 
-        // ✅ AUTO-DEDUCT INVENTORY ON COMPLETION
-        if (status === "COMPLETED" && !skipInventoryDeduction && order.items && Array.isArray(order.items)) {
-            console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Triggering inventory deduction.`);
-            const { deductInventory } = await import("@/lib/inventory-utils");
-            await deductInventory(order.items);
+        // ✅ AUTO-DEDUCT INVENTORY ON COMPLETION (ATOMIC CLAIM)
+        const isCompleting = status === "COMPLETED" && currentOrder.status !== "COMPLETED";
+        
+        if (isCompleting && !skipInventoryDeduction && order.items && Array.isArray(order.items) && order.items.length > 0) {
+            // ATOMIC CLAIM
+            const claim = await prisma.order.updateMany({
+                where: { id: orderId, inventoryDeducted: false },
+                data: { inventoryDeducted: true }
+            });
+
+            if (claim.count > 0) {
+                console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Claim successful. Triggering inventory deduction.`);
+                const { deductInventory } = await import("@/lib/inventory-utils");
+                
+                // Fire and forget, but with rollback on failure
+                const tInvStart = Date.now();
+                deductInventory(order.items)
+                    .then(() => {
+                        console.log(`[INVENTORY_PERF] source=order orderId=${orderId} durationMs=${Date.now() - tInvStart} status=success`);
+                    })
+                    .catch(async (err) => {
+                        console.error(`[INVENTORY_PERF] source=order orderId=${orderId} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
+                        // Revert claim so it can be retried
+                        try {
+                            await prisma.order.updateMany({
+                                where: { id: orderId },
+                                data: { inventoryDeducted: false }
+                            });
+                        } catch (revertErr) {
+                            console.error("Failed to revert inventory claim:", revertErr);
+                        }
+                    });
+            } else {
+                console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} is already deducted or claim lost. Skipping deduction.`);
+            }
         } else if (status === "COMPLETED" && skipInventoryDeduction) {
             console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Inventory deduction skipped by caller.`);
-        } else if (status === "COMPLETED") {
-            console.warn(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED but has NO items. Deduction skipped.`);
+        } else if (status === "COMPLETED" && currentOrder.status === "COMPLETED") {
+            console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} is already COMPLETED. Skipping duplicate deduction.`);
         }
 
         return NextResponse.json(order);
@@ -304,15 +339,32 @@ export async function POST(req: NextRequest) {
                 orderNumber: orderNumber,
                 tokenNumber: nextToken, // Legacy
                 kotNumbers: [nextToken], // Store as first KOT/Token number
+                inventoryDeducted: status === "COMPLETED" ? true : false,
             },
             include: { table: true },
         });
 
         // ✅ 4. AUTO-DEDUCT INVENTORY IF COMPLETED
-        if (order.status === "COMPLETED") {
+        if (order.status === "COMPLETED" && order.inventoryDeducted) {
             console.log(`[ORDER_POST_DEBUG] New Order ${order.id} is COMPLETED. Triggering inventory deduction.`);
             const { deductInventory } = await import("@/lib/inventory-utils");
-            await deductInventory(order.items as any[]);
+            
+            const tInvStart = Date.now();
+            deductInventory(order.items as any[])
+                .then(() => {
+                    console.log(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=success`);
+                })
+                .catch(async (err) => {
+                    console.error(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
+                    try {
+                        await prisma.order.updateMany({
+                            where: { id: order.id },
+                            data: { inventoryDeducted: false }
+                        });
+                    } catch (revertErr) {
+                        console.error("Failed to revert inventory claim:", revertErr);
+                    }
+                });
         }
 
         // ✅ 5. SEND EXPO PUSH NOTIFICATION FOR BACKGROUND POPUP (DATA ONLY MESSAGE)

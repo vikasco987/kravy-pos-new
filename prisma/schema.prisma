@@ -366,6 +366,8 @@ model Order {
   tokenNumber Int?    // Legacy support
   kotNumbers  Int[]   // Array of KOT/Token numbers for multiple rounds
 
+  inventoryDeducted Boolean @default(false) // ✅ Atomic Idempotency tracking
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

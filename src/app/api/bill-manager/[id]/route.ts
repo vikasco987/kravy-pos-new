@@ -437,14 +437,32 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
         data,
       });
 
-      // ✅ AUTO-DEDUCT INVENTORY WHEN SETTLING A HELD BILL
-      if (existingBill.isHeld && data.isHeld === false) {
-        try {
-          console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} settled from HELD state. Triggering inventory deduction.`);
-          const { deductInventory } = await import("@/lib/inventory-utils");
-          await deductInventory(bill.items as any[]);
-        } catch (deductErr) {
-          console.error("Failed to deduct inventory on settling held bill:", deductErr);
+      // ✅ AUTO-DEDUCT INVENTORY WHEN SETTLING A HELD BILL (ATOMIC)
+      if (existingBill.isHeld && data.isHeld === false && !existingBill.inventoryDeducted) {
+        const claim = await prisma.billManager.updateMany({
+            where: { id: bill.id, inventoryDeducted: false },
+            data: { inventoryDeducted: true }
+        });
+        
+        if (claim.count > 0) {
+            console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} settled from HELD state. Claim successful. Triggering inventory deduction.`);
+            const tInvStart = Date.now();
+            import("@/lib/inventory-utils")
+                .then(({ deductInventory }) => deductInventory(bill.items as any[]))
+                .then(() => {
+                    console.log(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
+                })
+                .catch(async (deductErr) => {
+                    console.error(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=failed error=`, deductErr);
+                    try {
+                        await prisma.billManager.updateMany({
+                            where: { id: bill.id },
+                            data: { inventoryDeducted: false }
+                        });
+                    } catch (revertErr) {
+                        console.error("Failed to revert inventory claim on bill:", revertErr);
+                    }
+                });
         }
       }
 

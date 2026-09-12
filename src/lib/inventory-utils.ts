@@ -5,9 +5,8 @@ import prisma from "./prisma";
  * @param orderItems List of items in the order
  */
 export async function deductInventory(orderItems: any[]) {
-  console.log(`[INVENTORY_DEBUG] Starting deduction for ${orderItems.length} items.`);
-
   if (!orderItems || orderItems.length === 0) return;
+  const tStart = Date.now();
 
   try {
     // 1. Aggregate requested quantities for each finished item
@@ -24,7 +23,6 @@ export async function deductInventory(orderItems: any[]) {
     }
 
     if (itemDeductions.size === 0) {
-      console.log("[INVENTORY_DEBUG] No valid items to deduct.");
       return;
     }
 
@@ -46,6 +44,8 @@ export async function deductInventory(orderItems: any[]) {
         materialDeductions.set(ri.materialId, (materialDeductions.get(ri.materialId) || 0) + totalDeduction);
       }
 
+      const updatePromises: Promise<any>[] = [];
+
       // 2c. Update raw materials bulk (with clamping to 0)
       if (materialDeductions.size > 0) {
         const materialIds = Array.from(materialDeductions.keys());
@@ -57,11 +57,12 @@ export async function deductInventory(orderItems: any[]) {
           const deduction = materialDeductions.get(material.id) || 0;
           const newStock = Math.max(0, (material.stock || 0) - deduction);
           
-          await tx.rawMaterial.update({
-            where: { id: material.id },
-            data: { stock: newStock }
-          });
-          console.log(`[INVENTORY_DEBUG] Success: New stock for ${material.name} is ${newStock}`);
+          updatePromises.push(
+            tx.rawMaterial.update({
+              where: { id: material.id },
+              data: { stock: newStock }
+            })
+          );
         }
       }
 
@@ -75,19 +76,27 @@ export async function deductInventory(orderItems: any[]) {
         if (currentItem.currentStock !== null && currentItem.currentStock !== undefined) {
           const newStock = Math.max(0, currentItem.currentStock - deduction);
           
-          await tx.item.update({
-            where: { id: currentItem.id },
-            data: { currentStock: newStock }
-          });
-          console.log(`[INVENTORY_DEBUG] Success: New stock for Finished Item ${currentItem.name} is ${newStock}`);
+          updatePromises.push(
+            tx.item.update({
+              where: { id: currentItem.id },
+              data: { currentStock: newStock }
+            })
+          );
         }
       }
+
+      // Execute all writes in parallel inside the transaction
+      if (updatePromises.length > 0) {
+        await Promise.all(updatePromises);
+      }
+
     }, {
-      maxWait: 5000, // default: 2000
-      timeout: 60000, // default: 5000
+      maxWait: 5000, 
+      timeout: 10000, // Reduced from 60000 since it should be fast now
     });
-    console.log("[INVENTORY_DEBUG] Inventory deduction cycle completed atomically.");
+    
   } catch (err) {
-    console.error("[INVENTORY_DEBUG] CRITICAL ERROR in deductInventory:", err);
+    console.error("[INVENTORY_PERF] CRITICAL ERROR in deductInventory:", err);
+    throw err; // Propagate error so caller can reset idempotency claim
   }
 }

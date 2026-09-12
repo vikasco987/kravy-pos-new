@@ -417,6 +417,7 @@ export async function POST(req: NextRequest) {
           isKotPrinted: isKotPrinted === true,
           tokenNumber: nextToken,
           kotNumbers: kotNumbers || [],
+          inventoryDeducted: (!isHeld && skipInventoryDeduction !== true) ? true : false,
         },
       });
       console.log(`[BILL_PERF_STEP] 4. BillManager Record Create: ${Date.now() - tCreateStart}ms`);
@@ -479,16 +480,24 @@ export async function POST(req: NextRequest) {
     console.log(`[BILL_MANAGER_PERF] TOTAL Transaction Time for Bill ${bill?.billNumber}: ${Date.now() - startTime}ms`);
 
     // ✅ AUTO-DEDUCT INVENTORY IN BACKGROUND (NON-BLOCKING)
-    if (!bill.isHeld && skipInventoryDeduction !== true) {
+    if (!bill.isHeld && skipInventoryDeduction !== true && bill.inventoryDeducted) {
       console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Triggering background inventory deduction.`);
       const tInvStart = Date.now();
       import("@/lib/inventory-utils")
         .then(({ deductInventory }) => deductInventory(bill.items as any[]))
         .then(() => {
-          console.log(`[BILL_PERF_STEP] 6. Async Inventory Deduction Complete: ${Date.now() - tInvStart}ms`);
+          console.log(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
         })
-        .catch((deductErr) => {
-          console.error("Failed to deduct inventory from bill:", deductErr);
+        .catch(async (deductErr) => {
+          console.error(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} durationMs=${Date.now() - tInvStart} status=failed error=`, deductErr);
+          try {
+              await prisma.billManager.updateMany({
+                  where: { id: bill.id },
+                  data: { inventoryDeducted: false }
+              });
+          } catch (revertErr) {
+              console.error("Failed to revert inventory claim on bill:", revertErr);
+          }
         });
     } else if (skipInventoryDeduction === true) {
       console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Inventory deduction skipped by caller.`);
