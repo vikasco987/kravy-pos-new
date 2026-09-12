@@ -1,0 +1,1275 @@
+diff --git a/final_diff.patch b/final_diff.patch
+new file mode 100644
+index 0000000..0e151a6
+--- /dev/null
++++ b/final_diff.patch
+@@ -0,0 +1,463 @@
++diff --git a/prisma/schema.prisma b/prisma/schema.prisma
++index 74f84aa..8604154 100644
++--- a/prisma/schema.prisma
+++++ b/prisma/schema.prisma
++@@ -732,6 +732,8 @@ model BillManager {
++   whatsappSentAt DateTime?
++   whatsappSid    String?
++ 
+++  inventoryDeducted Boolean @default(false) // ✅ Atomic Idempotency tracking
+++
++   @@unique([clerkUserId, billNumber]) // ✅ FIX: Global uniqueness changed to per-business uniqueness
++   @@index([clerkUserId])
++   @@index([isDeleted, createdAt])
++diff --git a/src/app/api/bill-manager/[id]/route.ts b/src/app/api/bill-manager/[id]/route.ts
++index 64ba2a9..36d00d9 100644
++--- a/src/app/api/bill-manager/[id]/route.ts
+++++ b/src/app/api/bill-manager/[id]/route.ts
++@@ -439,30 +439,28 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
++ 
++       // ✅ AUTO-DEDUCT INVENTORY WHEN SETTLING A HELD BILL (ATOMIC)
++       if (existingBill.isHeld && data.isHeld === false && !existingBill.inventoryDeducted) {
++-        const claim = await prisma.billManager.updateMany({
++-            where: { id: bill.id, inventoryDeducted: false },
++-            data: { inventoryDeducted: true }
++-        });
+++        console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} settled from HELD state. Awaiting background inventory deduction.`);
++         
++-        if (claim.count > 0) {
++-            console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} settled from HELD state. Claim successful. Triggering inventory deduction.`);
++-            const tInvStart = Date.now();
++-            import("@/lib/inventory-utils")
++-                .then(({ deductInventory }) => deductInventory(bill.items as any[]))
++-                .then(() => {
++-                    console.log(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
++-                })
++-                .catch(async (deductErr) => {
++-                    console.error(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=failed error=`, deductErr);
++-                    try {
++-                        await prisma.billManager.updateMany({
++-                            where: { id: bill.id },
++-                            data: { inventoryDeducted: false }
++-                        });
++-                    } catch (revertErr) {
++-                        console.error("Failed to revert inventory claim on bill:", revertErr);
++-                    }
+++        const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
+++        const tInvStart = Date.now();
+++        
+++        try {
+++            await withTransactionRetry(async (tx) => {
+++                const claim = await tx.billManager.updateMany({
+++                    where: { id: bill.id, inventoryDeducted: false },
+++                    data: { inventoryDeducted: true }
++                 });
+++                
+++                if (claim.count > 0) {
+++                    console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} won claim. Triggering inventory deduction.`);
+++                    await executeInventoryDeduction(tx, bill.items as any[]);
+++                    console.log(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
+++                }
+++            });
+++        } catch (err) {
+++            console.error(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
+++            // We DO NOT throw the error here to preserve the business contract. The bill was successfully updated.
+++            // The `inventoryDeducted` flag safely rolls back to `false` automatically via transaction abort.
++         }
++       }
++ 
++diff --git a/src/app/api/bill-manager/route.ts b/src/app/api/bill-manager/route.ts
++index 1d6c4b9..0e5de4d 100644
++--- a/src/app/api/bill-manager/route.ts
+++++ b/src/app/api/bill-manager/route.ts
++@@ -214,11 +214,11 @@ export async function POST(req: NextRequest) {
++     // ✅ ATOMIC TRANSACTION FOR BILL CREATION, COUNTER ALLOCATION, & LEDGER
++     const startTime = Date.now();
++     
++-    let bill = null;
+++    let result: any = null;
++     let attempts = 0;
++     while (attempts < 3) {
++       try {
++-        bill = await prisma.$transaction(async (tx) => {
+++        result = await prisma.$transaction(async (tx) => {
++           // 1. ATOMIC BILL COUNTER & BILL NUMBER ALLOCATION
++           const t1Start = Date.now();
++           let nextSerial = 1;
++@@ -259,9 +259,10 @@ export async function POST(req: NextRequest) {
++           let finalBillNumber = body.billNumber || `INV/${yy}${mm}/${serialLabel}`;
++       console.log(`[BILL_PERF_STEP] 1. Bill Counter Allocation: ${Date.now() - t1Start}ms`);
++ 
+++      let orderForDeduction = null;
++       if (body.orderId) {
++         const tOrderStart = Date.now();
++-        const order = await tx.order.findUnique({ where: { id: body.orderId } });
+++        orderForDeduction = await tx.order.findUnique({ where: { id: body.orderId } });
++         console.log(`[BILL_PERF_STEP] 1b. Order Lookup: ${Date.now() - tOrderStart}ms`);
++       }
++ 
++@@ -459,7 +460,7 @@ export async function POST(req: NextRequest) {
++       }
++       console.log(`[BILL_PERF_STEP] 5. Wallet Ledger Updates: ${Date.now() - tWalletStart}ms`);
++ 
++-      return createdBill;
+++      return { bill: createdBill, orderForDeduction };
++     }, {
++       timeout: 10000
++     });
++@@ -477,28 +478,93 @@ export async function POST(req: NextRequest) {
++       }
++     }
++ 
++-    console.log(`[BILL_MANAGER_PERF] TOTAL Transaction Time for Bill ${bill?.billNumber}: ${Date.now() - startTime}ms`);
+++    console.log(`[BILL_MANAGER_PERF] TOTAL Transaction Time for Bill ${result?.bill?.billNumber}: ${Date.now() - startTime}ms`);
+++    
+++    const bill = result.bill;
+++    const orderForDeduction = result.orderForDeduction;
++ 
++     // ✅ AUTO-DEDUCT INVENTORY IN BACKGROUND (NON-BLOCKING)
++     if (!bill.isHeld && skipInventoryDeduction !== true && bill.inventoryDeducted) {
++-      console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Triggering background inventory deduction.`);
+++      console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Awaiting background inventory deduction.`);
+++      
+++      const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
++       const tInvStart = Date.now();
++-      import("@/lib/inventory-utils")
++-        .then(({ deductInventory }) => deductInventory(bill.items as any[]))
++-        .then(() => {
++-          console.log(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
++-        })
++-        .catch(async (deductErr) => {
++-          console.error(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} durationMs=${Date.now() - tInvStart} status=failed error=`, deductErr);
++-          try {
++-              await prisma.billManager.updateMany({
+++      let itemsToDeduct = bill.items as any[];
+++      
+++      try {
+++          // ENTIRE OPERATION WRAPPED IN ACID TRANSACTION WITH RETRY
+++          await withTransactionRetry(async (tx) => {
+++              // 1. Claim BillManager Lock
+++              const billLock = await tx.billManager.findUnique({ where: { id: bill.id } });
+++              if (billLock?.inventoryDeducted) {
+++                  console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.id} already marked deducted in DB.`);
+++                  return; // Someone else handled it
+++              }
+++              
+++              // 2. Cross-Entity Lock (Order)
+++              if (body.orderId) {
+++                  const orderLock = await tx.order.findUnique({ where: { id: body.orderId } });
+++                  
+++                  if (orderLock?.inventoryDeducted) {
+++                      // Order was already deducted (e.g. by concurrent Order PATCH).
+++                      // Only deduct the DIFFERENCE (newly added items).
+++                      const orderItems = (orderLock.items as any[]) || [];
+++                      const orderItemQuantities = new Map<string, number>();
+++                      
+++                      for (const oi of orderItems) {
+++                          const id = oi.itemId || oi.id;
+++                          if (id) {
+++                              orderItemQuantities.set(id, (orderItemQuantities.get(id) || 0) + Number(oi.qty || oi.quantity || 1));
+++                          }
+++                      }
+++                      
+++                      const newItemsToDeduct = [];
+++                      for (const bi of itemsToDeduct) {
+++                          const id = bi.itemId || bi.id;
+++                          if (!id) continue;
+++                          
+++                          const billQty = Number(bi.qty || bi.quantity || 1);
+++                          const orderQty = orderItemQuantities.get(id) || 0;
+++                          
+++                          if (billQty > orderQty) {
+++                              const difference = billQty - orderQty;
+++                              newItemsToDeduct.push({ ...bi, qty: difference, quantity: difference });
+++                              orderItemQuantities.set(id, orderQty + difference);
+++                          }
+++                      }
+++                      
+++                      itemsToDeduct = newItemsToDeduct;
+++                      console.log(`[BILL_MANAGER_DEBUG] Order ${orderLock.id} already deducted. Filtered bill items to ${itemsToDeduct.length} new items.`);
+++                  } else if (orderLock) {
+++                      // We won the race! Lock the order.
+++                      await tx.order.update({
+++                          where: { id: body.orderId },
+++                          data: { inventoryDeducted: true }
+++                      });
+++                      console.log(`[BILL_MANAGER_DEBUG] Bill claimed lock on Order ${body.orderId}. Deducting full bill items.`);
+++                  }
+++              }
+++
+++              // 3. Mark Bill as Deducted
+++              await tx.billManager.update({
++                   where: { id: bill.id },
++-                  data: { inventoryDeducted: false }
+++                  data: { inventoryDeducted: true }
++               });
++-          } catch (revertErr) {
++-              console.error("Failed to revert inventory claim on bill:", revertErr);
++-          }
++-        });
+++
+++              // 4. Perform the Actual Deduction
+++              if (itemsToDeduct.length > 0) {
+++                  await executeInventoryDeduction(tx, itemsToDeduct);
+++                  console.log(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
+++              } else {
+++                  console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} has no new items to deduct after cross-entity protection.`);
+++              }
+++          });
+++      } catch (deductErr) {
+++          console.error(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} status=failed error=`, deductErr);
+++          // Transaction automatically rolled back! 
+++          // `inventoryDeducted` is safely false again. 
+++          // We DO NOT throw the error to preserve the business contract (bill is still created successfully).
+++      }
++     } else if (skipInventoryDeduction === true) {
++       console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Inventory deduction skipped by caller.`);
++     }
++diff --git a/src/app/api/orders/route.ts b/src/app/api/orders/route.ts
++index 88131ce..c14c758 100644
++--- a/src/app/api/orders/route.ts
+++++ b/src/app/api/orders/route.ts
++@@ -171,36 +171,31 @@ export async function PATCH(req: NextRequest) {
++         const isCompleting = status === "COMPLETED" && currentOrder.status !== "COMPLETED";
++         
++         if (isCompleting && !skipInventoryDeduction && order.items && Array.isArray(order.items) && order.items.length > 0) {
++-            // ATOMIC CLAIM
++-            const claim = await prisma.order.updateMany({
++-                where: { id: orderId, inventoryDeducted: false },
++-                data: { inventoryDeducted: true }
++-            });
++-
++-            if (claim.count > 0) {
++-                console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Claim successful. Triggering inventory deduction.`);
++-                const { deductInventory } = await import("@/lib/inventory-utils");
++-                
++-                // Fire and forget, but with rollback on failure
++-                const tInvStart = Date.now();
++-                deductInventory(order.items)
++-                    .then(() => {
++-                        console.log(`[INVENTORY_PERF] source=order orderId=${orderId} durationMs=${Date.now() - tInvStart} status=success`);
++-                    })
++-                    .catch(async (err) => {
++-                        console.error(`[INVENTORY_PERF] source=order orderId=${orderId} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
++-                        // Revert claim so it can be retried
++-                        try {
++-                            await prisma.order.updateMany({
++-                                where: { id: orderId },
++-                                data: { inventoryDeducted: false }
++-                            });
++-                        } catch (revertErr) {
++-                            console.error("Failed to revert inventory claim:", revertErr);
++-                        }
+++            console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Awaiting transactional deduction.`);
+++            
+++            const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
+++            const tInvStart = Date.now();
+++            try {
+++                // Ensure atomic transaction + retry
+++                await withTransactionRetry(async (tx) => {
+++                    // ATOMIC CLAIM (Inside Transaction)
+++                    const claim = await tx.order.updateMany({
+++                        where: { id: orderId, inventoryDeducted: false },
+++                        data: { inventoryDeducted: true }
++                     });
++-            } else {
++-                console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} is already deducted or claim lost. Skipping deduction.`);
+++                    
+++                    if (claim.count > 0) {
+++                        console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} won claim. Executing deduction.`);
+++                        await executeInventoryDeduction(tx, order.items);
+++                    } else {
+++                        console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} already deducted or claim lost. Skipping deduction.`);
+++                    }
+++                });
+++                console.log(`[INVENTORY_PERF] source=order_patch orderId=${orderId} durationMs=${Date.now() - tInvStart} status=success`);
+++            } catch (err) {
+++                console.error(`[INVENTORY_PERF] source=order_patch orderId=${orderId} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
+++                // We DO NOT throw the error here to preserve the business contract. The order was successfully updated.
+++                // The `inventoryDeducted` flag safely rolls back to `false` automatically via transaction abort.
++             }
++         } else if (status === "COMPLETED" && skipInventoryDeduction) {
++             console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Inventory deduction skipped by caller.`);
++@@ -339,32 +334,35 @@ export async function POST(req: NextRequest) {
++                 orderNumber: orderNumber,
++                 tokenNumber: nextToken, // Legacy
++                 kotNumbers: [nextToken], // Store as first KOT/Token number
++-                inventoryDeducted: status === "COMPLETED" ? true : false,
+++                inventoryDeducted: false, // Wait for transaction to set this to true!
++             },
++             include: { table: true },
++         });
++ 
++         // ✅ 4. AUTO-DEDUCT INVENTORY IF COMPLETED
++-        if (order.status === "COMPLETED" && order.inventoryDeducted) {
++-            console.log(`[ORDER_POST_DEBUG] New Order ${order.id} is COMPLETED. Triggering inventory deduction.`);
++-            const { deductInventory } = await import("@/lib/inventory-utils");
+++        if (order.status === "COMPLETED" && !order.inventoryDeducted) {
+++            console.log(`[ORDER_POST_DEBUG] New Order ${order.id} is COMPLETED. Awaiting transactional deduction.`);
+++            const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
++             
++             const tInvStart = Date.now();
++-            deductInventory(order.items as any[])
++-                .then(() => {
++-                    console.log(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=success`);
++-                })
++-                .catch(async (err) => {
++-                    console.error(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
++-                    try {
++-                        await prisma.order.updateMany({
++-                            where: { id: order.id },
++-                            data: { inventoryDeducted: false }
++-                        });
++-                    } catch (revertErr) {
++-                        console.error("Failed to revert inventory claim:", revertErr);
+++            try {
+++                // Ensure atomic transaction + retry
+++                await withTransactionRetry(async (tx) => {
+++                    const claim = await tx.order.updateMany({
+++                        where: { id: order.id, inventoryDeducted: false },
+++                        data: { inventoryDeducted: true }
+++                    });
+++                    
+++                    if (claim.count > 0) {
+++                        await executeInventoryDeduction(tx, order.items as any[]);
++                     }
++                 });
+++                console.log(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=success`);
+++            } catch (err) {
+++                console.error(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
+++                // We DO NOT throw the error here to preserve the business contract. The order was successfully created.
+++                // The `inventoryDeducted` flag safely rolls back to `false` automatically via transaction abort.
+++            }
++         }
++ 
++         // ✅ 5. SEND EXPO PUSH NOTIFICATION FOR BACKGROUND POPUP (DATA ONLY MESSAGE)
++diff --git a/src/lib/inventory-utils.ts b/src/lib/inventory-utils.ts
++index d3a3792..4e07b5f 100644
++--- a/src/lib/inventory-utils.ts
+++++ b/src/lib/inventory-utils.ts
++@@ -1,15 +1,45 @@
++ import prisma from "./prisma";
++ 
++ /**
++- * Deducts raw materials based on the recipes of items in an order.
++- * @param orderItems List of items in the order
+++ * Executes a Prisma transaction with explicit retry logic for transient MongoDB/Prisma transaction conflicts.
+++ * Retries on P2034 (WriteConflict) and P2028 (Transaction API error) up to maxRetries.
++  */
++-export async function deductInventory(orderItems: any[]) {
+++export async function withTransactionRetry<T>(
+++  operation: (tx: any) => Promise<T>,
+++  maxRetries: number = 3
+++): Promise<T> {
+++  let attempt = 0;
+++  while (attempt < maxRetries) {
+++    try {
+++      return await prisma.$transaction(operation, {
+++        maxWait: 5000,
+++        timeout: 15000,
+++      });
+++    } catch (error: any) {
+++      if (error.code === "P2034" || error.code === "P2028") {
+++        attempt++;
+++        if (attempt >= maxRetries) {
+++          console.error(`[TX_RETRY] Failed after ${maxRetries} attempts due to ${error.code}`);
+++          throw error;
+++        }
+++        console.warn(`[TX_RETRY] Transaction conflict ${error.code}. Retrying attempt ${attempt + 1}/${maxRetries}...`);
+++        await new Promise((resolve) => setTimeout(resolve, 100 * attempt)); // Exponential backoff
+++      } else {
+++        throw error; // Throw non-retryable errors immediately
+++      }
+++    }
+++  }
+++  throw new Error("Transaction retry loop exhausted without returning or throwing. This should be unreachable.");
+++}
+++
+++/**
+++ * Executes the inventory deduction logic using an existing transaction client.
+++ * This allows callers to bundle locks and deductions into a single ACID transaction.
+++ */
+++export async function executeInventoryDeduction(tx: any, orderItems: any[]) {
++   if (!orderItems || orderItems.length === 0) return;
++-  const tStart = Date.now();
++ 
++-  try {
++-    // 1. Aggregate requested quantities for each finished item
+++  // 1. Aggregate requested quantities for each finished item
++     const itemDeductions = new Map<string, number>();
++     
++     for (const item of orderItems) {
++@@ -28,10 +58,9 @@ export async function deductInventory(orderItems: any[]) {
++ 
++     const itemIds = Array.from(itemDeductions.keys());
++ 
++-    // 2. Execute within transaction
++-    await prisma.$transaction(async (tx) => {
++-      // 2a. Fetch all required recipes at once
++-      const recipeItems = await tx.recipeItem.findMany({
+++    // 2. Execute using the provided transaction client
+++    // 2a. Fetch all required recipes at once
+++    const recipeItems = await tx.recipeItem.findMany({
++         where: { itemId: { in: itemIds } }
++       });
++ 
++@@ -44,8 +73,6 @@ export async function deductInventory(orderItems: any[]) {
++         materialDeductions.set(ri.materialId, (materialDeductions.get(ri.materialId) || 0) + totalDeduction);
++       }
++ 
++-      const updatePromises: Promise<any>[] = [];
++-
++       // 2c. Update raw materials bulk (with clamping to 0)
++       if (materialDeductions.size > 0) {
++         const materialIds = Array.from(materialDeductions.keys());
++@@ -57,12 +84,10 @@ export async function deductInventory(orderItems: any[]) {
++           const deduction = materialDeductions.get(material.id) || 0;
++           const newStock = Math.max(0, (material.stock || 0) - deduction);
++           
++-          updatePromises.push(
++-            tx.rawMaterial.update({
++-              where: { id: material.id },
++-              data: { stock: newStock }
++-            })
++-          );
+++          await tx.rawMaterial.update({
+++            where: { id: material.id },
+++            data: { stock: newStock }
+++          });
++         }
++       }
++ 
++@@ -76,27 +101,10 @@ export async function deductInventory(orderItems: any[]) {
++         if (currentItem.currentStock !== null && currentItem.currentStock !== undefined) {
++           const newStock = Math.max(0, currentItem.currentStock - deduction);
++           
++-          updatePromises.push(
++-            tx.item.update({
++-              where: { id: currentItem.id },
++-              data: { currentStock: newStock }
++-            })
++-          );
+++          await tx.item.update({
+++            where: { id: currentItem.id },
+++            data: { currentStock: newStock }
+++          });
++         }
++       }
++-
++-      // Execute all writes in parallel inside the transaction
++-      if (updatePromises.length > 0) {
++-        await Promise.all(updatePromises);
++       }
++-
++-    }, {
++-      maxWait: 5000, 
++-      timeout: 10000, // Reduced from 60000 since it should be fast now
++-    });
++-    
++-  } catch (err) {
++-    console.error("[INVENTORY_PERF] CRITICAL ERROR in deductInventory:", err);
++-    throw err; // Propagate error so caller can reset idempotency claim
++-  }
++-}
+diff --git a/prisma/schema.prisma b/prisma/schema.prisma
+index 74f84aa..8604154 100644
+--- a/prisma/schema.prisma
++++ b/prisma/schema.prisma
+@@ -732,6 +732,8 @@ model BillManager {
+   whatsappSentAt DateTime?
+   whatsappSid    String?
+ 
++  inventoryDeducted Boolean @default(false) // ✅ Atomic Idempotency tracking
++
+   @@unique([clerkUserId, billNumber]) // ✅ FIX: Global uniqueness changed to per-business uniqueness
+   @@index([clerkUserId])
+   @@index([isDeleted, createdAt])
+diff --git a/scratch/test-concurrency.ts b/scratch/test-concurrency.ts
+new file mode 100644
+index 0000000..adb805f
+--- /dev/null
++++ b/scratch/test-concurrency.ts
+@@ -0,0 +1,41 @@
++import { PrismaClient } from '@prisma/client';
++const prisma = new PrismaClient();
++
++async function simulateOrderCompletion(orderId: string, items: any[]) {
++    let attempts = 0;
++    const maxAttempts = 3;
++    while (attempts < maxAttempts) {
++        try {
++            console.log(`[Order ${orderId}] Attempt ${attempts + 1}: Starting transaction...`);
++            await prisma.$transaction(async (tx) => {
++                const claim = await tx.order.updateMany({
++                    where: { id: orderId, inventoryDeducted: false },
++                    data: { inventoryDeducted: true }
++                });
++                
++                if (claim.count > 0) {
++                    console.log(`[Order ${orderId}] Won claim. Deducting inventory...`);
++                    // Simulate fast deduction
++                    await new Promise(r => setTimeout(r, 100));
++                    console.log(`[Order ${orderId}] Deduction complete.`);
++                } else {
++                    console.log(`[Order ${orderId}] Lost claim or already deducted. Skipping.`);
++                }
++            }, { isolationLevel: 'Serializable', maxWait: 5000, timeout: 15000 });
++            return true;
++        } catch (e: any) {
++            console.error(`[Order ${orderId}] Transaction failed with code: ${e.code}`);
++            if (e.code === 'P2034') { // WriteConflict
++                attempts++;
++                if (attempts >= maxAttempts) throw e;
++                console.log(`[Order ${orderId}] Retrying due to P2034...`);
++                await new Promise(r => setTimeout(r, 100 * attempts)); // Exponential backoff
++            } else {
++                throw e;
++            }
++        }
++    }
++}
++
++// In actual tests we would seed DB and run concurrent simulated orders
++console.log("Test script compiled successfully. Run this with ts-node when DB is ready.");
+diff --git a/src/app/api/bill-manager/[id]/route.ts b/src/app/api/bill-manager/[id]/route.ts
+index 64ba2a9..36d00d9 100644
+--- a/src/app/api/bill-manager/[id]/route.ts
++++ b/src/app/api/bill-manager/[id]/route.ts
+@@ -439,30 +439,28 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
+ 
+       // ✅ AUTO-DEDUCT INVENTORY WHEN SETTLING A HELD BILL (ATOMIC)
+       if (existingBill.isHeld && data.isHeld === false && !existingBill.inventoryDeducted) {
+-        const claim = await prisma.billManager.updateMany({
+-            where: { id: bill.id, inventoryDeducted: false },
+-            data: { inventoryDeducted: true }
+-        });
++        console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} settled from HELD state. Awaiting background inventory deduction.`);
+         
+-        if (claim.count > 0) {
+-            console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} settled from HELD state. Claim successful. Triggering inventory deduction.`);
+-            const tInvStart = Date.now();
+-            import("@/lib/inventory-utils")
+-                .then(({ deductInventory }) => deductInventory(bill.items as any[]))
+-                .then(() => {
+-                    console.log(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
+-                })
+-                .catch(async (deductErr) => {
+-                    console.error(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=failed error=`, deductErr);
+-                    try {
+-                        await prisma.billManager.updateMany({
+-                            where: { id: bill.id },
+-                            data: { inventoryDeducted: false }
+-                        });
+-                    } catch (revertErr) {
+-                        console.error("Failed to revert inventory claim on bill:", revertErr);
+-                    }
++        const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
++        const tInvStart = Date.now();
++        
++        try {
++            await withTransactionRetry(async (tx) => {
++                const claim = await tx.billManager.updateMany({
++                    where: { id: bill.id, inventoryDeducted: false },
++                    data: { inventoryDeducted: true }
+                 });
++                
++                if (claim.count > 0) {
++                    console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} won claim. Triggering inventory deduction.`);
++                    await executeInventoryDeduction(tx, bill.items as any[]);
++                    console.log(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
++                }
++            });
++        } catch (err) {
++            console.error(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
++            // We DO NOT throw the error here to preserve the business contract. The bill was successfully updated.
++            // The `inventoryDeducted` flag safely rolls back to `false` automatically via transaction abort.
+         }
+       }
+ 
+diff --git a/src/app/api/bill-manager/route.ts b/src/app/api/bill-manager/route.ts
+index 1d6c4b9..0e5de4d 100644
+--- a/src/app/api/bill-manager/route.ts
++++ b/src/app/api/bill-manager/route.ts
+@@ -214,11 +214,11 @@ export async function POST(req: NextRequest) {
+     // ✅ ATOMIC TRANSACTION FOR BILL CREATION, COUNTER ALLOCATION, & LEDGER
+     const startTime = Date.now();
+     
+-    let bill = null;
++    let result: any = null;
+     let attempts = 0;
+     while (attempts < 3) {
+       try {
+-        bill = await prisma.$transaction(async (tx) => {
++        result = await prisma.$transaction(async (tx) => {
+           // 1. ATOMIC BILL COUNTER & BILL NUMBER ALLOCATION
+           const t1Start = Date.now();
+           let nextSerial = 1;
+@@ -259,9 +259,10 @@ export async function POST(req: NextRequest) {
+           let finalBillNumber = body.billNumber || `INV/${yy}${mm}/${serialLabel}`;
+       console.log(`[BILL_PERF_STEP] 1. Bill Counter Allocation: ${Date.now() - t1Start}ms`);
+ 
++      let orderForDeduction = null;
+       if (body.orderId) {
+         const tOrderStart = Date.now();
+-        const order = await tx.order.findUnique({ where: { id: body.orderId } });
++        orderForDeduction = await tx.order.findUnique({ where: { id: body.orderId } });
+         console.log(`[BILL_PERF_STEP] 1b. Order Lookup: ${Date.now() - tOrderStart}ms`);
+       }
+ 
+@@ -459,7 +460,7 @@ export async function POST(req: NextRequest) {
+       }
+       console.log(`[BILL_PERF_STEP] 5. Wallet Ledger Updates: ${Date.now() - tWalletStart}ms`);
+ 
+-      return createdBill;
++      return { bill: createdBill, orderForDeduction };
+     }, {
+       timeout: 10000
+     });
+@@ -477,28 +478,93 @@ export async function POST(req: NextRequest) {
+       }
+     }
+ 
+-    console.log(`[BILL_MANAGER_PERF] TOTAL Transaction Time for Bill ${bill?.billNumber}: ${Date.now() - startTime}ms`);
++    console.log(`[BILL_MANAGER_PERF] TOTAL Transaction Time for Bill ${result?.bill?.billNumber}: ${Date.now() - startTime}ms`);
++    
++    const bill = result.bill;
++    const orderForDeduction = result.orderForDeduction;
+ 
+     // ✅ AUTO-DEDUCT INVENTORY IN BACKGROUND (NON-BLOCKING)
+     if (!bill.isHeld && skipInventoryDeduction !== true && bill.inventoryDeducted) {
+-      console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Triggering background inventory deduction.`);
++      console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Awaiting background inventory deduction.`);
++      
++      const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
+       const tInvStart = Date.now();
+-      import("@/lib/inventory-utils")
+-        .then(({ deductInventory }) => deductInventory(bill.items as any[]))
+-        .then(() => {
+-          console.log(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
+-        })
+-        .catch(async (deductErr) => {
+-          console.error(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} durationMs=${Date.now() - tInvStart} status=failed error=`, deductErr);
+-          try {
+-              await prisma.billManager.updateMany({
++      let itemsToDeduct = bill.items as any[];
++      
++      try {
++          // ENTIRE OPERATION WRAPPED IN ACID TRANSACTION WITH RETRY
++          await withTransactionRetry(async (tx) => {
++              // 1. Claim BillManager Lock
++              const billLock = await tx.billManager.findUnique({ where: { id: bill.id } });
++              if (billLock?.inventoryDeducted) {
++                  console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.id} already marked deducted in DB.`);
++                  return; // Someone else handled it
++              }
++              
++              // 2. Cross-Entity Lock (Order)
++              if (body.orderId) {
++                  const orderLock = await tx.order.findUnique({ where: { id: body.orderId } });
++                  
++                  if (orderLock?.inventoryDeducted) {
++                      // Order was already deducted (e.g. by concurrent Order PATCH).
++                      // Only deduct the DIFFERENCE (newly added items).
++                      const orderItems = (orderLock.items as any[]) || [];
++                      const orderItemQuantities = new Map<string, number>();
++                      
++                      for (const oi of orderItems) {
++                          const id = oi.itemId || oi.id;
++                          if (id) {
++                              orderItemQuantities.set(id, (orderItemQuantities.get(id) || 0) + Number(oi.qty || oi.quantity || 1));
++                          }
++                      }
++                      
++                      const newItemsToDeduct = [];
++                      for (const bi of itemsToDeduct) {
++                          const id = bi.itemId || bi.id;
++                          if (!id) continue;
++                          
++                          const billQty = Number(bi.qty || bi.quantity || 1);
++                          const orderQty = orderItemQuantities.get(id) || 0;
++                          
++                          if (billQty > orderQty) {
++                              const difference = billQty - orderQty;
++                              newItemsToDeduct.push({ ...bi, qty: difference, quantity: difference });
++                              orderItemQuantities.set(id, orderQty + difference);
++                          }
++                      }
++                      
++                      itemsToDeduct = newItemsToDeduct;
++                      console.log(`[BILL_MANAGER_DEBUG] Order ${orderLock.id} already deducted. Filtered bill items to ${itemsToDeduct.length} new items.`);
++                  } else if (orderLock) {
++                      // We won the race! Lock the order.
++                      await tx.order.update({
++                          where: { id: body.orderId },
++                          data: { inventoryDeducted: true }
++                      });
++                      console.log(`[BILL_MANAGER_DEBUG] Bill claimed lock on Order ${body.orderId}. Deducting full bill items.`);
++                  }
++              }
++
++              // 3. Mark Bill as Deducted
++              await tx.billManager.update({
+                   where: { id: bill.id },
+-                  data: { inventoryDeducted: false }
++                  data: { inventoryDeducted: true }
+               });
+-          } catch (revertErr) {
+-              console.error("Failed to revert inventory claim on bill:", revertErr);
+-          }
+-        });
++
++              // 4. Perform the Actual Deduction
++              if (itemsToDeduct.length > 0) {
++                  await executeInventoryDeduction(tx, itemsToDeduct);
++                  console.log(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
++              } else {
++                  console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} has no new items to deduct after cross-entity protection.`);
++              }
++          });
++      } catch (deductErr) {
++          console.error(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} status=failed error=`, deductErr);
++          // Transaction automatically rolled back! 
++          // `inventoryDeducted` is safely false again. 
++          // We DO NOT throw the error to preserve the business contract (bill is still created successfully).
++      }
+     } else if (skipInventoryDeduction === true) {
+       console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Inventory deduction skipped by caller.`);
+     }
+diff --git a/src/app/api/orders/route.ts b/src/app/api/orders/route.ts
+index 88131ce..c14c758 100644
+--- a/src/app/api/orders/route.ts
++++ b/src/app/api/orders/route.ts
+@@ -171,36 +171,31 @@ export async function PATCH(req: NextRequest) {
+         const isCompleting = status === "COMPLETED" && currentOrder.status !== "COMPLETED";
+         
+         if (isCompleting && !skipInventoryDeduction && order.items && Array.isArray(order.items) && order.items.length > 0) {
+-            // ATOMIC CLAIM
+-            const claim = await prisma.order.updateMany({
+-                where: { id: orderId, inventoryDeducted: false },
+-                data: { inventoryDeducted: true }
+-            });
+-
+-            if (claim.count > 0) {
+-                console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Claim successful. Triggering inventory deduction.`);
+-                const { deductInventory } = await import("@/lib/inventory-utils");
+-                
+-                // Fire and forget, but with rollback on failure
+-                const tInvStart = Date.now();
+-                deductInventory(order.items)
+-                    .then(() => {
+-                        console.log(`[INVENTORY_PERF] source=order orderId=${orderId} durationMs=${Date.now() - tInvStart} status=success`);
+-                    })
+-                    .catch(async (err) => {
+-                        console.error(`[INVENTORY_PERF] source=order orderId=${orderId} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
+-                        // Revert claim so it can be retried
+-                        try {
+-                            await prisma.order.updateMany({
+-                                where: { id: orderId },
+-                                data: { inventoryDeducted: false }
+-                            });
+-                        } catch (revertErr) {
+-                            console.error("Failed to revert inventory claim:", revertErr);
+-                        }
++            console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Awaiting transactional deduction.`);
++            
++            const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
++            const tInvStart = Date.now();
++            try {
++                // Ensure atomic transaction + retry
++                await withTransactionRetry(async (tx) => {
++                    // ATOMIC CLAIM (Inside Transaction)
++                    const claim = await tx.order.updateMany({
++                        where: { id: orderId, inventoryDeducted: false },
++                        data: { inventoryDeducted: true }
+                     });
+-            } else {
+-                console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} is already deducted or claim lost. Skipping deduction.`);
++                    
++                    if (claim.count > 0) {
++                        console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} won claim. Executing deduction.`);
++                        await executeInventoryDeduction(tx, order.items);
++                    } else {
++                        console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} already deducted or claim lost. Skipping deduction.`);
++                    }
++                });
++                console.log(`[INVENTORY_PERF] source=order_patch orderId=${orderId} durationMs=${Date.now() - tInvStart} status=success`);
++            } catch (err) {
++                console.error(`[INVENTORY_PERF] source=order_patch orderId=${orderId} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
++                // We DO NOT throw the error here to preserve the business contract. The order was successfully updated.
++                // The `inventoryDeducted` flag safely rolls back to `false` automatically via transaction abort.
+             }
+         } else if (status === "COMPLETED" && skipInventoryDeduction) {
+             console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Inventory deduction skipped by caller.`);
+@@ -339,32 +334,35 @@ export async function POST(req: NextRequest) {
+                 orderNumber: orderNumber,
+                 tokenNumber: nextToken, // Legacy
+                 kotNumbers: [nextToken], // Store as first KOT/Token number
+-                inventoryDeducted: status === "COMPLETED" ? true : false,
++                inventoryDeducted: false, // Wait for transaction to set this to true!
+             },
+             include: { table: true },
+         });
+ 
+         // ✅ 4. AUTO-DEDUCT INVENTORY IF COMPLETED
+-        if (order.status === "COMPLETED" && order.inventoryDeducted) {
+-            console.log(`[ORDER_POST_DEBUG] New Order ${order.id} is COMPLETED. Triggering inventory deduction.`);
+-            const { deductInventory } = await import("@/lib/inventory-utils");
++        if (order.status === "COMPLETED" && !order.inventoryDeducted) {
++            console.log(`[ORDER_POST_DEBUG] New Order ${order.id} is COMPLETED. Awaiting transactional deduction.`);
++            const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
+             
+             const tInvStart = Date.now();
+-            deductInventory(order.items as any[])
+-                .then(() => {
+-                    console.log(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=success`);
+-                })
+-                .catch(async (err) => {
+-                    console.error(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
+-                    try {
+-                        await prisma.order.updateMany({
+-                            where: { id: order.id },
+-                            data: { inventoryDeducted: false }
+-                        });
+-                    } catch (revertErr) {
+-                        console.error("Failed to revert inventory claim:", revertErr);
++            try {
++                // Ensure atomic transaction + retry
++                await withTransactionRetry(async (tx) => {
++                    const claim = await tx.order.updateMany({
++                        where: { id: order.id, inventoryDeducted: false },
++                        data: { inventoryDeducted: true }
++                    });
++                    
++                    if (claim.count > 0) {
++                        await executeInventoryDeduction(tx, order.items as any[]);
+                     }
+                 });
++                console.log(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=success`);
++            } catch (err) {
++                console.error(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
++                // We DO NOT throw the error here to preserve the business contract. The order was successfully created.
++                // The `inventoryDeducted` flag safely rolls back to `false` automatically via transaction abort.
++            }
+         }
+ 
+         // ✅ 5. SEND EXPO PUSH NOTIFICATION FOR BACKGROUND POPUP (DATA ONLY MESSAGE)
+diff --git a/src/lib/inventory-utils.ts b/src/lib/inventory-utils.ts
+index d3a3792..474f5fc 100644
+--- a/src/lib/inventory-utils.ts
++++ b/src/lib/inventory-utils.ts
+@@ -1,15 +1,45 @@
+ import prisma from "./prisma";
+ 
+ /**
+- * Deducts raw materials based on the recipes of items in an order.
+- * @param orderItems List of items in the order
++ * Executes a Prisma transaction with explicit retry logic for transient MongoDB/Prisma transaction conflicts.
++ * Retries on P2034 (WriteConflict) and P2028 (Transaction API error) up to maxRetries.
+  */
+-export async function deductInventory(orderItems: any[]) {
++export async function withTransactionRetry<T>(
++  operation: (tx: any) => Promise<T>,
++  maxRetries: number = 3
++): Promise<T> {
++  let attempt = 0;
++  while (attempt < maxRetries) {
++    try {
++      return await prisma.$transaction(operation, {
++        maxWait: 5000,
++        timeout: 15000,
++      });
++    } catch (error: any) {
++      if (error.code === "P2034") {
++        attempt++;
++        if (attempt >= maxRetries) {
++          console.error(`[TX_RETRY] Failed after ${maxRetries} attempts due to ${error.code}`);
++          throw error;
++        }
++        console.warn(`[TX_RETRY] Transaction conflict ${error.code}. Retrying attempt ${attempt + 1}/${maxRetries}...`);
++        await new Promise((resolve) => setTimeout(resolve, 100 * attempt)); // Exponential backoff
++      } else {
++        throw error; // Throw non-retryable errors immediately
++      }
++    }
++  }
++  throw new Error("Transaction retry loop exhausted without returning or throwing. This should be unreachable.");
++}
++
++/**
++ * Executes the inventory deduction logic using an existing transaction client.
++ * This allows callers to bundle locks and deductions into a single ACID transaction.
++ */
++export async function executeInventoryDeduction(tx: any, orderItems: any[]) {
+   if (!orderItems || orderItems.length === 0) return;
+-  const tStart = Date.now();
+ 
+-  try {
+-    // 1. Aggregate requested quantities for each finished item
++  // 1. Aggregate requested quantities for each finished item
+     const itemDeductions = new Map<string, number>();
+     
+     for (const item of orderItems) {
+@@ -28,10 +58,9 @@ export async function deductInventory(orderItems: any[]) {
+ 
+     const itemIds = Array.from(itemDeductions.keys());
+ 
+-    // 2. Execute within transaction
+-    await prisma.$transaction(async (tx) => {
+-      // 2a. Fetch all required recipes at once
+-      const recipeItems = await tx.recipeItem.findMany({
++    // 2. Execute using the provided transaction client
++    // 2a. Fetch all required recipes at once
++    const recipeItems = await tx.recipeItem.findMany({
+         where: { itemId: { in: itemIds } }
+       });
+ 
+@@ -44,8 +73,6 @@ export async function deductInventory(orderItems: any[]) {
+         materialDeductions.set(ri.materialId, (materialDeductions.get(ri.materialId) || 0) + totalDeduction);
+       }
+ 
+-      const updatePromises: Promise<any>[] = [];
+-
+       // 2c. Update raw materials bulk (with clamping to 0)
+       if (materialDeductions.size > 0) {
+         const materialIds = Array.from(materialDeductions.keys());
+@@ -57,12 +84,10 @@ export async function deductInventory(orderItems: any[]) {
+           const deduction = materialDeductions.get(material.id) || 0;
+           const newStock = Math.max(0, (material.stock || 0) - deduction);
+           
+-          updatePromises.push(
+-            tx.rawMaterial.update({
+-              where: { id: material.id },
+-              data: { stock: newStock }
+-            })
+-          );
++          await tx.rawMaterial.update({
++            where: { id: material.id },
++            data: { stock: newStock }
++          });
+         }
+       }
+ 
+@@ -76,27 +101,10 @@ export async function deductInventory(orderItems: any[]) {
+         if (currentItem.currentStock !== null && currentItem.currentStock !== undefined) {
+           const newStock = Math.max(0, currentItem.currentStock - deduction);
+           
+-          updatePromises.push(
+-            tx.item.update({
+-              where: { id: currentItem.id },
+-              data: { currentStock: newStock }
+-            })
+-          );
++          await tx.item.update({
++            where: { id: currentItem.id },
++            data: { currentStock: newStock }
++          });
+         }
+       }
+-
+-      // Execute all writes in parallel inside the transaction
+-      if (updatePromises.length > 0) {
+-        await Promise.all(updatePromises);
+       }
+-
+-    }, {
+-      maxWait: 5000, 
+-      timeout: 10000, // Reduced from 60000 since it should be fast now
+-    });
+-    
+-  } catch (err) {
+-    console.error("[INVENTORY_PERF] CRITICAL ERROR in deductInventory:", err);
+-    throw err; // Propagate error so caller can reset idempotency claim
+-  }
+-}
+diff --git a/test-concurrency.ts b/test-concurrency.ts
+new file mode 100644
+index 0000000..6f84998
+--- /dev/null
++++ b/test-concurrency.ts
+@@ -0,0 +1,290 @@
++import { PrismaClient } from '@prisma/client';
++
++const prisma = new PrismaClient();
++
++async function runTests() {
++  console.log("Starting Concurrency Tests for Inventory System...");
++  
++  // Create a dummy user/clerk
++  const testUserId = "test_user_" + Date.now();
++  const user = await prisma.user.create({
++    data: { clerkId: testUserId, email: testUserId + "@test.com", name: "Test User" }
++  });
++
++  // Create some raw materials and finished items
++  const rawMaterial = await prisma.rawMaterial.create({
++    data: { name: "Test Raw Material", stock: 100, unit: "kg", user: { connect: { clerkId: testUserId } } }
++  });
++  
++  const finishedItem = await prisma.item.create({
++    data: { name: "Test Burger", currentStock: 10, sellingPrice: 100, clerkId: testUserId, user: { connect: { id: user.id } }, category: { create: { name: "Test Category", clerkId: testUserId } } }
++  });
++
++  await prisma.recipeItem.create({
++    data: { itemId: finishedItem.id, materialId: rawMaterial.id, quantity: 2 }
++  });
++
++  console.log("Test Data Setup Complete.");
++  console.log(`Initial Stock - Raw: 100, Finished: 10`);
++
++  // --- Test 1: Order + Order Concurrency (Same Order PATCHed twice simultaneously) ---
++  console.log("\n--- Test 1: Order + Order Concurrency ---");
++  const order1 = await prisma.order.create({
++    data: {
++      user: { connect: { clerkId: testUserId } },
++      total: 100,
++      status: "PENDING",
++      items: [{ id: finishedItem.id, qty: 1 }],
++      inventoryDeducted: false
++    }
++  });
++
++  // Simulate two concurrent PATCH /api/orders setting it to COMPLETED
++  const { withTransactionRetry, executeInventoryDeduction } = await import('./src/lib/inventory-utils');
++
++  const patchLogic = async (orderId: string, processName: string) => {
++    try {
++      await withTransactionRetry(async (tx: any) => {
++        const claim = await tx.order.updateMany({
++          where: { id: orderId, inventoryDeducted: false },
++          data: { inventoryDeducted: true }
++        });
++        if (claim.count > 0) {
++          console.log(`[${processName}] Won claim. Deducting inventory...`);
++          await executeInventoryDeduction(tx, [{ id: finishedItem.id, qty: 1 }]);
++        } else {
++          console.log(`[${processName}] Lost claim. Skipping deduction.`);
++        }
++      });
++    } catch (e: any) {
++       console.log(`[${processName}] Failed: ${e.message}`);
++    }
++  };
++
++  await Promise.all([
++    patchLogic(order1.id, "Process A"),
++    patchLogic(order1.id, "Process B")
++  ]);
++
++  const afterOrder1_Raw = await prisma.rawMaterial.findUnique({ where: { id: rawMaterial.id } });
++  const afterOrder1_Item = await prisma.item.findUnique({ where: { id: finishedItem.id } });
++  console.log(`Resulting Stock - Raw: ${afterOrder1_Raw?.stock} (Expected 98), Finished: ${afterOrder1_Item?.currentStock} (Expected 9)`);
++
++  // --- Test 2: Order + BillManager Concurrency ---
++  console.log("\n--- Test 2: Order + BillManager Concurrency ---");
++  const order2 = await prisma.order.create({
++    data: {
++      user: { connect: { clerkId: testUserId } },
++      total: 100,
++      status: "PENDING",
++      items: [{ id: finishedItem.id, qty: 1 }],
++      inventoryDeducted: false
++    }
++  });
++
++  // BillManager POST logic
++  const billPostLogic = async (orderId: string, processName: string) => {
++    try {
++      const bill = await prisma.billManager.create({
++         data: {
++            user: { connect: { clerkId: testUserId } },
++            billNumber: "TEST-BILL-" + Date.now(),
++            items: [{ id: finishedItem.id, qty: 2 }], // Bill has 2 burgers, Order had 1
++            subtotal: 200, tax: 0, total: 200, paymentMode: "Cash", paymentStatus: "Paid", inventoryDeducted: false
++         }
++      });
++
++      await withTransactionRetry(async (tx: any) => {
++          const orderLock = await tx.order.findUnique({ where: { id: orderId } });
++          let itemsToDeduct = [{ id: finishedItem.id, qty: 2 }] as any[];
++
++          if (orderLock?.inventoryDeducted) {
++             const difference = 2 - 1; // Simulated deduction of extra qty
++             itemsToDeduct = [{ id: finishedItem.id, qty: difference }];
++             console.log(`[${processName}] Order already deducted. Deducting difference: ${difference}`);
++          } else {
++             await tx.order.update({
++                 where: { id: orderId },
++                 data: { inventoryDeducted: true }
++             });
++             console.log(`[${processName}] Won order lock. Deducting full amount: 2`);
++          }
++
++          await tx.billManager.update({
++             where: { id: bill.id },
++             data: { inventoryDeducted: true }
++          });
++          await executeInventoryDeduction(tx, itemsToDeduct);
++      });
++    } catch (e: any) {
++        console.log(`[${processName}] Failed: ${e.message}`);
++    }
++  };
++
++  await Promise.all([
++    patchLogic(order2.id, "Order PATCH Process"),
++    billPostLogic(order2.id, "Bill POST Process")
++  ]);
++
++  const afterOrder2_Raw = await prisma.rawMaterial.findUnique({ where: { id: rawMaterial.id } });
++  const afterOrder2_Item = await prisma.item.findUnique({ where: { id: finishedItem.id } });
++  console.log(`Resulting Stock - Raw: ${afterOrder2_Raw?.stock} (Expected 94), Finished: ${afterOrder2_Item?.currentStock} (Expected 7)`);
++
++  // --- Test 3: BillManager wins -> Order retries ---
++  console.log("\n--- Test 3: BillManager wins, Order retries ---");
++  const order3 = await prisma.order.create({
++    data: {
++      user: { connect: { clerkId: testUserId } },
++      total: 100,
++      status: "PENDING",
++      items: [{ id: finishedItem.id, qty: 1 }],
++      inventoryDeducted: false
++    }
++  });
++
++  // Since we want Bill to win, we'll introduce an artificial delay in the Order's claim so Bill grabs the lock first.
++  const patchLogicDelayed = async (orderId: string, processName: string) => {
++    try {
++      await withTransactionRetry(async (tx: any) => {
++        // Delay order claim to ensure Bill gets it
++        await new Promise(res => setTimeout(res, 500));
++        
++        const claim = await tx.order.updateMany({
++          where: { id: orderId, inventoryDeducted: false },
++          data: { inventoryDeducted: true }
++        });
++        if (claim.count > 0) {
++          console.log(`[${processName}] Won claim. Deducting inventory...`);
++          await executeInventoryDeduction(tx, [{ id: finishedItem.id, qty: 1 }]);
++        } else {
++          console.log(`[${processName}] Lost claim. Order already deducted by Bill. Skipping deduction.`);
++        }
++      });
++    } catch (e: any) {
++       console.log(`[${processName}] Failed: ${e.message}`);
++    }
++  };
++
++  await Promise.all([
++    patchLogicDelayed(order3.id, "Order PATCH Process (Delayed)"),
++    billPostLogic(order3.id, "Bill POST Process (Fast)")
++  ]);
++
++  const afterOrder3_Raw = await prisma.rawMaterial.findUnique({ where: { id: rawMaterial.id } });
++  const afterOrder3_Item = await prisma.item.findUnique({ where: { id: finishedItem.id } });
++  console.log(`Resulting Stock - Raw: ${afterOrder3_Raw?.stock} (Expected 90), Finished: ${afterOrder3_Item?.currentStock} (Expected 5)`);
++  // Previous Raw=94, Item=7. Total 2 burgers ordered => -4 raw, -2 item => Raw=90, Item=5.
++
++  // --- Test 4: Bill + Bill Concurrency ---
++  console.log("\n--- Test 4: Bill + Bill Concurrency ---");
++  const billConcurrencyOrder = await prisma.order.create({
++    data: {
++      user: { connect: { clerkId: testUserId } },
++      total: 100,
++      status: "PENDING",
++      items: [{ id: finishedItem.id, qty: 1 }],
++      inventoryDeducted: false
++    }
++  });
++
++  const billLogic = async (processName: string) => {
++    try {
++      const bill = await prisma.billManager.create({
++         data: {
++            user: { connect: { clerkId: testUserId } },
++            billNumber: "TEST-BILL-" + Date.now(),
++            items: [{ id: finishedItem.id, qty: 2 }],
++            subtotal: 200, tax: 0, total: 200, paymentMode: "Cash", paymentStatus: "Paid", inventoryDeducted: false
++         }
++      });
++      await withTransactionRetry(async (tx: any) => {
++          const claim = await tx.billManager.updateMany({
++              where: { id: bill.id, inventoryDeducted: false },
++              data: { inventoryDeducted: true }
++          });
++          if (claim.count > 0) {
++              console.log(`[${processName}] Won claim on Bill. Deducting...`);
++              await executeInventoryDeduction(tx, [{ id: finishedItem.id, qty: 2 }]);
++          } else {
++              console.log(`[${processName}] Lost claim on Bill.`);
++          }
++      });
++    } catch (e: any) {
++        console.log(`[${processName}] Failed: ${e.message}`);
++    }
++  };
++
++  await Promise.all([
++    billLogic("Bill Process A"),
++    billLogic("Bill Process B")
++  ]);
++
++  const afterOrder4_Raw = await prisma.rawMaterial.findUnique({ where: { id: rawMaterial.id } });
++  const afterOrder4_Item = await prisma.item.findUnique({ where: { id: finishedItem.id } });
++  console.log(`Resulting Stock - Raw: ${afterOrder4_Raw?.stock} (Expected 82), Finished: ${afterOrder4_Item?.currentStock} (Expected 1)`);
++  // Previous Raw=90, Item=5. We ran 2 Bill processes. Each process creates a DIFFERENT Bill! 
++  // Wait, Bill+Bill concurrency means two different bills are processed? Yes, they don't share the same Bill ID.
++  // So both should succeed and deduct 2 each = 4 total items.
++  // 4 items => -8 raw. Raw = 90 - 8 = 82. Item = 5 - 4 = 1.
++
++  // --- Test 5: Failed Transaction Rollback ---
++  console.log("\n--- Test 5: Failed Transaction Rollback ---");
++  const rollbackOrder = await prisma.order.create({
++    data: {
++      user: { connect: { clerkId: testUserId } },
++      total: 100,
++      status: "PENDING",
++      items: [{ id: finishedItem.id, qty: 1 }],
++      inventoryDeducted: false
++    }
++  });
++
++  const beforeRollbackItem = await prisma.item.findUnique({ where: { id: finishedItem.id } });
++  const beforeRollbackRaw = await prisma.rawMaterial.findUnique({ where: { id: rawMaterial.id } });
++  
++  console.log(`[Rollback Test] Stock BEFORE transaction - Finished: ${beforeRollbackItem?.currentStock}, Raw: ${beforeRollbackRaw?.stock}`);
++
++  try {
++      await withTransactionRetry(async (tx: any) => {
++          const claim = await tx.order.updateMany({
++              where: { id: rollbackOrder.id, inventoryDeducted: false },
++              data: { inventoryDeducted: true }
++          });
++          if (claim.count > 0) {
++              console.log("[Rollback Test] Won claim. Intentionally throwing error before deduction...");
++              throw new Error("Simulated Deduction Failure");
++          }
++      });
++  } catch (e: any) {
++      console.log(`[Rollback Test] Caught error: ${e.message}`);
++  }
++
++  const checkRollback = await prisma.order.findUnique({ where: { id: rollbackOrder.id } });
++  const afterRollbackItem = await prisma.item.findUnique({ where: { id: finishedItem.id } });
++  const afterRollbackRaw = await prisma.rawMaterial.findUnique({ where: { id: rawMaterial.id } });
++
++  console.log(`[Rollback Test] Order inventoryDeducted flag is: ${checkRollback?.inventoryDeducted} (Assert: false => ${checkRollback?.inventoryDeducted === false})`);
++  console.log(`[Rollback Test] Stock AFTER failure - Finished: ${afterRollbackItem?.currentStock} (Assert: unchanged => ${afterRollbackItem?.currentStock === beforeRollbackItem?.currentStock})`);
++  console.log(`[Rollback Test] Stock AFTER failure - Raw: ${afterRollbackRaw?.stock} (Assert: unchanged => ${afterRollbackRaw?.stock === beforeRollbackRaw?.stock})`);
++
++  console.log("\n[Rollback Test] Now running a successful retry...");
++  await patchLogic(rollbackOrder.id, "Successful Retry Process");
++  
++  const finalRetryItem = await prisma.item.findUnique({ where: { id: finishedItem.id } });
++  const finalRetryRaw = await prisma.rawMaterial.findUnique({ where: { id: rawMaterial.id } });
++  console.log(`[Rollback Test] Final Stock AFTER successful retry - Finished: ${finalRetryItem?.currentStock} (Assert: deducted => ${finalRetryItem?.currentStock === (beforeRollbackItem?.currentStock ?? 0) - 1})`);
++
++
++  // --- Test 6: Repeated COMPLETED Request ---
++  console.log("\n--- Test 6: Repeated COMPLETED Request ---");
++  await patchLogic(rollbackOrder.id, "Repeat COMPLETED - 1st Call");
++  await patchLogic(rollbackOrder.id, "Repeat COMPLETED - 2nd Call");
++  
++  const afterOrder6_Item = await prisma.item.findUnique({ where: { id: finishedItem.id } });
++  console.log(`[Repeat Test] Stock after 2 calls - Finished: ${afterOrder6_Item?.currentStock} (Expected 0)`);
++  // Started at 1, deduct 1 => 0. Second call skips.
++
++  console.log("\nTests Complete.");
++}
++
++runTests().catch(console.error).finally(() => prisma.$disconnect());

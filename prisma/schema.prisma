@@ -732,6 +732,8 @@ model BillManager {
   whatsappSentAt DateTime?
   whatsappSid    String?
 
+  inventoryDeducted Boolean @default(false) // ✅ Atomic Idempotency tracking
+
   @@unique([clerkUserId, billNumber]) // ✅ FIX: Global uniqueness changed to per-business uniqueness
   @@index([clerkUserId])
   @@index([isDeleted, createdAt])

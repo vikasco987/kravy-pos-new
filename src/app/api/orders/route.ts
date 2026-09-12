@@ -171,36 +171,31 @@ export async function PATCH(req: NextRequest) {
         const isCompleting = status === "COMPLETED" && currentOrder.status !== "COMPLETED";
         
         if (isCompleting && !skipInventoryDeduction && order.items && Array.isArray(order.items) && order.items.length > 0) {
-            // ATOMIC CLAIM
-            const claim = await prisma.order.updateMany({
-                where: { id: orderId, inventoryDeducted: false },
-                data: { inventoryDeducted: true }
-            });
-
-            if (claim.count > 0) {
-                console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Claim successful. Triggering inventory deduction.`);
-                const { deductInventory } = await import("@/lib/inventory-utils");
-                
-                // Fire and forget, but with rollback on failure
-                const tInvStart = Date.now();
-                deductInventory(order.items)
-                    .then(() => {
-                        console.log(`[INVENTORY_PERF] source=order orderId=${orderId} durationMs=${Date.now() - tInvStart} status=success`);
-                    })
-                    .catch(async (err) => {
-                        console.error(`[INVENTORY_PERF] source=order orderId=${orderId} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
-                        // Revert claim so it can be retried
-                        try {
-                            await prisma.order.updateMany({
-                                where: { id: orderId },
-                                data: { inventoryDeducted: false }
-                            });
-                        } catch (revertErr) {
-                            console.error("Failed to revert inventory claim:", revertErr);
-                        }
+            console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Awaiting transactional deduction.`);
+            
+            const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
+            const tInvStart = Date.now();
+            try {
+                // Ensure atomic transaction + retry
+                await withTransactionRetry(async (tx) => {
+                    // ATOMIC CLAIM (Inside Transaction)
+                    const claim = await tx.order.updateMany({
+                        where: { id: orderId, inventoryDeducted: false },
+                        data: { inventoryDeducted: true }
                     });
-            } else {
-                console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} is already deducted or claim lost. Skipping deduction.`);
+                    
+                    if (claim.count > 0) {
+                        console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} won claim. Executing deduction.`);
+                        await executeInventoryDeduction(tx, order.items);
+                    } else {
+                        console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} already deducted or claim lost. Skipping deduction.`);
+                    }
+                });
+                console.log(`[INVENTORY_PERF] source=order_patch orderId=${orderId} durationMs=${Date.now() - tInvStart} status=success`);
+            } catch (err) {
+                console.error(`[INVENTORY_PERF] source=order_patch orderId=${orderId} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
+                // We DO NOT throw the error here to preserve the business contract. The order was successfully updated.
+                // The `inventoryDeducted` flag safely rolls back to `false` automatically via transaction abort.
             }
         } else if (status === "COMPLETED" && skipInventoryDeduction) {
             console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} marked as COMPLETED. Inventory deduction skipped by caller.`);
@@ -339,32 +334,35 @@ export async function POST(req: NextRequest) {
                 orderNumber: orderNumber,
                 tokenNumber: nextToken, // Legacy
                 kotNumbers: [nextToken], // Store as first KOT/Token number
-                inventoryDeducted: status === "COMPLETED" ? true : false,
+                inventoryDeducted: false, // Wait for transaction to set this to true!
             },
             include: { table: true },
         });
 
         // ✅ 4. AUTO-DEDUCT INVENTORY IF COMPLETED
-        if (order.status === "COMPLETED" && order.inventoryDeducted) {
-            console.log(`[ORDER_POST_DEBUG] New Order ${order.id} is COMPLETED. Triggering inventory deduction.`);
-            const { deductInventory } = await import("@/lib/inventory-utils");
+        if (order.status === "COMPLETED" && !order.inventoryDeducted) {
+            console.log(`[ORDER_POST_DEBUG] New Order ${order.id} is COMPLETED. Awaiting transactional deduction.`);
+            const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
             
             const tInvStart = Date.now();
-            deductInventory(order.items as any[])
-                .then(() => {
-                    console.log(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=success`);
-                })
-                .catch(async (err) => {
-                    console.error(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
-                    try {
-                        await prisma.order.updateMany({
-                            where: { id: order.id },
-                            data: { inventoryDeducted: false }
-                        });
-                    } catch (revertErr) {
-                        console.error("Failed to revert inventory claim:", revertErr);
+            try {
+                // Ensure atomic transaction + retry
+                await withTransactionRetry(async (tx) => {
+                    const claim = await tx.order.updateMany({
+                        where: { id: order.id, inventoryDeducted: false },
+                        data: { inventoryDeducted: true }
+                    });
+                    
+                    if (claim.count > 0) {
+                        await executeInventoryDeduction(tx, order.items as any[]);
                     }
                 });
+                console.log(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=success`);
+            } catch (err) {
+                console.error(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
+                // We DO NOT throw the error here to preserve the business contract. The order was successfully created.
+                // The `inventoryDeducted` flag safely rolls back to `false` automatically via transaction abort.
+            }
         }
 
         // ✅ 5. SEND EXPO PUSH NOTIFICATION FOR BACKGROUND POPUP (DATA ONLY MESSAGE)

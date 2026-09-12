@@ -110,7 +110,20 @@ export async function POST(req: NextRequest) {
       amountPaid,
       packagingCharges,
       loyaltyPointsRedeemed,
+      idempotencyKey,
     } = body;
+
+    // 🚀 0. IDEMPOTENCY FAST-PATH CHECK
+    if (idempotencyKey) {
+      const existingBill = await prisma.billManager.findUnique({
+        where: { idempotencyKey },
+        include: { party: true }
+      });
+      if (existingBill) {
+         console.log(`[IDEMPOTENCY] Fast-path returned existing bill for key ${idempotencyKey}`);
+         return NextResponse.json({ bill: existingBill, orderForDeduction: null });
+      }
+    }
 
     // 🛑 1. ROBUST VALIDATION (Critical Fix for UI Crashes)
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -214,54 +227,35 @@ export async function POST(req: NextRequest) {
     // ✅ ATOMIC TRANSACTION FOR BILL CREATION, COUNTER ALLOCATION, & LEDGER
     const startTime = Date.now();
     
-    let bill = null;
+    let result: any = null;
     let attempts = 0;
     while (attempts < 3) {
       try {
-        bill = await prisma.$transaction(async (tx) => {
+        result = await prisma.$transaction(async (tx) => {
           // 1. ATOMIC BILL COUNTER & BILL NUMBER ALLOCATION
           const t1Start = Date.now();
           let nextSerial = 1;
-          
-          // Always read the true MAX bill to auto-correct out-of-sync profiles
-          const lastBill = await tx.billManager.findFirst({
-            where: { clerkUserId: effectiveId, createdAt: { gte: monthStart }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
-            orderBy: { createdAt: 'desc' },
-            select: { billNumber: true }
-          });
-          let trueDbMax = 0;
-          if (lastBill && lastBill.billNumber) {
-            const parts = lastBill.billNumber.split('/');
-            const lastSerial = parseInt(parts[parts.length - 1], 10);
-            if (!isNaN(lastSerial)) trueDbMax = lastSerial;
-          }
 
           if (profile?.id) {
-            const currentProfile = await tx.businessProfile.findUnique({ 
-                where: { id: profile.id }, 
-                select: { billCounter: true }
-            });
-            let targetCounter = Math.max(currentProfile?.billCounter || 0, trueDbMax);
-            
-            // Advance counter. If retrying, aggressively skip ahead to bypass stale reads/collisions
-            targetCounter += (1 + attempts); 
-
-            await tx.businessProfile.update({
+            const updatedProfile = await tx.businessProfile.update({
               where: { id: profile.id },
-              data: { billCounter: targetCounter }
+              data: { billCounter: { increment: 1 } },
+              select: { billCounter: true }
             });
-            nextSerial = targetCounter;
+            nextSerial = updatedProfile.billCounter;
           } else {
-            nextSerial = trueDbMax + 1 + attempts;
+            // Fallback for missing profile
+            nextSerial = Math.floor(Math.random() * 1000000);
           }
           
           const serialLabel = String(nextSerial).padStart(4, '0');
           let finalBillNumber = body.billNumber || `INV/${yy}${mm}/${serialLabel}`;
       console.log(`[BILL_PERF_STEP] 1. Bill Counter Allocation: ${Date.now() - t1Start}ms`);
 
+      let orderForDeduction = null;
       if (body.orderId) {
         const tOrderStart = Date.now();
-        const order = await tx.order.findUnique({ where: { id: body.orderId } });
+        orderForDeduction = await tx.order.findUnique({ where: { id: body.orderId } });
         console.log(`[BILL_PERF_STEP] 1b. Order Lookup: ${Date.now() - tOrderStart}ms`);
       }
 
@@ -356,25 +350,22 @@ export async function POST(req: NextRequest) {
       // 3. ATOMIC TOKEN NUMBER GENERATION
       const tTokenStart = Date.now();
       let nextToken = body.tokenNumber || (kotNumbers && Array.isArray(kotNumbers) && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : null);
-      if (!nextToken) {
+      if (!nextToken && profile?.id) {
         const today = new Date().toISOString().split('T')[0];
         const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
-        
-        if (lastTokenDate === today) {
-          nextToken = (profile?.lastTokenNumber || 0) + 1;
-        } else {
-          nextToken = 1;
-        }
+        const isNewDay = lastTokenDate !== today;
 
-        if (profile?.id) {
-          await tx.businessProfile.update({
-            where: { id: profile.id },
-            data: {
-              lastTokenNumber: nextToken,
-              lastTokenDate: new Date()
-            }
-          });
-        }
+        const updatedProfile = await tx.businessProfile.update({
+          where: { id: profile.id },
+          data: {
+            lastTokenNumber: isNewDay ? 1 : { increment: 1 },
+            lastTokenDate: new Date()
+          },
+          select: { lastTokenNumber: true }
+        });
+        nextToken = updatedProfile.lastTokenNumber;
+      } else if (!nextToken) {
+        nextToken = 1;
       }
       console.log(`[BILL_PERF_STEP] 3. Token Generation & Profile Update: ${Date.now() - tTokenStart}ms`);
 
@@ -388,7 +379,9 @@ export async function POST(req: NextRequest) {
       const tCreateStart = Date.now();
       const createdBill = await tx.billManager.create({
         data: {
+          idempotencyKey: idempotencyKey || `auto_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
           clerkUserId: effectiveId || "Unknown",
+          orderId: body.orderId || null,
           billNumber: finalBillNumber,
           items: processedItems,
           subtotal: finalSubtotal,
@@ -417,7 +410,7 @@ export async function POST(req: NextRequest) {
           isKotPrinted: isKotPrinted === true,
           tokenNumber: nextToken,
           kotNumbers: kotNumbers || [],
-          inventoryDeducted: (!isHeld && skipInventoryDeduction !== true) ? true : false,
+          inventoryDeducted: false, // Wait for transaction to set this to true!
         },
       });
       console.log(`[BILL_PERF_STEP] 4. BillManager Record Create: ${Date.now() - tCreateStart}ms`);
@@ -459,46 +452,119 @@ export async function POST(req: NextRequest) {
       }
       console.log(`[BILL_PERF_STEP] 5. Wallet Ledger Updates: ${Date.now() - tWalletStart}ms`);
 
-      return createdBill;
+      return { bill: createdBill, orderForDeduction };
     }, {
       timeout: 10000
     });
 
         break; // Success! Break out of the retry loop.
       } catch (err: any) {
-        if (err.code === 'P2002' && !body.billNumber && attempts < 2) {
-          attempts++;
-          console.log(`[BILL_MANAGER] Retry ${attempts} due to P2002 collision on billNumber...`);
-          // Exponential backoff jitter
-          await new Promise(r => setTimeout(r, Math.random() * 100 * attempts));
-          continue;
+        if (err.code === 'P2002' || err.code === 'P2034' || String(err.message).includes('WriteConflict') || String(err.message).includes('deadlock')) {
+          if (err.code === 'P2002' && (err.meta?.target?.includes('idempotencyKey') || String(err.message).includes('idempotencyKey'))) {
+            if (idempotencyKey) {
+              const existingBill = await prisma.billManager.findUnique({ where: { idempotencyKey }, include: { party: true } });
+              if (existingBill) {
+                console.log(`[IDEMPOTENCY] Race caught, returning existing bill for key ${idempotencyKey}`);
+                return NextResponse.json({ bill: existingBill });
+              }
+            }
+          }
+          if (attempts < 15) {
+            attempts++;
+            console.log(`[BILL_MANAGER] Retry ${attempts} due to ${err.code} / ${err.message.substring(0, 50)}`);
+            // Exponential backoff jitter
+            await new Promise(r => setTimeout(r, Math.random() * 200 * attempts));
+            continue;
+          }
         }
         throw err; // Re-throw if max attempts reached or unrelated error
       }
     }
 
-    console.log(`[BILL_MANAGER_PERF] TOTAL Transaction Time for Bill ${bill?.billNumber}: ${Date.now() - startTime}ms`);
+    if (!result) {
+      throw new Error("Transaction failed after maximum retries.");
+    }
+
+    console.log(`[BILL_MANAGER_PERF] TOTAL Transaction Time for Bill ${result?.bill?.billNumber}: ${Date.now() - startTime}ms`);
+    
+    const bill = result.bill;
+    const orderForDeduction = result.orderForDeduction;
 
     // ✅ AUTO-DEDUCT INVENTORY IN BACKGROUND (NON-BLOCKING)
-    if (!bill.isHeld && skipInventoryDeduction !== true && bill.inventoryDeducted) {
-      console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Triggering background inventory deduction.`);
+    if (!bill.isHeld && skipInventoryDeduction !== true) {
+      console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Awaiting background inventory deduction.`);
+      
+      const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
       const tInvStart = Date.now();
-      import("@/lib/inventory-utils")
-        .then(({ deductInventory }) => deductInventory(bill.items as any[]))
-        .then(() => {
-          console.log(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
-        })
-        .catch(async (deductErr) => {
-          console.error(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} durationMs=${Date.now() - tInvStart} status=failed error=`, deductErr);
-          try {
-              await prisma.billManager.updateMany({
-                  where: { id: bill.id },
-                  data: { inventoryDeducted: false }
+      
+      try {
+          // ENTIRE OPERATION WRAPPED IN ACID TRANSACTION WITH RETRY
+          await withTransactionRetry(async (tx) => {
+              // 1. Claim BillManager Lock atomically FIRST
+              const claim = await tx.billManager.updateMany({
+                  where: { id: bill.id, inventoryDeducted: false },
+                  data: { inventoryDeducted: true }
               });
-          } catch (revertErr) {
-              console.error("Failed to revert inventory claim on bill:", revertErr);
-          }
-        });
+
+              if (claim.count === 0) {
+                  console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} already deducted or locked.`);
+                  return; // Someone else handled it
+              }
+
+              let itemsToDeduct = bill.items as any[];
+              
+              // 2. Cross-Entity Semantics
+              // Read the Order flag to know if we are FIRST or SECOND. We DO NOT claim it.
+              if (body.orderId) {
+                  const orderLock = await tx.order.findUnique({ where: { id: body.orderId } });
+                  
+                  if (orderLock?.inventoryDeducted) {
+                      // Order was already deducted (e.g. by concurrent Order PATCH).
+                      // Only deduct the DIFFERENCE (newly added items).
+                      const orderItems = (orderLock.items as any[]) || [];
+                      const orderItemQuantities = new Map<string, number>();
+                      
+                      for (const oi of orderItems) {
+                          const id = oi.itemId || oi.id;
+                          if (id) {
+                              orderItemQuantities.set(id, (orderItemQuantities.get(id) || 0) + Number(oi.qty || oi.quantity || 1));
+                          }
+                      }
+                      
+                      const newItemsToDeduct = [];
+                      for (const bi of itemsToDeduct) {
+                          const id = bi.itemId || bi.id;
+                          if (!id) continue;
+                          
+                          const billQty = Number(bi.qty || bi.quantity || 1);
+                          const orderQty = orderItemQuantities.get(id) || 0;
+                          
+                          if (billQty > orderQty) {
+                              const difference = billQty - orderQty;
+                              newItemsToDeduct.push({ ...bi, qty: difference, quantity: difference });
+                              orderItemQuantities.set(id, orderQty + difference);
+                          }
+                      }
+                      
+                      itemsToDeduct = newItemsToDeduct;
+                      console.log(`[BILL_MANAGER_DEBUG] Order ${orderLock.id} already deducted. Filtered bill items to ${itemsToDeduct.length} new items.`);
+                  }
+              }
+
+              // 3. Execute Deduction
+              if (itemsToDeduct.length > 0) {
+                  await executeInventoryDeduction(tx, itemsToDeduct);
+                  console.log(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
+              } else {
+                  console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} has no new items to deduct after cross-entity protection.`);
+              }
+          });
+      } catch (deductErr) {
+          console.error(`[INVENTORY_PERF] source=bill_manager_post billId=${bill.id} status=failed error=`, deductErr);
+          // Transaction automatically rolled back! 
+          // `inventoryDeducted` is safely false again. 
+          // We DO NOT throw the error to preserve the business contract (bill is still created successfully).
+      }
     } else if (skipInventoryDeduction === true) {
       console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} created. Inventory deduction skipped by caller.`);
     }

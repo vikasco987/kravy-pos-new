@@ -439,30 +439,28 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
       // ✅ AUTO-DEDUCT INVENTORY WHEN SETTLING A HELD BILL (ATOMIC)
       if (existingBill.isHeld && data.isHeld === false && !existingBill.inventoryDeducted) {
-        const claim = await prisma.billManager.updateMany({
-            where: { id: bill.id, inventoryDeducted: false },
-            data: { inventoryDeducted: true }
-        });
+        console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} settled from HELD state. Awaiting background inventory deduction.`);
         
-        if (claim.count > 0) {
-            console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} settled from HELD state. Claim successful. Triggering inventory deduction.`);
-            const tInvStart = Date.now();
-            import("@/lib/inventory-utils")
-                .then(({ deductInventory }) => deductInventory(bill.items as any[]))
-                .then(() => {
-                    console.log(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
-                })
-                .catch(async (deductErr) => {
-                    console.error(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=failed error=`, deductErr);
-                    try {
-                        await prisma.billManager.updateMany({
-                            where: { id: bill.id },
-                            data: { inventoryDeducted: false }
-                        });
-                    } catch (revertErr) {
-                        console.error("Failed to revert inventory claim on bill:", revertErr);
-                    }
+        const { withTransactionRetry, executeInventoryDeduction } = await import("@/lib/inventory-utils");
+        const tInvStart = Date.now();
+        
+        try {
+            await withTransactionRetry(async (tx) => {
+                const claim = await tx.billManager.updateMany({
+                    where: { id: bill.id, inventoryDeducted: false },
+                    data: { inventoryDeducted: true }
                 });
+                
+                if (claim.count > 0) {
+                    console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} won claim. Triggering inventory deduction.`);
+                    await executeInventoryDeduction(tx, bill.items as any[]);
+                    console.log(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
+                }
+            });
+        } catch (err) {
+            console.error(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=failed error=`, err);
+            // We DO NOT throw the error here to preserve the business contract. The bill was successfully updated.
+            // The `inventoryDeducted` flag safely rolls back to `false` automatically via transaction abort.
         }
       }
 
