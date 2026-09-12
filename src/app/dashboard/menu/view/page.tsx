@@ -1670,7 +1670,8 @@ export default function ViewMenuPage() {
         body: JSON.stringify({
           id: updated.id,
           name: updated.name,
-          sellingPrice: updated.price,
+          price: updated.price,
+          sellingPrice: updated.sellingPrice,
           unit: updated.unit,
           categoryId: updated.categoryId,
           imageUrl: updated.imageUrl,
@@ -1681,6 +1682,9 @@ export default function ViewMenuPage() {
           shortCode: updated.shortCode,
           expiryDate: updated.expiryDate,
           variants: updated.variants,
+          description: updated.description,
+          addonGroupIds: updated.addonGroupIds,
+          zones: updated.zones,
         }),
       });
 
