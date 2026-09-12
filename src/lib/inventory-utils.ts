@@ -6,53 +6,77 @@ import prisma from "./prisma";
  */
 export async function deductInventory(orderItems: any[]) {
   console.log(`[INVENTORY_DEBUG] Starting deduction for ${orderItems.length} items.`);
-  
+
+  if (!orderItems || orderItems.length === 0) return;
+
   try {
+    // 1. Aggregate requested quantities for each finished item
+    const itemDeductions = new Map<string, number>();
+    
+    for (const item of orderItems) {
+      const rawItemId = item.itemId || item.id;
+      const itemId = rawItemId ? rawItemId.split('-')[0] : null;
+      const quantitySold = Number(item.qty || item.quantity || 1);
+      
+      if (!itemId || isNaN(quantitySold) || quantitySold <= 0) continue;
+      
+      itemDeductions.set(itemId, (itemDeductions.get(itemId) || 0) + quantitySold);
+    }
+
+    if (itemDeductions.size === 0) {
+      console.log("[INVENTORY_DEBUG] No valid items to deduct.");
+      return;
+    }
+
+    const itemIds = Array.from(itemDeductions.keys());
+
+    // 2. Execute within transaction
     await prisma.$transaction(async (tx) => {
-      for (const item of orderItems) {
-        const rawItemId = item.itemId || item.id;
-        const itemId = rawItemId ? rawItemId.split('-')[0] : null; // Extract real ObjectId
-        const quantitySold = Number(item.qty || item.quantity || 1);
-        const itemName = item.name || "Unknown Item";
+      // 2a. Fetch all required recipes at once
+      const recipeItems = await tx.recipeItem.findMany({
+        where: { itemId: { in: itemIds } }
+      });
 
-        console.log(`[INVENTORY_DEBUG] Processing: ${itemName} (ID: ${rawItemId} -> ${itemId}), Qty: ${quantitySold}`);
+      // 2b. Calculate total raw material deductions across the entire order
+      const materialDeductions = new Map<string, number>();
+      
+      for (const ri of recipeItems) {
+        const soldQty = itemDeductions.get(ri.itemId) || 0;
+        const totalDeduction = ri.quantity * soldQty;
+        materialDeductions.set(ri.materialId, (materialDeductions.get(ri.materialId) || 0) + totalDeduction);
+      }
 
-        if (!itemId || isNaN(quantitySold) || quantitySold <= 0) {
-          console.warn(`[INVENTORY_DEBUG] Skipping ${itemName} - Invalid ID or Quantity.`);
-          continue;
-        }
-
-        const recipeItems = await tx.recipeItem.findMany({
-          where: { itemId },
-          include: { material: true }
+      // 2c. Update raw materials bulk (with clamping to 0)
+      if (materialDeductions.size > 0) {
+        const materialIds = Array.from(materialDeductions.keys());
+        const materials = await tx.rawMaterial.findMany({
+          where: { id: { in: materialIds } }
         });
 
-        if (recipeItems.length === 0) {
-          console.warn(`[INVENTORY_DEBUG] No recipe found for ${itemName} (ID: ${itemId}). Skipping raw materials deduction.`);
-        } else {
-          console.log(`[INVENTORY_DEBUG] Found recipe with ${recipeItems.length} ingredients for ${itemName}.`);
-
-          for (const ri of recipeItems) {
-            const totalDeduction = ri.quantity * quantitySold;
-            
-            const currentMaterial = await tx.rawMaterial.findUnique({ where: { id: ri.materialId } });
-            if (currentMaterial) {
-              const newStock = Math.max(0, (currentMaterial.stock || 0) - totalDeduction);
-              await tx.rawMaterial.update({
-                where: { id: ri.materialId },
-                data: { stock: newStock },
-              });
-              console.log(`[INVENTORY_DEBUG] Success: New stock for ${currentMaterial.name} is ${newStock}`);
-            }
-          }
+        for (const material of materials) {
+          const deduction = materialDeductions.get(material.id) || 0;
+          const newStock = Math.max(0, (material.stock || 0) - deduction);
+          
+          await tx.rawMaterial.update({
+            where: { id: material.id },
+            data: { stock: newStock }
+          });
+          console.log(`[INVENTORY_DEBUG] Success: New stock for ${material.name} is ${newStock}`);
         }
+      }
 
-        // ✅ ALSO DEDUCT FINISHED ITEM STOCK (The item itself) atomically preventing negatives
-        const currentItem = await tx.item.findUnique({ where: { id: itemId } });
-        if (currentItem && currentItem.currentStock !== null && currentItem.currentStock !== undefined) {
-          const newStock = Math.max(0, currentItem.currentStock - quantitySold);
+      // 2d. Update finished items bulk (with clamping to 0)
+      const finishedItems = await tx.item.findMany({
+        where: { id: { in: itemIds } }
+      });
+
+      for (const currentItem of finishedItems) {
+        const deduction = itemDeductions.get(currentItem.id) || 0;
+        if (currentItem.currentStock !== null && currentItem.currentStock !== undefined) {
+          const newStock = Math.max(0, currentItem.currentStock - deduction);
+          
           await tx.item.update({
-            where: { id: itemId },
+            where: { id: currentItem.id },
             data: { currentStock: newStock }
           });
           console.log(`[INVENTORY_DEBUG] Success: New stock for Finished Item ${currentItem.name} is ${newStock}`);
