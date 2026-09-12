@@ -1683,6 +1683,18 @@ export default function ViewMenuPage() {
           description: (updated as any).description,
           addonGroupIds: (updated as any).addonGroupIds,
           zones: (updated as any).zones,
+          hsnCode: (updated as any).hsnCode,
+          isActive: (updated as any).isActive,
+          isBestseller: (updated as any).isBestseller,
+          isRecommended: (updated as any).isRecommended,
+          isNew: (updated as any).isNew,
+          isFavorite: (updated as any).isFavorite,
+          spiciness: (updated as any).spiciness,
+          rating: (updated as any).rating,
+          hiName: (updated as any).hiName,
+          mrName: (updated as any).mrName,
+          taName: (updated as any).taName,
+          upsellText: (updated as any).upsellText,
         }),
       });
 
