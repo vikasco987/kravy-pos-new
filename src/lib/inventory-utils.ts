@@ -58,6 +58,9 @@ export async function deductInventory(orderItems: any[]) {
           console.log(`[INVENTORY_DEBUG] Success: New stock for Finished Item ${currentItem.name} is ${newStock}`);
         }
       }
+    }, {
+      maxWait: 5000, // default: 2000
+      timeout: 60000, // default: 5000
     });
     console.log("[INVENTORY_DEBUG] Inventory deduction cycle completed atomically.");
   } catch (err) {
