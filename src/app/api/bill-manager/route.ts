@@ -229,28 +229,41 @@ export async function POST(req: NextRequest) {
     
     let result: any = null;
     let attempts = 0;
-    while (attempts < 3) {
+    while (attempts < 15) {
       try {
         result = await prisma.$transaction(async (tx) => {
-          // 1. ATOMIC BILL COUNTER & BILL NUMBER ALLOCATION
-          const t1Start = Date.now();
+          // 1 & 3. ATOMIC BILL COUNTER & TOKEN ALLOCATION
+          const tProfileStart = Date.now();
           let nextSerial = 1;
+          let nextToken = body.tokenNumber || (kotNumbers && Array.isArray(kotNumbers) && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : null);
 
           if (profile?.id) {
+            const currentProfile = await tx.businessProfile.findUnique({ where: { id: profile.id } });
+            const today = new Date().toISOString().split('T')[0];
+            const lastTokenDate = currentProfile?.lastTokenDate ? new Date(currentProfile.lastTokenDate).toISOString().split('T')[0] : "";
+            const isNewDay = lastTokenDate !== today;
+
             const updatedProfile = await tx.businessProfile.update({
               where: { id: profile.id },
-              data: { billCounter: { increment: 1 } },
-              select: { billCounter: true }
+              data: {
+                billCounter: { increment: 1 },
+                ...(!nextToken ? {
+                  lastTokenNumber: isNewDay ? 1 : { increment: 1 },
+                  lastTokenDate: new Date()
+                } : {})
+              },
+              select: { billCounter: true, lastTokenNumber: true }
             });
             nextSerial = updatedProfile.billCounter;
+            if (!nextToken) nextToken = updatedProfile.lastTokenNumber;
           } else {
-            // Fallback for missing profile
             nextSerial = Math.floor(Math.random() * 1000000);
+            if (!nextToken) nextToken = 1;
           }
           
           const serialLabel = String(nextSerial).padStart(4, '0');
           let finalBillNumber = body.billNumber || `INV/${yy}${mm}/${serialLabel}`;
-      console.log(`[BILL_PERF_STEP] 1. Bill Counter Allocation: ${Date.now() - t1Start}ms`);
+          console.log(`[BILL_PERF_STEP] 1/3. Profile Counter & Token Update: ${Date.now() - tProfileStart}ms`);
 
       let orderForDeduction = null;
       if (body.orderId) {
@@ -347,27 +360,7 @@ export async function POST(req: NextRequest) {
         calculatedPaymentStatus = paymentStatus === "Paid" ? "PAID" : "PENDING";
       }
 
-      // 3. ATOMIC TOKEN NUMBER GENERATION
-      const tTokenStart = Date.now();
-      let nextToken = body.tokenNumber || (kotNumbers && Array.isArray(kotNumbers) && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : null);
-      if (!nextToken && profile?.id) {
-        const today = new Date().toISOString().split('T')[0];
-        const lastTokenDate = profile?.lastTokenDate ? new Date(profile.lastTokenDate).toISOString().split('T')[0] : "";
-        const isNewDay = lastTokenDate !== today;
 
-        const updatedProfile = await tx.businessProfile.update({
-          where: { id: profile.id },
-          data: {
-            lastTokenNumber: isNewDay ? 1 : { increment: 1 },
-            lastTokenDate: new Date()
-          },
-          select: { lastTokenNumber: true }
-        });
-        nextToken = updatedProfile.lastTokenNumber;
-      } else if (!nextToken) {
-        nextToken = 1;
-      }
-      console.log(`[BILL_PERF_STEP] 3. Token Generation & Profile Update: ${Date.now() - tTokenStart}ms`);
 
       const processedItems = items.map((it: any) => ({
         ...it,
@@ -484,6 +477,12 @@ export async function POST(req: NextRequest) {
     if (!result) {
       throw new Error("Transaction failed after maximum retries.");
     }
+
+    if (!result) {
+      throw new Error("Transaction failed after maximum retries.");
+    }
+
+    if (!result) throw new Error("Transaction failed after maximum retries.");
 
     console.log(`[BILL_MANAGER_PERF] TOTAL Transaction Time for Bill ${result?.bill?.billNumber}: ${Date.now() - startTime}ms`);
     

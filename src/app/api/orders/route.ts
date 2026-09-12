@@ -69,13 +69,17 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+    let effectiveId: string | null = null;
+    let orderId: string | undefined;
     try {
-        const effectiveId = await getEffectiveClerkId();
+        effectiveId = await getEffectiveClerkId();
         if (!effectiveId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { orderId, status, isKotPrinted, isBillPrinted, items, total, isDeleted, skipInventoryDeduction, customerName, customerPhone, reservedTokenNumber } = await req.json();
+        const body = await req.json();
+        orderId = body.orderId;
+        const { status, isKotPrinted, isBillPrinted, items, total, isDeleted, skipInventoryDeduction, customerName, customerPhone, reservedTokenNumber } = body;
 
         if (!orderId) {
             return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
@@ -136,7 +140,7 @@ export async function PATCH(req: NextRequest) {
                                 data: updateData,
                                 select: { lastTokenNumber: true }
                             });
-                            nextToken = updatedProfile.lastTokenNumber;
+                            nextToken = updatedProfile.lastTokenNumber || 1;
                         }
                     }
 
@@ -185,10 +189,40 @@ export async function PATCH(req: NextRequest) {
                     });
                     
                     if (claim.count > 0) {
-                        console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} won claim. Executing deduction.`);
-                        await executeInventoryDeduction(tx, order.items);
+                        console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} won claim. Checking Bill for cross-entity semantics.`);
+                        let itemsToDeduct = order.items as any[];
+                        
+                        const billLocks = await tx.billManager.findMany({ where: { orderId: orderId, inventoryDeducted: true } });
+                        if (billLocks.length > 0) {
+                            const billItemQuantities = new Map<string, number>();
+                            for (const bill of billLocks) {
+                                const billItems = (bill.items as any[]) || [];
+                                for (const bi of billItems) {
+                                    const id = bi.itemId || bi.id;
+                                    if (id) billItemQuantities.set(id, (billItemQuantities.get(id) || 0) + Number(bi.qty || bi.quantity || 1));
+                                }
+                            }
+                            
+                            const newItemsToDeduct = [];
+                            for (const oi of itemsToDeduct) {
+                                const id = oi.itemId || oi.id;
+                                if (!id) continue;
+                                const orderQty = Number(oi.qty || oi.quantity || 1);
+                                const billQty = billItemQuantities.get(id) || 0;
+                                if (orderQty > billQty) {
+                                    const diff = orderQty - billQty;
+                                    newItemsToDeduct.push({ ...oi, qty: diff, quantity: diff });
+                                    billItemQuantities.set(id, billQty + diff);
+                                }
+                            }
+                            itemsToDeduct = newItemsToDeduct;
+                        }
+                        
+                        if (itemsToDeduct.length > 0) {
+                            await executeInventoryDeduction(tx, itemsToDeduct);
+                        }
                     } else {
-                        console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} already deducted or claim lost. Skipping deduction.`);
+                        console.log(`[ORDER_PATCH_DEBUG] Order ${orderId} already deducted. Skipping deduction.`);
                     }
                 });
                 console.log(`[INVENTORY_PERF] source=order_patch orderId=${orderId} durationMs=${Date.now() - tInvStart} status=success`);
@@ -354,7 +388,34 @@ export async function POST(req: NextRequest) {
                     });
                     
                     if (claim.count > 0) {
-                        await executeInventoryDeduction(tx, order.items as any[]);
+                        let itemsToDeduct = order.items as any[];
+                        const billLocks = await tx.billManager.findMany({ where: { orderId: order.id, inventoryDeducted: true } });
+                        if (billLocks.length > 0) {
+                            const billItemQuantities = new Map<string, number>();
+                            for (const bill of billLocks) {
+                                const billItems = (bill.items as any[]) || [];
+                                for (const bi of billItems) {
+                                    const id = bi.itemId || bi.id;
+                                    if (id) billItemQuantities.set(id, (billItemQuantities.get(id) || 0) + Number(bi.qty || bi.quantity || 1));
+                                }
+                            }
+                            const newItemsToDeduct = [];
+                            for (const oi of itemsToDeduct) {
+                                const id = oi.itemId || oi.id;
+                                if (!id) continue;
+                                const orderQty = Number(oi.qty || oi.quantity || 1);
+                                const billQty = billItemQuantities.get(id) || 0;
+                                if (orderQty > billQty) {
+                                    const diff = orderQty - billQty;
+                                    newItemsToDeduct.push({ ...oi, qty: diff, quantity: diff });
+                                    billItemQuantities.set(id, billQty + diff);
+                                }
+                            }
+                            itemsToDeduct = newItemsToDeduct;
+                        }
+                        if (itemsToDeduct.length > 0) {
+                            await executeInventoryDeduction(tx, itemsToDeduct);
+                        }
                     }
                 });
                 console.log(`[INVENTORY_PERF] source=order_post orderId=${order.id} durationMs=${Date.now() - tInvStart} status=success`);

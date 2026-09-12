@@ -356,7 +356,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
         try {
           await prisma.table.update({
             where: { id: order.tableId },
-            data: { isOccupied: false, currentOrderId: null }
+            data: { isOccupied: false, currentOrderId: null } as any
           });
         } catch (tErr) {
           console.error("Failed to free table on order delete:", tErr);
@@ -452,9 +452,39 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
                 });
                 
                 if (claim.count > 0) {
-                    console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} won claim. Triggering inventory deduction.`);
-                    await executeInventoryDeduction(tx, bill.items as any[]);
-                    console.log(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
+                    console.log(`[BILL_MANAGER_DEBUG] Bill ${bill.billNumber} won claim. Checking Order for cross-entity semantics.`);
+                    let itemsToDeduct = bill.items as any[];
+                    
+                    if (bill.orderId) {
+                        const orderLock = await tx.order.findUnique({ where: { id: bill.orderId } });
+                        if (orderLock?.inventoryDeducted) {
+                            const orderItems = (orderLock.items as any[]) || [];
+                            const orderItemQuantities = new Map<string, number>();
+                            for (const oi of orderItems) {
+                                const id = oi.itemId || oi.id;
+                                if (id) orderItemQuantities.set(id, (orderItemQuantities.get(id) || 0) + Number(oi.qty || oi.quantity || 1));
+                            }
+                            
+                            const newItemsToDeduct = [];
+                            for (const bi of itemsToDeduct) {
+                                const id = bi.itemId || bi.id;
+                                if (!id) continue;
+                                const billQty = Number(bi.qty || bi.quantity || 1);
+                                const orderQty = orderItemQuantities.get(id) || 0;
+                                if (billQty > orderQty) {
+                                    const diff = billQty - orderQty;
+                                    newItemsToDeduct.push({ ...bi, qty: diff, quantity: diff });
+                                    orderItemQuantities.set(id, orderQty + diff);
+                                }
+                            }
+                            itemsToDeduct = newItemsToDeduct;
+                        }
+                    }
+                    
+                    if (itemsToDeduct.length > 0) {
+                        await executeInventoryDeduction(tx, itemsToDeduct);
+                        console.log(`[INVENTORY_PERF] source=bill_manager_put billId=${bill.id} durationMs=${Date.now() - tInvStart} status=success`);
+                    }
                 }
             });
         } catch (err) {

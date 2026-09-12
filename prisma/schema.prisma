@@ -334,6 +334,8 @@ model Order {
   table   Table?  @relation(fields: [tableId], references: [id])
 
   items Json // Array of { name, price, quantity, itemId, addedAt, addedInCase }
+  orderId String? @db.ObjectId
+  @@index([orderId])
   total Float
   deliveryCharges  Float? @default(0)
   packagingCharges Float? @default(0)
@@ -603,6 +605,8 @@ model ManualInvoice {
   companyInfo     Json? // { name, address, phone, email, gst, etc }
 
   items Json // Array of { name, price, quantity, discountType, discountValue }
+  orderId String? @db.ObjectId
+  @@index([orderId])
 
   subtotal    Float
   discount    Float @default(0) // total discount amount applied
@@ -685,6 +689,8 @@ model BillManager {
   createdAt  DateTime @default(now())
 
   items Json
+  orderId String? @db.ObjectId
+  @@index([orderId])
 
   subtotal       Float
   discountAmount Float?  @default(0)
@@ -733,6 +739,7 @@ model BillManager {
   whatsappSid    String?
 
   inventoryDeducted Boolean @default(false) // ✅ Atomic Idempotency tracking
+  idempotencyKey    String? @unique // ✅ Added for safe retries and preventing duplicate bills
 
   @@unique([clerkUserId, billNumber]) // ✅ FIX: Global uniqueness changed to per-business uniqueness
   @@index([clerkUserId])

@@ -22,6 +22,7 @@ import { useConfirm } from "@/components/ConfirmContext";
 import ItemModal from "@/components/MenuEditor/ItemModal";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { getQRCodeDataUrl } from "@/lib/qrHelper";
+import { v4 as uuidv4 } from "uuid";
 
 /* ================= TYPES ================= */
 
@@ -745,6 +746,7 @@ export default function CheckoutClient() {
     tokenNumberRef.current = null;
     setKotNumbers([]);
     kotNumbersRef.current = [];
+    idempotencyKeyRef.current = uuidv4();
     setServiceCharge(0);
     setServiceChargeType('FLAT');
     setManualDeliveryCharge(0);
@@ -821,6 +823,7 @@ export default function CheckoutClient() {
   const tokenNumberRef = useRef<number | null>(null);
   const [kotNumbers, setKotNumbers] = useState<number[]>([]);
   const kotNumbersRef = useRef<number[]>([]);
+  const idempotencyKeyRef = useRef<string>(uuidv4());
   const { setOrders } = useTerminalContext();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -2053,6 +2056,7 @@ export default function CheckoutClient() {
         tokenNumber: tokenNumberRef.current,
         profileId: business?.id,
         amountPaid: finalAmountPaid,
+        idempotencyKey: idempotencyKeyRef.current,
       };
 
       const url = resumeBillId ? `/api/bill-manager/${resumeBillId}` : "/api/bill-manager";
