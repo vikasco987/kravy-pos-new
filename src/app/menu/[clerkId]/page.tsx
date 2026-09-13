@@ -39,7 +39,8 @@ import {
     UtensilsCrossed,
     FileText,
     Utensils,
-    Locate
+    Locate,
+    Copy
 } from "lucide-react";
 import { saveOrderLocally } from "@/lib/orderStorage";
 import ActiveOrderBanner from "@/components/ActiveOrderBanner";
@@ -132,6 +133,8 @@ type BusinessProfile = {
     qrPackagingChargeEnabled?: boolean;
     qrPackagingChargeAmount?: number;
     loyaltyPointRatio?: number;
+    upi?: string;
+    qrPayUpiEnabled?: boolean;
 };
 
 type ComboSelection = {
@@ -227,6 +230,7 @@ function PublicMenu() {
     const [orderStatus, setOrderStatus] = useState<"none" | "placing" | "placed">("none");
     const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
     const [lastOrderItems, setLastOrderItems] = useState<any[]>([]);
+    const [lastOrderTotal, setLastOrderTotal] = useState(0);
     const [recentOrderIds, setRecentOrderIds] = useState<string[]>([]);
     const [showRecentOrders, setShowRecentOrders] = useState(false);
     const [activeCombo, setActiveCombo] = useState<Combo | null>(null);
@@ -992,6 +996,7 @@ function PublicMenu() {
                 const orderData = await res.json();
                 setPlacedOrderId(orderData.id);
                 setLastOrderItems(allOrderItems);
+                setLastOrderTotal(total);
                 setOrderStatus("placed");
                 setCart({});
                 setVariantCart([]);
@@ -1256,7 +1261,7 @@ function PublicMenu() {
                                 </div>
                                 <div className="px-3.5 py-3">
                                     <div className="text-[1.25rem] font-[900] mb-0.5">{profile?.businessName || "Restaurant"}</div>
-                                    {profile?.qrMenuShowDetails !== false && profile?.qrMenuCuisines && (
+                                    {profile?.qrMenuShowDetails !== false && profile?.qrMenuCuisines && profile.qrMenuCuisines !== "North Indian, Mughlai, Biryani" && (
                                         <div className="text-[0.75rem] text-[#696969] font-[600] mb-2">{profile.qrMenuCuisines}</div>
                                     )}
 
@@ -2582,7 +2587,7 @@ function PublicMenu() {
                                         <span className="text-xl">👑</span>
                                         <span className="text-[0.75rem] font-[700] text-[#7A5A00]">Loyalty points earned!</span>
                                     </div>
-                                    <span className="font-[Syne] text-[1.1rem] font-[800] text-[#D4A353]">+{Math.floor(total / (profile?.loyaltyPointRatio || 10))} pts</span>
+                                    <span className="font-[Syne] text-[1.1rem] font-[800] text-[#D4A353]">+{Math.floor(lastOrderTotal / (profile?.loyaltyPointRatio || 10))} pts</span>
                                 </div>
                             )}
 
@@ -2605,6 +2610,29 @@ function PublicMenu() {
                         </div>
 
                         <div className="space-y-3 pb-4">
+                            {profile?.qrPayUpiEnabled && profile?.upi && (
+                                <div className="bg-white rounded-[14px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.06)] mb-6 text-center border border-gray-100">
+                                    <div className="text-[0.8rem] font-bold text-gray-500 uppercase tracking-widest mb-3">Pay via UPI</div>
+                                    <div className="bg-gray-50 rounded-xl p-4 mb-3 inline-block">
+                                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=${profile.upi}&pn=${profile.businessName || 'Merchant'}&am=${lastOrderTotal}&cu=INR`)}`} alt="UPI QR" className="w-32 h-32 object-contain mx-auto mix-blend-multiply" />
+                                    </div>
+                                    <div className="text-[1.3rem] font-black text-gray-900 mb-1">₹{lastOrderTotal}</div>
+                                    <div className="flex items-center justify-center gap-2 mb-1">
+                                        <span className="text-[0.85rem] font-[700] text-gray-600">{profile.upi}</span>
+                                        <button 
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(profile.upi || "");
+                                                toast.success("UPI ID Copied!");
+                                            }}
+                                            className="bg-gray-100 p-1.5 rounded-md hover:bg-gray-200 transition-colors"
+                                        >
+                                            <Copy size={14} className="text-gray-600" />
+                                        </button>
+                                    </div>
+                                    <div className="text-[0.65rem] text-gray-400 font-bold">Scan QR or Copy UPI ID to pay</div>
+                                </div>
+                            )}
+
                             <button
                                 onClick={() => window.location.href = `/order-tracking/${placedOrderId}`}
                                 className="w-full bg-[#3B82F6] text-white rounded-[14px] py-4 font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
