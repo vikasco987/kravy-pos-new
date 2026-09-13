@@ -281,62 +281,84 @@ export async function PUT(
       // ✅ CONVERT ORDER TO BILL
       if (!existingOrder) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-      // Generate Bill Number
+      // Generate Bill Number and Create Atomically
       const nowLocal = new Date();
       const yy = String(nowLocal.getFullYear()).slice(-2);
       const mm = String(nowLocal.getMonth() + 1).padStart(2, '0');
-      const lastBill = await prisma.billManager.findFirst({
-        where: { clerkUserId: effectiveId, createdAt: { gte: new Date(nowLocal.getFullYear(), nowLocal.getMonth(), 1) }, OR: [{ billNumber: { startsWith: 'INV/' } }, { billNumber: { startsWith: 'SV/' } }] },
-        orderBy: { createdAt: 'desc' },
-      });
-      let nextSerial = 1;
-      if (lastBill) {
-        const lastS = parseInt(lastBill.billNumber.split('/').pop() || "0", 10);
-        if (!isNaN(lastS)) nextSerial = lastS + 1;
-      }
-      const billNumber = `INV/${yy}${mm}/${String(nextSerial).padStart(4, '0')}`;
       const idempotencyKey = `order-conversion-${id}`;
 
-      try {
-        [bill] = await prisma.$transaction([
-          prisma.billManager.create({
-            data: {
-              idempotencyKey,
-              orderId: id,
-              clerkUserId: effectiveId, billNumber, items: processedItems, subtotal: finalSubtotal, tax, total: finalTotal,
-              paymentMode: finalPaymentMode, paymentStatus: finalPaymentStatus,
-              isHeld: body.isHeld === true, upiTxnRef: upiTxnRef || null,
-              customerName: customerName || existingOrder.customerName,
-              customerPhone: customerPhone || existingOrder.customerPhone,
-              customerAddress: customerAddress || existingOrder.customerAddress,
-              partyId, tableName: tableName || "POS",
-              discountAmount: serverDiscountAmt, discountCode: validatedDiscountCode,
-              deliveryCharges: finalDeliveryCharge, deliveryGst: serverDeliveryGst,
-              packagingCharges: finalPackagingCharge, packagingGst: serverPackagingGst,
-              serviceCharge: finalServiceCharge, isKotPrinted: isKotPrinted === true,
-              auditNote: body.auditNote || "Finalized from Online Order",
-              kotNumbers: kotNumbers || existingOrder.kotNumbers,
-              tokenNumber: tokenNumber || existingOrder.tokenNumber,
-            },
-          }),
-          prisma.order.update({
-            where: { id },
-            data: { status: "COMPLETED", isBillPrinted: true }
-          })
-        ]);
-      } catch (err: any) {
-        if (isOrderConversion && (err.code === 'P2002' || err.code === 'P2034')) {
-          // Wait briefly for the winning transaction to commit if it was a same-order race
-          for (let attempt = 0; attempt < 3; attempt++) {
-            await new Promise(res => setTimeout(res, 200 * (attempt + 1)));
+      let attempts = 0;
+      while (true) {
+        try {
+          const profile = body.profileId
+            ? await prisma.businessProfile.findUnique({ where: { id: body.profileId } })
+            : await prisma.businessProfile.findFirst({ where: { userId: effectiveId }, orderBy: { createdAt: 'asc' } });
+
+          bill = await prisma.$transaction(async (tx) => {
+            let nextSerial = 1;
+            if (profile?.id) {
+              const updatedProfile = await tx.businessProfile.update({
+                where: { id: profile.id },
+                data: { billCounter: { increment: 1 } },
+                select: { billCounter: true }
+              });
+              nextSerial = updatedProfile.billCounter;
+            } else {
+              nextSerial = Math.floor(Math.random() * 1000000);
+            }
+
+            const billNumber = `INV/${yy}${mm}/${String(nextSerial).padStart(4, '0')}`;
+
+            const createdBill = await tx.billManager.create({
+              data: {
+                idempotencyKey,
+                orderId: id,
+                clerkUserId: effectiveId, billNumber, items: processedItems, subtotal: finalSubtotal, tax, total: finalTotal,
+                paymentMode: finalPaymentMode, paymentStatus: finalPaymentStatus,
+                isHeld: body.isHeld === true, upiTxnRef: upiTxnRef || null,
+                customerName: customerName || existingOrder.customerName,
+                customerPhone: customerPhone || existingOrder.customerPhone,
+                customerAddress: customerAddress || existingOrder.customerAddress,
+                partyId, tableName: tableName || "POS",
+                discountAmount: serverDiscountAmt, discountCode: validatedDiscountCode,
+                deliveryCharges: finalDeliveryCharge, deliveryGst: serverDeliveryGst,
+                packagingCharges: finalPackagingCharge, packagingGst: serverPackagingGst,
+                serviceCharge: finalServiceCharge, isKotPrinted: isKotPrinted === true,
+                auditNote: body.auditNote || "Finalized from Online Order",
+                kotNumbers: kotNumbers || existingOrder.kotNumbers,
+                tokenNumber: tokenNumber || existingOrder.tokenNumber,
+              },
+            });
+
+            await tx.order.update({
+              where: { id },
+              data: { status: "COMPLETED", isBillPrinted: true }
+            });
+
+            return createdBill;
+          });
+          break; // Success! Break out of the retry loop
+        } catch (err: any) {
+          if (isOrderConversion && (err.code === 'P2002' || err.code === 'P2034')) {
+            // Check if this was a SAME-ORDER idempotency race
             const raceBill = await prisma.billManager.findUnique({ where: { idempotencyKey } });
             if (raceBill) {
               console.log(`[IDEMPOTENCY] Race caught in PUT order-to-bill, returning existing bill for order ${id}`);
               return NextResponse.json({ bill: raceBill });
             }
+            
+            // If not same-order, it's a DIFFERENT-ORDER write conflict on the atomic counter
+            if (err.code === 'P2034' && attempts < 25) {
+              attempts++;
+              console.log(`[CONCURRENCY] Write conflict (P2034) on atomic counter for order ${id}. Retrying attempt ${attempts}...`);
+              // Use random jitter between 100ms and 400ms to perfectly break the convoy effect
+              const jitter = 100 + Math.random() * 300;
+              await new Promise(res => setTimeout(res, attempts * 50 + jitter));
+              continue;
+            }
           }
+          throw err;
         }
-        throw err;
       }
     }
 
