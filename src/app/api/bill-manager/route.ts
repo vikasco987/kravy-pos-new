@@ -240,7 +240,7 @@ export async function POST(req: NextRequest) {
 
     let result: any = null;
     let attempts = 0;
-    while (attempts < 15) {
+    while (true) {
       const _tTxAttemptStart = Date.now();
       try {
         result = await prisma.$transaction(async (tx) => {
