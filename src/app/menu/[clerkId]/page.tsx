@@ -235,6 +235,7 @@ function PublicMenu() {
     const [customizingItem, setCustomizingItem] = useState<MenuItem | null>(null);
     const [selectedVariants, setSelectedVariants] = useState<Record<string, any>>({});
     const [variantCart, setVariantCart] = useState<any[]>([]);
+    const [appliedOffer, setAppliedOffer] = useState<Offer | null>(null);
 
     // Review State
     const [reviewRating, setReviewRating] = useState(5);
@@ -677,10 +678,17 @@ function PublicMenu() {
     const qrDeliveryFee = profile?.qrDeliveryChargeEnabled ? (profile.qrDeliveryChargeAmount || 0) : 0;
     const qrPackagingFee = profile?.qrPackagingChargeEnabled ? (profile.qrPackagingChargeAmount || 0) : 0;
     
+    const offerDisc = useMemo(() => {
+        if (!appliedOffer) return 0;
+        if (subtotal < (appliedOffer.minOrderValue || 0)) return 0;
+        let disc = appliedOffer.discountType === 'PERCENTAGE' ? (subtotal * appliedOffer.discountValue) / 100 : appliedOffer.discountValue;
+        return Math.min(disc, subtotal - loyaltyDisc);
+    }, [appliedOffer, subtotal, loyaltyDisc]);
+
     const total = useMemo(() => {
-        let baseTotal = isInclusive ? (subtotal - loyaltyDisc) : (subtotal + tax - loyaltyDisc);
-        return baseTotal + qrDeliveryFee + qrPackagingFee;
-    }, [isInclusive, subtotal, loyaltyDisc, tax, qrDeliveryFee, qrPackagingFee]);
+        let baseTotal = isInclusive ? (subtotal - loyaltyDisc - offerDisc) : (subtotal + tax - loyaltyDisc - offerDisc);
+        return Math.max(Math.round(baseTotal + qrDeliveryFee + qrPackagingFee), 0);
+    }, [isInclusive, subtotal, loyaltyDisc, offerDisc, tax, qrDeliveryFee, qrPackagingFee]);
 
     // Actions
     // Auto-initialize selectedVariants when an item is selected for customization or detail view
@@ -1248,17 +1256,8 @@ function PublicMenu() {
                                 </div>
                                 <div className="px-3.5 py-3">
                                     <div className="text-[1.25rem] font-[900] mb-0.5">{profile?.businessName || "Restaurant"}</div>
-                                    {profile?.qrMenuShowDetails !== false && (
-                                        <>
-                                            <div className="text-[0.75rem] text-[#696969] font-[600] mb-2">{profile?.qrMenuCuisines || "North Indian, Mughlai, Biryani"}</div>
-                                            <div className="flex items-center gap-1.5 flex-wrap mb-2">
-                                                <div className="flex items-center gap-1 border border-[#b2dfc8] bg-[#F0FDF4] rounded-md px-2 py-1 text-[0.72rem] font-[700] text-[#22C55E]">★ {profile?.qrMenuRating || "4.3 (2.1K)"}</div>
-                                                <div className="w-[1px] h-4 bg-[#EBEBEB]" />
-                                                <div className="flex items-center gap-1 border border-[#EBEBEB] rounded-md px-2 py-1 text-[0.72rem] font-[700]">⏱ {profile?.qrMenuDeliveryTime || "20–30 min"}</div>
-                                                <div className="w-[1px] h-4 bg-[#EBEBEB]" />
-                                                <div className="flex items-center gap-1 border border-[#EBEBEB] rounded-md px-2 py-1 text-[0.72rem] font-[700]">{profile?.qrMenuCostForTwo || "₹350 for two"}</div>
-                                            </div>
-                                        </>
+                                    {profile?.qrMenuShowDetails !== false && profile?.qrMenuCuisines && (
+                                        <div className="text-[0.75rem] text-[#696969] font-[600] mb-2">{profile.qrMenuCuisines}</div>
                                     )}
 
                                     {/* DYNAMIC OFFERS SLIDER */}
@@ -2101,11 +2100,7 @@ function PublicMenu() {
             {/* ── STICKY CART BAR (Zomato Style) ── */}
             <div className={`fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-[110] px-4 pt-2 pb-6 transition-transform duration-500 ease-in-out ${cartCount > 0 && !showCartSheet ? "translate-y-0" : "translate-y-full"}`}>
                 
-                {/* Coupon Hint */}
-                <div className="bg-[#E8F3FF] border border-blue-100 rounded-t-xl px-4 py-2 flex items-center gap-2 mb-[-5px] relative z-0">
-                  <div className="bg-blue-600 text-white rounded p-0.5"><Tag size={12} fill="currentColor"/></div>
-                  <span className="text-[0.72rem] font-black text-blue-700">You have unlocked 60% OFF up to ₹120</span>
-                </div>
+                {/* Coupon Hint Removed */}
 
                 <div onClick={() => { kravy.open(); setShowCartSheet(true); }} className="bg-[#E23744] text-white rounded-2xl px-4 py-3 flex items-center justify-between shadow-2xl active:scale-95 transition-all cursor-pointer relative z-10">
                     <div className="flex items-center gap-3">
@@ -2381,19 +2376,28 @@ function PublicMenu() {
                                         <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
                                             {offers.map(offer => {
                                                 const isDisabled = subtotal < (offer.minOrderValue || 0);
+                                                const isApplied = appliedOffer?.id === offer.id && !isDisabled;
                                                 return (
                                                     <div
                                                         key={offer.id}
-                                                        className={`flex-shrink-0 px-4 py-3 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1 min-w-[130px] transition-all ${isDisabled ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-red-50/30 border-[#E23744]/30'}`}
+                                                        onClick={() => {
+                                                            if (isDisabled) return;
+                                                            if (isApplied) setAppliedOffer(null);
+                                                            else setAppliedOffer(offer);
+                                                        }}
+                                                        className={`flex-shrink-0 px-4 py-3 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1 min-w-[130px] transition-all cursor-pointer ${isDisabled ? 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed' : isApplied ? 'bg-green-50 border-green-500 scale-105 shadow-sm' : 'bg-red-50/30 border-[#E23744]/30 active:scale-95'}`}
                                                     >
-                                                        <div className={`text-[0.78rem] font-black uppercase tracking-tighter ${isDisabled ? 'text-gray-400' : 'text-[#E23744]'}`}>
+                                                        <div className={`text-[0.78rem] font-black uppercase tracking-tighter ${isDisabled ? 'text-gray-400' : isApplied ? 'text-green-600' : 'text-[#E23744]'}`}>
                                                             {offer.code || "OFFER"}
                                                         </div>
-                                                        <div className="text-[0.6rem] font-bold text-gray-600">
+                                                        <div className={`text-[0.6rem] font-bold ${isApplied ? 'text-green-600' : 'text-gray-600'}`}>
                                                             {offer.discountType === 'PERCENTAGE' ? `${offer.discountValue}% OFF` : `₹${offer.discountValue} OFF`}
                                                         </div>
                                                         {isDisabled && (
                                                             <div className="text-[0.55rem] font-black text-gray-400 italic">Add ₹{(offer.minOrderValue || 0) - subtotal} more</div>
+                                                        )}
+                                                        {isApplied && (
+                                                            <div className="text-[0.55rem] font-black text-green-500 italic">APPLIED 🎉</div>
                                                         )}
                                                     </div>
                                                 );
@@ -2494,6 +2498,12 @@ function PublicMenu() {
                                         <div className="flex justify-between text-[0.8rem] text-[#696969] font-bold">
                                             <span>Delivery Charge</span>
                                             <span>+₹{qrDeliveryFee.toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                    {offerDisc > 0 && (
+                                        <div className="flex justify-between text-[0.8rem] text-green-600 font-bold">
+                                            <span>🏷️ Offer Discount</span>
+                                            <span>−₹{Math.round(offerDisc)}</span>
                                         </div>
                                     )}
                                     {loyaltyDisc > 0 && <div className="flex justify-between text-[0.8rem] text-[#D4A353] font-bold"><span>👑 Loyalty Discount</span><span>−₹{loyaltyDisc}</span></div>}
