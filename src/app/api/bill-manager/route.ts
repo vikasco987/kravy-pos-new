@@ -502,6 +502,18 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ bill: existingBill });
               }
             }
+          } else if (err.code === 'P2002' && (err.meta?.target?.includes('billNumber') || String(err.message).includes('billNumber'))) {
+            if (body.billNumber) {
+              console.log(`[BILL_MANAGER] Explicit billNumber ${body.billNumber} collided. Skipping retries.`);
+              throw err;
+            }
+            console.log(`[BILL_MANAGER] billNumber collision detected. Advancing counter outside transaction to recover.`);
+            if (profile?.id) {
+              await prisma.businessProfile.update({
+                where: { id: profile.id },
+                data: { billCounter: { increment: 1 } }
+              });
+            }
           }
           if (attempts < 15) {
             attempts++;
