@@ -44,10 +44,16 @@ export async function executeInventoryDeduction(tx: any, orderItems: any[]) {
     
     for (const item of orderItems) {
       const rawItemId = item.itemId || item.id;
-      const itemId = rawItemId ? rawItemId.split('-')[0] : null;
+      const match = rawItemId ? String(rawItemId).match(/^[0-9a-fA-F]{24}/) : null;
+      const itemId = match ? match[0] : null;
+
+      if (!itemId) {
+        throw new Error(`[INVENTORY_ERROR] Invalid item ID for inventory deduction: ${rawItemId}. Aborting to prevent silent inventory discrepancy.`);
+      }
+
       const quantitySold = Number(item.qty || item.quantity || 1);
       
-      if (!itemId || isNaN(quantitySold) || quantitySold <= 0) continue;
+      if (isNaN(quantitySold) || quantitySold <= 0) continue;
       
       itemDeductions.set(itemId, (itemDeductions.get(itemId) || 0) + quantitySold);
     }

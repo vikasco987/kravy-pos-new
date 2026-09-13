@@ -233,8 +233,20 @@ export async function PUT(
 
     /* ---------- PROCESS UPDATE OR CONVERT ORDER ---------- */
     let bill;
-    const existingBill = await prisma.billManager.findUnique({ where: { id } });
+    let existingBill = await prisma.billManager.findUnique({ where: { id } });
+    let isConversionRetry = false;
+    let isOrderConversion = false;
+    
+    if (!existingBill) {
+      existingBill = await prisma.billManager.findFirst({ where: { orderId: id } });
+      if (existingBill) {
+        isConversionRetry = true;
+      }
+    }
     const existingOrder = !existingBill ? await prisma.order.findUnique({ where: { id } }) : null;
+    if (!existingBill && existingOrder) {
+      isOrderConversion = true;
+    }
 
     const finalToken = tokenNumber || (kotNumbers && Array.isArray(kotNumbers) && kotNumbers.length > 0 ? kotNumbers[kotNumbers.length - 1] : null) || existingBill?.tokenNumber || existingOrder?.tokenNumber || 1;
     const processedItems = items.map((it: any) => ({
@@ -244,6 +256,10 @@ export async function PUT(
     }));
 
     if (existingBill) {
+      if (isConversionRetry) {
+        console.log(`[IDEMPOTENCY] Returning existing converted bill for order ${id} without mutation.`);
+        return NextResponse.json({ bill: existingBill });
+      }
       // ✅ UPDATE BILL
       bill = await prisma.billManager.update({
         where: { id },
@@ -279,30 +295,49 @@ export async function PUT(
         if (!isNaN(lastS)) nextSerial = lastS + 1;
       }
       const billNumber = `INV/${yy}${mm}/${String(nextSerial).padStart(4, '0')}`;
+      const idempotencyKey = `order-conversion-${id}`;
 
-      bill = await prisma.billManager.create({
-        data: {
-          clerkUserId: effectiveId, billNumber, items: processedItems, subtotal: finalSubtotal, tax, total: finalTotal,
-          paymentMode: finalPaymentMode, paymentStatus: finalPaymentStatus,
-          isHeld: body.isHeld === true, upiTxnRef: upiTxnRef || null,
-          customerName: customerName || existingOrder.customerName,
-          customerPhone: customerPhone || existingOrder.customerPhone,
-          customerAddress: customerAddress || existingOrder.customerAddress,
-          partyId, tableName: tableName || "POS",
-          discountAmount: serverDiscountAmt, discountCode: validatedDiscountCode,
-          deliveryCharges: finalDeliveryCharge, deliveryGst: serverDeliveryGst,
-          packagingCharges: finalPackagingCharge, packagingGst: serverPackagingGst,
-          serviceCharge: finalServiceCharge, isKotPrinted: isKotPrinted === true,
-          auditNote: body.auditNote || "Finalized from Online Order",
-          kotNumbers: kotNumbers || existingOrder.kotNumbers,
-          tokenNumber: tokenNumber || existingOrder.tokenNumber,
-        },
-      });
-
-      await prisma.order.update({
-        where: { id },
-        data: { status: "COMPLETED", isBillPrinted: true }
-      });
+      try {
+        [bill] = await prisma.$transaction([
+          prisma.billManager.create({
+            data: {
+              idempotencyKey,
+              orderId: id,
+              clerkUserId: effectiveId, billNumber, items: processedItems, subtotal: finalSubtotal, tax, total: finalTotal,
+              paymentMode: finalPaymentMode, paymentStatus: finalPaymentStatus,
+              isHeld: body.isHeld === true, upiTxnRef: upiTxnRef || null,
+              customerName: customerName || existingOrder.customerName,
+              customerPhone: customerPhone || existingOrder.customerPhone,
+              customerAddress: customerAddress || existingOrder.customerAddress,
+              partyId, tableName: tableName || "POS",
+              discountAmount: serverDiscountAmt, discountCode: validatedDiscountCode,
+              deliveryCharges: finalDeliveryCharge, deliveryGst: serverDeliveryGst,
+              packagingCharges: finalPackagingCharge, packagingGst: serverPackagingGst,
+              serviceCharge: finalServiceCharge, isKotPrinted: isKotPrinted === true,
+              auditNote: body.auditNote || "Finalized from Online Order",
+              kotNumbers: kotNumbers || existingOrder.kotNumbers,
+              tokenNumber: tokenNumber || existingOrder.tokenNumber,
+            },
+          }),
+          prisma.order.update({
+            where: { id },
+            data: { status: "COMPLETED", isBillPrinted: true }
+          })
+        ]);
+      } catch (err: any) {
+        if (isOrderConversion && (err.code === 'P2002' || err.code === 'P2034')) {
+          // Wait briefly for the winning transaction to commit if it was a same-order race
+          for (let attempt = 0; attempt < 3; attempt++) {
+            await new Promise(res => setTimeout(res, 200 * (attempt + 1)));
+            const raceBill = await prisma.billManager.findUnique({ where: { idempotencyKey } });
+            if (raceBill) {
+              console.log(`[IDEMPOTENCY] Race caught in PUT order-to-bill, returning existing bill for order ${id}`);
+              return NextResponse.json({ bill: raceBill });
+            }
+          }
+        }
+        throw err;
+      }
     }
 
     return NextResponse.json({ bill });
