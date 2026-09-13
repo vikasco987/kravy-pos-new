@@ -40,7 +40,8 @@ import {
     FileText,
     Utensils,
     Locate,
-    Copy
+    Copy,
+    Download
 } from "lucide-react";
 import { saveOrderLocally } from "@/lib/orderStorage";
 import ActiveOrderBanner from "@/components/ActiveOrderBanner";
@@ -1152,6 +1153,28 @@ function PublicMenu() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E23744]"></div>
         </div>
     );
+
+    const isUpiEnabled = profile?.qrPayUpiEnabled && profile?.upi;
+    const upiUrl = isUpiEnabled ? `upi://pay?pa=${profile?.upi}&pn=${profile?.businessName || 'Merchant'}&am=${lastOrderTotal}&cu=INR` : "";
+    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiUrl)}`;
+
+    const handleDownloadQR = async () => {
+        try {
+            const response = await fetch(qrImageUrl);
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Kravy_Payment_QR_${placedOrderId}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast.success("QR Code Downloaded!");
+        } catch (e) {
+            toast.error("Failed to download QR code");
+        }
+    };
 
     return (
         <div className="max-w-[480px] mx-auto bg-[#F4F4F4] min-h-screen relative font-sans text-[#1C1C1C]">
@@ -2563,90 +2586,122 @@ function PublicMenu() {
             <AnimatePresence>
                 {orderStatus === "placed" && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-white z-[300] flex flex-col p-6 overflow-y-auto no-scrollbar">
-                        <div className="flex-1 flex flex-col items-center justify-center text-center">
-                            <motion.div initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", damping: 12 }} className="text-[4rem] mb-2">🎉</motion.div>
-                            <h2 className="text-[1.3rem] font-[900] mb-1 tracking-tight">Order Placed Successfully!</h2>
-                            <p className="text-[0.78rem] text-[#696969] leading-relaxed mb-6 max-w-[280px] mx-auto">Kitchen mein order pahunch gaya hai.<br />Jaldi ready ho jaayega.</p>
-
-                            {/* Ordered Items Summary */}
-                            <div className="w-full bg-[#f9f9f9] rounded-2xl p-4 mb-6 border border-[#eee] text-left">
-                                <p className="text-[0.65rem] font-bold text-[#999] uppercase tracking-widest mb-2">Aapne Mangwaya:</p>
-                                <div className="space-y-2">
-                                    {lastOrderItems.map((item, idx) => (
-                                        <div key={idx} className="flex justify-between items-center">
-                                            <span className="text-[0.8rem] font-bold text-[#333]">{item.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()} × {item.quantity}</span>
-                                            <span className="text-[0.8rem] text-[#666]">₹{item.total || (item.price * item.quantity)}</span>
-                                        </div>
-                                    ))}
+                        {isUpiEnabled ? (
+                            <div className="flex-1 flex flex-col justify-center max-w-[400px] mx-auto w-full pt-10 pb-4">
+                                <div className="text-center mb-6">
+                                    <h2 className="text-[1.4rem] font-[900] mb-1 tracking-tight text-gray-900">Complete Your Payment</h2>
+                                    <p className="text-[0.75rem] text-blue-600 font-bold bg-blue-50 py-1.5 px-3 rounded-full inline-block">Please pay to proceed with your order.</p>
                                 </div>
-                            </div>
 
-                            {profile?.enableLoyaltyProgram !== false && (
-                                <div className="bg-[#D4A353]/10 border border-[#D4A353]/30 rounded-xl px-5 py-2.5 flex items-center justify-between w-full mb-8">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xl">👑</span>
-                                        <span className="text-[0.75rem] font-[700] text-[#7A5A00]">Loyalty points earned!</span>
-                                    </div>
-                                    <span className="font-[Syne] text-[1.1rem] font-[800] text-[#D4A353]">+{Math.floor(lastOrderTotal / (profile?.loyaltyPointRatio || 10))} pts</span>
-                                </div>
-                            )}
-
-                            <div className="flex w-full mb-8 gap-1">
-                                {[
-                                    { ico: "✅", lbl: "Received", done: true },
-                                    { ico: "👨🍳", lbl: "Preparing", done: false },
-                                    { ico: "🔥", lbl: "Cooking", done: false },
-                                    { ico: "🍽️", lbl: "Ready!", done: false }
-                                ].map((step, i) => (
-                                    <div key={i} className="flex-1 text-center relative">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm mx-auto mb-1.5 relative z-10 border transition-all ${step.done ? "bg-[#22C55E] border-transparent text-white" : "bg-[#F4F4F4] border-[#EBEBEB] text-[#ABABAB]"}`}>
-                                            {step.ico}
-                                        </div>
-                                        <div className={`text-[0.55rem] font-[800] ${step.done ? "text-[#22C55E]" : "text-[#ABABAB]"}`}>{step.lbl}</div>
-                                        {i < 3 && <div className={`absolute top-4 left-1/2 w-full h-[2px] -z-1 transition-all ${step.done ? "bg-[#22C55E]" : "bg-[#EBEBEB]"}`} />}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-3 pb-4">
-                            {profile?.qrPayUpiEnabled && profile?.upi && (
-                                <div className="bg-white rounded-[14px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.06)] mb-6 text-center border border-gray-100">
-                                    <div className="text-[0.8rem] font-bold text-gray-500 uppercase tracking-widest mb-3">Pay via UPI</div>
-                                    <div className="bg-gray-50 rounded-xl p-4 mb-3 inline-block">
-                                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=${profile.upi}&pn=${profile.businessName || 'Merchant'}&am=${lastOrderTotal}&cu=INR`)}`} alt="UPI QR" className="w-32 h-32 object-contain mx-auto mix-blend-multiply" />
-                                    </div>
-                                    <div className="text-[1.3rem] font-black text-gray-900 mb-1">₹{lastOrderTotal}</div>
-                                    <div className="flex items-center justify-center gap-2 mb-1">
-                                        <span className="text-[0.85rem] font-[700] text-gray-600">{profile.upi}</span>
+                                <div className="bg-white rounded-2xl p-6 shadow-[0_15px_40px_rgba(0,0,0,0.08)] mb-6 border border-gray-100 text-center relative overflow-hidden">
+                                    <div className="text-[0.75rem] font-bold text-gray-400 uppercase tracking-widest mb-4">Scan & Pay</div>
+                                    
+                                    <div className="bg-gray-50 rounded-xl p-4 mb-4 inline-block relative border border-gray-200">
+                                        <img src={qrImageUrl} alt="UPI QR" className="w-40 h-40 object-contain mx-auto mix-blend-multiply" />
                                         <button 
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(profile.upi || "");
-                                                toast.success("UPI ID Copied!");
-                                            }}
-                                            className="bg-gray-100 p-1.5 rounded-md hover:bg-gray-200 transition-colors"
+                                            onClick={handleDownloadQR}
+                                            className="absolute -bottom-3 -right-3 bg-white p-2.5 rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.1)] border border-gray-100 text-gray-700 hover:text-blue-600 transition-colors z-10"
                                         >
-                                            <Copy size={14} className="text-gray-600" />
+                                            <Download size={18} />
                                         </button>
                                     </div>
-                                    <div className="text-[0.65rem] text-gray-400 font-bold">Scan QR or Copy UPI ID to pay</div>
-                                </div>
-                            )}
+                                    
+                                    <div className="text-[1.8rem] font-black text-gray-900 mb-2">₹{lastOrderTotal}</div>
+                                    
+                                    <div className="flex flex-col items-center gap-2 mb-4">
+                                        <div className="flex items-center justify-center gap-2 bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-100 w-full active:scale-95 transition-all cursor-pointer"
+                                             onClick={() => {
+                                                 navigator.clipboard.writeText(profile.upi || "");
+                                                 toast.success("UPI ID Copied!");
+                                             }}
+                                        >
+                                            <span className="text-[0.85rem] font-[700] text-gray-700 truncate">{profile.upi}</span>
+                                            <div className="text-blue-600 bg-blue-50 p-1.5 rounded-md"><Copy size={14} /></div>
+                                        </div>
+                                    </div>
 
-                            <button
-                                onClick={() => window.location.href = `/order-tracking/${placedOrderId}`}
-                                className="w-full bg-[#3B82F6] text-white rounded-[14px] py-4 font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
-                            >
-                                <History size={20} />
-                                Live Status Track Karein
-                            </button>
-                            <button
-                                onClick={() => setOrderStatus("none")}
-                                className="w-full border-2 border-[#E23744] text-[#E23744] rounded-[14px] py-4 font-black text-sm uppercase tracking-widest active:scale-95 transition-all text-center"
-                            >
-                                + Add More Items
-                            </button>
-                        </div>
+                                    <div className="text-[0.7rem] text-gray-600 text-left bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 leading-relaxed">
+                                        <span className="font-bold text-blue-700 mb-1 block uppercase tracking-wider text-[0.6rem]">Instructions</span>
+                                        <ul className="list-disc pl-4 space-y-1.5">
+                                            <li>Scan this QR using <span className="font-bold">GPay, PhonePe, Paytm</span>.</li>
+                                            <li>Or copy the UPI ID above and pay directly.</li>
+                                            <li>You can also download the QR to upload & pay.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => window.location.href = `/order-tracking/${placedOrderId}`}
+                                    className="w-full bg-[#1e293b] text-white rounded-[14px] py-4.5 font-black text-[0.95rem] uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all mt-auto"
+                                >
+                                    I Have Paid, Track Order <ArrowRight size={18} />
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex-1 flex flex-col items-center justify-center text-center">
+                                    <motion.div initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", damping: 12 }} className="text-[4rem] mb-2">🎉</motion.div>
+                                    <h2 className="text-[1.3rem] font-[900] mb-1 tracking-tight">Order Placed Successfully!</h2>
+                                    <p className="text-[0.78rem] text-[#696969] leading-relaxed mb-6 max-w-[280px] mx-auto">Kitchen mein order pahunch gaya hai.<br />Jaldi ready ho jaayega.</p>
+
+                                    {/* Ordered Items Summary */}
+                                    <div className="w-full bg-[#f9f9f9] rounded-2xl p-4 mb-6 border border-[#eee] text-left">
+                                        <p className="text-[0.65rem] font-bold text-[#999] uppercase tracking-widest mb-2">Aapne Mangwaya:</p>
+                                        <div className="space-y-2">
+                                            {lastOrderItems.map((item, idx) => (
+                                                <div key={idx} className="flex justify-between items-center">
+                                                    <span className="text-[0.8rem] font-bold text-[#333]">{item.name.replace(/\s?\((V|NV|R)\)/gi, "").trim()} × {item.quantity}</span>
+                                                    <span className="text-[0.8rem] text-[#666]">₹{item.total || (item.price * item.quantity)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {profile?.enableLoyaltyProgram !== false && (
+                                        <div className="bg-[#D4A353]/10 border border-[#D4A353]/30 rounded-xl px-5 py-2.5 flex items-center justify-between w-full mb-8">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xl">👑</span>
+                                                <span className="text-[0.75rem] font-[700] text-[#7A5A00]">Loyalty points earned!</span>
+                                            </div>
+                                            <span className="font-[Syne] text-[1.1rem] font-[800] text-[#D4A353]">+{Math.floor(lastOrderTotal / (profile?.loyaltyPointRatio || 10))} pts</span>
+                                        </div>
+                                    )}
+
+                                    <div className="flex w-full mb-8 gap-1">
+                                        {[
+                                            { ico: "✅", lbl: "Received", done: true },
+                                            { ico: "👨🍳", lbl: "Preparing", done: false },
+                                            { ico: "🔥", lbl: "Cooking", done: false },
+                                            { ico: "🍽️", lbl: "Ready!", done: false }
+                                        ].map((step, i) => (
+                                            <div key={i} className="flex-1 text-center relative">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm mx-auto mb-1.5 relative z-10 border transition-all ${step.done ? "bg-[#22C55E] border-transparent text-white" : "bg-[#F4F4F4] border-[#EBEBEB] text-[#ABABAB]"}`}>
+                                                    {step.ico}
+                                                </div>
+                                                <div className={`text-[0.55rem] font-[800] ${step.done ? "text-[#22C55E]" : "text-[#ABABAB]"}`}>{step.lbl}</div>
+                                                {i < 3 && <div className={`absolute top-4 left-1/2 w-full h-[2px] -z-1 transition-all ${step.done ? "bg-[#22C55E]" : "bg-[#EBEBEB]"}`} />}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 pb-4">
+                                    <button
+                                        onClick={() => window.location.href = `/order-tracking/${placedOrderId}`}
+                                        className="w-full bg-[#3B82F6] text-white rounded-[14px] py-4 font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
+                                    >
+                                        <History size={20} />
+                                        Live Status Track Karein
+                                    </button>
+                                    <button
+                                        onClick={() => setOrderStatus("none")}
+                                        className="w-full border-2 border-[#E23744] text-[#E23744] rounded-[14px] py-4 font-black text-sm uppercase tracking-widest active:scale-95 transition-all text-center"
+                                    >
+                                        + Add More Items
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
